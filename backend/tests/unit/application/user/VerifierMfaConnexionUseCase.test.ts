@@ -23,6 +23,7 @@ function userRepoMock(user: AuthUserData | null): UserRepository {
     authentifier: async () => null,
     listerRolesAvecMotDePasse: async () => [],
     findMatchingAccountsByEmailPassword: async () => [],
+    findActiveUsersByEmail: async () => [],
     saveAvecProfil: async () => {},
     mettreAJourAvecProfil: async () => {},
     supprimerAvecCascade: async () => {},

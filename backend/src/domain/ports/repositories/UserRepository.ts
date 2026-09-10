@@ -59,6 +59,18 @@ export interface UserRepository {
     nomComplet: string;
   }>>;
 
+  // Forgot password — recherche users par email toutes écoles (actifs, non supprimés)
+  findActiveUsersByEmail(email: string): Promise<Array<{
+    userId: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+    schoolId: string;
+    schoolName: string;
+    schoolSubdomain: string;
+  }>>;
+
   // HR — lectures employé (TEACHER/STAFF) avec profils embarqués
   findEmployeeById(userId: string, schoolId: string): Promise<EmployeeDetail | null>;
   findEmployees(schoolId: string, activeOnly?: boolean): Promise<EmployeeDetail[]>;

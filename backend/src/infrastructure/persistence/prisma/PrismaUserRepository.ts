@@ -175,6 +175,52 @@ export class PrismaUserRepository implements UserRepository {
     return matches;
   }
 
+  async findActiveUsersByEmail(email: string): Promise<Array<{
+    userId: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+    schoolId: string;
+    schoolName: string;
+    schoolSubdomain: string;
+  }>> {
+    const users = await this.prisma.user.findMany({
+      where: { email, isActive: true, deletedAt: null },
+      include: {
+        school: { select: { id: true, name: true, subdomain: true, status: true } },
+      },
+    });
+
+    const results: Array<{
+      userId: string;
+      email: string;
+      firstName: string;
+      lastName: string;
+      role: string;
+      schoolId: string;
+      schoolName: string;
+      schoolSubdomain: string;
+    }> = [];
+
+    for (const u of users) {
+      // Only include users from active/approved schools
+      if (u.school?.status === 'PENDING' || u.school?.status === 'SUSPENDED') continue;
+      if (!u.email) continue;
+      results.push({
+        userId: u.id,
+        email: u.email,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        role: u.role,
+        schoolId: u.schoolId,
+        schoolName: u.school.name,
+        schoolSubdomain: u.school.subdomain,
+      });
+    }
+    return results;
+  }
+
   async mettreAJourAvecProfil(userId: string, data: { firstName?: string; lastName?: string; phone?: string; avatarUrl?: string; email?: string; isActive?: boolean; passwordHash?: string; subjectIds?: string[]; classeId?: string; dateOfBirth?: Date; gender?: string }): Promise<void> {
     await this.patchUser(userId, { ...(data.firstName && { firstName: data.firstName }), ...(data.lastName && { lastName: data.lastName }), ...(data.phone !== undefined && { phone: data.phone }), ...(data.avatarUrl !== undefined && { avatarUrl: data.avatarUrl }), ...(data.email && { email: data.email }), ...(data.isActive !== undefined && { isActive: data.isActive }), ...(data.passwordHash && { passwordHash: data.passwordHash }), updatedAt: new Date() });
     if (data.subjectIds !== undefined) {

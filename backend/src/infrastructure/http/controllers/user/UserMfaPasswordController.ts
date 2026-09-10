@@ -135,11 +135,24 @@ export class UserMfaPasswordController {
       }
 
       // No subdomain: find all matching users across schools
-      // Need a repo method: findUsersByEmailAcrossSchools
-      // For now, use findByEmail with each school (fallback - not ideal)
-      // TODO: add findMatchingAccountsByEmailPassword equivalent for reset
-      // Minimal V1: generic response only, no email sent (anti-enumeration)
-      // If exact 1 user found via a future repo method, send email
+      const matchingUsers = await this.userRepository.findActiveUsersByEmail(normalizedEmail);
+
+      if (matchingUsers.length === 1) {
+        // Exactly one user: send reset email
+        const match = matchingUsers[0];
+        const school = await this.schoolRepository.findById(match.schoolId);
+        if (school) {
+          // Create a minimal user object for the email helper
+          await sendResetEmail({
+            id: match.userId,
+            email: match.email,
+            firstName: match.firstName,
+            lastName: match.lastName,
+          }, school);
+        }
+      }
+      // If 0 or multiple users: generic response (anti-enumeration)
+      // For N>1, could optionally send one email per account with their respective links
 
       res.json({ success: true, message: 'Si ce compte existe, un email de réinitialisation a été envoyé.' });
     } catch (error) {

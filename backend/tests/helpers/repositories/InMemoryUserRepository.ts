@@ -147,6 +147,31 @@ export class InMemoryUserRepository implements UserRepository {
       }));
   }
 
+  async findActiveUsersByEmail(email: string): Promise<Array<{
+    userId: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+    schoolId: string;
+    schoolName: string;
+    schoolSubdomain: string;
+  }>> {
+    // In-memory: return all active users with matching email
+    return [...this.store.values()]
+      .filter(u => u.email === email && this.estActif(u))
+      .map(u => ({
+        userId: u.id,
+        email: u.email,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        role: u.role,
+        schoolId: u.schoolId,
+        schoolName: u.schoolId,
+        schoolSubdomain: u.schoolId,
+      }));
+  }
+
   async saveAvecProfil(user: User, profilData: {
     passwordHash: string;
     staffTitle?: string;
