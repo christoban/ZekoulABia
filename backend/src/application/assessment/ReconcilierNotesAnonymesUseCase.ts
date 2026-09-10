@@ -5,7 +5,6 @@ import type { MatiereRepository } from '@domain/ports/repositories/MatiereReposi
 import type { AnneeAcademiqueRepository } from '@domain/ports/repositories/AnneeAcademiqueRepository';
 import type { AssessmentScopeRepository } from '@domain/ports/repositories/AssessmentScopeRepository';
 import { Note } from '@domain/entities/Note';
-import { AssessmentScope } from '@domain/entities/AssessmentScope';
 import { canManageAnonymat } from '@domain/rules/AnonymatRules';
 import {
   ForbiddenAnonymatError,
@@ -71,26 +70,41 @@ export class ReconcilierNotesAnonymesUseCase {
         continue;
       }
 
-      if (!user) {
-        skippedIllegible++;
+      // Ni absent ni score → on ne compte pas comme réconcilié
+      if (!note.isAbsent && (note.score === null || note.score === undefined)) {
+        continue;
+      }
+
+      const matiere = await this.matiereRepository.findById(session.subjectId);
+      const sequence = await this.anneeRepository.findSequenceById(
+        session.academicSequenceId,
+        cmd.schoolId,
+      );
+      if (!sequence) throw new SequenceRequiredError();
+      const periode = await this.anneeRepository.findPeriodeById(
+        sequence.academicPeriodId,
+        cmd.schoolId,
+      );
+      if (!periode?.academicYearId) throw new SequenceRequiredError();
+      const academicYearId = periode.academicYearId;
+
+      const existing = await this.noteRepository.findByEleveEtMatiere(
+        user.userId,
+        session.subjectId,
+        session.academicSequenceId,
+      );
+
+      // Note déjà LOCKED → skip (évite exception sur definirScore / verrouiller)
+      if (existing && !existing.peutEtreModifiee()) {
         continue;
       }
 
       if (note.isAbsent) {
-        const existing = await this.noteRepository.findByEleveEtMatiere(
-          user.userId,
-          session.subjectId,
-          session.academicSequenceId,
-        );
-
-        const matiere = await this.matiereRepository.findById(session.subjectId);
-        const sequence = await this.anneeRepository.findSequenceById(session.academicSequenceId, cmd.schoolId);
-        const periode = sequence ? await this.anneeRepository.findPeriodeById(sequence.academicPeriodId, cmd.schoolId) : null;
-        const academicYearId = periode?.academicYearId ?? '';
-
         if (existing) {
           existing.definirScore(0);
-          if (shouldLock) { existing.verrouiller(); }
+          if (shouldLock) {
+            existing.verrouiller();
+          }
           await this.noteRepository.update(existing);
         } else {
           const noteEntity = Note.create({
@@ -107,25 +121,19 @@ export class ReconcilierNotesAnonymesUseCase {
             coefficient: matiere?.coefficient ?? 1,
             maxValue: note.maxValue,
           });
-          if (shouldLock) { noteEntity.verrouiller(); }
+          if (shouldLock) {
+            noteEntity.verrouiller();
+          }
           await this.noteRepository.save(noteEntity);
         }
         reconciled++;
-      } else if (note.score !== null && note.score !== undefined) {
-        const existing = await this.noteRepository.findByEleveEtMatiere(
-          user.userId,
-          session.subjectId,
-          session.academicSequenceId,
-        );
-
-        const matiere = await this.matiereRepository.findById(session.subjectId);
-        const sequence = await this.anneeRepository.findSequenceById(session.academicSequenceId, cmd.schoolId);
-        const periode = sequence ? await this.anneeRepository.findPeriodeById(sequence.academicPeriodId, cmd.schoolId) : null;
-        const academicYearId = periode?.academicYearId ?? '';
-
+      } else {
+        // score défini (garanti par le garde ci-dessus)
         if (existing) {
-          existing.definirScore(note.score);
-          if (shouldLock) { existing.verrouiller(); }
+          existing.definirScore(note.score!);
+          if (shouldLock) {
+            existing.verrouiller();
+          }
           await this.noteRepository.update(existing);
         } else {
           const noteEntity = Note.create({
@@ -136,18 +144,19 @@ export class ReconcilierNotesAnonymesUseCase {
             academicYearId,
             sequenceId: session.academicSequenceId,
             recordedById: cmd.actorUserId,
-            sequenceScore: note.score,
+            sequenceScore: note.score!,
             harmonizedAssessmentSessionId: cmd.sessionId,
             isAbsentGrade: false,
             coefficient: matiere?.coefficient ?? 1,
             maxValue: note.maxValue,
           });
-          if (shouldLock) { noteEntity.verrouiller(); }
+          if (shouldLock) {
+            noteEntity.verrouiller();
+          }
           await this.noteRepository.save(noteEntity);
         }
+        reconciled++;
       }
-
-      reconciled++;
     }
 
     session.marquerReconcilie(cmd.actorUserId);

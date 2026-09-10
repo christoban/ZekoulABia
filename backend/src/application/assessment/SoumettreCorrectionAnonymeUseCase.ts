@@ -32,7 +32,7 @@ export class SoumettreCorrectionAnonymeUseCase {
       cmd.correcteurId,
     );
     if (assignments.length === 0 && !isAdmin) {
-      throw new NotAssignedCorrectorError(); // ajoute l'import
+      throw new NotAssignedCorrectorError();
     }
 
     const submitted = await this.anonymatRepo.submitNotesAnonymes(

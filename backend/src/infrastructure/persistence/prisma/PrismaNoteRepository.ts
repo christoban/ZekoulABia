@@ -186,6 +186,8 @@ export class PrismaNoteRepository implements NoteRepository {
         sequenceAverage: data.sequenceAverage,
         validationStatus: data.validationStatus,
         isOfflineSync: data.isOfflineSync,
+        isAbsentGrade: data.isAbsentGrade,
+        harmonizedAssessmentSessionId: data.harmonizedAssessmentSessionId ?? null,
         createdAt: data.createdAt,
       },
     });
@@ -213,6 +215,8 @@ export class PrismaNoteRepository implements NoteRepository {
         rejectionReason: data.rejectionReason ?? null,
         isOfflineSync: data.isOfflineSync,
         syncedAt: data.syncedAt ?? null,
+        isAbsentGrade: data.isAbsentGrade,
+        harmonizedAssessmentSessionId: data.harmonizedAssessmentSessionId ?? null,
       },
     });
   }

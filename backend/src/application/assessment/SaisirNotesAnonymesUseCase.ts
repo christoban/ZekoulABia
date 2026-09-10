@@ -1,6 +1,5 @@
 import type { HarmonizedAssessmentSessionRepository } from '@domain/ports/repositories/HarmonizedAssessmentSessionRepository';
 import type { AnonymatRepository } from '@domain/ports/repositories/AnonymatRepository';
-import { canManageAnonymat } from '@domain/rules/AnonymatRules';
 import {
   ForbiddenAnonymatError,
   InvalidCodeForAssignmentError,
