@@ -246,7 +246,9 @@
     "mfa_setup_recovery_title": "Conservez vos codes de récupération",
     "mfa_setup_recovery_subtitle": "Ces codes à usage unique vous permettent de vous connecter si vous perdez l'accès à votre application d'authentification. Notez-les et conservez-les en lieu sûr — ils ne seront plus jamais affichés.",
     "mfa_setup_recovery_confirm": "J'ai enregistré mes codes de récupération",
-    "mfa_setup_continue": "Continuer vers mon tableau de bord →"
+    "mfa_setup_continue": "Continuer vers mon tableau de bord →",
+    "choose_account_title": "Plusieurs comptes trouvés",
+    "choose_account_subtitle": "Choisissez le compte avec lequel vous souhaitez vous connecter."
   },
   "messages": {
     "operationSuccess": "Opération réussie",

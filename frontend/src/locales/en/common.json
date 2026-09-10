@@ -246,7 +246,9 @@
     "mfa_setup_recovery_title": "Save your recovery codes",
     "mfa_setup_recovery_subtitle": "These single-use codes let you sign in if you lose access to your authenticator app. Write them down and keep them safe — they will never be shown again.",
     "mfa_setup_recovery_confirm": "I have saved my recovery codes",
-    "mfa_setup_continue": "Continue to my dashboard →"
+    "mfa_setup_continue": "Continue to my dashboard →",
+    "choose_account_title": "Multiple accounts found",
+    "choose_account_subtitle": "Choose the account you want to sign in with."
   },
   "messages": {
     "operationSuccess": "Operation completed successfully",

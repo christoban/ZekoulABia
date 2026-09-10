@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Eye, EyeOff, Loader2, ChevronDown, ChevronRight, Search, School, Presentation, Users, GraduationCap, User, Ban, Hand, AlertTriangle, Check, Mail, Clock, ArrowLeft, KeyRound, Shield, Copy } from 'lucide-react'
+import { Eye, EyeOff, Loader2, ChevronRight, Search, School, Presentation, Users, GraduationCap, User, Ban, Hand, AlertTriangle, Check, Mail, Clock, ArrowLeft, KeyRound, Shield, Copy } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import AnimatedBackground from '@/components/AnimatedBackground'

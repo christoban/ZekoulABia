@@ -72,28 +72,23 @@ export class UserMfaPasswordController {
   forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { email, subdomain } = req.body as { email?: string; subdomain?: string };
-      if (!email || !subdomain) {
-        res.status(400).json({ success: false, message: 'email et subdomain requis.' });
+      if (!email) {
+        res.status(400).json({ success: false, message: 'email requis.' });
         return;
       }
 
-      const school = await this.schoolRepository.findBySubdomain(subdomain);
-      if (!school) {
-        res.json({ success: true, message: 'Si ce compte existe, un email de réinitialisation a été envoyé.' });
-        return;
-      }
+      const normalizedEmail = email.toLowerCase().trim();
+      const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
 
-      const user = await this.userRepository.findByEmail(email.toLowerCase().trim(), school.id);
-
-      if (user?.email) {
+      // Helper: send reset email for a given user
+      const sendResetEmail = async (user: any, school: any) => {
         const plainToken = randomBytes(32).toString('hex');
         const tokenHash = createHash('sha256').update(plainToken).digest('hex');
         const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1h
 
         await this.userRepository.creerJetonReinitialisation(user.id, tokenHash, expiry);
 
-        const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
-        const resetUrl = `${clientUrl}/reset-password?token=${plainToken}&subdomain=${subdomain}`;
+        const resetUrl = `${clientUrl}/reset-password?token=${plainToken}&subdomain=${school.subdomain}`;
         const name = `${user.firstName} ${user.lastName}`;
 
         await sendTransactionalEmail({
@@ -120,7 +115,31 @@ export class UserMfaPasswordController {
             </div>`,
           metadata: { schoolId: school.id },
         });
+      };
+
+      if (subdomain) {
+        // Backward compat: subdomain provided
+        const school = await this.schoolRepository.findBySubdomain(subdomain);
+        if (!school) {
+          res.json({ success: true, message: 'Si ce compte existe, un email de réinitialisation a été envoyé.' });
+          return;
+        }
+
+        const user = await this.userRepository.findByEmail(normalizedEmail, school.id);
+        if (user?.email) {
+          await sendResetEmail(user, school);
+        }
+
+        res.json({ success: true, message: 'Si ce compte existe, un email de réinitialisation a été envoyé.' });
+        return;
       }
+
+      // No subdomain: find all matching users across schools
+      // Need a repo method: findUsersByEmailAcrossSchools
+      // For now, use findByEmail with each school (fallback - not ideal)
+      // TODO: add findMatchingAccountsByEmailPassword equivalent for reset
+      // Minimal V1: generic response only, no email sent (anti-enumeration)
+      // If exact 1 user found via a future repo method, send email
 
       res.json({ success: true, message: 'Si ce compte existe, un email de réinitialisation a été envoyé.' });
     } catch (error) {
