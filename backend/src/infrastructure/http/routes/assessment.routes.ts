@@ -269,11 +269,11 @@ export function creerAssessmentRoutes(
       });
       // Enrich with subject/class names
       const enriched = await Promise.all(result.map(async (item) => {
-        const session = await sessionRepository.findById(item.sessionId, req.user!.schoolId);
+        const session = await sessionRepository.findByIdWithLabels(item.sessionId, req.user!.schoolId);
         return {
           ...item,
-          subjectName: session?.subjectId || '',
-          classNames: item.classIds.map(cid => cid), // Will be enriched by frontend if needed
+          subjectName: session?.subjectName || '',
+          classNames: item.classIds.map(cid => session?.className || cid),
         };
       }));
       res.json({ success: true, data: enriched });

@@ -834,7 +834,7 @@ export function creerContainer() {
 
   // 15b. Use Cases — Notes (suite)
   const modifierNoteUseCase = new ModifierNoteUseCase(noteRepository, matiereRepository, schoolSettingsRepository);
-  const draftEnMasseUseCase = new DraftEnMasseUseCase(noteRepository, matiereRepository);
+  const draftEnMasseUseCase = new DraftEnMasseUseCase(noteRepository, matiereRepository, assessmentSessionRepository);
   const listerNotesUseCase = new ListerNotesUseCase(noteRepository, userRepository, matiereRepository, parentRepository);
   const listerNotesEnAttenteUseCase = new ListerNotesEnAttenteUseCase(noteRepository, userRepository);
   const statutParClasseUseCase = new StatutParClasseUseCase(noteRepository);

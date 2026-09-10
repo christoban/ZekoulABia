@@ -1,6 +1,7 @@
 import { Note } from '@domain/entities/Note';
 import type { NoteRepository } from '@domain/ports/repositories/NoteRepository';
 import type { MatiereRepository } from '@domain/ports/repositories/MatiereRepository';
+import type { HarmonizedAssessmentSessionRepository } from '@domain/ports/repositories/HarmonizedAssessmentSessionRepository';
 
 export interface DraftGradeInput {
   studentId: string;
@@ -33,6 +34,7 @@ export class DraftEnMasseUseCase {
   constructor(
     private readonly noteRepository: NoteRepository,
     private readonly matiereRepository: MatiereRepository,
+    private readonly sessionRepository?: HarmonizedAssessmentSessionRepository,
   ) {}
 
   async execute(commande: DraftEnMasseCommande): Promise<DraftEnMasseResultat> {
@@ -44,6 +46,24 @@ export class DraftEnMasseUseCase {
       if (!estAssigne) {
         throw new Error(
           `L'enseignant n'est pas assigné à cette matière`,
+        );
+      }
+    }
+
+    // Check for anonymized session that blocks nominative grading
+    if (this.sessionRepository) {
+      const sessions = await this.sessionRepository.findBySubjectClassAndYear(
+        commande.schoolId,
+        commande.subjectId,
+        commande.classId,
+        commande.academicYearId,
+      );
+      const blocked = sessions.some(
+        (s) => s.isAnonymized && s.anonymatStatus !== 'RECONCILIE' && s.academicSequenceId !== undefined
+      );
+      if (blocked) {
+        throw new Error(
+          'Cette évaluation est anonymisée : la saisie nominative en masse est interdite. Utilisez la fiche de correction par codes.'
         );
       }
     }

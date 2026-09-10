@@ -18,6 +18,7 @@ export type SessionListItem = {
 
 export interface HarmonizedAssessmentSessionRepository {
   findById(id: string, schoolId: string): Promise<HarmonizedAssessmentSession | null>;
+  findByIdWithLabels(id: string, schoolId: string): Promise<SessionListItem | null>;
   findBySubjectClassAndYear(schoolId: string, subjectId: string, classId: string, academicYearId: string): Promise<HarmonizedAssessmentSession[]>;
   findBySchool(schoolId: string, filters?: { classId?: string; subjectId?: string }): Promise<HarmonizedAssessmentSession[]>;
   findBySchoolWithLabels(schoolId: string, filters?: { classId?: string; subjectId?: string }): Promise<SessionListItem[]>;

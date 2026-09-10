@@ -32,6 +32,32 @@ export class PrismaHarmonizedAssessmentSessionRepository implements HarmonizedAs
     return data ? toDomain(data) : null;
   }
 
+  async findByIdWithLabels(id: string, schoolId: string): Promise<SessionListItem | null> {
+    const row = await this.prisma.harmonizedAssessmentSession.findFirst({
+      where: { id, schoolId },
+      include: {
+        class: { select: { id: true, name: true } },
+        subject: { select: { id: true, name: true } },
+      },
+    });
+    if (!row) return null;
+    return {
+      id: row.id,
+      schoolId: row.schoolId,
+      assessmentScopeId: row.assessmentScopeId,
+      subjectId: row.subjectId,
+      subjectName: row.subject.name,
+      classId: row.classId,
+      className: row.class.name,
+      academicSequenceId: row.academicSequenceId,
+      scheduledDate: row.scheduledDate,
+      status: row.status,
+      isAnonymized: row.isAnonymized,
+      anonymatStatus: row.anonymatStatus,
+      correctionMode: row.correctionMode,
+    };
+  }
+
   async findBySubjectClassAndYear(schoolId: string, subjectId: string, classId: string, academicYearId: string): Promise<HarmonizedAssessmentSession[]> {
     const data = await this.prisma.harmonizedAssessmentSession.findMany({
       where: {
