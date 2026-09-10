@@ -1,4 +1,5 @@
 import { type Request, type Response, type NextFunction } from 'express'
+import type { ParamsDictionary } from 'express-serve-static-core'
 import jwt from 'jsonwebtoken'
 
 export interface AuthPayload {
@@ -19,7 +20,11 @@ declare global {
   }
 }
 
-export const requireAuth = (req: Request, res: Response, next: NextFunction) => {
+export const requireAuth = <P = ParamsDictionary>(
+  req: Request<P>,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const token = req.cookies?.access_token
     if (!token) return res.status(401).json({ error: 'Non authentifié' })
@@ -42,7 +47,7 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction) => 
 }
 
 export const requireRole = (...args: (string | string[])[]) =>
-  (req: Request, res: Response, next: NextFunction) => {
+  <P = ParamsDictionary>(req: Request<P>, res: Response, next: NextFunction) => {
     const roles = args.flat().map((r) => r.toUpperCase())
     if (!req.user || !roles.includes(req.user.role.toUpperCase())) {
       return res.status(403).json({ error: 'Accès refusé' })
@@ -50,11 +55,8 @@ export const requireRole = (...args: (string | string[])[]) =>
     next()
   }
 
-// Autorise par role OU par permission portée par un titre STAFF (ex. Censeur via
-// VALIDATE_GRADES) — même principe que estAdmin() || aPermission(perm) côté domaine
-// (TenirConseilClasseUseCase, ValiderNoteUseCase) : jamais de vérification par titre.
 export const requireRoleOrPermission = (roles: string[], permission: string) =>
-  (req: Request, res: Response, next: NextFunction) => {
+  <P = ParamsDictionary>(req: Request<P>, res: Response, next: NextFunction) => {
     const upperRoles = roles.map((r) => r.toUpperCase())
     const roleMatch = !!req.user && upperRoles.includes(req.user.role.toUpperCase())
     const permissionMatch = !!req.user?.permissions?.includes(permission)
@@ -64,7 +66,11 @@ export const requireRoleOrPermission = (roles: string[], permission: string) =>
     next()
   }
 
-export const requireSchool = (req: Request, res: Response, next: NextFunction) => {
+export const requireSchool = <P = ParamsDictionary>(
+  req: Request<P>,
+  res: Response,
+  next: NextFunction
+) => {
   if (!req.user?.schoolId) {
     return res.status(403).json({ error: 'Aucun établissement associé' })
   }

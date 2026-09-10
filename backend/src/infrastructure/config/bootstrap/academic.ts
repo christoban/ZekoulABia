@@ -179,6 +179,11 @@ export function registerAcademicRoutes(app: Application, prismaParam: typeof pri
     c.assessment.enregistrerParticipationEnLot,
     c.assessment.genererCodesAnonymat,
     c.assessment.designerEquipeAnonymat,
+    c.assessment.assignerCorrectionAnonymat,
+    c.assessment.obtenirFicheCorrectionAnonyme,
+    c.assessment.saisirNotesAnonymes,
+    c.assessment.soumettreCorrectionAnonyme,
+    c.assessment.reconcilierNotesAnonymes,
   ));
   app.use('/api/v2/anonymat', creerAnonymatPublicRoutes(
     c.assessment.obtenirListeAnonymatParToken,

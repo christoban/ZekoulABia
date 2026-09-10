@@ -15,3 +15,13 @@ export type {
 } from './DesignerEquipeAnonymatUseCase';
 export { MarquerAnonymisationTermineeUseCase } from './MarquerAnonymisationTermineeUseCase';
 export { ObtenirListeAnonymatParTokenUseCase } from './ObtenirListeAnonymatParTokenUseCase';
+export { AssignerCorrectionAnonymatUseCase } from './AssignerCorrectionAnonymatUseCase';
+export type { AssignerCorrectionAnonymatCommande } from './AssignerCorrectionAnonymatUseCase';
+export { ObtenirFicheCorrectionAnonymeUseCase } from './ObtenirFicheCorrectionAnonymeUseCase';
+export type { ObtenirFicheCorrectionAnonymeCommande, FicheCorrectionLigne } from './ObtenirFicheCorrectionAnonymeUseCase';
+export { SaisirNotesAnonymesUseCase } from './SaisirNotesAnonymesUseCase';
+export type { SaisirNotesAnonymesCommande } from './SaisirNotesAnonymesUseCase';
+export { SoumettreCorrectionAnonymeUseCase } from './SoumettreCorrectionAnonymeUseCase';
+export type { SoumettreCorrectionAnonymeCommande } from './SoumettreCorrectionAnonymeUseCase';
+export { ReconcilierNotesAnonymesUseCase } from './ReconcilierNotesAnonymesUseCase';
+export type { ReconcilierNotesAnonymesCommande } from './ReconcilierNotesAnonymesUseCase';

@@ -410,6 +410,13 @@ import { PointerPresenceEnseignantUseCase } from '@application/staffAttendance/P
 import { VerifierPresenceAvantCahierDeTexte } from '@application/staffAttendance/VerifierPresenceAvantCahierDeTexte';
 import { JwtQrTokenService } from '@infrastructure/services/qr/QrTokenService';
 
+// --- Use Cases : Assessment Anonymat ---
+import { AssignerCorrectionAnonymatUseCase } from '../../application/assessment/AssignerCorrectionAnonymatUseCase';
+import { ObtenirFicheCorrectionAnonymeUseCase } from '../../application/assessment/ObtenirFicheCorrectionAnonymeUseCase';
+import { SaisirNotesAnonymesUseCase } from '../../application/assessment/SaisirNotesAnonymesUseCase';
+import { SoumettreCorrectionAnonymeUseCase } from '../../application/assessment/SoumettreCorrectionAnonymeUseCase';
+import { ReconcilierNotesAnonymesUseCase } from '../../application/assessment/ReconcilierNotesAnonymesUseCase';
+
 // ─────────────────────────────────────────────
 // Factory principale
 // ─────────────────────────────────────────────
@@ -889,6 +896,32 @@ export function creerContainer() {
     anonymatRepository,
     assessmentSessionRepository,
   );
+  const assignerCorrectionAnonymatUseCase = new AssignerCorrectionAnonymatUseCase(
+    assessmentSessionRepository,
+    anonymatRepository,
+    rattachementRepository,
+    assessmentScopeRepository,
+  );
+  const obtenirFicheCorrectionAnonymeUseCase = new ObtenirFicheCorrectionAnonymeUseCase(
+    assessmentSessionRepository,
+    anonymatRepository,
+  );
+  const saisirNotesAnonymesUseCase = new SaisirNotesAnonymesUseCase(
+    assessmentSessionRepository,
+    anonymatRepository,
+  );
+  const soumettreCorrectionAnonymeUseCase = new SoumettreCorrectionAnonymeUseCase(
+    assessmentSessionRepository,
+    anonymatRepository,
+  );
+  const reconcilierNotesAnonymesUseCase = new ReconcilierNotesAnonymesUseCase(
+    assessmentSessionRepository,
+    anonymatRepository,
+    noteRepository,
+    matiereRepository,
+    anneeRepository,
+    assessmentScopeRepository,
+  );
 
   // 18bis. Use Cases — Tâches
   const creerTaskUseCase = new CreerTaskUseCase(taskRepository, userRepository);
@@ -1216,6 +1249,11 @@ export function creerContainer() {
       designerEquipeAnonymat: designerEquipeAnonymatUseCase,
       obtenirListeAnonymatParToken: obtenirListeAnonymatParTokenUseCase,
       marquerAnonymisationTerminee: marquerAnonymisationTermineeUseCase,
+      assignerCorrectionAnonymat: assignerCorrectionAnonymatUseCase,
+      obtenirFicheCorrectionAnonyme: obtenirFicheCorrectionAnonymeUseCase,
+      saisirNotesAnonymes: saisirNotesAnonymesUseCase,
+      soumettreCorrectionAnonyme: soumettreCorrectionAnonymeUseCase,
+      reconcilierNotesAnonymes: reconcilierNotesAnonymesUseCase,
     },
     task: {
       creer: creerTaskUseCase,

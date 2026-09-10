@@ -4,9 +4,14 @@ import type {
   AnonymatListRow,
   AnonymatRepository,
   AnonymatTeamMemberRecord,
+  CodeAvecProfil,
+  CorrectionAssignmentRecord,
   CreateAnonymatCodeInput,
   CreateAnonymatTeamMemberInput,
+  NoteAnonymeRecord,
+  NoteAnonymeStatus,
   StudentGroupForAnonymat,
+  UpsertNoteAnonymeInput,
 } from '@domain/ports/repositories/AnonymatRepository';
 import type { AnonymatTeamMemberStatus } from '@domain/types/enums';
 
@@ -157,5 +162,168 @@ export class PrismaAnonymatRepository implements AnonymatRepository {
       }));
     }
     return rows;
+  }
+
+  async findCodesWithUserIds(sessionId: string): Promise<CodeAvecProfil[]> {
+    const codes = await this.prisma.anonymatCode.findMany({
+      where: { assessmentSessionId: sessionId },
+      include: {
+        studentProfile: { select: { id: true, userId: true } },
+      },
+    });
+    return codes.map((code) => ({
+      code: code.code,
+      classId: code.classId,
+      studentProfileId: code.studentProfileId,
+      userId: code.studentProfile.userId,
+    }));
+  }
+
+  async findCodeBySessionAndCode(sessionId: string, code: string): Promise<AnonymatCodeRecord | null> {
+    const c = await this.prisma.anonymatCode.findUnique({
+      where: { assessmentSessionId_code: { assessmentSessionId: sessionId, code } },
+    });
+    return c ? { ...c } : null;
+  }
+
+  async upsertNotesAnonymes(notes: UpsertNoteAnonymeInput[]): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      for (const note of notes) {
+        const existing = await tx.noteAnonyme.findUnique({
+          where: { assessmentSessionId_code: { assessmentSessionId: note.assessmentSessionId, code: note.code } },
+        });
+        if (existing && existing.status === 'SUBMITTED') {
+          continue;
+        }
+        await tx.noteAnonyme.upsert({
+          where: { assessmentSessionId_code: { assessmentSessionId: note.assessmentSessionId, code: note.code } },
+          update: {
+            score: note.score,
+            isAbsent: note.isAbsent,
+            isIllegible: note.isIllegible,
+            maxValue: note.maxValue,
+            correcteurId: note.correcteurId,
+          },
+          create: {
+            schoolId: note.schoolId,
+            assessmentSessionId: note.assessmentSessionId,
+            code: note.code,
+            score: note.score,
+            maxValue: note.maxValue,
+            isAbsent: note.isAbsent,
+            isIllegible: note.isIllegible,
+            correcteurId: note.correcteurId,
+            status: 'DRAFT',
+          },
+        });
+      }
+    });
+  }
+
+  async findNotesAnonymesBySession(sessionId: string): Promise<NoteAnonymeRecord[]> {
+    const notes = await this.prisma.noteAnonyme.findMany({
+      where: { assessmentSessionId: sessionId },
+    });
+    return notes.map((n) => ({
+      id: n.id,
+      schoolId: n.schoolId,
+      assessmentSessionId: n.assessmentSessionId,
+      code: n.code,
+      score: n.score,
+      maxValue: n.maxValue,
+      isAbsent: n.isAbsent,
+      isIllegible: n.isIllegible,
+      correcteurId: n.correcteurId,
+      submittedAt: n.submittedAt,
+      status: n.status as NoteAnonymeStatus,
+    }));
+  }
+
+  async findNotesAnonymesByCorrecteur(sessionId: string, correcteurId: string): Promise<NoteAnonymeRecord[]> {
+    const notes = await this.prisma.noteAnonyme.findMany({
+      where: { assessmentSessionId: sessionId, correcteurId },
+    });
+    return notes.map((n) => ({
+      id: n.id,
+      schoolId: n.schoolId,
+      assessmentSessionId: n.assessmentSessionId,
+      code: n.code,
+      score: n.score,
+      maxValue: n.maxValue,
+      isAbsent: n.isAbsent,
+      isIllegible: n.isIllegible,
+      correcteurId: n.correcteurId,
+      submittedAt: n.submittedAt,
+      status: n.status as NoteAnonymeStatus,
+    }));
+  }
+
+  async submitNotesAnonymes(sessionId: string, correcteurId: string): Promise<number> {
+    const result = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.noteAnonyme.updateMany({
+        where: {
+          assessmentSessionId: sessionId,
+          correcteurId,
+          status: 'DRAFT',
+        },
+        data: { status: 'SUBMITTED', submittedAt: new Date() },
+      });
+      return updated.count;
+    });
+    return result;
+  }
+
+  async replaceCorrectionAssignments(
+    sessionId: string,
+    assignments: Array<{
+      schoolId: string;
+      classId: string;
+      correcteurUserId: string;
+      assignedByUserId: string;
+    }>,
+  ): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.correctionAssignment.deleteMany({ where: { assessmentSessionId: sessionId } });
+      if (assignments.length === 0) return;
+      await tx.correctionAssignment.createMany({
+        data: assignments.map((a) => ({
+          schoolId: a.schoolId,
+          assessmentSessionId: sessionId,
+          classId: a.classId,
+          correcteurUserId: a.correcteurUserId,
+          assignedByUserId: a.assignedByUserId,
+        })),
+      });
+    });
+  }
+
+  async findCorrectionAssignments(sessionId: string): Promise<CorrectionAssignmentRecord[]> {
+    const assignments = await this.prisma.correctionAssignment.findMany({
+      where: { assessmentSessionId: sessionId },
+    });
+    return assignments.map((a) => ({
+      id: a.id,
+      schoolId: a.schoolId,
+      assessmentSessionId: a.assessmentSessionId,
+      classId: a.classId,
+      correcteurUserId: a.correcteurUserId,
+      assignedByUserId: a.assignedByUserId,
+      assignedAt: a.assignedAt,
+    }));
+  }
+
+  async findAssignmentForCorrecteur(sessionId: string, correcteurUserId: string): Promise<CorrectionAssignmentRecord[]> {
+    const assignments = await this.prisma.correctionAssignment.findMany({
+      where: { assessmentSessionId: sessionId, correcteurUserId },
+    });
+    return assignments.map((a) => ({
+      id: a.id,
+      schoolId: a.schoolId,
+      assessmentSessionId: a.assessmentSessionId,
+      classId: a.classId,
+      correcteurUserId: a.correcteurUserId,
+      assignedByUserId: a.assignedByUserId,
+      assignedAt: a.assignedAt,
+    }));
   }
 }

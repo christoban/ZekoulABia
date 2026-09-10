@@ -48,3 +48,39 @@ export class InvalidMagicTokenError extends AnonymatDomainError {
     super(messages[code], code);
   }
 }
+
+export class NotAssignedCorrectorError extends AnonymatDomainError {
+  constructor() {
+    super('Le correcteur n\'est pas assigné à cette session', 'NOT_ASSIGNED_CORRECTOR');
+  }
+}
+
+export class NotesAlreadySubmittedError extends AnonymatDomainError {
+  constructor() {
+    super('Les notes ont déjà été soumises', 'NOTES_ALREADY_SUBMITTED');
+  }
+}
+
+export class InvalidCodeForAssignmentError extends AnonymatDomainError {
+  constructor() {
+    super('Le code ne correspond pas à une classe assignée au correcteur', 'INVALID_CODE_FOR_ASSIGNMENT');
+  }
+}
+
+export class CorrectionNotReadyError extends AnonymatDomainError {
+  constructor() {
+    super('La correction n\'est pas encore prête', 'CORRECTION_NOT_READY');
+  }
+}
+
+export class SequenceRequiredError extends AnonymatDomainError {
+  constructor() {
+    super('Une séquence académique est requise pour la réconciliation', 'SEQUENCE_REQUIRED');
+  }
+}
+
+export class ReconcileForbiddenError extends AnonymatDomainError {
+  constructor() {
+    super('La réconciliation est interdite dans cet état', 'RECONCILE_FORBIDDEN');
+  }
+}
