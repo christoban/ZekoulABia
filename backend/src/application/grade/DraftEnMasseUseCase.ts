@@ -59,7 +59,10 @@ export class DraftEnMasseUseCase {
         commande.academicYearId,
       );
       const blocked = sessions.some(
-        (s) => s.isAnonymized && s.anonymatStatus !== 'RECONCILIE' && s.academicSequenceId !== undefined
+        (s) =>
+          s.isAnonymized &&
+          s.anonymatStatus !== 'RECONCILIE' &&
+          s.academicSequenceId === commande.sequenceId,
       );
       if (blocked) {
         throw new Error(
