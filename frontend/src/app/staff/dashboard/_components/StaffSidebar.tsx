@@ -4,6 +4,7 @@ import {
   Link2, Calendar, Landmark, Smartphone, Lock, AlertTriangle, BookOpen,
   Compass, IdCard, HandCoins, X, ShieldAlert,
   RefreshCw, Megaphone, MessageCircle, ShieldCheck,
+  ScanSearch,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -52,6 +53,7 @@ export default function StaffSidebar({ current, onChange, allowedSections, sessi
   const supervisionItems: NavItem[] = []
   if (can('council'))          supervisionItems.push({ id: 'council',          icon: GraduationCap, label: tnav('sidebar.council'),         badge: badges.council,   badgeColor: 'amber' })
   if (can('grades'))           supervisionItems.push({ id: 'grades',           icon: FileText, label: tnav('sidebar.gradeValidation'), badge: badges.grades,    badgeColor: 'red'   })
+  if (can('anonymat'))         supervisionItems.push({ id: 'anonymat',         icon: ScanSearch, label: tnav('sidebar.anonymat') })
   if (can('suivi-eleves'))     supervisionItems.push({ id: 'suivi-eleves',     icon: ShieldAlert, label: tnav('sidebar.suiviEleves') })
   if (can('attendance'))       supervisionItems.push({ id: 'attendance',       icon: ClipboardCheck, label: tnav('sidebar.attendance'),      badge: badges.attendance })
   if (can('grille-horaire'))   supervisionItems.push({ id: 'grille-horaire',   icon: Clock, label: tnav('sidebar.scheduleGrid') })

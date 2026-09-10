@@ -34,64 +34,7 @@ Je mets à jour ta mémoire projet avec cette décision pour qu'elle soit là la
 
 
 
-
-
-
-
-il va falloir faire qu'il y'ait deux différents enseignants au primaire également
-
-
-
-
-
-
-
-il faudra:
-1. Simplifier la validation des notes
-
-Ton intuition est juste, et elle est cohérente avec un principe que tu as déjà posé ailleurs : ne pas construire de la validation hiérarchique là où elle n'ajoute rien. Le censeur/proviseur validant chaque note individuelle n'a effectivement aucune valeur pédagogique — il ne peut pas juger si un 12/20 en maths est correct. Ce qu'il doit vérifier, c'est la complétude et la cohérence à l'échelle de la classe, pas la justesse d'une note isolée.
-
-Proposition : séparer clairement deux niveaux de statut qui existent aujourd'hui fusionnés dans un seul workflow.
-
-Niveau Note (par matière, par enseignant) — statuts minimalistes :
-
-EN_SAISIE — l'enseignant remplit/modifie librement
-VERROUILLÉE — l'enseignant confirme avoir terminé pour cette évaluation (verrouillage auto-géré par l'enseignant, pas de validation externe)
-
-Niveau Bulletin (par classe, agrégat) — c'est ici que le pattern DRAFT→SUBMITTED→VALIDATED→PUBLISHED que tu as déjà retenu pour les frais garde tout son sens, mais appliqué au bulletin complet de la classe, pas à chaque note :
-
-DRAFT — les notes de la classe sont en cours de saisie par les différents enseignants
-SUBMITTED — le titulaire de classe (voir point 2) a vérifié la complétude et soumis
-VALIDATED — le censeur (ou directeur en primaire) a fait sa vérification de cohérence globale
-PUBLISHED — diffusion automatique à tous les parents/élèves concernés
-
-Ça évite exactement ce que ton enseignant pointait : personne ne "valide" une note en tant que telle, mais quelqu'un vérifie que le paquet est complet et cohérent avant diffusion.
-
-2. Rôle de l'enseignant titulaire (professeur principal ↔ primaire)
-
-Point important que ton encadrant soulève : le rôle existant dans ton backlog ("Professeur principal") doit en réalité être pensé comme un rôle transversal aux deux cycles, avec la même fonction structurelle mais un contexte différent :
-
-Secondaire : Professeur principal — n'enseigne généralement qu'une ou deux matières à sa classe, coordonne les autres enseignants matière
-Primaire : Instituteur titulaire — enseigne lui-même la majorité des matières, sauf les matières spécialisées (anglais, informatique) assurées par un enseignant itinérant sur plusieurs classes
-
-Dans les deux cas, c'est la même fonction vis-à-vis du bulletin : point de convergence entre tous les enseignants de la classe (lui inclus) et l'échelon supérieur.
-
-Voici le workflow détaillé que je propose, qui correspond à ce que ton encadrant a décrit :
-
-Chaque enseignant de la classe (titulaire compris, pour ses propres matières) remplit ses notes + son appréciation par élève (le terme technique classique est bien "appréciation")
-Une fois toutes les fiches remplies, le titulaire :
-Vérifie la complétude (aucune matière manquante, aucun élève oublié)
-Rédige son appréciation générale/de conduite (spécifique au titulaire, pas une matière — reflète la synthèse du conseil de classe une fois celui-ci tenu)
-Peut publier une pré-version consultable par les élèves pour signalement d'erreur avant transmission officielle (bonne idée à garder — ça réduit les corrections après coup)
-Soumet (SUBMITTED) au censeur (secondaire) ou au directeur (primaire)
-Le censeur/directeur fait sa vérification de cohérence globale (VALIDATED) — pas une re-vérification note par note, mais un contrôle de forme et de cohérence d'ensemble
-Le censeur/directeur publie (PUBLISHED) → diffusion automatique à tous les destinataires concernés (parents, élèves), sans envoi manuel un par un
-
-
 le fichier bootstrap est devenu trop long il faut le scinder en plusieurs fichiuers et de meme pour tous les autre s fichiers qui dépasse 500 OU 600 OU 700 OU 800 lignes de code
-
-
-
 
 
 
@@ -118,3 +61,8 @@ Ne pas laisser DEV_PASS dans le code même commenté ou "juste au cas où" — u
 Ne pas oublier de vérifier s'il existe des références similaires ailleurs dans le code (recherche globale EMAIL_DISABLED et DEV_PASS dans tout le repo, pas seulement ce fichier) — d'autres endroits du projet (ex: création de compte manuelle par un admin) pourraient avoir le même pattern.
 
 Comment vérifier que c'est fait : grep -r "EMAIL_DISABLED\|DEV_PASS" backend/src/ doit retourner zéro résultat avant le déploiement final.
+
+
+
+
+il faudra chercher à comprendre comment fonctionne le processus d'anonymisation des feuilles de composition, qui sont ceux qui interviennent à chaque partie pour faire quoi 

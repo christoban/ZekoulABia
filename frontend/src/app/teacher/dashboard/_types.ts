@@ -5,6 +5,7 @@ export type TeacherSection =
   | 'ap-departement'
   | 'cahier-de-texte'
   | 'at-risk' | 'mon-suivi'
+  | 'correction-anonyme'
   | 'mon-profil-rh' | 'notifications' | 'babillard' | 'messagerie'
 
 export interface Toast {

@@ -4,6 +4,7 @@ import {
   LogOut, LayoutDashboard, School, ClipboardCheck, FileText, Calendar,
   NotebookPen, FolderOpen, IdCard, ClipboardList, PenLine, Target, RefreshCw,
   AlertTriangle, X, ListChecks, Megaphone, MessageCircle,
+  ScanSearch,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -29,15 +30,16 @@ function buildNav(user: UserInfo | null | undefined, pendingGrades: number | und
     {
       items: [{ id: 'dashboard', icon: LayoutDashboard, label: tnav('sidebar.dashboard') }],
     },
-    {
-      label: tnav('group.academic'),
-      items: [
-        { id: 'classes',    icon: School, label: tnav('sidebar.myClasses') },
-        { id: 'attendance', icon: ClipboardCheck, label: tnav('sidebar.attendance') },
-        { id: 'grades',     icon: FileText, label: tnav('sidebar.grades'), ...(pendingGrades ? { badge: String(pendingGrades), badgeColor: 'red' as const } : {}) },
-        { id: 'timetable',  icon: Calendar, label: tnav('sidebar.timetable') },
-      ],
-    },
+{
+        label: tnav('group.academic'),
+        items: [
+          { id: 'classes',    icon: School, label: tnav('sidebar.myClasses') },
+          { id: 'attendance', icon: ClipboardCheck, label: tnav('sidebar.attendance') },
+          { id: 'grades',     icon: FileText, label: tnav('sidebar.grades'), ...(pendingGrades ? { badge: String(pendingGrades), badgeColor: 'red' as const } : {}) },
+          { id: 'timetable',  icon: Calendar, label: tnav('sidebar.timetable') },
+          { id: 'correction-anonyme', icon: ScanSearch, label: tnav('sidebar.correctionAnonyme') },
+        ],
+      },
     {
       label: tnav('group.pedagogie'),
       items: [

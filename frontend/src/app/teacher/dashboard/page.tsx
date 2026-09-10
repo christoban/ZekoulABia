@@ -18,6 +18,7 @@ import SectionDepartementAP from './_components/SectionDepartementAP'
 import SectionCahierDeTexte from './_components/SectionCahierDeTexte'
 import SectionTeacherAtRisk from './_components/SectionTeacherAtRisk'
 import SectionMesActionsSuivi from './_components/SectionMesActionsSuivi'
+import SectionTeacherCorrectionAnonyme from './_components/SectionTeacherCorrectionAnonyme'
 import type { TeacherSection, Toast, UserInfo } from './_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
@@ -45,6 +46,7 @@ interface SessionUser {
 const TEACHER_SECTIONS: TeacherSection[] = [
   'dashboard', 'classes', 'attendance', 'grades', 'bulletins', 'timetable', 'resources', 'sync',
   'pp-classe', 'pp-appreciations', 'ap-departement', 'cahier-de-texte', 'at-risk', 'mon-suivi',
+  'correction-anonyme',
   'mon-profil-rh', 'notifications', 'babillard', 'messagerie',
 ]
 const TEACHER_ASSISTANT_SUGGESTIONS = [
@@ -79,6 +81,7 @@ export default function TeacherDashboard() {
     'cahier-de-texte':   tnav('pageTitle.teacher_cahierDeTexte'),
     'at-risk':           tnav('pageTitle.teacher_atRisk'),
     'mon-suivi':         tnav('pageTitle.teacher_monSuivi'),
+    'correction-anonyme': tnav('pageTitle.teacher_correctionAnonyme'),
     'mon-profil-rh':     tnav('sidebar.monProfilRH'),
     notifications:       tnav('pageTitle.teacher_notifications'),
     babillard:           tnav('sidebar.babillard'),
@@ -193,6 +196,7 @@ export default function TeacherDashboard() {
           {section === 'cahier-de-texte' && <SectionCahierDeTexte user={user} onToast={showToast} />}
           {section === 'at-risk' && user && <SectionTeacherAtRisk currentUserId={user.id} onToast={showToast} />}
           {section === 'mon-suivi' && <SectionMesActionsSuivi onToast={showToast} />}
+          {section === 'correction-anonyme' && <SectionTeacherCorrectionAnonyme onToast={showToast} />}
           {section === 'mon-profil-rh' && <SectionMonProfilRH onToast={showToast} />}
           {section === 'notifications' && <NotificationCenter />}
           {section === 'babillard' && <Babillard role={user?.role ?? 'TEACHER'} title={tnav('sidebar.babillard')} subtitle={tcommon('brand.roleTeacher')} />}

@@ -22,6 +22,7 @@ import SectionLibrary          from './_components/SectionLibrary'
 import SectionOrientation      from './_components/SectionOrientation'
 import SectionDepartementsStaff from './_components/SectionDepartementsStaff'
 import SectionSuiviElevesStaff from './_components/SectionSuiviElevesStaff'
+import SectionAnonymatStaff from './_components/SectionAnonymatStaff'
 import APEEAlertBanner from './_components/APEEAlertBanner'
 import SectionMonProfilRH from '@/features/rh/SectionMonProfilRH'
 import NotificationCenter from '@/components/NotificationCenter'
@@ -142,6 +143,10 @@ export default function StaffDashboard() {
 
           {section === 'grades' && can('grades') && (
             <SectionBulletinValidation onToast={showToast} />
+          )}
+
+          {section === 'anonymat' && can('anonymat') && (
+            <SectionAnonymatStaff onToast={showToast} sessionUser={sessionUser} />
           )}
 
           {section === 'attendance' && can('attendance') && (

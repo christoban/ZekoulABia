@@ -104,4 +104,16 @@ export class PrismaHarmonizedAssessmentSessionRepository implements HarmonizedAs
     });
     return data.map(toDomain);
   }
+
+  async findBySchool(schoolId: string, filters?: { classId?: string; subjectId?: string }): Promise<HarmonizedAssessmentSession[]> {
+    const data = await this.prisma.harmonizedAssessmentSession.findMany({
+      where: {
+        schoolId,
+        classId: filters?.classId,
+        subjectId: filters?.subjectId,
+      },
+      orderBy: { scheduledDate: 'desc' },
+    });
+    return data.map(toDomain);
+  }
 }

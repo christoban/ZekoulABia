@@ -10,6 +10,7 @@ import type { ObtenirFicheCorrectionAnonymeUseCase } from '@application/assessme
 import type { SaisirNotesAnonymesUseCase } from '@application/assessment/SaisirNotesAnonymesUseCase';
 import type { SoumettreCorrectionAnonymeUseCase } from '@application/assessment/SoumettreCorrectionAnonymeUseCase';
 import type { ReconcilierNotesAnonymesUseCase } from '@application/assessment/ReconcilierNotesAnonymesUseCase';
+import type { HarmonizedAssessmentSessionRepository } from '@domain/ports/repositories/HarmonizedAssessmentSessionRepository';
 import { AnonymatDomainError } from '@domain/errors/AnonymatErrors';
 import { requireAuth } from '../middlewares/auth.ts';
 
@@ -25,6 +26,7 @@ export function creerAssessmentRoutes(
   saisirNotesAnonymes: SaisirNotesAnonymesUseCase,
   soumettreCorrection: SoumettreCorrectionAnonymeUseCase,
   reconcilierNotes: ReconcilierNotesAnonymesUseCase,
+  sessionRepository: HarmonizedAssessmentSessionRepository,
 ): Router {
   const router = Router();
 
@@ -236,6 +238,20 @@ export function creerAssessmentRoutes(
         res.status(status).json({ success: false, error: error.code, message: error.message });
         return;
       }
+      next(error);
+    }
+  });
+
+  // GET /api/v2/assessments/sessions?classId=&subjectId=
+  router.get('/sessions', requireAuth, async (req, res, next) => {
+    try {
+      const schoolId = req.user!.schoolId;
+      const classId = typeof req.query.classId === 'string' ? req.query.classId : undefined;
+      const subjectId = typeof req.query.subjectId === 'string' ? req.query.subjectId : undefined;
+
+      const sessions = await sessionRepository.findBySchool(schoolId, { classId, subjectId });
+      res.json({ success: true, data: sessions });
+    } catch (error) {
       next(error);
     }
   });

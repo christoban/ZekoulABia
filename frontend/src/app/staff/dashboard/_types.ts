@@ -3,6 +3,7 @@ export type StaffSection =
   | 'grille-horaire' | 'affectations'
   | 'attendance' | 'finance' | 'cautions' | 'discipline'
   | 'library' | 'orientation' | 'departements' | 'suivi-eleves'
+  | 'anonymat'
   | 'sync-offline'
   | 'mon-profil-rh' | 'apee' | 'notifications' | 'babillard' | 'messagerie' | 'moderation-messagerie'
 
@@ -42,6 +43,7 @@ export const PERM_TO_SECTION: { perm: string; section: StaffSection }[] = [
   { perm: 'VALIDATE_GRADES',            section: 'suivi-eleves'     },
   { perm: 'MANAGE_ORIENTATION',         section: 'suivi-eleves'     },
   { perm: 'MANAGE_PEDAGOGICAL_BRIEF',   section: 'suivi-eleves'     },
+  { perm: 'MANAGE_ANONYMAT',            section: 'anonymat'         },
 ]
 
 export function getSectionsFromPermissions(permissions: string[]): Set<StaffSection> {
