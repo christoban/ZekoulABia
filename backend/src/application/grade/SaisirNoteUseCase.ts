@@ -9,6 +9,7 @@ import type { MatiereRepository } from '@domain/ports/repositories/MatiereReposi
 import type { UserRepository } from '@domain/ports/repositories/UserRepository';
 import type { RattachementEnseignantRepository } from '@domain/ports/repositories/RattachementEnseignantRepository';
 import type { AssessmentParticipationRepository } from '@domain/ports/repositories/AssessmentParticipationRepository';
+import type { HarmonizedAssessmentSessionRepository } from '@domain/ports/repositories/HarmonizedAssessmentSessionRepository';
 
 export interface SaisirNoteCommande {
   schoolId: string;
@@ -47,6 +48,7 @@ export class SaisirNoteUseCase {
     private readonly userRepository: UserRepository,
     private readonly rattachementRepository: RattachementEnseignantRepository,
     private readonly participationRepository?: AssessmentParticipationRepository,
+    private readonly sessionRepository?: HarmonizedAssessmentSessionRepository,
   ) {}
 
   async execute(commande: SaisirNoteCommande): Promise<SaisirNoteResultat> {
@@ -112,6 +114,16 @@ export class SaisirNoteUseCase {
       );
       if (participation && participation.status === 'ABSENT') {
         isAbsentGrade = true;
+      }
+    }
+
+    // 4bis. Bloquer la saisie nominative si la session est anonymisée et non réconciliée
+    if (commande.harmonizedAssessmentSessionId && this.sessionRepository) {
+      const session = await this.sessionRepository.findById(commande.harmonizedAssessmentSessionId, commande.schoolId);
+      if (session?.isAnonymized && session.anonymatStatus !== 'RECONCILIE') {
+        throw new Error(
+          'Cette évaluation est anonymisée : la saisie nominative est interdite. Utilisez la fiche de correction par codes.'
+        );
       }
     }
 

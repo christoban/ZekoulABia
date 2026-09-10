@@ -25,3 +25,5 @@ export { SoumettreCorrectionAnonymeUseCase } from './SoumettreCorrectionAnonymeU
 export type { SoumettreCorrectionAnonymeCommande } from './SoumettreCorrectionAnonymeUseCase';
 export { ReconcilierNotesAnonymesUseCase } from './ReconcilierNotesAnonymesUseCase';
 export type { ReconcilierNotesAnonymesCommande } from './ReconcilierNotesAnonymesUseCase';
+export { ListerSessionsCorrectionAnonymeUseCase } from './ListerSessionsCorrectionAnonymeUseCase';
+export type { ListerSessionsCorrectionAnonymeCommande, SessionCorrectionSummary } from './ListerSessionsCorrectionAnonymeUseCase';

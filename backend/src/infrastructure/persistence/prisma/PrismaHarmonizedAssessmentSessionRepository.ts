@@ -1,5 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
-import type { HarmonizedAssessmentSessionRepository } from '@domain/ports/repositories/HarmonizedAssessmentSessionRepository';
+import type { HarmonizedAssessmentSessionRepository, SessionListItem } from '@domain/ports/repositories/HarmonizedAssessmentSessionRepository';
 import { HarmonizedAssessmentSession } from '@domain/entities/HarmonizedAssessmentSession';
 
 function toDomain(data: any): HarmonizedAssessmentSession {
@@ -115,5 +115,35 @@ export class PrismaHarmonizedAssessmentSessionRepository implements HarmonizedAs
       orderBy: { scheduledDate: 'desc' },
     });
     return data.map(toDomain);
+  }
+
+  async findBySchoolWithLabels(schoolId: string, filters?: { classId?: string; subjectId?: string }): Promise<SessionListItem[]> {
+    const rows = await this.prisma.harmonizedAssessmentSession.findMany({
+      where: {
+        schoolId,
+        ...(filters?.classId ? { classId: filters.classId } : {}),
+        ...(filters?.subjectId ? { subjectId: filters.subjectId } : {}),
+      },
+      include: {
+        class: { select: { id: true, name: true } },
+        subject: { select: { id: true, name: true } },
+      },
+      orderBy: { scheduledDate: 'desc' },
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      schoolId: r.schoolId,
+      assessmentScopeId: r.assessmentScopeId,
+      subjectId: r.subjectId,
+      subjectName: r.subject.name,
+      classId: r.classId,
+      className: r.class.name,
+      academicSequenceId: r.academicSequenceId,
+      scheduledDate: r.scheduledDate,
+      status: r.status,
+      isAnonymized: r.isAnonymized,
+      anonymatStatus: r.anonymatStatus,
+      correctionMode: r.correctionMode,
+    }));
   }
 }

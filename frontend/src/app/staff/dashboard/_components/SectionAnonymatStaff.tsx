@@ -43,6 +43,9 @@ const STATUS_COLORS: Record<string, string> = {
   RECONCILIE: 'bg-emerald-500/20 text-emerald-300',
 }
 
+type RefItem = { id: string; name: string }
+type SequenceItem = { id: string; label: string }
+
 export default function SectionAnonymatStaff({ onToast }: Props) {
   const [sessions, setSessions] = useState<SessionRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -57,11 +60,15 @@ export default function SectionAnonymatStaff({ onToast }: Props) {
   const [teamEmails, setTeamEmails] = useState('')
   const [crossAssignments, setCrossAssignments] = useState<{ classId: string; correcteurUserId: string }[]>([])
   const [teachers, setTeachers] = useState<{ id: string; name: string }[]>([])
+  const [classes, setClasses] = useState<RefItem[]>([])
+  const [subjects, setSubjects] = useState<RefItem[]>([])
+  const [sequences, setSequences] = useState<SequenceItem[]>([])
   const [creating, setCreating] = useState(false)
   const [generating, setGenerating] = useState<string | null>(null)
   const [designating, setDesignating] = useState(false)
   const [assigning, setAssigning] = useState(false)
   const [reconciling, setReconciling] = useState(false)
+  const [teamProgress, setTeamProgress] = useState<{ total: number; done: number } | null>(null)
 
   const loadSessions = useCallback(async () => {
     setLoading(true)
@@ -79,6 +86,29 @@ export default function SectionAnonymatStaff({ onToast }: Props) {
 
   useEffect(() => { loadSessions() }, [loadSessions])
 
+  // Load reference data on mount
+  useEffect(() => {
+    Promise.all([
+      fetchApi('/api/v2/classes', { credentials: 'include' }).then(r => r.json()),
+      fetchApi('/api/v2/subjects', { credentials: 'include' }).then(r => r.json()),
+      fetchApi('/api/v2/academic-years', { credentials: 'include' }).then(r => r.json()),
+    ]).then(([cls, sub, ay]) => {
+      if (cls.data) setClasses(cls.data.map((c: any) => ({ id: c.id, name: c.name })))
+      if (sub.data) setSubjects(sub.data.map((s: any) => ({ id: s.id, name: s.name })))
+      if (ay.data) {
+        const seqs = (ay.data ?? []).flatMap((year: any) =>
+          (year.periods ?? []).flatMap((p: any) =>
+            (p.sequences ?? []).map((s: any) => ({
+              id: s.id,
+              label: `${year.name} · ${p.name} · ${s.name}`,
+            })),
+          ),
+        )
+        setSequences(seqs)
+      }
+    }).catch(() => {})
+  }, [])
+
   // Fetch teachers for CROSSED mode when panel opens
   useEffect(() => {
     if (selected?.anonymatStatus === 'ANONYMISATION_TERMINEE' && selected.correctionMode === 'CROSSED' && teachers.length === 0) {
@@ -88,6 +118,18 @@ export default function SectionAnonymatStaff({ onToast }: Props) {
         .catch(() => {})
     }
   }, [selected?.anonymatStatus, selected?.correctionMode])
+
+  // Fetch team progress when selected session is in team phase
+  useEffect(() => {
+    if (!selected || !['CODES_GENERES', 'EQUIPE_DESIGNEE', 'ANONYMISATION_EN_COURS', 'ANONYMISATION_TERMINEE'].includes(selected.anonymatStatus)) {
+      setTeamProgress(null)
+      return
+    }
+    fetchApi(`/api/v2/assessments/sessions/${selected.id}/anonymat/team-progress`, { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => { if (d.success) setTeamProgress(d.data) })
+      .catch(() => {})
+  }, [selected?.id, selected?.anonymatStatus])
 
   const createSession = async () => {
     if (!scopeId || !subjectId || !classId || !scheduledDate || !academicSequenceId) {
@@ -183,6 +225,14 @@ export default function SectionAnonymatStaff({ onToast }: Props) {
   }
 
   const assignCorrection = async (session: SessionRow) => {
+    if (session.correctionMode === 'CROSSED' && crossAssignments.length === 0) {
+      onToast('Ajoutez au moins un correcteur (mode croisé)', 'warning')
+      return
+    }
+    if (session.correctionMode === 'CROSSED' && crossAssignments.some(a => !a.correcteurUserId)) {
+      onToast('Tous les correcteurs doivent être sélectionnés', 'warning')
+      return
+    }
     setAssigning(true)
     try {
       const body =
@@ -315,23 +365,29 @@ export default function SectionAnonymatStaff({ onToast }: Props) {
           </div>
           <div>
             <label className="block text-sm font-medium text-[var(--text2)] mb-1">Matière</label>
-            <input
-              type="text"
+            <select
               value={subjectId}
               onChange={(e) => setSubjectId(e.target.value)}
-              placeholder="ID matière"
               className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-            />
+            >
+              <option value="">— Matière —</option>
+              {subjects.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-[var(--text2)] mb-1">Classe</label>
-            <input
-              type="text"
+            <select
               value={classId}
               onChange={(e) => setClassId(e.target.value)}
-              placeholder="ID classe"
               className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-            />
+            >
+              <option value="">— Classe —</option>
+              {classes.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-[var(--text2)] mb-1">Date prévue</label>
@@ -344,13 +400,16 @@ export default function SectionAnonymatStaff({ onToast }: Props) {
           </div>
           <div>
             <label className="block text-sm font-medium text-[var(--text2)] mb-1">Séquence académique</label>
-            <input
-              type="text"
+            <select
               value={academicSequenceId}
               onChange={(e) => setAcademicSequenceId(e.target.value)}
-              placeholder="ID séquence académique"
               className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-            />
+            >
+              <option value="">— Séquence —</option>
+              {sequences.map(s => (
+                <option key={s.id} value={s.id}>{s.label}</option>
+              ))}
+            </select>
           </div>
           <div style={{ display: 'flex', gap: 12, alignItems: 'end' }}>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -477,6 +536,11 @@ export default function SectionAnonymatStaff({ onToast }: Props) {
           {['CODES_GENERES', 'EQUIPE_DESIGNEE'].includes(selected.anonymatStatus) && (
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
               <h3 className="font-medium text-[var(--text)] mb-3">Désigner l'équipe d'anonymisation</h3>
+              {teamProgress && (
+                <p className="text-sm text-[var(--text3)] mb-3">
+                  Équipe : {teamProgress.done}/{teamProgress.total} lot(s) terminé(s)
+                </p>
+              )}
               <textarea
                 value={teamEmails}
                 onChange={(e) => setTeamEmails(e.target.value)}

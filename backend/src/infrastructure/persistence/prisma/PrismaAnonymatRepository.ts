@@ -326,4 +326,27 @@ export class PrismaAnonymatRepository implements AnonymatRepository {
       assignedAt: a.assignedAt,
     }));
   }
+
+  async countTeamMembersByStatus(sessionId: string): Promise<{ total: number; done: number; pending: number }> {
+    const [total, done] = await Promise.all([
+      this.prisma.anonymatTeamMember.count({ where: { assessmentSessionId: sessionId } }),
+      this.prisma.anonymatTeamMember.count({ where: { assessmentSessionId: sessionId, status: 'DONE' } }),
+    ]);
+    return { total, done, pending: total - done };
+  }
+
+  async findCorrectionAssignmentsByCorrecteur(schoolId: string, correcteurUserId: string): Promise<CorrectionAssignmentRecord[]> {
+    const assignments = await this.prisma.correctionAssignment.findMany({
+      where: { schoolId, correcteurUserId },
+    });
+    return assignments.map((a) => ({
+      id: a.id,
+      schoolId: a.schoolId,
+      assessmentSessionId: a.assessmentSessionId,
+      classId: a.classId,
+      correcteurUserId: a.correcteurUserId,
+      assignedByUserId: a.assignedByUserId,
+      assignedAt: a.assignedAt,
+    }));
+  }
 }

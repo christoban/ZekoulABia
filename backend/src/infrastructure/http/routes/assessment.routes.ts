@@ -10,7 +10,9 @@ import type { ObtenirFicheCorrectionAnonymeUseCase } from '@application/assessme
 import type { SaisirNotesAnonymesUseCase } from '@application/assessment/SaisirNotesAnonymesUseCase';
 import type { SoumettreCorrectionAnonymeUseCase } from '@application/assessment/SoumettreCorrectionAnonymeUseCase';
 import type { ReconcilierNotesAnonymesUseCase } from '@application/assessment/ReconcilierNotesAnonymesUseCase';
+import type { ListerSessionsCorrectionAnonymeUseCase } from '@application/assessment/ListerSessionsCorrectionAnonymeUseCase';
 import type { HarmonizedAssessmentSessionRepository } from '@domain/ports/repositories/HarmonizedAssessmentSessionRepository';
+import type { AnonymatRepository } from '@domain/ports/repositories/AnonymatRepository';
 import { AnonymatDomainError } from '@domain/errors/AnonymatErrors';
 import { requireAuth } from '../middlewares/auth.ts';
 
@@ -26,7 +28,9 @@ export function creerAssessmentRoutes(
   saisirNotesAnonymes: SaisirNotesAnonymesUseCase,
   soumettreCorrection: SoumettreCorrectionAnonymeUseCase,
   reconcilierNotes: ReconcilierNotesAnonymesUseCase,
+  listerSessionsCorrection: ListerSessionsCorrectionAnonymeUseCase,
   sessionRepository: HarmonizedAssessmentSessionRepository,
+  anonymatRepository: AnonymatRepository,
 ): Router {
   const router = Router();
 
@@ -94,7 +98,7 @@ export function creerAssessmentRoutes(
     }
   });
 
-  router.post('/sessions/:sessionId/anonymat/codes', async (req, res, next) => {
+  router.post('/sessions/:sessionId/anonymat/codes', requireAuth, async (req, res, next) => {
     try {
       const result = await genererCodes.execute({
         schoolId: req.user!.schoolId,
@@ -115,7 +119,7 @@ export function creerAssessmentRoutes(
     }
   });
 
-  router.post('/sessions/:sessionId/anonymat/team', async (req, res, next) => {
+  router.post('/sessions/:sessionId/anonymat/team', requireAuth, async (req, res, next) => {
     try {
       const result = await designerEquipe.execute({
         schoolId: req.user!.schoolId,
@@ -249,8 +253,40 @@ export function creerAssessmentRoutes(
       const classId = typeof req.query.classId === 'string' ? req.query.classId : undefined;
       const subjectId = typeof req.query.subjectId === 'string' ? req.query.subjectId : undefined;
 
-      const sessions = await sessionRepository.findBySchool(schoolId, { classId, subjectId });
-      res.json({ success: true, data: sessions.map((s) => s.toObject()) });
+      const sessions = await sessionRepository.findBySchoolWithLabels(schoolId, { classId, subjectId });
+      res.json({ success: true, data: sessions });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // GET /api/v2/assessments/anonymat/my-correction-sessions
+  router.get('/anonymat/my-correction-sessions', requireAuth, async (req, res, next) => {
+    try {
+      const result = await listerSessionsCorrection.execute({
+        schoolId: req.user!.schoolId,
+        correcteurUserId: req.user!.userId,
+      });
+      // Enrich with subject/class names
+      const enriched = await Promise.all(result.map(async (item) => {
+        const session = await sessionRepository.findById(item.sessionId, req.user!.schoolId);
+        return {
+          ...item,
+          subjectName: session?.subjectId || '',
+          classNames: item.classIds.map(cid => cid), // Will be enriched by frontend if needed
+        };
+      }));
+      res.json({ success: true, data: enriched });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // GET /api/v2/assessments/sessions/:sessionId/anonymat/team-progress
+  router.get('/sessions/:sessionId/anonymat/team-progress', requireAuth, async (req, res, next) => {
+    try {
+      const progress = await anonymatRepository.countTeamMembersByStatus(req.params.sessionId);
+      res.json({ success: true, data: progress });
     } catch (error) {
       next(error);
     }

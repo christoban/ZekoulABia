@@ -1,5 +1,5 @@
 'use client'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Loader2, Save, Send, AlertCircle, CheckCircle } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 
@@ -19,12 +19,24 @@ type CorrectionSheetData = {
   sessionName?: string
 }
 
+type MySession = {
+  sessionId: string
+  subjectId: string
+  subjectName: string
+  classIds: string[]
+  classNames: string[]
+  anonymatStatus: string
+  scheduledDate: string
+  submitted: boolean
+}
+
 export default function SectionTeacherCorrectionAnonyme({
   onToast,
 }: {
   onToast: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void
 }) {
   const [sessionId, setSessionId] = useState('')
+  const [mySessions, setMySessions] = useState<MySession[]>([])
   const [lines, setLines] = useState<Line[]>([])
   const [submitted, setSubmitted] = useState(false)
   const [scores, setScores] = useState<Record<string, string>>({})
@@ -33,6 +45,14 @@ export default function SectionTeacherCorrectionAnonyme({
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+
+  // Load assigned sessions on mount
+  useEffect(() => {
+    fetchApi('/api/v2/assessments/anonymat/my-correction-sessions', { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => { if (d.success) setMySessions(d.data ?? []) })
+      .catch(() => {})
+  }, [])
 
   const loadSheet = useCallback(async () => {
     if (!sessionId) return
@@ -143,14 +163,23 @@ export default function SectionTeacherCorrectionAnonyme({
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20, marginBottom: 24 }}>
         <div style={{ display: 'flex', gap: 12, alignItems: 'end', flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 280 }}>
-            <label className="block text-sm font-medium text-[var(--text2)] mb-1">ID de session</label>
-            <input
-              type="text"
+            <label className="block text-sm font-medium text-[var(--text2)] mb-1">Session à corriger</label>
+            <select
               value={sessionId}
-              onChange={(e) => setSessionId(e.target.value)}
-              placeholder="Collez l'ID de session ici"
+              onChange={(e) => {
+                setSessionId(e.target.value)
+                setLines([])
+              }}
               className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-            />
+            >
+              <option value="">— Session à corriger —</option>
+              {mySessions.map((s) => (
+                <option key={s.sessionId} value={s.sessionId}>
+                  {new Date(s.scheduledDate).toLocaleDateString('fr-FR')} · {s.subjectName || s.subjectId.slice(0, 8)}…
+                  {s.submitted ? ' (soumis)' : ''}
+                </option>
+              ))}
+            </select>
           </div>
           <button
             onClick={loadSheet}

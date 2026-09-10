@@ -140,6 +140,8 @@ export interface AnonymatRepository {
   ): Promise<void>;
 
   countTeamMembersNotDone(sessionId: string): Promise<number>;
+  
+  countTeamMembersByStatus(sessionId: string): Promise<{ total: number; done: number; pending: number }>;
 
   getOrderedListForMember(memberId: string): Promise<AnonymatListRow[]>;
 
@@ -163,5 +165,6 @@ export interface AnonymatRepository {
   ): Promise<void>;
   findCorrectionAssignments(sessionId: string): Promise<CorrectionAssignmentRecord[]>;
   findAssignmentForCorrecteur(sessionId: string, correcteurUserId: string): Promise<CorrectionAssignmentRecord[]>;
+  findCorrectionAssignmentsByCorrecteur(schoolId: string, correcteurUserId: string): Promise<CorrectionAssignmentRecord[]>;
 
 }

@@ -389,6 +389,7 @@ import { GenererCodesAnonymatUseCase } from '@application/assessment/GenererCode
 import { DesignerEquipeAnonymatUseCase } from '@application/assessment/DesignerEquipeAnonymatUseCase';
 import { ObtenirListeAnonymatParTokenUseCase } from '@application/assessment/ObtenirListeAnonymatParTokenUseCase';
 import { MarquerAnonymisationTermineeUseCase } from '@application/assessment/MarquerAnonymisationTermineeUseCase';
+import { ListerSessionsCorrectionAnonymeUseCase } from '@application/assessment/ListerSessionsCorrectionAnonymeUseCase';
 import { AnonymatInvitationService } from '@infrastructure/services/notification/AnonymatInvitationService';
 import { AnonymatLinkGenerator } from '@infrastructure/services/anonymat/AnonymatLinkGenerator';
 import { EnvAppConfig } from '@infrastructure/config/EnvAppConfig';
@@ -490,7 +491,7 @@ export function creerContainer() {
 
   // 4. Use Cases — Notes
   const saisirNoteUseCase = new SaisirNoteUseCase(
-    noteRepository, matiereRepository, userRepository, rattachementRepository
+    noteRepository, matiereRepository, userRepository, rattachementRepository, undefined, assessmentSessionRepository
   );
   const verrouillerNoteUseCase = new VerrouillerNoteUseCase(noteRepository, matiereRepository, metricCache);
   const verrouillerNotesEnMasseUseCase = new VerrouillerNotesEnMasseUseCase(noteRepository, matiereRepository, metricCache);
@@ -922,6 +923,10 @@ export function creerContainer() {
     anneeRepository,
     assessmentScopeRepository,
   );
+  const listerSessionsCorrectionAnonymeUseCase = new ListerSessionsCorrectionAnonymeUseCase(
+    anonymatRepository,
+    assessmentSessionRepository,
+  );
 
   // 18bis. Use Cases — Tâches
   const creerTaskUseCase = new CreerTaskUseCase(taskRepository, userRepository);
@@ -1241,6 +1246,7 @@ export function creerContainer() {
       scopeRepository: assessmentScopeRepository,
       sessionRepository: assessmentSessionRepository,
       participationRepository: assessmentParticipationRepository,
+      anonymatRepository: anonymatRepository,
       creerScope: creerAssessmentScopeUseCase,
       planifierSession: planifierAssessmentSessionUseCase,
       enregistrerParticipation: enregistrerParticipationUseCase,
@@ -1254,6 +1260,7 @@ export function creerContainer() {
       saisirNotesAnonymes: saisirNotesAnonymesUseCase,
       soumettreCorrectionAnonyme: soumettreCorrectionAnonymeUseCase,
       reconcilierNotesAnonymes: reconcilierNotesAnonymesUseCase,
+      listerSessionsCorrectionAnonyme: listerSessionsCorrectionAnonymeUseCase,
     },
     task: {
       creer: creerTaskUseCase,
