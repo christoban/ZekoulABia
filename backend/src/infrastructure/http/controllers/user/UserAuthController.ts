@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import type { ConnecterUtilisateurUseCase, RoleMismatchError, SchoolSuspendedError } from '@application/user/ConnecterUtilisateurUseCase';
+import type { ConnecterUtilisateurUseCase, RoleMismatchError, SchoolSuspendedError, MultipleAccountsError } from '@application/user/ConnecterUtilisateurUseCase';
 import type { LoginEmailOtpUseCase } from '@application/user/LoginEmailOtpUseCase';
 import type { VerifierMfaConnexionUseCase } from '@application/user/VerifierMfaConnexionUseCase';
 import type { MfaUseCase } from '@application/user/MfaUseCase';
@@ -39,23 +39,29 @@ export class UserAuthController {
   // POST /api/v2/auth/login
   login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { email, password, subdomain, role } = req.body;
-      if (!email || !password || !subdomain) {
-        res.status(400).json({ success: false, message: 'email, password et subdomain requis' });
+      const { email, password, subdomain, role, userId } = req.body;
+      if (!email || !password) {
+        res.status(400).json({ success: false, message: 'email et password requis' });
         return;
       }
 
-      const school = await this.schoolRepository.findBySubdomain(subdomain);
-      if (!school) {
-        res.status(404).json({ success: false, message: 'Établissement introuvable' });
-        return;
+      let schoolId: string | undefined;
+      if (subdomain) {
+        // Compatibilité rétro (ancien client) — optionnel
+        const school = await this.schoolRepository.findBySubdomain(subdomain);
+        if (!school) {
+          res.status(404).json({ success: false, message: 'Établissement introuvable' });
+          return;
+        }
+        schoolId = school.id;
       }
 
       const resultat = await this.connecter.execute({
         email,
         plainPassword: password,
-        schoolId: school.id,
+        schoolId,
         role: role || undefined,
+        userId: userId || undefined,
       });
 
       await this.loginEmailOtp.envoyer(resultat.userId);
@@ -80,6 +86,15 @@ export class UserAuthController {
           success: false,
           error: 'SCHOOL_SUSPENDED',
           message: 'Votre établissement a été suspendu. Contactez le support ZekoulABia.',
+        });
+        return;
+      }
+      if (error instanceof Error && (error as MultipleAccountsError).code === 'MULTIPLE_ACCOUNTS') {
+        res.status(409).json({
+          success: false,
+          code: 'MULTIPLE_ACCOUNTS',
+          message: 'Plusieurs comptes correspondent. Choisissez celui avec lequel vous voulez vous connecter.',
+          accounts: (error as MultipleAccountsError).accounts,
         });
         return;
       }

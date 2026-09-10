@@ -37,6 +37,7 @@ function userRepositoryStub(user: User | null): UserRepository {
     findByIdWithRefreshVersion: async () => null,
     authentifier: async () => null,
     listerRolesAvecMotDePasse: async () => [],
+    findMatchingAccountsByEmailPassword: async () => [],
     saveAvecProfil: async () => {},
     mettreAJourAvecProfil: async () => {},
     supprimerAvecCascade: async () => {},

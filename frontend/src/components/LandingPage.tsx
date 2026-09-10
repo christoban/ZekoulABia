@@ -34,6 +34,7 @@ const textsFR = {
     plans: 'Plans',
     contact: 'Contact',
     demo: 'Demander une démo',
+    login: 'Se connecter',
   },
   hero: {
     badge: '🇨🇲 Plateforme officielle · Système MINESEC Cameroun',
@@ -154,6 +155,7 @@ const textsEN = {
     plans: 'Plans',
     contact: 'Contact',
     demo: 'Request a demo',
+    login: 'Log in',
   },
   hero: {
     badge: '🇨🇲 Official platform · MINESEC Cameroon',
@@ -507,14 +509,13 @@ export default function LandingPage() {
         {/* Right actions */}
         <div className="gap-2 md:gap-3" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, marginLeft: 'auto' }}>
           <span className="hidden sm:inline-flex"><LanguageSwitch /></span>
-          {/* Pas de "Se connecter" ici, volontairement — modèle Logesco : tant que ZekoulABia est
-              en phase d'acquisition (pas encore de base d'écoles clientes qui reviennent taper le
-              domaine par réflexe), chaque bouton en plus du CTA "Demander une démo" est une fuite
-              d'attention pour un public à 95%+ composé de prospects sans compte. Un utilisateur
-              déjà connecté qui revient sur "/" est de toute façon redirigé automatiquement vers
-              son tableau de bord avant même de voir cette page (voir l'effet de redirection dans
-              LandingPage). À réintroduire en footer/header le jour où une base significative
-              d'écoles actives justifie le compromis inverse. */}
+          <button
+            type="button"
+            onClick={() => router.push('/login')}
+            className="hidden sm:inline-flex items-center px-3 py-2 rounded-lg text-sm font-semibold border border-[var(--border)] bg-transparent text-[var(--text)] hover:bg-[var(--bg2)] transition-colors"
+          >
+            {tx.nav.login}
+          </button>
           <button onClick={openDemo} className="hidden sm:inline-flex py-[9px] px-3 md:px-[18px] text-[14px] md:text-[17px] whitespace-nowrap" style={{ ...btnPrimary, padding: undefined, fontSize: undefined, display: undefined }}>{tx.nav.demo}</button>
         </div>
       </nav>

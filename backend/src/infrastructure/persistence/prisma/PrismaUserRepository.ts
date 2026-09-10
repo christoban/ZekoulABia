@@ -141,6 +141,40 @@ export class PrismaUserRepository implements UserRepository {
     return resultats.filter((r): r is NonNullable<typeof r> => r !== null) as string[];
   }
 
+  async findMatchingAccountsByEmailPassword(email: string, plainPassword: string): Promise<Array<{ userId: string; schoolId: string; role: string; schoolName: string; schoolSubdomain: string; nomComplet: string }>> {
+    const users = await this.prisma.user.findMany({
+      where: { email, isActive: true, deletedAt: null },
+      include: {
+        school: { select: { id: true, name: true, subdomain: true, status: true } },
+      },
+    });
+
+    const matches: Array<{
+      userId: string;
+      schoolId: string;
+      role: string;
+      schoolName: string;
+      schoolSubdomain: string;
+      nomComplet: string;
+    }> = [];
+
+    for (const u of users) {
+      if (!u.passwordHash) continue;
+      if (!(await this.compareHash(plainPassword, u.passwordHash))) continue;
+      // Only include users from active/approved schools
+      if (u.school?.status === 'PENDING' || u.school?.status === 'SUSPENDED') continue;
+      matches.push({
+        userId: u.id,
+        schoolId: u.schoolId,
+        role: u.role,
+        schoolName: u.school.name,
+        schoolSubdomain: u.school.subdomain,
+        nomComplet: `${u.firstName} ${u.lastName}`.trim(),
+      });
+    }
+    return matches;
+  }
+
   async mettreAJourAvecProfil(userId: string, data: { firstName?: string; lastName?: string; phone?: string; avatarUrl?: string; email?: string; isActive?: boolean; passwordHash?: string; subjectIds?: string[]; classeId?: string; dateOfBirth?: Date; gender?: string }): Promise<void> {
     await this.patchUser(userId, { ...(data.firstName && { firstName: data.firstName }), ...(data.lastName && { lastName: data.lastName }), ...(data.phone !== undefined && { phone: data.phone }), ...(data.avatarUrl !== undefined && { avatarUrl: data.avatarUrl }), ...(data.email && { email: data.email }), ...(data.isActive !== undefined && { isActive: data.isActive }), ...(data.passwordHash && { passwordHash: data.passwordHash }), updatedAt: new Date() });
     if (data.subjectIds !== undefined) {

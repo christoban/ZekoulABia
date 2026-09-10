@@ -133,6 +133,20 @@ export class InMemoryUserRepository implements UserRepository {
       .map(u => u.role);
   }
 
+  async findMatchingAccountsByEmailPassword(email: string, _plainPassword: string): Promise<Array<{ userId: string; schoolId: string; role: string; schoolName: string; schoolSubdomain: string; nomComplet: string }>> {
+    // In-memory: return all users with matching email (password check simplified for tests)
+    return [...this.store.values()]
+      .filter(u => u.email === email && this.estActif(u))
+      .map(u => ({
+        userId: u.id,
+        schoolId: u.schoolId,
+        role: u.role,
+        schoolName: u.schoolId, // Simplified for in-memory
+        schoolSubdomain: u.schoolId,
+        nomComplet: `${u.firstName} ${u.lastName}`.trim(),
+      }));
+  }
+
   async saveAvecProfil(user: User, profilData: {
     passwordHash: string;
     staffTitle?: string;

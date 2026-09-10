@@ -46,6 +46,19 @@ export interface UserRepository {
   /** Destinataires actifs d'une annonce, ciblés par rôle(s) — ids seulement. */
   findActiveByRoles(schoolId: string, roles: UserRole[]): Promise<{ id: string }[]>;
 
+  // Authentification simplifiée — recherche par email + password toutes écoles
+  findMatchingAccountsByEmailPassword(
+    email: string,
+    plainPassword: string,
+  ): Promise<Array<{
+    userId: string;
+    schoolId: string;
+    role: string;
+    schoolName: string;
+    schoolSubdomain: string;
+    nomComplet: string;
+  }>>;
+
   // HR — lectures employé (TEACHER/STAFF) avec profils embarqués
   findEmployeeById(userId: string, schoolId: string): Promise<EmployeeDetail | null>;
   findEmployees(schoolId: string, activeOnly?: boolean): Promise<EmployeeDetail[]>;
