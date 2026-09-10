@@ -139,11 +139,10 @@ function AnonymatListContent() {
           </button>
         </div>
       </div>
-      <style jsx>{`
+<style>{`
         @media print {
           button { display: none !important; }
           body { background: white; }
-          .no-print { display: none !important; }
         }
       `}</style>
     </div>

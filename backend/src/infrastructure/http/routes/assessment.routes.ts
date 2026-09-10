@@ -250,7 +250,7 @@ export function creerAssessmentRoutes(
       const subjectId = typeof req.query.subjectId === 'string' ? req.query.subjectId : undefined;
 
       const sessions = await sessionRepository.findBySchool(schoolId, { classId, subjectId });
-      res.json({ success: true, data: sessions });
+      res.json({ success: true, data: sessions.map((s) => s.toObject()) });
     } catch (error) {
       next(error);
     }

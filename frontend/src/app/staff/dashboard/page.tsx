@@ -146,7 +146,7 @@ export default function StaffDashboard() {
           )}
 
           {section === 'anonymat' && can('anonymat') && (
-            <SectionAnonymatStaff onToast={showToast} sessionUser={sessionUser} />
+            <SectionAnonymatStaff onToast={showToast} />
           )}
 
           {section === 'attendance' && can('attendance') && (

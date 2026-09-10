@@ -1,12 +1,10 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { Loader2, RefreshCw, Plus, Key, Users, Edit, CheckCircle, AlertCircle } from 'lucide-react'
+import { Loader2, RefreshCw, Plus, Key, Users, Edit, CheckCircle, AlertCircle, UserPlus } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
-import type { SessionUser } from '../_types'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void
-  sessionUser: SessionUser | null
 }
 
 type SessionRow = {
@@ -45,18 +43,20 @@ const STATUS_COLORS: Record<string, string> = {
   RECONCILIE: 'bg-emerald-500/20 text-emerald-300',
 }
 
-export default function SectionAnonymatStaff({ onToast, sessionUser }: Props) {
+export default function SectionAnonymatStaff({ onToast }: Props) {
   const [sessions, setSessions] = useState<SessionRow[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<SessionRow | null>(null)
   const [classId, setClassId] = useState('')
   const [subjectId, setSubjectId] = useState('')
   const [scopeId, setScopeId] = useState('')
+  const [academicSequenceId, setAcademicSequenceId] = useState('')
   const [scheduledDate, setScheduledDate] = useState('')
   const [isAnonymized, setIsAnonymized] = useState(true)
   const [correctionMode, setCorrectionMode] = useState<'OWN_CLASS' | 'CROSSED'>('OWN_CLASS')
   const [teamEmails, setTeamEmails] = useState('')
   const [crossAssignments, setCrossAssignments] = useState<{ classId: string; correcteurUserId: string }[]>([])
+  const [teachers, setTeachers] = useState<{ id: string; name: string }[]>([])
   const [creating, setCreating] = useState(false)
   const [generating, setGenerating] = useState<string | null>(null)
   const [designating, setDesignating] = useState(false)
@@ -79,9 +79,19 @@ export default function SectionAnonymatStaff({ onToast, sessionUser }: Props) {
 
   useEffect(() => { loadSessions() }, [loadSessions])
 
+  // Fetch teachers for CROSSED mode when panel opens
+  useEffect(() => {
+    if (selected?.anonymatStatus === 'ANONYMISATION_TERMINEE' && selected.correctionMode === 'CROSSED' && teachers.length === 0) {
+      fetchApi('/api/v2/users?role=TEACHER', { credentials: 'include' })
+        .then(r => r.json())
+        .then(d => { if (d.success) setTeachers(d.data.map((u: any) => ({ id: u.id, name: `${u.firstName} ${u.lastName}` }))) })
+        .catch(() => {})
+    }
+  }, [selected?.anonymatStatus, selected?.correctionMode])
+
   const createSession = async () => {
-    if (!scopeId || !subjectId || !classId || !scheduledDate) {
-      onToast('Tous les champs sont requis', 'error')
+    if (!scopeId || !subjectId || !classId || !scheduledDate || !academicSequenceId) {
+      onToast('Tous les champs sont requis (incl. séquence académique)', 'error')
       return
     }
     setCreating(true)
@@ -94,6 +104,7 @@ export default function SectionAnonymatStaff({ onToast, sessionUser }: Props) {
           assessmentScopeId: scopeId,
           subjectId,
           classId,
+          academicSequenceId,
           scheduledDate,
           isAnonymized,
           correctionMode: isAnonymized ? correctionMode : undefined,
@@ -106,6 +117,7 @@ export default function SectionAnonymatStaff({ onToast, sessionUser }: Props) {
         setScopeId('')
         setSubjectId('')
         setClassId('')
+        setAcademicSequenceId('')
         setScheduledDate('')
       } else onToast(data.message || data.error || 'Échec', 'error')
     } catch (e: unknown) {
@@ -330,6 +342,16 @@ export default function SectionAnonymatStaff({ onToast, sessionUser }: Props) {
               className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-[var(--text2)] mb-1">Séquence académique</label>
+            <input
+              type="text"
+              value={academicSequenceId}
+              onChange={(e) => setAcademicSequenceId(e.target.value)}
+              placeholder="ID séquence académique"
+              className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+            />
+          </div>
           <div style={{ display: 'flex', gap: 12, alignItems: 'end' }}>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -483,19 +505,23 @@ export default function SectionAnonymatStaff({ onToast, sessionUser }: Props) {
                   <p className="text-sm text-[var(--text3)] mb-2">Mode croisé : associez chaque classe à un correcteur</p>
                   <button
                     onClick={() => setCrossAssignments([...crossAssignments, { classId: selected.classId, correcteurUserId: '' }])}
-                    className="text-sm text-[var(--primary)] hover:underline mb-3"
+                    className="text-sm text-[var(--primary)] hover:underline mb-3 flex items-center gap-1"
                   >
+                    <UserPlus size={14} />
                     + Ajouter une assignation
                   </button>
                   {crossAssignments.map((a, idx) => (
                     <div key={idx} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
-                      <input
-                        type="text"
-                        placeholder="ID correcteur"
+                      <select
                         value={a.correcteurUserId}
                         onChange={(e) => setCrossAssignments(crossAssignments.map((x, i) => i === idx ? { ...x, correcteurUserId: e.target.value } : x))}
                         className="flex-1 px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-sm"
-                      />
+                      >
+                        <option value="">— Sélectionner un correcteur —</option>
+                        {teachers.map(t => (
+                          <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                      </select>
                       <button onClick={() => setCrossAssignments(crossAssignments.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-300">×</button>
                     </div>
                   ))}
