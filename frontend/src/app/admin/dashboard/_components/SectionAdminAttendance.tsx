@@ -101,7 +101,7 @@ export default function SectionAdminAttendance({ onToast }: Props) {
     <div className="px-4 py-5 md:px-6 md:py-5" style={{ overflowY: 'auto', height: '100%' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
         <div>
           <div className="text-[18px] md:text-[18px]" style={sTitle}>{t('attendance.title')}</div>
           <div className="text-[12px] md:text-[13px]" style={sSub}>Supervision · Toutes les classes de l&apos;établissement</div>
@@ -118,13 +118,13 @@ export default function SectionAdminAttendance({ onToast }: Props) {
       </div>
 
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 39 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 25 }}>
           <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
         </div>
       ) : (
         <>
           {stats && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-3" style={{ marginBottom: 14 }}>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-3" style={{ marginBottom: 10 }}>
               {([
                 { icon: CheckCircle2, bg: 'var(--green-light)', val: stats.attendanceRate, label: 'Taux de présence', color: 'var(--green)' },
                 { icon: Users, bg: 'var(--blue-light)', val: String(stats.total),   label: 'Enregistrements', color: 'var(--blue)' },
@@ -158,16 +158,16 @@ export default function SectionAdminAttendance({ onToast }: Props) {
             </div>
 
             {loadingRecords && (
-              <div style={{ display: 'flex', justifyContent: 'center', padding: 26 }}>
+              <div style={{ display: 'flex', justifyContent: 'center', padding: 18 }}>
                 <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
               </div>
             )}
             {!loadingRecords && error === 'OFFLINE_NO_CACHE' && (
-              <div style={{ padding: '26px 14px', textAlign: 'center', color: 'var(--text3)' }}>Aucune donnée en cache pour ce filtre — reconnectez-vous pour charger les présences.</div>
+              <div style={{ padding: '18px 11px', textAlign: 'center', color: 'var(--text3)' }}>Aucune donnée en cache pour ce filtre — reconnectez-vous pour charger les présences.</div>
             )}
-            {!loadingRecords && error && error !== 'OFFLINE_NO_CACHE' && <div style={{ padding: '12px 14px', color: 'var(--red)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}><AlertTriangle size={16} /> {error}</div>}
+            {!loadingRecords && error && error !== 'OFFLINE_NO_CACHE' && <div style={{ padding: '12px 11px', color: 'var(--red)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}><AlertTriangle size={16} /> {error}</div>}
             {!loadingRecords && !error && records.length === 0 && (
-              <div style={{ padding: '26px 14px', textAlign: 'center', color: 'var(--text3)' }}>
+              <div style={{ padding: '18px 11px', textAlign: 'center', color: 'var(--text3)' }}>
                 {classId || date ? 'Aucun enregistrement pour ces filtres' : 'Sélectionnez une classe ou une date pour afficher les présences'}
               </div>
             )}
@@ -183,7 +183,7 @@ export default function SectionAdminAttendance({ onToast }: Props) {
                           <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 13 }}>{r.student ? `${r.student.firstName} ${r.student.lastName}` : '—'}</div>
                           <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{r.class?.name ?? '—'} · {new Date(r.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })} · {r.period}</div>
                         </div>
-                        <span style={{ padding: '4px 10px', borderRadius: 10, fontSize: 11.5, fontWeight: 800, background: st.bg, color: st.color, display: 'inline-flex', alignItems: 'center', gap: 5, flexShrink: 0 }}><st.icon size={12} /> {st.label}</span>
+                        <span style={{ padding: '4px 10px', borderRadius: 8, fontSize: 11.5, fontWeight: 800, background: st.bg, color: st.color, display: 'inline-flex', alignItems: 'center', gap: 5, flexShrink: 0 }}><st.icon size={12} /> {st.label}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 9 }}>
                         <span style={{ fontSize: 12, color: 'var(--text3)' }}>{r.markedBy ? `${r.markedBy.firstName} ${r.markedBy.lastName}` : '—'}</span>
@@ -219,7 +219,7 @@ export default function SectionAdminAttendance({ onToast }: Props) {
                           <td style={tdSt}>{new Date(r.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}</td>
                           <td style={tdSt}>{r.period}</td>
                           <td style={tdSt}>
-                            <span style={{ padding: '4px 10px', borderRadius: 10, fontSize: 12, fontWeight: 800, background: st.bg, color: st.color, display: 'inline-flex', alignItems: 'center', gap: 5 }}><st.icon size={13} /> {st.label}</span>
+                            <span style={{ padding: '4px 10px', borderRadius: 8, fontSize: 12, fontWeight: 800, background: st.bg, color: st.color, display: 'inline-flex', alignItems: 'center', gap: 5 }}><st.icon size={13} /> {st.label}</span>
                           </td>
                           <td style={tdSt}>{r.markedBy ? `${r.markedBy.firstName} ${r.markedBy.lastName}` : '—'}</td>
                           <td style={tdSt}>
@@ -248,7 +248,7 @@ export default function SectionAdminAttendance({ onToast }: Props) {
 
 const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }
 const sSub: React.CSSProperties = { color: 'var(--text3)', marginTop: 3 }
-const btnPrim: React.CSSProperties = { padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+const btnPrim: React.CSSProperties = { padding: '9px 11px', borderRadius: 8, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
 const btnSec: React.CSSProperties = { padding: '8px 12px', borderRadius: 8, fontSize: 13, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
 const filterStCls = 'rounded-[8px] md:rounded-[10px] px-[12px] py-[10px] md:px-[12px] md:py-[8px] text-[13px] md:text-[13px] font-semibold md:font-bold border-0 md:border md:border-[1.5px] md:border-[var(--border2)] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none'
 const filterSt: React.CSSProperties = { background: 'var(--surface)', color: 'var(--text2)', outline: 'none', fontFamily: 'inherit' }

@@ -577,13 +577,13 @@ export default function SectionClasses({ onToast }: Props) {
   }
 
   return (
-    <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto' }}>
+    <div className="px-4 py-5 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
       <div className="mb-[16px] md:mb-[26px]" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <div className="text-[22px] md:text-[28px]" style={sTitle}>{t('classes.title')}</div>
-          <div className="text-[13px] md:text-[17px]" style={sSub}>{loading ? '…' : t('classes.subtitle').replace('{count}', String(classes.length)).replace('{students}', String(totalEleves))}</div>
+          <div className="text-[18px] md:text-[18px]" style={sTitle}>{t('classes.title')}</div>
+          <div className="text-[13px] md:text-[14px]" style={sSub}>{loading ? '…' : t('classes.subtitle').replace('{count}', String(classes.length)).replace('{students}', String(totalEleves))}</div>
         </div>
         <button className="hidden md:inline-block" style={btnPrim} onClick={() => setCreateOpen(true)}>{t('classes.btn_create')}</button>
         <button
@@ -593,23 +593,23 @@ export default function SectionClasses({ onToast }: Props) {
       </div>
 
       {loading && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}>
-          <div style={{ width: 36, height: 36, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 52 }}>
+          <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
         </div>
       )}
       {!loading && error && (
-        <div style={{ background: 'var(--red-light)', borderRadius: 14, padding: '18px 22px', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <AlertTriangle size={18} color="var(--red)" />
+        <div style={{ background: 'var(--red-light)', borderRadius: 8, padding: '14px 15px', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <AlertTriangle size={15} color="var(--red)" />
           <span style={{ fontWeight: 700, color: 'var(--red)', flex: 1 }}>{error}</span>
           <button onClick={fetchClasses} style={btnRetry}>{t('dashboard.retry')}</button>
         </div>
       )}
 
       {!loading && !error && classes.length === 0 && (
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: '60px 32px', textAlign: 'center' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}><School size={52} /></div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{t('classes.empty.title')}</div>
-          <div style={{ fontSize: 16, color: 'var(--text3)', marginBottom: 22 }}>{t('classes.empty.desc')}</div>
+        <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1.5px solid var(--border)', padding: '39px 20px', textAlign: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><School size={16} /></div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{t('classes.empty.title')}</div>
+          <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 14 }}>{t('classes.empty.desc')}</div>
           <button style={btnPrim} onClick={() => setCreateOpen(true)}>{t('classes.btn_create')}</button>
         </div>
       )}
@@ -621,11 +621,11 @@ export default function SectionClasses({ onToast }: Props) {
           {classes.map(cls => {
             const badge = getLevelBadge(cls.name)
             const ppName = cls.professorPrincipal ? `${cls.professorPrincipal.firstName} ${cls.professorPrincipal.lastName}` : t('classes.pp_not_assigned')
-            const cardBtnMobile: React.CSSProperties = { flex: 1, fontSize: 13, fontWeight: 850, color: 'var(--text2)', background: 'var(--bg2)', border: 'none', borderRadius: 10, padding: '9px 0', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }
+            const cardBtnMobile: React.CSSProperties = { flex: 1, fontSize: 13, fontWeight: 850, color: 'var(--text2)', background: 'var(--bg2)', border: 'none', borderRadius: 8, padding: '9px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }
             return (
-              <div key={cls.id} className="rounded-[16px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: 16 }}>
+              <div key={cls.id} className="rounded-[10px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
-                  <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 16, fontWeight: 850, color: 'var(--text)' }}>{cls.name}</div>
+                  <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 13, fontWeight: 850, color: 'var(--text)' }}>{cls.name}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                     <span style={{ fontSize: 12, fontWeight: 850, color: badge.color, background: badge.bg, borderRadius: 8, padding: '3px 9px' }}>{badge.label}</span>
                     <button onClick={() => setDelConfirm({ classId: cls.id, className: cls.name })}
@@ -634,7 +634,7 @@ export default function SectionClasses({ onToast }: Props) {
                     </button>
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginTop: 10 }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--text2)' }}><GraduationCap size={15} strokeWidth={2} color="var(--text3)" /> {t('classes.student_count').replace('{count}', String(cls._count.students))}</span>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--text2)' }}><Armchair size={15} strokeWidth={2} color="var(--text3)" /> {t('classes.capacity_label').replace('{capacity}', String(cls.capacity))}</span>
                 </div>
@@ -689,24 +689,24 @@ export default function SectionClasses({ onToast }: Props) {
         </div>
 
         {/* ── Grille — desktop (inchangée) ── */}
-        <div className="hidden md:grid" style={{ gridTemplateColumns: 'repeat(3,1fr)', gap: 18 }}>
+        <div className="hidden md:grid" style={{ gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
           {classes.map(cls => {
             const badge = getLevelBadge(cls.name)
             const ppName = cls.professorPrincipal ? `${cls.professorPrincipal.firstName} ${cls.professorPrincipal.lastName}` : t('classes.pp_not_assigned')
             return (
               <div key={cls.id}
-                style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: 22, transition: 'all 0.15s' }}
+                style={{ background: 'var(--surface)', borderRadius: 10, border: '1.5px solid var(--border)', padding: 15, transition: 'all 0.15s' }}
                 onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { transform: 'translateY(-2px)', boxShadow: '0 6px 20px rgba(0,0,0,0.07)', borderColor: 'var(--border2)' })}
                 onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { transform: 'none', boxShadow: 'none', borderColor: 'var(--border)' })}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
-                  <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 24, fontWeight: 700, color: 'var(--text)' }}>{cls.name}</div>
-                  <span style={{ background: badge.bg, color: badge.color, padding: '4px 12px', borderRadius: 22, fontSize: 14, fontWeight: 800 }}>{badge.label}</span>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>{cls.name}</div>
+                  <span style={{ background: badge.bg, color: badge.color, padding: '4px 12px', borderRadius: 10, fontSize: 12, fontWeight: 800 }}>{badge.label}</span>
                 </div>
-                <div style={{ display: 'flex', gap: 16, fontSize: 16, color: 'var(--text2)', fontWeight: 600, marginBottom: 12 }}>
+                <div style={{ display: 'flex', gap: 11, fontSize: 13, color: 'var(--text2)', fontWeight: 600, marginBottom: 12 }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><GraduationCap size={15} /> {t('classes.student_count').replace('{count}', String(cls._count.students))}</span>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Armchair size={15} /> {t('classes.capacity_label').replace('{capacity}', String(cls.capacity))}</span>
                 </div>
-                <div style={{ fontSize: 15, color: 'var(--text3)', fontWeight: 600, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <UserCheck size={15} /> {t('classes.pp_label')} <strong style={{ color: cls.professorPrincipal ? 'var(--text2)' : 'var(--text3)', fontStyle: cls.professorPrincipal ? 'normal' : 'italic' }}>{ppName}</strong>
                 </div>
                 <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
@@ -715,21 +715,21 @@ export default function SectionClasses({ onToast }: Props) {
                     const isPEBSFiliere = cls.filiere === 'FR_PEBS' || cls.filiere === 'EN_PEBS';
                     if (badge === 'PEBS' || isPEBSFiliere) {
                       const label = cls.filiere === 'EN_PEBS' ? 'PEBS EN' : 'PEBS FR';
-                      return <span style={{ background: 'rgba(22,163,74,0.12)', color: 'var(--green)', padding: '3px 10px', borderRadius: 20, fontSize: 13, fontWeight: 700 }}>{label}</span>;
+                      return <span style={{ background: 'rgba(22,163,74,0.12)', color: 'var(--green)', padding: '3px 10px', borderRadius: 10, fontSize: 13, fontWeight: 700 }}>{label}</span>;
                     }
                     if (badge === 'MIXTE') {
-                      return <span style={{ background: 'rgba(234,179,8,0.12)', color: '#b45309', padding: '3px 10px', borderRadius: 20, fontSize: 13, fontWeight: 700 }}>{t('classes.filiere_labels.MIXTE')}</span>;
+                      return <span style={{ background: 'rgba(234,179,8,0.12)', color: '#b45309', padding: '3px 10px', borderRadius: 10, fontSize: 13, fontWeight: 700 }}>{t('classes.filiere_labels.MIXTE')}</span>;
                     }
                     if (badge === 'GENERAL') {
-                      return <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '3px 10px', borderRadius: 20, fontSize: 13, fontWeight: 700 }}>{t('classes.filiere_labels.GENERAL')}</span>;
+                      return <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '3px 10px', borderRadius: 10, fontSize: 13, fontWeight: 700 }}>{t('classes.filiere_labels.GENERAL')}</span>;
                     }
                     if (cls.filiere && !['FR_PEBS', 'EN_PEBS', 'FR_GENERAL', 'EN_GENERAL'].includes(cls.filiere)) {
-                      return <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '3px 10px', borderRadius: 20, fontSize: 13, fontWeight: 700 }}>{cls.filiere}</span>;
+                      return <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '3px 10px', borderRadius: 10, fontSize: 13, fontWeight: 700 }}>{cls.filiere}</span>;
                     }
                     return null;
                   })()}
                   {cls.serie && (
-                    <span style={{ background: 'var(--bg2)', color: 'var(--text2)', padding: '3px 10px', borderRadius: 20, fontSize: 13, fontWeight: 700 }}>{t('classes.serie_label').replace('{serie}', cls.serie)}</span>
+                    <span style={{ background: 'var(--bg2)', color: 'var(--text2)', padding: '3px 10px', borderRadius: 10, fontSize: 13, fontWeight: 700 }}>{t('classes.serie_label').replace('{serie}', cls.serie)}</span>
                   )}
                 </div>
                 <div style={{ paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -762,7 +762,7 @@ export default function SectionClasses({ onToast }: Props) {
           <div className={sModalTitleCls} style={sModalTitle}>{t('classes.create_modal.title')}</div>
           <div className={sLabelCls} style={sLabel}>{t('classes.create_modal.name_label')}</div>
           <input className={sInputCls} style={sInput} placeholder={t('classes.create_modal.name_placeholder')} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <div>
               <div className={sLabelCls} style={sLabel}>{t('classes.create_modal.level_label')}</div>
               <input className={sInputCls} style={sInput} placeholder={t('classes.create_modal.level_placeholder')} value={form.level} onChange={e => setForm(f => ({ ...f, level: e.target.value }))} />
@@ -823,7 +823,7 @@ export default function SectionClasses({ onToast }: Props) {
           <div className={sModalTitleCls} style={sModalTitle}>{t('classes.edit_modal.title')}</div>
           <div className={sLabelCls} style={sLabel}>{t('classes.edit_modal.name_label')}</div>
           <input className={sInputCls} style={sInput} value={modForm.name} onChange={e => setModForm(f => ({ ...f, name: e.target.value }))} />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <div>
               <div className={sLabelCls} style={sLabel}>{t('classes.edit_modal.level_label')}</div>
               <input className={sInputCls} style={sInput} placeholder={t('classes.edit_modal.level_placeholder')} value={modForm.level} onChange={e => setModForm(f => ({ ...f, level: e.target.value }))} />
@@ -880,23 +880,23 @@ export default function SectionClasses({ onToast }: Props) {
       {ppForm.open && (
         <ModalOverlay onClose={() => setPPForm(EMPTY_PP)}>
           <div className={sModalTitleCls} style={sModalTitle}>{t('classes.pp_modal.title')}</div>
-          <div style={{ fontSize: 15, color: 'var(--text3)', marginBottom: 18 }}>{t('classes.pp_modal.class_name').replace('{name}', ppForm.className)}</div>
+          <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 13 }}>{t('classes.pp_modal.class_name').replace('{name}', ppForm.className)}</div>
           <div className={sLabelCls} style={sLabel}>{t('classes.pp_modal.search_label')}</div>
           <input className={sInputCls} style={sInput} placeholder={t('classes.pp_modal.search_placeholder')} value={ppForm.teacherSearch}
             onChange={e => setPPForm(f => ({ ...f, teacherSearch: e.target.value, selected: null }))} />
           {ppForm.selected && (
-            <div style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '8px 14px', borderRadius: 8, marginBottom: 12, fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '8px 11px', borderRadius: 8, marginBottom: 12, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
               <Check size={14} /> {ppForm.selected.firstName} {ppForm.selected.lastName}
             </div>
           )}
           {!ppForm.selected && (
-            <div style={{ border: '1.5px solid var(--border)', borderRadius: 10, maxHeight: 200, overflowY: 'auto', marginBottom: 12 }}>
+            <div style={{ border: '1.5px solid var(--border)', borderRadius: 8, maxHeight: 200, overflowY: 'auto', marginBottom: 12 }}>
               {filteredTeachers.length === 0 ? (
-                <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text3)', fontSize: 14 }}>{t('classes.pp_modal.no_teacher')}</div>
+                <div style={{ padding: '12px', textAlign: 'center', color: 'var(--text3)', fontSize: 12 }}>{t('classes.pp_modal.no_teacher')}</div>
               ) : filteredTeachers.map(t => (
                 <div key={t.id}
                   onClick={() => setPPForm(f => ({ ...f, selected: t, teacherSearch: `${t.firstName} ${t.lastName}` }))}
-                  style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 14, borderBottom: '1px solid var(--bg2)', color: 'var(--text)' }}
+                  style={{ padding: '10px 12px', cursor: 'pointer', fontSize: 12, borderBottom: '1px solid var(--bg2)', color: 'var(--text)' }}
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
                   {t.firstName} {t.lastName}
@@ -918,7 +918,7 @@ export default function SectionClasses({ onToast }: Props) {
       {delConfirm && (
         <ModalOverlay onClose={() => !deleting && setDelConfirm(null)}>
           <div className={sModalTitleCls} style={{ ...sModalTitle, color: 'var(--red)' }}>{t('classes.delete_modal.title')}</div>
-          <div className="text-[13.5px] md:text-[15px] mb-[18px] md:mb-[24px]" style={{ color: 'var(--text2)', lineHeight: 1.6 }} dangerouslySetInnerHTML={{ __html: t('classes.delete_modal.confirm').replace('{name}', delConfirm.className) }} />
+          <div className="text-[13.5px] md:text-[13px] mb-[18px] md:mb-[24px]" style={{ color: 'var(--text2)', lineHeight: 1.6 }} dangerouslySetInnerHTML={{ __html: t('classes.delete_modal.confirm').replace('{name}', delConfirm.className) }} />
           <div style={{ display: 'flex', gap: 10 }}>
             <button style={{ ...btnSec2, flex: 1 }} onClick={() => setDelConfirm(null)} disabled={deleting}>{t('classes.delete_modal.btn_cancel')}</button>
             <button
@@ -937,13 +937,13 @@ export default function SectionClasses({ onToast }: Props) {
 
           {/* Liste des sous-groupes existants */}
           {sgForm.subgroups.length === 0 ? (
-            <div style={{ color: 'var(--text3)', fontSize: 14, marginBottom: 18, fontStyle: 'italic' }}>
+            <div style={{ color: 'var(--text3)', fontSize: 12, marginBottom: 13, fontStyle: 'italic' }}>
               {t('classes.subgroups.empty')}
             </div>
           ) : (
-            <div style={{ border: '1.5px solid var(--border)', borderRadius: 10, overflow: 'hidden', marginBottom: 18 }}>
+            <div style={{ border: '1.5px solid var(--border)', borderRadius: 8, overflow: 'hidden', marginBottom: 13 }}>
               {sgForm.subgroups.map((sg, i) => (
-                <div key={sg.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: i < sgForm.subgroups.length - 1 ? '1px solid var(--bg2)' : 'none', fontSize: 14, color: 'var(--text)' }}>
+                <div key={sg.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderBottom: i < sgForm.subgroups.length - 1 ? '1px solid var(--bg2)' : 'none', fontSize: 12, color: 'var(--text)' }}>
                   <span style={{ fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Link2 size={14} /> {sg.name}</span>
                   <button onClick={() => openAssign(sg)} style={btnSecSm}>
                     {t('classes.subgroups.btn_assign')}
@@ -980,10 +980,10 @@ export default function SectionClasses({ onToast }: Props) {
       {/* ── ACTION LV2 : Répartition LV2 d'une classe ── */}
       {lv2Form.open && (
         <div onClick={() => setLV2Form(EMPTY_LV2)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} className="px-5 py-6 md:px-9 md:py-8" style={{ background: 'var(--surface)', borderRadius: 18, width: 680, maxWidth: '96vw', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
+          <div onClick={e => e.stopPropagation()} className="px-5 py-6 md:px-9 md:py-8" style={{ background: 'var(--surface)', borderRadius: 10, width: 680, maxWidth: '96vw', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <div className={sModalTitleCls} style={sModalTitle}>{t('classes.lv2.title').replace('{name}', lv2Form.className)}</div>
-              <button onClick={() => setLV2Form(EMPTY_LV2)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--text3)', lineHeight: 1 }}>×</button>
+              <button onClick={() => setLV2Form(EMPTY_LV2)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text3)', lineHeight: 1 }}>×</button>
             </div>
 
             {/* Compteur par langue */}
@@ -999,14 +999,14 @@ export default function SectionClasses({ onToast }: Props) {
               }
               const sansCount = lv2Form.rows.filter(r => !r.lv2SubjectId).length
               return (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
                   {Array.from(counts.values()).map(({ name, count }) => (
-                    <span key={name} style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '4px 12px', borderRadius: 20, fontSize: 13, fontWeight: 800 }}>
+                    <span key={name} style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '4px 12px', borderRadius: 10, fontSize: 13, fontWeight: 800 }}>
                       {name}: {count}
                     </span>
                   ))}
                   {sansCount > 0 && (
-                    <span style={{ background: 'var(--red-light)', color: 'var(--red)', padding: '4px 12px', borderRadius: 20, fontSize: 13, fontWeight: 800 }}>
+                    <span style={{ background: 'var(--red-light)', color: 'var(--red)', padding: '4px 12px', borderRadius: 10, fontSize: 13, fontWeight: 800 }}>
                       {t('classes.lv2.unassigned').replace('{count}', String(sansCount))}
                     </span>
                   )}
@@ -1015,18 +1015,18 @@ export default function SectionClasses({ onToast }: Props) {
             })()}
 
             {lv2Form.loading ? (
-              <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
-                <div style={{ width: 32, height: 32, border: '3px solid var(--border)', borderTopColor: 'var(--blue)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
+              <div style={{ display: 'flex', justifyContent: 'center', padding: 31 }}>
+                <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--blue)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
               </div>
             ) : lv2Form.error ? (
               <div style={sError}>{lv2Form.error}</div>
             ) : lv2Form.rows.length === 0 ? (
-              <div style={{ color: 'var(--text3)', textAlign: 'center', padding: '32px 0', fontStyle: 'italic' }}>{t('classes.lv2.no_students')}</div>
+              <div style={{ color: 'var(--text3)', textAlign: 'center', padding: '20px', fontStyle: 'italic' }}>{t('classes.lv2.no_students')}</div>
             ) : (
               <>
                 {/* Bulk action bar */}
                 {lv2Form.bulkSelected.size > 0 && (
-                  <div style={{ background: 'var(--blue-light)', border: '1.5px solid var(--blue-light)', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+                  <div style={{ background: 'var(--blue-light)', border: '1.5px solid var(--blue-light)', borderRadius: 8, padding: '10px 11px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--blue)' }}>{t('classes.lv2.bulk_selected').replace('{count}', String(lv2Form.bulkSelected.size))}</span>
                     <select
                       value={lv2Form.bulkSubjectId}
@@ -1036,12 +1036,12 @@ export default function SectionClasses({ onToast }: Props) {
                       {lv2Form.subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                     </select>
                     <button
-                      style={{ ...btnPrim, fontSize: 13, padding: '7px 16px', opacity: lv2Form.bulkAssigning ? 0.7 : 1 }}
+                      style={{ ...btnPrim, fontSize: 13, padding: '7px 12px', opacity: lv2Form.bulkAssigning ? 0.7 : 1 }}
                       onClick={bulkAssignLV2} disabled={lv2Form.bulkAssigning}>
                       {lv2Form.bulkAssigning ? t('classes.lv2.bulk_assigning') : t('classes.lv2.btn_bulk_assign')}
                     </button>
                     <button
-                      style={{ ...btnSec2, fontSize: 13, padding: '7px 14px' }}
+                      style={{ ...btnSec2, fontSize: 13, padding: '7px 11px' }}
                       onClick={() => setLV2Form(f => ({ ...f, bulkSelected: new Set() }))}>
                       {t('classes.lv2.btn_deselect_all')}
                     </button>
@@ -1049,9 +1049,9 @@ export default function SectionClasses({ onToast }: Props) {
                 )}
 
                 {/* Liste des élèves */}
-                <div style={{ overflowY: 'auto', flex: 1, border: '1.5px solid var(--border)', borderRadius: 12 }}>
+                <div style={{ overflowY: 'auto', flex: 1, border: '1.5px solid var(--border)', borderRadius: 8 }}>
                   {/* En-tête */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 200px', gap: 10, padding: '8px 14px', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', fontSize: 12, fontWeight: 800, color: 'var(--text3)', position: 'sticky', top: 0 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 200px', gap: 10, padding: '8px 11px', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', fontSize: 12, fontWeight: 800, color: 'var(--text3)', position: 'sticky', top: 0 }}>
                     <div><input type="checkbox"
                       checked={lv2Form.rows.length > 0 && lv2Form.bulkSelected.size === lv2Form.rows.length}
                       onChange={e => setLV2Form(f => ({ ...f, bulkSelected: e.target.checked ? new Set(f.rows.map(r => r.id)) : new Set() }))}
@@ -1063,7 +1063,7 @@ export default function SectionClasses({ onToast }: Props) {
                   {lv2Form.rows.map((row, i) => {
                     const currentSub = lv2Form.subjects.find(s => s.id === row.lv2SubjectId)
                     return (
-                      <div key={row.id} style={{ display: 'grid', gridTemplateColumns: '32px 1fr 200px', gap: 10, padding: '8px 14px', alignItems: 'center', borderBottom: i < lv2Form.rows.length - 1 ? '1px solid var(--bg2)' : 'none', background: lv2Form.bulkSelected.has(row.id) ? 'var(--blue-light)' : 'white' }}>
+                      <div key={row.id} style={{ display: 'grid', gridTemplateColumns: '32px 1fr 200px', gap: 10, padding: '8px 11px', alignItems: 'center', borderBottom: i < lv2Form.rows.length - 1 ? '1px solid var(--bg2)' : 'none', background: lv2Form.bulkSelected.has(row.id) ? 'var(--blue-light)' : 'white' }}>
                         <div>
                           <input type="checkbox"
                             checked={lv2Form.bulkSelected.has(row.id)}
@@ -1074,12 +1074,12 @@ export default function SectionClasses({ onToast }: Props) {
                             })}
                             style={{ accentColor: 'var(--blue)', cursor: 'pointer' }} />
                         </div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{row.lastName} {row.firstName}</div>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{row.lastName} {row.firstName}</div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           {row.saving ? (
                             <div style={{ width: 16, height: 16, border: '2px solid var(--border)', borderTopColor: 'var(--blue)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite', flexShrink: 0 }} />
                           ) : currentSub ? (
-                            <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '2px 9px', borderRadius: 14, fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap' }}>{currentSub.name}</span>
+                            <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '2px 9px', borderRadius: 8, fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap' }}>{currentSub.name}</span>
                           ) : (
                             <span style={{ color: 'var(--red)', fontSize: 12, fontWeight: 700, fontStyle: 'italic' }}>{t('classes.lv2.unassigned_label')}</span>
                           )}
@@ -1109,10 +1109,10 @@ export default function SectionClasses({ onToast }: Props) {
       {/* ── ACTION PEBS : Répartition PEBS d'une classe ── */}
       {pebsForm.open && (
         <div onClick={() => setPEBSForm(EMPTY_PEBS)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} className="px-5 py-6 md:px-9 md:py-8" style={{ background: 'var(--surface)', borderRadius: 18, width: 680, maxWidth: '96vw', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
+          <div onClick={e => e.stopPropagation()} className="px-5 py-6 md:px-9 md:py-8" style={{ background: 'var(--surface)', borderRadius: 10, width: 680, maxWidth: '96vw', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <div className={sModalTitleCls} style={sModalTitle}>{t('classes.pebs.title').replace('{name}', pebsForm.className)}</div>
-              <button onClick={() => setPEBSForm(EMPTY_PEBS)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--text3)', lineHeight: 1 }}>×</button>
+              <button onClick={() => setPEBSForm(EMPTY_PEBS)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text3)', lineHeight: 1 }}>×</button>
             </div>
 
             {/* Compteur PEBS / non-PEBS */}
@@ -1122,24 +1122,24 @@ export default function SectionClasses({ onToast }: Props) {
               const frCount = pebsForm.rows.filter(r => r.pebsFiliere === 'FR_PEBS').length
               const enCount = pebsForm.rows.filter(r => r.pebsFiliere === 'EN_PEBS').length
               return (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
                   {frCount > 0 && (
-                    <span style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '4px 12px', borderRadius: 20, fontSize: 13, fontWeight: 800 }}>
+                    <span style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '4px 12px', borderRadius: 10, fontSize: 13, fontWeight: 800 }}>
                       {t('classes.pebs.count_fr').replace('{count}', String(frCount))}
                     </span>
                   )}
                   {enCount > 0 && (
-                    <span style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '4px 12px', borderRadius: 20, fontSize: 13, fontWeight: 800 }}>
+                    <span style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '4px 12px', borderRadius: 10, fontSize: 13, fontWeight: 800 }}>
                       {t('classes.pebs.count_en').replace('{count}', String(enCount))}
                     </span>
                   )}
                   {pebsCount > 0 && (
-                    <span style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '4px 12px', borderRadius: 20, fontSize: 13, fontWeight: 800 }}>
+                    <span style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '4px 12px', borderRadius: 10, fontSize: 13, fontWeight: 800 }}>
                       {t('classes.pebs.total_pebs').replace('{count}', String(pebsCount))}
                     </span>
                   )}
                   {nonCount > 0 && (
-                    <span style={{ background: 'var(--red-light)', color: 'var(--red)', padding: '4px 12px', borderRadius: 20, fontSize: 13, fontWeight: 800 }}>
+                    <span style={{ background: 'var(--red-light)', color: 'var(--red)', padding: '4px 12px', borderRadius: 10, fontSize: 13, fontWeight: 800 }}>
                       {t('classes.pebs.non_pebs').replace('{count}', String(nonCount))}
                     </span>
                   )}
@@ -1148,18 +1148,18 @@ export default function SectionClasses({ onToast }: Props) {
             })()}
 
             {pebsForm.loading ? (
-              <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
-                <div style={{ width: 32, height: 32, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
+              <div style={{ display: 'flex', justifyContent: 'center', padding: 31 }}>
+                <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
               </div>
             ) : pebsForm.error ? (
               <div style={sError}>{pebsForm.error}</div>
             ) : pebsForm.rows.length === 0 ? (
-              <div style={{ color: 'var(--text3)', textAlign: 'center', padding: '32px 0', fontStyle: 'italic' }}>{t('classes.pebs.no_students')}</div>
+              <div style={{ color: 'var(--text3)', textAlign: 'center', padding: '20px', fontStyle: 'italic' }}>{t('classes.pebs.no_students')}</div>
             ) : (
               <>
                 {/* Bulk action bar */}
                 {pebsForm.bulkSelected.size > 0 && (
-                  <div style={{ background: 'var(--green-light)', border: '1.5px solid var(--green-light)', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+                  <div style={{ background: 'var(--green-light)', border: '1.5px solid var(--green-light)', borderRadius: 8, padding: '10px 11px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--green)' }}>{t('classes.pebs.bulk_selected').replace('{count}', String(pebsForm.bulkSelected.size))}</span>
                     <select
                       value={pebsForm.bulkValue}
@@ -1169,12 +1169,12 @@ export default function SectionClasses({ onToast }: Props) {
                       {getPEBSOptions().map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                     <button
-                      style={{ ...btnPrim, fontSize: 13, padding: '7px 16px', opacity: pebsForm.bulkAssigning ? 0.7 : 1 }}
+                      style={{ ...btnPrim, fontSize: 13, padding: '7px 12px', opacity: pebsForm.bulkAssigning ? 0.7 : 1 }}
                       onClick={bulkAssignPEBS} disabled={pebsForm.bulkAssigning}>
                       {pebsForm.bulkAssigning ? t('classes.pebs.bulk_assigning') : t('classes.pebs.btn_bulk_assign')}
                     </button>
                     <button
-                      style={{ ...btnSec2, fontSize: 13, padding: '7px 14px' }}
+                      style={{ ...btnSec2, fontSize: 13, padding: '7px 11px' }}
                       onClick={() => setPEBSForm(f => ({ ...f, bulkSelected: new Set() }))}>
                       {t('classes.pebs.btn_deselect_all')}
                     </button>
@@ -1182,9 +1182,9 @@ export default function SectionClasses({ onToast }: Props) {
                 )}
 
                 {/* Liste des élèves */}
-                <div style={{ overflowY: 'auto', flex: 1, border: '1.5px solid var(--border)', borderRadius: 12 }}>
+                <div style={{ overflowY: 'auto', flex: 1, border: '1.5px solid var(--border)', borderRadius: 8 }}>
                   {/* En-tête */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 160px', gap: 10, padding: '8px 14px', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', fontSize: 12, fontWeight: 800, color: 'var(--text3)', position: 'sticky', top: 0 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 160px', gap: 10, padding: '8px 11px', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', fontSize: 12, fontWeight: 800, color: 'var(--text3)', position: 'sticky', top: 0 }}>
                     <div><input type="checkbox"
                       checked={pebsForm.rows.length > 0 && pebsForm.bulkSelected.size === pebsForm.rows.length}
                       onChange={e => setPEBSForm(f => ({ ...f, bulkSelected: e.target.checked ? new Set(f.rows.map(r => r.id)) : new Set() }))}
@@ -1198,7 +1198,7 @@ export default function SectionClasses({ onToast }: Props) {
                       : row.pebsFiliere === 'EN_PEBS' ? t('classes.pebs.status_en')
                       : null
                     return (
-                      <div key={row.id} style={{ display: 'grid', gridTemplateColumns: '32px 1fr 160px', gap: 10, padding: '8px 14px', alignItems: 'center', borderBottom: i < pebsForm.rows.length - 1 ? '1px solid var(--bg2)' : 'none', background: pebsForm.bulkSelected.has(row.id) ? 'var(--green-light)' : 'white' }}>
+                      <div key={row.id} style={{ display: 'grid', gridTemplateColumns: '32px 1fr 160px', gap: 10, padding: '8px 11px', alignItems: 'center', borderBottom: i < pebsForm.rows.length - 1 ? '1px solid var(--bg2)' : 'none', background: pebsForm.bulkSelected.has(row.id) ? 'var(--green-light)' : 'white' }}>
                         <div>
                           <input type="checkbox"
                             checked={pebsForm.bulkSelected.has(row.id)}
@@ -1209,14 +1209,14 @@ export default function SectionClasses({ onToast }: Props) {
                             })}
                             style={{ accentColor: 'var(--green)', cursor: 'pointer' }} />
                         </div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{row.lastName} {row.firstName}</div>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{row.lastName} {row.firstName}</div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           {row.saving ? (
                             <div style={{ width: 16, height: 16, border: '2px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite', flexShrink: 0 }} />
                           ) : pebsLabel ? (
-                            <span style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '2px 9px', borderRadius: 14, fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap' }}>{pebsLabel}</span>
+                            <span style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '2px 9px', borderRadius: 8, fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap' }}>{pebsLabel}</span>
                           ) : (
-                            <span style={{ background: 'var(--bg2)', color: 'var(--text2)', padding: '2px 9px', borderRadius: 14, fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{t('classes.filiere_labels.GENERAL')}</span>
+                            <span style={{ background: 'var(--bg2)', color: 'var(--text2)', padding: '2px 9px', borderRadius: 8, fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{t('classes.filiere_labels.GENERAL')}</span>
                           )}
                           <select
                             value={row.pebsFiliere ?? ''}
@@ -1244,53 +1244,53 @@ export default function SectionClasses({ onToast }: Props) {
       {/* ── ACTION A-Level : choix individuel des matières (Sixth Form) ── */}
       {alevelForm.open && (
         <div onClick={() => setALevelForm(EMPTY_ALEVEL)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} className="px-5 py-5 md:px-7 md:py-7" style={{ background: 'var(--surface)', borderRadius: 18, width: 720, maxWidth: '96vw', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
+          <div onClick={e => e.stopPropagation()} className="px-5 py-5 md:px-7 md:py-5" style={{ background: 'var(--surface)', borderRadius: 10, width: 720, maxWidth: '96vw', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <div className={sModalTitleCls} style={sModalTitle}>{t('classes.alevel.title').replace('{name}', alevelForm.className)}</div>
-              <button onClick={() => setALevelForm(EMPTY_ALEVEL)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--text3)', lineHeight: 1 }}>×</button>
+              <button onClick={() => setALevelForm(EMPTY_ALEVEL)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text3)', lineHeight: 1 }}>×</button>
             </div>
-            <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 14 }}>
+            <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 10 }}>
               Chaque élève choisit entre {ALEVEL_MIN} et {ALEVEL_MAX} matières. Les combinaisons ne sont qu'un point de départ personnalisable.
             </div>
 
             {alevelForm.loading ? (
-              <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
-                <div style={{ width: 32, height: 32, border: '3px solid var(--border)', borderTopColor: 'var(--purple)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
+              <div style={{ display: 'flex', justifyContent: 'center', padding: 31 }}>
+                <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--purple)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
               </div>
             ) : alevelForm.error ? (
               <div style={sError}>{alevelForm.error}</div>
             ) : alevelForm.rows.length === 0 ? (
-              <div style={{ color: 'var(--text3)', textAlign: 'center', padding: '32px 0', fontStyle: 'italic' }}>{t('classes.lv2.no_students')}</div>
+              <div style={{ color: 'var(--text3)', textAlign: 'center', padding: '20px', fontStyle: 'italic' }}>{t('classes.lv2.no_students')}</div>
             ) : (
               <>
                 {/* Barre d'action de masse */}
-                <div style={{ background: 'var(--purple-light)', border: '1.5px solid var(--purple-light)', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+                <div style={{ background: 'var(--purple-light)', border: '1.5px solid var(--purple-light)', borderRadius: 8, padding: '10px 11px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--purple)' }}>Combinaison de départ pour toute la classe :</span>
                   <select value={alevelForm.bulkCombo} onChange={e => setALevelForm(f => ({ ...f, bulkCombo: e.target.value }))} className={sInputCls} style={{ ...sInput, marginBottom: 0, flex: 1, minWidth: 160, fontSize: 13 }}>
                     <option value="">— Choisir —</option>
                     {alevelForm.combos.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
                   </select>
-                  <button style={{ ...btnPrim, background: 'var(--purple)', fontSize: 13, padding: '7px 16px', opacity: (!alevelForm.bulkCombo || alevelForm.bulkApplying) ? 0.6 : 1 }}
+                  <button style={{ ...btnPrim, background: 'var(--purple)', fontSize: 13, padding: '7px 12px', opacity: (!alevelForm.bulkCombo || alevelForm.bulkApplying) ? 0.6 : 1 }}
                     onClick={bulkApplyCombo} disabled={!alevelForm.bulkCombo || alevelForm.bulkApplying}>
                     {alevelForm.bulkApplying ? 'En cours…' : 'Appliquer à tous'}
                   </button>
                 </div>
 
-                <div style={{ overflowY: 'auto', flex: 1, border: '1.5px solid var(--border)', borderRadius: 12 }}>
+                <div style={{ overflowY: 'auto', flex: 1, border: '1.5px solid var(--border)', borderRadius: 8 }}>
                   {alevelForm.rows.map((row, i) => {
                     const incomplete = row.count < ALEVEL_MIN
                     const editing = alevelForm.editingStudentId === row.id
                     return (
-                      <div key={row.id} style={{ padding: '10px 14px', borderBottom: i < alevelForm.rows.length - 1 ? '1px solid var(--bg2)' : 'none', background: editing ? 'var(--purple-light)' : 'white' }}>
+                      <div key={row.id} style={{ padding: '10px 11px', borderBottom: i < alevelForm.rows.length - 1 ? '1px solid var(--bg2)' : 'none', background: editing ? 'var(--purple-light)' : 'white' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', minWidth: 150 }}>{row.lastName} {row.firstName}</span>
-                          <span style={{ background: incomplete ? 'var(--red-light)' : 'var(--purple-light)', color: incomplete ? 'var(--red)' : 'var(--purple)', padding: '2px 9px', borderRadius: 14, fontSize: 12, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', minWidth: 150 }}>{row.lastName} {row.firstName}</span>
+                          <span style={{ background: incomplete ? 'var(--red-light)' : 'var(--purple-light)', color: incomplete ? 'var(--red)' : 'var(--purple)', padding: '2px 9px', borderRadius: 8, fontSize: 12, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                             {row.count}/{ALEVEL_MAX}{incomplete && <AlertTriangle size={11} />}
                           </span>
                           {row.saving && <div style={{ width: 14, height: 14, border: '2px solid var(--border)', borderTopColor: 'var(--purple)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />}
                           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', flex: 1 }}>
                             {row.subjects.map(s => (
-                              <span key={s.id} style={{ background: 'var(--purple-light)', color: 'var(--purple)', padding: '2px 8px', borderRadius: 12, fontSize: 11.5, fontWeight: 700 }}>{s.name}</span>
+                              <span key={s.id} style={{ background: 'var(--purple-light)', color: 'var(--purple)', padding: '2px 8px', borderRadius: 8, fontSize: 11.5, fontWeight: 700 }}>{s.name}</span>
                             ))}
                             {row.count === 0 && <span style={{ color: 'var(--red)', fontSize: 12, fontStyle: 'italic', fontWeight: 700 }}>Aucune matière</span>}
                           </div>
@@ -1314,7 +1314,7 @@ export default function SectionClasses({ onToast }: Props) {
                                 <button key={subj.id} disabled={row.saving || blocked}
                                   onClick={() => toggleStudentSubject(row, subj)}
                                   style={{
-                                    padding: '5px 11px', borderRadius: 16, fontSize: 12.5, fontWeight: 700, cursor: (row.saving || blocked) ? 'not-allowed' : 'pointer',
+                                    padding: '5px 11px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, cursor: (row.saving || blocked) ? 'not-allowed' : 'pointer',
                                     border: `1.5px solid ${selected ? 'var(--purple)' : 'var(--border)'}`, background: selected ? 'var(--purple)' : 'white',
                                     color: selected ? 'white' : blocked ? 'var(--border2)' : 'var(--text2)', opacity: blocked ? 0.5 : 1,
                                   }}>
@@ -1352,20 +1352,20 @@ export default function SectionClasses({ onToast }: Props) {
             <button
               onClick={() => setAssignForm(EMPTY_ASSIGN)}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', padding: 0, lineHeight: 1, display: 'flex' }}>
-              <ArrowLeft size={20} />
+              <ArrowLeft size={15} />
             </button>
             <div className={sModalTitleCls} style={sModalTitle}>{t('classes.subgroups.btn_assign')}</div>
           </div>
-          <div style={{ fontSize: 14, color: 'var(--text3)', marginBottom: 18 }}>
+          <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 13 }}>
             Sous-groupe : <strong style={{ color: 'var(--text2)' }}>{assignForm.subGroupName}</strong>
           </div>
 
           {assignForm.loading ? (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}>
               <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
             </div>
           ) : assignForm.students.length === 0 ? (
-            <div style={{ color: 'var(--text3)', fontSize: 14, textAlign: 'center', padding: '24px 0', fontStyle: 'italic' }}>
+            <div style={{ color: 'var(--text3)', fontSize: 12, textAlign: 'center', padding: '16px', fontStyle: 'italic' }}>
               {t('classes.lv2.no_students')}
             </div>
           ) : (
@@ -1373,11 +1373,11 @@ export default function SectionClasses({ onToast }: Props) {
               <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 8 }}>
                 {t('classes.lv2.bulk_selected').replace('{count}', String(assignForm.selected.size))}
               </div>
-              <div style={{ border: '1.5px solid var(--border)', borderRadius: 10, maxHeight: 260, overflowY: 'auto', marginBottom: 14 }}>
+              <div style={{ border: '1.5px solid var(--border)', borderRadius: 8, maxHeight: 260, overflowY: 'auto', marginBottom: 10 }}>
                 {assignForm.students.map((s, i) => {
                   const profileId = s.studentProfile?.id ?? s.id
                   return (
-                    <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px', cursor: 'pointer', borderBottom: i < assignForm.students.length - 1 ? '1px solid var(--bg2)' : 'none', fontSize: 14, color: 'var(--text)' }}
+                    <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px', cursor: 'pointer', borderBottom: i < assignForm.students.length - 1 ? '1px solid var(--bg2)' : 'none', fontSize: 12, color: 'var(--text)' }}
                       onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
                       <input
@@ -1414,7 +1414,7 @@ export default function SectionClasses({ onToast }: Props) {
 function ModalOverlay({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div onClick={e => e.stopPropagation()} className="px-5 py-5 md:px-9 md:py-8 max-h-[90vh] overflow-y-auto" style={{ background: 'var(--surface)', borderRadius: 18, width: 480, maxWidth: '94vw', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
+      <div onClick={e => e.stopPropagation()} className="px-5 py-5 md:px-9 md:py-8 max-h-[90vh] overflow-y-auto" style={{ background: 'var(--surface)', borderRadius: 10, width: 480, maxWidth: '94vw', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
         {children}
       </div>
     </div>
@@ -1426,14 +1426,14 @@ const sSub: React.CSSProperties = { color: 'var(--text3)', marginTop: 3 }
 // Tailles resserrees vers la cible mobile (meme technique que SectionUsers) — desktop inchangee
 // via md:. fontSize/padding/marginBottom retires des objets style (toujours gagnants sur
 // className) et portes par les classNames compagnes ci-dessous.
-const sModalTitleCls = 'text-[18px] md:text-[22px] mb-[16px] md:mb-[22px]'
+const sModalTitleCls = 'text-[18px] md:text-[18px] mb-[16px] md:mb-[22px]'
 const sModalTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }
 const sLabelCls = 'text-[12px] md:text-[13px] mb-[4px] md:mb-[6px]'
 const sLabel: React.CSSProperties = { fontWeight: 700, color: 'var(--text3)' }
-const sInputCls = 'rounded-[10px] px-[12px] py-[9px] mb-[10px] text-[13px] md:px-[14px] md:py-[10px] md:mb-[14px] md:text-[14px]'
+const sInputCls = 'rounded-[10px] px-[12px] py-[9px] mb-[10px] text-[13px] md:px-[14px] md:py-[10px] md:mb-[14px] md:text-[12px]'
 const sInput: React.CSSProperties = { width: '100%', border: '1.5px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none' }
-const sError: React.CSSProperties = { background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, marginBottom: 8 }
-const btnPrim: React.CSSProperties = { padding: '10px 20px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
-const btnSec2: React.CSSProperties = { padding: '10px 20px', borderRadius: 11, fontSize: 15, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }
-const btnSecSm: React.CSSProperties = { padding: '7px 14px', borderRadius: 10, fontSize: 14, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
-const btnRetry: React.CSSProperties = { padding: '7px 16px', borderRadius: 9, background: 'var(--surface)', color: 'var(--red)', border: '1.5px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }
+const sError: React.CSSProperties = { background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8, padding: '8px 11px', fontSize: 13, fontWeight: 600, marginBottom: 8 }
+const btnPrim: React.CSSProperties = { padding: '10px 14px', borderRadius: 11, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+const btnSec2: React.CSSProperties = { padding: '10px 14px', borderRadius: 11, fontSize: 13, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }
+const btnSecSm: React.CSSProperties = { padding: '7px 11px', borderRadius: 8, fontSize: 12, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
+const btnRetry: React.CSSProperties = { padding: '7px 12px', borderRadius: 9, background: 'var(--surface)', color: 'var(--red)', border: '1.5px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }

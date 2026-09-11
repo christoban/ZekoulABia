@@ -39,8 +39,8 @@ const STATUT_COLORS: Record<string, { bg: string; color: string }> = {
   EXPIRED: { bg: 'var(--bg2)', color: 'var(--text3)' },
 }
 
-const btnPri = { padding: '8px 14px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
-const btnSec = { padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 12, cursor: 'pointer' as const }
+const btnPri = { padding: '8px 11px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
+const btnSec = { padding: '8px 11px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 12, cursor: 'pointer' as const }
 const btnDanger = { padding: '6px 12px', borderRadius: 8, border: '1px solid var(--red)', background: 'var(--surface)', color: 'var(--red)', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
 const btnSmall = { padding: '6px 12px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
 const inputStyle = { padding: '9px 11px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 12, width: '100%', boxSizing: 'border-box' as const }
@@ -223,14 +223,14 @@ export default function SectionEleveOnboarding({ onToast }: Props) {
           <h2 className="text-[18px] md:text-[18px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('eleveOnboarding.title')}</h2>
           <p className="text-[13px] md:text-[12px]" style={{ color: 'var(--text3)', marginTop: 4 }}>{t('eleveOnboarding.subtitle')}</p>
         </div>
-        <button onClick={() => setCreateOpen(true)} style={{ ...btnPri, borderRadius: 10, padding: '9px 11px', fontSize: 12 }}>{t('eleveOnboarding.createBtn')}</button>
+        <button onClick={() => setCreateOpen(true)} style={{ ...btnPri, borderRadius: 8, padding: '9px 11px', fontSize: 12 }}>{t('eleveOnboarding.createBtn')}</button>
       </div>
 
       {settings && (
         <div className="flex-col md:flex-row gap-[12px] md:gap-4 rounded-[8px] md:rounded-[8px] px-[14px] py-[12px] md:px-3.5 md:py-2.5 mb-[16px] md:mb-[16px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[var(--border)]" style={{ display: 'flex', alignItems: 'stretch', background: 'var(--surface)' }}>
           <div onClick={toggleSelfService} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, cursor: 'pointer' }}>
             <span className="text-[12.5px] md:text-[12px]" style={{ fontWeight: 700, color: 'var(--text)' }}>{t('eleveOnboarding.settingsToggle')}</span>
-            <div style={{ width: 40, height: 22, borderRadius: 11, background: settings.selfServiceEnabled ? 'var(--green)' : 'var(--border2)', position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
+            <div style={{ width: 32, height: 22, borderRadius: 11, background: settings.selfServiceEnabled ? 'var(--green)' : 'var(--border2)', position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
               <div style={{ width: 16, height: 16, borderRadius: 8, background: '#fff', position: 'absolute', top: 3, left: settings.selfServiceEnabled ? 22 : 3, transition: 'left 0.2s' }} />
             </div>
           </div>
@@ -272,14 +272,14 @@ export default function SectionEleveOnboarding({ onToast }: Props) {
                   <div style={{ fontSize: 11, color: '#b45309', marginTop: 3 }}>{t('eleveOnboarding.matchWarning', { score: String(d.matchScore) })}</div>
                 )}
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-                  <span style={{ padding: '3px 10px', borderRadius: 10, fontSize: 12, fontWeight: 700, ...(STATUT_COLORS[d.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }) }}>
+                  <span style={{ padding: '3px 10px', borderRadius: 8, fontSize: 12, fontWeight: 700, ...(STATUT_COLORS[d.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }) }}>
                     {t(`eleveOnboarding.status_${d.status}`)}
                   </span>
-                  <span style={{ padding: '3px 10px', borderRadius: 10, fontSize: 12, fontWeight: 700, background: 'var(--bg2)', color: 'var(--text2)' }}>
+                  <span style={{ padding: '3px 10px', borderRadius: 8, fontSize: 12, fontWeight: 700, background: 'var(--bg2)', color: 'var(--text2)' }}>
                     {t(`eleveOnboarding.source_${d.sourceType}`)}
                   </span>
                   {d.classe?.name && (
-                    <span style={{ padding: '3px 10px', borderRadius: 10, fontSize: 12, fontWeight: 700, background: 'var(--bg2)', color: 'var(--text2)' }}>{d.classe.name}</span>
+                    <span style={{ padding: '3px 10px', borderRadius: 8, fontSize: 12, fontWeight: 700, background: 'var(--bg2)', color: 'var(--text2)' }}>{d.classe.name}</span>
                   )}
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 8 }}>{new Date(d.createdAt).toLocaleDateString()}</div>
@@ -316,7 +316,7 @@ export default function SectionEleveOnboarding({ onToast }: Props) {
                       )}
                     </td>
                     <td style={{ padding: '12px 12px' }}>
-                      <span style={{ padding: '3px 10px', borderRadius: 10, fontSize: 12, fontWeight: 700, ...(STATUT_COLORS[d.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }) }}>
+                      <span style={{ padding: '3px 10px', borderRadius: 8, fontSize: 12, fontWeight: 700, ...(STATUT_COLORS[d.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }) }}>
                         {t(`eleveOnboarding.status_${d.status}`)}
                       </span>
                     </td>
@@ -346,7 +346,7 @@ export default function SectionEleveOnboarding({ onToast }: Props) {
 
       {createOpen && (
         <div onClick={() => !creating && setCreateOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div onClick={e => e.stopPropagation()} className="p-5 md:p-5" style={{ background: 'var(--surface)', borderRadius: 10, width: 420, maxWidth: '92vw', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div onClick={e => e.stopPropagation()} className="p-5 md:p-5" style={{ background: 'var(--surface)', borderRadius: 8, width: 420, maxWidth: '92vw', maxHeight: '90vh', overflowY: 'auto' }}>
             <h3 className="text-[13px] md:text-[18px]" style={{ fontWeight: 800, color: 'var(--text)', marginBottom: 13 }}>{t('eleveOnboarding.createModalTitle')}</h3>
 
             <FieldLabel>{t('eleveOnboarding.fieldNomProvisoire')}</FieldLabel>
@@ -416,7 +416,7 @@ export default function SectionEleveOnboarding({ onToast }: Props) {
 
       {validateTarget && (
         <div onClick={() => !validating && setValidateTarget(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div onClick={e => e.stopPropagation()} className="p-5 md:p-5" style={{ background: 'var(--surface)', borderRadius: 10, width: 420, maxWidth: '92vw' }}>
+          <div onClick={e => e.stopPropagation()} className="p-5 md:p-5" style={{ background: 'var(--surface)', borderRadius: 8, width: 420, maxWidth: '92vw' }}>
             <h3 className="text-[13px] md:text-[18px]" style={{ fontWeight: 800, color: 'var(--text)', marginBottom: 6 }}>{t('eleveOnboarding.validateModalTitle')}</h3>
             <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12 }}>{validateTarget.nomProvisoire}</p>
 
@@ -438,7 +438,7 @@ export default function SectionEleveOnboarding({ onToast }: Props) {
 
       {rejectTarget && (
         <div onClick={() => !rejecting && setRejectTarget(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div onClick={e => e.stopPropagation()} className="p-5 md:p-5" style={{ background: 'var(--surface)', borderRadius: 10, width: 420, maxWidth: '92vw' }}>
+          <div onClick={e => e.stopPropagation()} className="p-5 md:p-5" style={{ background: 'var(--surface)', borderRadius: 8, width: 420, maxWidth: '92vw' }}>
             <h3 className="text-[13px] md:text-[18px]" style={{ fontWeight: 800, color: 'var(--text)', marginBottom: 6 }}>{t('eleveOnboarding.rejectModalTitle')}</h3>
             <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12 }}>{rejectTarget.nomProvisoire}</p>
 

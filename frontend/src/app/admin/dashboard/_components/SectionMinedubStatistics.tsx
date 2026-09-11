@@ -32,8 +32,8 @@ interface Supplement {
 interface ChampNonResolu { section: string; champ: string; raison: string }
 interface Report { id: string; generatedAt: string; filePath: string | null }
 
-const btnPri = { padding: '8px 14px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
-const btnSec = { padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 12, cursor: 'pointer' as const }
+const btnPri = { padding: '8px 11px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
+const btnSec = { padding: '8px 11px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 12, cursor: 'pointer' as const }
 const inputStyle = { padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 12, width: '100%', boxSizing: 'border-box' as const }
 const smallInputStyle = { ...inputStyle, padding: '6px 10px', fontSize: 12 }
 const cardStyleCls = 'rounded-[10px] md:rounded-[8px] p-3 md:p-3.5 mb-[12px] md:mb-[16px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[var(--border)]'
@@ -124,7 +124,7 @@ export default function SectionMinedubStatistics({ onToast }: Props) {
 
   const downloadReport = (id: string) => window.open(`/api/v2/statistical-campaign-minedub/reports/${id}/download`, '_blank')
 
-  if (loading) return <div style={{ padding: 26, textAlign: 'center', color: 'var(--text3)' }}>{t('common.loading') || '...'}</div>
+  if (loading) return <div style={{ padding: 18, textAlign: 'center', color: 'var(--text3)' }}>{t('common.loading') || '...'}</div>
 
   return (
     <div className="px-4 py-5 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
@@ -192,7 +192,7 @@ export default function SectionMinedubStatistics({ onToast }: Props) {
                       <td style={{ padding: '4px 8px', fontWeight: 700 }}>{niveau}</td>
                       {(['refugiesF', 'refugiesG', 'deplacesF', 'deplacesG', 'handicapesF', 'handicapesG'] as const).map((k) => (
                         <td key={k} style={{ padding: '4px 6px' }}>
-                          <input style={{ ...smallInputStyle, width: 48 }} type="number" min={0}
+                          <input style={{ ...smallInputStyle, width: 32 }} type="number" min={0}
                             value={getVulnerable(niveau, k) ?? ''}
                             onChange={(e) => setVulnerable(niveau, k, e.target.value === '' ? null : Number(e.target.value))} />
                         </td>

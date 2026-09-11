@@ -214,13 +214,13 @@ export default function SectionTimetable({ onToast }: Props) {
       </div>
 
       {loading && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 26 }}>
           <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
         </div>
       )}
 
       {!loading && error && (
-        <div className="flex-wrap gap-[10px] md:gap-[12px] px-[14px] py-2.5 md:px-[18px] md:py-[14px]" style={{ background: 'var(--red-light)', borderRadius: 8, display: 'flex', alignItems: 'center' }}>
+        <div className="flex-wrap gap-[10px] md:gap-[12px] px-[14px] py-2.5 md:px-3.5 md:py-2.5" style={{ background: 'var(--red-light)', borderRadius: 8, display: 'flex', alignItems: 'center' }}>
           <AlertTriangle size={16} strokeWidth={2} color="var(--red)" />
           <span className="text-[13px] md:text-[13px]" style={{ fontWeight: 700, color: 'var(--red)', flex: 1 }}>{error}</span>
           <button onClick={() => fetchTimetable()} className="w-full md:w-auto text-[13px] md:text-[13px] px-[12px] md:px-[14px] py-[7px] md:py-[9px]" style={{ ...btnSec, padding: undefined, fontSize: undefined }}>{t('timetable.retry')}</button>
@@ -228,17 +228,17 @@ export default function SectionTimetable({ onToast }: Props) {
       )}
 
       {!loading && !error && !classId && (
-        <div className="p-[20px] md:px-[24px] md:py-[40px]" style={{ background: 'var(--surface)', borderRadius: 10, border: '1.5px solid var(--border)', textAlign: 'center' }}>
+        <div className="p-3.5 md:px-[24px] md:py-[40px]" style={{ background: 'var(--surface)', borderRadius: 8, border: '1.5px solid var(--border)', textAlign: 'center' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><CalendarDays size={16} strokeWidth={1.5} className="md:hidden" /><CalendarDays size={16} strokeWidth={1.5} className="hidden md:block" /></div>
-          <div className="text-[14px] md:text-[16px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{t('timetable.selectClassTitle')}</div>
+          <div className="text-[12px] md:text-[13px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{t('timetable.selectClassTitle')}</div>
           <div className="text-[13px] md:text-[13px]" style={{ color: 'var(--text3)' }}>{t('timetable.selectClassHint')}</div>
         </div>
       )}
 
       {!loading && !error && classId && !timetable && (
-        <div className="p-[20px] md:px-[24px] md:py-[40px]" style={{ background: 'var(--surface)', borderRadius: 10, border: '1.5px solid var(--border)', textAlign: 'center' }}>
+        <div className="p-3.5 md:px-[24px] md:py-[40px]" style={{ background: 'var(--surface)', borderRadius: 8, border: '1.5px solid var(--border)', textAlign: 'center' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><Calendar size={16} strokeWidth={1.5} className="md:hidden" /><Calendar size={16} strokeWidth={1.5} className="hidden md:block" /></div>
-          <div className="text-[14px] md:text-[16px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{t('timetable.noTimetable')}</div>
+          <div className="text-[12px] md:text-[13px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{t('timetable.noTimetable')}</div>
           <div className="text-[13px] md:text-[13px]" style={{ color: 'var(--text3)' }}>{t('timetable.noTimetableHint')}</div>
         </div>
       )}
@@ -251,9 +251,9 @@ export default function SectionTimetable({ onToast }: Props) {
               <div style={{ width: `${pct}%`, height: '100%', background: pct === 100 ? 'var(--green)' : 'var(--amber)', transition: 'width 0.3s', borderRadius: 4 }} />
             </div>
             <span style={{ fontSize: 13, fontWeight: 800, color: pct === 100 ? 'var(--green)' : 'var(--amber)' }}>{pct}%</span>
-            {timetable.generatedByAI && <span style={{ fontSize: 12, background: 'var(--purple-light)', color: 'var(--purple)', fontWeight: 700, borderRadius: 10, padding: '3px 10px', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Bot size={12} strokeWidth={2} /> IA</span>}
-            {timetable.status === 'PUBLISHED' && <span style={{ fontSize: 12, background: 'var(--green-light)', color: 'var(--green)', fontWeight: 700, borderRadius: 10, padding: '3px 10px' }}>{t('timetable.statusPublished')}</span>}
-            {timetable.status !== 'PUBLISHED' && <span style={{ fontSize: 12, background: 'var(--amber-light)', color: 'var(--amber)', fontWeight: 700, borderRadius: 10, padding: '3px 10px' }}>{t('timetable.statusDraft')}</span>}
+            {timetable.generatedByAI && <span style={{ fontSize: 12, background: 'var(--purple-light)', color: 'var(--purple)', fontWeight: 700, borderRadius: 8, padding: '3px 10px', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Bot size={12} strokeWidth={2} /> IA</span>}
+            {timetable.status === 'PUBLISHED' && <span style={{ fontSize: 12, background: 'var(--green-light)', color: 'var(--green)', fontWeight: 700, borderRadius: 8, padding: '3px 10px' }}>{t('timetable.statusPublished')}</span>}
+            {timetable.status !== 'PUBLISHED' && <span style={{ fontSize: 12, background: 'var(--amber-light)', color: 'var(--amber)', fontWeight: 700, borderRadius: 8, padding: '3px 10px' }}>{t('timetable.statusDraft')}</span>}
           </div>
 
           {slots.length === 0 ? (
@@ -264,7 +264,7 @@ export default function SectionTimetable({ onToast }: Props) {
             <>
             <div className="md:hidden">
               <div className="relative -mr-4" style={{ borderBottom: '1px solid var(--border)' }}>
-                <div className="flex gap-[6px] overflow-x-auto" style={{ padding: '2px 20px 4px', scrollbarWidth: 'none' }}>
+                <div className="flex gap-[6px] overflow-x-auto" style={{ padding: '2px 14px 4px', scrollbarWidth: 'none' }}>
                   {displayDays.map(j => {
                     const active = effectiveMobileDay === j
                     return (
@@ -428,7 +428,7 @@ export default function SectionTimetable({ onToast }: Props) {
       )}
 
       {timetable && timetable.status !== 'PUBLISHED' && (
-        <div className="rounded-[10px] md:rounded-[10px] p-[14px] md:px-3.5 md:py-[14px]" style={{ marginTop: 16, background: 'var(--surface)', border: '1.5px solid var(--border2)' }}>
+        <div className="rounded-[10px] md:rounded-[10px] p-[14px] md:px-3.5 md:py-2.5" style={{ marginTop: 16, background: 'var(--surface)', border: '1.5px solid var(--border2)' }}>
           <div className="text-[12px] md:text-[13px]" style={{ fontWeight: 800, color: 'var(--text)', marginBottom: 4 }}>{t('timetable.adjustTitle')}</div>
           <div className="text-[12px] md:text-[13px]" style={{ color: 'var(--text3)', marginBottom: 12 }}>
             {t('timetable.adjustHint')}
@@ -479,8 +479,8 @@ export default function SectionTimetable({ onToast }: Props) {
 
 const sTitle:    React.CSSProperties = { fontFamily: 'var(--font-spectral,Spectral,serif)', fontWeight: 700, color: 'var(--text)' }
 const sSub:      React.CSSProperties = { color: 'var(--text3)', marginTop: 3 }
-const btnPrim:   React.CSSProperties = { padding: '10px 14px', borderRadius: 11, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }
-const btnAI:     React.CSSProperties = { padding: '10px 14px', borderRadius: 11, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--purple),var(--purple))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }
+const btnPrim:   React.CSSProperties = { padding: '10px 11px', borderRadius: 11, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }
+const btnAI:     React.CSSProperties = { padding: '10px 11px', borderRadius: 11, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--purple),var(--purple))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }
 const btnSec:    React.CSSProperties = { padding: '9px 12px', borderRadius: 8, fontSize: 13, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
 const selectSt:  React.CSSProperties = { background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 8, padding: '8px 12px', fontSize: 13, fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }
 const thSt:      React.CSSProperties = { padding: '10px 8px', textAlign: 'center', fontSize: 13, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', border: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px' }

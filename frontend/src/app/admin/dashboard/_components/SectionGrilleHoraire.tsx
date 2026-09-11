@@ -66,7 +66,7 @@ function calculerSquelette(f: GridForm): PeriodeGrille[] {
   return result
 }
 
-const sScroll: React.CSSProperties = { height: '100%', overflowY: 'auto', padding: '16px 20px' }
+const sScroll: React.CSSProperties = { height: '100%', overflowY: 'auto', padding: '12px 14px' }
 const sCardCls = 'rounded-[10px] p-3 md:px-5 md:py-4 shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]'
 const sCard: React.CSSProperties = { background: 'var(--surface)' }
 const sLabel: React.CSSProperties = { fontSize: 12, fontWeight: 700, color: 'var(--text2)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }
@@ -152,7 +152,7 @@ export default function SectionGrilleHoraire({ onToast }: { onToast: (msg: strin
 
   return (
     <div className="px-4 py-5 md:px-6 md:py-5" style={{ ...sScroll, padding: undefined }}>
-      <div style={{ marginBottom: 14 }}>
+      <div style={{ marginBottom: 10 }}>
         <div className="text-[18px] md:text-[18px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
           {t('grille_horaire.title')}
         </div>
@@ -169,7 +169,7 @@ export default function SectionGrilleHoraire({ onToast }: { onToast: (msg: strin
       )}
 
       {isConfigured && existingTimetables > 0 && (
-        <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber-light)', borderRadius: 8, padding: '10px 12px', marginBottom: 15, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+        <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber-light)', borderRadius: 8, padding: '10px 12px', marginBottom: 11, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
           <AlertTriangle size={15} strokeWidth={2} />
           <div style={{ fontSize: 12, color: 'var(--amber)' }}>
             <strong>{t('grille_horaire.warnStrong')}</strong> {t('grille_horaire.warnBody', { n: existingTimetables })}
@@ -177,8 +177,8 @@ export default function SectionGrilleHoraire({ onToast }: { onToast: (msg: strin
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:[grid-template-columns:1fr_1fr]" style={{ gap: 14, alignItems: 'start' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div className="grid grid-cols-1 md:[grid-template-columns:1fr_1fr]" style={{ gap: 10, alignItems: 'start' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div className={sCardCls} style={sCard}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 13 }}>{t('grille_horaire.settings')}</div>
 
@@ -267,7 +267,7 @@ export default function SectionGrilleHoraire({ onToast }: { onToast: (msg: strin
         <div className={sCardCls} style={sCard}>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 13 }}>{t('grille_horaire.previewTitle')}</div>
           {squelette.length === 0 ? (
-            <div style={{ color: 'var(--text3)', textAlign: 'center', padding: '26px' }}>
+            <div style={{ color: 'var(--text3)', textAlign: 'center', padding: '18px' }}>
               {t('grille_horaire.configureToPreview')}
             </div>
           ) : (
@@ -275,10 +275,10 @@ export default function SectionGrilleHoraire({ onToast }: { onToast: (msg: strin
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 550 }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid var(--border)' }}>
-                    <th style={{ textAlign: 'center', padding: '8px 12px', fontSize: 12, fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase', width: 32 }}>N°</th>
+                    <th style={{ textAlign: 'center', padding: '8px 12px', fontSize: 12, fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase', width: 28 }}>N°</th>
                     <th style={{ textAlign: 'left', padding: '8px 12px', fontSize: 12, fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase' }}>{t('grille_horaire.colStart')}</th>
                     <th style={{ textAlign: 'left', padding: '8px 12px', fontSize: 12, fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase' }}>{t('grille_horaire.colEnd')}</th>
-                    <th style={{ textAlign: 'center', padding: '8px 12px', fontSize: 12, fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase', width: 32 }}>{t('grille_horaire.colDuration')}</th>
+                    <th style={{ textAlign: 'center', padding: '8px 12px', fontSize: 12, fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase', width: 28 }}>{t('grille_horaire.colDuration')}</th>
                     <th style={{ textAlign: 'left', padding: '8px 12px', fontSize: 12, fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase' }}>{t('grille_horaire.colType')}</th>
                   </tr>
                 </thead>

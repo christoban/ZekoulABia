@@ -14,8 +14,8 @@ interface PaymentOverview {
   etablissement: { status: string; _count: { _all: number }; _sum: { montantAttendu: number | null; montantPaye: number | null } }[];
 }
 
-const btnPri = { padding: '8px 14px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
-const btnSec = { padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 12, cursor: 'pointer' as const }
+const btnPri = { padding: '8px 11px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
+const btnSec = { padding: '8px 11px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 12, cursor: 'pointer' as const }
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   IMPAYE: { bg: 'rgba(239,68,68,0.12)', color: 'var(--red)' },
@@ -137,7 +137,7 @@ export default function SectionSchoolPayments({ onToast }: Props) {
                 return (
                   <div key={i} className="rounded-[10px] px-[14px] py-[13px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <span style={{ padding: '3px 10px', borderRadius: 10, fontSize: 10.5, fontWeight: 800, background: sc.bg, color: sc.color }}>{s.status}</span>
+                      <span style={{ padding: '3px 10px', borderRadius: 8, fontSize: 10.5, fontWeight: 800, background: sc.bg, color: sc.color }}>{s.status}</span>
                       <span style={{ fontSize: 11.5, color: 'var(--text3)', fontWeight: 700 }}>{s._count._all} paiement(s)</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>

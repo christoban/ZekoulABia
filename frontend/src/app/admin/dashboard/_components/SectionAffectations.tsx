@@ -16,7 +16,7 @@ interface AssignmentRow {
   eligibleTeachers: { id: string; name: string }[]
 }
 
-const sScroll: React.CSSProperties = { height: '100%', overflowY: 'auto', padding: '16px 20px' }
+const sScroll: React.CSSProperties = { height: '100%', overflowY: 'auto', padding: '12px 14px' }
 const sCardCls = 'rounded-[10px] md:rounded-[10px] p-3 md:px-5 md:py-4 shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]'
 const sCard: React.CSSProperties = { background: 'var(--surface)' }
 const sLabel: React.CSSProperties = { fontSize: 12, fontWeight: 700, color: 'var(--text2)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }
@@ -114,7 +114,7 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
 
   return (
     <div className="px-4 py-5 md:px-6 md:py-5" style={{ ...sScroll, padding: undefined }}>
-      <div style={{ marginBottom: 14 }}>
+      <div style={{ marginBottom: 10 }}>
         <div className="text-[18px] md:text-[18px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
           {t('affectations.title')}
         </div>
@@ -130,7 +130,7 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
         </div>
       )}
 
-      <div className={sCardCls} style={{ ...sCard, marginBottom: 15, maxWidth: 480 }}>
+      <div className={sCardCls} style={{ ...sCard, marginBottom: 11, maxWidth: 480 }}>
         <div style={sLabel}>Choisir une classe</div>
         {loadingClasses ? (
           <div style={{ color: 'var(--text3)', fontSize: 12 }}>Chargement…</div>
@@ -145,7 +145,7 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
       </div>
 
       {meta && classId && (
-        <div style={{ display: 'flex', gap: 11, flexWrap: 'wrap', marginBottom: 15 }}>
+        <div style={{ display: 'flex', gap: 11, flexWrap: 'wrap', marginBottom: 11 }}>
           <div className="rounded-[8px] px-3.5 py-2.5 md:px-4 md:py-2.5" style={{ background: meta.assigned === meta.total ? 'var(--green-light)' : 'var(--amber-light)', border: `1.5px solid ${meta.assigned === meta.total ? 'var(--green-light)' : 'var(--amber-light)'}`, display: 'flex', alignItems: 'center', gap: 8 }}>
             {meta.assigned === meta.total ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
             <div>
@@ -167,9 +167,9 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
       {classId && (
         <div className={sCardCls} style={sCard}>
           {loadingRows ? (
-            <div style={{ textAlign: 'center', padding: '26px', color: 'var(--text3)' }}>Chargement des matières…</div>
+            <div style={{ textAlign: 'center', padding: '18px', color: 'var(--text3)' }}>Chargement des matières…</div>
           ) : rows.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '26px' }}>
+            <div style={{ textAlign: 'center', padding: '18px' }}>
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><BookOpen size={16} /></div>
               <div style={{ fontSize: 13, color: 'var(--text3)' }}>
                 Aucune matière dans le programme de {selectedClass?.name}.<br />
@@ -230,7 +230,7 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
                 <thead>
                   <tr style={{ borderBottom: '2px solid var(--border)' }}>
                     <th style={{ textAlign: 'left', padding: '10px 11px', fontSize: 12, fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Matière</th>
-                    <th style={{ textAlign: 'center', padding: '10px 11px', fontSize: 12, fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '0.04em', width: 32 }}>Coeff.</th>
+                    <th style={{ textAlign: 'center', padding: '10px 11px', fontSize: 12, fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '0.04em', width: 28 }}>Coeff.</th>
                     <th style={{ textAlign: 'left', padding: '10px 11px', fontSize: 12, fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Enseignant affecté</th>
                     <th style={{ width: 28 }}></th>
                   </tr>
@@ -291,7 +291,7 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
       )}
 
       {!classId && !loadingClasses && (
-        <div style={{ textAlign: 'center', padding: '39px', color: 'var(--text3)' }}>
+        <div style={{ textAlign: 'center', padding: '25px', color: 'var(--text3)' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><GraduationCap size={16} /></div>
           <div style={{ fontSize: 13 }}>Sélectionnez une classe pour gérer ses affectations.</div>
         </div>

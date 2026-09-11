@@ -72,7 +72,7 @@ export default function SectionGrades({ onToast }: Props) {
     <div className="px-4 py-5 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
         <div>
           <div className="text-[18px] md:text-[18px]" style={sTitle}>{t('title')}</div>
           <div className="text-[12px] md:text-[13px]" style={sSub}>Consultation des notes</div>
@@ -108,7 +108,7 @@ export default function SectionGrades({ onToast }: Props) {
         </div>
 
         {loading && (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}>
             <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
           </div>
         )}
@@ -151,14 +151,14 @@ export default function SectionGrades({ onToast }: Props) {
                         <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{grade.subject.name}</div>
                       </div>
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <span style={{ fontSize: 16, fontWeight: 900, color: (grade.sequenceAverage ?? 0) < 10 ? 'var(--red)' : 'var(--green)' }}>
+                        <span style={{ fontSize: 13, fontWeight: 900, color: (grade.sequenceAverage ?? 0) < 10 ? 'var(--red)' : 'var(--green)' }}>
                           {grade.sequenceAverage != null ? grade.sequenceAverage.toFixed(1) : '—'}
                         </span>
                         <span style={{ fontSize: 12, color: 'var(--text3)', marginLeft: 3 }}>/20</span>
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 9, gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{ padding: '4px 10px', borderRadius: 10, fontSize: 11.5, fontWeight: 800, background: st.bg, color: st.color }}>
+                      <span style={{ padding: '4px 10px', borderRadius: 8, fontSize: 11.5, fontWeight: 800, background: st.bg, color: st.color }}>
                         {st.label}
                       </span>
                     </div>
@@ -187,7 +187,7 @@ export default function SectionGrades({ onToast }: Props) {
                         <td style={tdStyle}>{grade.subject.name}</td>
                         <td style={tdStyle}>
                           <span style={{
-                            fontSize: 16, fontWeight: 900,
+                            fontSize: 13, fontWeight: 900,
                             color: (grade.sequenceAverage ?? 0) < 10 ? 'var(--red)' : 'var(--green)',
                           }}>
                             {grade.sequenceAverage != null ? grade.sequenceAverage.toFixed(1) : '—'}
@@ -195,7 +195,7 @@ export default function SectionGrades({ onToast }: Props) {
                           <span style={{ fontSize: 12, color: 'var(--text3)', marginLeft: 4 }}>/20</span>
                         </td>
                         <td style={tdStyle}>
-                          <span style={{ padding: '4px 12px', borderRadius: 10, fontSize: 12, fontWeight: 800, background: st.bg, color: st.color }}>
+                          <span style={{ padding: '4px 12px', borderRadius: 8, fontSize: 12, fontWeight: 800, background: st.bg, color: st.color }}>
                             {st.label}
                           </span>
                         </td>
@@ -219,7 +219,7 @@ export default function SectionGrades({ onToast }: Props) {
 
 const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }
 const sSub: React.CSSProperties = { color: 'var(--text3)', marginTop: 3 }
-const btnPrim: React.CSSProperties = { padding: '10px 14px', borderRadius: 11, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+const btnPrim: React.CSSProperties = { padding: '10px 11px', borderRadius: 11, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
 const filterSelectCls = 'rounded-[8px] md:rounded-[10px] px-[12px] py-[10px] md:px-[12px] md:py-[8px] text-[12.5px] md:text-[13px] font-semibold md:font-bold border-0 md:border md:border-[1.5px] md:border-[var(--border2)] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none'
 const filterSelect: React.CSSProperties = { background: 'var(--surface)', color: 'var(--text2)', cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }
 const thStyle: React.CSSProperties = { padding: '11px 12px', textAlign: 'left', fontSize: 12, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.7px' }

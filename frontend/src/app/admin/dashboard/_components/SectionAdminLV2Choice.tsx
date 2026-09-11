@@ -28,8 +28,8 @@ interface Subject { id: string; name: string }
 interface AcademicYear { id: string; label: string; isCurrent: boolean }
 interface ClassItem { id: string; name: string; level: string | null }
 
-const btnPri = { padding: '8px 14px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
-const btnSec = { padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 12, cursor: 'pointer' as const }
+const btnPri = { padding: '8px 11px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
+const btnSec = { padding: '8px 11px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 12, cursor: 'pointer' as const }
 
 export default function SectionAdminLV2Choice({ onToast }: Props) {
   const t = useT('admin')
@@ -200,7 +200,7 @@ export default function SectionAdminLV2Choice({ onToast }: Props) {
       ) : windows.length === 0 ? (
         <p style={{ color: 'var(--text3)', fontStyle: 'italic' }}>{t('lv2_choice.no_windows')}</p>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 15 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 11 }}>
           {windows.map(w => (
             <div key={w.id} className="rounded-[10px] md:rounded-[10px] p-[12px] md:px-3.5 md:py-[12px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, background: 'var(--surface)' }}>
               <div>

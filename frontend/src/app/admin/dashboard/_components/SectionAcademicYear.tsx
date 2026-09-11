@@ -375,14 +375,14 @@ export default function SectionAcademicYear({ onToast }: Props) {
   const currentSeq    = currentPeriod?.sequences.find(s => s.isCurrent)
 
   return (
-    <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto' }}>
+    <div className="px-4 py-5 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 26 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
         <div>
-          <div className="text-[22px] md:text-[28px]" style={sTitle}>{t('academic_year.title')}</div>
-          <div className="text-[13px] md:text-[17px]" style={sSub}>{t('academic_year.subtitle')}</div>
+          <div className="text-[18px] md:text-[18px]" style={sTitle}>{t('academic_year.title')}</div>
+          <div className="text-[13px] md:text-[14px]" style={sSub}>{t('academic_year.subtitle')}</div>
         </div>
         <button className="hidden md:inline-block" style={btnPrim} onClick={() => setCreateOpen(true)}>{t('academic_year.newYear')}</button>
         <button
@@ -392,27 +392,27 @@ export default function SectionAcademicYear({ onToast }: Props) {
       </div>
 
       {loading && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}>
-          <div style={{ width: 36, height: 36, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 52 }}>
+          <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
         </div>
       )}
 
       {!loading && error && (
-        <div style={{ background: 'var(--red-light)', borderRadius: 14, padding: '18px 22px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
-          <AlertTriangle size={18} strokeWidth={2} />
+        <div style={{ background: 'var(--red-light)', borderRadius: 8, padding: '14px 15px', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 13 }}>
+          <AlertTriangle size={15} strokeWidth={2} />
           <span style={{ fontWeight: 700, color: 'var(--red)', flex: 1 }}>{error}</span>
           <button onClick={fetchYears}
-            style={{ padding: '7px 16px', borderRadius: 9, background: 'var(--surface)', color: 'var(--red)', border: '1.5px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }}>
+            style={{ padding: '7px 12px', borderRadius: 9, background: 'var(--surface)', color: 'var(--red)', border: '1.5px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }}>
             {t('academic_year.retry')}
           </button>
         </div>
       )}
 
       {!loading && !error && years.length === 0 && (
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: '60px 32px', textAlign: 'center' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}><Calendar size={52} /></div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{t('academic_year.noYear')}</div>
-          <div style={{ fontSize: 16, color: 'var(--text3)', marginBottom: 22 }}>{t('academic_year.noYearHint')}</div>
+        <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1.5px solid var(--border)', padding: '39px 20px', textAlign: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><Calendar size={16} /></div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{t('academic_year.noYear')}</div>
+          <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 14 }}>{t('academic_year.noYearHint')}</div>
           <button style={btnPrim} onClick={() => setCreateOpen(true)}>{t('academic_year.createYear')}</button>
         </div>
       )}
@@ -424,29 +424,29 @@ export default function SectionAcademicYear({ onToast }: Props) {
             background: 'linear-gradient(135deg,var(--sidebar) 0%,var(--sidebar2) 60%,var(--sidebar) 100%)',
             border: '1.5px solid rgba(255,255,255,0.08)', position: 'relative', overflow: 'hidden',
           }}>
-            <div className="hidden md:block" style={{ position: 'absolute', right: 36, top: '50%', transform: 'translateY(-50%)', opacity: 0.04, color: 'white', pointerEvents: 'none' }}><Star size={100} fill="white" /></div>
+            <div className="hidden md:block" style={{ position: 'absolute', right: 36, top: '50%', transform: 'translateY(-50%)', opacity: 0.04, color: 'white', pointerEvents: 'none' }}><Star size={16} fill="white" /></div>
 
             <div className="mb-[16px] md:mb-[20px]" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
               <div>
                 <div className="text-[11px] md:text-[13px] mb-[6px] md:mb-[8px]" style={{ fontWeight: 800, color: 'rgba(255,255,255,0.4)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
                   {t('academic_year.currentYearLabel')}
                 </div>
-                <div className="text-[26px] md:text-[44px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'white', lineHeight: 1 }}>
+                <div className="text-[20px] md:text-[30px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'white', lineHeight: 1 }}>
                   {currentYear.name}
                 </div>
-                <div className="text-[13px] md:text-[17px] mt-[6px] md:mt-[8px]" style={{ color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>
+                <div className="text-[13px] md:text-[14px] mt-[6px] md:mt-[8px]" style={{ color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>
                   {fmtDate(currentYear.startDate)} → {fmtDate(currentYear.endDate)}
                 </div>
               </div>
               {currentSeq && (
-                <span className="text-[13px] md:text-[14px] px-[14px] md:px-[16px] py-[5px] md:py-[6px]" style={{ background: 'var(--amber-light)', color: 'var(--amber)', borderRadius: 20, fontWeight: 800, alignSelf: 'flex-start', marginTop: 8 }}>
+                <span className="text-[13px] md:text-[12px] px-[14px] md:px-[16px] py-[5px] md:py-[6px]" style={{ background: 'var(--amber-light)', color: 'var(--amber)', borderRadius: 10, fontWeight: 800, alignSelf: 'flex-start', marginTop: 8 }}>
                   {t('academic_year.seqInProgress', { name: currentSeq.name })}
                 </span>
               )}
             </div>
 
             {currentPeriod && (
-              <div className="gap-[20px] md:gap-[28px]" style={{ display: 'flex', flexWrap: 'wrap' }}>
+              <div className="gap-3.5 md:gap-[28px]" style={{ display: 'flex', flexWrap: 'wrap' }}>
                 {[
                   { label: t('academic_year.currentPeriodLabel'), value: currentPeriod.name },
                   { label: t('academic_year.type'), value: currentPeriod.type === 'TRIMESTER' ? t('academic_year.trimesters') : t('academic_year.semesters') },
@@ -456,7 +456,7 @@ export default function SectionAcademicYear({ onToast }: Props) {
                     <div className="text-[11px] md:text-[13px]" style={{ fontWeight: 800, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '1px' }}>
                       {m.label}
                     </div>
-                    <div className="text-[14px] md:text-[17px]" style={{ fontWeight: 700, color: 'white' }}>{m.value}</div>
+                    <div className="text-[12px] md:text-[14px]" style={{ fontWeight: 700, color: 'white' }}>{m.value}</div>
                   </div>
                 ))}
               </div>
@@ -464,16 +464,16 @@ export default function SectionAcademicYear({ onToast }: Props) {
           </div>
 
           {/* Calendrier scolaire */}
-          <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', overflow: 'hidden', marginBottom: 22 }}>
-            <div className="px-[16px] py-[13px] md:px-[22px] md:py-[16px]" style={{ borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-              <span className="text-[14.5px] md:text-[17px]" style={{ fontWeight: 800, color: 'var(--text)' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1.5px solid var(--border)', overflow: 'hidden', marginBottom: 14 }}>
+            <div className="px-[16px] py-[13px] md:px-[22px] md:py-3" style={{ borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+              <span className="text-[14.5px] md:text-[14px]" style={{ fontWeight: 800, color: 'var(--text)' }}>
                 {t('academic_year.calendarTitle', { name: currentYear.name })}
               </span>
               <button style={btnSecSm} onClick={() => openCalendar(currentYear)}>{t('academic_year.editCalendar')}</button>
             </div>
 
             {currentYear.periods.length === 0 ? (
-              <div style={{ padding: '30px 22px', color: 'var(--text3)', textAlign: 'center' }}>
+              <div style={{ padding: '19px 15px', color: 'var(--text3)', textAlign: 'center' }}>
                 {t('academic_year.noPeriod')}
               </div>
             ) : (
@@ -485,16 +485,16 @@ export default function SectionAcademicYear({ onToast }: Props) {
                   <div key={period.id} style={{ borderBottom: '1px solid var(--border)' }}>
                     <div
                       onClick={() => togglePeriod(period.id)}
-                      className="gap-[10px] md:gap-[14px] px-[16px] py-[14px] md:px-[22px] md:py-[18px]"
+                      className="gap-[10px] md:gap-[14px] px-[16px] py-2.5 md:px-[22px] md:py-[18px]"
                       style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', cursor: 'pointer', userSelect: 'none', transition: 'background 0.1s' }}
                       onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
                       <span style={{ color: 'var(--text3)', transition: 'transform 0.2s', display: 'inline-flex', transform: open ? 'rotate(90deg)' : 'none', flexShrink: 0 }}><ChevronRight size={14} /></span>
-                      <span className="text-[14px] md:text-[20px] md:[font-family:var(--font-spectral),Spectral,serif]" style={{ fontWeight: 700, color: 'var(--text)', flex: 1 }}>{period.name}</span>
-                      <span className="text-[12px] md:text-[15px]" style={{ color: 'var(--text3)', fontWeight: 600 }}>
+                      <span className="text-[12px] md:text-[16px] md:[font-family:var(--font-spectral),Spectral,serif]" style={{ fontWeight: 700, color: 'var(--text)', flex: 1 }}>{period.name}</span>
+                      <span className="text-[12px] md:text-[13px]" style={{ color: 'var(--text3)', fontWeight: 600 }}>
                         {fmtDate(period.startDate)} → {fmtDate(period.endDate)}
                       </span>
-                      <span className="text-[11.5px] md:text-[14px] px-[10px] md:px-[12px] py-[3px] md:py-[4px]" style={{ background: badge.bg, color: badge.color, borderRadius: 22, fontWeight: 800 }}>
+                      <span className="text-[11.5px] md:text-[12px] px-[10px] md:px-[12px] py-[3px] md:py-[4px]" style={{ background: badge.bg, color: badge.color, borderRadius: 10, fontWeight: 800 }}>
                         {t(`academic_year.status.${ps}`)}
                       </span>
                       {!period.isCurrent && (
@@ -516,16 +516,16 @@ export default function SectionAcademicYear({ onToast }: Props) {
                             return (
                               <div key={seq.id} className="gap-[8px] md:gap-[14px] py-[9px] md:py-[12px]" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', position: 'relative', borderBottom: si < period.sequences.length - 1 ? '1px solid var(--border)' : 'none' }}>
                                 <div className="w-[10px] h-[10px] md:w-[13px] md:h-[13px] left-[-22px] md:left-[-30px]" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', borderRadius: '50%', background: ss === 'done' ? 'var(--green)' : ss === 'active' ? 'var(--amber)' : 'var(--border2)', border: '2px solid white', boxShadow: ss === 'active' ? '0 0 0 4px rgba(217,119,6,0.18)' : 'none' }} />
-                                <span className="text-[13.5px] md:text-[17px] min-w-[90px] md:min-w-[120px]" style={{ fontWeight: 700, color: 'var(--text)' }}>{seq.name}</span>
-                                <span className="text-[12px] md:text-[15px]" style={{ color: 'var(--text3)', fontWeight: 600, flex: 1 }}>
+                                <span className="text-[13.5px] md:text-[14px] min-w-[90px] md:min-w-[120px]" style={{ fontWeight: 700, color: 'var(--text)' }}>{seq.name}</span>
+                                <span className="text-[12px] md:text-[13px]" style={{ color: 'var(--text3)', fontWeight: 600, flex: 1 }}>
                                   {seq.startDate ? `${fmtDate(seq.startDate)} → ${fmtDate(seq.endDate)}` : t('academic_year.noDates')}
                                 </span>
-                                <span className="text-[11px] md:text-[13px] px-[8px] md:px-[10px] py-[2px] md:py-[3px]" style={{ background: sb.bg, color: sb.color, borderRadius: 20, fontWeight: 800 }}>
+                                <span className="text-[11px] md:text-[13px] px-[8px] md:px-[10px] py-[2px] md:py-[3px]" style={{ background: sb.bg, color: sb.color, borderRadius: 10, fontWeight: 800 }}>
                                   {t(`academic_year.status.${ss}`)}
                                 </span>
                                 {!seq.isCurrent && (
                                   <button
-                                    className="text-[12px] md:text-[15px] px-[10px] md:px-[14px] py-[5px] md:py-[7px]"
+                                    className="text-[12px] md:text-[13px] px-[10px] md:px-[14px] py-[5px] md:py-[7px]"
                                     style={{ ...btnSecSm, fontSize: undefined, padding: undefined }}
                                     onClick={e => { e.stopPropagation(); handleSetSequenceCurrent(seq.id) }}
                                     disabled={settingSequenceId === seq.id}>
@@ -548,17 +548,17 @@ export default function SectionAcademicYear({ onToast }: Props) {
 
       {/* Historique */}
       {!loading && !error && historyYears.length > 0 && (
-        <div className="rounded-none md:rounded-[16px] border-0 md:border md:border-[1.5px] md:border-[var(--border)] bg-transparent md:bg-[var(--surface)]" style={{ overflow: 'hidden', marginBottom: 22 }}>
-          <div className="px-0 pb-[10px] md:px-[22px] md:py-[16px] md:border-b md:border-[var(--border)]">
-            <span className="text-[12.5px] md:text-[17px] uppercase md:normal-case" style={{ fontWeight: 800, color: 'var(--text)' }}>{t('academic_year.historyTitle')}</span>
+        <div className="rounded-none md:rounded-[10px] border-0 md:border md:border-[1.5px] md:border-[var(--border)] bg-transparent md:bg-[var(--surface)]" style={{ overflow: 'hidden', marginBottom: 14 }}>
+          <div className="px-0 pb-[10px] md:px-[22px] md:py-3 md:border-b md:border-[var(--border)]">
+            <span className="text-[12.5px] md:text-[14px] uppercase md:normal-case" style={{ fontWeight: 800, color: 'var(--text)' }}>{t('academic_year.historyTitle')}</span>
           </div>
           {/* ── Cartes empilées — mobile ── */}
           <div className="md:hidden flex flex-col" style={{ gap: 10 }}>
             {historyYears.map((y) => (
-              <div key={y.id} className="rounded-[14px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: 13 }}>
+              <div key={y.id} className="rounded-[10px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: 13 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                   <div className="text-[13.5px]" style={{ fontWeight: 700, color: 'var(--text)' }}>{y.name}</div>
-                  <span className="text-[10.5px]" style={{ background: y.status === 'CLOSED' ? 'var(--bg2)' : 'var(--green-light)', color: y.status === 'CLOSED' ? 'var(--text2)' : 'var(--green)', padding: '3px 9px', borderRadius: 20, fontWeight: 800, flexShrink: 0 }}>
+                  <span className="text-[10.5px]" style={{ background: y.status === 'CLOSED' ? 'var(--bg2)' : 'var(--green-light)', color: y.status === 'CLOSED' ? 'var(--text2)' : 'var(--green)', padding: '3px 9px', borderRadius: 10, fontWeight: 800, flexShrink: 0 }}>
                     {y.status === 'CLOSED' ? t('academic_year.archived') : y.status}
                   </span>
                 </div>
@@ -585,12 +585,12 @@ export default function SectionAcademicYear({ onToast }: Props) {
                     onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
                     onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
                     <td style={tdStyle}>
-                      <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 19, fontWeight: 800, color: 'var(--text)' }}>{y.name}</div>
+                      <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>{y.name}</div>
                     </td>
                     <td style={tdStyle}>{fmtDate(y.startDate)}</td>
                     <td style={tdStyle}>{fmtDate(y.endDate)}</td>
                     <td style={tdStyle}>
-                      <span style={{ background: y.status === 'CLOSED' ? 'var(--bg2)' : 'var(--green-light)', color: y.status === 'CLOSED' ? 'var(--text2)' : 'var(--green)', padding: '4px 12px', borderRadius: 22, fontSize: 14, fontWeight: 800 }}>
+                      <span style={{ background: y.status === 'CLOSED' ? 'var(--bg2)' : 'var(--green-light)', color: y.status === 'CLOSED' ? 'var(--text2)' : 'var(--green)', padding: '4px 12px', borderRadius: 10, fontSize: 12, fontWeight: 800 }}>
                         {y.status === 'CLOSED' ? t('academic_year.archived') : y.status}
                       </span>
                     </td>
@@ -610,18 +610,18 @@ export default function SectionAcademicYear({ onToast }: Props) {
 
       {/* Danger zone — clôture de l'année courante */}
       {!loading && !error && currentYear && (
-        <div className="rounded-[16px] md:rounded-[18px] border-[1.5px] md:border-2" style={{ background: 'var(--surface)', borderColor: 'rgba(220,38,38,0.2)', borderStyle: 'solid', overflow: 'hidden' }}>
+        <div className="rounded-[10px] md:rounded-[18px] border-[1.5px] md:border-2" style={{ background: 'var(--surface)', borderColor: 'rgba(220,38,38,0.2)', borderStyle: 'solid', overflow: 'hidden' }}>
           <div className="px-[14px] py-[13px] md:px-[26px] md:py-[20px] gap-[8px] md:gap-[12px]" style={{ background: 'var(--red-light)', borderBottom: '1px solid rgba(220,38,38,0.15)', display: 'flex', alignItems: 'center' }}>
             <AlertTriangle size={16} className="md:hidden" color="var(--red)" />
-            <AlertTriangle size={22} className="hidden md:block" color="var(--red)" />
+            <AlertTriangle size={15} className="hidden md:block" color="var(--red)" />
             <div className="text-[13.5px] md:text-[18px]" style={{ fontWeight: 800, color: 'var(--red)' }}>{t('academic_year.dangerZone')}</div>
           </div>
           <div className="p-[14px] md:px-[26px] md:py-[22px]">
-            <p className="text-[12.5px] md:text-[17px] mb-[14px] md:mb-[20px]" style={{ color: 'var(--text2)', lineHeight: 1.55 }}>
+            <p className="text-[12.5px] md:text-[14px] mb-[14px] md:mb-[20px]" style={{ color: 'var(--text2)', lineHeight: 1.55 }}>
               {t('academic_year.dangerText')}
             </p>
             <button
-              className="w-full md:w-auto text-[12.5px] md:text-[16px] py-[11px] md:py-[10px] px-[16px] md:px-[20px] rounded-[10px] md:rounded-[11px]"
+              className="w-full md:w-auto text-[12.5px] md:text-[13px] py-[11px] md:py-[10px] px-[16px] md:px-3.5 rounded-[10px] md:rounded-[11px]"
               style={{ background: 'var(--red-light)', color: 'var(--red)', border: '1.5px solid rgba(220,38,38,0.3)', cursor: closingId ? 'wait' : 'pointer', fontFamily: 'inherit', fontWeight: 800, opacity: closingId ? 0.6 : 1 }}
               onClick={() => handleClose(currentYear.id)}
               disabled={!!closingId}>
@@ -633,15 +633,15 @@ export default function SectionAcademicYear({ onToast }: Props) {
 
       {/* ── Modal calendrier scolaire ── */}
       {calForm.open && (
-        <div onClick={() => setCalForm(EMPTY_CAL)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div onClick={e => e.stopPropagation()} className="px-5 py-6 md:px-9 md:py-8" style={{ background: 'var(--surface)', borderRadius: 18, width: 720, maxWidth: '96vw', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
-            <div className="text-[18px] md:text-[22px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{t('academic_year.calModalTitle')}</div>
-            <div className="text-[13.5px] md:text-[15px]" style={{ color: 'var(--text3)', marginBottom: 24 }}>{calForm.yearName}</div>
+        <div onClick={() => setCalForm(EMPTY_CAL)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
+          <div onClick={e => e.stopPropagation()} className="px-5 py-6 md:px-9 md:py-8" style={{ background: 'var(--surface)', borderRadius: 10, width: 720, maxWidth: '96vw', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
+            <div className="text-[18px] md:text-[18px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{t('academic_year.calModalTitle')}</div>
+            <div className="text-[13.5px] md:text-[13px]" style={{ color: 'var(--text3)', marginBottom: 15 }}>{calForm.yearName}</div>
 
             {calForm.periodes.map((p, pi) => (
-              <div key={pi} style={{ border: '1.5px solid var(--border)', borderRadius: 12, padding: 18, marginBottom: 18 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                  <span style={{ fontWeight: 800, color: 'var(--text)', fontSize: 16 }}>{t('academic_year.periodN', { n: pi + 1 })}</span>
+              <div key={pi} style={{ border: '1.5px solid var(--border)', borderRadius: 8, padding: 18, marginBottom: 13 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <span style={{ fontWeight: 800, color: 'var(--text)', fontSize: 13 }}>{t('academic_year.periodN', { n: pi + 1 })}</span>
                   <button onClick={() => remPeriode(pi)} style={{ padding: '4px 10px', borderRadius: 8, fontSize: 13, fontWeight: 700, background: 'var(--red-light)', color: 'var(--red)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>{t('academic_year.delete')}</button>
                 </div>
                 <div className="grid grid-cols-2 sm:[grid-template-columns:1fr_1fr_80px]" style={{ gap: 10 }}>
@@ -673,11 +673,11 @@ export default function SectionAcademicYear({ onToast }: Props) {
                 </div>
 
                 <div style={{ marginTop: 8, paddingTop: 14, borderTop: '1px dashed var(--border)' }}>
-                  <div style={{ fontWeight: 800, color: 'var(--text2)', fontSize: 14, marginBottom: 10 }}>{t('academic_year.sequences')}</div>
+                  <div style={{ fontWeight: 800, color: 'var(--text2)', fontSize: 12, marginBottom: 10 }}>{t('academic_year.sequences')}</div>
                   {p.sequences.map((seq, si) => (
-                    <div key={si} style={{ background: 'var(--bg2)', borderRadius: 10, padding: '12px 14px', marginBottom: 10, border: '1px solid var(--bg2)' }}>
+                    <div key={si} style={{ background: 'var(--bg2)', borderRadius: 8, padding: '12px 11px', marginBottom: 10, border: '1px solid var(--bg2)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                        <span style={{ fontWeight: 700, color: 'var(--text2)', fontSize: 14 }}>{t('academic_year.sequenceN', { n: si + 1 })}</span>
+                        <span style={{ fontWeight: 700, color: 'var(--text2)', fontSize: 12 }}>{t('academic_year.sequenceN', { n: si + 1 })}</span>
                         <button onClick={() => remSeq(pi, si)} style={{ padding: '2px 8px', borderRadius: 6, fontSize: 12, fontWeight: 700, background: 'var(--red-light)', color: 'var(--red)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center' }}><X size={12} /></button>
                       </div>
                       <div className="grid grid-cols-2 sm:[grid-template-columns:1fr_1fr_70px]" style={{ gap: 8 }}>
@@ -711,13 +711,13 @@ export default function SectionAcademicYear({ onToast }: Props) {
               </div>
             ))}
 
-            <button style={{ ...btnSecSm, width: '100%', marginBottom: 22 }} onClick={addPeriode}>{t('academic_year.addPeriod')}</button>
+            <button style={{ ...btnSecSm, width: '100%', marginBottom: 14 }} onClick={addPeriode}>{t('academic_year.addPeriod')}</button>
 
-            {calForm.error && <div style={{ background: 'var(--red-light)', color: 'var(--red)', borderRadius: 9, padding: '10px 14px', fontSize: 13, fontWeight: 600, marginBottom: 14, lineHeight: 1.5 }}>{calForm.error}</div>}
+            {calForm.error && <div style={{ background: 'var(--red-light)', color: 'var(--red)', borderRadius: 9, padding: '10px 11px', fontSize: 13, fontWeight: 600, marginBottom: 10, lineHeight: 1.5 }}>{calForm.error}</div>}
 
             <div style={{ display: 'flex', gap: 10 }}>
-              <button style={{ flex: 1, padding: '11px', borderRadius: 11, fontSize: 15, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => setCalForm(EMPTY_CAL)}>{t('academic_year.cancel')}</button>
-              <button style={{ flex: 1, padding: '11px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: calForm.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: calForm.loading ? 0.7 : 1 }} onClick={submitCalendar} disabled={calForm.loading}>
+              <button style={{ flex: 1, padding: '11px', borderRadius: 11, fontSize: 13, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => setCalForm(EMPTY_CAL)}>{t('academic_year.cancel')}</button>
+              <button style={{ flex: 1, padding: '11px', borderRadius: 11, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: calForm.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: calForm.loading ? 0.7 : 1 }} onClick={submitCalendar} disabled={calForm.loading}>
                 {calForm.loading ? t('academic_year.saving') : t('academic_year.save')}
               </button>
             </div>
@@ -728,14 +728,14 @@ export default function SectionAcademicYear({ onToast }: Props) {
       {/* ── Modal créer une année ── */}
       {createOpen && (
         <ModalOverlay onClose={() => { setCreateOpen(false); setForm(EMPTY_YEAR) }}>
-          <div className="text-[18px] md:text-[22px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 22 }}>
+          <div className="text-[18px] md:text-[18px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 14 }}>
             {t('academic_year.createYearTitle')}
           </div>
           <div className={sLbCls} style={sLb}>{t('academic_year.nameReq')}</div>
           <input
             className={sInCls} style={sIn}
             placeholder={t('academic_year.yearPlaceholder')} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <div>
               <div className={sLbCls} style={sLb}>{t('academic_year.startDateFull')}</div>
               <input type="date"
@@ -749,11 +749,11 @@ export default function SectionAcademicYear({ onToast }: Props) {
                 value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} />
             </div>
           </div>
-          {form.error && <div style={{ background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{form.error}</div>}
+          {form.error && <div style={{ background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8, padding: '8px 11px', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{form.error}</div>}
           <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-            <button style={{ flex: 1, padding: '10px', borderRadius: 11, fontSize: 15, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }}
+            <button style={{ flex: 1, padding: '10px', borderRadius: 11, fontSize: 13, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }}
               onClick={() => { setCreateOpen(false); setForm(EMPTY_YEAR) }}>{t('academic_year.cancel')}</button>
-            <button style={{ flex: 1, padding: '10px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: form.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: form.loading ? 0.7 : 1 }}
+            <button style={{ flex: 1, padding: '10px', borderRadius: 11, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: form.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: form.loading ? 0.7 : 1 }}
               onClick={submitCreate} disabled={form.loading}>
               {form.loading ? t('academic_year.creating') : t('academic_year.create')}
             </button>
@@ -764,47 +764,47 @@ export default function SectionAcademicYear({ onToast }: Props) {
       {/* ── Modal revue de reconduction des plans de frais ── */}
       {reconduction.open && (
         <div onClick={closeReconduction} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} className="px-5 py-6 md:px-9 md:py-8" style={{ background: 'var(--surface)', borderRadius: 18, width: 640, maxWidth: '94vw', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
-            <div className="text-[18px] md:text-[22px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
+          <div onClick={e => e.stopPropagation()} className="px-5 py-6 md:px-9 md:py-8" style={{ background: 'var(--surface)', borderRadius: 10, width: 640, maxWidth: '94vw', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
+            <div className="text-[18px] md:text-[18px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
               Reconduire les plans de frais ?
             </div>
-            <div className="text-[13px] md:text-[14px]" style={{ color: 'var(--text3)', marginBottom: 18 }}>
+            <div className="text-[13px] md:text-[12px]" style={{ color: 'var(--text3)', marginBottom: 13 }}>
               Vers <strong>{reconduction.targetYearName}</strong> — décochez les plans à ne pas reconduire, ajustez les montants si besoin. Rien n&apos;est créé tant que vous n&apos;avez pas confirmé.
             </div>
 
             {reconduction.loading && (
-              <div style={{ display: 'flex', justifyContent: 'center', padding: 30 }}><Loader2 size={22} className="animate-spin" /></div>
+              <div style={{ display: 'flex', justifyContent: 'center', padding: 19 }}><Loader2 size={15} className="animate-spin" /></div>
             )}
 
             {!reconduction.loading && reconduction.rows.length === 0 && (
-              <div style={{ padding: '20px 0', color: 'var(--text3)', fontSize: 14 }}>Aucun plan de frais existant à reconduire.</div>
+              <div style={{ padding: '14px', color: 'var(--text3)', fontSize: 12 }}>Aucun plan de frais existant à reconduire.</div>
             )}
 
             {!reconduction.loading && reconduction.rows.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 18 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 13 }}>
                 {reconduction.rows.map(row => (
-                  <div key={row.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: row.include ? 'var(--bg2)' : 'transparent', opacity: row.include ? 1 : 0.5 }}>
+                  <div key={row.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, background: row.include ? 'var(--bg2)' : 'transparent', opacity: row.include ? 1 : 0.5 }}>
                     <input type="checkbox" checked={row.include} onChange={() => toggleReconductionRow(row.id)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.name}</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.name}</div>
                       <div style={{ fontSize: 12, color: 'var(--text3)' }}>{row.feeType}{row.level ? ` — ${row.level}` : ''}</div>
                     </div>
                     <input
                       type="number" value={row.editedAmount} disabled={!row.include}
                       onChange={e => setReconductionAmount(row.id, e.target.value)}
-                      style={{ width: 110, padding: '7px 10px', borderRadius: 8, fontSize: 14, border: '1.5px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', textAlign: 'right' }} />
+                      style={{ width: 110, padding: '7px 10px', borderRadius: 8, fontSize: 12, border: '1.5px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', textAlign: 'right' }} />
                     <span style={{ fontSize: 12, color: 'var(--text3)' }}>FCFA</span>
                   </div>
                 ))}
               </div>
             )}
 
-            {reconduction.error && <div style={{ background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{reconduction.error}</div>}
+            {reconduction.error && <div style={{ background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8, padding: '8px 11px', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{reconduction.error}</div>}
 
             <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-              <button style={{ flex: 1, padding: '11px', borderRadius: 11, fontSize: 15, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }}
+              <button style={{ flex: 1, padding: '11px', borderRadius: 11, fontSize: 13, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }}
                 onClick={closeReconduction}>Ignorer</button>
-              <button style={{ flex: 1, padding: '11px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: reconduction.submitting ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: reconduction.submitting ? 0.7 : 1 }}
+              <button style={{ flex: 1, padding: '11px', borderRadius: 11, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: reconduction.submitting ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: reconduction.submitting ? 0.7 : 1 }}
                 onClick={confirmReconduction} disabled={reconduction.submitting || reconduction.loading || reconduction.rows.length === 0}>
                 {reconduction.submitting ? 'Reconduction…' : `Reconduire (${reconduction.rows.filter(r => r.include).length})`}
               </button>
@@ -818,14 +818,14 @@ export default function SectionAcademicYear({ onToast }: Props) {
 
 const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }
 const sSub: React.CSSProperties = { color: 'var(--text3)', marginTop: 3 }
-const btnPrim: React.CSSProperties = { padding: '10px 20px', borderRadius: 11, fontSize: 16, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
-const btnSecSm: React.CSSProperties = { padding: '7px 14px', borderRadius: 9, fontSize: 15, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
-const thStyle: React.CSSProperties = { padding: '11px 20px', textAlign: 'left', fontSize: 13, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.7px', whiteSpace: 'nowrap' }
-const tdStyle: React.CSSProperties = { padding: '15px 20px', fontSize: 17, color: 'var(--text2)', borderBottom: '1px solid var(--border)', verticalAlign: 'middle' }
+const btnPrim: React.CSSProperties = { padding: '10px 14px', borderRadius: 11, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+const btnSecSm: React.CSSProperties = { padding: '7px 11px', borderRadius: 9, fontSize: 13, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
+const thStyle: React.CSSProperties = { padding: '11px 14px', textAlign: 'left', fontSize: 13, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.7px', whiteSpace: 'nowrap' }
+const tdStyle: React.CSSProperties = { padding: '12px 14px', fontSize: 14, color: 'var(--text2)', borderBottom: '1px solid var(--border)', verticalAlign: 'middle' }
 
 const sLbCls = 'text-[11.5px] md:text-[13px]'
 const sLb: React.CSSProperties = { fontWeight: 700, color: 'var(--text3)', marginBottom: 4, display: 'block' }
-const sInCls = 'rounded-[9px] px-[10px] py-[8px] mb-[8px] text-[12.5px] md:px-[12px] md:py-[9px] md:mb-[10px] md:text-[14px]'
+const sInCls = 'rounded-[9px] px-[10px] py-[8px] mb-[8px] text-[12.5px] md:px-[12px] md:py-[9px] md:mb-[10px] md:text-[12px]'
 const sIn: React.CSSProperties = { width: '100%', border: '1.5px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none' }
 
 function toDateInput(d: string | null): string {
@@ -837,7 +837,7 @@ function toDateInput(d: string | null): string {
 function ModalOverlay({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div onClick={e => e.stopPropagation()} className="px-5 py-6 md:px-9 md:py-8" style={{ background: 'var(--surface)', borderRadius: 18, width: 460, maxWidth: '94vw', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
+      <div onClick={e => e.stopPropagation()} className="px-5 py-6 md:px-9 md:py-8" style={{ background: 'var(--surface)', borderRadius: 10, width: 460, maxWidth: '94vw', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
         {children}
       </div>
     </div>

@@ -62,10 +62,10 @@ export default function SectionAdminGroupTransfers({ onToast }: Props) {
     }
   }
 
-  if (loading) return <div style={{ padding: 20 }}>Chargement…</div>
+  if (loading) return <div style={{ padding: 14 }}>Chargement…</div>
 
   return (
-    <div style={{ padding: 20, overflowY: 'auto', height: '100%' }}>
+    <div style={{ padding: 14, overflowY: 'auto', height: '100%' }}>
       <h2 style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', marginBottom: 8 }}>Transferts entrants du groupe scolaire</h2>
       <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 13 }}>
         Demandes initiées par le Fondateur de Groupe pour transférer un élève ou un enseignant vers votre établissement.
@@ -80,7 +80,7 @@ export default function SectionAdminGroupTransfers({ onToast }: Props) {
           {demandes.map((d) => (
             <div key={d.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 16, background: 'var(--surface)', borderRadius: 8, border: '1px solid var(--border)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: 28, height: 28, borderRadius: 8, background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <ArrowRightLeft size={15} color="var(--green)" />
                 </div>
                 <div>

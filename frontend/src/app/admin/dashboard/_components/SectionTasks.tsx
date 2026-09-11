@@ -129,7 +129,7 @@ export default function SectionTasks({ onToast }: Props) {
           {(['A_FAIRE', 'EN_COURS', 'TERMINE', 'VALIDE'] as const).map(st => (
             <div key={st} className="rounded-[10px] p-[12px] md:px-3.5 md:py-3" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
               <div style={{ marginBottom: 6 }}><ListChecks size={15} /></div>
-              <div className="text-[16px] md:text-[18px] font-black md:font-bold" style={{ color: 'var(--text)', fontFamily: 'var(--font-spectral),Spectral,serif' }}>{counts[st]}</div>
+              <div className="text-[13px] md:text-[18px] font-black md:font-bold" style={{ color: 'var(--text)', fontFamily: 'var(--font-spectral),Spectral,serif' }}>{counts[st]}</div>
               <div className="text-[11.5px] md:text-[12px]" style={{ color: 'var(--text3)', fontWeight: 600, marginTop: 2 }}>{t(STATUS[st].label)}</div>
             </div>
           ))}
@@ -137,7 +137,7 @@ export default function SectionTasks({ onToast }: Props) {
       )}
 
       {loading && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 39 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 25 }}>
           <Loader2 size={16} className="animate-spin" color="var(--green)" />
         </div>
       )}
@@ -150,9 +150,9 @@ export default function SectionTasks({ onToast }: Props) {
       )}
 
       {!loading && !error && tasks.length === 0 && (
-        <div className="px-[24px] py-[40px] md:px-[32px] md:py-[60px]" style={{ background: 'var(--surface)', borderRadius: 10, border: '1.5px solid var(--border)', textAlign: 'center' }}>
+        <div className="px-[24px] py-[40px] md:px-[32px] md:py-[60px]" style={{ background: 'var(--surface)', borderRadius: 8, border: '1.5px solid var(--border)', textAlign: 'center' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><ListChecks size={16} /></div>
-          <div className="text-[13px] md:text-[16px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{t('tasks.emptyTitle')}</div>
+          <div className="text-[13px] md:text-[13px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{t('tasks.emptyTitle')}</div>
           <div className="text-[13px] md:text-[13px]" style={{ color: 'var(--text3)' }}>{t('tasks.emptySub')}</div>
         </div>
       )}
@@ -162,8 +162,8 @@ export default function SectionTasks({ onToast }: Props) {
           {tasks.map(tk => (
             <div key={tk.id} className="rounded-[10px] md:rounded-[10px] p-[15px] md:px-[22px] md:py-[18px]" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
               <div className="mb-[8px] gap-[8px]" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-                <div className="text-[14.5px] md:text-[16px]" style={{ fontWeight: 800, color: 'var(--text)', flex: 1 }}>{tk.title}</div>
-                <span className="text-[10.5px] md:text-[12px]" style={{ padding: '2px 8px', borderRadius: 10, fontWeight: 800, background: STATUS[tk.status].bg, color: STATUS[tk.status].color }}>
+                <div className="text-[14.5px] md:text-[13px]" style={{ fontWeight: 800, color: 'var(--text)', flex: 1 }}>{tk.title}</div>
+                <span className="text-[10.5px] md:text-[12px]" style={{ padding: '2px 8px', borderRadius: 8, fontWeight: 800, background: STATUS[tk.status].bg, color: STATUS[tk.status].color }}>
                   {t(STATUS[tk.status].label)}
                 </span>
               </div>
@@ -191,7 +191,7 @@ export default function SectionTasks({ onToast }: Props) {
           <div onClick={e => e.stopPropagation()} className="p-5 md:p-7 rounded-[10px] w-[480px] max-w-[94vw] max-h-[85vh] overflow-y-auto"
             style={{ background: 'var(--surface)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 13 }}>
-              <div className="text-[18px] md:text-[16px]" style={{ fontWeight: 800, color: 'var(--text)' }}>{t('tasks.newTask')}</div>
+              <div className="text-[18px] md:text-[13px]" style={{ fontWeight: 800, color: 'var(--text)' }}>{t('tasks.newTask')}</div>
               <button onClick={() => setFormOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}><X size={15} /></button>
             </div>
 

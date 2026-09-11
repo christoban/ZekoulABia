@@ -79,7 +79,7 @@ export default function SectionCorbeille({ onToast }: Props) {
       </div>
 
       {loading && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 39 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 25 }}>
           <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-corbeille-spin 0.7s linear infinite' }} />
           <style>{`@keyframes edu-corbeille-spin { to { transform: rotate(360deg); } }`}</style>
         </div>
@@ -95,7 +95,7 @@ export default function SectionCorbeille({ onToast }: Props) {
       )}
 
       {!loading && !error && elements.length === 0 && (
-        <div style={{ background: 'var(--surface)', borderRadius: 8, border: '1.5px solid var(--border)', padding: 31, textAlign: 'center', maxWidth: 460 }}>
+        <div style={{ background: 'var(--surface)', borderRadius: 8, border: '1.5px solid var(--border)', padding: 20, textAlign: 'center', maxWidth: 460 }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><Trash2 size={16} color="var(--text3)" /></div>
           <div className="text-[13px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
             {t('corbeille.vide_titre')}

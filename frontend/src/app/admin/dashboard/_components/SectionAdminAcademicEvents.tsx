@@ -164,7 +164,7 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
           ].map(({ icon: Icon, value, label }) => (
             <div key={label} className="rounded-[10px] p-[12px] md:px-3.5 md:py-3 shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)' }}>
               <div style={{ marginBottom: 6 }}><Icon size={15} /></div>
-              <div className="text-[16px] md:text-[18px] font-black md:font-bold" style={{ color: 'var(--text)', fontFamily: 'var(--font-spectral),Spectral,serif' }}>{value}</div>
+              <div className="text-[13px] md:text-[18px] font-black md:font-bold" style={{ color: 'var(--text)', fontFamily: 'var(--font-spectral),Spectral,serif' }}>{value}</div>
               <div className="text-[11.5px] md:text-[12px]" style={{ color: 'var(--text3)', fontWeight: 600, marginTop: 2 }}>{label}</div>
             </div>
           ))}
@@ -172,7 +172,7 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
       )}
 
       {loading && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 39 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 25 }}>
           <Loader2 size={16} className="animate-spin" color="var(--green)" />
         </div>
       )}
@@ -185,9 +185,9 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
       )}
 
       {!loading && !error && events.length === 0 && (
-        <div className="px-[24px] py-[40px] md:px-[32px] md:py-[48px]" style={{ background: 'var(--surface)', borderRadius: 10, border: '1.5px solid var(--border)', textAlign: 'center' }}>
+        <div className="px-[24px] py-[40px] md:px-[32px] md:py-[48px]" style={{ background: 'var(--surface)', borderRadius: 8, border: '1.5px solid var(--border)', textAlign: 'center' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><CalendarClock size={16} className="md:hidden" /><CalendarClock size={16} className="hidden md:block" /></div>
-          <div className="text-[13px] md:text-[14px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{t('academicEvents.emptyTitle')}</div>
+          <div className="text-[13px] md:text-[12px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{t('academicEvents.emptyTitle')}</div>
           <div className="text-[13px] md:text-[13px]" style={{ color: 'var(--text3)' }}>{t('academicEvents.emptySub')}</div>
         </div>
       )}
@@ -197,12 +197,12 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
           {events.map(ev => (
             <div key={ev.id} className="rounded-[10px] md:rounded-[10px] p-[15px] md:px-4 md:py-3.5 shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)' }}>
               <div className="mb-[8px] gap-[8px]" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-                <div className="text-[14px] md:text-[15px]" style={{ fontWeight: 800, color: 'var(--text)', flex: 1 }}>{ev.title}</div>
+                <div className="text-[12px] md:text-[13px]" style={{ fontWeight: 800, color: 'var(--text)', flex: 1 }}>{ev.title}</div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  <span className="text-[10.5px] md:text-[12px]" style={{ padding: '2px 8px', borderRadius: 10, fontWeight: 800, background: CATEGORY_COLOR[ev.category]?.bg, color: CATEGORY_COLOR[ev.category]?.color }}>
+                  <span className="text-[10.5px] md:text-[12px]" style={{ padding: '2px 8px', borderRadius: 8, fontWeight: 800, background: CATEGORY_COLOR[ev.category]?.bg, color: CATEGORY_COLOR[ev.category]?.color }}>
                     {t(`academicEvents.category.${ev.category}`)}
                   </span>
-                  <span className="text-[10.5px] md:text-[12px]" style={{ padding: '2px 8px', borderRadius: 10, fontWeight: 800, background: STATUS_COLOR[ev.status]?.bg, color: STATUS_COLOR[ev.status]?.color }}>
+                  <span className="text-[10.5px] md:text-[12px]" style={{ padding: '2px 8px', borderRadius: 8, fontWeight: 800, background: STATUS_COLOR[ev.status]?.bg, color: STATUS_COLOR[ev.status]?.color }}>
                     {t(`academicEvents.status.${ev.status}`)}
                   </span>
                 </div>
@@ -245,7 +245,7 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
           <div onClick={e => e.stopPropagation()} className="p-5 md:p-5 rounded-[10px] w-[480px] max-w-[94vw] max-h-[85vh] overflow-y-auto"
             style={{ background: 'var(--surface)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 13 }}>
-              <div className="text-[16px] md:text-[16px]" style={{ fontWeight: 800, color: 'var(--text)' }}>{t('academicEvents.newEvent')}</div>
+              <div className="text-[13px] md:text-[13px]" style={{ fontWeight: 800, color: 'var(--text)' }}>{t('academicEvents.newEvent')}</div>
               <button onClick={() => setFormOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}><X size={15} /></button>
             </div>
 
@@ -289,7 +289,7 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
                   {ROLES.map(role => (
                     <button key={role} type="button" onClick={() => toggleRole(role)}
                       className="text-[12px] md:text-[13px] px-[11px] md:px-[14px] py-[5px] md:py-[6px]"
-                      style={{ borderRadius: 10, fontWeight: 700, cursor: 'pointer', border: '1.5px solid', fontFamily: 'inherit',
+                      style={{ borderRadius: 8, fontWeight: 700, cursor: 'pointer', border: '1.5px solid', fontFamily: 'inherit',
                         background: form.targetRoles.includes(role) ? 'var(--green-light)' : 'white',
                         borderColor: form.targetRoles.includes(role) ? 'var(--green)' : 'var(--border2)',
                         color: form.targetRoles.includes(role) ? 'var(--green)' : 'var(--text2)' }}>

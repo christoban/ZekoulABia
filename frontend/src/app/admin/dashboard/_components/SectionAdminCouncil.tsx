@@ -131,7 +131,7 @@ export default function SectionAdminCouncil({ onToast }: Props) {
       </div>
 
       {!loading && !error && sessions.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-[10px] md:gap-3" style={{ marginBottom: 15 }}>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-[10px] md:gap-3" style={{ marginBottom: 11 }}>
           {([
             { icon: ClipboardList, value: totalSessions,  label: 'Sessions au total' },
             { icon: Loader2, value: openCount,       label: 'En cours' },
@@ -140,7 +140,7 @@ export default function SectionAdminCouncil({ onToast }: Props) {
           ] as { icon: typeof ClipboardList; value: number; label: string }[]).map(({ icon: Icon, value, label }) => (
             <div key={label} className="p-3 md:px-3.5 md:py-3 rounded-[10px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)' }}>
               <div style={{ marginBottom: 6 }}><Icon size={16} /></div>
-              <div className="text-[16px] md:text-[18px] font-black" style={{ color: 'var(--text)', fontFamily: 'var(--font-spectral),Spectral,serif' }}>{value}</div>
+              <div className="text-[13px] md:text-[18px] font-black" style={{ color: 'var(--text)', fontFamily: 'var(--font-spectral),Spectral,serif' }}>{value}</div>
               <div className="text-[11px] md:text-[12px]" style={{ color: 'var(--text3)', fontWeight: 600, marginTop: 2 }}>{label}</div>
             </div>
           ))}
@@ -148,22 +148,22 @@ export default function SectionAdminCouncil({ onToast }: Props) {
       )}
 
       {loading && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 39 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 25 }}>
           <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
         </div>
       )}
 
       {!loading && error && (
-        <div style={{ background: 'var(--red-light)', borderRadius: 8, padding: '14px 15px', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ background: 'var(--red-light)', borderRadius: 8, padding: '11px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
           <AlertTriangle size={15} color="var(--red)" /><span style={{ fontWeight: 700, color: 'var(--red)', flex: 1 }}>{error}</span>
           <button onClick={fetchSessions} style={btnRetry}>Réessayer</button>
         </div>
       )}
 
       {!loading && !error && filteredSessions.length === 0 && (
-        <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1.5px solid var(--border)', padding: '39px 20px', textAlign: 'center' }}>
+        <div style={{ background: 'var(--surface)', borderRadius: 8, border: '1.5px solid var(--border)', padding: '25px 14px', textAlign: 'center' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><GraduationCap size={16} /></div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>Aucun conseil de classe</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>Aucun conseil de classe</div>
           <div style={{ fontSize: 13, color: 'var(--text3)' }}>
             {selectedPeriodId !== 'all' ? 'Aucune session pour ce trimestre.' : 'Les sessions seront créées par le personnel.'}
           </div>
@@ -171,7 +171,7 @@ export default function SectionAdminCouncil({ onToast }: Props) {
       )}
 
       {!loading && !error && filteredSessions.length > 0 && (
-        <div className="grid grid-cols-1 sm:[grid-template-columns:var(--council-grid)]" style={{ '--council-grid': selected ? '340px 1fr' : 'repeat(3,1fr)', gap: 12, alignItems: 'start' } as React.CSSProperties}>
+        <div className="grid grid-cols-1 sm:[grid-template-columns:var(--council-grid)]" style={{ '--council-grid': selected ? '340px 1fr' : 'repeat(3,1fr)', gap: 8, alignItems: 'start' } as React.CSSProperties}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {filteredSessions.map(s => (
               <div key={s.id} onClick={() => openSession(s.id)}
@@ -180,8 +180,8 @@ export default function SectionAdminCouncil({ onToast }: Props) {
                 onMouseEnter={e => { if (selected?.id !== s.id) Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--border2)', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }) }}
                 onMouseLeave={e => { if (selected?.id !== s.id) Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--border)', boxShadow: 'none' }) }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
-                  <div className="text-[13px] md:text-[14px] md:[font-family:var(--font-spectral),Spectral,serif]" style={{ fontWeight: 700, color: 'var(--text)' }}>{s.class.name}</div>
-                  <span className="text-[11px] md:text-[12px]" style={{ padding: '3px 10px', borderRadius: 10, fontWeight: 800, background: s.status === 'LOCKED' ? 'var(--green-light)' : 'var(--blue-light)', color: s.status === 'LOCKED' ? 'var(--green)' : 'var(--blue)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <div className="text-[13px] md:text-[12px] md:[font-family:var(--font-spectral),Spectral,serif]" style={{ fontWeight: 700, color: 'var(--text)' }}>{s.class.name}</div>
+                  <span className="text-[11px] md:text-[12px]" style={{ padding: '3px 10px', borderRadius: 8, fontWeight: 800, background: s.status === 'LOCKED' ? 'var(--green-light)' : 'var(--blue-light)', color: s.status === 'LOCKED' ? 'var(--green)' : 'var(--blue)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                     {s.status === 'LOCKED' ? <><Lock size={12} /> Verrouillé</> : <><BookOpen size={12} /> Ouvert</>}
                   </span>
                 </div>
@@ -194,13 +194,13 @@ export default function SectionAdminCouncil({ onToast }: Props) {
           {selected && (
             <div className="rounded-[10px] md:rounded-[10px]" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', overflow: 'hidden' }}>
               {loadingDetail ? (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: 39 }}>
+                <div style={{ display: 'flex', justifyContent: 'center', padding: 25 }}>
                   <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
                 </div>
               ) : (
                 <>
                   <div className="p-[14px] md:px-4 md:py-3" style={{ borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-                    <span className="text-[14px] md:text-[14px]" style={{ fontWeight: 800, color: 'var(--text)', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    <span className="text-[12px] md:text-[12px]" style={{ fontWeight: 800, color: 'var(--text)', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                       <Vote size={15} /> {selected.class.name} · {selected.academicPeriod.name}
                     </span>
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -241,7 +241,7 @@ export default function SectionAdminCouncil({ onToast }: Props) {
                   )}
 
                   {selected.decisions.length === 0 ? (
-                    <div style={{ padding: '26px 15px', textAlign: 'center', color: 'var(--text3)' }}>Aucun élève dans cette session.</div>
+                    <div style={{ padding: '18px 12px', textAlign: 'center', color: 'var(--text3)' }}>Aucun élève dans cette session.</div>
                   ) : (
                     <>
                       {selected.decisions.some(d => d.alertLevel) && (
@@ -259,12 +259,12 @@ export default function SectionAdminCouncil({ onToast }: Props) {
                                   {d.student.firstName} {d.student.lastName}
                                   {d.alertLevel && (
                                     <span title={`Indice de santé scolaire : ${d.healthScore}/100`}
-                                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 10, fontSize: 11, fontWeight: 800, background: d.alertLevel === 'critical' ? 'var(--red-light)' : 'var(--amber-light)', color: d.alertLevel === 'critical' ? 'var(--red)' : 'var(--amber)' }}>
+                                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 8, fontSize: 11, fontWeight: 800, background: d.alertLevel === 'critical' ? 'var(--red-light)' : 'var(--amber-light)', color: d.alertLevel === 'critical' ? 'var(--red)' : 'var(--amber)' }}>
                                       <HeartPulse size={11} /> {d.healthScore}
                                     </span>
                                   )}
                                 </span>
-                                <span style={{ padding: '3px 10px', borderRadius: 10, fontSize: 12, fontWeight: 800, background: dc?.bg, color: dc?.color, flexShrink: 0 }}>
+                                <span style={{ padding: '3px 10px', borderRadius: 8, fontSize: 12, fontWeight: 800, background: dc?.bg, color: dc?.color, flexShrink: 0 }}>
                                   {DEC_LABEL[d.decision] ?? d.decision}
                                 </span>
                               </div>
@@ -295,14 +295,14 @@ export default function SectionAdminCouncil({ onToast }: Props) {
                                     {d.student.firstName} {d.student.lastName}
                                     {d.alertLevel && (
                                       <span title={`Indice de santé scolaire : ${d.healthScore}/100`}
-                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 10, fontSize: 12, fontWeight: 800, background: d.alertLevel === 'critical' ? 'var(--red-light)' : 'var(--amber-light)', color: d.alertLevel === 'critical' ? 'var(--red)' : 'var(--amber)' }}>
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 8, fontSize: 12, fontWeight: 800, background: d.alertLevel === 'critical' ? 'var(--red-light)' : 'var(--amber-light)', color: d.alertLevel === 'critical' ? 'var(--red)' : 'var(--amber)' }}>
                                         <HeartPulse size={11} /> {d.healthScore}
                                       </span>
                                     )}
                                   </span>
                                 </td>
                                 <td style={tdSt}>
-                                  <span style={{ padding: '4px 12px', borderRadius: 10, fontSize: 12, fontWeight: 800, background: dc?.bg, color: dc?.color }}>
+                                  <span style={{ padding: '4px 12px', borderRadius: 8, fontSize: 12, fontWeight: 800, background: dc?.bg, color: dc?.color }}>
                                     {DEC_LABEL[d.decision] ?? d.decision}
                                   </span>
                                 </td>

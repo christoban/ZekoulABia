@@ -48,8 +48,8 @@ interface Meta {
   anneesEtudeEstp: { anneeEtude: string; capaciteMax: number }[]
 }
 
-const btnPri = { padding: '10px 14px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
-const btnSec = { padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 12, cursor: 'pointer' as const }
+const btnPri = { padding: '10px 11px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
+const btnSec = { padding: '10px 11px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 12, cursor: 'pointer' as const }
 const btnSmall = { padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 12, cursor: 'pointer' as const }
 const inputStyle = { padding: '9px 11px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 12, width: '100%', boxSizing: 'border-box' as const }
 const smallInputStyle = { ...inputStyle, padding: '6px 10px', fontSize: 13 }
@@ -226,7 +226,7 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
     window.open(`/api/v2/statistical-campaign/submissions/${id}/download`, '_blank')
   }
 
-  if (loading) return <div style={{ padding: 26, textAlign: 'center', color: 'var(--text3)' }}>{t('common.loading') || '...'}</div>
+  if (loading) return <div style={{ padding: 18, textAlign: 'center', color: 'var(--text3)' }}>{t('common.loading') || '...'}</div>
 
   return (
     <div className="px-4 py-5 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>

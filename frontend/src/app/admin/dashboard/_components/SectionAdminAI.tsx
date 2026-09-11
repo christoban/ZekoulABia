@@ -73,7 +73,7 @@ export default function SectionAdminAI({ onToast }: Props) {
     <div className="px-4 py-5 md:px-6 md:py-5" style={{ overflowY: 'auto', height: '100%' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
         <div>
           <div className="text-[18px] md:text-[18px]" style={sTitle}>{t('ai.title')}</div>
           <div className="text-[12px] md:text-[13px]" style={sSub}>{t('ai.subtitle')}</div>
@@ -90,7 +90,7 @@ export default function SectionAdminAI({ onToast }: Props) {
       </div>
 
       {summary && !loading && (
-        <div className="grid grid-cols-2 sm:grid-cols-5" style={{ gap: 10, marginBottom: 14 }}>
+        <div className="grid grid-cols-2 sm:grid-cols-5" style={{ gap: 10, marginBottom: 10 }}>
           {(Object.entries(ALERT_STYLE) as [string, typeof ALERT_STYLE[string]][]).map(([key, s]) => {
             const isActive = alertFilter === key
             return (
@@ -133,18 +133,18 @@ export default function SectionAdminAI({ onToast }: Props) {
 
       <div className="rounded-none md:rounded-[10px] border-0 md:border md:border-[1.5px] md:border-[var(--border)] bg-transparent md:bg-[var(--surface)]" style={{ overflow: 'hidden' }}>
         {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: 39 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 25 }}>
             <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
           </div>
         ) : error ? (
-          <div style={{ padding: '26px 14px', textAlign: 'center', color: 'var(--red)', fontWeight: 700 }}>{error}</div>
+          <div style={{ padding: '18px 11px', textAlign: 'center', color: 'var(--red)', fontWeight: 700 }}>{error}</div>
         ) : filtered.length === 0 ? (
-          <div style={{ padding: '39px 14px', textAlign: 'center', color: 'var(--text3)' }}>
+          <div style={{ padding: '25px 11px', textAlign: 'center', color: 'var(--text3)' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
               <Bot size={16} className="md:hidden" />
               <Bot size={16} className="hidden md:block" />
             </div>
-            <div className="text-[14px] md:text-[14px]">{t('ai.empty_filtered')}</div>
+            <div className="text-[12px] md:text-[12px]">{t('ai.empty_filtered')}</div>
           </div>
         ) : (
           <>
@@ -159,7 +159,7 @@ export default function SectionAdminAI({ onToast }: Props) {
                       <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 13 }}>{s.name}</div>
                       <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{s.className}</div>
                     </div>
-                    <span style={{ padding: '4px 10px', borderRadius: 10, fontSize: 12, fontWeight: 800, background: al.bg, color: al.color, display: 'inline-flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+                    <span style={{ padding: '4px 10px', borderRadius: 8, fontSize: 12, fontWeight: 800, background: al.bg, color: al.color, display: 'inline-flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
                       <al.icon size={12} /> {alertLabel(s.alertLevel)}
                     </span>
                   </div>
@@ -193,14 +193,14 @@ export default function SectionAdminAI({ onToast }: Props) {
                       <td style={tdSt}>{s.className}</td>
                       <td style={tdSt}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div style={{ width: 32, height: 8, background: 'var(--bg2)', borderRadius: 4, overflow: 'hidden' }}>
+                          <div style={{ width: 28, height: 8, background: 'var(--bg2)', borderRadius: 4, overflow: 'hidden' }}>
                             <div style={{ width: `${s.healthScore}%`, height: '100%', background: barColor, borderRadius: 4, transition: 'width 0.5s' }} />
                           </div>
                           <span style={{ fontWeight: 900, color: barColor, fontSize: 13 }}>{s.healthScore}</span>
                         </div>
                       </td>
                       <td style={tdSt}>
-                        <span style={{ padding: '4px 12px', borderRadius: 10, fontSize: 12, fontWeight: 800, background: al.bg, color: al.color, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                        <span style={{ padding: '4px 12px', borderRadius: 8, fontSize: 12, fontWeight: 800, background: al.bg, color: al.color, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                           <al.icon size={13} /> {alertLabel(s.alertLevel)}
                         </span>
                       </td>

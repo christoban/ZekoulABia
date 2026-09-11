@@ -346,7 +346,7 @@ export default function SectionCommunications({ onToast }: Props) {
             <div className="rounded-[10px] p-3 md:p-4" style={{ background: 'var(--surface)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', marginBottom: 12 }}>
               <h4 className="text-[13px] md:text-[12px]" style={{ margin: '0 0 14px', fontWeight: 700, color: 'var(--text2)' }}>{t('communications.preview_title')}</h4>
               {!preview ? (
-                <div className="text-[12.5px] md:text-[13px]" style={{ textAlign: 'center', padding: '14px', color: 'var(--text3)' }}>
+                <div className="text-[12.5px] md:text-[13px]" style={{ textAlign: 'center', padding: '11px', color: 'var(--text3)' }}>
                   {t('communications.preview_empty_line1')}<br />{t('communications.preview_empty_line2')}
                 </div>
               ) : (
@@ -359,7 +359,7 @@ export default function SectionCommunications({ onToast }: Props) {
                     ].map((item) => (
                       <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 12px', background: 'var(--bg)', borderRadius: 8 }}>
                         <span className="text-[12.5px] md:text-[13px]" style={{ color: 'var(--text3)' }}>{item.label}</span>
-                        <span className="text-[13px] md:text-[16px]" style={{ fontWeight: 800, color: item.color }}>{item.value}</span>
+                        <span className="text-[13px] md:text-[13px]" style={{ fontWeight: 800, color: item.color }}>{item.value}</span>
                       </div>
                     ))}
                   </div>
@@ -394,7 +394,7 @@ export default function SectionCommunications({ onToast }: Props) {
       {tab === 'history' && (
         <div style={{ background: 'var(--surface)', borderRadius: 8, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
           {logs.length === 0 ? (
-            <div style={{ padding: 31, textAlign: 'center', color: 'var(--text3)' }}>
+            <div style={{ padding: 20, textAlign: 'center', color: 'var(--text3)' }}>
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
                 <Inbox size={16} className="md:hidden" />
                 <Inbox size={16} className="hidden md:block" />

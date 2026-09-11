@@ -122,14 +122,14 @@ export default function SectionStatistics({ onToast }: Props) {
     <div className="px-4 py-5 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
-      <div style={{ marginBottom: 14 }}>
+      <div style={{ marginBottom: 10 }}>
         <div className="text-[18px] md:text-[18px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
           {t('statistics.title')}
         </div>
         <div className="text-[12px] md:text-[13px]" style={{ color: 'var(--text3)', marginTop: 3 }}>{t('statistics.subtitle')}</div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 12 }}>
+      <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 8 }}>
 
         <div className={cardCls} style={card}>
           <div className={cardHeaderCls} style={{ ...cardHeader, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
@@ -268,7 +268,7 @@ function Spinner() {
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <div className="text-[12.5px] md:text-[12px]" style={{ height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text3)', textAlign: 'center', padding: '14px' }}>
+    <div className="text-[12.5px] md:text-[12px]" style={{ height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text3)', textAlign: 'center', padding: '11px' }}>
       {text}
     </div>
   )

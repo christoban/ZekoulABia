@@ -23,8 +23,8 @@ interface ImportJob {
   resultDetails: UnmatchedDetail[] | { unmatched: UnmatchedDetail[]; fuzzyMatches: FuzzyMatch[] } | null
 }
 
-const btnPri = { padding: '8px 14px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
-const btnSec = { padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 12, cursor: 'pointer' as const }
+const btnPri = { padding: '8px 11px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
+const btnSec = { padding: '8px 11px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 12, cursor: 'pointer' as const }
 
 function extractUnmatched(details: ImportJob['resultDetails']): UnmatchedDetail[] {
   if (!details) return []
@@ -229,7 +229,7 @@ export default function SectionMatricules({ onToast }: Props) {
                           <div className="text-[12.5px] md:text-[13px]" style={{ fontWeight: 700, color: 'var(--text)' }}>{f.nomFichier} {f.prenomFichier}</div>
                         </div>
                       </div>
-                      <span className="text-[10.5px] md:text-[12px] px-[9px] md:px-[12px]" style={{ padding: '3px', borderRadius: 10, fontWeight: 800, background: '#b45309', color: '#fff' }}>
+                      <span className="text-[10.5px] md:text-[12px] px-[9px] md:px-[12px]" style={{ padding: '3px', borderRadius: 8, fontWeight: 800, background: '#b45309', color: '#fff' }}>
                         {f.similarityPercent}% {t('matricules.fuzzy_similarity_label')}
                       </span>
                     </div>

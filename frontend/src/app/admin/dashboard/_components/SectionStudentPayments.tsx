@@ -28,8 +28,8 @@ interface VerifResult {
   conflitMatriculeExistant?: string; message: string
 }
 
-const btnPri = { padding: '8px 14px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
-const btnSec = { padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 12, cursor: 'pointer' as const }
+const btnPri = { padding: '8px 11px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
+const btnSec = { padding: '8px 11px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 12, cursor: 'pointer' as const }
 const inputStyle = { padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 12, flex: 1 }
 
 const STATUT_COLORS: Record<string, { bg: string; color: string }> = {
@@ -162,7 +162,7 @@ export default function SectionStudentPayments({ onToast }: Props) {
                     {dashboard.student.classe} · {t('matricules.matricule_label')} {dashboard.student.matriculeNational ?? t('matricules.no_matricule')}
                   </div>
                 </div>
-                <span style={{ padding: '5px 11px', borderRadius: 10, fontSize: 12, fontWeight: 800, ...(STATUT_COLORS[dashboard.totaux.statutGlobal] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }) }}>
+                <span style={{ padding: '5px 11px', borderRadius: 8, fontSize: 12, fontWeight: 800, ...(STATUT_COLORS[dashboard.totaux.statutGlobal] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }) }}>
                   {t(dashboard.totaux.statutGlobal === 'A_JOUR' ? 'matricules.minesec_statut_a_jour' : dashboard.totaux.statutGlobal === 'EN_RETARD' ? 'matricules.minesec_statut_retard' : 'matricules.minesec_statut_partiel')}
                 </span>
               </div>
@@ -200,15 +200,15 @@ export default function SectionStudentPayments({ onToast }: Props) {
               <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 8, marginBottom: 13 }}>
                 <div className="px-3.5 py-2.5 md:px-3.5 md:py-3" style={{ background: 'var(--blue-light)', color: 'var(--blue)', borderRadius: 8 }}>
                   <div className="text-[11px] md:text-[11px]" style={{ fontWeight: 700, opacity: 0.8 }}>{t('matricules.minesec_total_attendu')}</div>
-                  <div className="text-[13px] md:text-[16px]" style={{ fontWeight: 800 }}>{dashboard.totaux.totalAttendu.toLocaleString()} FCFA</div>
+                  <div className="text-[13px] md:text-[13px]" style={{ fontWeight: 800 }}>{dashboard.totaux.totalAttendu.toLocaleString()} FCFA</div>
                 </div>
                 <div className="px-3.5 py-2.5 md:px-3.5 md:py-3" style={{ background: 'rgba(22,163,74,0.12)', color: 'var(--green)', borderRadius: 8 }}>
                   <div className="text-[11px] md:text-[11px]" style={{ fontWeight: 700, opacity: 0.8 }}>{t('matricules.minesec_total_paye')}</div>
-                  <div className="text-[13px] md:text-[16px]" style={{ fontWeight: 800 }}>{dashboard.totaux.totalPaye.toLocaleString()} FCFA</div>
+                  <div className="text-[13px] md:text-[13px]" style={{ fontWeight: 800 }}>{dashboard.totaux.totalPaye.toLocaleString()} FCFA</div>
                 </div>
                 <div className="px-3.5 py-2.5 md:px-3.5 md:py-3" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--red)', borderRadius: 8 }}>
                   <div className="text-[11px] md:text-[11px]" style={{ fontWeight: 700, opacity: 0.8 }}>{t('matricules.minesec_total_restant')}</div>
-                  <div className="text-[13px] md:text-[16px]" style={{ fontWeight: 800 }}>{dashboard.totaux.totalRestant.toLocaleString()} FCFA</div>
+                  <div className="text-[13px] md:text-[13px]" style={{ fontWeight: 800 }}>{dashboard.totaux.totalRestant.toLocaleString()} FCFA</div>
                 </div>
               </div>
 

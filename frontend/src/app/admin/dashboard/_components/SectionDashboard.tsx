@@ -45,7 +45,7 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
         <div>
-          <div className="text-[18px] md:text-[20px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
+          <div className="text-[18px] md:text-[16px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
             {t('dashboard.overview_title')}
           </div>
           <div className="text-[12px] md:text-[13px]" style={{ color: 'var(--text3)', marginTop: 2 }}>{t('dashboard.overview_subtitle')}</div>
@@ -64,17 +64,17 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
 
       {/* Loading */}
       {loading && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 48 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 31 }}>
           <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
         </div>
       )}
 
       {/* Error */}
       {!loading && error && error !== 'OFFLINE_NO_CACHE' && (
-        <div style={{ background: 'var(--red-light)', border: '1px solid rgba(220,38,38,0.2)', borderRadius: 10, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-          <AlertTriangle size={18} strokeWidth={2} />
+        <div style={{ background: 'var(--red-light)', border: '1px solid rgba(220,38,38,0.2)', borderRadius: 8, padding: '11px 14px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+          <AlertTriangle size={15} strokeWidth={2} />
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, color: 'var(--red)', fontSize: 14 }}>{error}</div>
+            <div style={{ fontWeight: 700, color: 'var(--red)', fontSize: 12 }}>{error}</div>
           </div>
           <button onClick={fetchStats}
             style={{ padding: '6px 12px', borderRadius: 8, background: 'var(--surface)', color: 'var(--red)', border: '1px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 12 }}>
@@ -84,7 +84,7 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
       )}
 
       {!loading && error === 'OFFLINE_NO_CACHE' && (
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '32px 20px', textAlign: 'center', color: 'var(--text3)' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '20px 14px', textAlign: 'center', color: 'var(--text3)' }}>
           Aucune donnée en cache — reconnectez-vous pour charger le tableau de bord.
         </div>
       )}
@@ -105,7 +105,7 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
                   <div className="w-7 h-7 md:w-8 md:h-8 [&>svg]:w-[13px] [&>svg]:h-[13px] md:[&>svg]:w-[15px] md:[&>svg]:h-[15px]" style={{ borderRadius: 8, background: k.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{k.icon}</div>
                 </div>
-                <div className="text-[18px] md:text-[22px] font-bold md:font-black" style={{ color: 'var(--text)', lineHeight: 1 }}>{k.val}</div>
+                <div className="text-[18px] md:text-[18px] font-bold md:font-black" style={{ color: 'var(--text)', lineHeight: 1 }}>{k.val}</div>
                 <div className="text-[11px] md:text-[12px]" style={{ color: 'var(--text3)', marginTop: 4, fontWeight: 600 }}>{k.label}</div>
               </div>
             ))}
@@ -122,12 +122,12 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
               <div className="px-3 pb-3 pt-0 md:px-3.5 md:py-2.5">
                 {stats.recentActivity.length === 0 ? (
                   <div className="flex flex-col items-center gap-2 py-4 md:block md:py-4" style={{ color: 'var(--text3)', textAlign: 'center' }}>
-                    <Clock size={26} strokeWidth={1.6} className="md:hidden" style={{ color: 'var(--border2)' }} />
+                    <Clock size={16} strokeWidth={1.6} className="md:hidden" style={{ color: 'var(--border2)' }} />
                     <span className="text-[12px] md:text-[13px]">{t('dashboard.no_recent_activity')}</span>
                   </div>
                 ) : (
                   stats.recentActivity.map((act, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: i < stats.recentActivity.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px', borderBottom: i < stats.recentActivity.length - 1 ? '1px solid var(--border)' : 'none' }}>
                       <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--green)', flexShrink: 0 }} />
                       <span style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>{act}</span>
                     </div>

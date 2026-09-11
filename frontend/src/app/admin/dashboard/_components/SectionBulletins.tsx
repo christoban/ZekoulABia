@@ -227,13 +227,13 @@ export default function SectionBulletins({ onToast }: Props) {
       </div>
 
       {loadingCheck && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 39 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 25 }}>
           <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
         </div>
       )}
 
       {!loadingCheck && check && (
-        <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 12 }}>
+        <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 8 }}>
 
           <div className="rounded-[10px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)', overflow: 'hidden' }}>
             <div className="px-3.5 pt-3 pb-2 md:px-4 md:py-3 md:border-b md:border-[var(--border)]">
@@ -325,7 +325,7 @@ export default function SectionBulletins({ onToast }: Props) {
                           </strong>
                         </td>
                         <td style={tdSt}>
-                          <strong style={{ color: (b.generalAverage ?? 0) < 10 ? 'var(--red)' : 'var(--green)', fontSize: 14 }}>
+                          <strong style={{ color: (b.generalAverage ?? 0) < 10 ? 'var(--red)' : 'var(--green)', fontSize: 12 }}>
                             {b.generalAverage != null ? b.generalAverage.toFixed(2) : '—'}
                           </strong>
                         </td>
@@ -355,11 +355,11 @@ export default function SectionBulletins({ onToast }: Props) {
       )}
 
       {!loadingCheck && !check && (
-        <div className="px-[24px] py-[44px] md:px-[32px] md:py-[48px]" style={{ background: 'var(--surface)', borderRadius: 10, border: '1.5px solid var(--border)', textAlign: 'center' }}>
+        <div className="px-[24px] py-[44px] md:px-[32px] md:py-[48px]" style={{ background: 'var(--surface)', borderRadius: 8, border: '1.5px solid var(--border)', textAlign: 'center' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
             <FileText size={16} className="md:hidden" /><FileText size={16} className="hidden md:block" />
           </div>
-          <div className="text-[13px] md:text-[14px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
+          <div className="text-[13px] md:text-[12px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
             Sélectionnez une classe
           </div>
           <div className="text-[13px] md:text-[13px]" style={{ color: 'var(--text3)' }}>
