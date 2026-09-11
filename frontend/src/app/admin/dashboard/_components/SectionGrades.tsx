@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useT } from '@/lib/i18n'
 import { fetchApi } from '@/lib/fetchApi'
@@ -36,7 +36,6 @@ export default function SectionGrades({ onToast }: Props) {
   const [subjectId, setSubjectId] = useState('')
   const [status, setStatus]       = useState('SUBMITTED')
 
-  // Charger classes + matières au montage
   useEffect(() => {
     Promise.all([
       fetchApi('/api/v2/classes',  { credentials: 'include' }).then(r => r.json()),
@@ -61,7 +60,6 @@ export default function SectionGrades({ onToast }: Props) {
   const { data: gradesData, loading, error, fromCache, cachedAt, refetch: fetchGrades } = useCachedFetch<GradeItem[]>(`admin:grades:${classId}:${subjectId}:${status}`, fetchGradesFn)
   const grades = gradesData ?? []
 
-  // Rafraîchissement temps réel quand l'assistant IA valide des notes en masse.
   useEffect(() => {
     const onChanged = (e: Event) => {
       if ((e as CustomEvent<{ entity?: string }>).detail?.entity === 'grade') fetchGrades()
@@ -71,23 +69,22 @@ export default function SectionGrades({ onToast }: Props) {
   }, [fetchGrades])
 
   return (
-    <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto' }}>
+    <div className="px-4 py-5 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 26 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
         <div>
-          <div className="text-[22px] md:text-[28px]" style={sTitle}>{t('title')}</div>
-          <div className="text-[13px] md:text-[17px]" style={sSub}>Consultation des notes</div>
+          <div className="text-[18px] md:text-[18px]" style={sTitle}>{t('title')}</div>
+          <div className="text-[12px] md:text-[13px]" style={sSub}>Consultation des notes</div>
           {fromCache && cachedAt && (
-            <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 8, padding: '5px 12px', fontSize: 13, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10 }}>
+            <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 8, padding: '5px 12px', fontSize: 12, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10 }}>
               <Package size={14} strokeWidth={2} /> {t('cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}
             </div>
           )}
         </div>
       </div>
 
-      <div className="rounded-none md:rounded-[16px] border-0 md:border md:border-[1.5px] md:border-[var(--border)] bg-transparent md:bg-[var(--surface)]" style={{ overflow: 'hidden' }}>
-        {/* Filtres */}
+      <div className="rounded-none md:rounded-[10px] border-0 md:border md:border-[1.5px] md:border-[var(--border)] bg-transparent md:bg-[var(--surface)]" style={{ overflow: 'hidden' }}>
         <div className="grid grid-cols-2 sm:flex gap-2.5 px-0 py-0 mb-4 md:mb-0 sm:px-5 sm:py-3.5 sm:items-center sm:flex-wrap md:border-b md:border-[var(--border)]">
           <select value={classId} onChange={e => setClassId(e.target.value)} className={`w-full sm:w-auto ${filterSelectCls}`} style={filterSelect} disabled={!filtersReady}>
             <option value="">Toutes les classes</option>
@@ -111,22 +108,22 @@ export default function SectionGrades({ onToast }: Props) {
         </div>
 
         {loading && (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: 50 }}>
-            <div style={{ width: 32, height: 32, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}>
+            <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
           </div>
         )}
 
         {!loading && error === 'OFFLINE_NO_CACHE' && (
-          <div className="text-[13.5px] md:text-[17px] px-[16px] py-[36px] md:px-[20px] md:py-[50px]" style={{ textAlign: 'center', color: 'var(--text3)' }}>
+          <div className="text-[13px] md:text-[13px] px-[16px] py-[36px] md:px-3.5 md:py-[50px]" style={{ textAlign: 'center', color: 'var(--text3)' }}>
             Aucune donnée en cache pour ces filtres — reconnectez-vous pour charger les notes.
           </div>
         )}
 
         {!loading && error && error !== 'OFFLINE_NO_CACHE' && (
-          <div className="flex-wrap gap-[10px] md:gap-[12px] px-[16px] py-[16px] md:px-[24px] md:py-[20px]" style={{ display: 'flex', alignItems: 'center' }}>
-            <span className="text-[13px] md:text-[15px]" style={{ color: 'var(--red)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={15} strokeWidth={2} /> {error}</span>
+          <div className="flex-wrap gap-[10px] md:gap-[12px] px-[16px] py-3 md:px-[24px] md:py-[20px]" style={{ display: 'flex', alignItems: 'center' }}>
+            <span className="text-[13px] md:text-[13px]" style={{ color: 'var(--red)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={15} strokeWidth={2} /> {error}</span>
             <button onClick={fetchGrades}
-              className="w-full md:w-auto text-[12.5px] md:text-[14px] px-[10px] md:px-[12px] py-[5px] md:py-[5px]"
+              className="w-full md:w-auto text-[12.5px] md:text-[12px] px-[10px] md:px-[12px] py-[5px] md:py-[5px]"
               style={{ borderRadius: 8, background: 'var(--surface)', color: 'var(--red)', border: '1.5px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }}>
               Réessayer
             </button>
@@ -135,34 +132,33 @@ export default function SectionGrades({ onToast }: Props) {
 
         {!loading && !error && grades.length === 0 && (
           <div className="gap-[8px] px-[16px] py-[36px] md:py-[50px]" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', color: 'var(--text3)' }}>
-            <Inbox size={30} strokeWidth={1.6} className="md:hidden" />
-            <Inbox size={34} strokeWidth={1.6} className="hidden md:block" />
-            <div className="text-[13.5px] md:text-[17px]">Aucune note pour ces filtres</div>
+            <Inbox size={16} strokeWidth={1.6} className="md:hidden" />
+            <Inbox size={16} strokeWidth={1.6} className="hidden md:block" />
+            <div className="text-[13px] md:text-[13px]">Aucune note pour ces filtres</div>
           </div>
         )}
 
         {!loading && !error && grades.length > 0 && (
           <>
-            {/* ── Cartes empilées — mobile ── */}
             <div className="md:hidden flex flex-col" style={{ gap: 10 }}>
               {grades.map((grade) => {
                 const st = STATUS_STYLE[grade.validationStatus] ?? STATUS_STYLE.DRAFT
                 return (
-                  <div key={grade.id} className="rounded-[16px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: 14 }}>
+                  <div key={grade.id} className="rounded-[10px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: 14 }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
                       <div>
-                        <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 15 }}>{grade.student.firstName} {grade.student.lastName}</div>
+                        <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 13 }}>{grade.student.firstName} {grade.student.lastName}</div>
                         <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{grade.subject.name}</div>
                       </div>
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <span style={{ fontSize: 20, fontWeight: 900, color: (grade.sequenceAverage ?? 0) < 10 ? 'var(--red)' : 'var(--green)' }}>
+                        <span style={{ fontSize: 16, fontWeight: 900, color: (grade.sequenceAverage ?? 0) < 10 ? 'var(--red)' : 'var(--green)' }}>
                           {grade.sequenceAverage != null ? grade.sequenceAverage.toFixed(1) : '—'}
                         </span>
-                        <span style={{ fontSize: 13, color: 'var(--text3)', marginLeft: 3 }}>/20</span>
+                        <span style={{ fontSize: 12, color: 'var(--text3)', marginLeft: 3 }}>/20</span>
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 9, gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 11.5, fontWeight: 800, background: st.bg, color: st.color }}>
+                      <span style={{ padding: '4px 10px', borderRadius: 10, fontSize: 11.5, fontWeight: 800, background: st.bg, color: st.color }}>
                         {st.label}
                       </span>
                     </div>
@@ -171,7 +167,6 @@ export default function SectionGrades({ onToast }: Props) {
               })}
             </div>
 
-            {/* ── Tableau — desktop ── */}
             <div className="hidden md:block" style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 550 }}>
                 <thead>
@@ -192,15 +187,15 @@ export default function SectionGrades({ onToast }: Props) {
                         <td style={tdStyle}>{grade.subject.name}</td>
                         <td style={tdStyle}>
                           <span style={{
-                            fontSize: 20, fontWeight: 900,
+                            fontSize: 16, fontWeight: 900,
                             color: (grade.sequenceAverage ?? 0) < 10 ? 'var(--red)' : 'var(--green)',
                           }}>
                             {grade.sequenceAverage != null ? grade.sequenceAverage.toFixed(1) : '—'}
                           </span>
-                          <span style={{ fontSize: 14, color: 'var(--text3)', marginLeft: 4 }}>/20</span>
+                          <span style={{ fontSize: 12, color: 'var(--text3)', marginLeft: 4 }}>/20</span>
                         </td>
                         <td style={tdStyle}>
-                          <span style={{ padding: '4px 12px', borderRadius: 22, fontSize: 14, fontWeight: 800, background: st.bg, color: st.color }}>
+                          <span style={{ padding: '4px 12px', borderRadius: 10, fontSize: 12, fontWeight: 800, background: st.bg, color: st.color }}>
                             {st.label}
                           </span>
                         </td>
@@ -210,8 +205,8 @@ export default function SectionGrades({ onToast }: Props) {
                 </tbody>
               </table>
             </div>
-            <div className="text-center md:text-left px-[4px] py-[10px] md:px-[20px] md:py-[12px] md:border-t md:border-[var(--border)]">
-              <span className="text-[12.5px] md:text-[14px]" style={{ color: 'var(--text3)', fontWeight: 600 }}>
+            <div className="text-center md:text-left px-[4px] py-[10px] md:px-3.5 md:py-[12px] md:border-t md:border-[var(--border)]">
+              <span className="text-[12.5px] md:text-[12px]" style={{ color: 'var(--text3)', fontWeight: 600 }}>
                 {grades.length} note{grades.length > 1 ? 's' : ''}
               </span>
             </div>
@@ -224,8 +219,8 @@ export default function SectionGrades({ onToast }: Props) {
 
 const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }
 const sSub: React.CSSProperties = { color: 'var(--text3)', marginTop: 3 }
-const btnPrim: React.CSSProperties = { padding: '10px 20px', borderRadius: 11, fontSize: 16, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
-const filterSelectCls = 'rounded-[12px] md:rounded-[10px] px-[12px] py-[10px] md:px-[12px] md:py-[8px] text-[12.5px] md:text-[16px] font-semibold md:font-bold border-0 md:border md:border-[1.5px] md:border-[var(--border2)] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none'
+const btnPrim: React.CSSProperties = { padding: '10px 14px', borderRadius: 11, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+const filterSelectCls = 'rounded-[8px] md:rounded-[10px] px-[12px] py-[10px] md:px-[12px] md:py-[8px] text-[12.5px] md:text-[13px] font-semibold md:font-bold border-0 md:border md:border-[1.5px] md:border-[var(--border2)] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none'
 const filterSelect: React.CSSProperties = { background: 'var(--surface)', color: 'var(--text2)', cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }
-const thStyle: React.CSSProperties = { padding: '11px 16px', textAlign: 'left', fontSize: 13, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.7px' }
-const tdStyle: React.CSSProperties = { padding: '14px 16px', fontSize: 17, color: 'var(--text2)', borderBottom: '1px solid var(--border)', verticalAlign: 'middle' }
+const thStyle: React.CSSProperties = { padding: '11px 12px', textAlign: 'left', fontSize: 12, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.7px' }
+const tdStyle: React.CSSProperties = { padding: '11px 12px', fontSize: 13, color: 'var(--text2)', borderBottom: '1px solid var(--border)', verticalAlign: 'middle' }
