@@ -14,8 +14,8 @@ interface PaymentOverview {
   etablissement: { status: string; _count: { _all: number }; _sum: { montantAttendu: number | null; montantPaye: number | null } }[];
 }
 
-const btnPri = { padding: '8px 18px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' as const }
-const btnSec = { padding: '8px 18px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 14, cursor: 'pointer' as const }
+const btnPri = { padding: '8px 14px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
+const btnSec = { padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 12, cursor: 'pointer' as const }
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   IMPAYE: { bg: 'rgba(239,68,68,0.12)', color: 'var(--red)' },
@@ -90,31 +90,29 @@ export default function SectionSchoolPayments({ onToast }: Props) {
   }
 
   return (
-    <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto' }}>
+    <div className="px-4 py-5 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
       <div className="mb-[16px] md:mb-[20px]">
-        <h2 className="text-[22px] md:text-[28px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Wallet size={20} strokeWidth={2} /> {t('page.section_titles.school-payments')}
+        <h2 className="text-[18px] md:text-[18px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Wallet size={15} strokeWidth={2} /> {t('page.section_titles.school-payments')}
         </h2>
-        <div className="text-[13px] md:text-[17px]" style={{ color: 'var(--text3)', marginTop: 3 }}>{anneeScolaire || t('matricules.minesec_dashboard_title')}</div>
+        <div className="text-[12px] md:text-[13px]" style={{ color: 'var(--text3)', marginTop: 3 }}>{anneeScolaire || t('matricules.minesec_dashboard_title')}</div>
       </div>
 
-      {/* Filtre année */}
       <div className="gap-[8px] md:gap-[12px] mb-[16px] md:mb-[20px]" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
         <label className="text-[12.5px] md:text-[13px]" style={{ fontWeight: 600, color: 'var(--text2)' }}>{t('lv2_choice.academic_year')}</label>
         <select value={anneeScolaire} onChange={e => setAnneeScolaire(e.target.value)}
-          className="rounded-[10px] md:rounded-[6px] px-[10px] md:px-[12px] py-[6px] md:py-[7px] text-[12.5px] md:text-[14px] border-0 md:border md:border-[var(--border)] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none bg-[var(--surface)] md:bg-[var(--bg)]"
+          className="rounded-[10px] md:rounded-[6px] px-[10px] md:px-[12px] py-[6px] md:py-[7px] text-[12.5px] md:text-[12px] border-0 md:border md:border-[var(--border)] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none bg-[var(--surface)] md:bg-[var(--bg)]"
           style={{ color: 'var(--text)' }}>
           <option value="">—</option>
           {years.map(y => <option key={y.id} value={y.label}>{y.label}</option>)}
         </select>
       </div>
 
-      {loading ? <p className="text-[13.5px] md:text-[16px]" style={{ color: 'var(--text2)' }}>{t('common.loading')}</p> : !overview ? (
-        <p className="text-[13.5px] md:text-[16px]" style={{ color: 'var(--text3)', fontStyle: 'italic' }}>{t('matricules.no_imports')}</p>
+      {loading ? <p className="text-[13.5px] md:text-[13px]" style={{ color: 'var(--text2)' }}>{t('common.loading')}</p> : !overview ? (
+        <p className="text-[13.5px] md:text-[13px]" style={{ color: 'var(--text3)', fontStyle: 'italic' }}>{t('matricules.no_imports')}</p>
       ) : (
         <>
-          {/* Résumé global */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-[10px] md:gap-[16px] mb-[16px] md:mb-[24px]">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-[10px] md:gap-3 mb-[16px] md:mb-[24px]">
             {(() => {
               const stats = getStats(overview.minesec)
               return [
@@ -123,25 +121,23 @@ export default function SectionSchoolPayments({ onToast }: Props) {
                 { label: t('matricules.minesec_total_restant'), value: `${(stats.totalAttendu - stats.totalPaye).toLocaleString()} FCFA`, bg: 'rgba(239,68,68,0.12)', color: 'var(--red)' },
                 { label: t('matricules.taux_recouvrement'), value: `${stats.tauxRecouvrement}%`, bg: 'rgba(234,179,8,0.12)', color: '#b45309' },
               ].map((c, i) => (
-                <div key={i} className="rounded-[14px] md:rounded-[12px] p-[12px] md:px-[20px] md:py-[16px]" style={{ background: c.bg, color: c.color }}>
+                <div key={i} className="rounded-[10px] md:rounded-[8px] p-[12px] md:px-3.5 md:py-3" style={{ background: c.bg, color: c.color }}>
                   <div className="text-[11px]" style={{ fontWeight: 700, opacity: 0.85, marginBottom: 4 }}>{c.label}</div>
-                  <div className="text-[16px] md:text-[22px]" style={{ fontWeight: 900 }}>{c.value}</div>
+                  <div className="text-[13px] md:text-[18px]" style={{ fontWeight: 900 }}>{c.value}</div>
                 </div>
               ))
             })()}
           </div>
 
-          {/* Détail par statut */}
-          <div className="rounded-none md:rounded-[12px] p-0 md:p-[20px] mb-[16px] md:mb-[24px] border-0 md:border md:border-[var(--border)] bg-transparent md:bg-[var(--surface)]">
-            <h3 className="text-[12.5px] md:text-[16px]" style={{ fontWeight: 800, color: 'var(--text)', marginBottom: 12, textTransform: 'uppercase' }}>{t('matricules.par_statut')}</h3>
-            {/* Cartes — mobile */}
+          <div className="rounded-none md:rounded-[8px] p-0 md:p-3.5 mb-[16px] md:mb-[24px] border-0 md:border md:border-[var(--border)] bg-transparent md:bg-[var(--surface)]">
+            <h3 className="text-[12.5px] md:text-[13px]" style={{ fontWeight: 800, color: 'var(--text)', marginBottom: 12, textTransform: 'uppercase' }}>{t('matricules.par_statut')}</h3>
             <div className="md:hidden flex flex-col" style={{ gap: 8 }}>
               {overview.minesec.map((s, i) => {
                 const sc = STATUS_COLORS[s.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }
                 return (
-                  <div key={i} className="rounded-[14px] px-[14px] py-[13px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)' }}>
+                  <div key={i} className="rounded-[10px] px-[14px] py-[13px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 10.5, fontWeight: 800, background: sc.bg, color: sc.color }}>{s.status}</span>
+                      <span style={{ padding: '3px 10px', borderRadius: 10, fontSize: 10.5, fontWeight: 800, background: sc.bg, color: sc.color }}>{s.status}</span>
                       <span style={{ fontSize: 11.5, color: 'var(--text3)', fontWeight: 700 }}>{s._count._all} paiement(s)</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>
@@ -152,7 +148,6 @@ export default function SectionSchoolPayments({ onToast }: Props) {
                 )
               })}
             </div>
-            {/* Tableau — desktop */}
             <div className="hidden md:block" style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 500 }}>
                 <thead>
@@ -169,7 +164,7 @@ export default function SectionSchoolPayments({ onToast }: Props) {
                     return (
                       <tr key={i}>
                         <td style={{ padding: '8px 12px', borderBottom: '1px solid var(--bg2)' }}>
-                          <span style={{ padding: '3px 10px', borderRadius: 10, fontSize: 12, fontWeight: 700, background: sc.bg, color: sc.color }}>{s.status}</span>
+                          <span style={{ padding: '3px 10px', borderRadius: 8, fontSize: 12, fontWeight: 700, background: sc.bg, color: sc.color }}>{s.status}</span>
                         </td>
                         <td style={{ padding: '8px 12px', borderBottom: '1px solid var(--bg2)', textAlign: 'center' }}>{s._count._all}</td>
                         <td style={{ padding: '8px 12px', borderBottom: '1px solid var(--bg2)', textAlign: 'right' }}>{(s._sum.montantAttendu ?? 0).toLocaleString()} FCFA</td>
@@ -182,13 +177,12 @@ export default function SectionSchoolPayments({ onToast }: Props) {
             </div>
           </div>
 
-          {/* Actions */}
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={loadOverview}
-              className="text-[12.5px] md:text-[14px] py-[10px] md:py-[8px] px-[10px] md:px-[18px] rounded-[10px] md:rounded-[8px]"
+              className="text-[12.5px] md:text-[12px] py-[10px] md:py-[8px] px-[10px] md:px-3.5 rounded-[10px] md:rounded-[8px]"
               style={{ ...btnSec, padding: undefined, fontSize: undefined, borderRadius: undefined, flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><RefreshCw size={14} strokeWidth={2} /> {t('matricules.sync_btn')}</button>
             <button onClick={generateForSchool} disabled={generatingSchool}
-              className="text-[12.5px] md:text-[14px] py-[10px] md:py-[8px] px-[10px] md:px-[18px] rounded-[10px] md:rounded-[8px]"
+              className="text-[12.5px] md:text-[12px] py-[10px] md:py-[8px] px-[10px] md:px-3.5 rounded-[10px] md:rounded-[8px]"
               style={{ ...btnPri, padding: undefined, fontSize: undefined, borderRadius: undefined, flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
               {generatingSchool ? '...' : <><Settings size={14} strokeWidth={2} /> {t('matricules.generate_school_btn')}</>}
             </button>
