@@ -39,11 +39,11 @@ const STATUT_COLORS: Record<string, { bg: string; color: string }> = {
   EXPIRED: { bg: 'var(--bg2)', color: 'var(--text3)' },
 }
 
-const btnPri = { padding: '8px 18px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' as const }
-const btnSec = { padding: '8px 18px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 14, cursor: 'pointer' as const }
+const btnPri = { padding: '8px 14px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
+const btnSec = { padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 12, cursor: 'pointer' as const }
 const btnDanger = { padding: '6px 12px', borderRadius: 8, border: '1px solid var(--red)', background: 'var(--surface)', color: 'var(--red)', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
 const btnSmall = { padding: '6px 12px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
-const inputStyle = { padding: '9px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 14, width: '100%', boxSizing: 'border-box' as const }
+const inputStyle = { padding: '9px 11px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 12, width: '100%', boxSizing: 'border-box' as const }
 
 export default function SectionEleveOnboarding({ onToast }: Props) {
   const t = useT('admin')
@@ -217,28 +217,27 @@ export default function SectionEleveOnboarding({ onToast }: Props) {
   }
 
   return (
-    <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
+    <div className="px-4 py-5 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 13 }}>
         <div>
-          <h2 className="text-[22px] md:text-[28px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('eleveOnboarding.title')}</h2>
-          <p className="text-[13px] md:text-[14px]" style={{ color: 'var(--text3)', marginTop: 4 }}>{t('eleveOnboarding.subtitle')}</p>
+          <h2 className="text-[18px] md:text-[18px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('eleveOnboarding.title')}</h2>
+          <p className="text-[13px] md:text-[12px]" style={{ color: 'var(--text3)', marginTop: 4 }}>{t('eleveOnboarding.subtitle')}</p>
         </div>
-        <button onClick={() => setCreateOpen(true)} style={{ ...btnPri, borderRadius: 20, padding: '9px 14px', fontSize: 12 }}>{t('eleveOnboarding.createBtn')}</button>
+        <button onClick={() => setCreateOpen(true)} style={{ ...btnPri, borderRadius: 10, padding: '9px 11px', fontSize: 12 }}>{t('eleveOnboarding.createBtn')}</button>
       </div>
 
-      {/* Réglages */}
       {settings && (
-        <div className="flex-col md:flex-row gap-[12px] md:gap-[24px] rounded-[12px] md:rounded-[12px] px-[14px] py-[12px] md:px-[20px] md:py-[14px] mb-[16px] md:mb-[20px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[var(--border)]" style={{ display: 'flex', alignItems: 'stretch', background: 'var(--surface)' }}>
+        <div className="flex-col md:flex-row gap-[12px] md:gap-4 rounded-[8px] md:rounded-[8px] px-[14px] py-[12px] md:px-3.5 md:py-2.5 mb-[16px] md:mb-[16px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[var(--border)]" style={{ display: 'flex', alignItems: 'stretch', background: 'var(--surface)' }}>
           <div onClick={toggleSelfService} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, cursor: 'pointer' }}>
-            <span className="text-[12.5px] md:text-[14px]" style={{ fontWeight: 700, color: 'var(--text)' }}>{t('eleveOnboarding.settingsToggle')}</span>
-            <div style={{ width: 38, height: 22, borderRadius: 11, background: settings.selfServiceEnabled ? 'var(--green)' : 'var(--border2)', position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
-              <div style={{ width: 16, height: 16, borderRadius: 8, background: '#fff', position: 'absolute', top: 3, left: settings.selfServiceEnabled ? 19 : 3, transition: 'left 0.2s' }} />
+            <span className="text-[12.5px] md:text-[12px]" style={{ fontWeight: 700, color: 'var(--text)' }}>{t('eleveOnboarding.settingsToggle')}</span>
+            <div style={{ width: 40, height: 22, borderRadius: 11, background: settings.selfServiceEnabled ? 'var(--green)' : 'var(--border2)', position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
+              <div style={{ width: 16, height: 16, borderRadius: 8, background: '#fff', position: 'absolute', top: 3, left: settings.selfServiceEnabled ? 22 : 3, transition: 'left 0.2s' }} />
             </div>
           </div>
-          <label className="text-[12.5px] md:text-[14px] gap-[8px] md:gap-[10px]" style={{ display: 'flex', alignItems: 'center', color: 'var(--text2)' }}>
+          <label className="text-[12.5px] md:text-[12px] gap-[8px] md:gap-[10px]" style={{ display: 'flex', alignItems: 'center', color: 'var(--text2)' }}>
             {t('eleveOnboarding.settingsResponsable')}
             <select value={settings.responsableRole} onChange={e => changeResponsableRole(e.target.value as 'ADMIN' | 'STAFF')}
-              className="text-[12.5px] md:text-[14px] px-[8px] md:px-[10px] py-[5px] md:py-[6px] rounded-[8px] md:rounded-[8px]"
+              className="text-[12.5px] md:text-[12px] px-[8px] md:px-[10px] py-[5px] md:py-[6px] rounded-[8px] md:rounded-[8px]"
               style={{ border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)' }}>
               <option value="ADMIN">ADMIN</option>
               <option value="STAFF">STAFF</option>
@@ -247,10 +246,9 @@ export default function SectionEleveOnboarding({ onToast }: Props) {
         </div>
       )}
 
-      {/* Filtre statut */}
-      <div style={{ marginBottom: 14 }}>
+      <div style={{ marginBottom: 10 }}>
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-          className="rounded-[12px] md:rounded-[8px] px-[12px] md:px-[14px] py-[9px] md:py-[8px] text-[12.5px] md:text-[13px] font-semibold md:font-normal border-0 md:border md:border-[var(--border)] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none"
+          className="rounded-[8px] md:rounded-[8px] px-[12px] md:px-[14px] py-[9px] md:py-[8px] text-[12.5px] md:text-[13px] font-semibold md:font-normal border-0 md:border md:border-[var(--border)] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none"
           style={{ background: 'var(--surface)', color: 'var(--text)' }}>
           <option value="">{t('eleveOnboarding.filterAll')}</option>
           {['DRAFT', 'LINK_SENT', 'SUBMITTED', 'PENDING_VALIDATION', 'VALIDATED', 'ACTIVATED', 'REJECTED', 'EXPIRED'].map(s => (
@@ -259,31 +257,29 @@ export default function SectionEleveOnboarding({ onToast }: Props) {
         </select>
       </div>
 
-      {/* Liste */}
-      <div className="rounded-none md:rounded-[12px] border-0 md:border md:border-[var(--border)] bg-transparent md:bg-[var(--surface)]" style={{ overflow: 'hidden' }}>
+      <div className="rounded-none md:rounded-[8px] border-0 md:border md:border-[var(--border)] bg-transparent md:bg-[var(--surface)]" style={{ overflow: 'hidden' }}>
         {loading ? (
-          <div className="text-[13.5px] md:text-[16px] py-[30px] md:py-[40px]" style={{ textAlign: 'center', color: 'var(--text3)' }}>{t('common.loading') || '...'}</div>
+          <div className="text-[13.5px] md:text-[13px] py-[30px] md:py-[40px]" style={{ textAlign: 'center', color: 'var(--text3)' }}>{t('common.loading') || '...'}</div>
         ) : dossiers.length === 0 ? (
-          <div className="text-[13.5px] md:text-[16px] py-[30px] md:py-[40px]" style={{ textAlign: 'center', color: 'var(--text3)' }}>{t('eleveOnboarding.listEmpty')}</div>
+          <div className="text-[13.5px] md:text-[13px] py-[30px] md:py-[40px]" style={{ textAlign: 'center', color: 'var(--text3)' }}>{t('eleveOnboarding.listEmpty')}</div>
         ) : (
           <>
-          {/* ── Cartes empilées — mobile ── */}
           <div className="md:hidden flex flex-col" style={{ gap: 10 }}>
             {dossiers.map(d => (
-              <div key={d.id} className="rounded-[16px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: 15 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{d.nomProvisoire}</div>
+              <div key={d.id} className="rounded-[10px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: 15 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{d.nomProvisoire}</div>
                 {d.matchScore !== null && (
                   <div style={{ fontSize: 11, color: '#b45309', marginTop: 3 }}>{t('eleveOnboarding.matchWarning', { score: String(d.matchScore) })}</div>
                 )}
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-                  <span style={{ padding: '3px 10px', borderRadius: 16, fontSize: 12, fontWeight: 700, ...(STATUT_COLORS[d.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }) }}>
+                  <span style={{ padding: '3px 10px', borderRadius: 10, fontSize: 12, fontWeight: 700, ...(STATUT_COLORS[d.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }) }}>
                     {t(`eleveOnboarding.status_${d.status}`)}
                   </span>
-                  <span style={{ padding: '3px 10px', borderRadius: 16, fontSize: 12, fontWeight: 700, background: 'var(--bg2)', color: 'var(--text2)' }}>
+                  <span style={{ padding: '3px 10px', borderRadius: 10, fontSize: 12, fontWeight: 700, background: 'var(--bg2)', color: 'var(--text2)' }}>
                     {t(`eleveOnboarding.source_${d.sourceType}`)}
                   </span>
                   {d.classe?.name && (
-                    <span style={{ padding: '3px 10px', borderRadius: 16, fontSize: 12, fontWeight: 700, background: 'var(--bg2)', color: 'var(--text2)' }}>{d.classe.name}</span>
+                    <span style={{ padding: '3px 10px', borderRadius: 10, fontSize: 12, fontWeight: 700, background: 'var(--bg2)', color: 'var(--text2)' }}>{d.classe.name}</span>
                   )}
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 8 }}>{new Date(d.createdAt).toLocaleDateString()}</div>
@@ -303,32 +299,31 @@ export default function SectionEleveOnboarding({ onToast }: Props) {
             ))}
           </div>
 
-          {/* ── Tableau — desktop ── */}
           <div className="hidden md:block" style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
               <thead>
                 <tr>{[t('eleveOnboarding.colName'), t('eleveOnboarding.colStatus'), t('eleveOnboarding.colSource'), t('eleveOnboarding.colClasse'), t('eleveOnboarding.colCreated'), t('eleveOnboarding.colActions')].map(h => (
-                  <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 12, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', textTransform: 'uppercase' }}>{h}</th>
+                  <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontSize: 12, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', textTransform: 'uppercase' }}>{h}</th>
                 ))}</tr>
               </thead>
               <tbody>
                 {dossiers.map(d => (
                   <tr key={d.id} style={{ borderBottom: '1px solid var(--bg)' }}>
-                    <td style={{ padding: '12px 16px', fontSize: 14, color: 'var(--text)' }}>
+                    <td style={{ padding: '12px 12px', fontSize: 12, color: 'var(--text)' }}>
                       {d.nomProvisoire}
                       {d.matchScore !== null && (
                         <div style={{ fontSize: 11, color: '#b45309', marginTop: 3 }}>{t('eleveOnboarding.matchWarning', { score: String(d.matchScore) })}</div>
                       )}
                     </td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <span style={{ padding: '3px 10px', borderRadius: 16, fontSize: 12, fontWeight: 700, ...(STATUT_COLORS[d.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }) }}>
+                    <td style={{ padding: '12px 12px' }}>
+                      <span style={{ padding: '3px 10px', borderRadius: 10, fontSize: 12, fontWeight: 700, ...(STATUT_COLORS[d.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }) }}>
                         {t(`eleveOnboarding.status_${d.status}`)}
                       </span>
                     </td>
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text2)' }}>{t(`eleveOnboarding.source_${d.sourceType}`)}</td>
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text2)' }}>{d.classe?.name ?? '—'}</td>
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text3)' }}>{new Date(d.createdAt).toLocaleDateString()}</td>
-                    <td style={{ padding: '12px 16px', display: 'flex', gap: 8 }}>
+                    <td style={{ padding: '12px 12px', fontSize: 13, color: 'var(--text2)' }}>{t(`eleveOnboarding.source_${d.sourceType}`)}</td>
+                    <td style={{ padding: '12px 12px', fontSize: 13, color: 'var(--text2)' }}>{d.classe?.name ?? '—'}</td>
+                    <td style={{ padding: '12px 12px', fontSize: 13, color: 'var(--text3)' }}>{new Date(d.createdAt).toLocaleDateString()}</td>
+                    <td style={{ padding: '12px 12px', display: 'flex', gap: 8 }}>
                       {d.status === 'PENDING_VALIDATION' && (
                         <>
                           <button onClick={() => openValidate(d)} style={btnSmall}>{t('eleveOnboarding.validateBtn')}</button>
@@ -349,11 +344,10 @@ export default function SectionEleveOnboarding({ onToast }: Props) {
         )}
       </div>
 
-      {/* Modal création */}
       {createOpen && (
         <div onClick={() => !creating && setCreateOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div onClick={e => e.stopPropagation()} className="p-5 md:p-7" style={{ background: 'var(--surface)', borderRadius: 16, width: 460, maxWidth: '92vw' }}>
-            <h3 className="text-[16px] md:text-[18px]" style={{ fontWeight: 800, color: 'var(--text)', marginBottom: 18 }}>{t('eleveOnboarding.createModalTitle')}</h3>
+          <div onClick={e => e.stopPropagation()} className="p-5 md:p-5" style={{ background: 'var(--surface)', borderRadius: 10, width: 420, maxWidth: '92vw', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h3 className="text-[13px] md:text-[18px]" style={{ fontWeight: 800, color: 'var(--text)', marginBottom: 13 }}>{t('eleveOnboarding.createModalTitle')}</h3>
 
             <FieldLabel>{t('eleveOnboarding.fieldNomProvisoire')}</FieldLabel>
             <input style={inputStyle} value={createForm.nomProvisoire} onChange={e => setCreateForm(f => ({ ...f, nomProvisoire: e.target.value }))} />
@@ -420,12 +414,11 @@ export default function SectionEleveOnboarding({ onToast }: Props) {
         </div>
       )}
 
-      {/* Modal validation */}
       {validateTarget && (
         <div onClick={() => !validating && setValidateTarget(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div onClick={e => e.stopPropagation()} className="p-5 md:p-7" style={{ background: 'var(--surface)', borderRadius: 16, width: 420, maxWidth: '92vw' }}>
-            <h3 className="text-[16px] md:text-[18px]" style={{ fontWeight: 800, color: 'var(--text)', marginBottom: 6 }}>{t('eleveOnboarding.validateModalTitle')}</h3>
-            <p style={{ fontSize: 14, color: 'var(--text3)', marginBottom: 16 }}>{validateTarget.nomProvisoire}</p>
+          <div onClick={e => e.stopPropagation()} className="p-5 md:p-5" style={{ background: 'var(--surface)', borderRadius: 10, width: 420, maxWidth: '92vw' }}>
+            <h3 className="text-[13px] md:text-[18px]" style={{ fontWeight: 800, color: 'var(--text)', marginBottom: 6 }}>{t('eleveOnboarding.validateModalTitle')}</h3>
+            <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12 }}>{validateTarget.nomProvisoire}</p>
 
             <FieldLabel>{t('eleveOnboarding.validateClasseLabel')}</FieldLabel>
             <select style={inputStyle} value={validateClassId} onChange={e => setValidateClassId(e.target.value)}>
@@ -443,12 +436,11 @@ export default function SectionEleveOnboarding({ onToast }: Props) {
         </div>
       )}
 
-      {/* Modal rejet */}
       {rejectTarget && (
         <div onClick={() => !rejecting && setRejectTarget(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div onClick={e => e.stopPropagation()} className="p-5 md:p-7" style={{ background: 'var(--surface)', borderRadius: 16, width: 420, maxWidth: '92vw' }}>
-            <h3 className="text-[16px] md:text-[18px]" style={{ fontWeight: 800, color: 'var(--text)', marginBottom: 6 }}>{t('eleveOnboarding.rejectModalTitle')}</h3>
-            <p style={{ fontSize: 14, color: 'var(--text3)', marginBottom: 16 }}>{rejectTarget.nomProvisoire}</p>
+          <div onClick={e => e.stopPropagation()} className="p-5 md:p-5" style={{ background: 'var(--surface)', borderRadius: 10, width: 420, maxWidth: '92vw' }}>
+            <h3 className="text-[13px] md:text-[18px]" style={{ fontWeight: 800, color: 'var(--text)', marginBottom: 6 }}>{t('eleveOnboarding.rejectModalTitle')}</h3>
+            <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12 }}>{rejectTarget.nomProvisoire}</p>
 
             <FieldLabel>{t('eleveOnboarding.rejectReasonLabel')}</FieldLabel>
             <textarea style={{ ...inputStyle, minHeight: 80 }} value={rejectReason} onChange={e => setRejectReason(e.target.value)} />
