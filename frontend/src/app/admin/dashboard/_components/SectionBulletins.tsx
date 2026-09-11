@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useState, useEffect } from 'react'
 import { PartyPopper, Search, AlertTriangle, CheckCircle2, Loader2, FileText, BarChart3, Package, Upload, Eye } from 'lucide-react'
 import { useT } from '@/lib/i18n'
@@ -46,7 +46,6 @@ export default function SectionBulletins({ onToast }: Props) {
   const [sending, setSending]               = useState(false)
   const [celebrate, setCelebrate]           = useState(false)
 
-  // Auto-fermeture de l'écran de célébration (habillage ponctuel, pas un écran de travail)
   useEffect(() => {
     if (!celebrate) return
     const timer = setTimeout(() => setCelebrate(false), 6000)
@@ -61,7 +60,6 @@ export default function SectionBulletins({ onToast }: Props) {
       .finally(() => setLoadingClasses(false))
   }, [])
 
-  // Rafraîchissement temps réel quand l'assistant IA génère/envoie des bulletins.
   useEffect(() => {
     const onChanged = (e: Event) => {
       if ((e as CustomEvent<{ entity?: string }>).detail?.entity === 'reportCard' && classId) loadClass()
@@ -187,76 +185,73 @@ export default function SectionBulletins({ onToast }: Props) {
   ] : []
 
   return (
-    <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto' }}>
+    <div className="px-4 py-5 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
-      {/* Célébration ponctuelle après génération réussie — teinte fixe, texte clair fixe */}
       {celebrate && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 3000, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'edu-celebIn 0.3s ease both' }}>
           <style>{`@keyframes edu-celebIn { from { opacity: 0; } to { opacity: 1; } }`}</style>
           <AnimatedBackground variant="celebration" style={{ zIndex: 0 }} />
           <div className="px-[24px] py-[24px] md:px-[32px] md:py-[32px] max-w-[92vw] md:max-w-[460px]" style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14, color: 'white' }}>
-              <PartyPopper size={52} className="md:hidden" /><PartyPopper size={74} className="hidden md:block" />
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10, color: 'white' }}>
+              <PartyPopper size={16} className="md:hidden" /><PartyPopper size={16} className="hidden md:block" />
             </div>
-            <div className="text-[22px] md:text-[30px] mb-[8px] md:mb-[10px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'white' }}>
+            <div className="text-[18px] md:text-[18px] mb-[8px] md:mb-[10px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'white' }}>
               {t('bulletins.celebrate.title')}
             </div>
-            <div className="text-[14px] md:text-[17px] mb-[22px] md:mb-[30px]" style={{ color: 'rgba(247,243,238,0.75)', lineHeight: 1.6 }}>
+            <div className="text-[12px] md:text-[13px] mb-[22px] md:mb-[24px]" style={{ color: 'rgba(247,243,238,0.75)', lineHeight: 1.6 }}>
               {t('bulletins.celebrate.subtitle')}
             </div>
             <button onClick={() => setCelebrate(false)}
-              className="w-full md:w-auto text-[14px] md:text-[16px] px-[24px] md:px-[34px] py-[11px] md:py-[13px]"
-              style={{ background: 'var(--green)', color: 'white', fontWeight: 800, borderRadius: 11, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+              className="w-full md:w-auto text-[12px] md:text-[13px] px-[24px] md:px-[28px] py-[11px] md:py-[11px]"
+              style={{ background: 'var(--green)', color: 'white', fontWeight: 800, borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
               {t('bulletins.celebrate.cta')}
             </button>
           </div>
         </div>
       )}
 
-      <div className="mb-[14px] md:mb-[26px]">
-        <div className="text-[22px] md:text-[28px]" style={sTitle}>{t('bulletins.title')}</div>
-        <div className="text-[13px] md:text-[17px]" style={sSub}>Génération et distribution</div>
+      <div className="mb-[14px] md:mb-[18px]">
+        <div className="text-[18px] md:text-[18px]" style={sTitle}>{t('bulletins.title')}</div>
+        <div className="text-[12px] md:text-[13px]" style={sSub}>Génération et distribution</div>
       </div>
 
-      {/* Sélecteur de classe */}
-      <div className="rounded-[12px] md:rounded-[16px] px-[12px] py-[10px] md:px-[20px] md:py-[14px] mb-[14px] md:mb-[18px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div className="rounded-[8px] md:rounded-[10px] px-[12px] py-[10px] md:px-3.5 md:py-2.5 mb-[14px] md:mb-[16px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
         <select value={classId} onChange={e => setClassId(e.target.value)} className={selectStCls} style={selectSt} disabled={loadingClasses}>
           <option value="">{loadingClasses ? 'Chargement…' : 'Sélectionner une classe'}</option>
           {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <button className="text-[12.5px] md:text-[16px] px-[14px] py-[8px] md:px-[20px] md:py-[10px] rounded-[9px] md:rounded-[11px]" style={{ ...btnPrim, display: 'inline-flex', alignItems: 'center', gap: 7 }} onClick={loadClass} disabled={loadingClasses || loadingCheck || !classId}>
+        <button className="text-[12.5px] md:text-[13px] px-[14px] py-[8px] md:px-3.5 md:py-[10px] rounded-[9px] md:rounded-[8px]" style={{ ...btnPrim, display: 'inline-flex', alignItems: 'center', gap: 7 }} onClick={loadClass} disabled={loadingClasses || loadingCheck || !classId}>
           {loadingCheck ? <><Loader2 size={15} className="animate-spin" /> Chargement…</> : 'Charger'}
         </button>
       </div>
 
       {loadingCheck && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
-          <div style={{ width: 32, height: 32, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 39 }}>
+          <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
         </div>
       )}
 
       {!loadingCheck && check && (
-        <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 18 }}>
+        <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 12 }}>
 
-          {/* Pré-vérification */}
-          <div className="rounded-[16px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)', overflow: 'hidden' }}>
-            <div className="px-[16px] pt-[14px] pb-2 md:px-[22px] md:py-4 md:border-b md:border-[var(--border)]">
-              <span className="text-[14px] md:text-[17px] font-extrabold" style={{ color: 'var(--text)', display: 'inline-flex', alignItems: 'center', gap: 8 }}><Search size={16} /> Pré-vérification — {className}</span>
+          <div className="rounded-[10px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)', overflow: 'hidden' }}>
+            <div className="px-3.5 pt-3 pb-2 md:px-4 md:py-3 md:border-b md:border-[var(--border)]">
+              <span className="text-[12px] md:text-[13px] font-extrabold" style={{ color: 'var(--text)', display: 'inline-flex', alignItems: 'center', gap: 8 }}><Search size={15} /> Pré-vérification — {className}</span>
             </div>
-            <div className="p-[16px] md:p-[20px] gap-[10px] md:gap-[12px]" style={{ display: 'flex', flexDirection: 'column' }}>
+            <div className="p-3 md:p-3.5 gap-[10px] md:gap-[12px]" style={{ display: 'flex', flexDirection: 'column' }}>
               {checks.map((c, i) => (
-                <div key={i} className="gap-[10px] md:gap-[12px] p-[12px] md:px-[16px] md:py-[13px] rounded-[10px] md:rounded-[11px]" style={{ display: 'flex', alignItems: 'flex-start', background: c.warn ? 'var(--amber-light)' : 'var(--green-light)' }}>
-                  {c.warn ? <AlertTriangle size={20} color="var(--amber)" /> : <CheckCircle2 size={20} color="var(--green)" />}
+                <div key={i} className="gap-[10px] md:gap-[12px] p-[12px] md:px-[14px] md:py-[12px] rounded-[10px] md:rounded-[8px]" style={{ display: 'flex', alignItems: 'flex-start', background: c.warn ? 'var(--amber-light)' : 'var(--green-light)' }}>
+                  {c.warn ? <AlertTriangle size={15} color="var(--amber)" /> : <CheckCircle2 size={15} color="var(--green)" />}
                   <div>
-                    <div className="text-[13px] md:text-[16px]" style={{ fontWeight: 800, color: c.warn ? 'var(--amber)' : 'var(--green)' }}>{c.title}</div>
-                    <div className="text-[11.5px] md:text-[14px]" style={{ color: c.warn ? 'var(--amber)' : 'var(--green)', marginTop: 3, lineHeight: 1.5 }}>{c.sub}</div>
+                    <div className="text-[13px] md:text-[13px]" style={{ fontWeight: 800, color: c.warn ? 'var(--amber)' : 'var(--green)' }}>{c.title}</div>
+                    <div className="text-[11.5px] md:text-[12px]" style={{ color: c.warn ? 'var(--amber)' : 'var(--green)', marginTop: 3, lineHeight: 1.5 }}>{c.sub}</div>
                   </div>
                 </div>
               ))}
               <button
                 data-help-id="bulletins-generate-btn"
-                className="w-full md:w-auto justify-center text-[13.5px] md:text-[16px] py-[12px] md:py-[10px] px-[16px] md:px-[20px] rounded-[12px] md:rounded-[11px]"
+                className="w-full md:w-auto justify-center text-[13px] md:text-[13px] py-[12px] md:py-[10px] px-[16px] md:px-3.5 rounded-[8px] md:rounded-[8px]"
                 style={{ ...btnPrim, fontWeight: 800, marginTop: 6, opacity: check.canGenerateReportCard ? 1 : 0.45, cursor: check.canGenerateReportCard ? 'pointer' : 'not-allowed', display: 'inline-flex', alignItems: 'center', gap: 8 }}
                 onClick={handleGenerate}
                 disabled={!check.canGenerateReportCard || generating}>
@@ -265,18 +260,17 @@ export default function SectionBulletins({ onToast }: Props) {
             </div>
           </div>
 
-          {/* Bulletins générés */}
-          <div className="rounded-[16px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)', overflow: 'hidden' }}>
-            <div className="px-[16px] pt-[14px] pb-2 md:px-[22px] md:py-4 md:border-b md:border-[var(--border)]" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-              <span className="text-[14px] md:text-[17px] font-extrabold" style={{ color: 'var(--text)', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <BarChart3 size={16} /> Bulletins générés ({reportCards.length})
+          <div className="rounded-[10px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)', overflow: 'hidden' }}>
+            <div className="px-3.5 pt-3 pb-2 md:px-4 md:py-3 md:border-b md:border-[var(--border)]" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+              <span className="text-[12px] md:text-[13px] font-extrabold" style={{ color: 'var(--text)', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <BarChart3 size={15} /> Bulletins générés ({reportCards.length})
               </span>
               {reportCards.length > 0 && (
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="text-[11px] md:text-[15px] px-[10px] py-[6px] md:px-[14px] md:py-[7px] rounded-[8px] md:rounded-[10px] border-0 md:border md:border-[1.5px] md:border-[var(--border2)] bg-[var(--bg2)] md:bg-[var(--surface)]" style={{ fontWeight: 800, color: 'var(--text2)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={handleExportZip} disabled={exporting}>
+                  <button className="text-[11px] md:text-[12px] px-[10px] py-[6px] md:px-[12px] md:py-[7px] rounded-[8px] md:rounded-[8px] border-0 md:border md:border-[1.5px] md:border-[var(--border2)] bg-[var(--bg2)] md:bg-[var(--surface)]" style={{ fontWeight: 800, color: 'var(--text2)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={handleExportZip} disabled={exporting}>
                     {exporting ? <Loader2 size={14} className="animate-spin" /> : <Package size={14} />} ZIP
                   </button>
-                  <button className="text-[11px] md:text-[15px] px-[10px] py-[6px] md:px-[14px] md:py-[7px] rounded-[8px] md:rounded-[10px] border-0 md:border md:border-[1.5px] md:border-[var(--border2)] bg-[var(--bg2)] md:bg-[var(--surface)]" style={{ fontWeight: 800, color: 'var(--text2)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={handleSendParents} disabled={sending}>
+                  <button className="text-[11px] md:text-[12px] px-[10px] py-[6px] md:px-[12px] md:py-[7px] rounded-[8px] md:rounded-[8px] border-0 md:border md:border-[1.5px] md:border-[var(--border2)] bg-[var(--bg2)] md:bg-[var(--surface)]" style={{ fontWeight: 800, color: 'var(--text2)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={handleSendParents} disabled={sending}>
                     {sending ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} Envoyer
                   </button>
                 </div>
@@ -284,20 +278,19 @@ export default function SectionBulletins({ onToast }: Props) {
             </div>
 
             {reportCards.length === 0 ? (
-              <div className="text-[13.5px] md:text-[16px] px-[16px] py-[32px] md:px-[20px] md:py-[40px]" style={{ textAlign: 'center', color: 'var(--text3)' }}>
+              <div className="text-[13px] md:text-[13px] px-[16px] py-[32px] md:px-3.5 md:py-[32px]" style={{ textAlign: 'center', color: 'var(--text3)' }}>
                 Aucun bulletin généré pour cette classe
               </div>
             ) : (
               <>
-              {/* ── Cartes empilées — mobile ── */}
               <div className="md:hidden flex flex-col" style={{ gap: 10 }}>
                 {reportCards.slice(0, 15).map((b) => (
-                  <div key={b.id} className="rounded-[14px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                  <div key={b.id} className="rounded-[10px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                     <div>
-                      <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 15 }}>
+                      <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 13 }}>
                         {b.student ? `${b.student.firstName} ${b.student.lastName}` : 'Élève'}
                       </div>
-                      <div style={{ fontSize: 12.5, color: 'var(--text3)', marginTop: 2 }}>
+                      <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
                         {b.generalAverage != null ? `${b.generalAverage.toFixed(2)}/20` : '—'} · {b.rank != null ? `${b.rank}e` : '—'}
                       </div>
                     </div>
@@ -308,13 +301,12 @@ export default function SectionBulletins({ onToast }: Props) {
                   </div>
                 ))}
                 {reportCards.length > 15 && (
-                  <div style={{ textAlign: 'center', color: 'var(--text3)', fontStyle: 'italic', fontSize: 13, padding: '6px 0' }}>
+                  <div style={{ textAlign: 'center', color: 'var(--text3)', fontStyle: 'italic', fontSize: 13, padding: '6px' }}>
                     + {reportCards.length - 15} autres bulletins
                   </div>
                 )}
               </div>
 
-              {/* ── Tableau — desktop ── */}
               <div className="hidden md:block" style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 500 }}>
                   <thead>
@@ -333,7 +325,7 @@ export default function SectionBulletins({ onToast }: Props) {
                           </strong>
                         </td>
                         <td style={tdSt}>
-                          <strong style={{ color: (b.generalAverage ?? 0) < 10 ? 'var(--red)' : 'var(--green)', fontSize: 18 }}>
+                          <strong style={{ color: (b.generalAverage ?? 0) < 10 ? 'var(--red)' : 'var(--green)', fontSize: 14 }}>
                             {b.generalAverage != null ? b.generalAverage.toFixed(2) : '—'}
                           </strong>
                         </td>
@@ -363,14 +355,14 @@ export default function SectionBulletins({ onToast }: Props) {
       )}
 
       {!loadingCheck && !check && (
-        <div className="px-[24px] py-[44px] md:px-[32px] md:py-[70px]" style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', textAlign: 'center' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
-            <FileText size={40} className="md:hidden" /><FileText size={52} className="hidden md:block" />
+        <div className="px-[24px] py-[44px] md:px-[32px] md:py-[48px]" style={{ background: 'var(--surface)', borderRadius: 10, border: '1.5px solid var(--border)', textAlign: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+            <FileText size={16} className="md:hidden" /><FileText size={16} className="hidden md:block" />
           </div>
-          <div className="text-[16px] md:text-[20px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
+          <div className="text-[13px] md:text-[14px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
             Sélectionnez une classe
           </div>
-          <div className="text-[13.5px] md:text-[16px]" style={{ color: 'var(--text3)' }}>
+          <div className="text-[13px] md:text-[13px]" style={{ color: 'var(--text3)' }}>
             Choisissez une classe et cliquez sur « Charger » pour voir les bulletins.
           </div>
         </div>
@@ -382,8 +374,8 @@ export default function SectionBulletins({ onToast }: Props) {
 const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }
 const sSub: React.CSSProperties = { color: 'var(--text3)', marginTop: 3 }
 const btnPrim: React.CSSProperties = { fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
-const btnSec: React.CSSProperties = { padding: '7px 14px', borderRadius: 10, fontSize: 15, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
-const selectStCls = 'rounded-[10px] px-[10px] py-[7px] md:px-[12px] md:py-[8px] text-[13px] md:text-[16px] font-semibold md:font-bold border-0 md:border md:border-[1.5px] md:border-[var(--border2)] flex-1 md:flex-none'
+const btnSec: React.CSSProperties = { padding: '7px 11px', borderRadius: 8, fontSize: 12, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
+const selectStCls = 'rounded-[10px] px-[10px] py-[7px] md:px-[12px] md:py-[8px] text-[13px] md:text-[13px] font-semibold md:font-bold border-0 md:border md:border-[1.5px] md:border-[var(--border2)] flex-1 md:flex-none'
 const selectSt: React.CSSProperties = { background: 'var(--surface)', color: 'var(--text2)', cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }
-const thSt: React.CSSProperties = { padding: '11px 16px', textAlign: 'left', fontSize: 13, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.7px' }
-const tdSt: React.CSSProperties = { padding: '14px 16px', fontSize: 17, color: 'var(--text2)', borderBottom: '1px solid var(--border)', verticalAlign: 'middle' }
+const thSt: React.CSSProperties = { padding: '10px 12px', textAlign: 'left', fontSize: 12, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.7px' }
+const tdSt: React.CSSProperties = { padding: '10px 12px', fontSize: 13, color: 'var(--text2)', borderBottom: '1px solid var(--border)', verticalAlign: 'middle' }
