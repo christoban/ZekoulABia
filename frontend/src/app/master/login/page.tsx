@@ -19,21 +19,21 @@ function maskEmail(email: string) {
 function Alert({ a }: { a: AlertState }) {
   return (
     <div style={{
-      padding: '12px 14px', borderRadius: 10, fontSize: 16, fontWeight: 700,
-      marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8,
+      padding: '10px 14px', borderRadius: 10, fontSize: 11, fontWeight: 700,
+      marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8,
       background: a.type === 'error' ? '#fee2e2' : '#d1fae5',
       border: a.type === 'error' ? '1px solid rgba(220,38,38,0.2)' : '1px solid rgba(5,150,105,0.2)',
       color: a.type === 'error' ? '#b91c1c' : '#065f46'
     }}>
-      <span style={{ display: 'flex', alignItems: 'center' }}>{a.type === 'error' ? <AlertTriangle size={18} /> : <CheckCircle2 size={18} />}</span><span>{a.msg}</span>
+      <span style={{ display: 'flex', alignItems: 'center' }}>{a.type === 'error' ? <AlertTriangle size={14} /> : <CheckCircle2 size={14} />}</span><span>{a.msg}</span>
     </div>
   )
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: 13 }}>
-      <label style={{ fontSize: 16, fontWeight: 700, color: '#6b5c45', marginBottom: 7, display: 'block', letterSpacing: '0.4px', textTransform: 'uppercase' }}>
+    <div style={{ marginBottom: 12 }}>
+      <label style={{ fontSize: 11, fontWeight: 800, color: '#6b5c45', marginBottom: 6, display: 'block', letterSpacing: '0.3px', textTransform: 'uppercase' }}>
         {label}
       </label>
       {children}
@@ -43,41 +43,41 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function BackBtn({ onClick }: { onClick: () => void }) {
   return (
-    <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 16, fontWeight: 700, color: '#a89478', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit', marginBottom: 20, padding: 0, transition: 'color 0.15s' }}>
-      <ArrowLeft size={16} /> Retour
+    <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, color: '#a89478', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit', marginBottom: 16, padding: 0, transition: 'color 0.15s' }}>
+      <ArrowLeft size={13} /> Retour
     </button>
   )
 }
 
 function FormHeader({ title, sub }: { title: string; sub: React.ReactNode }) {
   return (
-    <div className="mb-[10px] md:mb-4">
-      <div className="text-[23px] md:text-[35px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: '#1a1209', marginBottom: 6, lineHeight: 1.2 }}>{title}</div>
-      <div className="text-[15px] md:text-[20px]" style={{ color: '#6b5c45', fontWeight: 500, lineHeight: 1.5 }}>{sub}</div>
+    <div className="mb-3 md:mb-4">
+      <div className="text-[20px] md:text-[26px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: '#1a1209', marginBottom: 6, lineHeight: 1.15 }}>{title}</div>
+      <div className="text-[12px] md:text-[15px]" style={{ color: '#6b5c45', fontWeight: 500, lineHeight: 1.4 }}>{sub}</div>
     </div>
   )
 }
 
 function SubmitBtn({ loading, onClick, children }: { loading: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button onClick={onClick} disabled={loading} className="edu-submit-btn" style={{
-      width: '100%', padding: 14, background: 'linear-gradient(135deg,#059669,#047857)',
-      color: 'white', fontSize: 20, fontWeight: 800, border: 'none', borderRadius: 10,
-      cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'all 0.2s',
-      boxShadow: '0 4px 16px rgba(5,150,105,0.25)', marginTop: 4,
-      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: loading ? 0.85 : 1
+    <button onClick={onClick} disabled={loading} className="edu-submit-btn text-[13px] md:text-[13px] py-2 md:py-3" style={{
+      width: '100%', background: 'linear-gradient(135deg,#059669,#047857)',
+      color: 'white', fontWeight: 800, border: 'none', borderRadius: 10,
+      cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'all 0.12s',
+      boxShadow: '0 2px 8px rgba(5,150,105,0.18)', marginTop: 10,
+      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, opacity: loading ? 0.85 : 1
     }}>
       {loading
-        ? <div style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
+        ? <div style={{ width: 13, height: 13, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
         : children}
     </button>
   )
 }
 
 const fieldInputStyle: React.CSSProperties = {
-  width: '100%', padding: '11px 14px', background: 'white',
+  width: '100%', padding: '10px 14px', background: 'white',
   border: '1.5px solid #d4c8b8', borderRadius: 10, color: '#1a1209',
-  fontSize: 19, fontFamily: 'inherit', fontWeight: 600, outline: 'none', transition: 'all 0.2s'
+  fontSize: 13, fontFamily: 'inherit', fontWeight: 600, outline: 'none', transition: 'all 0.2s'
 }
 
 // ── Main component ──
@@ -314,9 +314,9 @@ export default function SuperAdminLogin() {
         .edu-step:not(:last-child)::after {
           content: '';
           position: absolute;
-          top: 14px;
-          left: calc(50% + 14px);
-          width: calc(100% - 28px);
+          top: 13px;
+          left: calc(50% + 13px);
+          width: calc(100% - 26px);
           height: 2px;
           background: #d4c8b8;
           transition: background 0.4s;
@@ -358,45 +358,45 @@ export default function SuperAdminLogin() {
           {/* Cercle déco */}
           <div style={{ position: 'absolute', bottom: -100, right: -100, width: 350, height: 350, borderRadius: '50%', background: 'radial-gradient(circle,rgba(34,197,94,0.06) 0%,transparent 70%)', pointerEvents: 'none' }} />
 
-          <div style={{ padding: 40, display: 'flex', flexDirection: 'column', flex: 1, position: 'relative', zIndex: 1, overflow: 'hidden' }}>
+          <div style={{ padding: 28, display: 'flex', flexDirection: 'column', flex: 1, position: 'relative', zIndex: 1, overflow: 'hidden' }}>
             {/* Brand */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 48, paddingTop: 6, animation: 'edu-fadeDown 0.6s ease both' }}>
-              <div style={{ width: 70, height: 70, borderRadius: 17, background: "linear-gradient(135deg,#f59e0b,#22c55e)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 20px rgba(34,197,94,0.3)", flexShrink: 0, overflow: "hidden" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "65%", height: "65%", objectFit: "contain" }} /></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 28, paddingTop: 4, animation: 'edu-fadeDown 0.6s ease both' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 9, background: "linear-gradient(135deg,#f59e0b,#22c55e)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 10px rgba(34,197,94,0.2)", flexShrink: 0, overflow: "hidden" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "65%", height: "65%", objectFit: "contain" }} /></div>
               <div>
-                <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 34, fontWeight: 700, color: 'white' }}>ZekoulABia</div>
-                <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.4)', fontWeight: 600, letterSpacing: '0.5px' }}>Plateforme Multi-Établissements · Cameroun</div>
+                <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'white' }}>ZekoulABia</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontWeight: 700 }}>Plateforme Multi-Établissements · Cameroun</div>
               </div>
             </div>
 
             {/* Heading */}
-            <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 48, fontWeight: 700, lineHeight: 1.15, color: 'white', marginBottom: 16, animation: 'edu-fadeDown 0.6s 0.1s ease both' }}>
+            <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 'clamp(22px, 3vw, 26px)', fontWeight: 700, lineHeight: 1.15, color: 'white', marginBottom: 10, animation: 'edu-fadeDown 0.6s 0.1s ease both' }}>
               Accès<br />
               <span style={{ color: '#4ade80' }}>Administrateur</span><br />
               Plateforme
             </div>
 
-            <p style={{ fontSize: 20, color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, fontWeight: 500, maxWidth: 500, marginBottom: 40, animation: 'edu-fadeDown 0.6s 0.2s ease both' }}>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, fontWeight: 500, maxWidth: 320, marginBottom: 24, animation: 'edu-fadeDown 0.6s 0.2s ease both' }}>
               Espace réservé exclusivement à l&apos;administrateur système ZekoulABia. Connexion sécurisée à trois facteurs.
             </p>
 
             {/* Features */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, animation: 'edu-fadeDown 0.6s 0.3s ease both' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, animation: 'edu-fadeDown 0.6s 0.3s ease both' }}>
               {[
                 { bg: 'rgba(34,197,94,0.1)',  icon: KeyRound, title: 'Authentification triple facteur', desc: 'Email + OTP + TOTP' },
                 { bg: 'rgba(96,165,250,0.1)',  icon: School, title: 'Gestion multi-établissements',  desc: 'Invite, approuve, supervise' },
                 { bg: 'rgba(245,158,11,0.1)',  icon: BarChart3, title: 'Hub de contrôle centralisé',    desc: 'Toutes les écoles en un lieu' },
                 { bg: 'rgba(212,168,67,0.1)',  icon: Shield, title: 'Audit complet',                 desc: 'Chaque action tracée et sécurisée' },
               ].map((f, i) => (
-                <div key={i} className="edu-feature" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, transition: 'all 0.2s' }}>
-                  <div style={{ width: 46, height: 46, borderRadius: 14, background: f.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><f.icon size={23} /></div>
-                  <div style={{ fontSize: 18, color: 'rgba(255,255,255,0.55)' }}>
+                <div key={i} className="edu-feature" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, transition: 'all 0.2s' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: f.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><f.icon size={18} /></div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
                     <strong style={{ color: 'white', fontWeight: 700 }}>{f.title}</strong> — {f.desc}
                   </div>
                 </div>
               ))}
             </div>
 
-            <div style={{ marginTop: 'auto', paddingTop: 16, fontSize: 15, color: 'rgba(255,255,255,0.2)', fontWeight: 500, animation: 'edu-fadeDown 0.6s 0.4s ease both' }}>
+            <div style={{ marginTop: 'auto', paddingTop: 8, fontSize: 10, color: 'rgba(255,255,255,0.15)', fontWeight: 500, animation: 'edu-fadeDown 0.6s 0.4s ease both' }}>
               © 2026 ZekoulABia · Tous droits réservés · Accès réservé au personnel autorisé
             </div>
           </div>
@@ -421,17 +421,17 @@ export default function SuperAdminLogin() {
 
             {/* STEPPER — version complète desktop */}
             <div className="hidden md:block">
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 22 }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 18 }}>
                 {([{ n: 1, label: 'Identifiants' }, { n: 2, label: 'Vérif. email' }, { n: 3, label: 'Double auth.' }] as { n: 1 | 2 | 3; label: string }[]).map(({ n, label }) => {
                   const active = step === n, done = step > n
                   return (
                     <div key={n}
                       className={`edu-step${active ? ' s-active' : ''}${done ? ' s-done' : ''}`}
-                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flex: 1, position: 'relative' }}>
-                      <div style={{ width: 35, height: 35, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 800, zIndex: 1, border: `6px solid ${done ? '#047857' : active ? '#059669' : '#d4c8b8'}`, color: done ? 'white' : active ? '#059669' : '#a89478', background: done ? '#047857' : active ? 'rgba(5,150,105,0.08)' : 'white', transition: 'all 0.3s' }}>
-                        {done ? <Check size={16} /> : n}
+                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flex: 1, position: 'relative' }}>
+                      <div style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, zIndex: 1, border: `3px solid ${done ? '#047857' : active ? '#059669' : '#d4c8b8'}`, color: done ? 'white' : active ? '#059669' : '#a89478', background: done ? '#047857' : active ? 'rgba(5,150,105,0.08)' : 'white', transition: 'all 0.3s' }}>
+                        {done ? <Check size={13} /> : n}
                       </div>
-                      <div style={{ fontSize: 13, fontWeight: 700, textAlign: 'center', color: done ? '#047857' : active ? '#059669' : '#a89478' }}>{label}</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, textAlign: 'center', color: done ? '#047857' : active ? '#059669' : '#a89478' }}>{label}</div>
                     </div>
                   )
                 })}
@@ -442,8 +442,8 @@ export default function SuperAdminLogin() {
             {step === 1 && (
               <div style={{ animation: 'edu-fadeUp 0.35s ease both' }}>
                 <FormHeader title="Connexion Admin ZekoulABia" sub="Entrez vos identifiants pour accéder au panneau de contrôle." />
-                <div className="text-[13px] md:text-[16px] px-3 py-2.5 md:px-[18px] md:py-[14px]" style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fef3c7', border: '1px solid rgba(217,119,6,0.2)', borderRadius: 10, marginBottom: 14, fontWeight: 700, color: '#92400e' }}>
-                  <Shield size={16} /> Connexion chiffrée — URL d&apos;accès privée
+                <div className="text-[12px] md:text-[14px] px-3 py-2 md:px-3 md:py-2.5" style={{ display: 'flex', alignItems: 'center', gap: 7, background: '#fef3c7', border: '1px solid rgba(217,119,6,0.2)', borderRadius: 10, marginBottom: 14, fontWeight: 700, color: '#92400e' }}>
+                  <Shield size={14} /> Connexion chiffrée — URL d&apos;accès privée
                 </div>
                 {alert1 && <Alert a={alert1} />}
                 <Field label="Adresse email">
@@ -459,8 +459,8 @@ export default function SuperAdminLogin() {
                       onChange={e => { setPassword(e.target.value); setAlert1(null) }}
                       style={fieldInputStyle} />
                     <button type="button" onClick={() => setShowPwd(s => !s)}
-                      style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#a89478', cursor: 'pointer', fontSize: 18, padding: 4, transition: 'color 0.15s' }}>
-                      {showPwd ? <EyeOff size={18} /> : <Eye size={18} />}
+                      style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#a89478', cursor: 'pointer', padding: 2, transition: 'color 0.15s' }}>
+                      {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
                 </Field>
@@ -485,16 +485,16 @@ export default function SuperAdminLogin() {
                       className="edu-otp"
                       onChange={e => handleOtpInput(i, e.target.value)}
                       onKeyDown={e => handleOtpKey(i, e)}
-                      style={{ flex: 1, height: 77, textAlign: 'center', fontSize: 26, fontWeight: 900, background: v ? '#f0fdf4' : 'white', border: `1.5px solid ${v ? '#047857' : '#d4c8b8'}`, borderRadius: 10, outline: 'none', color: v ? '#059669' : '#1a1209', fontFamily: 'inherit', transition: 'all 0.2s', caretColor: '#059669', minWidth: 0, maxWidth: 100 }}
+                      style={{ flex: 1, height: 48, textAlign: 'center', fontSize: 20, fontWeight: 900, background: v ? '#f0fdf4' : 'white', border: `1.5px solid ${v ? '#047857' : '#d4c8b8'}`, borderRadius: 10, outline: 'none', color: v ? '#059669' : '#1a1209', fontFamily: 'inherit', transition: 'all 0.2s', caretColor: '#059669', minWidth: 0, maxWidth: 100 }}
                     />
                   ))}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-                  <div style={{ fontSize: 17, fontWeight: 700, color: timerSecs <= 60 ? '#dc2626' : '#d97706', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Clock size={16} /> {timerMin}:{String(timerSecDisp).padStart(2, '0')}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: timerSecs <= 60 ? '#dc2626' : '#d97706', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <Clock size={13} /> {timerMin}:{String(timerSecDisp).padStart(2, '0')}
                   </div>
                   <button onClick={resendOtp} disabled={!resendEnabled}
-                    style={{ fontSize: 17, fontWeight: 700, color: resendEnabled ? '#059669' : '#a89478', cursor: resendEnabled ? 'pointer' : 'default', background: 'none', border: 'none', fontFamily: 'inherit' }}>
+                    style={{ fontSize: 12, fontWeight: 700, color: resendEnabled ? '#059669' : '#a89478', cursor: resendEnabled ? 'pointer' : 'default', background: 'none', border: 'none', fontFamily: 'inherit' }}>
                     Renvoyer le code
                   </button>
                 </div>
@@ -520,21 +520,21 @@ export default function SuperAdminLogin() {
                 {!isRecovery && (
                   <>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
-                      <div style={{ position: 'relative', width: 56, height: 56 }}>
-                        <svg width="56" height="56" viewBox="0 0 56 56" style={{ transform: 'rotate(-90deg)' }}>
+                      <div style={{ position: 'relative', width: 44, height: 44 }}>
+                        <svg width="44" height="44" viewBox="0 0 56 56" style={{ transform: 'rotate(-90deg)' }}>
                           <circle cx="28" cy="28" r="23" fill="none" stroke="#e8e0d4" strokeWidth="4" />
                           <circle cx="28" cy="28" r="23" fill="none" stroke={totpColor} strokeWidth="4" strokeLinecap="round"
                             strokeDasharray={totpCircumference} strokeDashoffset={totpOffset}
                             style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.3s' }} />
                         </svg>
-                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontSize: 20, fontWeight: 900, color: totpColor, fontFamily: 'inherit' }}>{totpSecs}</div>
+                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontSize: 16, fontWeight: 900, color: totpColor, fontFamily: 'inherit' }}>{totpSecs}</div>
                       </div>
                     </div>
                     <Field label="Code TOTP (6 chiffres)">
                       <input type="tel" maxLength={6} value={totpCode} placeholder="123456" autoComplete="one-time-code"
                         className="edu-field"
                         onChange={e => { setTotpCode(e.target.value.replace(/\D/g, '')); setAlert3(null) }}
-                        style={{ ...fieldInputStyle, textAlign: 'center', fontSize: 29, fontWeight: 900, letterSpacing: 8 }} />
+                        style={{ ...fieldInputStyle, textAlign: 'center', fontSize: 20, fontWeight: 900, letterSpacing: 5 }} />
                     </Field>
                   </>
                 )}
@@ -545,14 +545,14 @@ export default function SuperAdminLogin() {
                     <input type="text" value={recoveryCode} placeholder="ABCD-1234-EFGH-5678" autoComplete="off"
                       className="edu-field"
                       onChange={e => { setRecoveryCode(e.target.value); setAlert3(null) }}
-                      style={{ ...fieldInputStyle, letterSpacing: 2, fontSize: 28, fontWeight: 700 }} />
+                      style={{ ...fieldInputStyle, letterSpacing: 2, fontSize: 16, fontWeight: 700 }} />
                   </Field>
                 )}
 
                 <div style={{ textAlign: 'center', marginBottom: 12 }}>
                   <button onClick={() => setIsRecovery(r => !r)}
-                    style={{ fontSize: 18, fontWeight: 700, color: '#059669', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                    {isRecovery ? <><ArrowLeft size={16} /> Utiliser le code TOTP</> : <><KeyRound size={16} /> Utiliser un code de récupération</>}
+                    style={{ fontSize: 12, fontWeight: 700, color: '#059669', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                    {isRecovery ? <><ArrowLeft size={13} /> Utiliser le code TOTP</> : <><KeyRound size={13} /> Utiliser un code de récupération</>}
                   </button>
                 </div>
 

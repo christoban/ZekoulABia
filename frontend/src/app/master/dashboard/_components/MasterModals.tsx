@@ -34,12 +34,12 @@ function Overlay({ children, onClose }: { children: React.ReactNode; onClose: ()
 }
 
 function ModalWrap({ children, size = 'md' }: { children: React.ReactNode; size?: 'sm' | 'md' | 'lg' }) {
-  const maxW = size === 'sm' ? 550 : size === 'lg' ? 860 : 520
+  const maxW = size === 'sm' ? 420 : size === 'lg' ? 640 : 460
   return (
     <div style={{
-      background: 'white', borderRadius: 18, padding: 32,
-      maxWidth: maxW, width: '90%', maxHeight: '90vh', overflowY: 'auto',
-      position: 'relative', animation: 'popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both'
+      background: 'white', borderRadius: 12, padding: 20,
+      maxWidth: maxW, width: '92%', maxHeight: '85vh', overflowY: 'auto',
+      position: 'relative', animation: 'popIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both'
     }}>
       {children}
     </div>
@@ -48,21 +48,21 @@ function ModalWrap({ children, size = 'md' }: { children: React.ReactNode; size?
 
 function ModalHeader({ title, sub, onClose, danger, icon: Icon }: { title: string; sub?: string; onClose: () => void; danger?: boolean; icon?: LucideIcon }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
+    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
       <div>
-        <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 26, fontWeight: 700, color: danger ? '#dc2626' : '#1a1209', display: 'flex', alignItems: 'center', gap: 10 }}>
-          {Icon && <Icon size={22} />}{title}
+        <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 15, fontWeight: 700, color: danger ? '#dc2626' : '#1a1209', display: 'flex', alignItems: 'center', gap: 6 }}>
+          {Icon && <Icon size={15} />}{title}
         </div>
-        {sub && <div style={{ fontSize: 17, color: '#6b5c45', marginTop: 4 }}>{sub}</div>}
+        {sub && <div style={{ fontSize: 11, color: '#6b5c45', marginTop: 2 }}>{sub}</div>}
       </div>
-      <button onClick={onClose} style={{ width: 40, height: 40, borderRadius: 8, border: '1.5px solid #d4c8b8', background: 'none', cursor: 'pointer', color: '#a89478', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><X size={20} /></button>
+      <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 6, border: '1px solid #d4c8b8', background: 'none', cursor: 'pointer', color: '#a89478', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><X size={13} /></button>
     </div>
   )
 }
 
 function ModalFooter({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 24, paddingTop: 16, borderTop: '1px solid #e8e0d4' }}>
+    <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18, paddingTop: 14, borderTop: '1px solid #e8e0d4' }}>
       {children}
     </div>
   )
@@ -70,25 +70,25 @@ function ModalFooter({ children }: { children: React.ReactNode }) {
 
 function Field({ label, hint, children }: { label: string; hint?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: 16 }}>
-      <label style={{ fontSize: 14, fontWeight: 800, color: '#6b5c45', marginBottom: 6, display: 'block', letterSpacing: '0.5px', textTransform: 'uppercase' }}>{label}</label>
+    <div style={{ marginBottom: 14 }}>
+      <label style={{ fontSize: 10, fontWeight: 800, color: '#6b5c45', marginBottom: 6, display: 'block', letterSpacing: '0.4px', textTransform: 'uppercase' }}>{label}</label>
       {children}
-      {hint && <div style={{ fontSize: 11, color: '#a89478', marginTop: 4 }}>{hint}</div>}
+      {hint && <div style={{ fontSize: 10, color: '#a89478', marginTop: 4 }}>{hint}</div>}
     </div>
   )
 }
 
 function FieldInput({ placeholder, type = 'text', value, onChange, style, autoComplete = 'off', showToggle }: { placeholder?: string; type?: string; value?: string; onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void; style?: React.CSSProperties; autoComplete?: string; showToggle?: boolean }) {
   const [show, setShow] = useState(false)
-  const base: React.CSSProperties = { width: '100%', padding: '11px 14px', background: '#f0ebe3', border: '1.5px solid #d4c8b8', borderRadius: 10, color: '#1a1209', fontSize: 14, fontFamily: 'inherit', fontWeight: 600, outline: 'none', ...style }
+  const base: React.CSSProperties = { width: '100%', padding: '9px 12px', background: '#f0ebe3', border: '1px solid #d4c8b8', borderRadius: 8, color: '#1a1209', fontSize: 11, fontFamily: 'inherit', fontWeight: 600, outline: 'none', ...style }
   if (showToggle && type === 'password') {
     return (
       <div style={{ position: 'relative' }}>
         <input type={show ? 'text' : 'password'} placeholder={placeholder} value={value} onChange={onChange} autoComplete={autoComplete}
           style={{ ...base, paddingRight: 40 }} />
         <button type="button" onClick={() => setShow(s => !s)}
-          style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#a89478', cursor: 'pointer', padding: 4, lineHeight: 1, display: 'flex', alignItems: 'center' }}>
-          {show ? <EyeOff size={17} /> : <Eye size={17} />}
+          style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#a89478', cursor: 'pointer', padding: 3, lineHeight: 1, display: 'flex', alignItems: 'center' }}>
+          {show ? <EyeOff size={13} /> : <Eye size={13} />}
         </button>
       </div>
     )
@@ -101,7 +101,7 @@ function FieldInput({ placeholder, type = 'text', value, onChange, style, autoCo
 
 function BtnPrimary({ onClick, children, disabled, type = 'button' }: { onClick?: () => void; children: React.ReactNode; disabled?: boolean; type?: 'button' | 'submit' }) {
   return (
-    <button type={type} onClick={onClick} disabled={disabled} style={{ padding: '11px 20px', borderRadius: 10, fontSize: 17, fontWeight: 800, background: disabled ? '#6b7280' : 'linear-gradient(135deg,#059669,#047857)', color: 'white', border: 'none', cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: disabled ? 'none' : '0 3px 12px rgba(5,150,105,0.25)', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+    <button type={type} onClick={onClick} disabled={disabled} style={{ padding: '9px 16px', borderRadius: 10, fontSize: 11, fontWeight: 800, background: disabled ? '#6b7280' : 'linear-gradient(135deg,#059669,#047857)', color: 'white', border: 'none', cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: disabled ? 'none' : '0 2px 8px rgba(5,150,105,0.18)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
       {children}
     </button>
   )
@@ -109,7 +109,7 @@ function BtnPrimary({ onClick, children, disabled, type = 'button' }: { onClick?
 
 function BtnSecondary({ onClick, children }: { onClick?: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" onClick={onClick} style={{ padding: '11px 20px', borderRadius: 10, fontSize: 17, fontWeight: 800, background: 'white', color: '#6b5c45', border: '1.5px solid #d4c8b8', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+    <button type="button" onClick={onClick} style={{ padding: '9px 14px', borderRadius: 10, fontSize: 11, fontWeight: 800, background: 'white', color: '#6b5c45', border: '1px solid #d4c8b8', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
       {children}
     </button>
   )
@@ -117,13 +117,13 @@ function BtnSecondary({ onClick, children }: { onClick?: () => void; children: R
 
 function SchoolSummary({ initials: init, name, meta, danger }: { initials: string; name: string; meta: string; danger?: boolean }) {
   return (
-    <div style={{ background: '#f0ebe3', borderRadius: 14, padding: '18px 20px', marginBottom: 19, display: 'flex', gap: 14, alignItems: 'center' }}>
-      <div style={{ width: 53, height: 53, borderRadius: 11, background: danger ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : 'linear-gradient(135deg,#059669,#1d4ed8)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 900, fontSize: 20, flexShrink: 0 }}>
+    <div style={{ background: '#f0ebe3', borderRadius: 10, padding: '12px 14px', marginBottom: 16, display: 'flex', gap: 10, alignItems: 'center' }}>
+      <div style={{ width: 32, height: 32, borderRadius: 8, background: danger ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : 'linear-gradient(135deg,#059669,#1d4ed8)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 13, flexShrink: 0 }}>
         {init}
       </div>
       <div>
-        <div style={{ fontSize: 18, fontWeight: 800, color: '#1a1209' }}>{name}</div>
-        <div style={{ fontSize: 16, color: '#a89478', marginTop: 2 }}>{meta}</div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: '#1a1209' }}>{name}</div>
+        <div style={{ fontSize: 11, color: '#a89478', marginTop: 1 }}>{meta}</div>
       </div>
     </div>
   )
@@ -131,7 +131,7 @@ function SchoolSummary({ initials: init, name, meta, danger }: { initials: strin
 
 function WarningBox({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ background: '#fef3c7', border: '1px solid rgba(217,119,6,0.2)', borderRadius: 10, padding: '12px 14px', fontSize: 17, color: '#92400e', fontWeight: 600, lineHeight: 1.6, marginBottom: 19, display: 'flex', gap: 10 }}>
+    <div style={{ background: '#fef3c7', border: '1px solid rgba(217,119,6,0.2)', borderRadius: 10, padding: '10px 12px', fontSize: 11, color: '#92400e', fontWeight: 600, lineHeight: 1.6, marginBottom: 16, display: 'flex', gap: 8 }}>
       {children}
     </div>
   )
@@ -148,9 +148,9 @@ function SensitiveAuthFields({ mfaEnabled, password, onPassword, mfaCode, onMfaC
   onMfaCode: (v: string) => void
 }) {
   return (
-    <div style={{ background: '#fef3c7', border: '1px solid rgba(217,119,6,0.25)', borderRadius: 12, padding: '14px 16px', marginTop: 16 }}>
-      <div style={{ fontSize: 13, fontWeight: 800, color: '#92400e', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-        <Shield size={15} /> Vérification d&apos;identité requise
+    <div style={{ background: '#fef3c7', border: '1px solid rgba(217,119,6,0.25)', borderRadius: 10, padding: '12px 14px', marginTop: 14 }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: '#92400e', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <Shield size={13} /> Vérification d&apos;identité requise
       </div>
       {/* Honeypot — absorbe l'autofill Chrome/Firefox avant les vrais champs */}
       <input type="text" autoComplete="username" aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} />
@@ -161,7 +161,7 @@ function SensitiveAuthFields({ mfaEnabled, password, onPassword, mfaCode, onMfaC
       {mfaEnabled && (
         <Field label="Code TOTP ou code de récupération *" hint="Requis car le MFA est actif">
           <FieldInput type="text" placeholder="123456" value={mfaCode} onChange={e => onMfaCode(e.target.value)}
-            style={{ textAlign: 'center', fontSize: 16, fontWeight: 900, letterSpacing: 4 }} />
+            style={{ textAlign: 'center', fontSize: 12, fontWeight: 900, letterSpacing: 3 }} />
         </Field>
       )}
     </div>
@@ -289,7 +289,7 @@ export default function MasterModals({ open, schoolId, suspendTarget, deleteTarg
                 }}
                 style={{
                   width: '100%', padding: '11px 14px', borderRadius: 10,
-                  color: '#1a1209', fontSize: 16, fontFamily: 'inherit', fontWeight: 600,
+                  color: '#1a1209', fontSize: 12, fontFamily: 'inherit', fontWeight: 600,
                   outline: 'none', resize: 'none', minHeight: 80, maxHeight: 320, overflowY: 'auto',
                   background: rejectFocused ? 'white' : '#f0ebe3',
                   border: rejectFocused ? '1.5px solid #2AA05F' : '1.5px solid #d4c8b8',
@@ -327,7 +327,7 @@ export default function MasterModals({ open, schoolId, suspendTarget, deleteTarg
             <Field label="Motif de la suspension" hint="Sera enregistré dans les logs d'audit">
               <textarea value={suspendReason} onChange={e => setSuspendReason(e.target.value)}
                 placeholder="Ex: Non-paiement, Violation des conditions..."
-                style={{ width: '100%', padding: '11px 14px', background: '#f0ebe3', border: '1.5px solid #d4c8b8', borderRadius: 10, color: '#1a1209', fontSize: 14, fontFamily: 'inherit', fontWeight: 600, outline: 'none', resize: 'vertical', minHeight: 80 }} />
+                style={{ width: '100%', padding: '9px 12px', background: '#f0ebe3', border: '1px solid #d4c8b8', borderRadius: 8, color: '#1a1209', fontSize: 11, fontFamily: 'inherit', fontWeight: 600, outline: 'none', resize: 'vertical', minHeight: 72 }} />
             </Field>
             <SensitiveAuthFields mfaEnabled={mfaEnabled} password={authPwd} onPassword={setAuthPwd} mfaCode={authMfa} onMfaCode={setAuthMfa} />
             <ModalFooter>
@@ -360,7 +360,7 @@ export default function MasterModals({ open, schoolId, suspendTarget, deleteTarg
               <input type="text" autoComplete="name" aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} />
               <input type="text" value={deleteInput} onChange={e => setDeleteInput(e.target.value)} autoComplete="off"
                 placeholder={`Tapez exactement : ${deleteTarget.name}`}
-                style={{ width: '100%', padding: '11px 14px', background: '#f0ebe3', border: `1.5px solid ${deleteInput === deleteTarget.name ? '#dc2626' : '#d4c8b8'}`, borderRadius: 10, color: '#1a1209', fontSize: 14, fontFamily: 'inherit', fontWeight: 600, outline: 'none' }} />
+                style={{ width: '100%', padding: '9px 12px', background: '#f0ebe3', border: `1px solid ${deleteInput === deleteTarget.name ? '#dc2626' : '#d4c8b8'}`, borderRadius: 8, color: '#1a1209', fontSize: 11, fontFamily: 'inherit', fontWeight: 600, outline: 'none' }} />
             </Field>
             <SensitiveAuthFields mfaEnabled={mfaEnabled} password={authPwd} onPassword={setAuthPwd} mfaCode={authMfa} onMfaCode={setAuthMfa} />
             <ModalFooter>
@@ -430,7 +430,7 @@ export default function MasterModals({ open, schoolId, suspendTarget, deleteTarg
                       placeholder="123456  ou  ABCD-1234-EFGH-5678"
                       value={mfaCode}
                       onChange={e => setMfaCode(e.target.value)}
-                      style={{ textAlign: 'center', fontSize: 16, letterSpacing: 2 }}
+                      style={{ textAlign: 'center', fontSize: 12, letterSpacing: 2 }}
                     />
                   </Field>
                 )}
@@ -462,7 +462,7 @@ export default function MasterModals({ open, schoolId, suspendTarget, deleteTarg
             {/* ── Étape 2 : code OTP reçu par email + nouveau mot de passe ── */}
             {pwdStep === 2 && (
               <>
-                <div style={{ padding: '11px 14px', background: '#eff6ff', border: '1px solid rgba(37,99,235,0.2)', borderRadius: 10, marginBottom: 18, fontSize: 14, color: '#1e40af', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ padding: '8px 10px', background: '#eff6ff', border: '1px solid rgba(37,99,235,0.2)', borderRadius: 8, marginBottom: 12, fontSize: 11, color: '#1e40af', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Mail size={16} style={{ flexShrink: 0 }} /> Un code de vérification a été envoyé à votre adresse email. Saisissez-le ci-dessous.
                 </div>
                 <Field label="Code de vérification email *" hint="Valable 15 minutes — vérifiez vos spams">
@@ -471,7 +471,7 @@ export default function MasterModals({ open, schoolId, suspendTarget, deleteTarg
                     placeholder="123456"
                     value={emailOtp}
                     onChange={e => setEmailOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    style={{ textAlign: 'center', fontSize: 22, fontWeight: 900, letterSpacing: 8 }}
+                    style={{ textAlign: 'center', fontSize: 15, fontWeight: 900, letterSpacing: 4 }}
                   />
                 </Field>
                 <Field label="Nouveau mot de passe *" hint="Minimum 12 caractères">
@@ -592,8 +592,8 @@ function InviteForm({ selectedPlan, onPlanChange, loading, onCancel, onDone, onE
           </div>
         </Field>
         <ModalFooter>
-          <button type="button" onClick={onCancel} style={{ padding: '11px 20px', borderRadius: 10, fontSize: 17, fontWeight: 800, background: 'white', color: '#6b5c45', border: '1.5px solid #d4c8b8', cursor: 'pointer', fontFamily: 'inherit' }}>Annuler</button>
-          <button type="submit" disabled={loading} style={{ padding: '11px 20px', borderRadius: 10, fontSize: 17, fontWeight: 800, background: loading ? '#6b7280' : 'linear-gradient(135deg,#059669,#047857)', color: 'white', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: loading ? 'none' : '0 3px 12px rgba(5,150,105,0.25)' }}>
+          <button type="button" onClick={onCancel} style={{ padding: '9px 14px', borderRadius: 10, fontSize: 11, fontWeight: 800, background: 'white', color: '#6b5c45', border: '1px solid #d4c8b8', cursor: 'pointer', fontFamily: 'inherit' }}>Annuler</button>
+          <button type="submit" disabled={loading} style={{ padding: '9px 14px', borderRadius: 10, fontSize: 11, fontWeight: 800, background: loading ? '#6b7280' : 'linear-gradient(135deg,#059669,#047857)', color: 'white', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: loading ? 'none' : '0 2px 8px rgba(5,150,105,0.18)' }}>
             Continuer →
           </button>
         </ModalFooter>
@@ -608,9 +608,9 @@ function InviteForm({ selectedPlan, onPlanChange, loading, onCancel, onDone, onE
       <input type="password" autoComplete="new-password" aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} />
       <div style={{ background: '#f0ebe3', borderRadius: 14, padding: 16, marginBottom: 16 }}>
         <div style={{ fontSize: 12, color: '#a89478', marginBottom: 4 }}>Établissement</div>
-        <div style={{ fontSize: 16, fontWeight: 800, color: '#1a1209' }}>{schoolName}</div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: '#1a1209' }}>{schoolName}</div>
         <div style={{ fontSize: 12, color: '#a89478', marginTop: 10, marginBottom: 4 }}>Email</div>
-        <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1209' }}>{email}</div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#1a1209' }}>{email}</div>
       </div>
 
       <Field label="Mot de passe master *" hint="Confirmez votre identité pour envoyer l'invitation">
@@ -619,13 +619,13 @@ function InviteForm({ selectedPlan, onPlanChange, loading, onCancel, onDone, onE
 
       {mfaEnabled && (
         <Field label="Code MFA *">
-          <FieldInput type="tel" placeholder="123456" value={mfaCode} onChange={e => setMfaCode(e.target.value)} style={{ textAlign: 'center', fontSize: 18, fontWeight: 900, letterSpacing: 4 }} />
+          <FieldInput type="tel" placeholder="123456" value={mfaCode} onChange={e => setMfaCode(e.target.value)} style={{ textAlign: 'center', fontSize: 14, fontWeight: 900, letterSpacing: 3 }} />
         </Field>
       )}
 
       <ModalFooter>
-        <button type="button" onClick={() => setStep('details')} style={{ padding: '11px 20px', borderRadius: 10, fontSize: 17, fontWeight: 800, background: 'white', color: '#6b5c45', border: '1.5px solid #d4c8b8', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 7 }}><ArrowLeft size={15} /> Retour</button>
-        <button type="submit" disabled={submitting || loading} style={{ padding: '11px 20px', borderRadius: 10, fontSize: 17, fontWeight: 800, background: submitting || loading ? '#6b7280' : 'linear-gradient(135deg,#059669,#047857)', color: 'white', border: 'none', cursor: submitting || loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: submitting || loading ? 'none' : '0 3px 12px rgba(5,150,105,0.25)', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+        <button type="button" onClick={() => setStep('details')} style={{ padding: '9px 14px', borderRadius: 10, fontSize: 11, fontWeight: 800, background: 'white', color: '#6b5c45', border: '1px solid #d4c8b8', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}><ArrowLeft size={13} /> Retour</button>
+        <button type="submit" disabled={submitting || loading} style={{ padding: '9px 14px', borderRadius: 10, fontSize: 11, fontWeight: 800, background: submitting || loading ? '#6b7280' : 'linear-gradient(135deg,#059669,#047857)', color: 'white', border: 'none', cursor: submitting || loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: submitting || loading ? 'none' : '0 2px 8px rgba(5,150,105,0.18)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           {submitting ? '...' : <><Mail size={16} /> Envoyer l'invitation</>}
         </button>
       </ModalFooter>

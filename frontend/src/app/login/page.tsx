@@ -432,23 +432,23 @@ export default function LoginPage() {
           background: 'radial-gradient(circle, rgba(245,158,11,0.06) 0%, transparent 70%)'
         }} />
 
-        <div style={{
-          padding: '44px', display: 'flex', flexDirection: 'column',
-          flex: 1, position: 'relative', zIndex: 1
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 60 }}>
-            <div style={{ width: 64, height: 64, borderRadius: 14, background: "linear-gradient(135deg,var(--amber),var(--green))", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 20px rgba(34,197,94,0.25)", overflow: "hidden" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "65%", height: "65%", objectFit: "contain" }} /></div>
+<div style={{
+            padding: '16px 20px', display: 'flex', flexDirection: 'column',
+            flex: 1, position: 'relative', zIndex: 1
+          }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 9, background: "linear-gradient(135deg,var(--amber),var(--green))", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 10px rgba(34,197,94,0.2)", overflow: "hidden" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "65%", height: "65%", objectFit: "contain" }} /></div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 36, fontWeight: 700, color: 'white' }}>ZekoulABia</div>
-              <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.4)', fontWeight: 700 }}>{t('login.tagline')}</div>
+              <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'white' }}>ZekoulABia</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontWeight: 700 }}>{t('login.tagline')}</div>
             </div>
-            <LanguageSwitch style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }} />
+            <LanguageSwitch compact style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }} />
           </div>
 
           <div style={{
             fontFamily: 'var(--font-spectral),Spectral,serif',
-            fontSize: 48, fontWeight: 700, lineHeight: 1.2,
-            color: 'white', marginBottom: 14
+            fontSize: 'clamp(22px, 3vw, 26px)', fontWeight: 700, lineHeight: 1.15,
+            color: 'white', marginBottom: 10
           }}>
             {t('login.left_title_1')}<br />
             {t('login.left_title_2')} <span style={{ color: '#4ade80' }}>{t('login.left_title_highlight')}</span><br />
@@ -456,78 +456,78 @@ export default function LoginPage() {
           </div>
 
           <p style={{
-            fontSize: 19, color: 'rgba(255,255,255,0.55)', lineHeight: 1.7,
-            fontWeight: 500, maxWidth: 400, marginBottom: 48
+            fontSize: 11, color: 'rgba(255,255,255,0.5)', lineHeight: 1.5,
+            fontWeight: 500, maxWidth: 320, marginBottom: 28
           }}>
             {t('login.left_subtitle')}
           </p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
             {ROLES.map((role, i) => (
               <div key={i} style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '13px 16px',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: 12, cursor: 'default',
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '6px 8px',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: 8, cursor: 'default',
                 transition: 'all 0.2s'
               }}
-                onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { background: 'rgba(255,255,255,0.09)', borderColor: 'rgba(255,255,255,0.14)', transform: 'translateX(4px)' })}
-                onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)', transform: 'none' })}
+              onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { background: 'rgba(255,255,255,0.07)', borderColor: 'rgba(255,255,255,0.12)', transform: 'translateX(2px)' })}
+              onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.06)', transform: 'none' })}
               >
                 <div style={{
-                  width: 50, height: 50, color: 'white',
-                  background: 'rgba(255,255,255,0.06)', borderRadius: 10,
+                  width: 36, height: 36, color: 'white',
+                  background: 'rgba(255,255,255,0.05)', borderRadius: 7,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
-                }}><role.icon size={26} strokeWidth={2} /></div>
+                }}><role.icon size={18} strokeWidth={2} /></div>
                 <div>
-                  <div style={{ color: 'white', fontSize: 18, fontWeight: 700 }}>{t(role.nameKey)}</div>
-                  <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 15, fontWeight: 500 }}>{t(role.descKey)}</div>
+                  <div style={{ color: 'white', fontSize: 12, fontWeight: 700 }}>{t(role.nameKey)}</div>
+                  <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 500 }}>{t(role.descKey)}</div>
                 </div>
-                <div style={{ marginLeft: 'auto', color: 'rgba(255,255,255,0.2)', display: 'flex' }}><ChevronRight size={20} strokeWidth={2} /></div>
+                <div style={{ marginLeft: 'auto', color: 'rgba(255,255,255,0.15)', display: 'flex' }}><ChevronRight size={14} strokeWidth={2} /></div>
               </div>
             ))}
           </div>
 
-          <div style={{ marginTop: 'auto', fontSize: 16, color: 'rgba(255,255,255,0.2)', fontWeight: 500, paddingTop: 16 }}>
+          <div style={{ marginTop: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.15)', fontWeight: 500, paddingTop: 8 }}>
             {t('login.copyright')}
           </div>
         </div>
       </div>
 
       {/* ══ PANNEAU DROIT ══ */}
-      <div className="px-4 py-4 md:p-10" style={{
+      <div className="px-3 py-3 md:p-5" style={{
         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: 'var(--bg)', position: 'relative', overflowY: 'auto',
       }}>
         {/* Le panneau gauche (qui porte normalement le selecteur de langue) est cache sous xl */}
-        <div className="xl:hidden" style={{ position: 'absolute', top: 10, right: 10, zIndex: 2 }}>
+        <div className="xl:hidden" style={{ position: 'absolute', top: 6, right: 6, zIndex: 2 }}>
           <LanguageSwitch compact />
         </div>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, ease: 'easeOut' }}
-          style={{ width: '100%', maxWidth: 530, position: 'relative', zIndex: 1 }}>
+          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+          style={{ width: '100%', maxWidth: 460, position: 'relative', zIndex: 1 }}>
 
           {suspended ? (
-            <div style={{ animation: 'edu-fadeUp 0.35s ease both' }}>
-              <style>{`@keyframes edu-fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }`}</style>
-              <div style={{ background: 'var(--red-light)', border: '2px solid rgba(220,38,38,0.25)', borderRadius: 16, padding: '32px 36px', boxShadow: '0 4px 24px rgba(220,38,38,0.08)' }}>
-                <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--red)', marginBottom: 16 }}><Ban size={40} strokeWidth={2} /></div>
-                <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'var(--red)', marginBottom: 12, textAlign: 'center' }}>
+            <div style={{ animation: 'edu-fadeUp 0.25s ease both' }}>
+              <style>{`@keyframes edu-fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }`}</style>
+              <div style={{ background: 'var(--red-light)', border: '1px solid rgba(220,38,38,0.2)', borderRadius: 10, padding: '16px 20px', boxShadow: '0 2px 8px rgba(220,38,38,0.06)' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--red)', marginBottom: 8 }}><Ban size={24} strokeWidth={2} /></div>
+                <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 16, fontWeight: 700, color: 'var(--red)', marginBottom: 7, textAlign: 'center' }}>
                   {t('login.suspended_title')}
                 </div>
-                <div style={{ fontSize: 15, color: 'var(--red)', fontWeight: 600, lineHeight: 1.7, marginBottom: 20 }}>
+                <div style={{ fontSize: 11, color: 'var(--red)', fontWeight: 600, lineHeight: 1.5, marginBottom: 12 }}>
                   {t('login.suspended_msg', { school: suspended.schoolName })}
                 </div>
-                <div style={{ background: 'var(--surface)', border: '1px solid rgba(220,38,38,0.15)', borderRadius: 10, padding: '14px 18px', marginBottom: 20, fontSize: 14, color: 'var(--text2)', lineHeight: 1.6 }}>
+                <div style={{ background: 'var(--surface)', border: '1px solid rgba(220,38,38,0.12)', borderRadius: 7, padding: '9px 12px', marginBottom: 12, fontSize: 10, color: 'var(--text2)', lineHeight: 1.4 }}>
                   {t('login.suspended_support')}{' '}
-                  <a href="mailto:support@zekoulabia.cm" style={{ color: 'var(--green)', fontWeight: 700 }}>support@zekoulabia.cm</a>
+                  <a href="mailto: support@zekoulabia.cm" style={{ color: 'var(--green)', fontWeight: 700 }}>support@zekoulabia.cm</a>
                 </div>
                 <button
                   onClick={() => setSuspended(null)}
-                  style={{ width: '100%', padding: '12px 0', background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 10, fontSize: 15, fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  style={{ width: '100%', padding: '8px 0', background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 7, fontSize: 11, fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', fontFamily: 'inherit' }}>
                   {t('login.suspended_back')}
                 </button>
               </div>
@@ -535,34 +535,34 @@ export default function LoginPage() {
           ) : step === 'credentials' ? (
 
           <>{/* Welcome */}
-          <div className="mb-5 md:mb-8">
-            <span className="[&>svg]:w-6 [&>svg]:h-6 md:[&>svg]:w-11 md:[&>svg]:h-11 mb-2 md:mb-[10px]" style={{ color: 'var(--text)', display: 'block' }}><Hand strokeWidth={2} /></span>
-            <div className="text-[19px] md:text-[36px] mb-1 md:mb-1.5" style={{
+          <div className="mb-2 md:mb-4">
+            <span className="[&>svg]:w-4 [&>svg]:h-4 md:[&>svg]:w-7 md:[&>svg]:h-7 mb-1 md:mb-6" style={{ color: 'var(--text)', display: 'block' }}><Hand strokeWidth={2} /></span>
+            <div className="text-[20px] md:text-[26px] mb-1" style={{
               fontFamily: 'var(--font-spectral),Spectral,serif',
-              fontWeight: 700, color: 'var(--text)', lineHeight: 1.2
+              fontWeight: 700, color: 'var(--text)', lineHeight: 1.1
             }}>
               {t('login.right_title')}
             </div>
-            <div className="text-[11.5px] md:text-[18px]" style={{ color: 'var(--text2)', fontWeight: 500, lineHeight: 1.4 }}>
+            <div className="text-[9px] md:text-[13px]" style={{ color: 'var(--text2)', fontWeight: 500, lineHeight: 1.25 }}>
               {t('login.right_subtitle')}
             </div>
           </div>
 
           {alert && (
-            <div className="text-[13px] md:text-[17px] mb-3 md:mb-4 px-3 py-2.5 md:px-3.5 md:py-3" style={{
-              borderRadius: 10, fontWeight: 700,
-              display: 'flex', alignItems: 'center', gap: 8,
+            <div className="text-[10px] md:text-[12px] mb-2 md:mb-2 px-2 py-1.5 md:px-2.5 md:py-2" style={{
+              borderRadius: 7, fontWeight: 700,
+              display: 'flex', alignItems: 'center', gap: 5,
               background: alert.type === 'error' ? 'var(--red-light)' : 'var(--orange-light)',
-              border: alert.type === 'error' ? '1px solid rgba(220,38,38,0.2)' : '1px solid rgba(234,88,12,0.2)',
+              border: alert.type === 'error' ? '1px solid rgba(220,38,38,0.18)' : '1px solid rgba(234,88,12,0.18)',
               color: alert.type === 'error' ? 'var(--red)' : 'var(--orange)'
             }}>
-              <AlertTriangle size={17} strokeWidth={2} className="shrink-0" /><span>{alert.msg}</span>
+              <AlertTriangle size={12} strokeWidth={2} className="shrink-0" /><span>{alert.msg}</span>
             </div>
           )}
 
           {/* Email */}
-          <div className="mb-4 md:mb-[18px]">
-            <label className="text-[12px] md:text-[15px] mb-1 md:mb-[7px]" style={{ fontWeight: 800, color: 'var(--text2)', display: 'block', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+          <div className="mb-2 md:mb-[12px]">
+            <label className="text-[9px] md:text-[11px] mb-1 md:mb-[4px]" style={{ fontWeight: 800, color: 'var(--text2)', display: 'block', letterSpacing: '0.3px', textTransform: 'uppercase' }}>
               {t('fields.email')}
             </label>
             <input
@@ -571,14 +571,14 @@ export default function LoginPage() {
               onKeyDown={e => e.key === 'Enter' && submitCredentials()}
               placeholder={t('login.email_placeholder')}
               autoComplete="off"
-              className="text-[13px] md:text-[14px] px-3 py-2.5 md:px-4 md:py-[19px]"
-              style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 14, color: 'var(--text)', fontFamily: 'inherit', fontWeight: 600, outline: 'none', transition: 'all 0.2s' }}
+              className="text-[10px] md:text-[11px] px-2.5 py-1.5 md:px-3 md:py-2"
+              style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 9, color: 'var(--text)', fontFamily: 'inherit', fontWeight: 600, outline: 'none', transition: 'all 0.2s' }}
             />
           </div>
 
           {/* Mot de passe */}
-          <div className="mb-4 md:mb-[18px]">
-            <label className="text-[12px] md:text-[15px] mb-1 md:mb-[7px]" style={{ fontWeight: 800, color: 'var(--text2)', display: 'block', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+          <div className="mb-2 md:mb-[12px]">
+            <label className="text-[9px] md:text-[11px] mb-1 md:mb-[4px]" style={{ fontWeight: 800, color: 'var(--text2)', display: 'block', letterSpacing: '0.3px', textTransform: 'uppercase' }}>
               {t('fields.password')}
             </label>
             <div style={{ position: 'relative' }}>
@@ -587,55 +587,55 @@ export default function LoginPage() {
                 onChange={e => { setPassword(e.target.value); setAlert(null) }}
                 onKeyDown={e => e.key === 'Enter' && submitCredentials()}
                 placeholder={t('login.password_placeholder')} autoComplete="new-password"
-                className="text-[13px] md:text-[14px] px-3 py-2.5 md:px-4 md:py-[19px]"
-                style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 14, color: 'var(--text)', fontFamily: 'inherit', fontWeight: 600, outline: 'none', transition: 'all 0.2s' }}
+                className="text-[10px] md:text-[11px] px-2.5 py-1.5 md:px-3 md:py-2"
+                style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 9, color: 'var(--text)', fontFamily: 'inherit', fontWeight: 600, outline: 'none', transition: 'all 0.2s' }}
               />
               <button type="button" onClick={() => setShowPwd(s => !s)}
-                style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', padding: 4 }}>
-                {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+                style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', padding: 2 }}>
+                {showPwd ? <EyeOff size={12} /> : <Eye size={12} />}
               </button>
             </div>
           </div>
 
-          <div className="mb-4 md:mb-[18px]" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -6 }}>
+          <div className="mb-2 md:mb-[12px]" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -3 }}>
             <button
               type="button"
               onClick={() => { setForgotOpen(true); setForgotDone(false); setForgotError(''); setForgotEmail(email) }}
-              className="text-[12.5px] md:text-[15px]"
+              className="text-[10px] md:text-[12px]"
               style={{ fontWeight: 700, color: 'var(--green)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
               {t('auth.forgotPassword')}
             </button>
           </div>
 
           <button onClick={submitCredentials} disabled={loading}
-            className="text-[15px] md:text-[19px] py-2.5 md:py-[14px]"
+            className="text-[13px] md:text-[13px] py-2 md:py-3"
             style={{
               width: '100%',
               background: 'linear-gradient(135deg,var(--green),var(--green2))',
               color: 'white', fontWeight: 800,
-              border: 'none', borderRadius: 10, cursor: loading ? 'not-allowed' : 'pointer',
-              fontFamily: 'inherit', transition: 'all 0.2s',
-              boxShadow: '0 4px 16px rgba(5,150,105,0.25)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              border: 'none', borderRadius: 8, cursor: loading ? 'not-allowed' : 'pointer',
+              fontFamily: 'inherit', transition: 'all 0.12s',
+              boxShadow: '0 2px 8px rgba(5,150,105,0.18)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
               opacity: loading ? 0.8 : 1
             }}>
-            {loading ? <Loader2 size={18} className="animate-spin" /> : null}
+            {loading ? <Loader2 size={13} className="animate-spin" /> : null}
             {loading ? t('login.signing_in') : t('auth.signIn')}
           </button>
 
         </>
         ) : step === 'choose_account' ? (
 
-          <div style={{ animation: 'edu-fadeUp 0.35s ease both' }}>
-            <style>{`@keyframes edu-fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }`}</style>
+          <div style={{ animation: 'edu-fadeUp 0.3s ease both' }}>
+            <style>{`@keyframes edu-fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }`}</style>
             <button onClick={() => { setStep('credentials'); setAccountChoices(null); setPendingCredentials(null) }}
-              className="text-[13px] md:text-[15px] mb-4 md:mb-5"
-              style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: 'var(--text3)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit' }}>
-              <ArrowLeft size={16} /> {t('login.back')}
+              className="text-[12px] md:text-[14px] mb-3 md:mb-4"
+              style={{ display: 'flex', alignItems: 'center', gap: 5, fontWeight: 700, color: 'var(--text3)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit' }}>
+              <ArrowLeft size={14} /> {t('login.back')}
             </button>
-            <div className="mb-4 md:mb-5">
-              <div className="text-[22px] md:text-[30px] mb-1.5 md:mb-2" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('login.choose_account_title')}</div>
-              <div className="text-[13px] md:text-[16px]" style={{ color: 'var(--text2)', fontWeight: 500, lineHeight: 1.5 }}>
+            <div className="mb-3 md:mb-4">
+              <div className="text-[20px] md:text-[26px] mb-1 md:mb-1.5" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('login.choose_account_title')}</div>
+              <div className="text-[12px] md:text-[15px]" style={{ color: 'var(--text2)', fontWeight: 500, lineHeight: 1.4 }}>
                 {t('login.choose_account_subtitle')}
               </div>
             </div>
@@ -645,7 +645,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => submitAccountChoice(account)}
                 disabled={loading}
-                className="w-full text-left p-4 mb-2 rounded-xl border border-[var(--border)] hover:bg-[var(--bg2)]"
+                className="w-full text-left p-3 mb-2 rounded-lg border border-[var(--border)] hover:bg-[var(--bg2)]"
               >
                 <div className="font-semibold">{account.schoolName}</div>
                 <div className="text-sm text-[var(--text3)]">
@@ -657,97 +657,97 @@ export default function LoginPage() {
 
         ) : step === 'email_otp' ? (
 
-          <div style={{ animation: 'edu-fadeUp 0.35s ease both' }}>
-            <style>{`@keyframes edu-fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }`}</style>
+          <div style={{ animation: 'edu-fadeUp 0.3s ease both' }}>
+            <style>{`@keyframes edu-fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }`}</style>
             <button onClick={() => { setStep('credentials'); if (otpTimerRef.current) clearInterval(otpTimerRef.current) }}
-              className="text-[13px] md:text-[15px] mb-4 md:mb-5"
-              style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: 'var(--text3)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit' }}>
-              <ArrowLeft size={16} /> {t('login.back')}
+              className="text-[12px] md:text-[14px] mb-3 md:mb-4"
+              style={{ display: 'flex', alignItems: 'center', gap: 5, fontWeight: 700, color: 'var(--text3)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit' }}>
+              <ArrowLeft size={14} /> {t('login.back')}
             </button>
-            <div className="mb-4 md:mb-5">
-              <div className="text-[22px] md:text-[30px] mb-1.5 md:mb-2" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('login.otp_title')}</div>
-              <div className="text-[13px] md:text-[16px]" style={{ color: 'var(--text2)', fontWeight: 500, lineHeight: 1.5 }}>
+            <div className="mb-3 md:mb-4">
+              <div className="text-[20px] md:text-[26px] mb-1 md:mb-1.5" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('login.otp_title')}</div>
+              <div className="text-[12px] md:text-[15px]" style={{ color: 'var(--text2)', fontWeight: 500, lineHeight: 1.4 }}>
                 {t('login.otp_subtitle', { email: maskEmail(email) })}
               </div>
             </div>
             {otpAlert && (
-              <div className="text-[13px] md:text-[15px] mb-3 md:mb-4 px-3 py-2.5 md:px-3.5 md:py-3" style={{ borderRadius: 10, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, background: 'var(--red-light)', border: '1px solid rgba(220,38,38,0.2)', color: 'var(--red)' }}>
-                <AlertTriangle size={16} strokeWidth={2} className="shrink-0" /><span>{otpAlert}</span>
+              <div className="text-[12px] md:text-[14px] mb-2 md:mb-3 px-3 py-2 md:px-3 md:py-2.5" style={{ borderRadius: 9, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 7, background: 'var(--red-light)', border: '1px solid rgba(220,38,38,0.2)', color: 'var(--red)' }}>
+                <AlertTriangle size={14} strokeWidth={2} className="shrink-0" /><span>{otpAlert}</span>
               </div>
             )}
-            <div style={{ display: 'flex', gap: 8, width: '100%' }}>
+            <div style={{ display: 'flex', gap: 7, width: '100%' }}>
               {otp.map((v, i) => (
                 <input key={i}
                   ref={el => { otpRefs.current[i] = el }}
                   type="tel" maxLength={1} value={v}
                   onChange={e => handleOtpInput(i, e.target.value)}
                   onKeyDown={e => handleOtpKey(i, e)}
-                  className="h-12 sm:h-[68px] text-[18px] sm:text-[24px]"
-                  style={{ flex: 1, textAlign: 'center', fontWeight: 900, background: v ? 'var(--green-light)' : 'var(--surface)', border: `1.5px solid ${v ? 'var(--green)' : 'var(--border)'}`, borderRadius: 10, outline: 'none', color: v ? 'var(--green)' : 'var(--text)', fontFamily: 'inherit', transition: 'all 0.2s', minWidth: 0, maxWidth: 100 }}
+                  className="h-11 sm:h-12 text-[16px] sm:text-[20px]"
+                  style={{ flex: 1, textAlign: 'center', fontWeight: 900, background: v ? 'var(--green-light)' : 'var(--surface)', border: `1.5px solid ${v ? 'var(--green)' : 'var(--border)'}`, borderRadius: 9, outline: 'none', color: v ? 'var(--green)' : 'var(--text)', fontFamily: 'inherit', transition: 'all 0.2s', minWidth: 0, maxWidth: 100 }}
                 />
               ))}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-              <div className="text-[12.5px] md:text-[14.5px]" style={{ fontWeight: 700, color: otpTimerSecs <= 60 ? 'var(--red)' : 'var(--amber)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Clock size={15} /> {timerMin}:{String(timerSecDisp).padStart(2, '0')}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+              <div className="text-[11.5px] md:text-[13.5px]" style={{ fontWeight: 700, color: otpTimerSecs <= 60 ? 'var(--red)' : 'var(--amber)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <Clock size={13} /> {timerMin}:{String(timerSecDisp).padStart(2, '0')}
               </div>
               <button onClick={resendOtp} disabled={!otpResendEnabled}
-                className="text-[12.5px] md:text-[14.5px]"
+                className="text-[11.5px] md:text-[13.5px]"
                 style={{ fontWeight: 700, color: otpResendEnabled ? 'var(--green)' : 'var(--text3)', cursor: otpResendEnabled ? 'pointer' : 'default', background: 'none', border: 'none', fontFamily: 'inherit' }}>
                 {t('login.otp_resend')}
               </button>
             </div>
             <button onClick={() => submitOtp()} disabled={otpLoading}
-              className="text-[15px] md:text-[17px] py-2.5 md:py-[14px] mt-4 md:mt-5"
-              style={{ width: '100%', background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', fontWeight: 800, border: 'none', borderRadius: 10, cursor: otpLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: otpLoading ? 0.8 : 1 }}>
-              {otpLoading ? <Loader2 size={18} className="animate-spin" /> : null}
+              className="text-[14px] md:text-[16px] py-2 md:py-3 mt-3 md:mt-4"
+              style={{ width: '100%', background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', fontWeight: 800, border: 'none', borderRadius: 9, cursor: otpLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, opacity: otpLoading ? 0.8 : 1 }}>
+              {otpLoading ? <Loader2 size={16} className="animate-spin" /> : null}
               {t('login.otp_verify')}
             </button>
           </div>
 
         ) : step === 'totp' ? (
 
-          <div style={{ animation: 'edu-fadeUp 0.35s ease both' }}>
+          <div style={{ animation: 'edu-fadeUp 0.3s ease both' }}>
             <button onClick={() => setStep('email_otp')}
-              className="text-[13px] md:text-[15px] mb-4 md:mb-5"
-              style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: 'var(--text3)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit' }}>
-              <ArrowLeft size={16} /> {t('login.back')}
+              className="text-[12px] md:text-[14px] mb-3 md:mb-4"
+              style={{ display: 'flex', alignItems: 'center', gap: 5, fontWeight: 700, color: 'var(--text3)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit' }}>
+              <ArrowLeft size={14} /> {t('login.back')}
             </button>
-            <div className="mb-4 md:mb-5">
-              <div className="text-[21px] md:text-[28px] mb-1.5 md:mb-2" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('login.totp_title')}</div>
-              <div className="text-[13px] md:text-[16px]" style={{ color: 'var(--text2)', fontWeight: 500, lineHeight: 1.5 }}>
+            <div className="mb-3 md:mb-4">
+              <div className="text-[20px] md:text-[26px] mb-1 md:mb-1.5" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('login.totp_title')}</div>
+              <div className="text-[12px] md:text-[15px]" style={{ color: 'var(--text2)', fontWeight: 500, lineHeight: 1.4 }}>
                 {isRecovery ? t('login.totp_subtitle_recovery') : t('login.totp_subtitle')}
               </div>
             </div>
             {totpAlert && (
-              <div className="text-[13px] md:text-[15px] mb-3 md:mb-4 px-3 py-2.5 md:px-3.5 md:py-3" style={{ borderRadius: 10, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, background: 'var(--red-light)', border: '1px solid rgba(220,38,38,0.2)', color: 'var(--red)' }}>
-                <AlertTriangle size={16} strokeWidth={2} className="shrink-0" /><span>{totpAlert}</span>
+              <div className="text-[12px] md:text-[14px] mb-2 md:mb-3 px-3 py-2 md:px-3 md:py-2.5" style={{ borderRadius: 9, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 7, background: 'var(--red-light)', border: '1px solid rgba(220,38,38,0.2)', color: 'var(--red)' }}>
+                <AlertTriangle size={14} strokeWidth={2} className="shrink-0" /><span>{totpAlert}</span>
               </div>
             )}
             {!isRecovery ? (
               <input type="tel" maxLength={6} value={totpCode} placeholder="123456" autoComplete="one-time-code"
                 onChange={e => { setTotpCode(e.target.value.replace(/\D/g, '')); setTotpAlert(null) }}
                 onKeyDown={e => e.key === 'Enter' && submitTotp()}
-                className="text-[22px] md:text-[28px] tracking-[4px] md:tracking-[8px] px-3 py-2.5 md:px-4 md:py-[19px]"
-                style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 14, color: 'var(--text)', fontFamily: 'inherit', fontWeight: 900, textAlign: 'center', outline: 'none' }} />
+                className="text-[18px] md:text-[20px] tracking-[3px] md:tracking-[5px] px-3 py-2 md:px-3.5 md:py-3"
+                style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontFamily: 'inherit', fontWeight: 900, textAlign: 'center', outline: 'none' }} />
             ) : (
               <input type="text" value={recoveryCode} placeholder="ABCD-1234-EFGH-5678" autoComplete="off"
                 onChange={e => { setRecoveryCode(e.target.value); setTotpAlert(null) }}
                 onKeyDown={e => e.key === 'Enter' && submitTotp()}
-                className="text-[15px] md:text-[20px] tracking-[1px] md:tracking-[2px] px-3 py-2.5 md:px-4 md:py-[19px]"
-                style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 14, color: 'var(--text)', fontFamily: 'inherit', fontWeight: 700, textAlign: 'center', outline: 'none' }} />
+                className="text-[14px] md:text-[16px] tracking-[1px] md:tracking-[2px] px-3 py-2 md:px-3.5 md:py-3"
+                style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontFamily: 'inherit', fontWeight: 700, textAlign: 'center', outline: 'none' }} />
             )}
-            <div className="my-2.5 md:my-[14px]" style={{ textAlign: 'center' }}>
+            <div className="my-2 md:my-[12px]" style={{ textAlign: 'center' }}>
               <button onClick={() => { setIsRecovery(r => !r); setTotpAlert(null) }}
-                className="text-[12.5px] md:text-[14.5px]"
-                style={{ fontWeight: 700, color: 'var(--green)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                {isRecovery ? <><ArrowLeft size={14} /> {t('login.totp_use_app')}</> : <><KeyRound size={14} /> {t('login.totp_use_recovery')}</>}
+                className="text-[11.5px] md:text-[13.5px]"
+                style={{ fontWeight: 700, color: 'var(--green)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                {isRecovery ? <><ArrowLeft size={13} /> {t('login.totp_use_app')}</> : <><KeyRound size={13} /> {t('login.totp_use_recovery')}</>}
               </button>
             </div>
             <button onClick={submitTotp} disabled={totpLoading}
-              className="text-[15px] md:text-[17px] py-2.5 md:py-[14px]"
-              style={{ width: '100%', background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', fontWeight: 800, border: 'none', borderRadius: 10, cursor: totpLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: totpLoading ? 0.8 : 1 }}>
-              {totpLoading ? <Loader2 size={18} className="animate-spin" /> : null}
+              className="text-[13px] md:text-[13px] py-2 md:py-3"
+              style={{ width: '100%', background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', fontWeight: 800, border: 'none', borderRadius: 8, cursor: totpLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, opacity: totpLoading ? 0.8 : 1 }}>
+              {totpLoading ? <Loader2 size={16} className="animate-spin" /> : null}
               {t('login.totp_verify')}
             </button>
           </div>
@@ -755,73 +755,73 @@ export default function LoginPage() {
         ) : (
 
           /* ── step === 'mfa_setup' — configuration obligatoire (1re connexion) ── */
-          <div style={{ animation: 'edu-fadeUp 0.35s ease both' }}>
+          <div style={{ animation: 'edu-fadeUp 0.3s ease both' }}>
             {!recoveryCodes ? (
               <>
-                <div className="text-[12.5px] md:text-[14px] px-3 py-2.5 md:px-4 md:py-3" style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--amber-light)', border: '1px solid rgba(217,119,6,0.2)', borderRadius: 10, marginBottom: 18, fontWeight: 700, color: 'var(--amber)' }}>
-                  <Shield size={16} /> {t('login.mfa_setup_subtitle')}
+                <div className="text-[11.5px] md:text-[13px] px-2.5 py-2 md:px-3 md:py-2.5" style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'var(--amber-light)', border: '1px solid rgba(217,119,6,0.2)', borderRadius: 9, marginBottom: 14, fontWeight: 700, color: 'var(--amber)' }}>
+                  <Shield size={14} /> {t('login.mfa_setup_subtitle')}
                 </div>
-                <div className="text-[21px] md:text-[26px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 18 }}>
+                <div className="text-[20px] md:text-[26px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>
                   {t('login.mfa_setup_title')}
                 </div>
                 {setupAlert && (
-                  <div className="text-[13px] md:text-[15px] mb-3 md:mb-4 px-3 py-2.5 md:px-3.5 md:py-3" style={{ borderRadius: 10, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, background: 'var(--red-light)', border: '1px solid rgba(220,38,38,0.2)', color: 'var(--red)' }}>
-                    <AlertTriangle size={16} strokeWidth={2} className="shrink-0" /><span>{setupAlert}</span>
+                  <div className="text-[12px] md:text-[14px] mb-2 md:mb-3 px-2.5 py-2 md:px-3 md:py-2.5" style={{ borderRadius: 9, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 7, background: 'var(--red-light)', border: '1px solid rgba(220,38,38,0.2)', color: 'var(--red)' }}>
+                    <AlertTriangle size={14} strokeWidth={2} className="shrink-0" /><span>{setupAlert}</span>
                   </div>
                 )}
-                <div className="text-[13px] md:text-[14.5px]" style={{ fontWeight: 700, color: 'var(--text2)', marginBottom: 10 }}>{t('login.mfa_setup_step1')}</div>
+                <div className="text-[12px] md:text-[13.5px]" style={{ fontWeight: 700, color: 'var(--text2)', marginBottom: 8 }}>{t('login.mfa_setup_step1')}</div>
                 {qrDataUri ? (
-                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
-                    <img src={qrDataUri} alt="QR MFA" className="w-[150px] h-[150px] md:w-[180px] md:h-[180px]" style={{ borderRadius: 12, border: '1.5px solid var(--border)', padding: 8, background: 'white' }} />
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+                    <img src={qrDataUri} alt="QR MFA" className="w-[130px] h-[130px] md:w-[160px] md:h-[160px]" style={{ borderRadius: 10, border: '1.5px solid var(--border)', padding: 7, background: 'white' }} />
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} className="animate-spin" /></div>
+                  <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}><Loader2 size={22} className="animate-spin" /></div>
                 )}
                 {manualKey && (
-                  <div style={{ marginBottom: 18 }}>
-                    <div className="text-[11px] md:text-[12.5px]" style={{ color: 'var(--text3)', fontWeight: 700, marginBottom: 5 }}>{t('login.mfa_setup_manual_label')}</div>
-                    <div className="text-[12px] md:text-[14px] px-2.5 py-2 md:px-3.5 md:py-2.5" style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--text)', background: 'var(--bg2)', borderRadius: 8, textAlign: 'center', letterSpacing: 1, wordBreak: 'break-all' }}>{manualKey}</div>
+                  <div style={{ marginBottom: 14 }}>
+                    <div className="text-[10px] md:text-[11.5px]" style={{ color: 'var(--text3)', fontWeight: 700, marginBottom: 4 }}>{t('login.mfa_setup_manual_label')}</div>
+                    <div className="text-[11px] md:text-[13px] px-2 py-1.5 md:px-3 md:py-2" style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--text)', background: 'var(--bg2)', borderRadius: 7, textAlign: 'center', letterSpacing: 1, wordBreak: 'break-all' }}>{manualKey}</div>
                   </div>
                 )}
-                <div className="text-[13px] md:text-[14.5px]" style={{ fontWeight: 700, color: 'var(--text2)', marginBottom: 10 }}>{t('login.mfa_setup_code_label')}</div>
+                <div className="text-[12px] md:text-[13.5px]" style={{ fontWeight: 700, color: 'var(--text2)', marginBottom: 8 }}>{t('login.mfa_setup_code_label')}</div>
                 <input type="tel" maxLength={6} value={setupTotpCode} placeholder="123456" autoComplete="one-time-code"
                   onChange={e => { setSetupTotpCode(e.target.value.replace(/\D/g, '')); setSetupAlert(null) }}
                   onKeyDown={e => e.key === 'Enter' && submitMfaSetup()}
-                  className="text-[22px] md:text-[28px] tracking-[4px] md:tracking-[8px] px-3 py-3 md:px-4 md:py-[19px]"
-                  style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 14, color: 'var(--text)', fontFamily: 'inherit', fontWeight: 900, textAlign: 'center', outline: 'none', marginBottom: 18 }} />
+                  className="text-[18px] md:text-[20px] tracking-[3px] md:tracking-[5px] px-3 py-2 md:px-3.5 md:py-3"
+                  style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontFamily: 'inherit', fontWeight: 900, textAlign: 'center', outline: 'none', marginBottom: 14 }} />
                 <button onClick={submitMfaSetup} disabled={setupLoading || !qrDataUri}
-                  className="text-[15px] md:text-[17px] py-2.5 md:py-[14px]"
-                  style={{ width: '100%', background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', fontWeight: 800, border: 'none', borderRadius: 10, cursor: setupLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: setupLoading ? 0.8 : 1 }}>
-                  {setupLoading ? <Loader2 size={18} className="animate-spin" /> : null}
+                  className="text-[13px] md:text-[13px] py-2 md:py-3"
+                  style={{ width: '100%', background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', fontWeight: 800, border: 'none', borderRadius: 8, cursor: setupLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, opacity: setupLoading ? 0.8 : 1 }}>
+                  {setupLoading ? <Loader2 size={16} className="animate-spin" /> : null}
                   {t('login.mfa_setup_confirm')}
                 </button>
               </>
             ) : (
               <>
-                <div className="[&>svg]:w-8 [&>svg]:h-8 md:[&>svg]:w-10 md:[&>svg]:h-10" style={{ display: 'flex', justifyContent: 'center', color: 'var(--green)', marginBottom: 14 }}><Shield strokeWidth={2} /></div>
-                <div className="text-[20px] md:text-[24px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 8, textAlign: 'center' }}>
+                <div className="[&>svg]:w-7 [&>svg]:h-7 md:[&>svg]:w-9 md:[&>svg]:h-9" style={{ display: 'flex', justifyContent: 'center', color: 'var(--green)', marginBottom: 12 }}><Shield strokeWidth={2} /></div>
+                <div className="text-[18px] md:text-[22px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 7, textAlign: 'center' }}>
                   {t('login.mfa_setup_recovery_title')}
                 </div>
-                <div className="text-[13px] md:text-[14.5px]" style={{ color: 'var(--text2)', lineHeight: 1.6, marginBottom: 18, textAlign: 'center' }}>
+                <div className="text-[12px] md:text-[13.5px]" style={{ color: 'var(--text2)', lineHeight: 1.5, marginBottom: 14, textAlign: 'center' }}>
                   {t('login.mfa_setup_recovery_subtitle')}
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 18, background: 'var(--bg2)', borderRadius: 12, padding: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7, marginBottom: 14, background: 'var(--bg2)', borderRadius: 10, padding: 12 }}>
                   {recoveryCodes.map(code => (
-                    <div key={code} className="text-[11px] md:text-[13px] px-2 py-1.5 md:px-2.5 md:py-2" style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--text)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6, textAlign: 'center' }}>{code}</div>
+                    <div key={code} className="text-[10px] md:text-[12px] px-1.5 py-1 md:px-2 md:py-1.5" style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--text)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 5, textAlign: 'center' }}>{code}</div>
                   ))}
                 </div>
                 <button onClick={() => navigator.clipboard?.writeText(recoveryCodes.join('\n'))}
-                  className="text-[12px] md:text-[13.5px] py-2 md:py-2.5"
-                  style={{ width: '100%', marginBottom: 18, background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
-                  <Copy size={14} /> Copier les codes
+                  className="text-[11px] md:text-[12.5px] py-1.5 md:py-2"
+                  style={{ width: '100%', marginBottom: 14, background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 9, fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  <Copy size={12} /> Copier les codes
                 </button>
-                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 18, cursor: 'pointer' }}>
-                  <input type="checkbox" checked={recoveryAck} onChange={e => setRecoveryAck(e.target.checked)} style={{ marginTop: 3, flexShrink: 0, width: 18, height: 18 }} />
-                  <span className="text-[12.5px] md:text-[14px]" style={{ fontWeight: 700, color: 'var(--text)' }}>{t('login.mfa_setup_recovery_confirm')}</span>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 9, marginBottom: 14, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={recoveryAck} onChange={e => setRecoveryAck(e.target.checked)} style={{ marginTop: 2, flexShrink: 0, width: 16, height: 16 }} />
+                  <span className="text-[11.5px] md:text-[13px]" style={{ fontWeight: 700, color: 'var(--text)' }}>{t('login.mfa_setup_recovery_confirm')}</span>
                 </label>
                 <button onClick={() => pendingLoginData && completeLogin(pendingLoginData)} disabled={!recoveryAck}
-                  className="text-[15px] md:text-[17px] py-2.5 md:py-[14px]"
-                  style={{ width: '100%', background: recoveryAck ? 'linear-gradient(135deg,var(--green),var(--green2))' : 'var(--text3)', color: 'white', fontWeight: 800, border: 'none', borderRadius: 10, cursor: recoveryAck ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
+                  className="text-[13px] md:text-[13px] py-2 md:py-3"
+                  style={{ width: '100%', background: recoveryAck ? 'linear-gradient(135deg,var(--green),var(--green2))' : 'var(--text3)', color: 'white', fontWeight: 800, border: 'none', borderRadius: 8, cursor: recoveryAck ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
                   {t('login.mfa_setup_continue')}
                 </button>
               </>
@@ -840,43 +840,43 @@ export default function LoginPage() {
           background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
           zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
-          <div className="px-7 py-7 md:px-10 md:py-10" style={{
-            background: 'var(--surface)', borderRadius: 20,
-            textAlign: 'center', maxWidth: 360, width: '90%',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
-            animation: 'popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both'
+          <div className="px-5 py-5 md:px-6 md:py-6" style={{
+            background: 'var(--surface)', borderRadius: 12,
+            textAlign: 'center', maxWidth: 300, width: '88%',
+            boxShadow: '0 12px 36px rgba(0,0,0,0.15)',
+            animation: 'popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both'
           }}>
-            <span style={{ color: success.color, marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
-              <success.icon size={56} strokeWidth={2} />
+            <span style={{ color: success.color, marginBottom: 8, display: 'flex', justifyContent: 'center' }}>
+              <success.icon size={32} strokeWidth={2} />
             </span>
-            <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
+            <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 5 }}>
               {t('login.success_greeting', { name: success.firstName })}
             </div>
-            <div style={{ fontSize: 14, color: 'var(--text2)', fontWeight: 500, lineHeight: 1.6, marginBottom: 8 }}>
+            <div style={{ fontSize: 11, color: 'var(--text2)', fontWeight: 500, lineHeight: 1.4, marginBottom: 6 }}>
               {t('messages.welcome')}
             </div>
             <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '8px 16px', borderRadius: 20,
-              fontSize: 13, fontWeight: 800, margin: '12px 0 20px',
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              padding: '4px 10px', borderRadius: 12,
+              fontSize: 10, fontWeight: 800, margin: '8px 0 12px',
               background: success.bg, color: success.color
             }}>
-              <success.icon size={14} strokeWidth={2} /> {success.badge}
+              <success.icon size={10} strokeWidth={2} /> {success.badge}
             </div>
 
-            <div style={{ background: 'var(--bg2)', borderRadius: 8, overflow: 'hidden', height: 6, marginBottom: 16 }}>
+            <div style={{ background: 'var(--bg2)', borderRadius: 6, overflow: 'hidden', height: 4, marginBottom: 10 }}>
               <div style={{
                 height: '100%', background: 'var(--green)',
                 width: progress ? '100%' : '0%',
-                transition: 'width 2s linear', borderRadius: 8
+                transition: 'width 2s linear', borderRadius: 6
               }} />
             </div>
-            <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 600, marginBottom: 14 }}>
+            <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 600, marginBottom: 10 }}>
               {t('login.success_redirecting')}
             </div>
             <button
               onClick={() => router.push(success.dest)}
-              style={{ width: '100%', padding: 12, background: 'var(--green)', color: 'white', fontSize: 14, fontWeight: 800, border: 'none', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit' }}>
+              style={{ width: '100%', padding: 9, background: 'var(--green)', color: 'white', fontSize: 11, fontWeight: 800, border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
               {t('login.success_goto')}
             </button>
           </div>
@@ -888,32 +888,32 @@ export default function LoginPage() {
         <div
           onClick={() => !forgotLoading && setForgotOpen(false)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} className="px-7 py-7 md:px-10 md:py-9"
-            style={{ background: 'var(--surface)', borderRadius: 20, width: 440, maxWidth: '94vw', boxShadow: '0 20px 60px rgba(0,0,0,0.18)', animation: 'popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both' }}>
+          <div onClick={e => e.stopPropagation()} className="px-5 py-5 md:px-6 md:py-5"
+            style={{ background: 'var(--surface)', borderRadius: 12, width: 360, maxWidth: '88vw', boxShadow: '0 12px 36px rgba(0,0,0,0.14)', animation: 'popIn 0.2s cubic-bezier(0.34,1.56,0.64,1) both' }}>
 
             {forgotDone ? (
-              <div style={{ textAlign: 'center', padding: '8px 0' }}>
-                <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--green)', marginBottom: 14 }}><Mail size={52} strokeWidth={2} /></div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', marginBottom: 10 }}>{t('login.forgot_success_title')}</div>
-                <div style={{ fontSize: 15, color: 'var(--text2)', lineHeight: 1.7, marginBottom: 24 }}>
+              <div style={{ textAlign: 'center', padding: '6px 0' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--green)', marginBottom: 8 }}><Mail size={30} strokeWidth={2} /></div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 7 }}>{t('login.forgot_success_title')}</div>
+                <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.5, marginBottom: 16 }}>
                   {t('login.forgot_success_msg')}
                 </div>
                 <button onClick={() => setForgotOpen(false)}
-                  style={{ padding: '11px 28px', borderRadius: 11, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', fontSize: 15, fontWeight: 800, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  style={{ padding: '9px 20px', borderRadius: 9, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', fontSize: 12, fontWeight: 800, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
                   {t('login.forgot_back')}
                 </button>
               </div>
             ) : (
               <>
-                <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
+                <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 5 }}>
                   {t('login.forgot_title')}
                 </div>
-                <div style={{ fontSize: 14, color: 'var(--text3)', marginBottom: 24, lineHeight: 1.6 }}>
+                <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 16, lineHeight: 1.4 }}>
                   {t('login.forgot_subtitle')}
                 </div>
 
-                <div style={{ marginBottom: 16 }}>
-                  <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: 'var(--text2)', marginBottom: 6, letterSpacing: '0.5px', textTransform: 'uppercase' as const }}>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: 'block', fontSize: 10, fontWeight: 800, color: 'var(--text2)', marginBottom: 4, letterSpacing: '0.3px', textTransform: 'uppercase' as const }}>
                     {t('login.forgot_email_label')}
                   </label>
                   <input
@@ -923,23 +923,23 @@ export default function LoginPage() {
                     onKeyDown={e => { if (e.key === 'Enter') handleForgotSubmit() }}
                     placeholder={t('login.forgot_email_placeholder')}
                     autoFocus
-                    style={{ width: '100%', padding: '12px 14px', background: 'var(--bg2)', border: '1.5px solid var(--border2)', borderRadius: 10, color: 'var(--text)', fontSize: 15, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' as const }}
+                    style={{ width: '100%', padding: '9px 10px', background: 'var(--bg2)', border: '1.5px solid var(--border2)', borderRadius: 8, color: 'var(--text)', fontSize: 12, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' as const }}
                   />
                 </div>
 
-                  {forgotError && (
-                  <div style={{ background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8, padding: '10px 14px', fontSize: 14, fontWeight: 600, marginBottom: 16 }}>
+                {forgotError && (
+                  <div style={{ background: 'var(--red-light)', color: 'var(--red)', borderRadius: 6, padding: '7px 10px', fontSize: 11, fontWeight: 600, marginBottom: 12 }}>
                     {forgotError}
                   </div>
                 )}
 
-                <div style={{ display: 'flex', gap: 10 }}>
+                <div style={{ display: 'flex', gap: 7 }}>
                   <button onClick={() => setForgotOpen(false)} disabled={forgotLoading}
-                    style={{ flex: 1, padding: '11px', borderRadius: 11, fontSize: 15, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    style={{ flex: 1, padding: '8px', borderRadius: 9, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }}>
                     {t('login.forgot_cancel')}
                   </button>
                   <button onClick={handleForgotSubmit} disabled={forgotLoading}
-                    style={{ flex: 1, padding: '11px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: forgotLoading ? 'var(--text3)' : 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: forgotLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+                    style={{ flex: 1, padding: '8px', borderRadius: 9, fontSize: 12, fontWeight: 800, background: forgotLoading ? 'var(--text3)' : 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: forgotLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
                     {forgotLoading ? t('login.forgot_sending') : t('login.forgot_send')}
                   </button>
                 </div>

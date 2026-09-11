@@ -23,23 +23,23 @@ export default function StaffTopbar({ section, periodLabel, onChangePassword, on
   const tcommon = useT('common')
   return (
     <header style={{
-      height: 68, background: 'var(--surface)', borderBottom: '1.5px solid var(--border)',
-      display: 'flex', alignItems: 'center', padding: '0 32px', gap: 14, flexShrink: 0,
+      height: 40, background: 'var(--surface)', borderBottom: '1px solid var(--border)',
+      display: 'flex', alignItems: 'center', padding: '0 16px', gap: 8, flexShrink: 0,
     }}>
       {onMenuClick && <MobileMenuButton onClick={onMenuClick} />}
-      <div className="truncate" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
+      <div className="truncate" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
         {tnav(`pageTitle.staff_${SECTION_KEY[section] ?? section}`)}
       </div>
       {periodLabel && (
-        <span className="hidden sm:inline" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 20, padding: '4px 14px', fontSize: 15, fontWeight: 700, color: 'var(--text3)' }}>
+        <span className="hidden sm:inline" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, padding: '3px 8px', fontSize: 12, fontWeight: 700, color: 'var(--text3)' }}>
           {periodLabel}
         </span>
       )}
-      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
         {onChangePassword && (
           <button onClick={onChangePassword} title={tcommon('auth.changePassword')}
-            style={{ width: 42, height: 42, borderRadius: 10, background: 'var(--bg2)', border: '1.5px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            <KeyRound size={18} color="var(--text2)" />
+            style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg2)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <KeyRound size={15} color="var(--text2)" />
           </button>
         )}
         <ThemeToggle />

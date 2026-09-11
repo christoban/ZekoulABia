@@ -128,59 +128,59 @@ export default function TeacherSidebar({
       />
 
       {/* Brand */}
-      <div className="flex items-center gap-[13px] border-b border-white/[0.07]" style={{ padding: '25px 25px' }}>
-        <div className="w-13 h-13 rounded-[14px] flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: "linear-gradient(135deg,var(--amber),var(--green))" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "70%", height: "70%", objectFit: "contain" }} /></div>
+      <div className="flex items-center gap-2 border-b border-white/[0.07]" style={{ padding: '12px 12px' }}>
+        <div className="w-7 h-7 rounded-[8px] flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: "linear-gradient(135deg,var(--amber),var(--green))" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "70%", height: "70%", objectFit: "contain" }} /></div>
         <div>
-          <div className="font-spectral text-[25px] font-bold text-white leading-tight">ZekoulABia</div>
-          <div className="text-[14px] text-white/35 font-semibold">{tcommon('brand.roleTeacher')}</div>
+          <div className="font-spectral text-[15px] font-bold text-white leading-tight">ZekoulABia</div>
+          <div className="text-[10px] text-white/35 font-semibold">{tcommon('brand.roleTeacher')}</div>
         </div>
       </div>
 
-      <div className="flex flex-col flex-1 overflow-hidden" style={{ padding: '25px 25px' }}>
+      <div className="flex flex-col flex-1 overflow-hidden" style={{ padding: '8px 10px' }}>
         {/* École pill */}
-        <div className="bg-white/[0.06] border border-white/10 rounded-[10px] mb-[25px]" style={{ padding: '20px 23px' }}>
-          <div className="flex items-center gap-[8px]">
+        <div className="bg-white/[0.06] border border-white/10 rounded-[8px] mb-2" style={{ padding: '8px 10px' }}>
+          <div className="flex items-center gap-2">
             {logoUrl
-              ? <img src={logoUrl} alt={displayName} className="w-10 h-10 rounded-[10px] flex-shrink-0" style={{ objectFit: 'cover' }} />
-              : <div className="w-10 h-10 rounded-[10px] bg-gradient-to-br from-[var(--green)] to-[var(--blue)] flex items-center justify-center text-[15px] font-black text-white flex-shrink-0">{initials}</div>
+              ? <img src={logoUrl} alt={displayName} className="w-6 h-6 rounded-[6px] flex-shrink-0" style={{ objectFit: 'cover' }} />
+              : <div className="w-6 h-6 rounded-[6px] bg-gradient-to-br from-[var(--green)] to-[var(--blue)] flex items-center justify-center text-[10px] font-black text-white flex-shrink-0">{initials}</div>
             }
             <div className="min-w-0">
-              <div className="text-[16px] font-bold text-white truncate">{displayName}</div>
-              <div className="text-[13px] text-white/35">{tcommon('brand.roleTeacher')}</div>
+              <div className="text-[12px] font-bold text-white truncate">{displayName}</div>
+              <div className="text-[10px] text-white/35">{tcommon('brand.roleTeacher')}</div>
             </div>
           </div>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-[10px] py-1">
+        <nav className="flex-1 overflow-y-auto px-1 py-1">
           {nav.map((group, gi) => (
             <div key={gi}>
               {group.label && (
-                <div className="text-[11px] font-black text-white/30 tracking-[1.2px] uppercase" style={{ padding: '14px 0 4px 0' }}>
+                <div className="text-[9px] font-black text-white/30 tracking-[1px] uppercase" style={{ padding: '6px 0 2px 0' }}>
                   {group.label}
                 </div>
               )}
               {group.items.map(item => (
                 <button key={`${gi}-${item.id}`} onClick={() => handleChange(item.id)}
                   className={cn(
-                    'relative w-full flex items-center gap-[20px] rounded-lg mb-[1px]',
-                    'text-[16px] font-semibold text-left border-none cursor-pointer font-nunito',
+                    'relative w-full flex items-center gap-2 rounded-md mb-[1px]',
+                    'text-[11px] font-semibold text-left border-none cursor-pointer font-nunito',
                     current === item.id
                       ? 'text-white'
                       : 'text-white/52 hover:bg-[var(--sidebar2)] hover:text-white/82'
                   )}
-                  style={{ padding: '6px 9px' }}>
+                  style={{ padding: '5px 8px' }}>
                   {current === item.id && (
                     <motion.div layoutId="teacher-nav-active"
-                      className="absolute inset-0 rounded-lg" style={{ background: 'var(--sidebar-active)' }}
+                      className="absolute inset-0 rounded-md" style={{ background: 'var(--sidebar-active)' }}
                       transition={{ type: 'spring', stiffness: 380, damping: 30 }} />
                   )}
-                  <span className="relative z-10 w-[20px] flex items-center justify-center flex-shrink-0">
-                    <item.icon size={20} strokeWidth={2} />
+                  <span className="relative z-10 w-[16px] flex items-center justify-center flex-shrink-0">
+                    <item.icon size={15} strokeWidth={2} />
                   </span>
                   <span className="relative z-10 truncate flex-1">{item.label}</span>
                   {item.badge && item.badgeColor && (
-                    <span className={cn('relative z-10 ml-auto text-[13px] font-black rounded-lg', BADGE_STYLES[item.badgeColor])} style={{ padding: '3px 6px' }}>
+                    <span className={cn('relative z-10 ml-auto text-[10px] font-black rounded', BADGE_STYLES[item.badgeColor])} style={{ padding: '1px 5px' }}>
                       {item.badge}
                     </span>
                   )}
@@ -192,26 +192,26 @@ export default function TeacherSidebar({
           {/* Synchronisation */}
           {pendingCount != null && pendingCount > 0 && (
             <div>
-              <div className="text-[11px] font-black text-white/30 tracking-[1.2px] uppercase" style={{ padding: '14px 0 4px 0' }}>
+              <div className="text-[9px] font-black text-white/30 tracking-[1px] uppercase" style={{ padding: '6px 0 2px 0' }}>
                 {tnav('sidebar.sync')}
               </div>
               <button onClick={() => handleChange('sync')}
                 className={cn(
-                  'relative w-full flex items-center gap-[20px] rounded-lg mb-[1px]',
-                  'text-[16px] font-semibold text-left border-none cursor-pointer font-nunito',
+                  'relative w-full flex items-center gap-2 rounded-md mb-[1px]',
+                  'text-[11px] font-semibold text-left border-none cursor-pointer font-nunito',
                   current === 'sync' ? 'text-white' : 'text-white/52 hover:bg-[var(--sidebar2)] hover:text-white/82'
                 )}
-                style={{ padding: '6px 9px' }}>
+                style={{ padding: '5px 8px' }}>
                 {current === 'sync' && (
                   <motion.div layoutId="teacher-nav-active"
-                    className="absolute inset-0 rounded-lg" style={{ background: 'var(--sidebar-active)' }}
+                    className="absolute inset-0 rounded-md" style={{ background: 'var(--sidebar-active)' }}
                     transition={{ type: 'spring', stiffness: 380, damping: 30 }} />
                 )}
-                <span className="relative z-10 w-[20px] flex items-center justify-center flex-shrink-0">
-                  <RefreshCw size={20} strokeWidth={2} />
+                <span className="relative z-10 w-[16px] flex items-center justify-center flex-shrink-0">
+                  <RefreshCw size={15} strokeWidth={2} />
                 </span>
                 <span className="relative z-10 truncate flex-1">{tnav('sidebar.sync')}</span>
-                <span className={cn('relative z-10 ml-auto text-[13px] font-black rounded-lg', BADGE_STYLES.amber)} style={{ padding: '3px 6px' }}>
+                <span className={cn('relative z-10 ml-auto text-[10px] font-black rounded', BADGE_STYLES.amber)} style={{ padding: '1px 5px' }}>
                   {pendingCount}
                 </span>
               </button>
@@ -221,21 +221,21 @@ export default function TeacherSidebar({
       </div>
 
       {/* User */}
-      <div className="border-t border-white/[0.07]" style={{ padding: '20px 25px' }}>
-        <div className="flex items-center gap-[12px] rounded-[10px] hover:bg-white/[0.06]" style={{ padding: '12px 14px' }}>
-          <div className="w-11 h-11 rounded-[11px] bg-gradient-to-br from-[var(--blue)] to-[var(--purple)] flex items-center justify-center text-white font-black text-[16px] flex-shrink-0">
+      <div className="border-t border-white/[0.07]" style={{ padding: '8px 10px' }}>
+        <div className="flex items-center gap-2 rounded-[8px] hover:bg-white/[0.06]" style={{ padding: '6px 8px' }}>
+          <div className="w-6 h-6 rounded-[6px] bg-gradient-to-br from-[var(--blue)] to-[var(--purple)] flex items-center justify-center text-white font-black text-[10px] flex-shrink-0">
             {user ? (user.firstName[0] || '') + (user.lastName[0] || '') : '??'}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[17px] font-bold text-white truncate">{user ? `${user.firstName} ${user.lastName}` : tcommon('user.loading')}</div>
-            <div className="text-[14px] text-white/35">{user?.role || tcommon('user.teacherFallback')}{user?.teacherProfile?.teacherSubjects?.length ? ` · ${user.teacherProfile.teacherSubjects.map(s => s.subject.name).join(', ')}` : ''}</div>
+            <div className="text-[11px] font-bold text-white truncate">{user ? `${user.firstName} ${user.lastName}` : tcommon('user.loading')}</div>
+            <div className="text-[9px] text-white/35 truncate">{user?.role || tcommon('user.teacherFallback')}{user?.teacherProfile?.teacherSubjects?.length ? ` · ${user.teacherProfile.teacherSubjects.map(s => s.subject.name).join(', ')}` : ''}</div>
           </div>
           {onLogout && (
             <button onClick={onLogout} title={tcommon('user.logoutTitle')}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', flexShrink: 0, padding: 4, borderRadius: 6 }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', flexShrink: 0, padding: 3, borderRadius: 4 }}
               onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'rgba(239,68,68,0.8)'}
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)'}>
-              <LogOut size={16} />
+              <LogOut size={13} />
             </button>
           )}
         </div>
@@ -245,17 +245,17 @@ export default function TeacherSidebar({
 
   return (
     <>
-      <aside className="hidden md:flex w-[320px] min-w-[320px] flex-col h-screen flex-shrink-0 relative overflow-hidden" style={{ background: 'var(--sidebar)' }}>
+      <aside className="hidden md:flex w-[200px] min-w-[200px] flex-col h-screen flex-shrink-0 relative overflow-hidden" style={{ background: 'var(--sidebar)' }}>
         {sidebarBody}
       </aside>
 
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true">
           <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onMobileClose} />
-          <aside className="absolute left-0 top-0 h-full w-[85vw] max-w-[320px] flex flex-col relative overflow-hidden" style={{ background: 'var(--sidebar)' }}>
+          <aside className="absolute left-0 top-0 h-full w-[85vw] max-w-[200px] flex flex-col relative overflow-hidden" style={{ background: 'var(--sidebar)' }}>
             <button onClick={onMobileClose} aria-label="Fermer"
-              className="absolute z-20" style={{ top: 14, right: 14, width: 34, height: 34, borderRadius: 8, background: 'rgba(255,255,255,0.08)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-              <X size={18} color="white" />
+              className="absolute z-20" style={{ top: 10, right: 10, width: 28, height: 28, borderRadius: 8, background: 'rgba(255,255,255,0.08)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              <X size={13} color="white" />
             </button>
             {sidebarBody}
           </aside>

@@ -264,15 +264,15 @@ const DECO_BAND: CSSProperties = {
 // Cards avec border-radius moderne (16px au lieu de 13px)
 const CARD: CSSProperties = {
   background: 'var(--surface)',
-  borderRadius: 16,
-  border: '1.5px solid var(--border)',
+  borderRadius: 12,
+  border: '1px solid var(--border)',
   boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
 }
 
 // Section heading helper
 const SH: CSSProperties = {
   fontFamily: 'var(--font-spectral),Spectral,serif',
-  fontSize: 40,
+  fontSize: 30,
   fontWeight: 700,
   color: 'var(--text)',
   textAlign: 'center',
@@ -429,17 +429,17 @@ export default function LandingPage() {
 
   const openDemo = () => setDemoOpen(true)
 
-  // shared button styles — taille standard landing page moderne
+  // shared button styles — taille ultra-dense landing page
   const btnPrimary: CSSProperties = {
     background: 'linear-gradient(135deg,var(--green),var(--green2))',
     color: 'white',
     fontWeight: 800,
-    fontSize: 15,
-    padding: '14px 28px',
-    borderRadius: 10,
+    fontSize: 13,
+    padding: '9px 18px',
+    borderRadius: 8,
     border: 'none',
     cursor: 'pointer',
-    boxShadow: '0 3px 12px rgba(5,150,105,0.22)',
+    boxShadow: '0 2px 8px rgba(5,150,105,0.18)',
     fontFamily: 'inherit',
     transition: 'all 150ms',
     display: 'inline-block',
@@ -450,9 +450,9 @@ export default function LandingPage() {
     background: 'var(--surface)',
     color: 'var(--text2)',
     fontWeight: 700,
-    fontSize: 15,
-    padding: '14px 28px',
-    borderRadius: 10,
+    fontSize: 13,
+    padding: '9px 18px',
+    borderRadius: 8,
     border: '1.5px solid var(--border2)',
     cursor: 'pointer',
     fontFamily: 'inherit',
@@ -472,19 +472,19 @@ export default function LandingPage() {
       {/* ══════════════════════════════════════════════════
           NAVBAR — hauteur 72px, padding horizontal 56px
       ══════════════════════════════════════════════════ */}
-      <nav className="px-4 md:px-8 lg:px-14 gap-2 md:gap-4 lg:gap-10" style={{
+      <nav className="px-3 md:px-6 lg:px-10 gap-1 md:gap-3 lg:gap-7" style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-        minHeight: 72, background: 'var(--surface)',
-        borderBottom: '1.5px solid var(--border)',
+        minHeight: 56, background: 'var(--surface)',
+        borderBottom: '1px solid var(--border)',
         display: 'flex', alignItems: 'center',
         transition: 'box-shadow 200ms',
-        boxShadow: navScrolled ? '0 2px 16px rgba(0,0,0,0.07)' : 'none',
+        boxShadow: navScrolled ? '0 1px 8px rgba(0,0,0,0.05)' : 'none',
       }}>
         {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0, minWidth: 0 }}>
-          <img src="/logo.svg" alt="ZekoulABia" style={{ width: 32, height: 32, flexShrink: 0 }} />
-          <span className="truncate" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>ZekoulABia</span>
-          <span className="hidden xl:inline-block" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text3)', fontSize: 14, fontWeight: 700, borderRadius: 20, padding: '2px 11px', marginLeft: 4, whiteSpace: 'nowrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0, minWidth: 0 }}>
+          <img src="/logo.svg" alt="ZekoulABia" style={{ width: 28, height: 28, flexShrink: 0 }} />
+          <span className="truncate" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>ZekoulABia</span>
+          <span className="hidden xl:inline-block" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text3)', fontSize: 11, fontWeight: 700, borderRadius: 16, padding: '1px 8px', marginLeft: 3, whiteSpace: 'nowrap' }}>
             {tx.nav.badge}
           </span>
         </div>
@@ -508,68 +508,68 @@ export default function LandingPage() {
 
         {/* Right actions */}
         <div className="gap-2 md:gap-3" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, marginLeft: 'auto' }}>
-          <span className="hidden sm:inline-flex"><LanguageSwitch /></span>
+          <span className="hidden sm:inline-flex"><LanguageSwitch compact /></span>
           <button
             type="button"
             onClick={() => router.push('/login')}
-            className="hidden sm:inline-flex items-center px-3 py-2 rounded-lg text-sm font-semibold border border-[var(--border)] bg-transparent text-[var(--text)] hover:bg-[var(--bg2)] transition-colors"
+            style={{ ...btnSecondary, padding: '7px 16px', fontSize: 13, fontWeight: 800, borderRadius: 8 }}
           >
             {tx.nav.login}
           </button>
-          <button onClick={openDemo} className="hidden sm:inline-flex py-[9px] px-3 md:px-[18px] text-[14px] md:text-[17px] whitespace-nowrap" style={{ ...btnPrimary, padding: undefined, fontSize: undefined, display: undefined }}>{tx.nav.demo}</button>
+          <button onClick={openDemo} style={{ ...btnPrimary, padding: '7px 18px', fontSize: 13, fontWeight: 800, borderRadius: 8 }}>{tx.nav.demo}</button>
         </div>
       </nav>
 
-      {/* ══════════════════════════════════════════════════
-          HERO — padding généreux, titre 66px
+{/* ═══════════════════════════════════════════════════
+          HERO — padding réduit, titre 32px
       ══════════════════════════════════════════════════ */}
-      <section style={{ background: 'var(--bg)', paddingTop: 72 }}>
+      <section style={{ background: 'var(--bg)', paddingTop: 56 }}>
         <div style={DECO_BAND} />
-        <div className="flex-col lg:flex-row px-5 md:px-16 py-16 md:py-28 gap-10 lg:gap-20" style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', alignItems: 'center' }}>
+        <div className="flex-col lg:flex-row px-4 md:px-10 py-10 md:py-14 gap-6 lg:gap-12" style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', alignItems: 'center' }}>
           {/* Left */}
           <div style={{ flex: 1, minWidth: 0, width: '100%' }}>
             <motion.div
-              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: 'easeOut' }}
-              style={{ display: 'inline-block', background: 'var(--green-light)', color: 'var(--green)', fontSize: 12, fontWeight: 900, borderRadius: 20, padding: '6px 16px', marginBottom: 26 }}>
+              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              style={{ display: 'inline-block', background: 'var(--green-light)', color: 'var(--green)', fontSize: 10, fontWeight: 900, borderRadius: 16, padding: '4px 12px', marginBottom: 18 }}>
               {tx.hero.badge}
             </motion.div>
             <motion.h1
-              initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.1, ease: 'easeOut' }}
-              className="text-[38px] md:text-[66px]"
-              style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', lineHeight: 1.1, maxWidth: 660, marginBottom: 26 }}>
+              initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.08, ease: 'easeOut' }}
+              className="text-[32px] md:text-[32px]"
+              style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', lineHeight: 1.05, maxWidth: 600, marginBottom: 16 }}>
               {tx.hero.title}
             </motion.h1>
             <motion.p
-              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.22, ease: 'easeOut' }}
-              style={{ fontSize: 18, color: 'var(--text2)', maxWidth: 540, lineHeight: 1.7, marginBottom: 36, fontWeight: 500 }}>
+              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.18, ease: 'easeOut' }}
+              style={{ fontSize: 13, color: 'var(--text2)', maxWidth: 480, lineHeight: 1.5, marginBottom: 22, fontWeight: 500 }}>
               {tx.hero.subtitle}
             </motion.p>
             {/* CTAs */}
             <motion.div
-              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.34, ease: 'easeOut' }}
-              style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 32 }}>
+              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.26, ease: 'easeOut' }}
+              style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 24 }}>
               <motion.button onClick={openDemo}
-                style={{ ...btnPrimary, fontSize: 16, padding: '16px 32px', display: 'inline-flex', alignItems: 'center', gap: 9 }}
-                whileHover={{ scale: 1.04, boxShadow: '0 6px 20px rgba(5,150,105,0.38)' }}
-                whileTap={{ scale: 0.97 }}
+                style={{ ...btnPrimary, fontSize: 13, padding: '9px 20px', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                whileHover={{ scale: 1.03, boxShadow: '0 4px 14px rgba(5,150,105,0.3)' }}
+                whileTap={{ scale: 0.98 }}
                 transition={{ type: 'spring', stiffness: 350, damping: 20 }}
-              ><GraduationCap size={17} strokeWidth={2} />{tx.hero.cta1}</motion.button>
-              <a href="#comment" style={{ ...btnSecondary, fontSize: 16, padding: '16px 32px', display: 'inline-flex', alignItems: 'center', gap: 9 }}><Play size={16} strokeWidth={2} />{tx.hero.cta2}</a>
+              ><GraduationCap size={14} strokeWidth={2} />{tx.hero.cta1}</motion.button>
+              <a href="#comment" style={{ ...btnSecondary, fontSize: 13, padding: '9px 20px', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Play size={13} strokeWidth={2} />{tx.hero.cta2}</a>
             </motion.div>
             {/* Trust badges */}
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.44 }}
-              style={{ display: 'flex', gap: 22, flexWrap: 'wrap' }}>
+              transition={{ duration: 0.4, delay: 0.36 }}
+              style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
               {tx.hero.trust.map((badge, i) => {
                 const Icon = TRUST_ICONS[i]
                 return (
-                  <span key={badge} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: 'var(--text2)', fontWeight: 700 }}>
-                    <Icon size={15} strokeWidth={2} />{badge}
+                  <span key={badge} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--text2)', fontWeight: 700 }}>
+                    <Icon size={12} strokeWidth={2} />{badge}
                   </span>
                 )
               })}
@@ -578,35 +578,35 @@ export default function LandingPage() {
 
           {/* Right — mockup flottant */}
           <motion.div className="w-full lg:w-auto" style={{ flexShrink: 0 }}
-            initial={{ opacity: 0, x: 36 }} animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.7, delay: 0.15, ease: 'easeOut' }}>
+            initial={{ opacity: 0, x: 22 }} animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.12, ease: 'easeOut' }}>
             <motion.div
-              animate={{ y: [0, -14, 0] }}
-              transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 0.9 }}>
+              animate={{ y: [0, -10, 0] }}
+              transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}>
               <HeroMockup />
             </motion.div>
           </motion.div>
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          STATS — chiffres 52px, padding 72px
-      ══════════════════════════════════════════════════ */}
-      <section className="px-5 md:px-16 py-12 md:py-[72px]" style={{ background: 'var(--surface)', borderTop: '1.5px solid var(--border)', borderBottom: '1.5px solid var(--border)' }}>
-        <div className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8" style={{ maxWidth: 1000, margin: '0 auto', display: 'grid' }}>
+{/* ══════════════════════════════════════════════════
+          STATS — chiffres 28px, padding réduit
+      ═════════════════════════════════════════════════ */}
+      <section className="px-4 md:px-10 py-8 md:py-12" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+        <div className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5" style={{ maxWidth: 1000, margin: '0 auto', display: 'grid' }}>
           {tx.stats.items.map((s, i) => {
             const { num, suffix } = parseStatVal(s.value)
             const Icon = STATS_ICONS[i]
             return (
               <motion.div key={s.label} style={{ textAlign: 'center' }}
-                initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.4 }}
-                transition={{ duration: 0.55, delay: i * 0.1, ease: 'easeOut' }}>
-                <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--green)', marginBottom: 8 }}><Icon size={36} strokeWidth={2} /></div>
-                <div className="text-[36px] md:text-[52px]" style={{ fontFamily: 'var(--font-nunito),Nunito,sans-serif', fontWeight: 900, color: 'var(--text)', lineHeight: 1 }}>
+                transition={{ duration: 0.45, delay: i * 0.07, ease: 'easeOut' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--green)', marginBottom: 5 }}><Icon size={28} strokeWidth={2} /></div>
+                <div className="text-[28px] md:text-[28px]" style={{ fontFamily: 'var(--font-nunito),Nunito,sans-serif', fontWeight: 900, color: 'var(--text)', lineHeight: 1 }}>
                   <CompteurAnime valeur={num} suffix={suffix} />
                 </div>
-                <div style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 600, marginTop: 8 }}>{s.label}</div>
+                <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, marginTop: 5 }}>{s.label}</div>
               </motion.div>
             )
           })}
@@ -614,30 +614,30 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════
-          FEATURES — grille 3×2, cards padding 32px
+          FEATURES — grille 3×2, cards padding 24px
       ══════════════════════════════════════════════════ */}
-      <section id="fonctionnalites" className="px-5 md:px-16 py-16 md:py-28" style={{ background: 'var(--bg)' }}>
+      <section id="fonctionnalites" className="px-4 md:px-10 py-10 md:py-14" style={{ background: 'var(--bg)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 68 }}>
-            <h2 className="text-[28px] md:text-[40px]" style={{ ...SH, fontSize: undefined }}>{tx.features.title}</h2>
-            <p style={{ fontSize: 15, color: 'var(--text3)', fontWeight: 600, marginTop: 10 }}>{tx.features.subtitle}</p>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <h2 className="text-[22px] md:text-[28px]" style={{ ...SH, fontSize: undefined }}>{tx.features.title}</h2>
+            <p style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600, marginTop: 8 }}>{tx.features.subtitle}</p>
           </div>
 
-          <div className="grid-cols-1 md:grid-cols-3 gap-5 md:gap-7" style={{ display: 'grid' }}>
+          <div className="grid-cols-1 md:grid-cols-3 gap-4 md:gap-5" style={{ display: 'grid' }}>
             {tx.features.items.map((f, i) => {
               const Icon = FEATURES_ICONS[i]
               return (
                 <motion.div key={f.title}
-                  style={{ ...CARD, padding: 32, cursor: 'default' }}
-                  initial={{ opacity: 0, y: 28 }}
+                  style={{ ...CARD, padding: 20, cursor: 'default' }}
+                  initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.15 }}
-                  transition={{ duration: 0.5, delay: i * 0.08, ease: 'easeOut' }}
-                  whileHover={{ y: -5, boxShadow: '0 8px 28px rgba(0,0,0,0.09)', transition: { duration: 0.2 } }}
+                  viewport={{ once: true, amount: 0.12 }}
+                  transition={{ duration: 0.45, delay: i * 0.07, ease: 'easeOut' }}
+                  whileHover={{ y: -3, boxShadow: '0 5px 16px rgba(0,0,0,0.07)', transition: { duration: 0.18 } }}
                 >
-                  <div style={{ color: 'var(--green)', marginBottom: 16 }}><Icon size={36} strokeWidth={2} /></div>
-                  <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 19, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>{f.title}</div>
-                  <div style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.7 }}>{f.desc}</div>
+                  <div style={{ color: 'var(--green)', marginBottom: 12 }}><Icon size={28} strokeWidth={2} /></div>
+                  <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 7 }}>{f.title}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.55 }}>{f.desc}</div>
                 </motion.div>
               )
             })}
@@ -647,62 +647,62 @@ export default function LandingPage() {
 
       {/* ══════════════════════════════════════════════════
           SÉCURITÉ — grille 2×2, note légale en bas
-      ══════════════════════════════════════════════════ */}
-      <section id="securite" className="px-5 md:px-16 py-16 md:py-28" style={{ background: 'var(--surface)', borderTop: '1.5px solid var(--border)', borderBottom: '1.5px solid var(--border)' }}>
+      ═════════════════════════════════════════════════ */}
+      <section id="securite" className="px-4 md:px-10 py-10 md:py-14" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 68 }}>
-            <h2 className="text-[28px] md:text-[40px]" style={{ ...SH, fontSize: undefined }}>{tx.security.title}</h2>
-            <p style={{ fontSize: 15, color: 'var(--text3)', fontWeight: 600, marginTop: 10 }}>{tx.security.subtitle}</p>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <h2 className="text-[22px] md:text-[28px]" style={{ ...SH, fontSize: undefined }}>{tx.security.title}</h2>
+            <p style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600, marginTop: 8 }}>{tx.security.subtitle}</p>
           </div>
 
-          <div className="grid-cols-1 md:grid-cols-2 gap-5 md:gap-7" style={{ display: 'grid', marginBottom: 40 }}>
+          <div className="grid-cols-1 md:grid-cols-2 gap-4 md:gap-5" style={{ display: 'grid', marginBottom: 32 }}>
             {tx.security.items.map((s, i) => {
               const Icon = SECURITY_ICONS[i]
               return (
                 <motion.div key={s.title}
-                  style={{ ...CARD, padding: 32, cursor: 'default' }}
-                  initial={{ opacity: 0, y: 28 }}
+                  style={{ ...CARD, padding: 20, cursor: 'default' }}
+                  initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.15 }}
-                  transition={{ duration: 0.5, delay: i * 0.08, ease: 'easeOut' }}
-                  whileHover={{ y: -5, boxShadow: '0 8px 28px rgba(0,0,0,0.09)', transition: { duration: 0.2 } }}
+                  viewport={{ once: true, amount: 0.12 }}
+                  transition={{ duration: 0.45, delay: i * 0.07, ease: 'easeOut' }}
+                  whileHover={{ y: -3, boxShadow: '0 5px 16px rgba(0,0,0,0.07)', transition: { duration: 0.18 } }}
                 >
-                  <div style={{ color: 'var(--green)', marginBottom: 16 }}><Icon size={32} strokeWidth={2} /></div>
-                  <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>{s.title}</div>
-                  <div style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.7 }}>{s.desc}</div>
+                  <div style={{ color: 'var(--green)', marginBottom: 12 }}><Icon size={28} strokeWidth={2} /></div>
+                  <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 7 }}>{s.title}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.55 }}>{s.desc}</div>
                 </motion.div>
               )
             })}
           </div>
 
-          <p style={{ fontSize: 12.5, color: 'var(--text3)', textAlign: 'center', maxWidth: 720, margin: '0 auto', lineHeight: 1.7 }}>{tx.security.note}</p>
+          <p style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'center', maxWidth: 720, margin: '0 auto', lineHeight: 1.6 }}>{tx.security.note}</p>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════
-          HOW IT WORKS — cercles 58px, icônes 44px
+          HOW IT WORKS — cercles 44px, icônes 32px
       ══════════════════════════════════════════════════ */}
-      <section id="comment" className="px-5 md:px-16 py-16 md:py-28" style={{ background: 'var(--surface)', borderTop: '1.5px solid var(--border)', borderBottom: '1.5px solid var(--border)' }}>
+      <section id="comment" className="px-4 md:px-10 py-10 md:py-14" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-          <h2 className="text-[28px] md:text-[40px] mb-10 md:mb-[72px]" style={{ ...SH, fontSize: undefined, marginBottom: undefined }}>{tx.howItWorks.title}</h2>
+          <h2 className="text-[22px] md:text-[28px] mb-7 md:mb-12" style={{ ...SH, fontSize: undefined, marginBottom: undefined }}>{tx.howItWorks.title}</h2>
 
-          <div className="flex-col md:flex-row gap-8 md:gap-0" style={{ display: 'flex', alignItems: 'flex-start' }}>
+          <div className="flex-col md:flex-row gap-6 md:gap-0" style={{ display: 'flex', alignItems: 'flex-start' }}>
             {tx.howItWorks.steps.map((step, i) => {
               const Icon = HOWITWORKS_ICONS[i]
               return (
                 <Fragment key={i}>
-                  <div className="px-3 md:px-8" style={{ flex: 1, textAlign: 'center' }}>
-                    <div style={{ width: 58, height: 58, borderRadius: '50%', background: 'var(--green-light)', color: 'var(--green)', fontSize: 22, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                  <div className="px-2 md:px-6" style={{ flex: 1, textAlign: 'center' }}>
+                    <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--green-light)', color: 'var(--green)', fontSize: 18, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
                       {i + 1}
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--green)', marginBottom: 14 }}><Icon size={44} strokeWidth={2} /></div>
-                    <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 19, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--green)', marginBottom: 11 }}><Icon size={32} strokeWidth={2} /></div>
+                    <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
                       Étape {i + 1} — {step.title}
                     </div>
-                    <div style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.7, maxWidth: 260, margin: '0 auto' }}>{step.desc}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.6, maxWidth: 220, margin: '0 auto' }}>{step.desc}</div>
                   </div>
                   {i < tx.howItWorks.steps.length - 1 && (
-                    <div className="hidden md:block" style={{ paddingTop: 22, color: 'var(--border2)', flexShrink: 0, alignSelf: 'flex-start' }}><ArrowRight size={28} strokeWidth={2} /></div>
+                    <div className="hidden md:block" style={{ paddingTop: 16, color: 'var(--border2)', flexShrink: 0, alignSelf: 'flex-start' }}><ArrowRight size={22} strokeWidth={2} /></div>
                   )}
                 </Fragment>
               )
@@ -712,28 +712,28 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════
-          ROLES — tabs + card, padding 40px
+          ROLES — tabs + card, padding ultra-dense
       ══════════════════════════════════════════════════ */}
-      <section className="px-5 md:px-16 py-16 md:py-28" style={{ background: 'var(--bg)' }}>
+      <section className="px-4 md:px-10 py-10 md:py-14" style={{ background: 'var(--bg)' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-          <h2 className="text-[28px] md:text-[40px] mb-6 md:mb-10" style={{ ...SH, fontSize: undefined, marginBottom: undefined }}>{tx.roles.title}</h2>
+          <h2 className="text-[22px] md:text-[28px] mb-5 md:mb-8" style={{ ...SH, fontSize: undefined, marginBottom: undefined }}>{tx.roles.title}</h2>
 
           {/* Role tabs */}
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 40 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 28 }}>
             {tx.roles.items.map((r, i) => {
               const Icon = ROLES_ICONS[i]
               return (
                 <button key={i} onClick={() => setTabRole(i)}
                   style={{
-                    padding: '10px 24px', fontSize: 14, fontWeight: 700, borderRadius: 28, cursor: 'pointer',
+                    padding: '7px 16px', fontSize: 11, fontWeight: 700, borderRadius: 20, cursor: 'pointer',
                     fontFamily: 'inherit', transition: 'all 150ms',
-                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
                     background: tabRole === i ? 'var(--green)' : 'white',
                     color: tabRole === i ? 'white' : 'var(--text2)',
-                    boxShadow: tabRole === i ? '0 4px 14px rgba(5,150,105,0.25)' : '0 2px 6px rgba(0,0,0,0.06)',
-                    border: tabRole !== i ? '1.5px solid var(--border)' : '1.5px solid transparent',
+                    boxShadow: tabRole === i ? '0 3px 10px rgba(5,150,105,0.22)' : '0 1px 4px rgba(0,0,0,0.05)',
+                    border: tabRole !== i ? '1px solid var(--border)' : '1px solid transparent',
                   }}>
-                  <Icon size={15} strokeWidth={2} /> {r.label}
+                  <Icon size={13} strokeWidth={2} /> {r.label}
                 </button>
               )
             })}
@@ -744,19 +744,19 @@ export default function LandingPage() {
             <motion.div key={tabRole}
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.22 }}
-              className="px-6 md:px-10 py-7 md:py-10"
+              className="px-5 md:px-8 py-5 md:py-7"
               style={{ ...CARD, padding: undefined }}>
               {(() => { const Icon = ROLES_ICONS[tabRole]; return (
-                <div style={{ display: 'flex', color: 'var(--green)', marginBottom: 14 }}><Icon size={52} strokeWidth={2} /></div>
+                <div style={{ display: 'flex', color: 'var(--green)', marginBottom: 10 }}><Icon size={36} strokeWidth={2} /></div>
               ) })()}
-              <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 24, fontWeight: 700, color: 'var(--text)', marginBottom: 24 }}>
+              <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 16 }}>
                 Espace {tx.roles.items[tabRole].label}
               </div>
-              <div className="grid-cols-1 md:grid-cols-2 gap-4" style={{ display: 'grid' }}>
+              <div className="grid-cols-1 md:grid-cols-2 gap-3" style={{ display: 'grid' }}>
                 {tx.roles.items[tabRole].benefits.map((b, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'var(--green-light)', color: 'var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}><Check size={13} strokeWidth={2.5} /></div>
-                    <div style={{ fontSize: 15, color: 'var(--text2)', lineHeight: 1.6 }}>{b}</div>
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                    <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--green-light)', color: 'var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}><Check size={11} strokeWidth={2.5} /></div>
+                    <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.5 }}>{b}</div>
                   </div>
                 ))}
               </div>
@@ -766,53 +766,53 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════
-          PRICING — cards padding 32px, price 38px
+          PRICING — cards padding 20px, price 28px
       ══════════════════════════════════════════════════ */}
-      <section id="plans" className="px-5 md:px-16 py-16 md:py-28" style={{ background: 'var(--surface)', borderTop: '1.5px solid var(--border)', borderBottom: '1.5px solid var(--border)' }}>
+      <section id="plans" className="px-4 md:px-10 py-10 md:py-14" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 68 }}>
-            <h2 className="text-[28px] md:text-[40px]" style={{ ...SH, fontSize: undefined }}>{tx.pricing.title}</h2>
-            <p style={{ fontSize: 15, color: 'var(--text3)', fontWeight: 600, marginTop: 10 }}>{tx.pricing.subtitle}</p>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <h2 className="text-[22px] md:text-[28px]" style={{ ...SH, fontSize: undefined }}>{tx.pricing.title}</h2>
+            <p style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600, marginTop: 8 }}>{tx.pricing.subtitle}</p>
           </div>
 
-          <div className="grid-cols-1 md:grid-cols-3 gap-5 md:gap-7" style={{ display: 'grid' }}>
+          <div className="grid-cols-1 md:grid-cols-3 gap-4 md:gap-5" style={{ display: 'grid' }}>
             {tx.pricing.plans.map(plan => (
-              <div key={plan.name} className="px-6 md:px-8 py-7 md:py-8" style={{
-                background: 'var(--surface)', borderRadius: 18,
-                border: plan.recommended ? '2px solid var(--green)' : '1.5px solid var(--border)',
-                boxShadow: plan.recommended ? '0 10px 32px rgba(5,150,105,0.14)' : '0 2px 8px rgba(0,0,0,0.06)',
+              <div key={plan.name} className="px-5 md:px-6 py-5 md:py-6" style={{
+                background: 'var(--surface)', borderRadius: 14,
+                border: plan.recommended ? '2px solid var(--green)' : '1px solid var(--border)',
+                boxShadow: plan.recommended ? '0 8px 24px rgba(5,150,105,0.12)' : '0 2px 6px rgba(0,0,0,0.04)',
                 position: 'relative',
                 transition: 'transform 200ms,box-shadow 200ms',
               }}
                 onMouseEnter={e => {
                   const el = e.currentTarget as HTMLElement
-                  el.style.transform = 'translateY(-6px)'
-                  el.style.boxShadow = plan.recommended ? '0 18px 44px rgba(5,150,105,0.22)' : '0 8px 28px rgba(0,0,0,0.09)'
+                  el.style.transform = 'translateY(-4px)'
+                  el.style.boxShadow = plan.recommended ? '0 14px 32px rgba(5,150,105,0.18)' : '0 6px 20px rgba(0,0,0,0.07)'
                 }}
                 onMouseLeave={e => {
                   const el = e.currentTarget as HTMLElement
                   el.style.transform = 'translateY(0)'
-                  el.style.boxShadow = plan.recommended ? '0 10px 32px rgba(5,150,105,0.14)' : '0 2px 8px rgba(0,0,0,0.06)'
+                  el.style.boxShadow = plan.recommended ? '0 8px 24px rgba(5,150,105,0.12)' : '0 2px 6px rgba(0,0,0,0.04)'
                 }}
               >
                 {plan.recommended && (
-                  <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: 'var(--green)', color: 'white', fontSize: 10, fontWeight: 900, borderRadius: 20, padding: '4px 16px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <Star size={11} strokeWidth={2} fill="currentColor" /> {tx.pricing.recommended}
+                  <div style={{ position: 'absolute', top: -11, left: '50%', transform: 'translateX(-50%)', background: 'var(--green)', color: 'white', fontSize: 9, fontWeight: 900, borderRadius: 16, padding: '3px 12px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Star size={10} strokeWidth={2} fill="currentColor" /> {tx.pricing.recommended}
                   </div>
                 )}
-                <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>{plan.name}</div>
-                <div className="text-[30px] md:text-[38px]" style={{ fontWeight: 900, color: plan.recommended ? 'var(--green)' : 'var(--text)', marginBottom: 22, lineHeight: 1 }}>{plan.price}</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 28 }}>
+                <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{plan.name}</div>
+                <div className="text-[24px] md:text-[28px]" style={{ fontWeight: 900, color: plan.recommended ? 'var(--green)' : 'var(--text)', marginBottom: 16, lineHeight: 1 }}>{plan.price}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
                   {plan.features.map(f => (
-                    <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 14, color: 'var(--text2)' }}>
-                      <span style={{ display: 'flex', color: 'var(--green)' }}><Check size={15} strokeWidth={2.5} /></span>{f}
+                    <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, color: 'var(--text2)' }}>
+                      <span style={{ display: 'flex', color: 'var(--green)' }}><Check size={13} strokeWidth={2.5} /></span>{f}
                     </div>
                   ))}
                 </div>
                 <button onClick={openDemo}
                   style={plan.recommended
-                    ? { ...btnPrimary, display: 'block', width: '100%', textAlign: 'center', fontSize: 14, padding: '13px 24px' }
-                    : { ...btnSecondary, display: 'block', width: '100%', textAlign: 'center', fontSize: 14, padding: '13px 24px' }
+                    ? { ...btnPrimary, display: 'block', width: '100%', textAlign: 'center', fontSize: 12, padding: '9px 16px', borderRadius: 8 }
+                    : { ...btnSecondary, display: 'block', width: '100%', textAlign: 'center', fontSize: 12, padding: '9px 16px', borderRadius: 8 }
                   }>{plan.cta}</button>
               </div>
             ))}
@@ -821,28 +821,28 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════
-          FAQ — accordéon, border-radius 12px
+          FAQ — accordéon, border-radius 8px
       ══════════════════════════════════════════════════ */}
-      <section className="px-5 md:px-16 py-16 md:py-28" style={{ background: 'var(--surface)', borderTop: '1.5px solid var(--border)', borderBottom: '1.5px solid var(--border)' }}>
+      <section className="px-4 md:px-10 py-10 md:py-14" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
-          <h2 className="text-[28px] md:text-[40px] mb-9 md:mb-16" style={{ ...SH, fontSize: undefined, marginBottom: undefined }}>{tx.faq.title}</h2>
+          <h2 className="text-[22px] md:text-[28px] mb-6 md:mb-10" style={{ ...SH, fontSize: undefined, marginBottom: undefined }}>{tx.faq.title}</h2>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {tx.faq.items.map((faq, i) => (
               <div key={i} style={{
-                borderRadius: 12, overflow: 'hidden', transition: 'all 150ms',
-                border: faqOpen === i ? '1.5px solid var(--green)' : '1.5px solid var(--border)',
-                borderLeft: faqOpen === i ? '4px solid var(--green)' : '1.5px solid var(--border)',
+                borderRadius: 8, overflow: 'hidden', transition: 'all 150ms',
+                border: faqOpen === i ? '1px solid var(--green)' : '1px solid var(--border)',
+                borderLeft: faqOpen === i ? '3px solid var(--green)' : '1px solid var(--border)',
                 background: faqOpen === i ? 'var(--bg2)' : 'white',
               }}>
                 <button onClick={() => setFaqOpen(faqOpen === i ? null : i)}
-                  className="px-4 md:px-6 py-4 md:py-5"
+                  className="px-3 md:px-4 py-3 md:py-3.5"
                   style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
-                  <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>{faq.q}</span>
-                  <span style={{ display: 'flex', color: 'var(--green)', transition: 'transform 150ms', transform: faqOpen === i ? 'rotate(180deg)' : 'rotate(0deg)', flexShrink: 0, marginLeft: 16 }}><ChevronDown size={20} strokeWidth={2.5} /></span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{faq.q}</span>
+                  <span style={{ display: 'flex', color: 'var(--green)', transition: 'transform 150ms', transform: faqOpen === i ? 'rotate(180deg)' : 'rotate(0deg)', flexShrink: 0, marginLeft: 12 }}><ChevronDown size={16} strokeWidth={2.5} /></span>
                 </button>
                 {faqOpen === i && (
-                  <div className="px-4 md:px-6 pb-4 md:pb-5" style={{ fontSize: 15, color: 'var(--text2)', lineHeight: 1.75, animation: 'fadeIn 0.15s ease' }}>
+                  <div className="px-3 md:px-4 pb-3 md:pb-3.5" style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.6, animation: 'fadeIn 0.15s ease' }}>
                     {faq.a}
                   </div>
                 )}
@@ -853,7 +853,7 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════
-          CTA FINAL — padding 120px, titre 52px
+          CTA FINAL — padding 60px, titre 32px
       ══════════════════════════════════════════════════ */}
       <section id="contact" style={{
         backgroundImage: 'url(https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=1600&q=80)',
@@ -868,66 +868,66 @@ export default function LandingPage() {
         {/* Deco band */}
         <div style={{ ...DECO_BAND, position: 'relative', zIndex: 1 }} />
         {/* Content */}
-        <div className="px-5 md:px-16 py-16 md:py-[120px]" style={{ position: 'relative', zIndex: 1, textAlign: 'center', overflow: 'hidden' }}>
+        <div className="px-4 md:px-10 py-10 md:py-16" style={{ position: 'relative', zIndex: 1, textAlign: 'center', overflow: 'hidden' }}>
           {/* Decorative circles */}
-          <div style={{ position: 'absolute', top: 48, left: '7%', width: 240, height: 240, borderRadius: '50%', background: 'rgba(5,150,105,0.1)', pointerEvents: 'none' }} />
-          <div style={{ position: 'absolute', bottom: 48, right: '6%', width: 300, height: 300, borderRadius: '50%', background: 'rgba(5,150,105,0.07)', pointerEvents: 'none' }} />
-          <div style={{ position: 'absolute', top: '35%', right: '18%', width: 140, height: 140, borderRadius: '50%', background: 'rgba(74,222,128,0.06)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: 24, left: '7%', width: 160, height: 160, borderRadius: '50%', background: 'rgba(5,150,105,0.1)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', bottom: 24, right: '6%', width: 200, height: 200, borderRadius: '50%', background: 'rgba(5,150,105,0.07)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: '35%', right: '18%', width: 90, height: 90, borderRadius: '50%', background: 'rgba(74,222,128,0.06)', pointerEvents: 'none' }} />
 
-          <h2 className="text-[30px] md:text-[52px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'white', maxWidth: 720, margin: '0 auto 24px', lineHeight: 1.15 }}>
+          <h2 className="text-[22px] md:text-[32px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'white', maxWidth: 600, margin: '0 auto 16px', lineHeight: 1.2 }}>
             {tx.cta.title}
           </h2>
-          <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.6)', marginBottom: 44 }}>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginBottom: 28 }}>
             {tx.cta.subtitle}
           </p>
           <button onClick={openDemo}
-            className="px-6 md:px-[52px] py-4 md:py-5 text-[15px] md:text-[18px]"
+            className="px-5 md:px-8 py-2.5 md:py-3 text-[12px] md:text-[14px]"
             style={{
               background: '#4ade80', color: 'var(--sidebar)',
-              fontWeight: 900, borderRadius: 12,
+              fontWeight: 900, borderRadius: 8,
               border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-              transition: 'all 150ms', display: 'inline-flex', alignItems: 'center', gap: 10,
-              boxShadow: '0 6px 24px rgba(74,222,128,0.32)',
+              transition: 'all 150ms', display: 'inline-flex', alignItems: 'center', gap: 8,
+              boxShadow: '0 4px 16px rgba(74,222,128,0.32)',
             }}
             onMouseEnter={e => {
               const el = e.currentTarget as HTMLButtonElement
               el.style.background = 'var(--green)'
-              el.style.boxShadow = '0 8px 32px rgba(74,222,128,0.48)'
+              el.style.boxShadow = '0 6px 24px rgba(74,222,128,0.48)'
               el.style.transform = 'translateY(-2px)'
             }}
             onMouseLeave={e => {
               const el = e.currentTarget as HTMLButtonElement
               el.style.background = '#4ade80'
-              el.style.boxShadow = '0 6px 24px rgba(74,222,128,0.32)'
+              el.style.boxShadow = '0 4px 16px rgba(74,222,128,0.32)'
               el.style.transform = 'translateY(0)'
             }}
           >
-            <GraduationCap size={19} strokeWidth={2} />
+            <GraduationCap size={16} strokeWidth={2} />
             {tx.cta.btn}
           </button>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════
-          FOOTER — padding 72px/44px, maxWidth 1200
+          FOOTER — padding 40px/28px, maxWidth 1000
       ══════════════════════════════════════════════════ */}
-      <footer className="px-5 md:px-16 pt-12 md:pt-[72px] pb-8 md:pb-11" style={{ background: 'var(--sidebar2)', color: 'white' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-8 md:gap-14" style={{ display: 'grid', marginBottom: 56 }}>
+      <footer className="px-4 md:px-10 pt-8 md:pt-12 pb-6 md:pb-8" style={{ background: 'var(--sidebar2)', color: 'white' }}>
+        <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+          <div className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-6 md:gap-8" style={{ display: 'grid', marginBottom: 36 }}>
             {/* Brand */}
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 14 }}>
-                <img src="/logo.svg" alt="ZekoulABia" style={{ width: 28, height: 28, filter: "brightness(0) invert(1)" }} />
-                <span style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'white' }}>ZekoulABia</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 }}>
+                <img src="/logo.svg" alt="ZekoulABia" style={{ width: 22, height: 22, filter: "brightness(0) invert(1)" }} />
+                <span style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'white' }}>ZekoulABia</span>
               </div>
-              <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.42)', lineHeight: 1.75 }}>{tx.footer.tagline}</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)', lineHeight: 1.6 }}>{tx.footer.tagline}</div>
             </div>
 
             {/* Produit */}
             <div>
-              <div style={{ fontSize: 11, fontWeight: 900, color: 'rgba(255,255,255,0.32)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 16 }}>{tx.footer.cols.product.title}</div>
+              <div style={{ fontSize: 10, fontWeight: 900, color: 'rgba(255,255,255,0.32)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 10 }}>{tx.footer.cols.product.title}</div>
               {tx.footer.cols.product.links.map(l => (
-                <a key={l} href={l === tx.footer.cols.product.links[2] ? '#securite' : '#'} style={{ display: 'block', fontSize: 14, color: 'rgba(255,255,255,0.48)', textDecoration: 'none', marginBottom: 10, transition: 'color 150ms' }}
+                <a key={l} href={l === tx.footer.cols.product.links[2] ? '#securite' : '#'} style={{ display: 'block', fontSize: 11, color: 'rgba(255,255,255,0.48)', textDecoration: 'none', marginBottom: 7, transition: 'color 150ms' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#4ade80' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(255,255,255,0.48)' }}
                 >{l}</a>
@@ -936,9 +936,9 @@ export default function LandingPage() {
 
             {/* Ressources */}
             <div>
-              <div style={{ fontSize: 11, fontWeight: 900, color: 'rgba(255,255,255,0.32)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 16 }}>{tx.footer.cols.resources.title}</div>
+              <div style={{ fontSize: 10, fontWeight: 900, color: 'rgba(255,255,255,0.32)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 10 }}>{tx.footer.cols.resources.title}</div>
               {tx.footer.cols.resources.links.map(l => (
-                <a key={l} href="#" style={{ display: 'block', fontSize: 14, color: 'rgba(255,255,255,0.48)', textDecoration: 'none', marginBottom: 10, transition: 'color 150ms' }}
+                <a key={l} href="#" style={{ display: 'block', fontSize: 11, color: 'rgba(255,255,255,0.48)', textDecoration: 'none', marginBottom: 7, transition: 'color 150ms' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#4ade80' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(255,255,255,0.48)' }}
                 >{l}</a>
@@ -947,9 +947,9 @@ export default function LandingPage() {
 
             {/* Entreprise */}
             <div>
-              <div style={{ fontSize: 11, fontWeight: 900, color: 'rgba(255,255,255,0.32)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 16 }}>{tx.footer.cols.company.title}</div>
+              <div style={{ fontSize: 10, fontWeight: 900, color: 'rgba(255,255,255,0.32)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 10 }}>{tx.footer.cols.company.title}</div>
               {tx.footer.cols.company.links.map(l => (
-                <a key={l} href="#" style={{ display: 'block', fontSize: 14, color: 'rgba(255,255,255,0.48)', textDecoration: 'none', marginBottom: 10, transition: 'color 150ms' }}
+                <a key={l} href="#" style={{ display: 'block', fontSize: 11, color: 'rgba(255,255,255,0.48)', textDecoration: 'none', marginBottom: 7, transition: 'color 150ms' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#4ade80' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(255,255,255,0.48)' }}
                 >{l}</a>
@@ -958,17 +958,17 @@ export default function LandingPage() {
 
             {/* Contact */}
             <div>
-              <div style={{ fontSize: 11, fontWeight: 900, color: 'rgba(255,255,255,0.32)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 16 }}>{tx.footer.cols.contact.title}</div>
+              <div style={{ fontSize: 10, fontWeight: 900, color: 'rgba(255,255,255,0.32)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 10 }}>{tx.footer.cols.contact.title}</div>
               {tx.footer.cols.contact.info.map(l => (
-                <div key={l} style={{ fontSize: 14, color: 'rgba(255,255,255,0.48)', marginBottom: 10 }}>{l}</div>
+                <div key={l} style={{ fontSize: 11, color: 'rgba(255,255,255,0.48)', marginBottom: 7 }}>{l}</div>
               ))}
             </div>
           </div>
 
           {/* Bottom bar */}
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 28, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.28)' }}>{tx.footer.copyright}</div>
-            <LanguageSwitch style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }} />
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 18, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.28)' }}>{tx.footer.copyright}</div>
+            <LanguageSwitch compact style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }} />
           </div>
         </div>
       </footer>

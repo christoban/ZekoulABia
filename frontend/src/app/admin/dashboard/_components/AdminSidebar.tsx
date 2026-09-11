@@ -147,68 +147,68 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
         style={{ background: 'repeating-linear-gradient(90deg,var(--amber) 0,var(--amber) 13px,var(--green) 13px,var(--green) 25px,var(--red) 25px,var(--red) 37px,#60a5fa 37px,#60a5fa 49px)' }}
       />
 
-      {/* Brand — compact sur mobile (reproduction maquette drawer), taille desktop inchangée */}
-      <div className="flex items-center gap-[10px] md:gap-[13px] px-4 pt-[18px] pb-[20px] md:p-[25px] md:border-b md:border-white/[0.07]" style={{ flexShrink: 0 }}>
-        <div className="w-10 h-10 md:w-13 md:h-13 rounded-[12px] md:rounded-[14px] flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: "linear-gradient(135deg,var(--amber),var(--green))" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "70%", height: "70%", objectFit: "contain" }} /></div>
+      {/* Brand */}
+      <div className="flex items-center gap-2 px-3 pt-3 pb-3 border-b border-white/[0.07]" style={{ flexShrink: 0 }}>
+        <div className="w-7 h-7 rounded-[8px] flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: "linear-gradient(135deg,var(--amber),var(--green))" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "70%", height: "70%", objectFit: "contain" }} /></div>
         <div className="flex-1 min-w-0">
-          <div className="font-spectral text-[16px] md:text-[25px] font-bold text-white leading-tight truncate">ZekoulABia</div>
-          <div className="text-[11px] md:text-[14px] text-white/35 font-semibold truncate">{tcommon('brand.roleAdmin')}</div>
+          <div className="font-spectral text-[15px] font-bold text-white leading-tight truncate">ZekoulABia</div>
+          <div className="text-[10px] text-white/35 font-semibold truncate">{tcommon('brand.roleAdmin')}</div>
         </div>
         {onMobileClose && (
           <button onClick={onMobileClose} aria-label="Fermer" className="md:hidden flex-shrink-0"
-            style={{ width: 32, height: 32, borderRadius: 16, background: 'rgba(255,255,255,0.08)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            <X size={14} color="rgba(255,255,255,0.75)" />
+            style={{ width: 28, height: 28, borderRadius: 14, background: 'rgba(255,255,255,0.08)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <X size={13} color="rgba(255,255,255,0.75)" />
           </button>
         )}
       </div>
 
-      <div className="flex flex-col gap-[18px] md:px-[25px] md:gap-[25px]" style={{ flex: 1, minHeight: 0 }}>
-        {/* École pill — pas de bordure et padding resserré sur mobile (maquette drawer) */}
-        <div className="mx-4 my-0 md:mx-3 md:my-2 bg-white/[0.06] border border-transparent md:border-white/10 rounded-[14px] md:rounded-[10px] p-[12px] md:py-[20px] md:px-[23px]" style={{ flexShrink: 0 }}>
-          <div className="flex items-center gap-[10px] md:gap-[8px]">
+      <div className="flex flex-col gap-2 md:px-2 md:gap-2" style={{ flex: 1, minHeight: 0 }}>
+        {/* École pill */}
+        <div className="mx-2 my-1 bg-white/[0.06] border border-white/10 rounded-[8px] p-2" style={{ flexShrink: 0 }}>
+          <div className="flex items-center gap-2">
             {logoUrl
-              ? <img src={logoUrl} alt={displayName} className="w-[34px] h-[34px] md:w-10 md:h-10 rounded-[10px] flex-shrink-0" style={{ objectFit: 'cover' }} />
-              : <div className="w-[34px] h-[34px] md:w-10 md:h-10 rounded-[10px] bg-gradient-to-br from-[var(--green)] to-[var(--blue)] flex items-center justify-center text-[12.5px] md:text-[15px] font-bold md:font-black text-white flex-shrink-0">{initials}</div>
+              ? <img src={logoUrl} alt={displayName} className="w-6 h-6 rounded-[6px] flex-shrink-0" style={{ objectFit: 'cover' }} />
+              : <div className="w-6 h-6 rounded-[6px] bg-gradient-to-br from-[var(--green)] to-[var(--blue)] flex items-center justify-center text-[10px] font-black text-white flex-shrink-0">{initials}</div>
             }
             <div className="min-w-0">
-              <div className="text-[13.5px] md:text-[16px] font-semibold md:font-bold text-white truncate">{displayName}</div>
-              <div className="text-[11px] md:text-[13px] text-white/35">{tcommon('brand.roleAdmin')}</div>
+              <div className="text-[12px] font-bold text-white truncate">{displayName}</div>
+              <div className="text-[10px] text-white/35">{tcommon('brand.roleAdmin')}</div>
             </div>
           </div>
         </div>
 
-        {/* Nav — wrapper relatif pour le fondu de defilement (maquette : fade en bas, mobile uniquement) */}
+        {/* Nav — wrapper relatif pour le fondu de defilement */}
         <div className="relative" style={{ minHeight: 0, flex: 1 }}>
-          <nav className="overflow-y-auto px-[10px] pt-0 pb-4 md:py-1 h-full max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden" style={{ minHeight: 0 }}>
+          <nav className="overflow-y-auto px-1.5 pt-0 pb-3 h-full" style={{ minHeight: 0 }}>
             {NAV.map((section, si) => (
               <div key={si}>
                 {section.label && (
-                  <div className="text-[11px] md:text-[14px] font-bold md:font-black text-white/30 tracking-[0.07em] md:tracking-[1.2px] uppercase pt-4 px-[10px] pb-[6px] md:pt-[11px] md:px-0 md:pb-0">
+                  <div className="text-[9px] font-black text-white/30 tracking-[1px] uppercase pt-2 px-1 pb-1">
                     {section.label}
                   </div>
                 )}
                 {section.items.map(item => (
                   <button key={item.id} onClick={() => handleChange(item.id)}
                     className={cn(
-                      'relative w-full flex items-center gap-[12px] md:gap-[20px] rounded-[12px] md:rounded-lg mx-[4px] mb-[1px] md:mx-0',
-                      'text-[14px] md:text-[16px] font-semibold text-left border-none cursor-pointer font-nunito',
-                      'py-[11px] px-3 md:py-[6px] md:px-[9px]',
+                      'relative w-full flex items-center gap-2 rounded-md mb-[1px]',
+                      'text-[11px] font-semibold text-left border-none cursor-pointer font-nunito',
+                      'py-1.5 px-2',
                       current === item.id
                         ? 'text-white'
                         : 'text-white/52 hover:bg-[var(--sidebar2)] hover:text-white/82'
                     )}>
                     {current === item.id && (
                       <motion.div layoutId="admin-nav-active"
-                        className="absolute inset-0 rounded-lg"
+                        className="absolute inset-0 rounded-md"
                         style={{ background: 'var(--sidebar-active)' }}
                         transition={{ type: 'spring', stiffness: 380, damping: 30 }} />
                     )}
-                    <span className="relative z-10 w-[20px] flex items-center justify-center flex-shrink-0">
-                      <item.icon size={20} strokeWidth={2} />
+                    <span className="relative z-10 w-[16px] flex items-center justify-center flex-shrink-0">
+                      <item.icon size={15} strokeWidth={2} />
                     </span>
                     <span className="relative z-10 truncate flex-1">{item.label}</span>
                     {item.badge && (
-                      <span className={cn('relative z-10 ml-auto text-[10.5px] md:text-[13px] font-bold md:font-black rounded-lg px-[7px] py-[2px] md:px-[6px] md:py-[3px]', BADGE_STYLES[item.badgeColor ?? 'green'])}>
+                      <span className={cn('relative z-10 ml-auto text-[10px] font-black rounded px-1.5 py-0.5', BADGE_STYLES[item.badgeColor ?? 'green'])}>
                         {item.badge}
                       </span>
                     )}
@@ -217,28 +217,26 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
               </div>
             ))}
           </nav>
-          {/* Fondu en bas de la liste — indique qu'il reste du contenu à faire défiler (maquette drawer) */}
-          <div className="md:hidden" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 20, background: 'linear-gradient(0deg,var(--sidebar),transparent)', pointerEvents: 'none' }} />
+          <div className="md:hidden" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 16, background: 'linear-gradient(0deg,var(--sidebar),transparent)', pointerEvents: 'none' }} />
         </div>
       </div>
 
-      {/* User — masque sur mobile (le profil vit desormais dans l'avatar de la top bar,
-          la maquette drawer n'a pas de carte utilisateur), inchange sur desktop. */}
-      <div className="hidden md:block border-t border-white/[0.07]" style={{ padding: '20px 25px', flexShrink: 0 }}>
-        <div className="flex items-center gap-[12px] rounded-[10px] hover:bg-white/[0.06]" style={{ padding: '12px 14px' }}>
-          <div className="w-11 h-11 rounded-[11px] bg-gradient-to-br from-[var(--amber)] to-[var(--red)] flex items-center justify-center text-white font-black text-[16px] flex-shrink-0">
+      {/* User */}
+      <div className="hidden md:block border-t border-white/[0.07]" style={{ padding: '8px 10px', flexShrink: 0 }}>
+        <div className="flex items-center gap-2 rounded-[8px] hover:bg-white/[0.06]" style={{ padding: '6px 8px' }}>
+          <div className="w-6 h-6 rounded-[6px] bg-gradient-to-br from-[var(--amber)] to-[var(--red)] flex items-center justify-center text-white font-black text-[10px] flex-shrink-0">
             {userInitials}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[17px] font-bold text-white truncate">{userDisplayName}</div>
-            <div className="text-[14px] text-white/35">{tcommon('user.roleLabel')}</div>
+            <div className="text-[11px] font-bold text-white truncate">{userDisplayName}</div>
+            <div className="text-[9px] text-white/35">{tcommon('user.roleLabel')}</div>
           </div>
           {onLogout && (
             <button onClick={onLogout} title={tcommon('user.logoutTitle')}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', flexShrink: 0, padding: 4, borderRadius: 6 }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', flexShrink: 0, padding: 3, borderRadius: 4 }}
               onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'rgba(239,68,68,0.8)'}
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)'}>
-              <LogOut size={16} />
+              <LogOut size={13} />
             </button>
           )}
         </div>
@@ -249,7 +247,7 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
   return (
     <>
       {/* Desktop — sidebar statique, fait partie du flux flex normal */}
-      <aside className="hidden md:flex w-[320px] min-w-[320px] flex-shrink-0 relative" style={{ background: 'var(--sidebar)', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+      <aside className="hidden md:flex w-[200px] min-w-[200px] flex-shrink-0 relative" style={{ background: 'var(--sidebar)', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
         {sidebarBody}
       </aside>
 
@@ -259,7 +257,7 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
           <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true">
             <motion.div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onMobileClose}
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }} />
-            <motion.aside className="absolute left-0 top-0 h-full w-[85vw] max-w-[300px] flex flex-col relative" style={{ background: 'var(--sidebar)', overflow: 'hidden' }}
+            <motion.aside className="absolute left-0 top-0 h-full w-[85vw] max-w-[200px] flex flex-col relative" style={{ background: 'var(--sidebar)', overflow: 'hidden' }}
               initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ duration: 0.26, ease: [0.4, 0, 0.2, 1] }}>
               {sidebarBody}
             </motion.aside>

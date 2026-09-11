@@ -28,13 +28,13 @@ export default function Badge({ type, children }: { type: BadgeType; children: R
     <span
       className={cn(STYLES[type] ?? 'bg-slate-100 text-slate-500')}
       style={{
-        display: 'inline-flex', alignItems: 'center', gap: 7,
-        padding: '7px 14px', borderRadius: 20,
-        fontSize: 14, fontWeight: 900, whiteSpace: 'nowrap',
+        display: 'inline-flex', alignItems: 'center', gap: 4,
+        padding: '3px 8px', borderRadius: 12,
+        fontSize: 10, fontWeight: 800, whiteSpace: 'nowrap',
       }}
     >
       {hasDot && (
-        <span style={{ width: 10, height: 10, borderRadius: '50%', flexShrink: 0, display: 'inline-block', background: 'currentColor', opacity: 0.7 }} />
+        <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, display: 'inline-block', background: 'currentColor', opacity: 0.7 }} />
       )}
       {children}
     </span>

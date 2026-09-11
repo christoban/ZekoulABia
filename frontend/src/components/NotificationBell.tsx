@@ -86,14 +86,14 @@ export default function NotificationBell({ onNav }: Props) {
       <div
         onClick={toggleOpen}
         className={attention ? 'zek-bell-active' : undefined}
-        style={{ width: 42, height: 42, borderRadius: 10, background: attention ? 'var(--red-light)' : 'var(--bg2)', border: `1.5px solid ${attention ? 'var(--red)' : 'var(--border)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative', transition: 'background 0.2s, border-color 0.2s' }}
+        style={{ width: 32, height: 32, borderRadius: 8, background: attention ? 'var(--red-light)' : 'var(--bg2)', border: `1px solid ${attention ? 'var(--red)' : 'var(--border)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative', transition: 'background 0.2s, border-color 0.2s' }}
       >
         {attention && (
-          <span className="zek-bell-ping" style={{ position: 'absolute', inset: -4, borderRadius: 12, background: 'var(--red)', pointerEvents: 'none' }} />
+          <span className="zek-bell-ping" style={{ position: 'absolute', inset: -3, borderRadius: 10, background: 'var(--red)', pointerEvents: 'none' }} />
         )}
-        <Bell className="zek-bell-icon" size={18} color={attention ? '#b91c1c' : 'var(--text2)'} style={{ transformOrigin: '50% 15%', position: 'relative' }} />
+        <Bell className="zek-bell-icon" size={15} color={attention ? '#b91c1c' : 'var(--text2)'} style={{ transformOrigin: '50% 15%', position: 'relative' }} />
         {unreadCount > 0 && (
-          <div className="zek-bell-dot" style={{ position: 'absolute', top: 6, right: 6, minWidth: 16, height: 16, padding: '0 3px', background: 'var(--red)', borderRadius: 8, border: '2px solid var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: 'white' }}>
+          <div className="zek-bell-dot" style={{ position: 'absolute', top: 4, right: 4, minWidth: 14, height: 14, padding: '0 3px', background: 'var(--red)', borderRadius: 7, border: '2px solid var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 800, color: 'white' }}>
             {unreadCount > 9 ? '9+' : unreadCount}
           </div>
         )}

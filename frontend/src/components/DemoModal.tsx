@@ -96,15 +96,15 @@ export default function DemoModal({ isOpen, onClose, onSuccess, onError, lang }:
   // inputs — taille confortable, moderne
   const inputBase: CSSProperties = {
     width: '100%',
-    padding: '13px 16px',
-    borderRadius: 10,
-    border: '1.5px solid var(--border)',
-    fontSize: 17,
+    padding: '9px 12px',
+    borderRadius: 6,
+    border: '1px solid var(--border)',
+    fontSize: 12,
     fontFamily: 'inherit',
     color: 'var(--text)',
     background: 'var(--bg2)',
     outline: 'none',
-    transition: 'border-color 150ms',
+    transition: 'border-color 100ms',
     boxSizing: 'border-box',
   }
 
@@ -132,27 +132,27 @@ export default function DemoModal({ isOpen, onClose, onSuccess, onError, lang }:
       <div style={{
         position: 'fixed', top: '50%', left: '50%',
         transform: 'translate(-50%,-50%)',
-        zIndex: 201, width: '96%', maxWidth: 700,
-        maxHeight: '92vh', overflowY: 'auto',
-        borderRadius: 20,
+        zIndex: 201, width: '96%', maxWidth: 620,
+        maxHeight: '85vh', overflowY: 'auto',
+        borderRadius: 10,
       }}>
         {/* ── Contenu animé ─────────────────────────────── */}
         <div style={{
-          background: 'var(--surface)', borderRadius: 20,
-          padding: '44px 48px',
-          animation: 'popIn 0.22s ease',
-          boxShadow: '0 32px 80px rgba(0,0,0,0.22)',
+          background: 'var(--surface)', borderRadius: 8,
+          padding: '24px 20px',
+          animation: 'popIn 0.18s ease',
+          boxShadow: '0 16px 48px rgba(0,0,0,0.16)',
         }}>
 
           {/* ── Header ──────────────────────────────────── */}
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 26 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ width: 52, height: 52, borderRadius: 14, flexShrink: 0, background: "linear-gradient(135deg,var(--green),var(--green2))", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "65%", height: "65%", objectFit: "contain" }} /></div>
+              <div style={{ width: 32, height: 32, borderRadius: 6, flexShrink: 0, background: "linear-gradient(135deg,var(--green),var(--green2))", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "65%", height: "65%", objectFit: "contain" }} /></div>
               <div>
-                <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 24, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>
+                <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>
                   {isFr ? 'Demander une démo gratuite' : 'Request a free demo'}
                 </div>
-                <div style={{ fontSize: 14, color: 'var(--text3)', marginTop: 4 }}>
+                <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 3 }}>
                   {isFr ? 'Notre équipe vous contacte dans les 24h ouvrables.' : 'Our team contacts you within 24 business hours.'}
                 </div>
               </div>
@@ -161,22 +161,22 @@ export default function DemoModal({ isOpen, onClose, onSuccess, onError, lang }:
               onClick={onClose}
               style={{
                 background: 'var(--bg2)', border: 'none', cursor: 'pointer',
-                color: 'var(--text2)', fontSize: 19, padding: '7px 11px',
-                borderRadius: 9, lineHeight: 1, marginLeft: 16, flexShrink: 0,
+                color: 'var(--text2)', fontSize: 16, padding: '6px 9px',
+                borderRadius: 8, lineHeight: 1, marginLeft: 12, flexShrink: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'background 150ms',
               }}
               onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--border)' }}
               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg2)' }}
               title={isFr ? 'Fermer' : 'Close'}
-            ><X size={19} strokeWidth={2} /></button>
+            ><X size={16} strokeWidth={2} /></button>
           </div>
 
           {/* Séparateur */}
-          <div style={{ height: 1, background: 'var(--border)', marginBottom: 28 }} />
+          <div style={{ height: 1, background: 'var(--border)', marginBottom: 16 }} />
 
           {/* ── Formulaire ──────────────────────────────── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
             {/* Ligne 1 : Nom + Établissement */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
@@ -270,12 +270,12 @@ export default function DemoModal({ isOpen, onClose, onSuccess, onError, lang }:
               style={{
                 width: '100%',
                 background: loading ? '#6b9e8e' : 'linear-gradient(135deg,var(--green),var(--green2))',
-                color: 'var(--surface)', fontWeight: 800, fontSize: 18,
-                padding: '17px 28px', borderRadius: 11, border: 'none',
+                color: 'var(--surface)', fontWeight: 800, fontSize: 13,
+                padding: '11px 20px', borderRadius: 6, border: 'none',
                 cursor: loading ? 'not-allowed' : 'pointer',
-                boxShadow: loading ? 'none' : '0 4px 14px rgba(5,150,105,0.24)',
-                fontFamily: 'inherit', transition: 'all 150ms',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                boxShadow: loading ? 'none' : '0 3px 10px rgba(5,150,105,0.2)',
+                fontFamily: 'inherit', transition: 'all 100ms',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}
               onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 6px 20px rgba(5,150,105,0.36)' }}
               onMouseLeave={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 14px rgba(5,150,105,0.24)' }}

@@ -21,6 +21,7 @@
   --sidebar2: #243b29;
   --sidebar3: #2d4f34;
   --sidebar-active: #3a6b44;
+  --sidebar-width: 200px;
 
   /* Borders */
   --border: #e8e0d4;
@@ -30,6 +31,29 @@
   --text: #1a1209;
   --text2: #6b5c45;
   --text3: #a89478;
+
+  /* Density tokens - Ultra dense */
+  --text-xs: 9px;
+  --text-sm: 10px;
+  --text-md: 11px;
+  --text-base: 11px;
+  --text-lg: 12px;
+  --text-xl: 13px;
+  --text-2xl: 14px;
+  --text-3xl: 16px;
+  --text-4xl: 18px;
+  --text-hero: 24px;
+
+  --space-1: 3px;
+  --space-2: 6px;
+  --space-3: 9px;
+  --space-4: 12px;
+  --space-5: 16px;
+  --space-6: 18px;
+
+  --topbar-height: 40px;
+  --radius-card: 7px;
+  --radius-btn: 6px;
 
   /* Semantic colors */
   --green: #059669;
@@ -55,9 +79,9 @@
   --orange-light: #ffedd5;
 
   /* Shadows */
-  --shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.06);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,0.08);
 }
 
 /* ── DARK THEME PALETTE (Warm African) ── */
@@ -149,8 +173,8 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-nunito), 'Nunito', sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 11px;
+  line-height: 1.4;
 }
 
 /* ── SCROLLBAR ── */
