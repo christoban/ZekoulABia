@@ -1,34 +1,26 @@
-import { useT } from '@/lib/i18n'
+'use client'
+import { Construction } from 'lucide-react'
 
 interface Props {
   title: string
-  icon: string
-  description: string
-  onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
+  description?: string
 }
 
-export default function SectionPlaceholder({ title, icon, description, onToast }: Props) {
-  const t = useT('admin')
+export default function SectionPlaceholder({ title, description }: Props) {
   return (
-    <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto' }}>
-      <div style={{ marginBottom: 26 }}>
-        <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 28, fontWeight: 700, color: 'var(--text)' }}>{title}</div>
-        <div style={{ fontSize: 17, color: 'var(--text3)', marginTop: 3 }}>{description}</div>
-      </div>
-      <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: 52, textAlign: 'center', maxWidth: 620 }}>
-        <div style={{ fontSize: 60, marginBottom: 22 }}>{icon}</div>
-        <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 26, fontWeight: 700, color: 'var(--text)', marginBottom: 14 }}>
+    <div className="px-4 py-4 md:px-6 md:py-5" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ textAlign: 'center', maxWidth: 360 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10, color: 'var(--text3)' }}>
+          <Construction size={28} strokeWidth={1.6} />
+        </div>
+        <div className="text-[18px] md:text-[16px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
           {title}
         </div>
-        <div style={{ fontSize: 17, color: 'var(--text3)', fontWeight: 500, marginBottom: 32, lineHeight: 1.7 }}>
-          {t('placeholder.message')}
-        </div>
-        <button
-          onClick={() => onToast(`Section ${title} bientôt disponible`, 'info')}
-          style={{ padding: '10px 24px', borderRadius: 11, fontSize: 16, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
-        >
-          Accéder à {title} →
-        </button>
+        {description && (
+          <div className="text-[13px] md:text-[13px]" style={{ color: 'var(--text3)', lineHeight: 1.5 }}>
+            {description}
+          </div>
+        )}
       </div>
     </div>
   )
