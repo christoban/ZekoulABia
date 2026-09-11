@@ -28,9 +28,9 @@ interface VerifResult {
   conflitMatriculeExistant?: string; message: string
 }
 
-const btnPri = { padding: '8px 18px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' as const }
-const btnSec = { padding: '8px 18px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 14, cursor: 'pointer' as const }
-const inputStyle = { padding: '9px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 14, flex: 1 }
+const btnPri = { padding: '8px 14px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
+const btnSec = { padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 12, cursor: 'pointer' as const }
+const inputStyle = { padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 12, flex: 1 }
 
 const STATUT_COLORS: Record<string, { bg: string; color: string }> = {
   A_JOUR: { bg: 'rgba(22,163,74,0.12)', color: 'var(--green)' },
@@ -121,10 +121,10 @@ export default function SectionStudentPayments({ onToast }: Props) {
   }
 
   return (
-    <div className="rounded-[16px] md:rounded-[12px] p-[16px] md:p-[20px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)', marginTop: 24 }}>
-      <h3 className="text-[14.5px] md:text-[16px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 14 }}>{t('matricules.student_dashboard_title')}</h3>
+    <div className="rounded-[10px] md:rounded-[8px] p-3 md:p-3.5 shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)', marginTop: 20 }}>
+      <h3 className="text-[13px] md:text-[13px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>{t('matricules.student_dashboard_title')}</h3>
 
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
         <input style={inputStyle} value={query} onChange={e => setQuery(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && search()}
           placeholder={t('matricules.search_placeholder')} />
@@ -132,7 +132,7 @@ export default function SectionStudentPayments({ onToast }: Props) {
       </div>
 
       {results.length > 0 && !selected && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
           {results.map(r => (
             <button key={r.id} onClick={() => selectStudent(r)}
               style={{ ...btnSec, textAlign: 'left', display: 'flex', justifyContent: 'space-between' }}>
@@ -145,7 +145,7 @@ export default function SectionStudentPayments({ onToast }: Props) {
 
       {selected && (
         <div>
-          <button onClick={() => { setSelected(null); setDashboard(null); setResults([]) }} style={{ ...btnSec, marginBottom: 14, fontSize: 12, padding: '5px 12px', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <button onClick={() => { setSelected(null); setDashboard(null); setResults([]) }} style={{ ...btnSec, marginBottom: 10, fontSize: 12, padding: '5px 12px', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <ArrowLeft size={13} strokeWidth={2} /> {t('matricules.back_to_search')}
           </button>
 
@@ -155,26 +155,26 @@ export default function SectionStudentPayments({ onToast }: Props) {
             <p style={{ color: 'var(--text3)', fontStyle: 'italic' }}>{t('matricules.no_data')}</p>
           ) : (
             <>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <div>
-                  <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>{dashboard.student.nom} {dashboard.student.prenom}</div>
-                  <div style={{ fontSize: 13, color: 'var(--text3)' }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>{dashboard.student.nom} {dashboard.student.prenom}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text3)' }}>
                     {dashboard.student.classe} · {t('matricules.matricule_label')} {dashboard.student.matriculeNational ?? t('matricules.no_matricule')}
                   </div>
                 </div>
-                <span style={{ padding: '5px 14px', borderRadius: 20, fontSize: 13, fontWeight: 800, ...(STATUT_COLORS[dashboard.totaux.statutGlobal] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }) }}>
+                <span style={{ padding: '5px 11px', borderRadius: 10, fontSize: 12, fontWeight: 800, ...(STATUT_COLORS[dashboard.totaux.statutGlobal] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }) }}>
                   {t(dashboard.totaux.statutGlobal === 'A_JOUR' ? 'matricules.minesec_statut_a_jour' : dashboard.totaux.statutGlobal === 'EN_RETARD' ? 'matricules.minesec_statut_retard' : 'matricules.minesec_statut_partiel')}
                 </span>
               </div>
 
-              <div style={{ marginBottom: 20 }}>
-                <button onClick={verifierSurCarteScolaire} disabled={verifying} style={{ ...btnSec, fontSize: 12, padding: '6px 14px' }}>
+              <div style={{ marginBottom: 13 }}>
+                <button onClick={verifierSurCarteScolaire} disabled={verifying} style={{ ...btnSec, fontSize: 12, padding: '6px 11px' }}>
                   {verifying ? t('matricules.verif_loading') : t('matricules.verif_btn')}
                 </button>
 
                 {verifResult && (
                   <div style={{
-                    marginTop: 10, borderRadius: 10, padding: '12px 16px',
+                    marginTop: 10, borderRadius: 8, padding: '12px 12px',
                     background: verifResult.trouve ? (verifResult.conflitMatriculeExistant ? 'rgba(234,179,8,0.12)' : 'rgba(22,163,74,0.12)') : 'var(--bg2)',
                     border: '1px solid var(--border)',
                   }}>
@@ -188,7 +188,7 @@ export default function SectionStudentPayments({ onToast }: Props) {
                           {verifResult.dateOfBirth && <><span style={{ fontWeight: 700 }}>{t('matricules.verif_field_dob')}</span><span>{verifResult.dateOfBirth}</span></>}
                           {verifResult.gender && <><span style={{ fontWeight: 700 }}>{t('matricules.verif_field_gender')}</span><span>{verifResult.gender}</span></>}
                         </div>
-                        <button onClick={confirmerMatricule} disabled={applyingMatricule} style={{ ...btnPri, fontSize: 12, padding: '6px 14px' }}>
+                        <button onClick={confirmerMatricule} disabled={applyingMatricule} style={{ ...btnPri, fontSize: 12, padding: '6px 11px' }}>
                           {applyingMatricule ? t('matricules.verif_loading') : t('matricules.verif_confirm_btn')}
                         </button>
                       </>
@@ -197,23 +197,22 @@ export default function SectionStudentPayments({ onToast }: Props) {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 12, marginBottom: 20 }}>
-                <div className="px-[14px] py-[10px] md:px-[16px] md:py-[12px]" style={{ background: 'var(--blue-light)', color: 'var(--blue)', borderRadius: 10 }}>
-                  <div className="text-[10.5px] md:text-[11px]" style={{ fontWeight: 700, opacity: 0.8 }}>{t('matricules.minesec_total_attendu')}</div>
-                  <div className="text-[16px] md:text-[18px]" style={{ fontWeight: 800 }}>{dashboard.totaux.totalAttendu.toLocaleString()} FCFA</div>
+              <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 8, marginBottom: 13 }}>
+                <div className="px-3.5 py-2.5 md:px-3.5 md:py-3" style={{ background: 'var(--blue-light)', color: 'var(--blue)', borderRadius: 8 }}>
+                  <div className="text-[11px] md:text-[11px]" style={{ fontWeight: 700, opacity: 0.8 }}>{t('matricules.minesec_total_attendu')}</div>
+                  <div className="text-[13px] md:text-[16px]" style={{ fontWeight: 800 }}>{dashboard.totaux.totalAttendu.toLocaleString()} FCFA</div>
                 </div>
-                <div className="px-[14px] py-[10px] md:px-[16px] md:py-[12px]" style={{ background: 'rgba(22,163,74,0.12)', color: 'var(--green)', borderRadius: 10 }}>
-                  <div className="text-[10.5px] md:text-[11px]" style={{ fontWeight: 700, opacity: 0.8 }}>{t('matricules.minesec_total_paye')}</div>
-                  <div className="text-[16px] md:text-[18px]" style={{ fontWeight: 800 }}>{dashboard.totaux.totalPaye.toLocaleString()} FCFA</div>
+                <div className="px-3.5 py-2.5 md:px-3.5 md:py-3" style={{ background: 'rgba(22,163,74,0.12)', color: 'var(--green)', borderRadius: 8 }}>
+                  <div className="text-[11px] md:text-[11px]" style={{ fontWeight: 700, opacity: 0.8 }}>{t('matricules.minesec_total_paye')}</div>
+                  <div className="text-[13px] md:text-[16px]" style={{ fontWeight: 800 }}>{dashboard.totaux.totalPaye.toLocaleString()} FCFA</div>
                 </div>
-                <div className="px-[14px] py-[10px] md:px-[16px] md:py-[12px]" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--red)', borderRadius: 10 }}>
-                  <div className="text-[10.5px] md:text-[11px]" style={{ fontWeight: 700, opacity: 0.8 }}>{t('matricules.minesec_total_restant')}</div>
-                  <div className="text-[16px] md:text-[18px]" style={{ fontWeight: 800 }}>{dashboard.totaux.totalRestant.toLocaleString()} FCFA</div>
+                <div className="px-3.5 py-2.5 md:px-3.5 md:py-3" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--red)', borderRadius: 8 }}>
+                  <div className="text-[11px] md:text-[11px]" style={{ fontWeight: 700, opacity: 0.8 }}>{t('matricules.minesec_total_restant')}</div>
+                  <div className="text-[13px] md:text-[16px]" style={{ fontWeight: 800 }}>{dashboard.totaux.totalRestant.toLocaleString()} FCFA</div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:[grid-template-columns:1fr_1fr]" style={{ gap: 16 }}>
-                {/* MINESEC */}
+              <div className="grid grid-cols-1 md:[grid-template-columns:1fr_1fr]" style={{ gap: 11 }}>
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                     <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)' }}>{t('matricules.minesec_column')}</h4>
@@ -236,14 +235,13 @@ export default function SectionStudentPayments({ onToast }: Props) {
                         <span>{p.typeFrais}</span>
                         <span style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                           {p.montantAttendu.toLocaleString()} FCFA
-                          <span style={{ padding: '2px 8px', borderRadius: 10, fontSize: 11, fontWeight: 700, ...sc }}>{p.status}</span>
+                          <span style={{ padding: '2px 8px', borderRadius: 8, fontSize: 11, fontWeight: 700, ...sc }}>{p.status}</span>
                         </span>
                       </div>
                     )
                   })}
                 </div>
 
-                {/* Établissement */}
                 <div>
                   <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)', marginBottom: 8 }}>{t('matricules.etablissement_column')}</h4>
                   {dashboard.paiementsEtablissement.length === 0 ? (
