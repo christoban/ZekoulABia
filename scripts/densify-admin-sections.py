@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-"""Densify admin Section*.tsx for 100% browser zoom. Run from repo root:
-  python3 scripts/densify-admin-sections.py
-"""
+"""Densify admin Section*.tsx for 100% zoom UI density."""
 import re
 from pathlib import Path
 
-DIR = Path('frontend/src/app/admin/dashboard/_components')
+DIR = Path(__file__).resolve().parents[1] / 'frontend/src/app/admin/dashboard/_components'
 TEXT_MAP = {28:22,26:20,24:18,22:18,20:16,19:15,17:14,16:13,15:13,14:12}
 FONT_MAP = dict(TEXT_MAP)
 EXTRA = {44:30,30:22,21:16,35:26}
@@ -89,24 +87,29 @@ def densify(s: str) -> str:
     s = re.sub(r'marginBottom:\s*(\d+)', mb_style, s)
     def wh(m):
         prop,n=m.group(1),int(m.group(2))
-        if n>=40: return f'{prop}: 32'
-        if n>=36: return f'{prop}: 28'
-        if n==32: return f'{prop}: 28'
+        if 20 <= n <= 48:
+            if n>=40: return f'{prop}: 32'
+            if n>=36: return f'{prop}: 28'
+            if n==32: return f'{prop}: 28'
         return m.group(0)
     s = re.sub(r'(width|height):\s*(\d+)(?!\s*px)', wh, s)
+    s = s.replace('text-[18px] md:text-[22px]', 'text-[18px] md:text-[18px]')
+    s = s.replace('text-[18px] md:text-[20px]', 'text-[18px] md:text-[18px]')
     return s
 
-skip = {
-  'SectionDashboard.tsx',
-}
-changed = 0
-for f in sorted(DIR.glob('Section*.tsx')):
-    if f.name in skip:
-        continue
-    orig = f.read_text(encoding='utf-8')
-    new = densify(orig)
-    if new != orig:
-        f.write_text(new, encoding='utf-8')
-        changed += 1
-        print('OK', f.name)
-print(f'Done: {changed} files')
+def main():
+    targets = sorted(DIR.glob('Section*.tsx'))
+    changed = 0
+    for f in targets:
+        orig = f.read_text(encoding='utf-8-sig')
+        new = densify(orig)
+        if new != orig:
+            f.write_text(new, encoding='utf-8')
+            changed += 1
+            print(f'  densified {f.name}')
+        else:
+            print(f'  ok        {f.name}')
+    print(f'Done. {changed}/{len(targets)} files updated.')
+
+if __name__ == '__main__':
+    main()
