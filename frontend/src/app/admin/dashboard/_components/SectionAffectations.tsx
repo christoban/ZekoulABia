@@ -16,11 +16,11 @@ interface AssignmentRow {
   eligibleTeachers: { id: string; name: string }[]
 }
 
-const sScroll: React.CSSProperties = { height: '100%', overflowY: 'auto', padding: '32px 40px' }
-const sCardCls = 'rounded-[16px] md:rounded-[16px] p-[16px] md:px-[32px] md:py-[28px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]'
+const sScroll: React.CSSProperties = { height: '100%', overflowY: 'auto', padding: '16px 20px' }
+const sCardCls = 'rounded-[10px] md:rounded-[10px] p-3 md:px-5 md:py-4 shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]'
 const sCard: React.CSSProperties = { background: 'var(--surface)' }
-const sLabel: React.CSSProperties = { fontSize: 13, fontWeight: 700, color: 'var(--text2)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }
-const sSelect: React.CSSProperties = { width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid var(--border)', fontSize: 15, color: 'var(--text)', background: 'var(--surface)', fontFamily: 'inherit', cursor: 'pointer' }
+const sLabel: React.CSSProperties = { fontSize: 12, fontWeight: 700, color: 'var(--text2)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }
+const sSelect: React.CSSProperties = { width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid var(--border)', fontSize: 13, color: 'var(--text)', background: 'var(--surface)', fontFamily: 'inherit', cursor: 'pointer' }
 
 export default function SectionAffectations({ onToast }: { onToast: (msg: string, type?: 'success' | 'error' | 'info') => void }) {
   const t = useT('admin')
@@ -30,7 +30,7 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
   const [meta, setMeta] = useState<{ total: number; assigned: number } | null>(null)
   const [loadingClasses, setLoadingClasses] = useState(true)
   const [loadingRows, setLoadingRows] = useState(false)
-  const [saving, setSaving] = useState<string | null>(null) // subjectId en cours de sauvegarde
+  const [saving, setSaving] = useState<string | null>(null)
   const { isOnline, addToQueue } = useSyncQueue()
 
   useEffect(() => {
@@ -113,29 +113,27 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
   const selectedClass = classes.find(c => c.id === classId)
 
   return (
-    <div className="px-4 py-5 md:px-10 md:py-8" style={{ ...sScroll, padding: undefined }}>
-      {/* En-tête */}
-      <div style={{ marginBottom: 28 }}>
-        <div className="text-[21px] md:text-[26px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
+    <div className="px-4 py-5 md:px-6 md:py-5" style={{ ...sScroll, padding: undefined }}>
+      <div style={{ marginBottom: 14 }}>
+        <div className="text-[18px] md:text-[18px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
           {t('affectations.title')}
         </div>
-        <div style={{ fontSize: 15, color: 'var(--text3)' }}>
+        <div style={{ fontSize: 12, color: 'var(--text3)' }}>
           Associez chaque matière du programme à un enseignant pour chaque classe.
         </div>
       </div>
 
       {!isOnline && (
-        <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 12, padding: '12px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ display: 'flex', alignItems: 'center' }}><WifiOff size={18} strokeWidth={2} /></span>
-          <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--amber)' }}>Mode hors-ligne — les nouvelles affectations seront synchronisées à la reconnexion</span>
+        <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 8, padding: '10px 12px', marginBottom: 13, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ display: 'flex', alignItems: 'center' }}><WifiOff size={15} strokeWidth={2} /></span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--amber)' }}>Mode hors-ligne — les nouvelles affectations seront synchronisées à la reconnexion</span>
         </div>
       )}
 
-      {/* Sélecteur de classe */}
-      <div className={sCardCls} style={{ ...sCard, marginBottom: 24, maxWidth: 480 }}>
+      <div className={sCardCls} style={{ ...sCard, marginBottom: 15, maxWidth: 480 }}>
         <div style={sLabel}>Choisir une classe</div>
         {loadingClasses ? (
-          <div style={{ color: 'var(--text3)', fontSize: 14 }}>Chargement…</div>
+          <div style={{ color: 'var(--text3)', fontSize: 12 }}>Chargement…</div>
         ) : (
           <select style={sSelect} value={classId} onChange={e => handleClassChange(e.target.value)}>
             <option value="">— Sélectionner une classe —</option>
@@ -146,20 +144,19 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
         )}
       </div>
 
-      {/* KPI */}
       {meta && classId && (
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
-          <div className="rounded-[12px] px-[16px] py-[12px] md:px-[22px] md:py-[14px]" style={{ background: meta.assigned === meta.total ? 'var(--green-light)' : 'var(--amber-light)', border: `1.5px solid ${meta.assigned === meta.total ? 'var(--green-light)' : 'var(--amber-light)'}`, display: 'flex', alignItems: 'center', gap: 12 }}>
-            {meta.assigned === meta.total ? <CheckCircle2 size={24} /> : <AlertTriangle size={24} />}
+        <div style={{ display: 'flex', gap: 11, flexWrap: 'wrap', marginBottom: 15 }}>
+          <div className="rounded-[8px] px-3.5 py-2.5 md:px-4 md:py-2.5" style={{ background: meta.assigned === meta.total ? 'var(--green-light)' : 'var(--amber-light)', border: `1.5px solid ${meta.assigned === meta.total ? 'var(--green-light)' : 'var(--amber-light)'}`, display: 'flex', alignItems: 'center', gap: 8 }}>
+            {meta.assigned === meta.total ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
             <div>
-              <div className="text-[18px] md:text-[22px]" style={{ fontWeight: 800, color: 'var(--text)' }}>{meta.assigned}/{meta.total}</div>
-              <div className="text-[12px] md:text-[13px]" style={{ color: 'var(--text2)' }}>matières affectées</div>
+              <div className="text-[18px] md:text-[18px]" style={{ fontWeight: 800, color: 'var(--text)' }}>{meta.assigned}/{meta.total}</div>
+              <div className="text-[12px] md:text-[12px]" style={{ color: 'var(--text2)' }}>matières affectées</div>
             </div>
           </div>
           {meta.assigned < meta.total && (
-            <div className="rounded-[12px] px-[16px] py-[12px] md:px-[22px] md:py-[14px]" style={{ background: 'var(--orange-light)', border: '1.5px solid var(--orange-light)', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <ClipboardList size={20} />
-              <div className="text-[13px] md:text-[14px]" style={{ color: 'var(--orange)' }}>
+            <div className="rounded-[8px] px-3.5 py-2.5 md:px-4 md:py-2.5" style={{ background: 'var(--orange-light)', border: '1.5px solid var(--orange-light)', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <ClipboardList size={15} />
+              <div className="text-[12px] md:text-[12px]" style={{ color: 'var(--orange)' }}>
                 <strong>{meta.total - meta.assigned}</strong> matière{meta.total - meta.assigned > 1 ? 's' : ''} sans enseignant
               </div>
             </div>
@@ -167,30 +164,28 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
         </div>
       )}
 
-      {/* Tableau */}
       {classId && (
         <div className={sCardCls} style={sCard}>
           {loadingRows ? (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text3)' }}>Chargement des matières…</div>
+            <div style={{ textAlign: 'center', padding: '26px', color: 'var(--text3)' }}>Chargement des matières…</div>
           ) : rows.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 0' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><BookOpen size={40} /></div>
-              <div style={{ fontSize: 16, color: 'var(--text3)' }}>
+            <div style={{ textAlign: 'center', padding: '26px' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><BookOpen size={16} /></div>
+              <div style={{ fontSize: 13, color: 'var(--text3)' }}>
                 Aucune matière dans le programme de {selectedClass?.name}.<br />
                 Configurez d'abord les coefficients dans la section Matières.
               </div>
             </div>
           ) : (
             <>
-            {/* ── Cartes empilées — mobile ── */}
             <div className="md:hidden flex flex-col" style={{ gap: 10 }}>
               {rows.map(row => {
                 const isSaving = saving === row.subjectId
                 const unassigned = row.currentTeacherId === null
                 return (
-                  <div key={row.subjectId} style={{ borderRadius: 12, padding: 14, background: unassigned ? 'var(--amber-light)' : 'var(--bg2)' }}>
+                  <div key={row.subjectId} style={{ borderRadius: 8, padding: 14, background: unassigned ? 'var(--amber-light)' : 'var(--bg2)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                      <div style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--text)' }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
                         {unassigned && <span style={{ marginRight: 6, display: 'inline-flex', verticalAlign: 'middle' }}><AlertTriangle size={14} /></span>}
                         {row.subjectName}
                       </div>
@@ -230,15 +225,14 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
               })}
             </div>
 
-            {/* ── Tableau — desktop ── */}
             <div className="hidden md:block" style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 500 }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid var(--border)' }}>
-                    <th style={{ textAlign: 'left', padding: '10px 14px', fontSize: 13, fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Matière</th>
-                    <th style={{ textAlign: 'center', padding: '10px 14px', fontSize: 13, fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '0.04em', width: 80 }}>Coeff.</th>
-                    <th style={{ textAlign: 'left', padding: '10px 14px', fontSize: 13, fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Enseignant affecté</th>
-                    <th style={{ width: 36 }}></th>
+                    <th style={{ textAlign: 'left', padding: '10px 11px', fontSize: 12, fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Matière</th>
+                    <th style={{ textAlign: 'center', padding: '10px 11px', fontSize: 12, fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '0.04em', width: 32 }}>Coeff.</th>
+                    <th style={{ textAlign: 'left', padding: '10px 11px', fontSize: 12, fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Enseignant affecté</th>
+                    <th style={{ width: 28 }}></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -247,14 +241,14 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
                     const unassigned = row.currentTeacherId === null
                     return (
                       <tr key={row.subjectId} style={{ borderBottom: '1px solid var(--bg2)', background: unassigned ? 'var(--amber-light)' : 'white' }}>
-                        <td style={{ padding: '12px 14px', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
+                        <td style={{ padding: '12px 11px', fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
                           {unassigned && <span style={{ marginRight: 6, display: 'inline-flex', verticalAlign: 'middle' }}><AlertTriangle size={14} /></span>}
                           {row.subjectName}
                         </td>
-                        <td style={{ padding: '12px 14px', textAlign: 'center', fontSize: 15, color: 'var(--text2)', fontWeight: 700 }}>
+                        <td style={{ padding: '12px 11px', textAlign: 'center', fontSize: 13, color: 'var(--text2)', fontWeight: 700 }}>
                           {row.coefficient}
                         </td>
-                        <td style={{ padding: '12px 14px' }}>
+                        <td style={{ padding: '12px 11px' }}>
                           <select
                             style={{
                               ...sSelect,
@@ -271,7 +265,6 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
                             {row.eligibleTeachers.map(t => (
                               <option key={t.id} value={t.id}>{t.name}</option>
                             ))}
-                            {/* Enseignant actuellement affecté mais pas éligible (sécurité) */}
                             {row.currentTeacherId && !row.eligibleTeachers.find(t => t.id === row.currentTeacherId) && (
                               <option value={row.currentTeacherId}>{row.currentTeacherName ?? row.currentTeacherId}</option>
                             )}
@@ -298,9 +291,9 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
       )}
 
       {!classId && !loadingClasses && (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text3)' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}><GraduationCap size={48} /></div>
-          <div style={{ fontSize: 17 }}>Sélectionnez une classe pour gérer ses affectations.</div>
+        <div style={{ textAlign: 'center', padding: '39px', color: 'var(--text3)' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><GraduationCap size={16} /></div>
+          <div style={{ fontSize: 13 }}>Sélectionnez une classe pour gérer ses affectations.</div>
         </div>
       )}
     </div>
