@@ -13,8 +13,8 @@ interface Demande {
   createdAt: string
 }
 
-const btnPri = { padding: '8px 18px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' as const, display: 'flex', alignItems: 'center', gap: 6 }
-const btnDanger = { padding: '8px 18px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--red)', fontWeight: 600, fontSize: 14, cursor: 'pointer' as const, display: 'flex', alignItems: 'center', gap: 6 }
+const btnPri = { padding: '8px 11px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const, display: 'flex', alignItems: 'center', gap: 6 }
+const btnDanger = { padding: '8px 11px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--red)', fontWeight: 600, fontSize: 12, cursor: 'pointer' as const, display: 'flex', alignItems: 'center', gap: 6 }
 
 export default function SectionAdminGroupTransfers({ onToast }: Props) {
   const [demandes, setDemandes] = useState<Demande[]>([])
@@ -62,29 +62,29 @@ export default function SectionAdminGroupTransfers({ onToast }: Props) {
     }
   }
 
-  if (loading) return <div style={{ padding: 32 }}>Chargement…</div>
+  if (loading) return <div style={{ padding: 20 }}>Chargement…</div>
 
   return (
-    <div style={{ padding: 32, overflowY: 'auto', height: '100%' }}>
-      <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', marginBottom: 8 }}>Transferts entrants du groupe scolaire</h2>
-      <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 20 }}>
+    <div style={{ padding: 20, overflowY: 'auto', height: '100%' }}>
+      <h2 style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', marginBottom: 8 }}>Transferts entrants du groupe scolaire</h2>
+      <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 13 }}>
         Demandes initiées par le Fondateur de Groupe pour transférer un élève ou un enseignant vers votre établissement.
       </p>
 
       {demandes.length === 0 ? (
-        <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-muted)', background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)' }}>
+        <div style={{ padding: 16, textAlign: 'center', color: 'var(--text-muted)', background: 'var(--surface)', borderRadius: 8, border: '1px solid var(--border)' }}>
           Aucune demande en attente.
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {demandes.map((d) => (
-            <div key={d.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 16, background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <ArrowRightLeft size={18} color="var(--green)" />
+            <div key={d.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 16, background: 'var(--surface)', borderRadius: 8, border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ArrowRightLeft size={15} color="var(--green)" />
                 </div>
                 <div>
-                  <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 15 }}>{d.sourceUserName}</div>
+                  <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 13 }}>{d.sourceUserName}</div>
                   <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                     {d.type === 'STUDENT' ? 'Élève' : 'Enseignant'} · depuis {d.sourceSchoolName}
                   </div>

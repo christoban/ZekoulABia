@@ -70,7 +70,7 @@ export default function SectionStaffAttendanceAVerifier({ onToast }: { onToast: 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {items.map(item => (
-        <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, border: '1px solid var(--bg2)', borderRadius: 12, padding: 10, background: 'var(--bg)' }}>
+        <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, border: '1px solid var(--bg2)', borderRadius: 8, padding: 10, background: 'var(--bg)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <AlertTriangle size={16} style={{ color: 'var(--amber)' }} />
             <div>
