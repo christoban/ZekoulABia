@@ -45,7 +45,6 @@ const STATUS_STYLE: Record<string, { color: string; bg: string; labelKey: string
   failed:    { color: 'var(--red)', bg: 'var(--red-light)', labelKey: 'failed' },
 }
 
-// Options de <select> natif — pas d'icône possible dans un <option>, texte seul.
 const ROLE_OPTIONS = [
   { value: '',        labelKey: 'empty' },
   { value: 'PARENT',  labelKey: 'parent' },
@@ -84,7 +83,6 @@ export default function SectionCommunications({ onToast }: Props) {
   const [preview, setPreview]           = useState<PreviewData | null>(null)
   const [tab, setTab]                   = useState<'compose' | 'history'>('compose')
 
-  // Form state
   const [channel, setChannel]       = useState<'SMS' | 'EMAIL' | 'BOTH'>('SMS')
   const [role, setRole]             = useState('')
   const [classId, setClassId]       = useState('')
@@ -115,7 +113,6 @@ export default function SectionCommunications({ onToast }: Props) {
 
   useEffect(() => { loadData() }, [loadData])
 
-  // Rafraîchissement temps réel quand l'assistant IA diffuse un message.
   useEffect(() => {
     const onChanged = (e: Event) => {
       if ((e as CustomEvent<{ entity?: string }>).detail?.entity === 'broadcastLog') loadData()
@@ -200,20 +197,18 @@ export default function SectionCommunications({ onToast }: Props) {
   )
 
   return (
-    <div className="px-4 py-5 md:px-9 md:py-8" style={{ height: '100%', overflow: 'auto', background: 'var(--bg)' }}>
-      {/* Header */}
-      <div className="mb-[16px] md:mb-[28px]">
-        <h2 className="text-[22px] md:text-[28px]" style={{ margin: 0, fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('communications.title')}</h2>
-        <p className="text-[13px] md:text-[14px]" style={{ margin: '6px 0 0', color: 'var(--text3)' }}>
+    <div className="px-4 py-5 md:px-6 md:py-5" style={{ height: '100%', overflow: 'auto', background: 'var(--bg)' }}>
+      <div className="mb-[16px] md:mb-[18px]">
+        <h2 className="text-[18px] md:text-[18px]" style={{ margin: 0, fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('communications.title')}</h2>
+        <p className="text-[12px] md:text-[12px]" style={{ margin: '6px 0 0', color: 'var(--text3)' }}>
           {t('communications.subtitle')}
         </p>
       </div>
 
-      {/* Tabs */}
-      <div className="mb-[16px] md:mb-[24px]" style={{ display: 'flex', gap: 4, background: 'var(--border)', borderRadius: 10, padding: 4, width: 'fit-content' }}>
+      <div className="mb-[16px] md:mb-[18px]" style={{ display: 'flex', gap: 4, background: 'var(--border)', borderRadius: 8, padding: 4, width: 'fit-content' }}>
         {(['compose', 'history'] as const).map((tb) => (
           <button key={tb} onClick={() => setTab(tb)}
-            className="text-[12.5px] md:text-[14px] px-[14px] md:px-[20px] py-[8px] md:py-[7px]"
+            className="text-[12.5px] md:text-[12px] px-[14px] md:px-3.5 py-[8px] md:py-[7px]"
             style={{
               borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700,
               background: tab === tb ? 'white' : 'transparent',
@@ -227,13 +222,11 @@ export default function SectionCommunications({ onToast }: Props) {
         ))}
       </div>
 
-      {/* ── COMPOSE TAB ──────────────────────────────────────────────────── */}
       {tab === 'compose' && (
-        <div className="grid grid-cols-1 md:[grid-template-columns:1fr_340px] gap-[16px] md:gap-[24px]">
-          {/* Left — form */}
-          <div className="rounded-[16px] md:rounded-[14px] p-[16px] md:p-[28px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-[0_1px_4px_rgba(0,0,0,0.06)]" style={{ background: 'var(--surface)' }}>
-            <h3 className="text-[12.5px] md:text-[15px]" style={{ margin: '0 0 12px', fontWeight: 800, color: 'var(--text2)', textTransform: 'uppercase' }}>1. Canal d'envoi</h3>
-            <div className="gap-[8px] md:gap-[10px] mb-[18px] md:mb-[28px]" style={{ display: 'flex' }}>
+        <div className="grid grid-cols-1 md:[grid-template-columns:1fr_300px] gap-3 md:gap-4">
+          <div className="rounded-[10px] md:rounded-[10px] p-3 md:p-4 shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-[0_1px_4px_rgba(0,0,0,0.06)]" style={{ background: 'var(--surface)' }}>
+            <h3 className="text-[12.5px] md:text-[13px]" style={{ margin: '0 0 12px', fontWeight: 800, color: 'var(--text2)', textTransform: 'uppercase' }}>1. Canal d'envoi</h3>
+            <div className="gap-[8px] md:gap-[10px] mb-[18px] md:mb-[20px]" style={{ display: 'flex' }}>
               {(['SMS', 'EMAIL', 'BOTH'] as const).map((c) => {
                 const Icon = CANAL_ICON[c]
                 return (
@@ -251,8 +244,8 @@ export default function SectionCommunications({ onToast }: Props) {
               })}
             </div>
 
-            <h3 className="text-[12.5px] md:text-[15px]" style={{ margin: '0 0 16px', fontWeight: 800, color: 'var(--text2)', textTransform: 'uppercase' }}>{t('communications.target_section')}</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-[12px] md:gap-[14px] mb-[22px] md:mb-[28px]">
+            <h3 className="text-[12.5px] md:text-[13px]" style={{ margin: '0 0 14px', fontWeight: 800, color: 'var(--text2)', textTransform: 'uppercase' }}>{t('communications.target_section')}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-[12px] md:gap-3 mb-[20px] md:mb-[20px]">
               <div>
                 <label className="text-[11px] md:text-[12px]" style={{ fontWeight: 600, color: 'var(--text3)', display: 'block', marginBottom: 5 }}>{t('communications.role_label')}</label>
                 <select value={role} onChange={(e) => { setRole(e.target.value); setPreview(null) }}
@@ -289,8 +282,8 @@ export default function SectionCommunications({ onToast }: Props) {
               </div>
             </div>
 
-            <div className="flex-wrap gap-y-[8px]" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 className="text-[12.5px] md:text-[15px]" style={{ margin: 0, fontWeight: 800, color: 'var(--text2)', textTransform: 'uppercase' }}>{t('communications.message_section')}</h3>
+            <div className="flex-wrap gap-y-[8px]" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h3 className="text-[12.5px] md:text-[13px]" style={{ margin: 0, fontWeight: 800, color: 'var(--text2)', textTransform: 'uppercase' }}>{t('communications.message_section')}</h3>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {VARIABLES.map((v) => (
                   <button key={v} onClick={() => insertVariable(v)}
@@ -308,10 +301,10 @@ export default function SectionCommunications({ onToast }: Props) {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder={t('communications.message_placeholder')}
-              rows={6}
+              rows={5}
               className="text-[12.5px] md:text-[13px]"
               style={{
-                width: '100%', padding: '12px 14px', borderRadius: 10, border: '1.5px solid var(--border)',
+                width: '100%', padding: '12px 11px', borderRadius: 8, border: '1.5px solid var(--border)',
                 resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.6,
                 boxSizing: 'border-box',
               }}
@@ -325,11 +318,11 @@ export default function SectionCommunications({ onToast }: Props) {
               )}
             </div>
 
-            <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+            <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
               <button onClick={handlePreview} disabled={previewing}
-                className="text-[13px] md:text-[14px]"
+                className="text-[13px] md:text-[12px]"
                 style={{
-                  flex: 1, padding: '11px 0', borderRadius: 10, border: '2px solid var(--blue)',
+                  flex: 1, padding: '11px', borderRadius: 8, border: '2px solid var(--blue)',
                   background: 'var(--surface)', color: 'var(--blue)', fontWeight: 700, cursor: 'pointer',
                   opacity: previewing ? 0.6 : 1,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
@@ -337,9 +330,9 @@ export default function SectionCommunications({ onToast }: Props) {
                 {previewing ? t('communications.btn_preview_loading') : <><Eye size={15} /> {t('communications.btn_preview')}</>}
               </button>
               <button onClick={handleSend} disabled={sending || !preview}
-                className="text-[13px] md:text-[14px]"
+                className="text-[13px] md:text-[12px]"
                 style={{
-                  flex: 2, padding: '11px 0', borderRadius: 10, border: 'none',
+                  flex: 2, padding: '11px', borderRadius: 8, border: 'none',
                   background: !preview || sending ? 'var(--text3)' : 'var(--blue)',
                   color: 'white', fontWeight: 700, cursor: !preview || sending ? 'not-allowed' : 'pointer',
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
@@ -349,13 +342,11 @@ export default function SectionCommunications({ onToast }: Props) {
             </div>
           </div>
 
-          {/* Right — preview card */}
           <div>
-            {/* Aperçu destinataires */}
-            <div className="rounded-[14px] p-[16px] md:p-[22px]" style={{ background: 'var(--surface)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', marginBottom: 16 }}>
-              <h4 className="text-[13px] md:text-[14px]" style={{ margin: '0 0 14px', fontWeight: 700, color: 'var(--text2)' }}>{t('communications.preview_title')}</h4>
+            <div className="rounded-[10px] p-3 md:p-4" style={{ background: 'var(--surface)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', marginBottom: 12 }}>
+              <h4 className="text-[13px] md:text-[12px]" style={{ margin: '0 0 14px', fontWeight: 700, color: 'var(--text2)' }}>{t('communications.preview_title')}</h4>
               {!preview ? (
-                <div className="text-[12.5px] md:text-[13px]" style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text3)' }}>
+                <div className="text-[12.5px] md:text-[13px]" style={{ textAlign: 'center', padding: '14px', color: 'var(--text3)' }}>
                   {t('communications.preview_empty_line1')}<br />{t('communications.preview_empty_line2')}
                 </div>
               ) : (
@@ -368,12 +359,12 @@ export default function SectionCommunications({ onToast }: Props) {
                     ].map((item) => (
                       <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 12px', background: 'var(--bg)', borderRadius: 8 }}>
                         <span className="text-[12.5px] md:text-[13px]" style={{ color: 'var(--text3)' }}>{item.label}</span>
-                        <span className="text-[16px] md:text-[18px]" style={{ fontWeight: 800, color: item.color }}>{item.value}</span>
+                        <span className="text-[13px] md:text-[16px]" style={{ fontWeight: 800, color: item.color }}>{item.value}</span>
                       </div>
                     ))}
                   </div>
                   {preview.total === 0 && (
-                    <div className="text-[11.5px] md:text-[12px]" style={{ marginTop: 12, padding: '10px 14px', background: 'var(--amber-light)', borderRadius: 8, color: 'var(--amber)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div className="text-[11.5px] md:text-[12px]" style={{ marginTop: 12, padding: '10px 11px', background: 'var(--amber-light)', borderRadius: 8, color: 'var(--amber)', display: 'flex', alignItems: 'center', gap: 6 }}>
                       <AlertTriangle size={13} /> {t('communications.preview_no_recipients')}
                     </div>
                   )}
@@ -381,8 +372,7 @@ export default function SectionCommunications({ onToast }: Props) {
               )}
             </div>
 
-            {/* Aide variables */}
-            <div style={{ background: 'var(--blue-light)', borderRadius: 14, padding: 18, border: '1px solid var(--blue-light)' }}>
+            <div style={{ background: 'var(--blue-light)', borderRadius: 8, padding: 14, border: '1px solid var(--blue-light)' }}>
               <h4 className="text-[12.5px] md:text-[13px]" style={{ margin: '0 0 10px', fontWeight: 700, color: 'var(--blue)', display: 'flex', alignItems: 'center', gap: 6 }}><Paperclip size={14} /> {t('communications.variables_title')}</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {[
@@ -401,26 +391,24 @@ export default function SectionCommunications({ onToast }: Props) {
         </div>
       )}
 
-      {/* ── HISTORY TAB ──────────────────────────────────────────────────── */}
       {tab === 'history' && (
-        <div style={{ background: 'var(--surface)', borderRadius: 14, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--surface)', borderRadius: 8, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
           {logs.length === 0 ? (
-            <div style={{ padding: 48, textAlign: 'center', color: 'var(--text3)' }}>
+            <div style={{ padding: 31, textAlign: 'center', color: 'var(--text3)' }}>
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
-                <Inbox size={32} className="md:hidden" />
-                <Inbox size={40} className="hidden md:block" />
+                <Inbox size={16} className="md:hidden" />
+                <Inbox size={16} className="hidden md:block" />
               </div>
-              <div className="text-[13.5px] md:text-[15px]" style={{ fontWeight: 600 }}>{t('communications.history_empty_title')}</div>
+              <div className="text-[13px] md:text-[13px]" style={{ fontWeight: 600 }}>{t('communications.history_empty_title')}</div>
               <div className="text-[12px] md:text-[13px]" style={{ marginTop: 6 }}>{t('communications.history_empty_sub')}</div>
             </div>
           ) : (
             <>
-            {/* ── Cartes empilées — mobile ── */}
             <div className="md:hidden flex flex-col" style={{ gap: 10 }}>
               {logs.map((log) => {
                 const s = STATUS_STYLE[log.status] ?? STATUS_STYLE['partial']
                 return (
-                  <div key={log.id} className="rounded-[16px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: 14 }}>
+                  <div key={log.id} className="rounded-[10px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: 14 }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                       <div>
                         <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--blue)' }}>{CANAL_LABEL[log.channel] ?? log.channel}</span>
@@ -432,11 +420,11 @@ export default function SectionCommunications({ onToast }: Props) {
                         {t(`communications.status_labels.${s.labelKey}`)}
                       </span>
                     </div>
-                    <div style={{ fontSize: 12.5, color: 'var(--text3)', marginTop: 8 }}>{targetSummary(log.target, t)}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 8 }}>{targetSummary(log.target, t)}</div>
                     <div style={{ fontSize: 13, color: 'var(--text2)', marginTop: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={log.message}>
                       {log.message}
                     </div>
-                    <div style={{ fontSize: 12.5, marginTop: 8 }}>
+                    <div style={{ fontSize: 12, marginTop: 8 }}>
                       <span style={{ color: 'var(--green)', fontWeight: 700 }}>{t('communications.sent_label').replace('{count}', String(log.sentCount))}</span>
                       {log.failedCount > 0 && <span style={{ color: 'var(--red)', marginLeft: 6 }}>· {t('communications.failed_label').replace('{count}', String(log.failedCount))}</span>}
                       <span style={{ color: 'var(--text3)', marginLeft: 6 }}>· {t('communications.recipients_label').replace('{count}', String(log.recipientCount))}</span>
@@ -446,13 +434,12 @@ export default function SectionCommunications({ onToast }: Props) {
               })}
             </div>
 
-            {/* ── Tableau — desktop ── */}
             <div className="hidden md:block" style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
                 <thead>
                   <tr style={{ background: 'var(--bg2)' }}>
                     {[0, 1, 2, 3, 4, 5].map((i) => (
-                      <th key={i} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      <th key={i} style={{ padding: '10px 12px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                         {t(`communications.table_headers.${i}`)}
                       </th>
                     ))}
@@ -463,25 +450,25 @@ export default function SectionCommunications({ onToast }: Props) {
                     const s = STATUS_STYLE[log.status] ?? STATUS_STYLE['partial']
                     return (
                       <tr key={log.id} style={{ borderTop: '1px solid var(--bg2)', background: i % 2 === 0 ? 'white' : 'var(--bg)' }}>
-                        <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text2)', whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: '10px 12px', fontSize: 13, color: 'var(--text2)', whiteSpace: 'nowrap' }}>
                           {new Date(log.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
                           <br />
                           <span style={{ fontSize: 11, color: 'var(--text3)' }}>
                             {new Date(log.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </td>
-                        <td style={{ padding: '12px 16px' }}>
+                        <td style={{ padding: '10px 12px' }}>
                           <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--blue)' }}>{CANAL_LABEL[log.channel] ?? log.channel}</span>
                         </td>
-                        <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--text3)' }}>
+                        <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--text3)' }}>
                           {targetSummary(log.target, t)}
                         </td>
-                        <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--text2)', maxWidth: 260 }}>
+                        <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--text2)', maxWidth: 260 }}>
                           <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={log.message}>
                             {log.message}
                           </div>
                         </td>
-                        <td style={{ padding: '12px 16px', fontSize: 12 }}>
+                        <td style={{ padding: '10px 12px', fontSize: 12 }}>
                           <span style={{ color: 'var(--green)', fontWeight: 700 }}>{t('communications.sent_label').replace('{count}', String(log.sentCount))}</span>
                           {log.failedCount > 0 && (
                             <span style={{ color: 'var(--red)', marginLeft: 6 }}>· {t('communications.failed_label').replace('{count}', String(log.failedCount))}</span>
@@ -489,7 +476,7 @@ export default function SectionCommunications({ onToast }: Props) {
                           <br />
                           <span style={{ color: 'var(--text3)' }}>{t('communications.recipients_label').replace('{count}', String(log.recipientCount))}</span>
                         </td>
-                        <td style={{ padding: '12px 16px' }}>
+                        <td style={{ padding: '10px 12px' }}>
                           <span style={{ padding: '3px 10px', borderRadius: 6, background: s.bg, color: s.color, fontSize: 11, fontWeight: 700 }}>
                             {t(`communications.status_labels.${s.labelKey}`)}
                           </span>
