@@ -52,8 +52,6 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
   })
   const [niveaux, setNiveaux] = useState<string[]>([])
 
-  // Chargée seulement au besoin (type CHOIX_LV2) — mêmes niveaux que ceux utilisés par l'écran
-  // de suivi LV2 existant (dérivés des classes réelles de l'établissement).
   useEffect(() => {
     if (form.type !== 'CHOIX_LV2' || niveaux.length > 0) return
     fetchApi('/api/v2/classes', { credentials: 'include' })
@@ -145,79 +143,79 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
   const clos = events.filter(e => e.status === 'CLOSED').length
 
   return (
-    <div className="px-4 py-5 md:px-8 md:py-7" style={{ overflowY: 'auto', height: '100%' }}>
-      <div className="mb-[16px] md:mb-[20px]" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+    <div className="px-4 py-5 md:px-6 md:py-5" style={{ overflowY: 'auto', height: '100%' }}>
+      <div className="mb-[16px] md:mb-[16px]" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
         <div>
-          <div className="text-[22px] md:text-[28px]" style={sTitle}>{t('academicEvents.title')}</div>
-          <div className="text-[13px] md:text-[17px]" style={sSub}>{t('academicEvents.subtitle')}</div>
+          <div className="text-[18px] md:text-[18px]" style={sTitle}>{t('academicEvents.title')}</div>
+          <div className="text-[12px] md:text-[13px]" style={sSub}>{t('academicEvents.subtitle')}</div>
         </div>
-        <button onClick={() => setFormOpen(true)} className="rounded-full md:rounded-[10px] text-[12px] md:text-[15px] px-[14px] md:px-[16px] py-[9px] md:py-[8px]" style={{ ...btnPrim, borderRadius: undefined, padding: undefined, fontSize: undefined, fontWeight: 700 }}>
+        <button onClick={() => setFormOpen(true)} className="rounded-full md:rounded-[10px] text-[12px] md:text-[13px] px-[14px] md:px-[16px] py-[9px] md:py-[8px]" style={{ ...btnPrim, borderRadius: undefined, padding: undefined, fontSize: undefined, fontWeight: 700 }}>
           <Plus size={15} strokeWidth={2.5} /> {t('academicEvents.newEvent')}
         </button>
       </div>
 
       {!loading && !error && events.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-[10px] md:gap-[14px] mb-[18px] md:mb-[24px]">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-[10px] md:gap-3 mb-[18px] md:mb-[18px]">
           {[
             { icon: CalendarClock, value: total, label: t('academicEvents.kpiTotal') },
             { icon: Zap, value: actifs, label: t('academicEvents.kpiActive') },
             { icon: Clock, value: aVenir, label: t('academicEvents.kpiUpcoming') },
             { icon: CheckCircle2, value: clos, label: t('academicEvents.kpiClosed') },
           ].map(({ icon: Icon, value, label }) => (
-            <div key={label} className="rounded-[14px] p-[12px] md:px-[18px] md:py-[16px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)' }}>
-              <div style={{ marginBottom: 6 }}><Icon size={22} /></div>
-              <div className="text-[20px] md:text-[28px] font-black md:font-bold" style={{ color: 'var(--text)', fontFamily: 'var(--font-spectral),Spectral,serif' }}>{value}</div>
-              <div className="text-[11.5px] md:text-[13px]" style={{ color: 'var(--text3)', fontWeight: 600, marginTop: 2 }}>{label}</div>
+            <div key={label} className="rounded-[10px] p-[12px] md:px-3.5 md:py-3 shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)' }}>
+              <div style={{ marginBottom: 6 }}><Icon size={15} /></div>
+              <div className="text-[16px] md:text-[18px] font-black md:font-bold" style={{ color: 'var(--text)', fontFamily: 'var(--font-spectral),Spectral,serif' }}>{value}</div>
+              <div className="text-[11.5px] md:text-[12px]" style={{ color: 'var(--text3)', fontWeight: 600, marginTop: 2 }}>{label}</div>
             </div>
           ))}
         </div>
       )}
 
       {loading && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
-          <Loader2 size={28} className="animate-spin" color="var(--green)" />
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 39 }}>
+          <Loader2 size={16} className="animate-spin" color="var(--green)" />
         </div>
       )}
 
       {!loading && error && (
-        <div className="flex-wrap gap-[10px] md:gap-[12px] px-[16px] py-[14px] md:px-[22px] md:py-[18px]" style={{ background: 'var(--red-light)', borderRadius: 14, display: 'flex', alignItems: 'center' }}>
-          <AlertTriangle size={18} color="var(--red)" /><span className="text-[13px] md:text-[15px]" style={{ fontWeight: 700, color: 'var(--red)', flex: 1 }}>{error}</span>
-          <button onClick={fetchEvents} className="w-full md:w-auto text-[12.5px] md:text-[14px] px-[12px] md:px-[14px] py-[6px] md:py-[6px]" style={{ ...btnRetry, padding: undefined }}>{t('academicEvents.retry')}</button>
+        <div className="flex-wrap gap-[10px] md:gap-[12px] px-[16px] py-2.5 md:px-[22px] md:py-[18px]" style={{ background: 'var(--red-light)', borderRadius: 8, display: 'flex', alignItems: 'center' }}>
+          <AlertTriangle size={15} color="var(--red)" /><span className="text-[13px] md:text-[13px]" style={{ fontWeight: 700, color: 'var(--red)', flex: 1 }}>{error}</span>
+          <button onClick={fetchEvents} className="w-full md:w-auto text-[12.5px] md:text-[12px] px-[12px] md:px-[14px] py-[6px] md:py-[6px]" style={{ ...btnRetry, padding: undefined }}>{t('academicEvents.retry')}</button>
         </div>
       )}
 
       {!loading && !error && events.length === 0 && (
-        <div className="px-[24px] py-[40px] md:px-[32px] md:py-[60px]" style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', textAlign: 'center' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}><CalendarClock size={44} className="md:hidden" /><CalendarClock size={48} className="hidden md:block" /></div>
-          <div className="text-[16px] md:text-[20px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{t('academicEvents.emptyTitle')}</div>
-          <div className="text-[13.5px] md:text-[16px]" style={{ color: 'var(--text3)' }}>{t('academicEvents.emptySub')}</div>
+        <div className="px-[24px] py-[40px] md:px-[32px] md:py-[48px]" style={{ background: 'var(--surface)', borderRadius: 10, border: '1.5px solid var(--border)', textAlign: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><CalendarClock size={16} className="md:hidden" /><CalendarClock size={16} className="hidden md:block" /></div>
+          <div className="text-[13px] md:text-[14px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{t('academicEvents.emptyTitle')}</div>
+          <div className="text-[13px] md:text-[13px]" style={{ color: 'var(--text3)' }}>{t('academicEvents.emptySub')}</div>
         </div>
       )}
 
       {!loading && !error && events.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {events.map(ev => (
-            <div key={ev.id} className="rounded-[16px] md:rounded-[14px] p-[15px] md:px-[22px] md:py-[18px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)' }}>
+            <div key={ev.id} className="rounded-[10px] md:rounded-[10px] p-[15px] md:px-4 md:py-3.5 shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)' }}>
               <div className="mb-[8px] gap-[8px]" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-                <div className="text-[14.5px] md:text-[18px]" style={{ fontWeight: 800, color: 'var(--text)', flex: 1 }}>{ev.title}</div>
+                <div className="text-[14px] md:text-[15px]" style={{ fontWeight: 800, color: 'var(--text)', flex: 1 }}>{ev.title}</div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  <span className="text-[10.5px] md:text-[12px]" style={{ padding: '2px 8px', borderRadius: 20, fontWeight: 800, background: CATEGORY_COLOR[ev.category]?.bg, color: CATEGORY_COLOR[ev.category]?.color }}>
+                  <span className="text-[10.5px] md:text-[12px]" style={{ padding: '2px 8px', borderRadius: 10, fontWeight: 800, background: CATEGORY_COLOR[ev.category]?.bg, color: CATEGORY_COLOR[ev.category]?.color }}>
                     {t(`academicEvents.category.${ev.category}`)}
                   </span>
-                  <span className="text-[10.5px] md:text-[12px]" style={{ padding: '2px 8px', borderRadius: 20, fontWeight: 800, background: STATUS_COLOR[ev.status]?.bg, color: STATUS_COLOR[ev.status]?.color }}>
+                  <span className="text-[10.5px] md:text-[12px]" style={{ padding: '2px 8px', borderRadius: 10, fontWeight: 800, background: STATUS_COLOR[ev.status]?.bg, color: STATUS_COLOR[ev.status]?.color }}>
                     {t(`academicEvents.status.${ev.status}`)}
                   </span>
                 </div>
               </div>
-              {ev.description && <div className="text-[13px] md:text-[14px]" style={{ color: 'var(--text3)', marginBottom: 8 }}>{ev.description}</div>}
-              <div className="text-[11.5px] md:text-[13px] gap-[4px] md:gap-[16px]" style={{ color: 'var(--text3)', display: 'flex', flexDirection: 'column' }}>
+              {ev.description && <div className="text-[13px] md:text-[12px]" style={{ color: 'var(--text3)', marginBottom: 8 }}>{ev.description}</div>}
+              <div className="text-[11.5px] md:text-[12px] gap-[4px] md:gap-3" style={{ color: 'var(--text3)', display: 'flex', flexDirection: 'column' }}>
                 <span>{t('academicEvents.opensOn')} {fmt(ev.openDate)} · {t('academicEvents.closesOn')} {fmt(ev.closeDate)}</span>
                 <span>{t('academicEvents.roles')} {ev.targetRoles.join(', ')}</span>
               </div>
 
               {ev.category === 'MANUAL_TRIGGER' && ev.status === 'UPCOMING' && (
                 <button onClick={() => declencher(ev.id)}
-                  className="w-full md:w-auto justify-center md:justify-start text-[12.5px] md:text-[15px] px-[16px] md:px-[16px] py-[9px] md:py-[8px] rounded-[10px] md:rounded-[10px]"
+                  className="w-full md:w-auto justify-center md:justify-start text-[12.5px] md:text-[13px] px-[16px] md:px-[16px] py-[9px] md:py-[8px] rounded-[10px] md:rounded-[8px]"
                   style={{ ...btnPrim, padding: undefined, fontSize: undefined, marginTop: 12 }}>
                   <Zap size={14} /> {t('academicEvents.triggerNow')}
                 </button>
@@ -226,13 +224,13 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
               {ev.category === 'SLIDING_WINDOW' && ev.status === 'ACTIVE' && (
                 adjustingId === ev.id ? (
                   <div className="flex-wrap md:flex-nowrap" style={{ display: 'flex', gap: 8, marginTop: 12, alignItems: 'center' }}>
-                    <input type="date" value={adjustDate} onChange={e => setAdjustDate(e.target.value)} className="flex-1 md:flex-none min-w-[140px] text-[13px] md:text-[14px] px-[9px] md:px-[10px] py-[6px] md:py-[7px]" style={{ ...inputSt, padding: undefined, fontSize: undefined }} />
-                    <button onClick={() => ajuster(ev.id)} className="text-[12.5px] md:text-[15px] px-[14px] md:px-[16px] py-[7px] md:py-[8px]" style={{ ...btnPrim, padding: undefined, fontSize: undefined }}>{t('academicEvents.save')}</button>
-                    <button onClick={() => { setAdjustingId(null); setAdjustDate('') }} className="text-[12.5px] md:text-[15px] px-[12px] md:px-[14px] py-[7px] md:py-[8px]" style={{ ...btnSec, padding: undefined, fontSize: undefined }}>{t('academicEvents.cancel')}</button>
+                    <input type="date" value={adjustDate} onChange={e => setAdjustDate(e.target.value)} className="flex-1 md:flex-none min-w-[140px] text-[13px] md:text-[12px] px-[9px] md:px-[10px] py-[6px] md:py-[7px]" style={{ ...inputSt, padding: undefined, fontSize: undefined }} />
+                    <button onClick={() => ajuster(ev.id)} className="text-[12.5px] md:text-[13px] px-[14px] md:px-[16px] py-[7px] md:py-[8px]" style={{ ...btnPrim, padding: undefined, fontSize: undefined }}>{t('academicEvents.save')}</button>
+                    <button onClick={() => { setAdjustingId(null); setAdjustDate('') }} className="text-[12.5px] md:text-[13px] px-[12px] md:px-[14px] py-[7px] md:py-[8px]" style={{ ...btnSec, padding: undefined, fontSize: undefined }}>{t('academicEvents.cancel')}</button>
                   </div>
                 ) : (
                   <button onClick={() => setAdjustingId(ev.id)}
-                    className="w-full md:w-auto justify-center md:justify-start text-[12.5px] md:text-[15px] px-[14px] md:px-[14px] py-[8px] md:py-[8px]"
+                    className="w-full md:w-auto justify-center md:justify-start text-[12.5px] md:text-[13px] px-[14px] md:px-[14px] py-[8px] md:py-[8px]"
                     style={{ ...btnSec, padding: undefined, fontSize: undefined, marginTop: 12, display: 'inline-flex', alignItems: 'center' }}>{t('academicEvents.adjustWindow')}</button>
                 )
               )}
@@ -244,14 +242,14 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
       {formOpen && (
         <div onClick={() => setFormOpen(false)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} className="p-5 md:p-7 rounded-[16px] w-[480px] max-w-[94vw] max-h-[85vh] overflow-y-auto"
+          <div onClick={e => e.stopPropagation()} className="p-5 md:p-5 rounded-[10px] w-[480px] max-w-[94vw] max-h-[85vh] overflow-y-auto"
             style={{ background: 'var(--surface)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-              <div className="text-[18px] md:text-[20px]" style={{ fontWeight: 800, color: 'var(--text)' }}>{t('academicEvents.newEvent')}</div>
-              <button onClick={() => setFormOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}><X size={20} /></button>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 13 }}>
+              <div className="text-[16px] md:text-[16px]" style={{ fontWeight: 800, color: 'var(--text)' }}>{t('academicEvents.newEvent')}</div>
+              <button onClick={() => setFormOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}><X size={15} /></button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div>
                 <label className={labelStCls} style={labelSt}>{t('academicEvents.formTitle')}</label>
                 <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} className={inputFullStCls} style={inputFullSt} placeholder={t('academicEvents.formTitlePlaceholder')} />
@@ -291,7 +289,7 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
                   {ROLES.map(role => (
                     <button key={role} type="button" onClick={() => toggleRole(role)}
                       className="text-[12px] md:text-[13px] px-[11px] md:px-[14px] py-[5px] md:py-[6px]"
-                      style={{ borderRadius: 20, fontWeight: 700, cursor: 'pointer', border: '1.5px solid', fontFamily: 'inherit',
+                      style={{ borderRadius: 10, fontWeight: 700, cursor: 'pointer', border: '1.5px solid', fontFamily: 'inherit',
                         background: form.targetRoles.includes(role) ? 'var(--green-light)' : 'white',
                         borderColor: form.targetRoles.includes(role) ? 'var(--green)' : 'var(--border2)',
                         color: form.targetRoles.includes(role) ? 'var(--green)' : 'var(--text2)' }}>
@@ -314,7 +312,7 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
               )}
 
               <button onClick={submitCreate} disabled={submitting}
-                className="w-full text-[13.5px] md:text-[15px] px-[16px] md:px-[16px] py-[10px] md:py-[8px]"
+                className="w-full text-[13px] md:text-[13px] px-[16px] md:px-[16px] py-[10px] md:py-[8px]"
                 style={{ ...btnPrim, padding: undefined, fontSize: undefined, justifyContent: 'center', marginTop: 8, opacity: submitting ? 0.6 : 1 }}>
                 {submitting ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />} {t('academicEvents.create')}
               </button>
@@ -328,11 +326,11 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
 
 const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }
 const sSub: React.CSSProperties = { color: 'var(--text3)', marginTop: 3 }
-const btnPrim: React.CSSProperties = { padding: '8px 16px', borderRadius: 10, fontSize: 15, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }
-const btnSec: React.CSSProperties = { padding: '8px 14px', borderRadius: 10, fontSize: 15, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
-const btnRetry: React.CSSProperties = { padding: '6px 14px', borderRadius: 8, background: 'var(--surface)', color: 'var(--red)', border: '1.5px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }
+const btnPrim: React.CSSProperties = { padding: '8px 12px', borderRadius: 8, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }
+const btnSec: React.CSSProperties = { padding: '8px 11px', borderRadius: 8, fontSize: 13, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
+const btnRetry: React.CSSProperties = { padding: '6px 11px', borderRadius: 8, background: 'var(--surface)', color: 'var(--red)', border: '1.5px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }
 const labelStCls = 'text-[12px] md:text-[13px] mb-[4px] md:mb-[5px]'
 const labelSt: React.CSSProperties = { display: 'block', fontWeight: 700, color: 'var(--text2)' }
-const inputFullStCls = 'rounded-[10px] md:rounded-[9px] px-[12px] py-[9px] text-[13px] md:text-[15px]'
+const inputFullStCls = 'rounded-[10px] md:rounded-[9px] px-[12px] py-[9px] text-[13px] md:text-[13px]'
 const inputFullSt: React.CSSProperties = { width: '100%', border: '1.5px solid var(--border2)', fontFamily: 'inherit', color: 'var(--text)', background: 'var(--bg2)', outline: 'none', boxSizing: 'border-box' }
-const inputSt: React.CSSProperties = { padding: '7px 10px', borderRadius: 8, border: '1.5px solid var(--border2)', fontSize: 14, fontFamily: 'inherit', color: 'var(--text)', background: 'var(--bg2)', outline: 'none' }
+const inputSt: React.CSSProperties = { padding: '7px 10px', borderRadius: 8, border: '1.5px solid var(--border2)', fontSize: 12, fontFamily: 'inherit', color: 'var(--text)', background: 'var(--bg2)', outline: 'none' }
