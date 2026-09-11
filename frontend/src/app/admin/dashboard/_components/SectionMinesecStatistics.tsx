@@ -48,12 +48,12 @@ interface Meta {
   anneesEtudeEstp: { anneeEtude: string; capaciteMax: number }[]
 }
 
-const btnPri = { padding: '10px 20px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' as const }
-const btnSec = { padding: '10px 20px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 14, cursor: 'pointer' as const }
+const btnPri = { padding: '10px 14px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
+const btnSec = { padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 12, cursor: 'pointer' as const }
 const btnSmall = { padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 12, cursor: 'pointer' as const }
-const inputStyle = { padding: '9px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 14, width: '100%', boxSizing: 'border-box' as const }
+const inputStyle = { padding: '9px 11px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 12, width: '100%', boxSizing: 'border-box' as const }
 const smallInputStyle = { ...inputStyle, padding: '6px 10px', fontSize: 13 }
-const cardStyleCls = 'rounded-[16px] md:rounded-[12px] p-[16px] md:p-[20px] mb-[12px] md:mb-[20px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[var(--border)]'
+const cardStyleCls = 'rounded-[10px] md:rounded-[8px] p-3 md:p-3.5 mb-[12px] md:mb-[16px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[var(--border)]'
 const cardStyle = { background: 'var(--surface)' }
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
@@ -113,7 +113,7 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
   const isStale = useMemo(() => {
     if (!supplement?.lastUpdatedAt) return false
     const days = (Date.now() - new Date(supplement.lastUpdatedAt).getTime()) / 86400000
-    return days > 300 // ~10 mois — probablement de la campagne précédente
+    return days > 300
   }, [supplement])
 
   const saveSupplement = async () => {
@@ -132,7 +132,6 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
     } catch { onToast(t('minesecStats.errorGeneric'), 'error') } finally { setSaving(false) }
   }
 
-  // ── BIP ──
   const addBip = () => {
     const list = Array.isArray(form.historiqueBip) ? form.historiqueBip : []
     setForm((f) => ({ ...f, historiqueBip: [...list, { designation: '', anneeObtention: '' }] }))
@@ -148,7 +147,6 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
     setForm((f) => ({ ...f, historiqueBip: list }))
   }
 
-  // ── Infrastructures ──
   const [expandedInfraRow, setExpandedInfraRow] = useState<string | null>(null)
   const setInfraValue = (subsystem: string, code: string, breakdownKey: string, value: number | null) => {
     const detail = { ...(form.infrastructuresDetail ?? {}) }
@@ -173,7 +171,6 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
   }
   const getCommodite = (code: string): boolean | null => form.infrastructuresDetail?.commodites?.[code] ?? null
 
-  // ── ESTP ──
   const addEstpEntry = () => {
     const list: EstpEntry[] = Array.isArray(form.effectifsTechniquesDetail) ? form.effectifsTechniquesDetail : []
     setForm((f) => ({
@@ -229,18 +226,18 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
     window.open(`/api/v2/statistical-campaign/submissions/${id}/download`, '_blank')
   }
 
-  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>{t('common.loading') || '...'}</div>
+  if (loading) return <div style={{ padding: 26, textAlign: 'center', color: 'var(--text3)' }}>{t('common.loading') || '...'}</div>
 
   return (
-    <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto' }}>
-      <div style={{ marginBottom: 20 }}>
-        <h2 className="text-[22px] md:text-[28px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('minesecStats.title')}</h2>
-        <p className="text-[13px] md:text-[14px]" style={{ color: 'var(--text3)', marginTop: 4 }}>{t('minesecStats.subtitle')}</p>
+    <div className="px-4 py-5 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
+      <div style={{ marginBottom: 13 }}>
+        <h2 className="text-[18px] md:text-[18px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('minesecStats.title')}</h2>
+        <p className="text-[13px] md:text-[12px]" style={{ color: 'var(--text3)', marginTop: 4 }}>{t('minesecStats.subtitle')}</p>
       </div>
 
-      <div className="gap-[6px] md:gap-[8px] mb-[16px] md:mb-[20px]" style={{ display: 'flex' }}>
-        <button onClick={() => setTab('supplement')} className="flex-1 md:flex-none rounded-[12px] md:rounded-[8px] text-[12.5px] md:text-[14px] py-[10px] px-0 md:px-[20px] md:py-[10px]" style={{ ...(tab === 'supplement' ? btnPri : btnSec), padding: undefined }}>{t('minesecStats.tabSupplement')}</button>
-        <button onClick={() => setTab('generer')} className="flex-1 md:flex-none rounded-[12px] md:rounded-[8px] text-[12.5px] md:text-[14px] py-[10px] px-0 md:px-[20px] md:py-[10px]" style={{ ...(tab === 'generer' ? btnPri : btnSec), padding: undefined }}>{t('minesecStats.tabGenerer')}</button>
+      <div className="gap-[6px] md:gap-[8px] mb-[16px] md:mb-[16px]" style={{ display: 'flex' }}>
+        <button onClick={() => setTab('supplement')} className="flex-1 md:flex-none rounded-[8px] md:rounded-[8px] text-[12.5px] md:text-[12px] py-[10px] px-0 md:px-3.5 md:py-[10px]" style={{ ...(tab === 'supplement' ? btnPri : btnSec), padding: undefined }}>{t('minesecStats.tabSupplement')}</button>
+        <button onClick={() => setTab('generer')} className="flex-1 md:flex-none rounded-[8px] md:rounded-[8px] text-[12.5px] md:text-[12px] py-[10px] px-0 md:px-3.5 md:py-[10px]" style={{ ...(tab === 'generer' ? btnPri : btnSec), padding: undefined }}>{t('minesecStats.tabGenerer')}</button>
       </div>
 
       {tab === 'supplement' && (
@@ -251,17 +248,16 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
                 {t('minesecStats.lastUpdated')} : {new Date(supplement.lastUpdatedAt).toLocaleDateString()}
               </span>
               {isStale && (
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#b45309', background: 'rgba(234,179,8,0.12)', padding: '2px 10px', borderRadius: 12 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#b45309', background: 'rgba(234,179,8,0.12)', padding: '2px 10px', borderRadius: 8 }}>
                   {t('minesecStats.staleWarning')}
                 </span>
               )}
             </div>
           )}
-          <p style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 16 }}>{t('minesecStats.persistenceExplainer')}</p>
+          <p style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 12 }}>{t('minesecStats.persistenceExplainer')}</p>
 
-          {/* Identification */}
           <div className={cardStyleCls} style={cardStyle}>
-            <h3 className="text-[14px] md:text-[16px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{t('minesecStats.sectionIdentification')}</h3>
+            <h3 className="text-[12px] md:text-[13px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{t('minesecStats.sectionIdentification')}</h3>
 
             <FieldLabel>{t('minesecStats.fieldTitreFoncier')}</FieldLabel>
             <BoolSelect value={form.hasTitreFoncier} onChange={(v) => setForm((f) => ({ ...f, hasTitreFoncier: v }))} />
@@ -288,7 +284,7 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
             <BoolSelect value={form.hasInternat} onChange={(v) => setForm((f) => ({ ...f, hasInternat: v }))} />
 
             {form.hasInternat === true && (
-              <div style={{ display: 'flex', gap: 12 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
                 <div style={{ flex: 1 }}>
                   <FieldLabel>{t('minesecStats.fieldPlacesFilles')}</FieldLabel>
                   <input style={inputStyle} type="number" value={form.placesInternatFilles ?? ''} onChange={(e) => setForm((f) => ({ ...f, placesInternatFilles: e.target.value === '' ? null : Number(e.target.value) }))} />
@@ -316,10 +312,9 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
             </div>
           </div>
 
-          {/* Historique BIP */}
           <div className={cardStyleCls} style={cardStyle}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <h3 className="text-[14px] md:text-[16px]" style={{ fontWeight: 700, color: 'var(--text)' }}>{t('minesecStats.sectionBip')}</h3>
+              <h3 className="text-[12px] md:text-[13px]" style={{ fontWeight: 700, color: 'var(--text)' }}>{t('minesecStats.sectionBip')}</h3>
               <button onClick={addBip} style={btnSmall}>+ {t('minesecStats.addBip')}</button>
             </div>
             {(form.historiqueBip ?? []).length === 0 && (
@@ -334,14 +329,13 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
             ))}
           </div>
 
-          {/* Infrastructures */}
           {meta && (
             <div className={cardStyleCls} style={cardStyle}>
-              <h3 className="text-[14px] md:text-[16px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{t('minesecStats.sectionInfrastructures')}</h3>
-              <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 14 }}>{t('minesecStats.infrastructuresHint')}</p>
+              <h3 className="text-[12px] md:text-[13px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{t('minesecStats.sectionInfrastructures')}</h3>
+              <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 10 }}>{t('minesecStats.infrastructuresHint')}</p>
 
               {meta.subsystems.map((s) => (
-                <div key={s.code} style={{ marginBottom: 20 }}>
+                <div key={s.code} style={{ marginBottom: 13 }}>
                   {meta.subsystems.length > 1 && (
                     <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)', marginBottom: 8 }}>{s.label}</h4>
                   )}
@@ -355,7 +349,7 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
                         <div key={row.code} style={{ borderTop: '1px solid var(--bg)' }}>
                           <div onClick={() => setExpandedInfraRow(isOpen ? null : rowKey)}
                             className="flex-wrap gap-[6px]"
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', cursor: 'pointer' }}>
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 11px', cursor: 'pointer' }}>
                             <span style={{ fontSize: 13, color: 'var(--text)' }}>{row.label}</span>
                             <span className="gap-[10px] md:gap-[14px]" style={{ fontSize: 12, color: 'var(--text3)', display: 'flex' }}>
                               <span>{t('minesecStats.infraTotalLocaux')}: <strong style={{ color: 'var(--text)' }}>{total}</strong></span>
@@ -363,14 +357,14 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
                             </span>
                           </div>
                           {isOpen && (
-                            <div style={{ padding: '4px 14px 14px', background: 'var(--bg2)' }}>
+                            <div style={{ padding: '4px 11px 11px', background: 'var(--bg2)' }}>
                               <div style={{ marginBottom: 10 }}>
                                 <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>{t('minesecStats.infraPlaces')}</div>
                                 <input style={{ ...smallInputStyle, maxWidth: 140 }} type="number" min={0}
                                   value={places ?? ''}
                                   onChange={(e) => setInfraValue(s.code, row.code, 'placesDisponibles', e.target.value === '' ? null : Number(e.target.value))} />
                               </div>
-                              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                              <div style={{ display: 'flex', gap: 11, flexWrap: 'wrap' }}>
                                 {meta.infraBreakdownKeys.filter((b) => b.key !== 'placesDisponibles').map((b) => (
                                   <div key={b.key} style={{ minWidth: 110 }}>
                                     <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>{b.label}</div>
@@ -389,9 +383,9 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
                 </div>
               ))}
 
-              <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: '20px 0 10px' }}>{t('minesecStats.sectionCommodites')}</h4>
+              <h4 style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', margin: '16px 0 10px' }}>{t('minesecStats.sectionCommodites')}</h4>
               {meta.commoditesRows.map((row) => (
-                <div key={row.code} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--bg)' }}>
+                <div key={row.code} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px', borderBottom: '1px solid var(--bg)' }}>
                   <span style={{ fontSize: 13, color: 'var(--text2)' }}>{row.label}</span>
                   <div style={{ width: 140 }}>
                     <BoolSelect value={getCommodite(row.code)} onChange={(v) => setCommodite(row.code, v)} />
@@ -401,14 +395,13 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
             </div>
           )}
 
-          {/* Effectifs techniques ESTP */}
           {meta && meta.specialitesTechniques.length > 0 && (
             <div className={cardStyleCls} style={cardStyle}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <h3 className="text-[14px] md:text-[16px]" style={{ fontWeight: 700, color: 'var(--text)' }}>{t('minesecStats.sectionEstp')}</h3>
+                <h3 className="text-[12px] md:text-[13px]" style={{ fontWeight: 700, color: 'var(--text)' }}>{t('minesecStats.sectionEstp')}</h3>
                 <button onClick={addEstpEntry} style={btnSmall}>+ {t('minesecStats.addEstp')}</button>
               </div>
-              <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 14 }}>{t('minesecStats.estpHint')}</p>
+              <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 10 }}>{t('minesecStats.estpHint')}</p>
 
               {(form.effectifsTechniquesDetail ?? []).length === 0 && (
                 <p style={{ fontSize: 13, color: 'var(--text3)' }}>{t('minesecStats.estpEmpty')}</p>
@@ -419,7 +412,7 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
                 const used = estpUsageParAnnee[entry.anneeEtude] ?? 0
                 const overCapacity = anneeInfo ? used > anneeInfo.capaciteMax : false
                 return (
-                  <div key={idx} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: 14, marginBottom: 10 }}>
+                  <div key={idx} style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 14, marginBottom: 10 }}>
                     <div className="flex-wrap sm:flex-nowrap" style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
                       <div className="flex-1 min-w-[160px] sm:flex-[2]">
                         <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>{t('minesecStats.estpSpecialite')}</div>
@@ -464,8 +457,8 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
           )}
 
           {champsManquants.length > 0 && (
-            <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid var(--red)', borderRadius: 12, padding: 16, marginBottom: 20 }}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--red)', marginBottom: 8 }}>{t('minesecStats.champsManquantsTitle')}</p>
+            <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid var(--red)', borderRadius: 8, padding: 16, marginBottom: 13 }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--red)', marginBottom: 8 }}>{t('minesecStats.champsManquantsTitle')}</p>
               <ul style={{ margin: 0, paddingLeft: 20 }}>
                 {champsManquants.map((c) => <li key={c.champ} style={{ fontSize: 13, color: 'var(--text2)' }}>{c.label}</li>)}
               </ul>
@@ -479,7 +472,7 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
       {tab === 'generer' && (
         <div>
           <div className={cardStyleCls} style={cardStyle}>
-            <p className="text-[12.5px] md:text-[14px]" style={{ color: 'var(--text2)', marginBottom: 16, lineHeight: 1.5 }}>{t('minesecStats.generateDescription')}</p>
+            <p className="text-[12.5px] md:text-[12px]" style={{ color: 'var(--text2)', marginBottom: 12, lineHeight: 1.5 }}>{t('minesecStats.generateDescription')}</p>
             <button onClick={genererDeclaration} disabled={generating} className="w-full justify-center" style={{ ...btnPri, display: 'inline-flex', alignItems: 'center' }}>
               {generating ? '...' : t('minesecStats.generateBtn')}
             </button>
@@ -487,7 +480,7 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
 
           {lastSubmission && (
             <div className={cardStyleCls} style={{ ...cardStyle, border: '1.5px solid var(--green)' }}>
-              <p className="text-[13px] md:text-[14px]" style={{ fontWeight: 700, color: 'var(--green)', marginBottom: 8 }}>{t('minesecStats.generationSuccess')}</p>
+              <p className="text-[13px] md:text-[12px]" style={{ fontWeight: 700, color: 'var(--green)', marginBottom: 8 }}>{t('minesecStats.generationSuccess')}</p>
               <button onClick={() => downloadSubmission(lastSubmission.id)} style={btnSec}>{t('minesecStats.downloadBtn')}</button>
 
               {champsNonResolus.length > 0 && (
@@ -523,15 +516,14 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
           )}
 
           <div className={cardStyleCls} style={cardStyle}>
-            <h3 className="text-[14px] md:text-[16px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>{t('minesecStats.historyTitle')}</h3>
+            <h3 className="text-[12px] md:text-[13px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>{t('minesecStats.historyTitle')}</h3>
             {submissions.length === 0 ? (
               <p style={{ fontSize: 13, color: 'var(--text3)' }}>{t('minesecStats.historyEmpty')}</p>
             ) : (
               <>
-              {/* ── Cartes empilées — mobile ── */}
               <div className="md:hidden flex flex-col" style={{ gap: 8 }}>
                 {submissions.map((s) => (
-                  <div key={s.id} className="rounded-[14px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: '13px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                  <div key={s.id} className="rounded-[10px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: '13px 11px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{new Date(s.generatedAt).toLocaleString()}</div>
                       <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{s.status}</div>
@@ -540,7 +532,6 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
                   </div>
                 ))}
               </div>
-              {/* ── Tableau — desktop ── */}
               <div className="hidden md:block" style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 500 }}>
                   <tbody>
