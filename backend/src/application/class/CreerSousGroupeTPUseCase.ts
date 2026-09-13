@@ -15,10 +15,6 @@ export class CreerSousGroupeTPUseCase {
   ) {}
 
   async execute(commande: CreerSousGroupeCommande): Promise<{ sousGroupeId: string }> {
-    if (commande.demandeurRole !== 'ADMIN') {
-      throw new Error('Seul un Admin peut créer un sous-groupe');
-    }
-
     const classe = await this.classeRepository.findById(commande.classeId);
     if (!classe) throw new Error(`Classe introuvable : ${commande.classeId}`);
     if (classe.schoolId !== commande.schoolId) {

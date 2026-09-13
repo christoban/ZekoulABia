@@ -4,10 +4,6 @@ export class RetirerAssignationSalleUseCase {
   constructor(private readonly classRoomAssignmentRepository: ClassRoomAssignmentRepository) {}
 
   async execute(params: { classId: string; academicYearId: string; schoolId: string; demandeurRole: string }): Promise<void> {
-    if (params.demandeurRole !== 'ADMIN') {
-      throw new Error('Seul un Admin peut retirer l\'assignation de salle d\'une classe');
-    }
-
     const existante = await this.classRoomAssignmentRepository.findByClasseAndAnnee(
       params.classId, params.academicYearId
     );

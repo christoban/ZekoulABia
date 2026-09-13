@@ -11,10 +11,6 @@ export class AssignerElevesAuSousGroupeUseCase {
   constructor(private readonly sousGroupeRepository: SousGroupeRepository) {}
 
   async execute(commande: AssignerElevesCommande): Promise<{ assignes: number }> {
-    if (commande.demandeurRole !== 'ADMIN') {
-      throw new Error('Seul un Admin peut assigner des élèves aux sous-groupes');
-    }
-
     if (!commande.studentProfileIds?.length) {
       throw new Error("La liste d'élèves ne peut pas être vide");
     }

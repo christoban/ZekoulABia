@@ -17,10 +17,6 @@ export class CreerStudentGroupSetUseCase {
   constructor(private readonly groupSetRepository: StudentGroupSetRepository) {}
 
   async execute(commande: CreerStudentGroupSetCommande): Promise<CreerStudentGroupSetResultat> {
-    if (commande.demandeurRole !== 'ADMIN') {
-      throw new Error('Seul un Admin peut créer une dimension de groupe (GroupSet)');
-    }
-
     if (!commande.code?.trim()) {
       throw new Error('Le code du GroupSet est obligatoire');
     }

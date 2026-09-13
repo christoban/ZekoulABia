@@ -18,10 +18,6 @@ export class AssignerSalleClasseUseCase {
   ) {}
 
   async execute(commande: AssignerSalleClasseCommande): Promise<void> {
-    if (commande.demandeurRole !== 'ADMIN') {
-      throw new Error('Seul un Admin peut assigner la salle habituelle d\'une classe');
-    }
-
     const classe = await this.classeRepository.findById(commande.classId);
     if (!classe) throw new Error(`Classe introuvable : ${commande.classId}`);
     if (classe.schoolId !== commande.schoolId) {

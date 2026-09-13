@@ -21,10 +21,6 @@ export class CreerStudentGroupUseCase {
   ) {}
 
   async execute(commande: CreerStudentGroupCommande): Promise<CreerStudentGroupResultat> {
-    if (commande.demandeurRole !== 'ADMIN') {
-      throw new Error('Seul un Admin peut créer un Group');
-    }
-
     const groupSet = await this.groupSetRepository.findById(commande.groupSetId);
     if (!groupSet) throw new Error(`GroupSet introuvable : ${commande.groupSetId}`);
     if (groupSet.schoolId !== commande.schoolId) {

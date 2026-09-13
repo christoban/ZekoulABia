@@ -4,10 +4,6 @@ export class SupprimerStudentGroupSetUseCase {
   constructor(private readonly groupSetRepository: StudentGroupSetRepository) {}
 
   async execute(params: { groupSetId: string; schoolId: string; demandeurRole: string }): Promise<void> {
-    if (params.demandeurRole !== 'ADMIN') {
-      throw new Error('Seul un Admin peut supprimer un GroupSet');
-    }
-
     const groupSet = await this.groupSetRepository.findById(params.groupSetId);
     if (!groupSet) throw new Error(`GroupSet introuvable : ${params.groupSetId}`);
     if (groupSet.schoolId !== params.schoolId) {

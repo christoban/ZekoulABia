@@ -8,10 +8,6 @@ export class SupprimerStudentGroupUseCase {
   ) {}
 
   async execute(params: { groupId: string; schoolId: string; demandeurRole: string }): Promise<void> {
-    if (params.demandeurRole !== 'ADMIN') {
-      throw new Error('Seul un Admin peut supprimer un Group');
-    }
-
     const group = await this.groupRepository.findById(params.groupId);
     if (!group) throw new Error(`Group introuvable : ${params.groupId}`);
 

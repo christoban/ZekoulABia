@@ -20,8 +20,16 @@ type Props = {
   onToast: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void
 }
 
+type AcademicYearItem = {
+  id: string
+  name: string
+  isCurrent?: boolean
+  status?: string
+}
+
 export default function SectionClassesStaff({ onToast }: Props) {
   const [classes, setClasses] = useState<ClassItem[]>([])
+  const [academicYears, setAcademicYears] = useState<AcademicYearItem[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
 
@@ -38,52 +46,34 @@ export default function SectionClassesStaff({ onToast }: Props) {
   const [anneeSuivanteId, setAnneeSuivanteId] = useState('')
   const [proposing, setProposing] = useState(false)
 
-  const handlePropose = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!anneeActuelleId.trim() || !anneeSuivanteId.trim()) {
-      onToast("L'ID de l'année actuelle et de l'année suivante sont requis", 'error')
-      return
-    }
-
-    setProposing(true)
-    try {
-      const res = await fetchApi(`/api/v2/academic-years/${encodeURIComponent(anneeActuelleId.trim())}/propose-next-structure`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ anneeSuivanteId: anneeSuivanteId.trim() }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || data.error || 'Erreur lors de la proposition de la structure')
-
-      onToast('Structure N+1 proposée avec succès (classes DRAFT créées)', 'success')
-      setProposeOpen(false)
-      setAnneeActuelleId('')
-      setAnneeSuivanteId('')
-    } catch (err: any) {
-      onToast(err.message || 'Erreur lors de la proposition de la structure', 'error')
-    } finally {
-      setProposing(false)
-    }
-  }
-
-  const loadClasses = () => {
+  const loadClassesAndYears = () => {
     setLoading(true)
-    fetchApi('/api/v2/classes', { credentials: 'include' })
-      .then(r => r.json())
-      .then(d => {
-        if (d.success) {
-          setClasses(d.data ?? [])
+    Promise.all([
+      fetchApi('/api/v2/classes', { credentials: 'include' }).then(r => r.json()),
+      fetchApi('/api/v2/academic-years', { credentials: 'include' }).then(r => r.json()).catch(() => null),
+    ])
+      .then(([classData, ayData]) => {
+        if (classData?.success) {
+          setClasses(classData.data ?? [])
         } else {
-          onToast(d.error || 'Erreur lors du chargement des classes', 'error')
+          onToast(classData?.error || 'Erreur lors du chargement des classes', 'error')
+        }
+
+        if (ayData?.success && Array.isArray(ayData.data)) {
+          const years: AcademicYearItem[] = ayData.data
+          setAcademicYears(years)
+          const current = years.find(y => y.isCurrent)
+          if (current) setAnneeActuelleId(current.id)
+          const next = years.find(y => !y.isCurrent && y.status !== 'ARCHIVED')
+          if (next) setAnneeSuivanteId(next.id)
         }
       })
-      .catch(() => onToast('Erreur réseau lors du chargement des classes', 'error'))
+      .catch(() => onToast('Erreur réseau lors du chargement des données', 'error'))
       .finally(() => setLoading(false))
   }
 
   useEffect(() => {
-    loadClasses()
+    loadClassesAndYears()
   }, [])
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -113,11 +103,38 @@ export default function SectionClassesStaff({ onToast }: Props) {
       setFormName('')
       setFormLevel('')
       setFormCapacity('40')
-      loadClasses()
+      loadClassesAndYears()
     } catch (err: any) {
       onToast(err.message || 'Erreur lors de la création de la classe', 'error')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handlePropose = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!anneeActuelleId.trim() || !anneeSuivanteId.trim()) {
+      onToast("Veuillez sélectionner l'année actuelle et l'année cible", 'error')
+      return
+    }
+
+    setProposing(true)
+    try {
+      const res = await fetchApi(`/api/v2/academic-years/${encodeURIComponent(anneeActuelleId.trim())}/propose-next-structure`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ anneeSuivanteId: anneeSuivanteId.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || data.error || 'Erreur lors de la proposition de la structure')
+
+      onToast('Structure N+1 proposée avec succès (classes DRAFT créées)', 'success')
+      setProposeOpen(false)
+    } catch (err: any) {
+      onToast(err.message || 'Erreur lors de la proposition de la structure', 'error')
+    } finally {
+      setProposing(false)
     }
   }
 
@@ -363,46 +380,94 @@ export default function SectionClassesStaff({ onToast }: Props) {
             <form onSubmit={handlePropose} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>
-                  ID Année Actuelle (Source) *
+                  Année Actuelle (Source) *
                 </label>
-                <input
-                  type="text"
-                  value={anneeActuelleId}
-                  onChange={e => setAnneeActuelleId(e.target.value)}
-                  placeholder="ex: ay-2025"
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '8px 10px',
-                    borderRadius: 6,
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    color: '#fff',
-                    fontSize: 12,
-                  }}
-                />
+                {academicYears.length > 0 ? (
+                  <select
+                    value={anneeActuelleId}
+                    onChange={e => setAnneeActuelleId(e.target.value)}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: 6,
+                      background: '#27272a',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      color: '#fff',
+                      fontSize: 12,
+                    }}
+                  >
+                    <option value="">-- Sélectionner l'année source --</option>
+                    {academicYears.map(y => (
+                      <option key={y.id} value={y.id}>
+                        {y.name} {y.isCurrent ? '(Actuelle)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={anneeActuelleId}
+                    onChange={e => setAnneeActuelleId(e.target.value)}
+                    placeholder="ID de l'année actuelle"
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: 6,
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      color: '#fff',
+                      fontSize: 12,
+                    }}
+                  />
+                )}
               </div>
 
               <div>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>
-                  ID Année Suivante N+1 (Cible) *
+                  Année Cible N+1 *
                 </label>
-                <input
-                  type="text"
-                  value={anneeSuivanteId}
-                  onChange={e => setAnneeSuivanteId(e.target.value)}
-                  placeholder="ex: ay-2026"
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '8px 10px',
-                    borderRadius: 6,
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    color: '#fff',
-                    fontSize: 12,
-                  }}
-                />
+                {academicYears.length > 0 ? (
+                  <select
+                    value={anneeSuivanteId}
+                    onChange={e => setAnneeSuivanteId(e.target.value)}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: 6,
+                      background: '#27272a',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      color: '#fff',
+                      fontSize: 12,
+                    }}
+                  >
+                    <option value="">-- Sélectionner l'année cible N+1 --</option>
+                    {academicYears.map(y => (
+                      <option key={y.id} value={y.id}>
+                        {y.name} {y.isCurrent ? '(Actuelle)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={anneeSuivanteId}
+                    onChange={e => setAnneeSuivanteId(e.target.value)}
+                    placeholder="ID de l'année suivante N+1"
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: 6,
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      color: '#fff',
+                      fontSize: 12,
+                    }}
+                  />
+                )}
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>

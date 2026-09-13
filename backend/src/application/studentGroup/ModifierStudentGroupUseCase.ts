@@ -16,10 +16,6 @@ export class ModifierStudentGroupUseCase {
   ) {}
 
   async execute(commande: ModifierStudentGroupCommande): Promise<void> {
-    if (commande.demandeurRole !== 'ADMIN') {
-      throw new Error('Seul un Admin peut modifier un Group');
-    }
-
     const group = await this.groupRepository.findById(commande.groupId);
     if (!group) throw new Error(`Group introuvable : ${commande.groupId}`);
 

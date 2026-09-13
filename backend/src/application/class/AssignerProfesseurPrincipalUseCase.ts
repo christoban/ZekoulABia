@@ -17,10 +17,6 @@ export class AssignerProfesseurPrincipalUseCase {
   ) {}
 
   async execute(commande: AssignerProfesseurCommande): Promise<void> {
-    if (commande.demandeurRole !== 'ADMIN') {
-      throw new Error('Seul un Admin peut assigner un Professeur Principal');
-    }
-
     const classe = await this.classeRepository.findById(commande.classeId);
     if (!classe) throw new Error(`Classe introuvable : ${commande.classeId}`);
     if (classe.schoolId !== commande.schoolId) {

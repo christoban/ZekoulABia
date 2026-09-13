@@ -16,10 +16,6 @@ export class AssignerEnseignantMatiereUseCase {
   ) {}
 
   async execute(commande: AssignerEnseignantCommande): Promise<void> {
-    if (commande.demandeurRole !== 'ADMIN') {
-      throw new Error('Seul un Admin peut gérer les assignations enseignant-matière');
-    }
-
     const enseignant = await this.userRepository.findById(commande.teacherUserId);
     if (!enseignant) throw new Error('Enseignant introuvable');
     if (!enseignant.estEnseignant()) {

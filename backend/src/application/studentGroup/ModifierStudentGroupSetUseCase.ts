@@ -12,10 +12,6 @@ export class ModifierStudentGroupSetUseCase {
   constructor(private readonly groupSetRepository: StudentGroupSetRepository) {}
 
   async execute(commande: ModifierStudentGroupSetCommande): Promise<void> {
-    if (commande.demandeurRole !== 'ADMIN') {
-      throw new Error('Seul un Admin peut modifier un GroupSet');
-    }
-
     const groupSet = await this.groupSetRepository.findById(commande.groupSetId);
     if (!groupSet) throw new Error(`GroupSet introuvable : ${commande.groupSetId}`);
     if (groupSet.schoolId !== commande.schoolId) {
