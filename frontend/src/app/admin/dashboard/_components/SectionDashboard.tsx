@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useCallback } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
@@ -42,24 +42,39 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
     <div className="px-4 py-4 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 18 }}>
-        <div>
-          <div className="text-[18px] md:text-[20px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
-            {t('dashboard.overview_title')}
-          </div>
-          <div className="text-[12px] md:text-[13px]" style={{ color: 'var(--text3)', marginTop: 2 }}>{t('dashboard.overview_subtitle')}</div>
-          {fromCache && cachedAt && (
-            <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 8, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 8 }}>
-              <Package size={12} strokeWidth={2} /> {t('cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}
+      {/* Header & Bandeau Direction */}
+      <div className="space-y-3 mb-5">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+          <div>
+            <div className="text-[18px] md:text-[20px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
+              {t('dashboard.overview_title')}
             </div>
-          )}
+            <div className="text-[12px] md:text-[13px]" style={{ color: 'var(--text3)', marginTop: 2 }}>{t('dashboard.overview_subtitle')}</div>
+            {fromCache && cachedAt && (
+              <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 8, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 8 }}>
+                <Package size={12} strokeWidth={2} /> {t('cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => { fetchStats(); onToast(t('dashboard.refreshing'), 'info') }}
+            className="inline-flex items-center gap-[6px] cursor-pointer font-nunito flex-shrink-0 rounded-full md:rounded-[8px] px-[14px] py-[9px] md:px-[12px] md:py-[6px] text-[12.5px] md:text-[13px] font-semibold md:font-extrabold border-0 md:border md:border-[1.5px] md:border-[var(--border2)] bg-[var(--bg2)] md:bg-[var(--surface)]"
+            style={{ color: 'var(--text2)' }}
+          ><RefreshCw size={13} strokeWidth={2} />{t('dashboard.refresh')}</button>
         </div>
-        <button
-          onClick={() => { fetchStats(); onToast(t('dashboard.refreshing'), 'info') }}
-          className="inline-flex items-center gap-[6px] cursor-pointer font-nunito flex-shrink-0 rounded-full md:rounded-[8px] px-[14px] py-[9px] md:px-[12px] md:py-[6px] text-[12.5px] md:text-[13px] font-semibold md:font-extrabold border-0 md:border md:border-[1.5px] md:border-[var(--border2)] bg-[var(--bg2)] md:bg-[var(--surface)]"
-          style={{ color: 'var(--text2)' }}
-        ><RefreshCw size={13} strokeWidth={2} />{t('dashboard.refresh')}</button>
+
+        {/* Banner Proviseur / Direction */}
+        <div className="bg-gradient-to-r from-slate-900 via-amber-950/20 to-slate-900 border border-amber-500/30 rounded-xl p-3.5 text-xs text-amber-200/90 flex items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 flex-shrink-0">
+              <Clock size={16} />
+            </div>
+            <div>
+              <p className="font-bold text-white text-xs">Espace de Pilotage & Direction</p>
+              <p className="text-slate-300 text-[11.5px]">Le quotidien des classes et affectations est porté par le Censeur. Vous supervisez la structure, les finances et la validation sensible.</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Loading */}
@@ -136,20 +151,20 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
               </div>
             </div>
 
-            {/* Actions rapides */}
+            {/* Actions rapides orientées Direction / Pilotage */}
             <div className="shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)', borderRadius: 12, overflow: 'hidden' }}>
               <div className="px-[18px] pt-[18px] pb-2 md:px-[18px] md:py-3 md:border-b md:border-[var(--border)]">
-                <span className="text-[14px] md:text-[15px] font-bold md:font-extrabold" style={{ color: 'var(--text)' }}>{t('dashboard.quick_actions_title')}</span>
+                <span className="text-[14px] md:text-[15px] font-bold md:font-extrabold" style={{ color: 'var(--text)' }}>Pilotage & Supervision</span>
               </div>
               <div className="px-[10px] pb-[10px] pt-[6px] gap-[6px] md:px-[14px] md:pb-3 md:pt-0 md:gap-[8px]" style={{ display: 'flex', flexDirection: 'column' }}>
                 {[
-                  { icon: <FileText size={14} strokeWidth={2} />, label: t('dashboard.quick_actions.pending_grades'),    nav: 'grades'    },
-                  { icon: <ScrollText size={14} strokeWidth={2} />, label: t('dashboard.quick_actions.generate_reports'),   nav: 'bulletins' },
-                  { icon: <Users size={14} strokeWidth={2} />, label: t('dashboard.quick_actions.manage_classes'),   nav: 'classes'   },
-                  { icon: <User size={14} strokeWidth={2} />, label: t('dashboard.quick_actions.invite_user'), action: onInvite },
+                  { icon: <Clock size={14} strokeWidth={2} />, label: 'Année scolaire & Périodes', nav: 'academic-year' },
+                  { icon: <Presentation size={14} strokeWidth={2} />, label: 'Hub Organisation Pédagogique', nav: 'org-pedagogy' },
+                  { icon: <FileText size={14} strokeWidth={2} />, label: 'Supervision & Validation des bulletins', nav: 'bulletin-validation' },
+                  { icon: <Package size={14} strokeWidth={2} />, label: 'Pilotage Financier', nav: 'finance' },
                 ].map((btn, i) => (
                   <button key={i}
-                    onClick={() => btn.action ? btn.action() : onNav(btn.nav!)}
+                    onClick={() => onNav(btn.nav)}
                     className="w-full rounded-[10px] md:rounded-[8px] py-[10px] px-[10px] md:py-[8px] md:px-4 text-[12px] md:text-[13px] font-semibold md:font-extrabold gap-[10px] md:gap-2 border-0 md:border md:border-[1.5px] md:border-[var(--border2)] bg-transparent md:bg-[var(--surface)]"
                     style={{ color: 'var(--text2)', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', transition: 'all 0.12s' }}
                     onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--green)', color: 'var(--green)' })}

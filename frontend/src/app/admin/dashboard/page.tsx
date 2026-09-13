@@ -43,6 +43,7 @@ import EventCenterWidget from '@/features/communication/EventCenterWidget'
 import AdminToast from './_components/AdminToast'
 import AssistantWidget from './_components/AssistantWidget'
 import HighlightController from './_components/HighlightController'
+import SectionOrgPedagogyHub from './_components/SectionOrgPedagogyHub'
 import type { AdminSection, Toast } from './_types'
 import { OfflineIndicator } from '@/components/OfflineIndicator'
 import ChangePasswordModal from '@/components/ChangePasswordModal'
@@ -59,6 +60,7 @@ const ADMIN_SECTIONS: AdminSection[] = [
   'council', 'academic-year', 'academic-events', 'finance', 'ai', 'statistics', 'communications', 'babillard', 'messagerie', 'settings', 'corbeille', 'sync-offline',
   'bulletin-validation',
   'pedagogie', 'rh', 'lv2-choice', 'entrance-exams', 'pebs-exams', 'matricules', 'school-payments', 'eleve-onboarding', 'minesec-stats', 'minedub-stats', 'group-transfers', 'tasks',
+  'org-pedagogy',
 ]
 
 const PLACEHOLDERS: Partial<Record<AdminSection, { icon: string; desc: string }>> = {}
@@ -205,6 +207,7 @@ export default function AdminDashboard() {
               onToast={showToast}
             />
           )}
+          {section === 'org-pedagogy' && <SectionOrgPedagogyHub onNav={s => setSection(s as AdminSection)} onToast={showToast} />}
           {section === 'users'     && <SectionUsers     onToast={showToast} />}
           {section === 'classes'      && <SectionClasses      onToast={showToast} />}
           {section === 'subjects'     && <SectionSubjects     onToast={showToast} />}

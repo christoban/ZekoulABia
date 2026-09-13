@@ -5,6 +5,7 @@ export type AdminSection =
   | 'bulletin-validation'
   | 'sync-offline'
   | 'pedagogie' | 'rh' | 'lv2-choice' | 'entrance-exams' | 'pebs-exams' | 'matricules' | 'school-payments' | 'eleve-onboarding' | 'minesec-stats' | 'minedub-stats' | 'notifications' | 'group-transfers' | 'corbeille' | 'tasks'
+  | 'org-pedagogy'
 
 export interface Toast {
   id: number

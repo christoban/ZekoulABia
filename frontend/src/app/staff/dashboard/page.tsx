@@ -37,6 +37,7 @@ import Messagerie from '@/features/messagerie'
 import SectionModerationMessagerie from './_components/SectionModerationMessagerie'
 import SectionClassesStaff from './_components/SectionClassesStaff'
 import SectionElevesAffectationsStaff from './_components/SectionElevesAffectationsStaff'
+import SectionImportElevesStaff from './_components/SectionImportElevesStaff'
 import { useRouter } from 'next/navigation'
 import { useT } from '@/lib/i18n'
 
@@ -147,10 +148,6 @@ export default function StaffDashboard() {
             <SectionCouncil onToast={showToast} />
           )}
 
-          {section === 'grades' && can('grades') && (
-            <SectionBulletinValidation onToast={showToast} />
-          )}
-
           {section === 'anonymat' && can('anonymat') && (
             <SectionAnonymatStaff onToast={showToast} />
           )}
@@ -209,6 +206,10 @@ export default function StaffDashboard() {
 
           {section === 'suivi-eleves' && can('suivi-eleves') && (
             <SectionSuiviElevesStaff sessionUser={sessionUser} onToast={showToast} />
+          )}
+
+          {section === 'import-eleves' && can('import-eleves') && (
+            <SectionImportElevesStaff onToast={showToast} />
           )}
 
           {section === 'mon-profil-rh' && <SectionMonProfilRH onToast={showToast} />}

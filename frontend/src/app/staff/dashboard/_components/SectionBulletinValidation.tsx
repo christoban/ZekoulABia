@@ -87,7 +87,7 @@ export default function SectionBulletinValidation({ onToast }: Props) {
           <div style={sTitle}>{t('bulletinValidation.title') || 'Validation des bulletins'}</div>
           <div style={sSub}>{loading ? '…' : `${submitted.length} en attente · ${validated.length} validé(s)`}</div>
         </div>
-        <button style={btnSec} onClick={fetchSessions}>{t('gradeValidation.refresh') || 'Actualiser'}</button>
+        <button style={btnSec} onClick={fetchSessions}>Actualiser</button>
       </div>
 
       {/* Tabs */}

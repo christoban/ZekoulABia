@@ -63,7 +63,9 @@
     "academicProfile": "Academic profile",
     "academicEvents": "Academic events",
     "tasks": "Administrative tasks",
-    "syncOffline": "Offline sync"
+    "syncOffline": "Offline sync",
+    "orgPedagogy": "Pedagogical Organization",
+    "importEleves": "Student Import"
   },
   "group": {
     "academic": "Academic",
