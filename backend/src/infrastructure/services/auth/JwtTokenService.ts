@@ -12,7 +12,7 @@ import type { TokenService, PayloadToken, TokensGeneres } from '@domain/ports/se
 type Duree = NonNullable<SignOptions['expiresIn']>;
 
 const JWT_SECRET = process.env.JWT_SECRET || 'zekoulabia-secret-change-in-production';
-const ACCESS_EXPIRY: Duree = '15m';
+const ACCESS_EXPIRY: Duree = process.env.NODE_ENV === 'development' ? '7d' : '12h';
 
 /**
  * Durée du refresh token graduée par sensibilité du rôle (Plan offline-first V1, §2) : un
