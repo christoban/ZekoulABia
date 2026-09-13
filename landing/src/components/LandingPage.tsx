@@ -140,7 +140,7 @@ const textsFR = {
       product: { title: 'Produit', links: ['Fonctionnalités', 'Plans tarifaires', 'Sécurité', 'API'] },
       resources: { title: 'Ressources', links: ['Documentation', 'Guides MINESEC', 'Blog', 'Support'] },
       company: { title: 'Entreprise', links: ['À propos', 'Carrières', 'Presse', 'Partenaires'] },
-      contact: { title: 'Contact', info: ['Yaoundé, Cameroun', 'contact@zekoulabia.cm', '+237 6XX XXX XXX'] },
+      contact: { title: 'Contact', info: ['Yaoundé, Cameroun', 'zekoulabia.noreply@gmail.com', '+237 695 557 891'] },
     },
   },
 }
@@ -244,7 +244,7 @@ const textsEN = {
       product: { title: 'Product', links: ['Features', 'Pricing', 'Security', 'API'] },
       resources: { title: 'Resources', links: ['Documentation', 'MINESEC Guides', 'Blog', 'Support'] },
       company: { title: 'Company', links: ['About', 'Careers', 'Press', 'Partners'] },
-      contact: { title: 'Contact', info: ['Yaoundé, Cameroon', 'contact@zekoulabia.cm', '+237 6XX XXX XXX'] },
+      contact: { title: 'Contact', info: ['Yaoundé, Cameroon', 'zekoulabia.noreply@gmail.com', '+237 695 557 891'] },
     },
   },
 }
@@ -715,9 +715,11 @@ export default function LandingPage() {
               exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.22 }}
               className="px-6 md:px-10 py-7 md:py-10"
               style={{ ...CARD, padding: undefined }}>
-              {(() => { const Icon = ROLES_ICONS[tabRole]; return (
-                <div style={{ display: 'flex', color: 'var(--green)', marginBottom: 14 }}><Icon size={52} strokeWidth={2} /></div>
-              ) })()}
+              {(() => {
+                const Icon = ROLES_ICONS[tabRole]; return (
+                  <div style={{ display: 'flex', color: 'var(--green)', marginBottom: 14 }}><Icon size={52} strokeWidth={2} /></div>
+                )
+              })()}
               <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 24, fontWeight: 700, color: 'var(--text)', marginBottom: 24 }}>
                 Espace {tx.roles.items[tabRole].label}
               </div>

@@ -76,7 +76,11 @@ export default function StaffDashboard() {
   useEffect(() => {
     fetchApi('/api/v2/school/me', { credentials: 'include' })
       .then(r => {
-        if (r.status === 401) { router.replace('/login'); return Promise.reject('auth') }
+        if (r.status === 401) {
+          try { localStorage.removeItem('zekoulabia_user') } catch { /* ignore */ }
+          router.replace('/login')
+          return Promise.reject('auth')
+        }
         return r.json()
       })
       .then(d => { if (d.success) { setSchoolName(d.data.name); setLogoUrl(d.data.logoUrl ?? null) } })

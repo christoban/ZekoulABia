@@ -17,9 +17,9 @@ export default function ThemeToggle() {
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
       title={mounted ? (isDark ? t('theme.toLight') : t('theme.toDark')) : undefined}
       style={{
-        width: 32,
-        height: 32,
-        borderRadius: 8,
+        width: 36,
+        height: 36,
+        borderRadius: 9,
         background: 'var(--bg2)',
         border: '1px solid var(--border)',
         display: 'flex',
@@ -31,7 +31,7 @@ export default function ThemeToggle() {
         transition: 'background 0.2s, color 0.2s, border-color 0.2s',
       }}
     >
-      {mounted ? (isDark ? <Sun size={15} /> : <Moon size={15} />) : <Sun size={15} />}
+      {mounted ? (isDark ? <Sun size={16} /> : <Moon size={16} />) : <Sun size={16} />}
     </button>
   )
 }

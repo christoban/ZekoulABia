@@ -26,7 +26,7 @@ export class VerifyMfaUseCase {
 
     if (masterUser.mfaSecret) {
       try {
-        const totpValid = verifySync({ token: code, secret: masterUser.mfaSecret }).valid;
+        const totpValid = verifySync({ token: code, secret: masterUser.mfaSecret, epochTolerance: 60 }).valid;
         if (totpValid) {
           return {
             email: masterUser.email,

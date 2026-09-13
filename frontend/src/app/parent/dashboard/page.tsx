@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useCallback, useEffect } from 'react'
 import { logoutUser } from '@/lib/userAuth'
@@ -83,7 +83,11 @@ export default function ParentDashboard() {
   useEffect(() => {
     fetchApi('/api/v2/users/me', { credentials: 'include' })
       .then(r => {
-        if (r.status === 401) { router.replace('/login'); return Promise.reject('auth') }
+        if (r.status === 401) {
+          try { localStorage.removeItem('zekoulabia_user') } catch { /* ignore */ }
+          router.replace('/login')
+          return Promise.reject('auth')
+        }
         return r.json()
       })
       .then(d => { if (d.success) setUser(d.data) })
@@ -136,9 +140,9 @@ export default function ParentDashboard() {
       <ParentSidebar current={section} onChange={setSection} onLogout={logoutUser} user={user} school={school} mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
-        <header style={{ height: 40, background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', padding: '0 16px', gap: 8, flexShrink: 0 }}>
+        <header style={{ height: 48, background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', padding: '0 20px', gap: 10, flexShrink: 0 }}>
           <MobileMenuButton onClick={() => setMobileNavOpen(true)} />
-          <div className="truncate" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+          <div className="truncate" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
             {TITLES[section]}
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>

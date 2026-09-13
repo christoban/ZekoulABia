@@ -18,7 +18,7 @@ export class VerifierMfaConnexionUseCase {
     }
 
     try {
-      const totpValid = verifySync({ token: code, secret: user.mfaSecret }).valid;
+      const totpValid = verifySync({ token: code, secret: user.mfaSecret, epochTolerance: 60 }).valid;
       if (totpValid) return;
     } catch {
       /* code mal formé — on retombe sur les codes de récupération */

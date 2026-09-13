@@ -156,54 +156,48 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
       />
 
       {/* Brand */}
-      <div className="flex items-center gap-2 px-3 pt-3 pb-3 border-b border-white/[0.07]" style={{ flexShrink: 0 }}>
-        <div className="w-7 h-7 rounded-[8px] flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: "linear-gradient(135deg,var(--amber),var(--green))" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "70%", height: "70%", objectFit: "contain" }} /></div>
+      <div className="flex items-center gap-2.5 px-3.5 pt-3.5 pb-3 border-b border-white/[0.07]" style={{ flexShrink: 0 }}>
+        <div className="w-7.5 h-7.5 rounded-[8px] flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: "linear-gradient(135deg,var(--amber),var(--green))" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "70%", height: "70%", objectFit: "contain" }} /></div>
         <div className="flex-1 min-w-0">
-          <div className="font-spectral text-[15px] font-bold text-white leading-tight truncate">ZekoulABia</div>
-          <div className="text-[10px] text-white/35 font-semibold truncate">{tcommon('brand.roleAdmin')}</div>
+          <div className="font-spectral text-[16px] font-bold text-white leading-tight truncate">ZekoulABia</div>
+          <div className="text-[11px] text-white/35 font-semibold truncate">{tcommon('brand.roleAdmin')}</div>
         </div>
-        {onMobileClose && (
-          <button onClick={onMobileClose} aria-label="Fermer" className="md:hidden flex-shrink-0"
-            style={{ width: 28, height: 28, borderRadius: 14, background: 'rgba(255,255,255,0.08)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            <X size={13} color="rgba(255,255,255,0.75)" />
-          </button>
-        )}
       </div>
 
       <div className="flex flex-col gap-2 md:px-2 md:gap-2" style={{ flex: 1, minHeight: 0 }}>
         {/* École pill */}
-        <div className="mx-2 my-1 bg-white/[0.06] border border-white/10 rounded-[8px] p-2" style={{ flexShrink: 0 }}>
-          <div className="flex items-center gap-2">
+        <div className="mx-2 my-1 bg-white/[0.06] border border-white/10 rounded-[8px] p-2.5" style={{ flexShrink: 0 }}>
+          <div className="flex items-center gap-2.5">
             {logoUrl
-              ? <img src={logoUrl} alt={displayName} className="w-6 h-6 rounded-[6px] flex-shrink-0" style={{ objectFit: 'cover' }} />
-              : <div className="w-6 h-6 rounded-[6px] bg-gradient-to-br from-[var(--green)] to-[var(--blue)] flex items-center justify-center text-[10px] font-black text-white flex-shrink-0">{initials}</div>
+              ? <img src={logoUrl} alt={displayName} className="w-6.5 h-6.5 rounded-[6px] flex-shrink-0" style={{ objectFit: 'cover' }} />
+              : <div className="w-6.5 h-6.5 rounded-[6px] bg-gradient-to-br from-[var(--green)] to-[var(--blue)] flex items-center justify-center text-[11px] font-black text-white flex-shrink-0">{initials}</div>
             }
             <div className="min-w-0">
-              <div className="text-[12px] font-bold text-white truncate">{displayName}</div>
-              <div className="text-[10px] text-white/35">{tcommon('brand.roleAdmin')}</div>
+              <div className="text-[12.5px] font-bold text-white truncate">{displayName}</div>
+              <div className="text-[10.5px] text-white/35">{tcommon('brand.roleAdmin')}</div>
             </div>
           </div>
         </div>
 
         {/* Nav — wrapper relatif pour le fondu de defilement */}
         <div className="relative" style={{ minHeight: 0, flex: 1 }}>
-          <nav className="overflow-y-auto px-1.5 pt-0 pb-3 h-full" style={{ minHeight: 0 }}>
+          <nav className="overflow-y-auto px-2 pt-0 pb-3 h-full" style={{ minHeight: 0 }}>
             {NAV.map((section, si) => (
               <div key={si}>
                 {section.label && (
-                  <div className="text-[9px] font-black text-white/30 tracking-[1px] uppercase pt-2 px-1 pb-1">
+                  <div className="text-[10px] font-black text-white/35 tracking-[1px] uppercase pt-2.5 px-1.5 pb-1">
                     {section.label}
                   </div>
                 )}
                 {section.items.map(item => (
                   <button key={item.id} onClick={() => handleChange(item.id)}
                     className={cn(
-                      'relative w-full flex items-center gap-2 rounded-md mb-[1px]',
-                      'text-[11px] font-semibold text-left border-none cursor-pointer font-nunito',
-                      'py-1.5 px-2',
+                      'relative w-full flex items-center gap-2.5 rounded-md mb-[2px]',
+                      'text-[12px] font-semibold text-left border-none cursor-pointer font-nunito',
+                      'py-2 px-2.5',
                       current === item.id
                         ? 'text-white'
-                        : 'text-white/52 hover:bg-[var(--sidebar2)] hover:text-white/82'
+                        : 'text-white/55 hover:bg-[var(--sidebar2)] hover:text-white/85'
                     )}>
                     {current === item.id && (
                       <motion.div layoutId="admin-nav-active"
@@ -211,12 +205,12 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
                         style={{ background: 'var(--sidebar-active)' }}
                         transition={{ type: 'spring', stiffness: 380, damping: 30 }} />
                     )}
-                    <span className="relative z-10 w-[16px] flex items-center justify-center flex-shrink-0">
-                      <item.icon size={15} strokeWidth={2} />
+                    <span className="relative z-10 w-[18px] flex items-center justify-center flex-shrink-0">
+                      <item.icon size={16} strokeWidth={2} />
                     </span>
                     <span className="relative z-10 truncate flex-1">{item.label}</span>
                     {item.badge && (
-                      <span className={cn('relative z-10 ml-auto text-[10px] font-black rounded px-1.5 py-0.5', BADGE_STYLES[item.badgeColor ?? 'green'])}>
+                      <span className={cn('relative z-10 ml-auto text-[10.5px] font-black rounded px-1.5 py-0.5', BADGE_STYLES[item.badgeColor ?? 'green'])}>
                         {item.badge}
                       </span>
                     )}
@@ -230,21 +224,21 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
       </div>
 
       {/* User */}
-      <div className="hidden md:block border-t border-white/[0.07]" style={{ padding: '8px 10px', flexShrink: 0 }}>
-        <div className="flex items-center gap-2 rounded-[8px] hover:bg-white/[0.06]" style={{ padding: '6px 8px' }}>
-          <div className="w-6 h-6 rounded-[6px] bg-gradient-to-br from-[var(--amber)] to-[var(--red)] flex items-center justify-center text-white font-black text-[10px] flex-shrink-0">
+      <div className="hidden md:block border-t border-white/[0.07]" style={{ padding: '9px 12px', flexShrink: 0 }}>
+        <div className="flex items-center gap-2.5 rounded-[8px] hover:bg-white/[0.06]" style={{ padding: '6px 8px' }}>
+          <div className="w-7 h-7 rounded-[6px] bg-gradient-to-br from-[var(--amber)] to-[var(--red)] flex items-center justify-center text-white font-black text-[11px] flex-shrink-0">
             {userInitials}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[11px] font-bold text-white truncate">{userDisplayName}</div>
-            <div className="text-[9px] text-white/35">{tcommon('user.roleLabel')}</div>
+            <div className="text-[12px] font-bold text-white truncate">{userDisplayName}</div>
+            <div className="text-[10px] text-white/35">{tcommon('user.roleLabel')}</div>
           </div>
           {onLogout && (
             <button onClick={onLogout} title={tcommon('user.logoutTitle')}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', flexShrink: 0, padding: 3, borderRadius: 4 }}
               onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'rgba(239,68,68,0.8)'}
-              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)'}>
-              <LogOut size={13} />
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(239,68,68,0.3)'}>
+              <LogOut size={14} />
             </button>
           )}
         </div>
@@ -255,7 +249,7 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
   return (
     <>
       {/* Desktop — sidebar statique, fait partie du flux flex normal */}
-      <aside className="hidden md:flex w-[200px] min-w-[200px] flex-shrink-0 relative" style={{ background: 'var(--sidebar)', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+      <aside className="hidden md:flex w-[225px] min-w-[225px] flex-shrink-0 relative" style={{ background: 'var(--sidebar)', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
         {sidebarBody}
       </aside>
 
@@ -265,7 +259,7 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
           <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true">
             <motion.div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onMobileClose}
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }} />
-            <motion.aside className="absolute left-0 top-0 h-full w-[85vw] max-w-[200px] flex flex-col relative" style={{ background: 'var(--sidebar)', overflow: 'hidden' }}
+            <motion.aside className="absolute left-0 top-0 h-full w-[85vw] max-w-[225px] flex flex-col relative" style={{ background: 'var(--sidebar)', overflow: 'hidden' }}
               initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ duration: 0.26, ease: [0.4, 0, 0.2, 1] }}>
               {sidebarBody}
             </motion.aside>

@@ -142,7 +142,7 @@ const textsFR = {
       product: { title: 'Produit', links: ['Fonctionnalités', 'Plans tarifaires', 'Sécurité', 'API'] },
       resources: { title: 'Ressources', links: ['Documentation', 'Guides MINESEC', 'Blog', 'Support'] },
       company: { title: 'Entreprise', links: ['À propos', 'Carrières', 'Presse', 'Partenaires'] },
-      contact: { title: 'Contact', info: ['Yaoundé, Cameroun', 'contact@zekoulabia.cm', '+237 6XX XXX XXX'] },
+      contact: { title: 'Contact', info: ['Yaoundé, Cameroun', 'zekoulabia.noreply@gmail.com', '+237 695 557 891'] },
     },
   },
 }
@@ -247,7 +247,7 @@ const textsEN = {
       product: { title: 'Product', links: ['Features', 'Pricing', 'Security', 'API'] },
       resources: { title: 'Resources', links: ['Documentation', 'MINESEC Guides', 'Blog', 'Support'] },
       company: { title: 'Company', links: ['About', 'Careers', 'Press', 'Partners'] },
-      contact: { title: 'Contact', info: ['Yaoundé, Cameroon', 'contact@zekoulabia.cm', '+237 6XX XXX XXX'] },
+      contact: { title: 'Contact', info: ['Yaoundé, Cameroon', 'zekoulabia.noreply@gmail.com', '+237 695 557 891'] },
     },
   },
 }
@@ -520,7 +520,7 @@ export default function LandingPage() {
         </div>
       </nav>
 
-{/* ═══════════════════════════════════════════════════
+      {/* ═══════════════════════════════════════════════════
           HERO — padding réduit, titre 32px
       ══════════════════════════════════════════════════ */}
       <section style={{ background: 'var(--bg)', paddingTop: 56 }}>
@@ -589,7 +589,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-{/* ══════════════════════════════════════════════════
+      {/* ══════════════════════════════════════════════════
           STATS — chiffres 28px, padding réduit
       ═════════════════════════════════════════════════ */}
       <section className="px-4 md:px-10 py-8 md:py-12" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
@@ -746,9 +746,11 @@ export default function LandingPage() {
               exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.22 }}
               className="px-5 md:px-8 py-5 md:py-7"
               style={{ ...CARD, padding: undefined }}>
-              {(() => { const Icon = ROLES_ICONS[tabRole]; return (
-                <div style={{ display: 'flex', color: 'var(--green)', marginBottom: 10 }}><Icon size={36} strokeWidth={2} /></div>
-              ) })()}
+              {(() => {
+                const Icon = ROLES_ICONS[tabRole]; return (
+                  <div style={{ display: 'flex', color: 'var(--green)', marginBottom: 10 }}><Icon size={36} strokeWidth={2} /></div>
+                )
+              })()}
               <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 16 }}>
                 Espace {tx.roles.items[tabRole].label}
               </div>

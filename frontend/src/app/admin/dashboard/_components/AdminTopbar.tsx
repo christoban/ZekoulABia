@@ -89,7 +89,7 @@ export default function AdminTopbar({ title, onNavigate, onChangePassword, onMen
 
   return (
     <header
-      className="px-2 py-[6px] gap-1 md:px-[16px] md:gap-[8px] md:h-[40px] md:border-b-[1px] md:border-[var(--border)]"
+      className="px-3 py-[8px] gap-2 md:px-[20px] md:gap-[10px] md:h-[48px] md:border-b-[1px] md:border-[var(--border)]"
       style={{ background: 'var(--surface)', display: 'flex', alignItems: 'center', flexShrink: 0, position: 'relative', boxShadow: '0 1px 0 rgba(0,0,0,0.06)' }}
     >
       {/* Hamburger — reproduction maquette : cercle 44px transparent, sous md uniquement */}
@@ -101,7 +101,7 @@ export default function AdminTopbar({ title, onNavigate, onChangePassword, onMen
       )}
 
       <div className="min-w-0 flex-1">
-        <div className="text-[17px] md:text-[16px] truncate" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
+        <div className="text-[17px] md:text-[18px] truncate" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
           {title}
         </div>
         {todayLabel && (
@@ -109,7 +109,7 @@ export default function AdminTopbar({ title, onNavigate, onChangePassword, onMen
         )}
       </div>
       {todayLabel && (
-        <span className="hidden lg:inline" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, padding: '3px 8px', fontSize: 12, fontWeight: 600, color: 'var(--text3)' }}>
+        <span className="hidden lg:inline" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, padding: '4px 10px', fontSize: 12.5, fontWeight: 600, color: 'var(--text3)' }}>
           📅 {todayLabel}
         </span>
       )}
@@ -178,8 +178,8 @@ export default function AdminTopbar({ title, onNavigate, onChangePassword, onMen
         <NotificationBell onNav={onNavigate} />
         {onChangePassword && (
           <button onClick={onChangePassword} title={t('topbar.change_password')}
-            style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg2)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            <KeyRound size={15} color="var(--text2)" />
+            style={{ width: 36, height: 36, borderRadius: 9, background: 'var(--bg2)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <KeyRound size={16} color="var(--text2)" />
           </button>
         )}
       </div>

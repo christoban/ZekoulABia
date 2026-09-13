@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useCallback, useEffect } from 'react'
 import { Search, KeyRound, FileText, FolderOpen } from 'lucide-react'
@@ -67,25 +67,25 @@ export default function TeacherDashboard() {
   const tcommon = useT('common')
   const router = useRouter()
   const TITLES: Record<TeacherSection, string> = {
-    dashboard:           tnav('pageTitle.teacher_dashboard'),
-    classes:             tnav('pageTitle.teacher_classes'),
-    attendance:          tnav('pageTitle.teacher_attendance'),
-    grades:              tnav('pageTitle.teacher_grades'),
-    bulletins:           tnav('pageTitle.teacher_bulletins'),
-    timetable:           tnav('pageTitle.teacher_timetable'),
-    resources:           tnav('pageTitle.teacher_resources'),
-    sync:                tnav('pageTitle.teacher_sync'),
-    'pp-classe':         tnav('pageTitle.teacher_ppClasse'),
-    'pp-appreciations':  tnav('pageTitle.teacher_ppAppreciations'),
-    'ap-departement':    tnav('pageTitle.teacher_apDepartement'),
-    'cahier-de-texte':   tnav('pageTitle.teacher_cahierDeTexte'),
-    'at-risk':           tnav('pageTitle.teacher_atRisk'),
-    'mon-suivi':         tnav('pageTitle.teacher_monSuivi'),
+    dashboard: tnav('pageTitle.teacher_dashboard'),
+    classes: tnav('pageTitle.teacher_classes'),
+    attendance: tnav('pageTitle.teacher_attendance'),
+    grades: tnav('pageTitle.teacher_grades'),
+    bulletins: tnav('pageTitle.teacher_bulletins'),
+    timetable: tnav('pageTitle.teacher_timetable'),
+    resources: tnav('pageTitle.teacher_resources'),
+    sync: tnav('pageTitle.teacher_sync'),
+    'pp-classe': tnav('pageTitle.teacher_ppClasse'),
+    'pp-appreciations': tnav('pageTitle.teacher_ppAppreciations'),
+    'ap-departement': tnav('pageTitle.teacher_apDepartement'),
+    'cahier-de-texte': tnav('pageTitle.teacher_cahierDeTexte'),
+    'at-risk': tnav('pageTitle.teacher_atRisk'),
+    'mon-suivi': tnav('pageTitle.teacher_monSuivi'),
     'correction-anonyme': tnav('pageTitle.teacher_correctionAnonyme'),
-    'mon-profil-rh':     tnav('sidebar.monProfilRH'),
-    notifications:       tnav('pageTitle.teacher_notifications'),
-    babillard:           tnav('sidebar.babillard'),
-    messagerie:          tnav('sidebar.messagerie'),
+    'mon-profil-rh': tnav('sidebar.monProfilRH'),
+    notifications: tnav('pageTitle.teacher_notifications'),
+    babillard: tnav('sidebar.babillard'),
+    messagerie: tnav('sidebar.messagerie'),
   }
   const [section, setSection] = useState<TeacherSection>('dashboard')
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
@@ -110,16 +110,20 @@ export default function TeacherDashboard() {
   // Infos école + utilisateur + compteur notes en attente — fetch en arrière-plan
   useEffect(() => {
     fetchApi('/api/v2/school/me', { credentials: 'include' })
-      .then(r => r.json()).then(d => { if (d.success) setSchoolInfo(d.data) }).catch(() => {})
+      .then(r => r.json()).then(d => { if (d.success) setSchoolInfo(d.data) }).catch(() => { })
     fetchApi('/api/v2/users/me', { credentials: 'include' })
       .then(r => {
-        if (r.status === 401) { router.replace('/login'); return Promise.reject('auth') }
+        if (r.status === 401) {
+          try { localStorage.removeItem('zekoulabia_user') } catch { /* ignore */ }
+          router.replace('/login')
+          return Promise.reject('auth')
+        }
         return r.json()
       })
       .then(d => { if (d.success) setUser(d.data) })
       .catch(err => { if (err !== 'auth') console.warn('[teacher-dashboard] Erreur réseau:', err) })
     fetchApi('/api/v2/grades?validationStatus=SUBMITTED&limit=1', { credentials: 'include' })
-      .then(r => r.json()).then(d => { if (d.pagination) setPendingGrades(d.pagination.total ?? 0) }).catch(() => {})
+      .then(r => r.json()).then(d => { if (d.pagination) setPendingGrades(d.pagination.total ?? 0) }).catch(() => { })
   }, [router])
 
   const showToast = useCallback((msg: string, type: Toast['type'] = 'success') => {
@@ -174,13 +178,13 @@ export default function TeacherDashboard() {
 
         {/* Contenu */}
         <main style={{ flex: 1, overflow: 'hidden', background: 'var(--bg)' }}>
-          {section === 'dashboard'  && <SectionTeacherDashboard onNav={s => setSection(s as TeacherSection)} {...sProps} />}
-          {section === 'classes'    && <SectionTeacherClasses onNav={s => setSection(s as TeacherSection)} {...sProps} />}
+          {section === 'dashboard' && <SectionTeacherDashboard onNav={s => setSection(s as TeacherSection)} {...sProps} />}
+          {section === 'classes' && <SectionTeacherClasses onNav={s => setSection(s as TeacherSection)} {...sProps} />}
           {section === 'attendance' && <SectionTeacherAttendance {...sProps} />}
-          {section === 'grades'     && <SectionTeacherGrades {...sProps} />}
+          {section === 'grades' && <SectionTeacherGrades {...sProps} />}
 
-          {section === 'timetable'  && <SectionTeacherTimetable {...sProps} />}
-          {section === 'sync'       && <SectionOfflineStatus onToast={showToast} namespace="teacher" />}
+          {section === 'timetable' && <SectionTeacherTimetable {...sProps} />}
+          {section === 'sync' && <SectionOfflineStatus onToast={showToast} namespace="teacher" />}
           {section === 'pp-classe' && (() => {
             const cls = user?.classesProfessorPrincipal?.[0]
             return cls ? <SectionProfesseurPrincipal user={user!} classeId={cls.id} classeNom={cls.name} /> : null

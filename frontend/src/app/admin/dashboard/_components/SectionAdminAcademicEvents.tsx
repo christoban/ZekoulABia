@@ -67,12 +67,12 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
       setLoading(true); setError(null)
       const res = await fetchApi('/api/v2/academic-events', { credentials: 'include' })
       const data = await res.json()
-      if (!data.success) throw new Error(data.message || t('academicEvents.errorLoad'))
+      if (!data.success) throw new Error(data.message || 'Erreur lors du chargement des événements')
       setEvents(data.data || [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('academicEvents.errorLoad'))
+      setError(err instanceof Error ? err.message : 'Erreur lors du chargement des événements')
     } finally { setLoading(false) }
-  }, [t])
+  }, [])
 
   useEffect(() => { fetchEvents() }, [fetchEvents])
 

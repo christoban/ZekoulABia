@@ -21,6 +21,6 @@ export class MfaServiceAdapter implements MfaService {
   }
 
   verifierTotp(token: string, secret: string): boolean {
-    return verifySync({ token, secret }).valid;
+    return verifySync({ token, secret, epochTolerance: 60 }).valid;
   }
 }

@@ -30,7 +30,7 @@ function previewGen(
       for (let i = 0; i < Math.min(count, 26); i++) {
         const suffix = conv === 'LETTRES' ? LETTRES[i]
           : conv === 'CHIFFRES' ? `${i + 1}`
-          : `${LETTRES[i]}1`
+            : `${LETTRES[i]}1`
         classes.push({ name: `${niveau} ${suffix}`, level: niveau, section: 'FR' })
       }
     }
@@ -79,7 +79,7 @@ export class InviteOnboardingController {
   constructor(
     private readonly invitationRepository: InvitationRepository,
     private readonly schoolRepository: SchoolRepository,
-  ) {}
+  ) { }
 
   // POST /api/v2/onboarding/preview-structure
   previewStructure = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -237,7 +237,7 @@ export class InviteOnboardingController {
       }).catch(err => console.error('[Email] Onboarding confirmation error:', err));
 
       // Notification au Super Admin — envoyée via Resend (destinataire = SUPER_ADMIN_EMAIL)
-      const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'christoban2005@gmail.com';
+      const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'zekoulabia.noreply@gmail.com';
       const masterDashboardUrl = `${process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000'}/master/dashboard`;
       const planLabels: Record<string, string> = { DISCOVERY: 'Découverte (gratuit)', STANDARD: 'Standard', PREMIUM: 'Premium' };
 

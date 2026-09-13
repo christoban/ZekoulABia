@@ -42,7 +42,12 @@ export async function fetchApi(input: RequestInfo | URL, init?: RequestInit): Pr
   }
 
   const refreshed = await refreshingPromise
-  if (!refreshed) return res
+  if (!refreshed) {
+    if (typeof window !== 'undefined') {
+      try { localStorage.removeItem('zekoulabia_user') } catch { /* ignore */ }
+    }
+    return res
+  }
 
   return fetch(input, { credentials: 'include', ...init })
 }

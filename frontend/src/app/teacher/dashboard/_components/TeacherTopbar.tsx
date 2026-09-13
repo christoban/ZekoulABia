@@ -26,28 +26,28 @@ export default function TeacherTopbar({ title, user, onMenuClick }: Props) {
 
   return (
     <header style={{
-      height: 40, background: 'var(--surface)', borderBottom: '1px solid var(--border)',
-      display: 'flex', alignItems: 'center', padding: '0 16px',
-      gap: 8, flexShrink: 0
+      height: 48, background: 'var(--surface)', borderBottom: '1px solid var(--border)',
+      display: 'flex', alignItems: 'center', padding: '0 20px',
+      gap: 10, flexShrink: 0
     }}>
       {onMenuClick && <MobileMenuButton onClick={onMenuClick} />}
-      <div className="truncate" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+      <div className="truncate" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
         {title}
       </div>
       {todayLabel && (
-        <span className="hidden lg:inline" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, padding: '3px 8px', fontSize: 12, fontWeight: 600, color: 'var(--text3)' }}>
+        <span className="hidden lg:inline" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, padding: '4px 10px', fontSize: 12.5, fontWeight: 600, color: 'var(--text3)' }}>
           📅 {todayLabel}
         </span>
       )}
       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
         <div className="hidden sm:block" style={{ position: 'relative' }}>
-          <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)' }} />
+          <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)' }} />
           <input type="text" placeholder={tcommon('actions.search')}
-            style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 10px 6px 30px', fontSize: 12, fontWeight: 600, color: 'var(--text)', outline: 'none', width: 200, fontFamily: 'inherit' }} />
+            style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 9, padding: '7px 12px 7px 34px', fontSize: 13, fontWeight: 600, color: 'var(--text)', outline: 'none', width: 220, fontFamily: 'inherit' }} />
         </div>
         <ThemeToggle />
         <NotificationBell />
-        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg,var(--blue),var(--purple))', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--surface)', fontWeight: 800, fontSize: 12 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 9, background: 'linear-gradient(135deg,var(--blue),var(--purple))', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--surface)', fontWeight: 800, fontSize: 13 }}>
           {initials}
         </div>
       </div>

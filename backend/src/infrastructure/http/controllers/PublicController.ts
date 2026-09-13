@@ -3,7 +3,7 @@ import type { SchoolRepository } from '@domain/ports/repositories/SchoolReposito
 import { sendContactRequestEmail, sendTransactionalEmail } from '../../services/email/EmailService.ts';
 
 export class PublicController {
-  constructor(private readonly schoolRepository: SchoolRepository) {}
+  constructor(private readonly schoolRepository: SchoolRepository) { }
 
   // GET /api/v2/public/schools — liste publique des écoles joignables (APPROVED, ACTIVE, SUSPENDED)
   // Retourne uniquement les champs nécessaires au sélecteur — jamais le statut ni le motif de suspension
@@ -35,7 +35,7 @@ export class PublicController {
         return;
       }
 
-      const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'christoban2005@gmail.com';
+      const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'zekoulabia.noreply@gmail.com';
       const nbElevesLabel: Record<string, string> = {
         'lt100': 'Moins de 100 élèves',
         '100-300': '100 – 300 élèves',
@@ -193,7 +193,7 @@ export class PublicController {
 
       try {
         await sendContactRequestEmail({
-          to: 'christoban2005@gmail.com',
+          to: 'zekoulabia.noreply@gmail.com',
           schoolName: school,
           responsibleEmail: email,
           phone: phone || 'Non fourni',

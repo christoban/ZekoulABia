@@ -34,10 +34,10 @@ function Overlay({ children, onClose }: { children: React.ReactNode; onClose: ()
 }
 
 function ModalWrap({ children, size = 'md' }: { children: React.ReactNode; size?: 'sm' | 'md' | 'lg' }) {
-  const maxW = size === 'sm' ? 420 : size === 'lg' ? 640 : 460
+  const maxW = size === 'sm' ? 440 : size === 'lg' ? 660 : 480
   return (
     <div style={{
-      background: 'white', borderRadius: 12, padding: 20,
+      background: 'white', borderRadius: 16, padding: '24px 28px',
       maxWidth: maxW, width: '92%', maxHeight: '85vh', overflowY: 'auto',
       position: 'relative', animation: 'popIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both'
     }}>
@@ -48,14 +48,14 @@ function ModalWrap({ children, size = 'md' }: { children: React.ReactNode; size?
 
 function ModalHeader({ title, sub, onClose, danger, icon: Icon }: { title: string; sub?: string; onClose: () => void; danger?: boolean; icon?: LucideIcon }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 }}>
       <div>
-        <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 15, fontWeight: 700, color: danger ? '#dc2626' : '#1a1209', display: 'flex', alignItems: 'center', gap: 6 }}>
-          {Icon && <Icon size={15} />}{title}
+        <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: danger ? '#dc2626' : '#1a1209', display: 'flex', alignItems: 'center', gap: 8 }}>
+          {Icon && <Icon size={18} />}{title}
         </div>
-        {sub && <div style={{ fontSize: 11, color: '#6b5c45', marginTop: 2 }}>{sub}</div>}
+        {sub && <div style={{ fontSize: 12, color: '#6b5c45', marginTop: 3 }}>{sub}</div>}
       </div>
-      <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 6, border: '1px solid #d4c8b8', background: 'none', cursor: 'pointer', color: '#a89478', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><X size={13} /></button>
+      <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid #d4c8b8', background: 'none', cursor: 'pointer', color: '#a89478', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><X size={16} /></button>
     </div>
   )
 }
@@ -70,25 +70,25 @@ function ModalFooter({ children }: { children: React.ReactNode }) {
 
 function Field({ label, hint, children }: { label: string; hint?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: 14 }}>
-      <label style={{ fontSize: 10, fontWeight: 800, color: '#6b5c45', marginBottom: 6, display: 'block', letterSpacing: '0.4px', textTransform: 'uppercase' }}>{label}</label>
+    <div style={{ marginBottom: 16 }}>
+      <label style={{ fontSize: 11, fontWeight: 800, color: '#6b5c45', marginBottom: 6, display: 'block', letterSpacing: '0.4px', textTransform: 'uppercase' }}>{label}</label>
       {children}
-      {hint && <div style={{ fontSize: 10, color: '#a89478', marginTop: 4 }}>{hint}</div>}
+      {hint && <div style={{ fontSize: 11, color: '#a89478', marginTop: 4 }}>{hint}</div>}
     </div>
   )
 }
 
 function FieldInput({ placeholder, type = 'text', value, onChange, style, autoComplete = 'off', showToggle }: { placeholder?: string; type?: string; value?: string; onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void; style?: React.CSSProperties; autoComplete?: string; showToggle?: boolean }) {
   const [show, setShow] = useState(false)
-  const base: React.CSSProperties = { width: '100%', padding: '9px 12px', background: '#f0ebe3', border: '1px solid #d4c8b8', borderRadius: 8, color: '#1a1209', fontSize: 11, fontFamily: 'inherit', fontWeight: 600, outline: 'none', ...style }
+  const base: React.CSSProperties = { width: '100%', padding: '10px 14px', background: '#f0ebe3', border: '1px solid #d4c8b8', borderRadius: 8, color: '#1a1209', fontSize: 13, fontFamily: 'inherit', fontWeight: 600, outline: 'none', ...style }
   if (showToggle && type === 'password') {
     return (
       <div style={{ position: 'relative' }}>
         <input type={show ? 'text' : 'password'} placeholder={placeholder} value={value} onChange={onChange} autoComplete={autoComplete}
           style={{ ...base, paddingRight: 40 }} />
         <button type="button" onClick={() => setShow(s => !s)}
-          style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#a89478', cursor: 'pointer', padding: 3, lineHeight: 1, display: 'flex', alignItems: 'center' }}>
-          {show ? <EyeOff size={13} /> : <Eye size={13} />}
+          style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#a89478', cursor: 'pointer', padding: 4, lineHeight: 1, display: 'flex', alignItems: 'center' }}>
+          {show ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>
       </div>
     )
@@ -101,7 +101,7 @@ function FieldInput({ placeholder, type = 'text', value, onChange, style, autoCo
 
 function BtnPrimary({ onClick, children, disabled, type = 'button' }: { onClick?: () => void; children: React.ReactNode; disabled?: boolean; type?: 'button' | 'submit' }) {
   return (
-    <button type={type} onClick={onClick} disabled={disabled} style={{ padding: '9px 16px', borderRadius: 10, fontSize: 11, fontWeight: 800, background: disabled ? '#6b7280' : 'linear-gradient(135deg,#059669,#047857)', color: 'white', border: 'none', cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: disabled ? 'none' : '0 2px 8px rgba(5,150,105,0.18)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+    <button type={type} onClick={onClick} disabled={disabled} style={{ padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 800, background: disabled ? '#6b7280' : 'linear-gradient(135deg,#059669,#047857)', color: 'white', border: 'none', cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: disabled ? 'none' : '0 2px 8px rgba(5,150,105,0.18)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
       {children}
     </button>
   )
@@ -109,7 +109,7 @@ function BtnPrimary({ onClick, children, disabled, type = 'button' }: { onClick?
 
 function BtnSecondary({ onClick, children }: { onClick?: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" onClick={onClick} style={{ padding: '9px 14px', borderRadius: 10, fontSize: 11, fontWeight: 800, background: 'white', color: '#6b5c45', border: '1px solid #d4c8b8', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+    <button type="button" onClick={onClick} style={{ padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 800, background: 'white', color: '#6b5c45', border: '1px solid #d4c8b8', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
       {children}
     </button>
   )
@@ -117,13 +117,13 @@ function BtnSecondary({ onClick, children }: { onClick?: () => void; children: R
 
 function SchoolSummary({ initials: init, name, meta, danger }: { initials: string; name: string; meta: string; danger?: boolean }) {
   return (
-    <div style={{ background: '#f0ebe3', borderRadius: 10, padding: '12px 14px', marginBottom: 16, display: 'flex', gap: 10, alignItems: 'center' }}>
-      <div style={{ width: 32, height: 32, borderRadius: 8, background: danger ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : 'linear-gradient(135deg,#059669,#1d4ed8)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 13, flexShrink: 0 }}>
+    <div style={{ background: '#f0ebe3', borderRadius: 10, padding: '14px 16px', marginBottom: 18, display: 'flex', gap: 12, alignItems: 'center' }}>
+      <div style={{ width: 36, height: 36, borderRadius: 8, background: danger ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : 'linear-gradient(135deg,#059669,#1d4ed8)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
         {init}
       </div>
       <div>
-        <div style={{ fontSize: 13, fontWeight: 800, color: '#1a1209' }}>{name}</div>
-        <div style={{ fontSize: 11, color: '#a89478', marginTop: 1 }}>{meta}</div>
+        <div style={{ fontSize: 14, fontWeight: 800, color: '#1a1209' }}>{name}</div>
+        <div style={{ fontSize: 12, color: '#a89478', marginTop: 2 }}>{meta}</div>
       </div>
     </div>
   )
@@ -131,7 +131,7 @@ function SchoolSummary({ initials: init, name, meta, danger }: { initials: strin
 
 function WarningBox({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ background: '#fef3c7', border: '1px solid rgba(217,119,6,0.2)', borderRadius: 10, padding: '10px 12px', fontSize: 11, color: '#92400e', fontWeight: 600, lineHeight: 1.6, marginBottom: 16, display: 'flex', gap: 8 }}>
+    <div style={{ background: '#fef3c7', border: '1px solid rgba(217,119,6,0.2)', borderRadius: 10, padding: '12px 14px', fontSize: 12, color: '#92400e', fontWeight: 600, lineHeight: 1.6, marginBottom: 18, display: 'flex', gap: 8 }}>
       {children}
     </div>
   )

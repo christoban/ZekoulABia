@@ -214,7 +214,7 @@ export default function DemoModal({ isOpen, onClose, onSuccess, onError, lang }:
               <Field label={isFr ? 'Téléphone (WhatsApp de préférence)' : 'Phone (WhatsApp preferred)'}>
                 <input
                   type="tel" value={telephone} onChange={e => setTelephone(e.target.value)}
-                  placeholder="+237 6XX XXX XXX"
+                  placeholder="+237 695 557 891"
                   style={inputBase}
                   onFocus={e => focusGreen(e.currentTarget)}
                   onBlur={e => blurDefault(e.currentTarget, false)}

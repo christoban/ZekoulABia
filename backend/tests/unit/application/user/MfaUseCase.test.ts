@@ -131,6 +131,15 @@ describe('MfaUseCase', () => {
     expect(store.user?.mfaTempSecret).toBe('SECRET_TEST');
   });
 
+  it('firstMfaSetup : réutilise le mfaTempSecret s\'il existe déjà sans le réécraser', async () => {
+    const { repo, store } = makeRepo(authUser({ mfaEnabled: false, mfaTempSecret: 'SECRET_EXISTANT' }));
+    const svc = makeMfaServiceFixed();
+    const uc = new MfaUseCase(repo, svc);
+    const res = await uc.firstMfaSetup('u1');
+    expect(res.manualKey).toBe('SECRET_EXISTANT');
+    expect(store.user?.mfaTempSecret).toBe('SECRET_EXISTANT');
+  });
+
   it('firstMfaSetup : refuse utilisateur introuvable', async () => {
     const { repo } = makeRepo(null);
     const uc = new MfaUseCase(repo, makeMfaServiceFixed());

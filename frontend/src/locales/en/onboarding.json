@@ -134,9 +134,15 @@
       "levelFamily": {
         "label": "Main level",
         "options": {
-          "MATERNELLE_NURSERY": { "label": "Nursery / Maternelle" },
-          "PRIMARY": { "label": "Primary / Primaire" },
-          "SECONDARY": { "label": "Secondary" }
+          "MATERNELLE_NURSERY": {
+            "label": "Nursery / Maternelle"
+          },
+          "PRIMARY": {
+            "label": "Primary / Primaire"
+          },
+          "SECONDARY": {
+            "label": "Secondary"
+          }
         }
       },
       "offers": {
@@ -227,7 +233,7 @@
       },
       "phone": {
         "label": "School phone",
-        "placeholder": "+237 6XX XXX XXX"
+        "placeholder": "+237 695 557 891"
       },
       "logo": {
         "label": "School logo (optional)",

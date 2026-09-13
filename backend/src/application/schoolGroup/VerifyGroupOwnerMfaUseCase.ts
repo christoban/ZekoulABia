@@ -25,7 +25,7 @@ export class VerifyGroupOwnerMfaUseCase {
 
     if (owner.mfaSecret) {
       try {
-        const totpValid = verifySync({ token: code, secret: owner.mfaSecret }).valid;
+        const totpValid = verifySync({ token: code, secret: owner.mfaSecret, epochTolerance: 60 }).valid;
         if (totpValid) {
           return { email: owner.email, name: owner.name };
         }

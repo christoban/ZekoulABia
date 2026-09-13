@@ -59,33 +59,33 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
   const filtered = activeTab === 'all' ? schools : schools.filter(s => s.status === activeTab)
 
   return (
-    <div style={{ padding: '12px 16px', height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexShrink: 0 }}>
+    <div style={{ padding: '16px 20px', height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexShrink: 0 }}>
         <div>
-          <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: '#1a1209' }}>
+          <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: '#1a1209' }}>
             Gestion des Écoles
           </div>
-          <div style={{ fontSize: 12, color: '#a89478', marginTop: 2 }}>{schools.length} établissements au total</div>
+          <div style={{ fontSize: 13, color: '#a89478', marginTop: 3 }}>{schools.length} établissements au total</div>
         </div>
         <button onClick={onInvite} style={btnPrimary}>+ Inviter une école</button>
       </div>
 
-      <div style={{ background: 'white', borderRadius: 8, border: '1px solid #e8e0d4', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div style={{ display: 'flex', background: 'white', borderBottom: '2px solid #e8e0d4', padding: '0 12px', flexShrink: 0 }}>
+      <div style={{ background: 'white', borderRadius: 10, border: '1px solid #e8e0d4', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', background: 'white', borderBottom: '2px solid #e8e0d4', padding: '0 14px', flexShrink: 0 }}>
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => onTabChange(tab.id)}
               style={{
-                padding: '6px 10px', fontSize: 12, fontWeight: 700,
+                padding: '8px 14px', fontSize: 13, fontWeight: 700,
                 color: activeTab === tab.id ? '#059669' : '#a89478',
                 background: 'none', border: 'none',
                 borderBottom: activeTab === tab.id ? '2px solid #059669' : '2px solid transparent',
                 marginBottom: -2, cursor: 'pointer', whiteSpace: 'nowrap',
-                display: 'flex', alignItems: 'center', gap: 4,
+                display: 'flex', alignItems: 'center', gap: 6,
                 fontFamily: 'inherit', transition: 'all 0.12s'
               }}>
               {tab.label}
               <span style={{
-                fontSize: 10, fontWeight: 800, padding: '1px 5px', borderRadius: 6,
+                fontSize: 11, fontWeight: 800, padding: '2px 7px', borderRadius: 6,
                 background: activeTab === tab.id ? '#d1fae5' : '#f0ebe3',
                 color: activeTab === tab.id ? '#047857' : tab.urgent && countsByTab[tab.id] > 0 ? '#92400e' : '#a89478'
               }}>{countsByTab[tab.id]}</span>
@@ -93,11 +93,11 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
           ))}
         </div>
 
-        <div style={{ padding: '8px 12px', borderBottom: '1px solid #e8e0d4', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f0ebe3', border: '1px solid #e8e0d4', borderRadius: 6, padding: '6px 10px', flex: 1, minWidth: 180 }}>
-            <Search size={13} color="#a89478" />
+        <div style={{ padding: '10px 14px', borderBottom: '1px solid #e8e0d4', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f0ebe3', border: '1px solid #e8e0d4', borderRadius: 8, padding: '7px 12px', flex: 1, minWidth: 200 }}>
+            <Search size={15} color="#a89478" />
             <input type="text" value={searchTerm} onChange={e => onSearchChange(e.target.value)} placeholder="Rechercher par nom, sous-domaine, email..."
-              style={{ background: 'none', border: 'none', outline: 'none', fontSize: 12, color: '#1a1209', fontFamily: 'inherit', fontWeight: 600, width: '100%' }} />
+              style={{ background: 'none', border: 'none', outline: 'none', fontSize: 13, color: '#1a1209', fontFamily: 'inherit', fontWeight: 600, width: '100%' }} />
           </div>
         </div>
 
@@ -106,7 +106,7 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
             <thead>
               <tr>
                 {['École', 'Type', 'Plan', 'Statut', 'Admin', 'Invitation', 'Créée le', 'Actions'].map(h => (
-                  <th key={h} style={{ padding: '6px 8px', textAlign: 'left', fontSize: 10, fontWeight: 800, color: '#a89478', background: '#f0ebe3', borderBottom: '1px solid #e8e0d4', textTransform: 'uppercase', letterSpacing: '0.4px', whiteSpace: 'nowrap', position: 'sticky', top: 0, zIndex: 1 }}>
+                  <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: '#a89478', background: '#f0ebe3', borderBottom: '1px solid #e8e0d4', textTransform: 'uppercase', letterSpacing: '0.4px', whiteSpace: 'nowrap', position: 'sticky', top: 0, zIndex: 1 }}>
                     {h}
                   </th>
                 ))}
@@ -292,9 +292,9 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
 function DropdownItem({ children, onClick, danger, color }: { children: React.ReactNode; onClick: () => void; danger?: boolean; color?: string }) {
   return (
     <div onClick={onClick} style={{
-      padding: '7px 10px', fontSize: 12, fontWeight: 600,
+      padding: '8px 12px', fontSize: 13, fontWeight: 600,
       color: danger ? '#dc2626' : color ?? '#6b5c45',
-      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
       transition: 'background 0.1s'
     }}
       onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = danger ? '#fee2e2' : '#f0ebe3'}
@@ -305,9 +305,9 @@ function DropdownItem({ children, onClick, danger, color }: { children: React.Re
 }
 
 const btnPrimary: React.CSSProperties = {
-  padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 800,
+  padding: '8px 16px', borderRadius: 9, fontSize: 13, fontWeight: 800,
   background: 'linear-gradient(135deg,#059669,#047857)', color: 'white',
   border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-  boxShadow: '0 2px 8px rgba(5,150,105,0.18)', display: 'inline-flex', alignItems: 'center', gap: 4
+  boxShadow: '0 2px 8px rgba(5,150,105,0.18)', display: 'inline-flex', alignItems: 'center', gap: 6
 }
-const tdStyle: React.CSSProperties = { padding: '6px 8px', fontSize: 11, color: '#6b5c45', verticalAlign: 'middle' }
+const tdStyle: React.CSSProperties = { padding: '8px 12px', fontSize: 12, color: '#6b5c45', verticalAlign: 'middle' }

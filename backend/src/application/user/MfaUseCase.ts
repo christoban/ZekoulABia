@@ -14,8 +14,10 @@ export class MfaUseCase {
       throw new Error('MFA déjà activé sur ce compte.');
     }
 
-    const secret: string = this.mfaService.genererSecret();
-    await this.userRepository.updateMfaTempSecret(userId, secret);
+    const secret: string = auth.mfaTempSecret || this.mfaService.genererSecret();
+    if (!auth.mfaTempSecret) {
+      await this.userRepository.updateMfaTempSecret(userId, secret);
+    }
 
     const otpauthUrl: string = this.mfaService.genererURI({ issuer: 'ZekoulABia', label: auth.email || userId, secret });
     const qrDataUri: string = await this.mfaService.genererQRCode(otpauthUrl);

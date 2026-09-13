@@ -104,14 +104,26 @@ export default function AdminDashboard() {
 
     fetchApi('/api/v2/school/me')
       .then(r => {
-        if (r.status === 401) { router.replace('/login'); return Promise.reject('auth') }
+        if (r.status === 401) {
+          try { localStorage.removeItem('zekoulabia_user') } catch { /* ignore */ }
+          router.replace('/login')
+          return Promise.reject('auth')
+        }
         return r.json()
       })
       .then(d => {
-        if (!d || !d.success) { router.replace('/login'); return }
+        if (!d || !d.success) {
+          try { localStorage.removeItem('zekoulabia_user') } catch { /* ignore */ }
+          router.replace('/login')
+          return
+        }
         const { status } = d.data as { status: string }
         if (status === 'APPROVED') { router.replace('/admin/configuration'); return }
-        if (status !== 'ACTIVE') { router.replace('/login'); return }
+        if (status !== 'ACTIVE') {
+          try { localStorage.removeItem('zekoulabia_user') } catch { /* ignore */ }
+          router.replace('/login')
+          return
+        }
         setSchoolInfo(d.data)
 
         const params = new URLSearchParams(window.location.search)
