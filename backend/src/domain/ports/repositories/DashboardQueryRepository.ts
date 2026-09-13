@@ -4,6 +4,7 @@
 export interface DashboardCounts {
   totalStudents: number;
   totalTeachers: number;
+  activeExams: number;
   presentAttendance: number;
   totalAttendance: number;
 }

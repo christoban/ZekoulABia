@@ -14,13 +14,14 @@ export class PrismaDashboardQueryRepository implements DashboardQueryRepository 
   }
 
   async countAdminStats(schoolId: string): Promise<DashboardCounts> {
-    const [totalStudents, totalTeachers, presentAttendance, totalAttendance] = await Promise.all([
+    const [totalStudents, totalTeachers, activeExams, presentAttendance, totalAttendance] = await Promise.all([
       this.prisma.user.count({ where: { ...(schoolId ? { schoolId } : {}), role: 'STUDENT' } }),
       this.prisma.user.count({ where: { ...(schoolId ? { schoolId } : {}), role: 'TEACHER' } }),
+      this.prisma.harmonizedAssessmentSession.count({ where: { ...(schoolId ? { schoolId } : {}), status: { in: ['PLANNED', 'IN_PROGRESS'] } } }),
       this.prisma.attendance.count({ where: { ...(schoolId ? { schoolId } : {}), status: { in: ['PRESENT', 'LATE'] } } }),
       this.prisma.attendance.count({ where: { ...(schoolId ? { schoolId } : {}) } }),
     ]);
-    return { totalStudents, totalTeachers, presentAttendance, totalAttendance };
+    return { totalStudents, totalTeachers, activeExams, presentAttendance, totalAttendance };
   }
 
   async countAdminBadges(schoolId: string): Promise<AdminBadges> {

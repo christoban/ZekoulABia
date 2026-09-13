@@ -1,8 +1,9 @@
-﻿'use client'
+'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { AlertTriangle, Wallet, Pencil, CheckCircle2, Loader2, Circle } from 'lucide-react'
+import DelegationSupervisionBanner from './DelegationSupervisionBanner'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
@@ -270,6 +271,8 @@ export default function SectionFinance({ onToast }: Props) {
           <button style={{ ...btnPrim, borderRadius: 20, padding: '9px 14px', fontSize: 12, fontWeight: 700 }} onClick={() => setCreateOpen(true)}>{t('actions.new_plan')}</button>
         </div>
       </div>
+
+      <DelegationSupervisionBanner actorTitle="Intendant / Économe" domainLabel="Finance & Tarifs" />
 
       {/* Tabs */}
       <div className="gap-[2px] mb-[16px] md:mb-[22px]" style={{ display: 'flex', background: 'var(--bg2)', padding: 5, borderRadius: 12, width: 'fit-content' }}>

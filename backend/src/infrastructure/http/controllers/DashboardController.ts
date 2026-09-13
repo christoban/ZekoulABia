@@ -26,7 +26,7 @@ export class DashboardController {
 
       if (user.role === 'ADMIN') {
         const counts = await this.dashboardRepo.countAdminStats(schoolId);
-        stats = { totalStudents: counts.totalStudents, totalTeachers: counts.totalTeachers, avgAttendance: formatPercent(counts.presentAttendance, counts.totalAttendance), recentActivity: formattedActivity };
+        stats = { totalStudents: counts.totalStudents, totalTeachers: counts.totalTeachers, activeExams: counts.activeExams ?? 0, avgAttendance: formatPercent(counts.presentAttendance, counts.totalAttendance), recentActivity: formattedActivity };
 
       } else if (user.role === 'TEACHER') {
         const teacherDash = await this.dashboardRepo.findTeacherDashboard(schoolId, user.userId);

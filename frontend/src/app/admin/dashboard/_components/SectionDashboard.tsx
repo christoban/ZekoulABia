@@ -32,10 +32,10 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
   const { data: stats, loading, error, fromCache, cachedAt, refetch: fetchStats } = useCachedFetch<DashStats>('admin:dashboard-stats', fetchStatsFn)
 
   const kpi = stats ? [
-    { icon: <GraduationCap size={22} strokeWidth={2} />, bg: 'var(--blue-light)', val: String(stats.totalStudents), label: t('dashboard.kpi.students'),  trendBg: 'var(--green-light)', trendColor: 'var(--green)', nav: 'users' },
-    { icon: <Presentation size={22} strokeWidth={2} />, bg: 'var(--amber-light)', val: String(stats.totalTeachers), label: t('dashboard.kpi.teachers'),       trendBg: 'var(--amber-light)', trendColor: 'var(--amber)', nav: 'users' },
-    { icon: <CheckCircle2 size={22} strokeWidth={2} />,   bg: 'var(--green-light)', val: stats.avgAttendance,          label: t('dashboard.kpi.attendance_rate'), trendBg: 'var(--green-light)', trendColor: 'var(--green)' },
-    { icon: <FileText size={22} strokeWidth={2} />,   bg: 'var(--orange-light)', val: String(stats.activeExams),    label: t('dashboard.kpi.active_exams'),   trendBg: 'var(--orange-light)', trendColor: 'var(--orange)' },
+    { icon: <GraduationCap size={22} strokeWidth={2} />, bg: 'var(--blue-light)', val: String(stats.totalStudents ?? 0), label: t('dashboard.kpi.students'),  trendBg: 'var(--green-light)', trendColor: 'var(--green)', nav: 'users' },
+    { icon: <Presentation size={22} strokeWidth={2} />, bg: 'var(--amber-light)', val: String(stats.totalTeachers ?? 0), label: t('dashboard.kpi.teachers'),       trendBg: 'var(--amber-light)', trendColor: 'var(--amber)', nav: 'users' },
+    { icon: <CheckCircle2 size={22} strokeWidth={2} />,   bg: 'var(--green-light)', val: stats.avgAttendance || '0%',          label: t('dashboard.kpi.attendance_rate'), trendBg: 'var(--green-light)', trendColor: 'var(--green)', nav: 'attendance' },
+    { icon: <FileText size={22} strokeWidth={2} />,   bg: 'var(--orange-light)', val: String(stats.activeExams ?? 0),    label: t('dashboard.kpi.active_exams'),   trendBg: 'var(--orange-light)', trendColor: 'var(--orange)', nav: 'academic-events' },
   ] : []
 
   return (
