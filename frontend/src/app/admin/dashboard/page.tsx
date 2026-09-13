@@ -59,7 +59,7 @@ const ADMIN_SECTIONS: AdminSection[] = [
   'attendance', 'grades', 'bulletins', 'timetable',
   'council', 'academic-year', 'academic-events', 'finance', 'ai', 'statistics', 'communications', 'babillard', 'messagerie', 'settings', 'corbeille', 'sync-offline',
   'bulletin-validation',
-  'pedagogie', 'rh', 'lv2-choice', 'entrance-exams', 'pebs-exams', 'matricules', 'school-payments', 'eleve-onboarding', 'minesec-stats', 'minedub-stats', 'group-transfers', 'tasks',
+  'pedagogie', 'rh', 'lv2-choice', 'entrance-exams', 'pebs-exams', 'matricules', 'school-payments', 'eleve-onboarding', 'minesec-stats', 'minedub-stats', 'ministerial-stats', 'group-transfers', 'tasks',
   'org-pedagogy',
 ]
 
@@ -233,6 +233,7 @@ export default function AdminDashboard() {
           {section === 'eleve-onboarding' && <SectionEleveOnboarding onToast={showToast} />}
           {section === 'minesec-stats'  && <SectionMinesecStatistics onToast={showToast} />}
           {section === 'minedub-stats'  && <SectionMinedubStatistics onToast={showToast} />}
+          {section === 'ministerial-stats' && (schoolInfo?.isPrimaire === true ? <SectionMinedubStatistics onToast={showToast} /> : <SectionMinesecStatistics onToast={showToast} />)}
           {section === 'pebs-exams'    && <SectionAdminPebsExams    onToast={showToast} />}
           {section === 'lv2-choice'    && <SectionAdminLV2Choice    onToast={showToast} />}
           {section === 'group-transfers' && <SectionAdminGroupTransfers onToast={showToast} />}

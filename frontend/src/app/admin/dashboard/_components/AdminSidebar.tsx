@@ -6,7 +6,7 @@ import {
   ScrollText, Calendar, GraduationCap, NotebookPen, Briefcase, CalendarDays,
   Smartphone, IdCard, Wallet, ClipboardEdit, UserPlus, BarChart3, ClipboardList,
   Globe, Languages, Bot, Megaphone, Settings, CalendarClock, X, ArrowRightLeft, Trash2,
-  RefreshCw, MessageCircle, ListChecks, ChevronDown, ChevronRight,
+  MessageCircle, ListChecks, ChevronDown, ChevronRight,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -23,7 +23,7 @@ interface NavItem {
 }
 
 interface NavSection {
-  id?: string
+  id: string
   label?: string
   items: NavItem[]
 }
@@ -35,12 +35,11 @@ const BADGE_STYLES = {
 }
 
 const DEFAULT_OPEN_GROUPS: Record<string, boolean> = {
-  direction: true,
+  pedagogy: false,
   org: false,
-  supervision: false,
-  pilotage: true,
+  pilotage: false,
   communication: false,
-  system: false,
+  config: false,
 }
 
 interface SessionUser {
@@ -69,8 +68,7 @@ interface Props {
   hasPendingGroupTransfers?: boolean
   /** Type d'établissement (School.templateCode → getTemplateMeta().isPrimaire) — pilote
    * l'affichage de Statistiques MINESEC (secondaire) vs MINEDUB (maternelle/primaire).
-   * undefined tant que /api/v2/school/me n'a pas répondu : les deux restent visibles le temps
-   * du chargement plutôt que de risquer de tout masquer. */
+   * undefined tant que /api/v2/school/me n'a pas répondu. */
   isPrimaire?: boolean | null
   /** Tiroir mobile (< 768px) — sidebar fixe cachée, remplacée par cet overlay contrôlé depuis page.tsx. */
   mobileOpen?: boolean
@@ -99,74 +97,42 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
 
   const NAV: NavSection[] = [
     {
-      id: 'root',
+      id: 'pedagogy',
+      label: tnav('group.pedagogie') ?? 'Pédagogie & Évaluations',
       items: [
-        { id: 'dashboard', icon: LayoutDashboard, label: tnav('sidebar.dashboard') },
-      ],
-    },
-    {
-      id: 'direction',
-      label: tnav('group.direction') ?? 'Direction',
-      items: [
-        { id: 'academic-year', icon: CalendarDays, label: tnav('sidebar.academicYear') },
-        { id: 'academic-events', icon: CalendarClock, label: tnav('sidebar.academicEvents') },
-        { id: 'settings', icon: Settings, label: tnav('sidebar.settings') },
-      ],
-    },
-    {
-      id: 'org',
-      label: tnav('group.orgPedagogy') ?? 'Organisation pédagogique',
-      items: [
-        { id: 'org-pedagogy', icon: School, label: tnav('sidebar.orgPedagogy') ?? 'Organisation pédagogique' },
-        { id: 'users', icon: Users, label: tnav('sidebar.users'), badge: badges.users, badgeColor: 'green' },
-        { id: 'classes', icon: School, label: tnav('sidebar.classes'), badge: badges.classes, badgeColor: 'green' },
-        { id: 'subjects', icon: BookOpen, label: tnav('sidebar.subjects') },
-        { id: 'timetable', icon: Calendar, label: tnav('sidebar.timetable') },
-        { id: 'eleve-onboarding', icon: UserPlus, label: tnav('sidebar.eleveOnboarding') },
-      ],
-    },
-    {
-      id: 'supervision',
-      label: tnav('group.supervision') ?? 'Supervision',
-      items: [
-        { id: 'attendance', icon: ClipboardCheck, label: tnav('sidebar.attendance') },
         { id: 'grades', icon: FileText, label: tnav('sidebar.grades'), badge: badges.grades, badgeColor: 'red' },
         { id: 'bulletins', icon: ScrollText, label: tnav('sidebar.bulletins') },
-        { id: 'bulletin-validation', icon: ClipboardCheck, label: tnav('sidebar.bulletinValidation') },
         { id: 'council', icon: GraduationCap, label: tnav('sidebar.council') },
         { id: 'pedagogie', icon: NotebookPen, label: tnav('sidebar.pedagogie') },
       ],
     },
     {
-      id: 'pilotage',
-      label: tnav('group.pilotage') ?? 'Pilotage',
+      id: 'org',
+      label: tnav('group.orgPedagogy') ?? 'Organisation & Structure',
       items: [
-        { id: 'finance', icon: Smartphone, label: tnav('sidebar.finance'), badge: badges.finance, badgeColor: 'amber' },
-        { id: 'school-payments', icon: Wallet, label: tnav('sidebar.schoolPayments') },
-        { id: 'matricules', icon: IdCard, label: tnav('sidebar.matricules') },
-        { id: 'rh', icon: Briefcase, label: tnav('sidebar.rh') },
-        { id: 'tasks', icon: ListChecks, label: tnav('sidebar.tasks') },
+        { id: 'users', icon: Users, label: tnav('sidebar.users'), badge: badges.users, badgeColor: 'green' },
+        { id: 'org-pedagogy', icon: School, label: tnav('sidebar.orgPedagogy') ?? 'Organisation pédagogique' },
+        { id: 'timetable', icon: Calendar, label: tnav('sidebar.timetable') },
+        { id: 'eleve-onboarding', icon: UserPlus, label: tnav('sidebar.eleveOnboarding') },
+      ],
+    },
+    {
+      id: 'pilotage',
+      label: tnav('group.pilotage') ?? 'Pilotage & Statistiques',
+      items: [
         { id: 'statistics', icon: BarChart3, label: tnav('sidebar.statistics') },
-        { id: 'ai', icon: Bot, label: tnav('sidebar.ai') },
-        ...(isPrimaire !== true ? [{ id: 'minesec-stats' as const, icon: BarChart3, label: tnav('sidebar.minesecStats') }] : []),
-        ...(isPrimaire !== false ? [{ id: 'minedub-stats' as const, icon: ClipboardList, label: tnav('sidebar.minedubStats') }] : []),
+        { id: 'ministerial-stats', icon: ClipboardList, label: tnav('sidebar.ministerialStats') ?? 'Statistiques Ministérielles' },
+        { id: 'rh', icon: Briefcase, label: tnav('sidebar.rh') },
+        { id: 'school-payments', icon: Wallet, label: tnav('sidebar.schoolPayments') },
       ],
     },
     {
       id: 'communication',
-      label: tnav('group.communication') ?? 'Communication',
+      label: tnav('group.communication') ?? 'Communication & Vie Scolaire',
       items: [
         { id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard') },
-        { id: 'messagerie', icon: MessageCircle, label: tnav('sidebar.messagerie'), ...(messagesNonLus > 0 ? { badge: String(messagesNonLus), badgeColor: 'red' as const } : {}) },
         { id: 'communications', icon: Megaphone, label: tnav('sidebar.communications') },
-      ],
-    },
-    {
-      id: 'system',
-      label: tnav('group.system') ?? 'Système',
-      items: [
-        { id: 'sync-offline', icon: RefreshCw, label: tnav('sidebar.syncOffline') },
-        { id: 'corbeille', icon: Trash2, label: tnav('sidebar.corbeille') },
+        { id: 'academic-events', icon: CalendarClock, label: tnav('sidebar.academicEvents') },
         ...(hasActiveEntranceExam ? [{ id: 'entrance-exams' as const, icon: ClipboardEdit, label: tnav('sidebar.entranceExams') }] : []),
         ...(hasActivePebs ? [{ id: 'pebs-exams' as const, icon: Globe, label: tnav('sidebar.pebsExams') }] : []),
         ...(hasPendingGroupTransfers ? [{ id: 'group-transfers' as const, icon: ArrowRightLeft, label: tnav('sidebar.groupTransfers') }] : []),
@@ -175,10 +141,10 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
     },
   ]
 
-  // Forcer l'ouverture du groupe contenant la section active si elle est fermée
+  // Ouvrir UNIQUEMENT l'accordéon contenant la section courante
   useEffect(() => {
     const activeSectionGroup = NAV.find(section => section.items.some(item => item.id === current))
-    if (activeSectionGroup?.id && activeSectionGroup.id !== 'root' && !openGroups[activeSectionGroup.id]) {
+    if (activeSectionGroup?.id && !openGroups[activeSectionGroup.id]) {
       setOpenGroups(prev => {
         const next = { ...prev, [activeSectionGroup.id!]: true }
         try { localStorage.setItem('zekoulabia.admin.nav.groups', JSON.stringify(next)) } catch {}
@@ -196,6 +162,8 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
   }
 
   const handleChange = (id: AdminSection) => { onChange(id); onMobileClose?.() }
+
+  const isConfigActive = ['settings', 'academic-year', 'matricules', 'corbeille'].includes(current)
 
   const sidebarBody = (
     <>
@@ -228,50 +196,89 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
           </div>
         </div>
 
-        {/* Nav — wrapper relatif pour le fondu de defilement */}
+        {/* Nav — wrapper relatif pour le fondu de défilement */}
         <div className="relative" style={{ minHeight: 0, flex: 1 }}>
           <nav className="overflow-y-auto px-2 pt-0 pb-3 h-full" style={{ minHeight: 0 }}>
-            {NAV.map((section, si) => {
-              const groupId = section.id || `group-${si}`
-              const isOpen = groupId === 'root' || !!openGroups[groupId]
+            {/* Dashboard principal */}
+            <button onClick={() => handleChange('dashboard')}
+              className={cn(
+                'w-full flex items-center gap-2.5 rounded-md mb-[4px]',
+                'text-[12.5px] font-bold transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
+                current === 'dashboard' ? 'bg-[var(--sidebar-active)] text-white' : 'bg-transparent text-white/70 hover:bg-[var(--sidebar2)] hover:text-white'
+              )}
+              style={{ padding: '7px 8px' }}>
+              <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <LayoutDashboard size={16} strokeWidth={2} />
+              </span>
+              <span className="truncate flex-1">{tnav('sidebar.dashboard')}</span>
+            </button>
+
+            {/* Vie Scolaire & Suivi Quotidien */}
+            <div style={{ marginBottom: 6 }}>
+              <div className="text-[10px] font-black text-white/30 tracking-[1px] uppercase" style={{ padding: '6px 6px 2px' }}>
+                Vie Scolaire & Suivi
+              </div>
+              {[
+                { id: 'attendance' as const, icon: ClipboardCheck, label: tnav('sidebar.attendance') },
+                { id: 'finance' as const, icon: Smartphone, label: tnav('sidebar.finance'), badge: badges.finance, badgeColor: 'amber' as const },
+                { id: 'messagerie' as const, icon: MessageCircle, label: tnav('sidebar.messagerie'), ...(messagesNonLus > 0 ? { badge: String(messagesNonLus), badgeColor: 'red' as const } : {}) },
+                { id: 'ai' as const, icon: Bot, label: tnav('sidebar.ai') },
+                { id: 'tasks' as const, icon: ListChecks, label: tnav('sidebar.tasks') },
+              ].map(item => (
+                <button key={item.id} onClick={() => handleChange(item.id)}
+                  className={cn(
+                    'w-full flex items-center gap-2.5 rounded-md mb-[2px]',
+                    'text-[12px] font-semibold transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
+                    current === item.id ? 'bg-[var(--sidebar-active)] text-white' : 'bg-transparent text-white/60 hover:bg-[var(--sidebar2)] hover:text-white/90'
+                  )}
+                  style={{ padding: '6px 8px' }}>
+                  <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <item.icon size={16} strokeWidth={2} />
+                  </span>
+                  <span className="truncate flex-1">{item.label}</span>
+                  {item.badge && (
+                    <span className={cn('ml-auto text-[10.5px] font-black rounded px-1.5 py-0.5', BADGE_STYLES[item.badgeColor ?? 'green'])}>
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Accordéons compacts */}
+            {NAV.map((section) => {
+              const groupId = section.id
+              const isOpen = !!openGroups[groupId]
               const hasActiveItem = section.items.some(i => i.id === current)
 
               return (
                 <div key={groupId} className="mb-1">
-                  {section.label && (
-                    <button
-                      type="button"
-                      onClick={() => toggleGroup(groupId)}
-                      className={cn(
-                        'w-full flex items-center justify-between text-[10px] font-black tracking-[1px] uppercase pt-2.5 px-1.5 pb-1 cursor-pointer transition-colors border-none bg-transparent',
-                        hasActiveItem ? 'text-amber-400/90' : 'text-white/35 hover:text-white/60'
-                      )}
-                    >
-                      <span>{section.label}</span>
-                      {isOpen ? <ChevronDown size={13} className="text-white/40" /> : <ChevronRight size={13} className="text-white/40" />}
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(groupId)}
+                    className={cn(
+                      'w-full flex items-center justify-between text-[10px] font-black tracking-[1px] uppercase pt-2 px-1.5 pb-1 cursor-pointer transition-colors border-none bg-transparent font-nunito',
+                      hasActiveItem ? 'text-amber-400/90' : 'text-white/35 hover:text-white/60'
+                    )}
+                  >
+                    <span>{section.label}</span>
+                    {isOpen ? <ChevronDown size={13} className="text-white/40" /> : <ChevronRight size={13} className="text-white/40" />}
+                  </button>
 
                   {isOpen && (
-                    <div className="space-y-[2px] mt-0.5">
+                    <div className="space-y-[2px] mt-0.5 pl-1">
                       {section.items.map(item => (
                         <button key={item.id} onClick={() => handleChange(item.id)}
                           className={cn(
                             'relative w-full flex items-center gap-2.5 rounded-md mb-[2px]',
                             'text-[12px] font-semibold text-left border-none cursor-pointer font-nunito',
-                            'py-2 px-2.5 transition-colors',
+                            'py-1.5 px-2 transition-colors',
                             current === item.id
-                              ? 'text-white'
+                              ? 'text-white bg-[var(--sidebar-active)]'
                               : 'text-white/55 hover:bg-[var(--sidebar2)] hover:text-white/85'
                           )}>
-                          {current === item.id && (
-                            <motion.div layoutId="admin-nav-active"
-                              className="absolute inset-0 rounded-md"
-                              style={{ background: 'var(--sidebar-active)' }}
-                              transition={{ type: 'spring', stiffness: 380, damping: 30 }} />
-                          )}
                           <span className="relative z-10 w-[18px] flex items-center justify-center flex-shrink-0">
-                            <item.icon size={16} strokeWidth={2} />
+                            <item.icon size={15} strokeWidth={2} />
                           </span>
                           <span className="relative z-10 truncate flex-1">{item.label}</span>
                           {item.badge && (
@@ -286,6 +293,46 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
                 </div>
               )
             })}
+
+            {/* Section Configuration Établissement (Pied de nav) */}
+            <div style={{ marginTop: 12, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+              <button
+                onClick={() => handleChange('settings')}
+                className={cn(
+                  'w-full flex items-center gap-2.5 rounded-lg transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
+                  isConfigActive
+                    ? 'bg-blue-600/30 text-blue-200 border border-blue-500/40'
+                    : 'bg-white/[0.04] text-white/70 hover:bg-white/[0.08] hover:text-white border border-white/10'
+                )}
+                style={{ padding: '8px 10px' }}
+              >
+                <Settings size={16} className="text-blue-400 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-[12px] font-bold leading-tight">Configuration</div>
+                  <div className="text-[10px] text-white/40">Rentrée, Paramètres, Matricules</div>
+                </div>
+              </button>
+
+              {/* Sous-pills quand on est en mode Configuration */}
+              {isConfigActive && (
+                <div className="mt-1.5 space-y-[2px] pl-1.5 border-l-2 border-blue-500/40 ml-2">
+                  {[
+                    { id: 'settings' as const, label: tnav('sidebar.settings') },
+                    { id: 'academic-year' as const, label: tnav('sidebar.academicYear') },
+                    { id: 'matricules' as const, label: tnav('sidebar.matricules') },
+                    { id: 'corbeille' as const, label: tnav('sidebar.corbeille') },
+                  ].map(sub => (
+                    <button key={sub.id} onClick={() => handleChange(sub.id)}
+                      className={cn(
+                        'w-full flex items-center text-[11.5px] font-semibold rounded py-1 px-2 text-left border-none cursor-pointer font-nunito',
+                        current === sub.id ? 'text-blue-300 font-bold bg-blue-500/20' : 'text-white/50 hover:text-white/80 hover:bg-white/[0.04]'
+                      )}>
+                      <span className="truncate">{sub.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </nav>
           <div className="md:hidden" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 16, background: 'linear-gradient(0deg,var(--sidebar),transparent)', pointerEvents: 'none' }} />
         </div>

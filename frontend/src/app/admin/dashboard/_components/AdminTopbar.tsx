@@ -5,6 +5,7 @@ import { useT, useLanguage } from '@/lib/i18n'
 import { useTheme } from 'next-themes'
 import ThemeToggle from '@/components/ThemeToggle'
 import NotificationBell from '@/components/NotificationBell'
+import OfflineSyncButtonPopover from '@/components/OfflineSyncButtonPopover'
 import { useNotifications } from '@/hooks/NotificationContext'
 
 interface SessionUser {
@@ -172,8 +173,9 @@ export default function AdminTopbar({ title, onNavigate, onChangePassword, onMen
         )}
       </div>
 
-      {/* Actions secondaires desktop — pas d'équivalent maquette à partir de md, convention existante inchangée */}
+      {/* Actions secondaires desktop */}
       <div className="hidden md:flex" style={{ alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
+        <OfflineSyncButtonPopover namespace="admin" />
         <ThemeToggle />
         <NotificationBell onNav={onNavigate} />
         {onChangePassword && (

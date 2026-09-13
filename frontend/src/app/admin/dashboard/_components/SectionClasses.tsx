@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { AlertTriangle, School, GraduationCap, Armchair, UserCheck, Trash2, Link2, Check, ArrowLeft } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
+import DelegationSupervisionBanner from './DelegationSupervisionBanner'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
@@ -591,6 +592,8 @@ export default function SectionClasses({ onToast }: Props) {
           style={{ background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 900 }}
           onClick={() => setCreateOpen(true)}>{t('classes.btn_create')}</button>
       </div>
+
+      <DelegationSupervisionBanner domainLabel="Classes & Structuration Pédagogique" />
 
       {loading && (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}>

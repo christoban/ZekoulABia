@@ -153,8 +153,8 @@
       "academic-year": "Academic Year",
       "academic-events": "Academic Events",
       "tasks": "Administrative tasks",
-      "finance": "Mobile Money",
-      "ai": "AI School Health",
+      "finance": "Finance & Fees",
+      "ai": "AI Assistant & Copilot",
       "statistics": "Statistics",
       "communications": "Communications",
       "notifications": "Notification Center",
@@ -165,10 +165,16 @@
       "pebs-exams": "PEBS Selection",
       "group-transfers": "School Group Transfers",
       "matricules": "Matricules",
-      "school-payments": "MINESEC Payments",
+      "school-payments": "School Payments",
       "eleve-onboarding": "Mid-year enrollments",
       "minesec-stats": "MINESEC Statistics",
-      "minedub-stats": "MINEDUB Statistics"
+      "minedub-stats": "MINEDUB Statistics",
+      "ministerial-stats": "Ministerial Statistics",
+      "sync-offline": "Offline Sync",
+      "corbeille": "Trash & Restore",
+      "babillard": "Official Bulletin Board",
+      "messagerie": "Internal Messaging",
+      "org-pedagogy": "Pedagogical Organization"
     },
     "toast": {
       "welcome_active": "Your space is now active! Welcome to ZekoulABia",
@@ -420,12 +426,31 @@
         "affectationsPedagogiquesPreremplies": "{count} teaching assignment(s) pre-filled"
       },
       "target_fields": {
-        "nom": "Last name", "prenom": "First name", "email": "Email", "telephone": "Phone",
-        "matricule": "Student ID", "dateNaissance": "Date of birth", "sexe": "Gender", "classe": "Class",
-        "nomParent": "Parent last name", "prenomParent": "Parent first name", "emailParent": "Parent email", "telephoneParent": "Parent phone",
-        "matieres": "Subjects", "classePrincipale": "Main class", "departementAp": "Teaching department", "fonction": "Position", "section": "Section",
-        "matriculesEnfants": "Children's IDs", "emailsEnfants": "Children's emails", "pebs": "PEBS", "lv2": "LV2",
-        "niveau": "Level", "serie": "Stream", "filiere": "Track", "capacite": "Capacity"
+        "nom": "Last name",
+        "prenom": "First name",
+        "email": "Email",
+        "telephone": "Phone",
+        "matricule": "Student ID",
+        "dateNaissance": "Date of birth",
+        "sexe": "Gender",
+        "classe": "Class",
+        "nomParent": "Parent last name",
+        "prenomParent": "Parent first name",
+        "emailParent": "Parent email",
+        "telephoneParent": "Parent phone",
+        "matieres": "Subjects",
+        "classePrincipale": "Main class",
+        "departementAp": "Teaching department",
+        "fonction": "Position",
+        "section": "Section",
+        "matriculesEnfants": "Children's IDs",
+        "emailsEnfants": "Children's emails",
+        "pebs": "PEBS",
+        "lv2": "LV2",
+        "niveau": "Level",
+        "serie": "Stream",
+        "filiere": "Track",
+        "capacite": "Capacity"
       },
       "errors": {
         "file_too_large": "File too large (max 5 MB)",
@@ -1078,13 +1103,29 @@
     "preferences": {
       "title": "System Preferences",
       "language_label": "Language",
-      "language_options": ["Français", "English", "Français/English (Bilingual)"],
+      "language_options": [
+        "Français",
+        "English",
+        "Français/English (Bilingual)"
+      ],
       "timezone_label": "Timezone",
-      "timezone_options": ["Africa/Douala (UTC+1)", "Africa/Lagos (UTC+1)", "Europe/Paris (UTC+2)"],
+      "timezone_options": [
+        "Africa/Douala (UTC+1)",
+        "Africa/Lagos (UTC+1)",
+        "Europe/Paris (UTC+2)"
+      ],
       "date_format_label": "Date format",
-      "date_format_options": ["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD"],
+      "date_format_options": [
+        "DD/MM/YYYY",
+        "MM/DD/YYYY",
+        "YYYY-MM-DD"
+      ],
       "grading_system_label": "Grading system",
-      "grading_system_options": ["/20 (MINESEC)", "/100", "Letters A–F"],
+      "grading_system_options": [
+        "/20 (MINESEC)",
+        "/100",
+        "Letters A–F"
+      ],
       "btn_save": "Save",
       "toast_saved": "Preferences saved (preview — not yet connected to the server)"
     },
@@ -1444,7 +1485,14 @@
     "var_balance": "Balance due in XAF",
     "history_empty_title": "No campaigns sent yet",
     "history_empty_sub": "Sent campaigns will appear here.",
-    "table_headers": ["Date", "Channel", "Targeting", "Message", "Result", "Status"],
+    "table_headers": [
+      "Date",
+      "Channel",
+      "Targeting",
+      "Message",
+      "Result",
+      "Status"
+    ],
     "status_labels": {
       "completed": "Sent",
       "partial": "Partial",
@@ -1617,7 +1665,12 @@
     "filter_all_classes": "All classes",
     "students_count_one": "{count} student",
     "students_count_other": "{count} students",
-    "table_headers": ["Student", "Class", "Health score", "Alert level"],
+    "table_headers": [
+      "Student",
+      "Class",
+      "Health score",
+      "Alert level"
+    ],
     "empty_filtered": "No student for this filter"
   },
   "assistant": {

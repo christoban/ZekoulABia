@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { fetchApi } from '@/lib/fetchApi'
+import DelegationSupervisionBanner from './DelegationSupervisionBanner'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
@@ -133,6 +134,8 @@ export default function SectionAdminCouncil({ onToast }: Props) {
           </select>
         )}
       </div>
+
+      <DelegationSupervisionBanner domainLabel="Conseils de Classe & Délibérations" />
 
       {/* KPI cards */}
       {!loading && !error && sessions.length > 0 && (

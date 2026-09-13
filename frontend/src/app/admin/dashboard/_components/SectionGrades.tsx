@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useT } from '@/lib/i18n'
 import { fetchApi } from '@/lib/fetchApi'
@@ -23,18 +23,15 @@ interface GradeItem {
 export default function SectionGrades({ onToast }: Props) {
   const t = useT('grades')
   const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }> = {
-    DRAFT:     { bg: 'var(--bg2)', color: 'var(--text2)', label: t('status_labels.DRAFT')     },
-    SUBMITTED: { bg: 'var(--amber-light)', color: 'var(--amber)', label: t('status_labels.SUBMITTED')    },
-    VALIDATED: { bg: 'var(--green-light)', color: 'var(--green)', label: t('status_labels.VALIDATED')     },
-    LOCKED:    { bg: 'var(--green-light)', color: 'var(--green)', label: t('status_labels.LOCKED')    },
-    REJECTED:  { bg: 'var(--red-light)', color: 'var(--red)', label: t('status_labels.REJECTED')     },
+    DRAFT:  { bg: 'var(--bg2)', color: 'var(--text2)', label: t('status_labels.DRAFT')  },
+    LOCKED: { bg: 'var(--green-light)', color: 'var(--green)', label: t('status_labels.LOCKED') },
   }
   const [classes, setClasses]     = useState<ClassItem[]>([])
   const [subjects, setSubjects]   = useState<SubjectItem[]>([])
   const [filtersReady, setFiltersReady] = useState(false)
   const [classId, setClassId]     = useState('')
   const [subjectId, setSubjectId] = useState('')
-  const [status, setStatus]       = useState('SUBMITTED')
+  const [status, setStatus]       = useState('')
 
   // Charger classes + matières au montage
   useEffect(() => {
@@ -99,10 +96,7 @@ export default function SectionGrades({ onToast }: Props) {
           </select>
           <select value={status} onChange={e => setStatus(e.target.value)} className={`w-full sm:w-auto ${filterSelectCls}`} style={filterSelect}>
             <option value="">Tous les statuts</option>
-            <option value="SUBMITTED">{t('status_labels.SUBMITTED')}</option>
-            <option value="VALIDATED">{t('status_labels.VALIDATED')}</option>
             <option value="DRAFT">{t('status_labels.DRAFT')}</option>
-            <option value="REJECTED">{t('status_labels.REJECTED')}</option>
             <option value="LOCKED">{t('status_labels.LOCKED')}</option>
           </select>
           <button className="w-full sm:w-auto" style={{ ...btnPrim, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }} onClick={fetchGrades} disabled={loading}>

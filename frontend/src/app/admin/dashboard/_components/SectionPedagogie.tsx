@@ -4,6 +4,7 @@ import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
 import { Circle, TrendingUp, BookOpen, CheckCircle2, Inbox, Check, WifiOff } from 'lucide-react'
+import DelegationSupervisionBanner from './DelegationSupervisionBanner'
 
 interface OnToast { (msg: string, type?: 'success' | 'error' | 'info' | 'warning'): void }
 
@@ -211,6 +212,8 @@ export default function SectionPedagogie({ onToast }: { onToast: OnToast }) {
           Programmes, cahiers de texte et suivi des progressions
         </div>
       </div>
+
+      <DelegationSupervisionBanner domainLabel="Suivi Pédagogique & Avancement des Programmes" />
 
       {!isOnline && (
         <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 12, padding: '12px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 10 }}>

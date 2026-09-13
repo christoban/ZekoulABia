@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { X, AlertTriangle, CalendarDays, Calendar, Bot } from 'lucide-react'
+import DelegationSupervisionBanner from './DelegationSupervisionBanner'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
@@ -216,10 +217,8 @@ export default function SectionTimetable({ onToast }: Props) {
         </div>
       </div>
 
-      {/* Bandeau info rôle */}
-      <div className="text-[12px] md:text-[13px] px-[12px] py-[9px] md:px-[16px] md:py-[10px]" style={{ background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.15)', borderRadius: 10, marginBottom: 16, color: 'var(--blue)' }}>
-        <strong>{t('timetable.bannerRole')}</strong> {t('timetable.bannerText1')} <strong>{t('timetable.bannerCenseur')}</strong> {t('timetable.bannerText2')} <strong>{t('timetable.bannerAutoGen')}</strong> {t('timetable.bannerText3')} <strong>{t('timetable.bannerPublish')}</strong>.
-      </div>
+      {/* Supervision Banner */}
+      <DelegationSupervisionBanner domainLabel="Emplois du Temps & Plannings" />
 
       {/* Panel résultats génération */}
 

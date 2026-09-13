@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
+import DelegationSupervisionBanner from './DelegationSupervisionBanner'
 
 interface Props { onToast: (msg: string, type?: 'success' | 'error' | 'info') => void }
 
@@ -224,6 +225,10 @@ export default function SectionEleveOnboarding({ onToast }: Props) {
           <p className="text-[13px] md:text-[14px]" style={{ color: 'var(--text3)', marginTop: 4 }}>{t('eleveOnboarding.subtitle')}</p>
         </div>
         <button onClick={() => setCreateOpen(true)} style={{ ...btnPri, borderRadius: 20, padding: '9px 14px', fontSize: 12 }}>{t('eleveOnboarding.createBtn')}</button>
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <DelegationSupervisionBanner domainLabel="Inscriptions & Admissions Élèves" />
       </div>
 
       {/* Réglages */}
