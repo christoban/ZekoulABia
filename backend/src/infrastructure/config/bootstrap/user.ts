@@ -109,6 +109,7 @@ export function registerUserRoutes(app: Application, prismaParam: typeof prisma 
     mfaUseCase,
     classeRepositoryForUser,
     enrollmentRepositoryForUser,
+    c.activityLog,
   );
 
   const masterAdminHexController = new MasterAdminHexController(

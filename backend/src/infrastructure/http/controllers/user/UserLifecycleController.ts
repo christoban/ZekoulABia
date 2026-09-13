@@ -5,6 +5,7 @@ import type { SupprimerUtilisateurUseCase } from '@application/user/SupprimerUti
 import type { TransfererEleveUseCase } from '@application/user/TransfererEleveUseCase';
 import type { DesignerAPUseCase } from '@application/user/DesignerAPUseCase';
 import type { AIActionAuditPort } from '@domain/ports/services/AIActionAuditPort';
+import type { ActivityLogPort } from '@domain/ports/services/ActivityLogPort';
 import type { UserRepository } from '@domain/ports/repositories/UserRepository';
 import type { SchoolRepository } from '@domain/ports/repositories/SchoolRepository';
 import type { ClasseRepository } from '@domain/ports/repositories/ClasseRepository';
@@ -27,6 +28,7 @@ export class UserLifecycleController {
     private readonly schoolRepository: SchoolRepository,
     private readonly classeRepository: ClasseRepository,
     private readonly enrollmentRepository: EnrollmentRepository,
+    private readonly activityLog?: ActivityLogPort,
   ) {}
 
   // POST /api/v2/users
@@ -317,6 +319,12 @@ export class UserLifecycleController {
         origin: 'UI_DIRECT',
         outcome: 'SUCCES',
         parametersSummary: { fromClasseId, toClasseId },
+      });
+      void this.activityLog?.log({
+        userId: user.userId,
+        schoolId: user.schoolId,
+        action: 'PEDAGOGY_STUDENT_TRANSFER',
+        details: `Élève ${req.params.id as string} transféré de la classe ${fromClasseId} vers la classe ${toClasseId}`,
       });
       res.json({ success: true, message: 'Élève transféré avec succès' });
     } catch (error) {

@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useCallback, useEffect } from 'react'
 import type { StaffSection, SessionUser, Toast } from './_types'
@@ -35,6 +35,8 @@ import SectionOfflineStatus from '@/components/SectionOfflineStatus'
 import Babillard from '@/features/communication/Babillard'
 import Messagerie from '@/features/messagerie'
 import SectionModerationMessagerie from './_components/SectionModerationMessagerie'
+import SectionClassesStaff from './_components/SectionClassesStaff'
+import SectionElevesAffectationsStaff from './_components/SectionElevesAffectationsStaff'
 import { useRouter } from 'next/navigation'
 import { useT } from '@/lib/i18n'
 
@@ -159,6 +161,14 @@ export default function StaffDashboard() {
 
           {section === 'affectations' && can('affectations') && (
             <SectionAffectations onToast={showToast} />
+          )}
+
+          {section === 'classes' && can('classes') && (
+            <SectionClassesStaff onToast={showToast} />
+          )}
+
+          {section === 'eleves-affectations' && can('eleves-affectations') && (
+            <SectionElevesAffectationsStaff onToast={showToast} />
           )}
 
           {section === 'timetable' && can('timetable') && (

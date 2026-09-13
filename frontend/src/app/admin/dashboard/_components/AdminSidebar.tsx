@@ -80,62 +80,70 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
     {
       items: [
         { id: 'dashboard', icon: LayoutDashboard, label: tnav('sidebar.dashboard') },
-        { id: 'users',     icon: Users, label: tnav('sidebar.users'),     badge: badges.users,   badgeColor: 'green' },
-        { id: 'classes',   icon: School, label: tnav('sidebar.classes'),   badge: badges.classes, badgeColor: 'green' },
-        { id: 'subjects',  icon: BookOpen, label: tnav('sidebar.subjects') },
-      ]
+      ],
     },
     {
-      label: tnav('group.academic'),
-      items: [
-        { id: 'attendance', icon: ClipboardCheck, label: tnav('sidebar.attendance') },
-        { id: 'grades',     icon: FileText, label: tnav('sidebar.grades'),     badge: badges.grades, badgeColor: 'red' },
-        { id: 'bulletins',  icon: ScrollText, label: tnav('sidebar.bulletins') },
-        { id: 'timetable',  icon: Calendar, label: tnav('sidebar.timetable') },
-        { id: 'council',    icon: GraduationCap, label: tnav('sidebar.council') },
-        { id: 'bulletin-validation', icon: ClipboardCheck, label: tnav('sidebar.bulletinValidation') },
-        { id: 'pedagogie',  icon: NotebookPen, label: tnav('sidebar.pedagogie') },
-        { id: 'rh',         icon: Briefcase, label: tnav('sidebar.rh') },
-        { id: 'tasks',      icon: ListChecks, label: tnav('sidebar.tasks') },
-      ]
-    },
-    {
-      label: tnav('group.services'),
+      label: tnav('group.direction') ?? 'Direction',
       items: [
         { id: 'academic-year', icon: CalendarDays, label: tnav('sidebar.academicYear') },
         { id: 'academic-events', icon: CalendarClock, label: tnav('sidebar.academicEvents') },
-        { id: 'finance',       icon: Smartphone, label: tnav('sidebar.finance'),     badge: badges.finance, badgeColor: 'amber' },
-        { id: 'matricules',    icon: IdCard, label: tnav('sidebar.matricules') },
-        { id: 'school-payments', icon: Wallet, label: tnav('sidebar.schoolPayments') },
-        // Masqué tant qu'aucune session de concours n'est en cours (statut réel de
-        // EntranceExamSession != CLOSED) — pas de AcademicEvent dédié, la session est déjà sa
-        // propre source de vérité.
-        ...(hasActiveEntranceExam ? [{ id: 'entrance-exams' as const, icon: ClipboardEdit, label: tnav('sidebar.entranceExams') }] : []),
+        { id: 'settings', icon: Settings, label: tnav('sidebar.settings') },
+      ],
+    },
+    {
+      label: tnav('group.orgPedagogy') ?? 'Organisation pédagogique',
+      items: [
+        { id: 'users', icon: Users, label: tnav('sidebar.users'), badge: badges.users, badgeColor: 'green' },
+        { id: 'classes', icon: School, label: tnav('sidebar.classes'), badge: badges.classes, badgeColor: 'green' },
+        { id: 'subjects', icon: BookOpen, label: tnav('sidebar.subjects') },
+        { id: 'timetable', icon: Calendar, label: tnav('sidebar.timetable') },
         { id: 'eleve-onboarding', icon: UserPlus, label: tnav('sidebar.eleveOnboarding') },
-        // MINESEC = enseignements secondaires, MINEDUB = maternelle/primaire — un établissement
-        // ne relève que d'un seul des deux ministères. isPrimaire===undefined (chargement en
-        // cours) laisse les deux visibles plutôt que de les masquer par erreur.
+      ],
+    },
+    {
+      label: tnav('group.supervision') ?? 'Supervision',
+      items: [
+        { id: 'attendance', icon: ClipboardCheck, label: tnav('sidebar.attendance') },
+        { id: 'grades', icon: FileText, label: tnav('sidebar.grades'), badge: badges.grades, badgeColor: 'red' },
+        { id: 'bulletins', icon: ScrollText, label: tnav('sidebar.bulletins') },
+        { id: 'bulletin-validation', icon: ClipboardCheck, label: tnav('sidebar.bulletinValidation') },
+        { id: 'council', icon: GraduationCap, label: tnav('sidebar.council') },
+        { id: 'pedagogie', icon: NotebookPen, label: tnav('sidebar.pedagogie') },
+      ],
+    },
+    {
+      label: tnav('group.pilotage') ?? 'Pilotage',
+      items: [
+        { id: 'finance', icon: Smartphone, label: tnav('sidebar.finance'), badge: badges.finance, badgeColor: 'amber' },
+        { id: 'school-payments', icon: Wallet, label: tnav('sidebar.schoolPayments') },
+        { id: 'matricules', icon: IdCard, label: tnav('sidebar.matricules') },
+        { id: 'rh', icon: Briefcase, label: tnav('sidebar.rh') },
+        { id: 'tasks', icon: ListChecks, label: tnav('sidebar.tasks') },
+        { id: 'statistics', icon: BarChart3, label: tnav('sidebar.statistics') },
+        { id: 'ai', icon: Bot, label: tnav('sidebar.ai') },
         ...(isPrimaire !== true ? [{ id: 'minesec-stats' as const, icon: BarChart3, label: tnav('sidebar.minesecStats') }] : []),
         ...(isPrimaire !== false ? [{ id: 'minedub-stats' as const, icon: ClipboardList, label: tnav('sidebar.minedubStats') }] : []),
-        // Même principe — masqué tant qu'aucune session PEBS n'est en cours (!= APPLIED).
-        ...(hasActivePebs ? [{ id: 'pebs-exams' as const, icon: Globe, label: tnav('sidebar.pebsExams') }] : []),
-        // Masqué tant qu'aucune demande de transfert du groupe ne cible cette école.
-        ...(hasPendingGroupTransfers ? [{ id: 'group-transfers' as const, icon: ArrowRightLeft, label: tnav('sidebar.groupTransfers') }] : []),
-        // Masqué tant qu'aucune fenêtre de choix LV2 n'est réellement ouverte (AcademicEvent
-        // CHOIX_LV2 actif) — jamais affiché à vide toute l'année pour rien.
-        ...(activeEventTypes.includes('CHOIX_LV2') ? [{ id: 'lv2-choice' as const, icon: Languages, label: tnav('sidebar.lv2Choice') }] : []),
-        { id: 'ai',            icon: Bot, label: tnav('sidebar.ai') },
-        { id: 'statistics',    icon: BarChart3, label: tnav('sidebar.statistics') },
-        { id: 'babillard',     icon: Megaphone, label: tnav('sidebar.babillard') },
-        { id: 'messagerie',    icon: MessageCircle, label: tnav('sidebar.messagerie'), ...(messagesNonLus > 0 ? { badge: String(messagesNonLus), badgeColor: 'red' as const } : {}) },
+      ],
+    },
+    {
+      label: tnav('group.communication') ?? 'Communication',
+      items: [
+        { id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard') },
+        { id: 'messagerie', icon: MessageCircle, label: tnav('sidebar.messagerie'), ...(messagesNonLus > 0 ? { badge: String(messagesNonLus), badgeColor: 'red' as const } : {}) },
         { id: 'communications', icon: Megaphone, label: tnav('sidebar.communications') },
+      ],
+    },
+    {
+      label: tnav('group.system') ?? 'Système',
+      items: [
         { id: 'sync-offline', icon: RefreshCw, label: tnav('sidebar.syncOffline') },
-        // Retiré de la sidebar — redondant avec la cloche (permanente sur tous les écrans),
-        // qui offre désormais un lien « Voir tout » vers cette même page.
-        { id: 'settings',      icon: Settings, label: tnav('sidebar.settings') },
-        { id: 'corbeille',     icon: Trash2, label: tnav('sidebar.corbeille') },
-      ]
-    }
+        { id: 'corbeille', icon: Trash2, label: tnav('sidebar.corbeille') },
+        ...(hasActiveEntranceExam ? [{ id: 'entrance-exams' as const, icon: ClipboardEdit, label: tnav('sidebar.entranceExams') }] : []),
+        ...(hasActivePebs ? [{ id: 'pebs-exams' as const, icon: Globe, label: tnav('sidebar.pebsExams') }] : []),
+        ...(hasPendingGroupTransfers ? [{ id: 'group-transfers' as const, icon: ArrowRightLeft, label: tnav('sidebar.groupTransfers') }] : []),
+        ...(activeEventTypes.includes('CHOIX_LV2') ? [{ id: 'lv2-choice' as const, icon: Languages, label: tnav('sidebar.lv2Choice') }] : []),
+      ],
+    },
   ]
 
   const handleChange = (id: AdminSection) => { onChange(id); onMobileClose?.() }

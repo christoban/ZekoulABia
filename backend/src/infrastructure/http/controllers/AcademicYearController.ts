@@ -9,6 +9,7 @@ import type { ValiderStructureAnneeSuivanteUseCase } from '@application/academic
 import type { AnnulerStructureProposeeUseCase } from '@application/academicYear/AnnulerStructureProposeeUseCase';
 import { prisma } from '@infrastructure/persistence/prisma/prisma.client';
 import { journaliserActionIA } from '@infrastructure/services/ai/AIActionAuditLogger';
+import type { ActivityLogPort } from '@domain/ports/services/ActivityLogPort';
 
 export class AcademicYearController {
   constructor(
@@ -20,6 +21,7 @@ export class AcademicYearController {
     private readonly proposerStructure: ProposerStructureAnneeSuivanteUseCase,
     private readonly validerStructure: ValiderStructureAnneeSuivanteUseCase,
     private readonly annulerStructure: AnnulerStructureProposeeUseCase,
+    private readonly activityLog?: ActivityLogPort,
   ) {}
 
   creerAnnee = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -110,6 +112,12 @@ export class AcademicYearController {
         demandeurId: user.userId,
         force: force === true,
       });
+      void this.activityLog?.log({
+        userId: user.userId,
+        schoolId: user.schoolId,
+        action: 'PEDAGOGY_YEAR_CLOSE',
+        details: `Clôture de l'année académique (ID: ${req.params['id']})`,
+      });
       res.json({ success: true, data: resultat });
     } catch (error) {
       this.gererErreur(error, res, next);
@@ -138,6 +146,12 @@ export class AcademicYearController {
         origin: 'UI_DIRECT', outcome: 'SUCCES',
         parametersSummary: { anneeActuelleId: req.params['id'], anneeSuivanteId, nbClasses: resultat.classesProposees.length },
       });
+      void this.activityLog?.log({
+        userId: user.userId,
+        schoolId: user.schoolId,
+        action: 'PEDAGOGY_STRUCTURE_PROPOSE',
+        details: `Proposition de la structure N+1 (${resultat.classesProposees.length} classes DRAFT pour l'année ID: ${anneeSuivanteId})`,
+      });
       res.status(201).json({ success: true, data: resultat });
     } catch (error) {
       const user = req.user;
@@ -164,6 +178,12 @@ export class AcademicYearController {
         actionName: 'valider_structure_annee_suivante', targetType: 'AcademicYear', targetId: req.params['id'] as string,
         origin: 'UI_DIRECT', outcome: 'SUCCES', parametersSummary: { classesActivees: resultat.classesActivees },
       });
+      void this.activityLog?.log({
+        userId: user.userId,
+        schoolId: user.schoolId,
+        action: 'PEDAGOGY_STRUCTURE_VALIDATE',
+        details: `Validation de la structure N+1 (${resultat.classesActivees} classes activées pour l'année ID: ${req.params['id']})`,
+      });
       res.json({ success: true, data: resultat });
     } catch (error) {
       const user = req.user;
@@ -189,6 +209,12 @@ export class AcademicYearController {
         actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
         actionName: 'annuler_structure_annee_suivante', targetType: 'AcademicYear', targetId: req.params['id'] as string,
         origin: 'UI_DIRECT', outcome: 'SUCCES', parametersSummary: { classesSupprimees: resultat.classesSupprimees },
+      });
+      void this.activityLog?.log({
+        userId: user.userId,
+        schoolId: user.schoolId,
+        action: 'PEDAGOGY_STRUCTURE_CANCEL',
+        details: `Annulation de la structure N+1 (${resultat.classesSupprimees} classes DRAFT supprimées pour l'année ID: ${req.params['id']})`,
       });
       res.json({ success: true, data: resultat });
     } catch (error) {

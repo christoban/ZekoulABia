@@ -14,11 +14,13 @@ import { detecterColumnMapping, getTargetFieldsForType } from '@application/user
 import { normalizeRowKeys } from '@application/user/helpers/importColumnMapper';
 import { validerLignesImport } from '@application/user/helpers/importRowValidator';
 import { gererErreurUser } from './userAuthHelper';
+import type { ActivityLogPort } from '@domain/ports/services/ActivityLogPort';
 
 export class UserImportController {
   constructor(
     private readonly importer: ImporterUtilisateursUseCase,
     private readonly importRepository: ImportUtilisateursRepository,
+    private readonly activityLog?: ActivityLogPort,
   ) {}
 
   // POST /api/v2/users/import
@@ -165,6 +167,13 @@ export class UserImportController {
       const normalizedRows = columnMapping ? confirmedRows.map((r) => normalizeRowKeys(r, columnMapping)) : confirmedRows;
 
       const resultat = await this.importer.execute(user.schoolId, targetType, normalizedRows);
+
+      void this.activityLog?.log({
+        userId: user.userId,
+        schoolId: user.schoolId,
+        action: 'PEDAGOGY_STUDENT_IMPORT',
+        details: `Importation confirmée de ${normalizedRows.length} enregistrements (${targetType})`,
+      });
 
       res.json({ success: true, data: resultat });
     } catch (error) {

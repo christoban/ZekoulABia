@@ -4,7 +4,7 @@ import {
   Link2, Calendar, Landmark, Smartphone, Lock, AlertTriangle, BookOpen,
   Compass, IdCard, HandCoins, X, ShieldAlert,
   RefreshCw, Megaphone, MessageCircle, ShieldCheck,
-  ScanSearch,
+  ScanSearch, School, Users,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -60,6 +60,8 @@ export default function StaffSidebar({ current, onChange, allowedSections, sessi
   if (can('affectations'))     supervisionItems.push({ id: 'affectations',     icon: Link2, label: tnav('sidebar.assignments') })
   if (can('timetable'))        supervisionItems.push({ id: 'timetable',        icon: Calendar, label: tnav('sidebar.timetable') })
   if (can('departements'))     supervisionItems.push({ id: 'departements',     icon: Landmark, label: tnav('sidebar.departments') })
+  if (can('classes'))             supervisionItems.push({ id: 'classes',             icon: School, label: tnav('sidebar.classes') ?? 'Classes' })
+  if (can('eleves-affectations')) supervisionItems.push({ id: 'eleves-affectations', icon: Users, label: tnav('sidebar.studentAssignments') ?? 'Affectations élèves' })
   if (can('moderation-messagerie')) supervisionItems.push({ id: 'moderation-messagerie', icon: ShieldCheck, label: tnav('sidebar.moderationMessagerie') })
 
   const servicesItems: NavItem[] = []

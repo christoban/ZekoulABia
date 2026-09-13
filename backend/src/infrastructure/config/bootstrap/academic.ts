@@ -153,6 +153,7 @@ export function registerAcademicRoutes(app: Application, prismaParam: typeof pri
     c.academicYear.proposerStructureSuivante,
     c.academicYear.validerStructureSuivante,
     c.academicYear.annulerStructureSuivante,
+    c.activityLog,
   );
   app.use('/api/v2/academic-years', creerAcademicYearRoutes(academicYearController));
 

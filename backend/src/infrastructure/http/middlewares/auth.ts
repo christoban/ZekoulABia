@@ -66,6 +66,23 @@ export const requireRoleOrPermission = (roles: string[], permission: string) =>
     next()
   }
 
+/** ADMIN (Proviseur) = super-set école ; sinon au moins une permission listée. */
+export const requirePermission = (...perms: string[]) =>
+  <P = ParamsDictionary>(req: Request<P>, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Non authentifié' })
+    }
+    if (req.user.role?.toUpperCase() === 'ADMIN') {
+      return next()
+    }
+    const userPerms = req.user.permissions ?? []
+    const ok = perms.some((p) => userPerms.includes(p))
+    if (!ok) {
+      return res.status(403).json({ error: 'Accès refusé' })
+    }
+    next()
+  }
+
 export const requireSchool = <P = ParamsDictionary>(
   req: Request<P>,
   res: Response,

@@ -68,6 +68,10 @@
   "group": {
     "academic": "Académique",
     "services": "Services",
+    "direction": "Direction",
+    "orgPedagogy": "Organisation pédagogique",
+    "pilotage": "Pilotage",
+    "system": "Système",
     "pedagogie": "Pédagogie",
     "ressources": "Ressources",
     "pp": "Professeur Principal",

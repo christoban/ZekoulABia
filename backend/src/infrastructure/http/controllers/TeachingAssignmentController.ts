@@ -2,11 +2,13 @@ import type { Request, Response, NextFunction } from 'express';
 import { CYCLE2_LEVELS, parseSerie } from '@application/school/SubjectAssignmentHelper';
 import type { RattachementEnseignantRepository } from '@domain/ports/repositories/RattachementEnseignantRepository';
 import type { AIActionAuditPort } from '@domain/ports/services/AIActionAuditPort';
+import type { ActivityLogPort } from '@domain/ports/services/ActivityLogPort';
 
 export class TeachingAssignmentController {
   constructor(
     private readonly rattachementRepository: RattachementEnseignantRepository,
     private readonly audit: AIActionAuditPort,
+    private readonly activityLog?: ActivityLogPort,
   ) {}
 
   // GET /api/v2/teaching-assignments?classId=:id
@@ -166,6 +168,13 @@ export class TeachingAssignmentController {
         origin: 'UI_DIRECT',
         outcome: 'SUCCES',
         parametersSummary: { classId, subjectId, teacherId },
+      });
+
+      void this.activityLog?.log({
+        userId: req.user!.userId,
+        schoolId,
+        action: 'PEDAGOGY_TEACHING_ASSIGN',
+        details: `Enseignant ${teacherId} affecté à la matière ${subjectId} dans la classe ${classId}`,
       });
 
       res.json({ success: true, message: 'Affectation enregistrée' });

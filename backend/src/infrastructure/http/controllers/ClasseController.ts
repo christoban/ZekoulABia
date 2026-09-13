@@ -13,6 +13,7 @@ import type { GenererTableauHonneurUseCase } from '@application/classe/GenererTa
 import type { GenererTableauHonneurAnnuelUseCase } from '@application/classe/GenererTableauHonneurAnnuelUseCase';
 import { CYCLE2_LEVELS, parseSerie } from '@application/school/SubjectAssignmentHelper';
 import type { AIActionAuditPort } from '@domain/ports/services/AIActionAuditPort';
+import type { ActivityLogPort } from '@domain/ports/services/ActivityLogPort';
 
 export class ClasseController {
   constructor(
@@ -29,6 +30,7 @@ export class ClasseController {
     private readonly gererMatiere?: GererMatiereClasseUseCase,
     private readonly genererTableauHonneur?: GenererTableauHonneurUseCase,
     private readonly genererTableauHonneurAnnuel?: GenererTableauHonneurAnnuelUseCase,
+    private readonly activityLog?: ActivityLogPort,
   ) {}
 
   creerClasse = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -44,6 +46,11 @@ export class ClasseController {
         // any` masquait un ciblage d'audit toujours undefined pour cette action.
         actionName: 'creer_classe', targetType: 'Class', targetId: resultat.classeId,
         origin: 'UI_DIRECT', outcome: 'SUCCES', parametersSummary: req.body,
+      });
+      void this.activityLog?.log({
+        userId: user.userId, schoolId: user.schoolId,
+        action: 'PEDAGOGY_CLASS_CREATE',
+        details: `Création de la classe ${req.body.name || ''} (ID: ${resultat.classeId})`,
       });
       res.status(201).json({ success: true, data: resultat });
     } catch (error) {
@@ -65,6 +72,11 @@ export class ClasseController {
         schoolId: user.schoolId,
         ...req.body,
       });
+      void this.activityLog?.log({
+        userId: user.userId, schoolId: user.schoolId,
+        action: 'PEDAGOGY_CLASS_UPDATE',
+        details: `Modification de la classe ${req.params.id}`,
+      });
       res.json({ success: true, message: 'Classe mise à jour' });
     } catch (error) {
       this.gererErreur(error, res, next);
@@ -83,6 +95,11 @@ export class ClasseController {
         actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
         actionName: 'supprimer_classe', targetType: 'Class', targetId: req.params.id as string,
         origin: 'UI_DIRECT', outcome: 'SUCCES', parametersSummary: req.body,
+      });
+      void this.activityLog?.log({
+        userId: user.userId, schoolId: user.schoolId,
+        action: 'PEDAGOGY_CLASS_DELETE',
+        details: `Suppression de la classe ${req.params.id}`,
       });
       res.json({ success: true, message: 'Classe mise à la corbeille' });
     } catch (error) {
@@ -120,6 +137,11 @@ export class ClasseController {
         actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
         actionName: 'assigner_professeur_principal', targetType: 'Class', targetId: classeId,
         origin: 'UI_DIRECT', outcome: 'SUCCES', parametersSummary: { classeId, teacherUserId },
+      });
+      void this.activityLog?.log({
+        userId: user.userId, schoolId: user.schoolId,
+        action: 'PEDAGOGY_PP_ASSIGN',
+        details: `Affectation Professeur Principal ${teacherUserId} à la classe ${classeId}`,
       });
       res.json({ success: true, message: 'Professeur Principal assigné' });
     } catch (error) {

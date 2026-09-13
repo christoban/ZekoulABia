@@ -82,6 +82,7 @@ export function registerFinanceRoutes(app: Application, prismaParam: typeof pris
   const teachingAssignmentController = new TeachingAssignmentController(
     new PrismaRattachementEnseignantRepository(p as any),
     auditForFinance,
+    c.activityLog,
   );
   app.use('/api/v2/teaching-assignments', creerTeachingAssignmentRoutes(teachingAssignmentController));
 

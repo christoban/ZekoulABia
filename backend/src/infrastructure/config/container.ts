@@ -1288,6 +1288,7 @@ export function creerContainer() {
     events: {
       publisher: eventPublisher,
     },
+    activityLog,
   };
 }
 

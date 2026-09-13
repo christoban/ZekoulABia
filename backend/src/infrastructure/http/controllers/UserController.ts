@@ -18,6 +18,7 @@ import type { UserRepository } from '@domain/ports/repositories/UserRepository';
 import type { ClasseRepository } from '@domain/ports/repositories/ClasseRepository';
 import type { EnrollmentRepository } from '@domain/ports/repositories/EnrollmentRepository';
 import type { AIActionAuditPort } from '@domain/ports/services/AIActionAuditPort';
+import type { ActivityLogPort } from '@domain/ports/services/ActivityLogPort';
 
 import { UserAuthController } from './user/UserAuthController';
 import { UserMfaPasswordController } from './user/UserMfaPasswordController';
@@ -65,6 +66,7 @@ export class UserController {
     mfaUseCase: MfaUseCase,
     classeRepository: ClasseRepository,
     enrollmentRepository: EnrollmentRepository,
+    activityLog?: ActivityLogPort,
   ) {
     this.classeRepository = classeRepository;
 
@@ -97,9 +99,10 @@ export class UserController {
       schoolRepository,
       classeRepository,
       enrollmentRepository,
+      activityLog,
     );
 
-    this.importController = new UserImportController(importer, importRepository);
+    this.importController = new UserImportController(importer, importRepository, activityLog);
   }
 
   // ── Auth & Session ──────────────────────────────────────────────────────────

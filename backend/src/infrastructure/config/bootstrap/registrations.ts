@@ -80,6 +80,7 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
     undefined as any,
     c.class.genererTableauHonneur,
     c.class.genererTableauHonneurAnnuel,
+    c.activityLog,
   );
 
   const subjectController = new SubjectController(

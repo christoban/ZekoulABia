@@ -6,6 +6,7 @@ export type StaffSection =
   | 'anonymat'
   | 'sync-offline'
   | 'mon-profil-rh' | 'apee' | 'notifications' | 'babillard' | 'messagerie' | 'moderation-messagerie'
+  | 'classes' | 'eleves-affectations'
 
 export interface SessionUser {
   userId: string
@@ -22,6 +23,9 @@ export interface Toast {
 }
 
 export const PERM_TO_SECTION: { perm: string; section: StaffSection }[] = [
+  { perm: 'MANAGE_CLASSES',             section: 'classes'          },
+  { perm: 'MANAGE_STUDENT_ASSIGNMENTS', section: 'eleves-affectations' },
+  { perm: 'MANAGE_TEACHING_ASSIGNMENTS',section: 'affectations'     },
   { perm: 'MANAGE_CLASS_COUNCIL',       section: 'council'          },
   { perm: 'VALIDATE_GRADES',            section: 'grades'           },
   { perm: 'MANAGE_TIMETABLE',           section: 'grille-horaire'   },

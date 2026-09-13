@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import type { UserController } from '@infrastructure/http/controllers/UserController';
-import { requireAuth, requireRole } from '../middlewares/auth.ts';
+import { requireAuth, requireRole, requirePermission } from '../middlewares/auth.ts';
 import { authLimiter, userEmailOtpLimiter, userMfaLimiter } from '../middlewares/rateLimit.ts';
 import { requireUserSensitiveAuth } from '../middlewares/requireUserSensitiveAuth.ts';
 import { requireReauthToken } from '../middlewares/requireReauthToken.ts';
@@ -64,16 +64,42 @@ export function creerUserRoutes(controller: UserController): Router {
   // enseignant, jamais une simple confirmation classique (contrairement à classe/matière).
   router.delete('/:id', requireAuth, requireRole('ADMIN'), requireReauthToken, controller.delete);
 
-  // Import Excel
-  router.post('/import', requireAuth, requireRole('ADMIN'), upload.single('file'), controller.importUsers);
+  // Import Excel — Secrétaire (MANAGE_ENROLLMENT), Censeur (MANAGE_STUDENT_ASSIGNMENTS), ADMIN
+  router.post(
+    '/import',
+    requireAuth,
+    requirePermission('MANAGE_ENROLLMENT', 'MANAGE_STUDENT_ASSIGNMENTS'),
+    upload.single('file'),
+    controller.importUsers,
+  );
 
-  // Import Excel — nouveaux endpoints (preview / validate / confirm)
-  router.post('/import/preview', requireAuth, requireRole('ADMIN'), upload.single('file'), controller.previewImport);
-  router.post('/import/validate', requireAuth, requireRole('ADMIN'), controller.validateImport);
-  router.post('/import/confirm', requireAuth, requireRole('ADMIN'), controller.confirmImport);
+  router.post(
+    '/import/preview',
+    requireAuth,
+    requirePermission('MANAGE_ENROLLMENT', 'MANAGE_STUDENT_ASSIGNMENTS'),
+    upload.single('file'),
+    controller.previewImport,
+  );
+  router.post(
+    '/import/validate',
+    requireAuth,
+    requirePermission('MANAGE_ENROLLMENT', 'MANAGE_STUDENT_ASSIGNMENTS'),
+    controller.validateImport,
+  );
+  router.post(
+    '/import/confirm',
+    requireAuth,
+    requirePermission('MANAGE_ENROLLMENT', 'MANAGE_STUDENT_ASSIGNMENTS'),
+    controller.confirmImport,
+  );
 
-  // Transfert élève
-  router.post('/students/:id/transfer', requireAuth, requireRole('ADMIN'), controller.transfer);
+  // Transfert élève — Censeur / VP (MANAGE_STUDENT_ASSIGNMENTS) ou ADMIN — pas le Secrétaire en V1
+  router.post(
+    '/students/:id/transfer',
+    requireAuth,
+    requirePermission('MANAGE_STUDENT_ASSIGNMENTS'),
+    controller.transfer,
+  );
 
   // Désignation AP (Animateur Pédagogique / HOD)
   router.patch('/:id/ap-designation', requireAuth, requireRole('ADMIN'), controller.apDesignation);
