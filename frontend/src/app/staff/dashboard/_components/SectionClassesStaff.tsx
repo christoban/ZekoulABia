@@ -53,10 +53,12 @@ export default function SectionClassesStaff({ onToast }: Props) {
       fetchApi('/api/v2/academic-years', { credentials: 'include' }).then(r => r.json()).catch(() => null),
     ])
       .then(([classData, ayData]) => {
-        if (classData?.success) {
-          setClasses(classData.data ?? [])
-        } else {
-          onToast(classData?.error || 'Erreur lors du chargement des classes', 'error')
+        if (Array.isArray(classData?.data)) {
+          setClasses(classData.data)
+        } else if (Array.isArray(classData)) {
+          setClasses(classData)
+        } else if (classData && !classData.success && classData.error) {
+          onToast(classData.error, 'error')
         }
 
         if (ayData?.success && Array.isArray(ayData.data)) {

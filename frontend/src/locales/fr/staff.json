@@ -33,6 +33,9 @@
     "overdueBooksAlert": "{count} livre{s} en retard à la bibliothèque",
     "cacheBadge": "Données du {date} — hors-ligne"
   },
+  "bulletinValidation": {
+    "title": "Validation des bulletins"
+  },
   "gradeValidation": {
     "title": "Validation des notes",
     "subtitle": "{total} note{s} en attente · {lots} lot{s}",
@@ -138,6 +141,7 @@
     "unassigned": "Non assigné",
     "clear": "Vider",
     "confirm": "Confirmer",
+    "cancel": "Annuler",
     "savingSlot": "Sauvegarde…",
     "slotUpdated": "Créneau mis à jour",
     "slotCleared": "Créneau vidé",
@@ -343,6 +347,7 @@
   },
   "cautions": {
     "title": "Gestion des cautions",
+    "retry": "Réessayer",
     "subtitle": "Dépôts de garantie · HELD → Remboursement ou rétention",
     "refresh": "Rafraîchir",
     "kpiPending": "Cautions en attente",

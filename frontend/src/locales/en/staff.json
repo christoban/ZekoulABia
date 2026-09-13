@@ -33,6 +33,9 @@
     "overdueBooksAlert": "{count} overdue book{s} at the library",
     "cacheBadge": "Data from {date} — offline"
   },
+  "bulletinValidation": {
+    "title": "Report Card Validation"
+  },
   "gradeValidation": {
     "title": "Grade Validation",
     "subtitle": "{total} grade{s} pending · {lots} lot{s}",
@@ -138,6 +141,7 @@
     "unassigned": "Unassigned",
     "clear": "Clear",
     "confirm": "Confirm",
+    "cancel": "Cancel",
     "savingSlot": "Saving…",
     "slotUpdated": "Slot updated",
     "slotCleared": "Slot cleared",
@@ -343,6 +347,7 @@
   },
   "cautions": {
     "title": "Caution Deposit Management",
+    "retry": "Retry",
     "subtitle": "Security deposits · HELD → Refund or Retention",
     "refresh": "Refresh",
     "kpiPending": "Pending Caution Deposits",

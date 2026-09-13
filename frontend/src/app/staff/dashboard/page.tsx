@@ -38,6 +38,7 @@ import SectionModerationMessagerie from './_components/SectionModerationMessager
 import SectionClassesStaff from './_components/SectionClassesStaff'
 import SectionElevesAffectationsStaff from './_components/SectionElevesAffectationsStaff'
 import SectionImportElevesStaff from './_components/SectionImportElevesStaff'
+import SectionConfigurationStaff from './_components/SectionConfigurationStaff'
 import { useRouter } from 'next/navigation'
 import { useT } from '@/lib/i18n'
 
@@ -56,7 +57,7 @@ export default function StaffDashboard() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [toasts, setToasts]             = useState<Toast[]>([])
   const [sessionUser, setSessionUser]   = useState<SessionUser | null>(null)
-  const [allowedSections, setAllowedSections] = useState<Set<StaffSection>>(new Set(['dashboard', 'mon-profil-rh', 'notifications', 'babillard', 'messagerie', 'moderation-messagerie']))
+  const [allowedSections, setAllowedSections] = useState<Set<StaffSection>>(new Set(['dashboard', 'mon-profil-rh', 'notifications', 'babillard', 'messagerie', 'moderation-messagerie', 'sync-offline', 'configuration']))
   const [schoolName, setSchoolName]     = useState<string | undefined>(undefined)
   const [logoUrl,    setLogoUrl]        = useState<string | null>(null)
   const [changePwdOpen, setChangePwdOpen] = useState(false)
@@ -156,18 +157,6 @@ export default function StaffDashboard() {
             <SectionAttendanceStaff onToast={showToast} />
           )}
 
-          {section === 'grille-horaire' && can('grille-horaire') && (
-            <SectionGrilleHoraire onToast={showToast} />
-          )}
-
-          {section === 'affectations' && can('affectations') && (
-            <SectionAffectations onToast={showToast} />
-          )}
-
-          {section === 'classes' && can('classes') && (
-            <SectionClassesStaff onToast={showToast} />
-          )}
-
           {section === 'eleves-affectations' && can('eleves-affectations') && (
             <SectionElevesAffectationsStaff onToast={showToast} />
           )}
@@ -182,10 +171,6 @@ export default function StaffDashboard() {
 
           {section === 'apee' && can('apee') && (
             <SectionAPEEStaff onToast={showToast} />
-          )}
-
-          {section === 'cautions' && can('cautions') && (
-            <SectionCautions onToast={showToast} />
           )}
 
           {section === 'discipline' && can('discipline') && (
@@ -208,8 +193,12 @@ export default function StaffDashboard() {
             <SectionSuiviElevesStaff sessionUser={sessionUser} onToast={showToast} />
           )}
 
-          {section === 'import-eleves' && can('import-eleves') && (
-            <SectionImportElevesStaff onToast={showToast} />
+          {(section === 'configuration' || ['import-eleves', 'classes', 'grille-horaire', 'affectations', 'cautions'].includes(section)) && (
+            <SectionConfigurationStaff
+              onToast={showToast}
+              allowedSections={allowedSections}
+              initialTab={['import-eleves', 'classes', 'grille-horaire', 'affectations', 'cautions'].includes(section) ? section : undefined}
+            />
           )}
 
           {section === 'mon-profil-rh' && <SectionMonProfilRH onToast={showToast} />}

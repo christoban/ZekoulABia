@@ -42,13 +42,9 @@ export default function SectionElevesAffectationsStaff({ onToast }: Props) {
     fetchApi('/api/v2/classes', { credentials: 'include' })
       .then(r => r.json())
       .then(d => {
-        if (d.success) {
-          const list: ClassItem[] = d.data ?? []
-          setClasses(list)
-          if (list.length > 0) setSelectedClassId(list[0].id)
-        } else {
-          onToast(d.error || 'Erreur lors du chargement des classes', 'error')
-        }
+        const list: ClassItem[] = Array.isArray(d?.data) ? d.data : Array.isArray(d) ? d : []
+        setClasses(list)
+        if (list.length > 0) setSelectedClassId(list[0].id)
       })
       .catch(() => onToast('Erreur réseau classes', 'error'))
       .finally(() => setLoadingClasses(false))

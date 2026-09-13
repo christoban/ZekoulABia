@@ -76,7 +76,11 @@ export default function SectionSuiviElevesStaff({ sessionUser, onToast }: Props)
 
   const fetchVigilance = useCallback(async (): Promise<VigilanceResponse> => {
     const res = await fetchApi('/api/v2/ai/students-health', { credentials: 'include' })
-    return res.json()
+    const data = await res.json()
+    if (!res.ok || !data || !Array.isArray(data.students)) {
+      return { students: [], summary: { critical: 0, warning: 0 } }
+    }
+    return data
   }, [])
   // cacheKey vide = useCachedFetch ne déclenche aucun appel (voir hooks/useCachedFetch.ts) — évite
   // d'interroger /students-health pour un Conseiller qui n'a pas la permission de le consulter.
@@ -86,12 +90,15 @@ export default function SectionSuiviElevesStaff({ sessionUser, onToast }: Props)
   const fetchActions = useCallback(async (): Promise<FollowUpAction[]> => {
     const res = await fetchApi('/api/v2/student-follow-up/mine', { credentials: 'include' })
     const data = await res.json()
-    if (!data.success) throw new Error(data.message || 'Erreur')
+    if (!res.ok || !data?.success || !Array.isArray(data?.data)) return []
     return data.data
   }, [])
   const { data: actions, loading: loadingActions, error, refetch } =
     useCachedFetch<FollowUpAction[]>('staff:suivi-eleves-mine', fetchActions)
-  const actionsOuvertes = (actions ?? []).filter((a) => a.status !== 'CLOS')
+  const actionsList = Array.isArray(actions) ? actions : []
+  const actionsOuvertes = actionsList.filter((a) => a && a.status !== 'CLOS')
+
+  const studentsList = Array.isArray(vigilance?.students) ? vigilance.students : []
 
   const labelType: Record<ActionType, string> = {
     ENTRETIEN_PARENT: t('suivi.type_entretien'), SIGNALEMENT_CONSEILLER: t('suivi.type_signalement'),
@@ -110,7 +117,7 @@ export default function SectionSuiviElevesStaff({ sessionUser, onToast }: Props)
           <div style={sBlockTitle}>{t('suivi.vigilance_title')}</div>
           {loadingVigilance ? (
             <div style={{ fontSize: 13, color: 'var(--text3)' }}>{t('suivi.chargement')}</div>
-          ) : !vigilance || vigilance.students.length === 0 ? (
+          ) : studentsList.length === 0 ? (
             <div style={{ fontSize: 13, color: 'var(--text3)', fontStyle: 'italic' }}>{t('suivi.vigilance_vide')}</div>
           ) : (
             <>
@@ -120,7 +127,7 @@ export default function SectionSuiviElevesStaff({ sessionUser, onToast }: Props)
                 </div>
               )}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10 }}>
-                {vigilance.students.filter((s) => s.alertLevel === 'critical' || s.alertLevel === 'warning').map((s) => {
+                {studentsList.filter((s) => s.alertLevel === 'critical' || s.alertLevel === 'warning').map((s) => {
                   const style = ALERT_STYLE[s.alertLevel]
                   return (
                     <div key={s.studentId} style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 12, padding: '12px 14px' }}>

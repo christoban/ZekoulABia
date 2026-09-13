@@ -36,7 +36,8 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
     fetchApi('/api/v2/classes', { credentials: 'include' })
       .then(r => r.json())
       .then(d => {
-        if (d.success) setClasses(d.data.map((c: any) => ({ id: c.id, name: c.name, level: c.level })))
+        const list = Array.isArray(d?.data) ? d.data : Array.isArray(d) ? d : []
+        setClasses(list.map((c: any) => ({ id: c.id, name: c.name, level: c.level })))
       })
       .catch(() => {})
       .finally(() => setLoadingClasses(false))

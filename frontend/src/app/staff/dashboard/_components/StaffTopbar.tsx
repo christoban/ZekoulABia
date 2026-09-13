@@ -6,8 +6,18 @@ import ThemeToggle from '@/components/ThemeToggle'
 import NotificationBell from '@/components/NotificationBell'
 import MobileMenuButton from '@/components/MobileMenuButton'
 
+import OfflineSyncButtonPopover from '@/components/OfflineSyncButtonPopover'
+
 const SECTION_KEY: Record<string, string> = {
   'grille-horaire': 'grilleHoraire',
+  'suivi-eleves': 'suiviEleves',
+  'eleves-affectations': 'elevesAffectations',
+  'import-eleves': 'importEleves',
+  'moderation-messagerie': 'moderationMessagerie',
+  'mon-profil-rh': 'monProfilRh',
+  'sync-offline': 'syncOffline',
+  'bulletin-validation': 'bulletinValidation',
+  'configuration': 'configuration',
 }
 
 interface Props {
@@ -36,6 +46,7 @@ export default function StaffTopbar({ section, periodLabel, onChangePassword, on
         </span>
       )}
       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <OfflineSyncButtonPopover namespace="staff" />
         {onChangePassword && (
           <button onClick={onChangePassword} title={tcommon('auth.changePassword')}
             style={{ width: 36, height: 36, borderRadius: 9, background: 'var(--bg2)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>

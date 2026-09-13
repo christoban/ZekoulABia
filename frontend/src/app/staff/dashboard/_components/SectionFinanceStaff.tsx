@@ -1,13 +1,15 @@
-﻿'use client'
+'use client'
 import { useState, useEffect, useCallback } from 'react'
 import type { SessionUser } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { AlertTriangle, Loader2, Smartphone } from 'lucide-react'
+import SectionAPEEStaff from './SectionAPEEStaff'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
   sessionUser?: SessionUser | null
+  initialTab?: 'invoices' | 'apee'
 }
 
 interface Payment { id: string; amount: number; status: string; paidAt: string | null; method: string }
@@ -34,8 +36,9 @@ function fmtCFA(n: number) {
 const DEPENSE_CATEGORIES = ['catSupplies', 'catMaintenance', 'catUtilities', 'catFuel', 'catCommunication', 'catBankFees', 'catSalaries', 'catEvents', 'catOther']
 const EMPTY_DEP = { label: '', amount: '', category: '', date: '' }
 
-export default function SectionFinanceStaff({ onToast, sessionUser }: Props) {
+export default function SectionFinanceStaff({ onToast, sessionUser, initialTab = 'invoices' }: Props) {
   const t = useT('staff')
+  const [tab, setTab]           = useState<'invoices' | 'apee'>(initialTab)
   const [invoices, setInvoices] = useState<InvoiceItem[]>([])
   const [pag, setPag]           = useState<Pagination>({ total: 0, page: 1, pages: 1 })
   const [loading, setLoading]   = useState(true)
@@ -135,25 +138,60 @@ export default function SectionFinanceStaff({ onToast, sessionUser }: Props) {
 
   const totalPending = invoices.filter(i => i.status === 'PENDING').reduce((s, i) => s + i.amount, 0)
   const totalPartial = invoices.filter(i => i.status === 'PARTIAL').reduce((s, i) => s + i.amount, 0)
+  const canSeeAPEE = sessionUser?.permissions?.some(p => p === 'VIEW_APEE' || p === 'MANAGE_APEE') ?? true
 
   return (
     <div style={{ padding: '28px 32px', overflowY: 'auto', height: '100%' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 26 }}>
-        <div>
-          <div style={sTitle}>{t('finance.title')}</div>
-          <div style={sSub}>{t('finance.subtitle')}</div>
+      {/* Onglets Finance & APEE */}
+      {canSeeAPEE && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 20, borderBottom: '1px solid var(--border)', paddingBottom: 10 }}>
+          <button
+            onClick={() => setTab('invoices')}
+            style={{
+              padding: '8px 16px', borderRadius: 10, fontSize: 14, fontWeight: 800,
+              background: tab === 'invoices' ? 'var(--blue-light)' : 'transparent',
+              color: tab === 'invoices' ? 'var(--blue)' : 'var(--text2)',
+              border: tab === 'invoices' ? '1px solid rgba(29,78,216,0.3)' : '1px solid transparent',
+              cursor: 'pointer', fontFamily: 'inherit'
+            }}
+          >
+            Factures & Mobile Money
+          </button>
+          <button
+            onClick={() => setTab('apee')}
+            style={{
+              padding: '8px 16px', borderRadius: 10, fontSize: 14, fontWeight: 800,
+              background: tab === 'apee' ? 'var(--blue-light)' : 'transparent',
+              color: tab === 'apee' ? 'var(--blue)' : 'var(--text2)',
+              border: tab === 'apee' ? '1px solid rgba(29,78,216,0.3)' : '1px solid transparent',
+              cursor: 'pointer', fontFamily: 'inherit'
+            }}
+          >
+            Transparence APEE
+          </button>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          {hasMF && (
-            <button style={btnPrim} onClick={() => { setDepenseOpen(true); setDepenseError(null); setDepenseForm(EMPTY_DEP) }}>
-              {t('finance.recordExpense')}
-            </button>
-          )}
-          <button style={btnSec} onClick={() => fetchInvoices(page)}>{t('finance.refresh')}</button>
-        </div>
-      </div>
+      )}
+
+      {tab === 'apee' ? (
+        <SectionAPEEStaff onToast={onToast} />
+      ) : (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 26 }}>
+            <div>
+              <div style={sTitle}>{t('finance.title')}</div>
+              <div style={sSub}>{t('finance.subtitle')}</div>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              {hasMF && (
+                <button style={btnPrim} onClick={() => { setDepenseOpen(true); setDepenseError(null); setDepenseForm(EMPTY_DEP) }}>
+                  {t('finance.recordExpense')}
+                </button>
+              )}
+              <button style={btnSec} onClick={() => fetchInvoices(page)}>{t('finance.refresh')}</button>
+            </div>
+          </div>
 
       {/* KPIs */}
       {!loading && !error && (
@@ -362,6 +400,8 @@ export default function SectionFinanceStaff({ onToast, sessionUser }: Props) {
             </form>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   )

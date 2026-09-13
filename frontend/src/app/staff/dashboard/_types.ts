@@ -7,6 +7,7 @@ export type StaffSection =
   | 'sync-offline'
   | 'mon-profil-rh' | 'apee' | 'notifications' | 'babillard' | 'messagerie' | 'moderation-messagerie'
   | 'classes' | 'eleves-affectations' | 'import-eleves'
+  | 'configuration'
 
 export interface SessionUser {
   userId: string
@@ -41,9 +42,6 @@ export const PERM_TO_SECTION: { perm: string; section: StaffSection }[] = [
   { perm: 'MANAGE_LIBRARY',             section: 'library'          },
   { perm: 'MANAGE_ORIENTATION',         section: 'orientation'      },
   { perm: 'SUPERVISE_DEPARTMENT_TEACHERS', section: 'departements'  },
-  // Suivi élève signalé (Partie B) — Censeur en lecture seule, Conseiller pédagogique (deux
-  // permissions possibles selon le template, jamais la même titulature partout, voir
-  // StaffPermissionRules.ts) une fois un cas escaladé vers lui.
   { perm: 'VALIDATE_GRADES',            section: 'suivi-eleves'     },
   { perm: 'MANAGE_ORIENTATION',         section: 'suivi-eleves'     },
   { perm: 'MANAGE_PEDAGOGICAL_BRIEF',   section: 'suivi-eleves'     },
@@ -51,7 +49,7 @@ export const PERM_TO_SECTION: { perm: string; section: StaffSection }[] = [
 ]
 
 export function getSectionsFromPermissions(permissions: string[]): Set<StaffSection> {
-  const set = new Set<StaffSection>(['dashboard', 'mon-profil-rh', 'notifications', 'babillard', 'messagerie', 'moderation-messagerie'])
+  const set = new Set<StaffSection>(['dashboard', 'mon-profil-rh', 'notifications', 'babillard', 'messagerie', 'moderation-messagerie', 'sync-offline', 'configuration'])
   for (const { perm, section } of PERM_TO_SECTION) {
     if (permissions.includes(perm)) set.add(section)
   }

@@ -1,10 +1,12 @@
 'use client'
+
+import { useState } from 'react'
 import {
-  LogOut, LayoutDashboard, GraduationCap, FileText, ClipboardCheck, Clock,
-  Link2, Calendar, Landmark, Smartphone, Lock, AlertTriangle, BookOpen,
+  LogOut, LayoutDashboard, GraduationCap, ClipboardCheck,
+  Calendar, Landmark, Smartphone, AlertTriangle, BookOpen,
   Compass, IdCard, HandCoins, X, ShieldAlert,
-  RefreshCw, Megaphone, MessageCircle, ShieldCheck,
-  ScanSearch, School, Users, UserPlus,
+  Megaphone, MessageCircle,
+  ScanSearch, Users, Settings, ChevronDown, ChevronRight,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -21,8 +23,9 @@ interface NavItem {
   badgeColor?: 'red' | 'amber' | 'green'
 }
 
-interface NavGroup {
-  label?: string
+interface NavAccordionGroup {
+  id: string
+  label: string
   items: NavItem[]
 }
 
@@ -50,41 +53,51 @@ export default function StaffSidebar({ current, onChange, allowedSections, sessi
   const messagesNonLus = useUnreadMessagesCount()
   const can = (s: StaffSection) => allowedSections.has(s)
 
-  const supervisionItems: NavItem[] = []
-  if (can('import-eleves'))     supervisionItems.push({ id: 'import-eleves',     icon: UserPlus, label: tnav('sidebar.importEleves') ?? 'Import élèves' })
-  if (can('council'))          supervisionItems.push({ id: 'council',          icon: GraduationCap, label: tnav('sidebar.council'),         badge: badges.council,   badgeColor: 'amber' })
-  if (can('anonymat'))         supervisionItems.push({ id: 'anonymat',         icon: ScanSearch, label: tnav('sidebar.anonymat') })
-  if (can('suivi-eleves'))     supervisionItems.push({ id: 'suivi-eleves',     icon: ShieldAlert, label: tnav('sidebar.suiviEleves') })
-  if (can('attendance'))       supervisionItems.push({ id: 'attendance',       icon: ClipboardCheck, label: tnav('sidebar.attendance'),      badge: badges.attendance })
-  if (can('grille-horaire'))   supervisionItems.push({ id: 'grille-horaire',   icon: Clock, label: tnav('sidebar.scheduleGrid') })
-  if (can('affectations'))     supervisionItems.push({ id: 'affectations',     icon: Link2, label: tnav('sidebar.assignments') })
-  if (can('timetable'))        supervisionItems.push({ id: 'timetable',        icon: Calendar, label: tnav('sidebar.timetable') })
-  if (can('departements'))     supervisionItems.push({ id: 'departements',     icon: Landmark, label: tnav('sidebar.departments') })
-  if (can('classes'))             supervisionItems.push({ id: 'classes',             icon: School, label: tnav('sidebar.classes') ?? 'Classes' })
-  if (can('eleves-affectations')) supervisionItems.push({ id: 'eleves-affectations', icon: Users, label: tnav('sidebar.studentAssignments') ?? 'Affectations élèves' })
-  if (can('moderation-messagerie')) supervisionItems.push({ id: 'moderation-messagerie', icon: ShieldCheck, label: tnav('sidebar.moderationMessagerie') })
+  // Items quotidiens (Vie Scolaire & Services actifs)
+  const vieScolaireItems: NavItem[] = []
+  if (can('attendance'))       vieScolaireItems.push({ id: 'attendance',   icon: ClipboardCheck, label: tnav('sidebar.attendance'), badge: badges.attendance })
+  if (can('discipline'))      vieScolaireItems.push({ id: 'discipline',  icon: AlertTriangle, label: tnav('sidebar.discipline') })
+  if (can('suivi-eleves'))     vieScolaireItems.push({ id: 'suivi-eleves', icon: ShieldAlert, label: tnav('sidebar.suiviEleves') })
+  if (can('timetable'))        vieScolaireItems.push({ id: 'timetable',    icon: Calendar, label: tnav('sidebar.timetable') })
+  if (can('finance'))          vieScolaireItems.push({ id: 'finance',      icon: Smartphone, label: tnav('sidebar.finance'), badge: badges.finance, badgeColor: 'red' })
 
-  const servicesItems: NavItem[] = []
-  if (can('finance'))     servicesItems.push({ id: 'finance',     icon: Smartphone, label: tnav('sidebar.finance'),    badge: badges.finance,  badgeColor: 'red' })
-  if (can('apee'))        servicesItems.push({ id: 'apee',        icon: HandCoins, label: tnav('sidebar.apee') })
-  if (can('cautions'))    servicesItems.push({ id: 'cautions',    icon: Lock, label: tnav('sidebar.cautionMoney') })
-  if (can('discipline'))  servicesItems.push({ id: 'discipline',  icon: AlertTriangle, label: tnav('sidebar.discipline') })
-  if (can('library'))     servicesItems.push({ id: 'library',     icon: BookOpen, label: tnav('sidebar.library') })
-  if (can('orientation')) servicesItems.push({ id: 'orientation', icon: Compass, label: tnav('sidebar.orientation') })
+  // Évaluations & Examens
+  const evalItems: NavItem[] = []
+  if (can('council'))          evalItems.push({ id: 'council', icon: GraduationCap, label: tnav('sidebar.council'), badge: badges.council, badgeColor: 'amber' })
+  if (can('anonymat'))         evalItems.push({ id: 'anonymat', icon: ScanSearch, label: tnav('sidebar.anonymat') })
 
-  const navGroups: NavGroup[] = [
-    { items: [{ id: 'dashboard', icon: LayoutDashboard, label: tnav('sidebar.dashboard') }] },
-    ...(supervisionItems.length > 0 ? [{ label: tnav('group.supervision'), items: supervisionItems }] : []),
-    ...(servicesItems.length > 0    ? [{ label: tnav('group.services'),    items: servicesItems    }] : []),
-    // notifications retiré de la sidebar — redondant avec la cloche (permanente sur tous les
-    // écrans), qui offre désormais un lien « Voir tout » vers cette même page.
-    { label: tnav('group.moncompte'), items: [
-      { id: 'sync-offline', icon: RefreshCw, label: tnav('sidebar.syncOffline') },
-      { id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard') },
-      { id: 'messagerie', icon: MessageCircle, label: tnav('sidebar.messagerie'), ...(messagesNonLus > 0 ? { badge: String(messagesNonLus), badgeColor: 'red' as const } : {}) },
-      { id: 'mon-profil-rh', icon: IdCard, label: tnav('sidebar.monProfilRH') },
-    ] },
+  // Pédagogie & Structure
+  const pedagItems: NavItem[] = []
+  if (can('eleves-affectations')) pedagItems.push({ id: 'eleves-affectations', icon: Users, label: tnav('sidebar.studentAssignments') ?? 'Affectations élèves' })
+  if (can('departements'))     pedagItems.push({ id: 'departements', icon: Landmark, label: tnav('sidebar.departments') })
+  if (can('orientation'))      pedagItems.push({ id: 'orientation', icon: Compass, label: tnav('sidebar.orientation') })
+  if (can('library'))          pedagItems.push({ id: 'library', icon: BookOpen, label: tnav('sidebar.library') })
+
+  // Communication
+  const commItems: NavItem[] = []
+  if (can('messagerie'))       commItems.push({ id: 'messagerie', icon: MessageCircle, label: tnav('sidebar.messagerie'), ...(messagesNonLus > 0 ? { badge: String(messagesNonLus), badgeColor: 'red' as const } : {}) })
+  if (can('babillard'))        commItems.push({ id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard') })
+
+  // Vérifier si une section de configuration est autorisée
+  const hasConfigAccess = ['import-eleves', 'classes', 'grille-horaire', 'affectations', 'cautions', 'configuration'].some(s => can(s as StaffSection))
+
+  const accordionGroups: NavAccordionGroup[] = [
+    ...(evalItems.length > 0 ? [{ id: 'evaluations', label: 'Évaluations & Conseils', items: evalItems }] : []),
+    ...(pedagItems.length > 0 ? [{ id: 'pedagogie', label: 'Pédagogie & Structure', items: pedagItems }] : []),
+    ...(commItems.length > 0 ? [{ id: 'communication', label: 'Communication', items: commItems }] : []),
   ]
+
+  // Déterminer quel groupe d'accordéon doit être ouvert par défaut (celui contenant la section courante)
+  const initialOpenState: Record<string, boolean> = {}
+  for (const grp of accordionGroups) {
+    initialOpenState[grp.id] = grp.items.some(it => it.id === current)
+  }
+
+  const [openAccordions, setOpenAccordions] = useState<Record<string, boolean>>(initialOpenState)
+
+  const toggleAccordion = (grpId: string) => {
+    setOpenAccordions(prev => ({ ...prev, [grpId]: !prev[grpId] }))
+  }
 
   const userFallback = sessionUser?.nomComplet ?? tcommon('user.staffFallback')
   const initials = sessionUser
@@ -128,21 +141,32 @@ export default function StaffSidebar({ current, onChange, allowedSections, sessi
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto" style={{ padding: '6px 6px' }}>
-        {navGroups.map((group, gi) => (
-          <div key={gi} style={{ marginBottom: 2 }}>
-            {group.label && (
-              <div className="text-[10px] font-black text-white/30 tracking-[1px] uppercase" style={{ padding: '6px 6px 2px' }}>
-                {group.label}
-              </div>
-            )}
-            {group.items.map(item => (
+        {/* Dashboard principal */}
+        <button onClick={() => handleChange('dashboard')}
+          className={cn(
+            'w-full flex items-center gap-2.5 rounded-md mb-[4px]',
+            'text-[12.5px] font-bold transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
+            current === 'dashboard' ? 'bg-[var(--sidebar-active)] text-white' : 'bg-transparent text-white/70 hover:bg-[var(--sidebar2)] hover:text-white'
+          )}
+          style={{ padding: '7px 8px' }}>
+          <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <LayoutDashboard size={16} strokeWidth={2} />
+          </span>
+          <span className="truncate flex-1">{tnav('sidebar.dashboard')}</span>
+        </button>
+
+        {/* Groupe Vie Scolaire & Suivi Quotidien */}
+        {vieScolaireItems.length > 0 && (
+          <div style={{ marginBottom: 6 }}>
+            <div className="text-[10px] font-black text-white/30 tracking-[1px] uppercase" style={{ padding: '6px 6px 2px' }}>
+              Vie Scolaire & Suivi
+            </div>
+            {vieScolaireItems.map(item => (
               <button key={item.id} onClick={() => handleChange(item.id)}
                 className={cn(
                   'w-full flex items-center gap-2.5 rounded-md mb-[2px]',
                   'text-[12px] font-semibold transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
-                    current === item.id
-                      ? 'bg-[var(--sidebar-active)] text-white'
-                      : 'bg-transparent text-white/50 hover:bg-[var(--sidebar2)] hover:text-white/80'
+                  current === item.id ? 'bg-[var(--sidebar-active)] text-white' : 'bg-transparent text-white/60 hover:bg-[var(--sidebar2)] hover:text-white/90'
                 )}
                 style={{ padding: '6px 8px' }}>
                 <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -157,7 +181,91 @@ export default function StaffSidebar({ current, onChange, allowedSections, sessi
               </button>
             ))}
           </div>
-        ))}
+        )}
+
+        {/* Groupes Accordéons (Évaluations, Pédagogie, Communication, Finance) */}
+        {accordionGroups.map(grp => {
+          const isOpen = openAccordions[grp.id] ?? grp.items.some(it => it.id === current)
+          return (
+            <div key={grp.id} style={{ marginBottom: 4 }}>
+              <button
+                onClick={() => toggleAccordion(grp.id)}
+                className="w-full flex items-center justify-between text-[10px] font-black text-white/35 tracking-[0.8px] uppercase hover:text-white/60 transition-all border-none bg-transparent cursor-pointer font-nunito"
+                style={{ padding: '6px 6px 4px' }}
+              >
+                <span>{grp.label}</span>
+                {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+              </button>
+
+              {isOpen && (
+                <div className="space-y-[2px] pl-1">
+                  {grp.items.map(item => (
+                    <button key={item.id} onClick={() => handleChange(item.id)}
+                      className={cn(
+                        'w-full flex items-center gap-2.5 rounded-md mb-[2px]',
+                        'text-[12px] font-semibold transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
+                        current === item.id ? 'bg-[var(--sidebar-active)] text-white' : 'bg-transparent text-white/55 hover:bg-[var(--sidebar2)] hover:text-white/85'
+                      )}
+                      style={{ padding: '6px 8px' }}>
+                      <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <item.icon size={15} strokeWidth={2} />
+                      </span>
+                      <span className="truncate flex-1">{item.label}</span>
+                      {item.badge && (
+                        <span className={cn('ml-auto text-[10.5px] font-black rounded', BADGE_STYLES[item.badgeColor ?? 'red'])} style={{ padding: '1px 5px' }}>
+                          {item.badge}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+
+        {/* Section Configuration Établissement (Séparée & Proéminente en bas de nav) */}
+        {hasConfigAccess && (
+          <div style={{ marginTop: 10, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+            <button
+              onClick={() => handleChange('configuration')}
+              className={cn(
+                'w-full flex items-center gap-2.5 rounded-lg transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
+                current === 'configuration' || ['import-eleves', 'classes', 'grille-horaire', 'affectations', 'cautions'].includes(current)
+                  ? 'bg-blue-600/30 text-blue-200 border border-blue-500/40'
+                  : 'bg-white/[0.04] text-white/70 hover:bg-white/[0.08] hover:text-white border border-white/10'
+              )}
+              style={{ padding: '8px 10px' }}
+            >
+              <Settings size={16} className="text-blue-400 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="text-[12px] font-bold leading-tight">Configuration</div>
+                <div className="text-[10px] text-white/40">Grilles, Rentrée, Classes</div>
+              </div>
+            </button>
+          </div>
+        )}
+
+        {/* Mon Compte */}
+        <div style={{ marginTop: 8 }}>
+          <div className="text-[10px] font-black text-white/30 tracking-[1px] uppercase" style={{ padding: '6px 6px 2px' }}>
+            Mon compte
+          </div>
+          {can('mon-profil-rh') && (
+            <button onClick={() => handleChange('mon-profil-rh')}
+              className={cn(
+                'w-full flex items-center gap-2.5 rounded-md mb-[2px]',
+                'text-[12px] font-semibold transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
+                current === 'mon-profil-rh' ? 'bg-[var(--sidebar-active)] text-white' : 'bg-transparent text-white/50 hover:bg-[var(--sidebar2)] hover:text-white/80'
+              )}
+              style={{ padding: '6px 8px' }}>
+              <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <IdCard size={15} strokeWidth={2} />
+              </span>
+              <span className="truncate flex-1">{tnav('sidebar.monProfilRH')}</span>
+            </button>
+          )}
+        </div>
       </nav>
 
       {/* User */}
@@ -202,3 +310,4 @@ export default function StaffSidebar({ current, onChange, allowedSections, sessi
     </>
   )
 }
+

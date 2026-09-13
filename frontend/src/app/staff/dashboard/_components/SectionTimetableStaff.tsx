@@ -104,8 +104,9 @@ export default function SectionTimetable({ onToast }: Props) {
       fetchApi('/api/v2/timetable-grid-config', { credentials: 'include' }).then(r => r.json()),
       fetchApi('/api/v2/subjects', { credentials: 'include' }).then(r => r.json()).catch(() => null),
     ]).then(([classData, configData, subjectData]) => {
-      setClasses(classData.data || [])
-      if (configData.data) {
+      const list = Array.isArray(classData?.data) ? classData.data : Array.isArray(classData) ? classData : []
+      setClasses(list)
+      if (configData?.data) {
         setGridConfig(configData.data.config)
         setSquelette(configData.data.squelette)
       }
