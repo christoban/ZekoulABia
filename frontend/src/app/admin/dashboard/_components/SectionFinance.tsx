@@ -5,8 +5,11 @@ import { useT } from '@/lib/i18n'
 import { AlertTriangle, Wallet, Pencil, CheckCircle2, Loader2, Circle } from 'lucide-react'
 import DelegationSupervisionBanner from './DelegationSupervisionBanner'
 
+import type { AdminSection } from '../_types'
+
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
+  onNav?: (section: AdminSection) => void
 }
 
 interface FeePlan {
@@ -37,8 +40,8 @@ const EMPTY_MOD_PLAN = { open: false, planId: '', name: '', amount: '', feeType:
 const EMPTY_BULK = { open: false, planId: '', planName: '', academicYearId: '', loading: false, error: '', years: [] as { id: string; name: string }[] }
 const EMPTY_INVOICE = { studentId: '', feePlanId: '', description: '', loading: false, error: '' }
 
-export default function SectionFinance({ onToast }: Props) {
-  const [tab, setTab] = useState<'plans' | 'invoices'>('plans')
+export default function SectionFinance({ onToast, onNav }: Props) {
+  const [tab, setTab] = useState<'supervision' | 'plans' | 'invoices'>('supervision')
   const [plans, setPlans]       = useState<FeePlan[]>([])
   const [invoices, setInvoices] = useState<InvoiceItem[]>([])
   const [pag, setPag]           = useState<Pagination>({ total: 0, page: 1, pages: 1 })
@@ -102,8 +105,14 @@ export default function SectionFinance({ onToast }: Props) {
   }, [page, invStatus])
 
   useEffect(() => {
-    if (tab === 'plans') fetchPlans()
-    else fetchInvoices(1)
+    if (tab === 'supervision') {
+      fetchPlans()
+      fetchInvoices(1)
+    } else if (tab === 'plans') {
+      fetchPlans()
+    } else {
+      fetchInvoices(1)
+    }
   }, [tab])  // eslint-disable-line react-hooks/exhaustive-deps
 
   // Rafraîchissement temps réel quand l'assistant IA agit sur les plans/factures/paiements.
@@ -257,30 +266,33 @@ export default function SectionFinance({ onToast }: Props) {
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 26 }}>
-        <div>
-          <div className="text-[22px] md:text-[28px]" style={sTitle}>{t('title')}</div>
-          <div className="text-[13px] md:text-[17px]" style={sSub}>{t('subtitle')}</div>
-        </div>
-        <div className="hidden md:flex" style={{ gap: 10, flexWrap: 'wrap' }}>
-          <button style={{ padding: '10px 18px', borderRadius: 11, fontSize: 16, fontWeight: 800, background: 'var(--surface)', color: 'var(--green)', border: '1.5px solid rgba(5,150,105,0.35)', cursor: 'pointer', fontFamily: 'inherit' }} onClick={openInvoiceModal}>{t('actions.create_invoice')}</button>
-          <button style={btnPrim} onClick={() => setCreateOpen(true)}>{t('actions.new_plan')}</button>
-        </div>
-        <div className="flex md:hidden" style={{ gap: 8 }}>
-          <button style={{ borderRadius: 20, padding: '9px 14px', fontSize: 12, background: 'var(--bg2)', color: 'var(--green)', fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }} onClick={openInvoiceModal}>{t('actions.create_invoice')}</button>
-          <button style={{ ...btnPrim, borderRadius: 20, padding: '9px 14px', fontSize: 12, fontWeight: 700 }} onClick={() => setCreateOpen(true)}>{t('actions.new_plan')}</button>
+      <div style={{ marginBottom: 18 }}>
+        <div className="text-[22px] md:text-[28px]" style={sTitle}>{t('title')} — Pilotage Financier</div>
+        <div className="text-[13px] md:text-[17px]" style={sSub}>{t('subtitle')}</div>
+      </div>
+
+      <DelegationSupervisionBanner actorTitle="Intendant / Économe" domainLabel="Finance & Tarifs" onNav={onNav} />
+
+      {/* RACI Directorship Governance Notice */}
+      <div className="mb-4 p-3.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-xs text-[var(--text)] flex items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-emerald-500/15 text-emerald-600 flex-shrink-0">
+            <Wallet size={16} />
+          </div>
+          <div>
+            <p className="font-bold text-xs">Supervision Financière Directoriale</p>
+            <p className="text-[11.5px] text-[var(--text2)]">La collecte quotidienne de scolarité est gérée par l’Intendant. En tant que Directeur, vous suivez le taux de recouvrement, approuvez les exonérations et validez les tarifs.</p>
+          </div>
         </div>
       </div>
 
-      <DelegationSupervisionBanner actorTitle="Intendant / Économe" domainLabel="Finance & Tarifs" />
-
       {/* Tabs */}
       <div className="gap-[2px] mb-[16px] md:mb-[22px]" style={{ display: 'flex', background: 'var(--bg2)', padding: 5, borderRadius: 12, width: 'fit-content' }}>
-        {(['plans', 'invoices'] as const).map(tabKey => (
+        {(['supervision', 'plans', 'invoices'] as const).map(tabKey => (
           <button key={tabKey} onClick={() => setTab(tabKey)}
             className="px-[14px] md:px-[20px] py-[7px] md:py-[8px] text-[13px] md:text-[16px]"
             style={{ borderRadius: 9, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: 'none', background: tab === tabKey ? 'white' : 'transparent', color: tab === tabKey ? 'var(--text)' : 'var(--text3)', boxShadow: tab === tabKey ? '0 1px 4px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.12s' }}>
-            {tabKey === 'plans' ? t('tabs.plans') : t('tabs.invoices')}
+            {tabKey === 'supervision' ? t('tabs.supervision') : tabKey === 'plans' ? t('tabs.plans') : t('tabs.invoices')}
           </button>
         ))}
       </div>
@@ -302,9 +314,70 @@ export default function SectionFinance({ onToast }: Props) {
         </div>
       )}
 
+      {/* Vue Supervision */}
+      {!loading && !error && tab === 'supervision' && (
+        <div className="flex flex-col gap-5">
+          {/* File d'attente d'arbitrage / Décisions */}
+          <div className="p-4 md:p-5 rounded-2xl border border-[var(--border)]" style={{ background: 'var(--surface)' }}>
+            <div className="flex items-center gap-2 mb-3">
+              <CheckCircle2 className="w-5 h-5 text-amber-600" />
+              <div className="text-base font-bold text-[var(--text)]">{t('supervision_queue.title')}</div>
+            </div>
+            {overdueCount === 0 && plans.length > 0 ? (
+              <div className="text-sm font-semibold text-emerald-700 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span>{t('supervision_queue.all_clear')}</span>
+              </div>
+            ) : (
+              <div className="flex flex-col md:flex-row gap-3">
+                {overdueCount > 0 && (
+                  <div className="flex-1 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3.5 flex items-center justify-between">
+                    <span className="text-xs md:text-sm font-bold text-amber-800">
+                      {t('supervision_queue.overdue_invoices').replace('{count}', String(overdueCount))}
+                    </span>
+                    <button onClick={() => setTab('invoices')} className="text-xs font-bold text-amber-900 underline hover:no-underline ml-2">
+                      {t('supervision_queue.go_to_invoices')}
+                    </button>
+                  </div>
+                )}
+                <div className="flex-1 bg-blue-500/10 border border-blue-500/20 rounded-xl p-3.5 flex items-center justify-between">
+                  <span className="text-xs md:text-sm font-bold text-blue-800">
+                    {t('supervision_queue.pending_plans').replace('{count}', String(plans.length))}
+                  </span>
+                  <button onClick={() => setTab('plans')} className="text-xs font-bold text-blue-900 underline hover:no-underline ml-2">
+                    {t('supervision_queue.go_to_plans')}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* KPIs factures */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-[10px] md:gap-[16px]">
+            {[
+              { icon: <Wallet size={20} strokeWidth={2} />, label: t('kpi.total_billed'),        val: fmtCFA(totalAmount),   bg: 'var(--blue-light)' },
+              { icon: <CheckCircle2 size={20} strokeWidth={2} />, label: t('kpi.total_collected'),      val: fmtCFA(paidAmount),    bg: 'var(--green-light)' },
+              { icon: <Loader2 size={20} strokeWidth={2} />, label: t('kpi.pending'),             val: String(pendingCount),  bg: 'var(--amber-light)' },
+              { icon: <Circle size={12} fill="var(--red)" stroke="none" />, label: t('kpi.overdue'),             val: String(overdueCount),  bg: 'var(--red-light)' },
+            ].map((k, i) => (
+              <div key={i} className="p-[12px] md:px-[20px] md:py-[18px] rounded-[14px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)' }}>
+                <div className="w-[34px] h-[34px] md:w-10 md:h-10" style={{ borderRadius: 10, background: k.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, marginBottom: 10 }}>{k.icon}</div>
+                <div className="text-[18px] md:text-[22px] font-black" style={{ color: 'var(--text)' }}>{k.val}</div>
+                <div className="text-[11.5px] md:text-[14px]" style={{ color: 'var(--text3)', fontWeight: 600, marginTop: 4 }}>{k.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Plans de frais */}
       {!loading && !error && tab === 'plans' && (
         <>
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-base font-bold text-[var(--text)]">{t('tabs.plans')}</div>
+            <button style={btnPrim} onClick={() => setCreateOpen(true)}>{t('actions.new_plan')}</button>
+          </div>
+
           {plans.length === 0 ? (
             <div className="px-[24px] py-[44px] md:px-[32px] md:py-[60px]" style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', textAlign: 'center' }}>
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
@@ -367,6 +440,10 @@ export default function SectionFinance({ onToast }: Props) {
       {/* Factures */}
       {!loading && !error && tab === 'invoices' && (
         <>
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-base font-bold text-[var(--text)]">{t('tabs.invoices')}</div>
+            <button style={{ padding: '9px 16px', borderRadius: 11, fontSize: 14, fontWeight: 800, background: 'var(--surface)', color: 'var(--green)', border: '1.5px solid rgba(5,150,105,0.35)', cursor: 'pointer', fontFamily: 'inherit' }} onClick={openInvoiceModal}>{t('actions.create_invoice')}</button>
+          </div>
           {/* KPIs factures (sur la page courante) */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-[10px] md:gap-[16px]" style={{ marginBottom: 20 }}>
             {[

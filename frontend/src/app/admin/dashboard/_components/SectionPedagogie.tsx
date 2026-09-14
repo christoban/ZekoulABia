@@ -6,7 +6,10 @@ import { useSyncQueue } from '@/hooks/useSyncQueue'
 import { Circle, TrendingUp, BookOpen, CheckCircle2, Inbox, Check, WifiOff } from 'lucide-react'
 import DelegationSupervisionBanner from './DelegationSupervisionBanner'
 
+import type { AdminSection } from '../_types'
+
 interface OnToast { (msg: string, type?: 'success' | 'error' | 'info' | 'warning'): void }
+interface Props { onToast: OnToast; onNav?: (section: AdminSection) => void }
 
 interface Subject { id: string; name: string }
 interface Classe  { id: string; name: string; level?: string | null }
@@ -36,7 +39,7 @@ interface ProgressionData {
 
 type Tab = 'programmes' | 'progression' | 'alertes' | 'rapports'
 
-export default function SectionPedagogie({ onToast }: { onToast: OnToast }) {
+export default function SectionPedagogie({ onToast, onNav }: Props) {
   const t = useT('admin')
   const [tab, setTab] = useState<Tab>('alertes')
   const { isOnline, addToQueue } = useSyncQueue()
@@ -213,7 +216,7 @@ export default function SectionPedagogie({ onToast }: { onToast: OnToast }) {
         </div>
       </div>
 
-      <DelegationSupervisionBanner domainLabel="Suivi Pédagogique & Avancement des Programmes" />
+      <DelegationSupervisionBanner actorTitle="Animateur Pédagogique" domainLabel="Suivi Pédagogique & Avancement des Programmes" onNav={onNav} />
 
       {!isOnline && (
         <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 12, padding: '12px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -278,8 +281,26 @@ export default function SectionPedagogie({ onToast }: { onToast: OnToast }) {
                           <div style={{ height: '100%', width: `${a.progressionPct}%`, background: a.niveau === 'CRITIQUE' ? 'var(--red)' : 'var(--amber)', borderRadius: 6, position: 'relative', zIndex: 1 }} />
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
-                          La barre verte (grise) montre le niveau attendu à cette date
+                          La barre grise indique le niveau d'avancement attendu à la date d'aujourd'hui.
                         </div>
+                      </div>
+
+                      {/* Actions RACI Admin : Signaler (par défaut) vs Intervenir directement */}
+                      <div className="mt-3 flex items-center gap-2 flex-wrap">
+                        <button
+                          onClick={() => onToast(`Signalement d'alerte transmis à l'Animateur Pédagogique et à l'Enseignant (${a.className} — ${a.subjectName})`, 'success')}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                          style={{ background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid var(--amber)' }}
+                        >
+                          <span>🔔 Signaler / Relancer l'Animateur Pédagogique</span>
+                        </button>
+                        <button
+                          onClick={() => { setTab('programmes'); setExpandedProg(a.programmeId) }}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                          style={{ background: 'var(--bg2)', color: 'var(--text2)', border: '1px solid var(--border)' }}
+                        >
+                          <span>✏️ Intervenir (Urgence Admin)</span>
+                        </button>
                       </div>
                     </div>
                   </div>

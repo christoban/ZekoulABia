@@ -148,12 +148,25 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
     <div className="px-4 py-5 md:px-8 md:py-7" style={{ overflowY: 'auto', height: '100%' }}>
       <div className="mb-[16px] md:mb-[20px]" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <div className="text-[22px] md:text-[28px]" style={sTitle}>{t('academicEvents.title')}</div>
+          <div className="text-[22px] md:text-[28px]" style={sTitle}>{t('academicEvents.title')} — Campagnes Saisonnières</div>
           <div className="text-[13px] md:text-[17px]" style={sSub}>{t('academicEvents.subtitle')}</div>
         </div>
         <button onClick={() => setFormOpen(true)} className="rounded-full md:rounded-[10px] text-[12px] md:text-[15px] px-[14px] md:px-[16px] py-[9px] md:py-[8px]" style={{ ...btnPrim, borderRadius: undefined, padding: undefined, fontSize: undefined, fontWeight: 700 }}>
           <Plus size={15} strokeWidth={2.5} /> {t('academicEvents.newEvent')}
         </button>
+      </div>
+
+      {/* RACI Academic Events Banner */}
+      <div className="mb-4 p-3.5 rounded-xl border border-purple-500/20 bg-purple-500/5 text-xs text-[var(--text)] flex items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-purple-500/15 text-purple-600 flex-shrink-0">
+            <CalendarClock size={16} />
+          </div>
+          <div>
+            <p className="font-bold text-xs">Gestion des Campagnes Événementielles</p>
+            <p className="text-[11.5px] text-[var(--text2)]">L'Administrateur déclenche et planifie les fenêtres d'événements (Choix LV2, Concours 6e, PEBS). Les sous-menus associés apparaissent dans la navigation uniquement lors des périodes d'ouverture.</p>
+          </div>
+        </div>
       </div>
 
       {!loading && !error && events.length > 0 && (

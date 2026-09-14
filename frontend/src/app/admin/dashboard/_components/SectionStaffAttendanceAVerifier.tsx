@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
@@ -23,21 +23,30 @@ export default function SectionStaffAttendanceAVerifier({ onToast }: { onToast: 
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState<string | null>(null)
 
-  const load = useCallback(async () => {
-    setLoading(true)
+  const onToastRef = useRef(onToast)
+  const tRef = useRef(t)
+  useEffect(() => {
+    onToastRef.current = onToast
+    tRef.current = t
+  })
+
+  const load = useCallback(async (isInitial = false) => {
+    if (isInitial) setLoading(true)
     try {
       const r = await fetchApi('/api/v2/staff-attendance/a-verifier', { credentials: 'include' })
       const d = await r.json()
       if (!d.success) throw new Error(d.message ?? 'Erreur')
       setItems(d.data ?? [])
     } catch {
-      onToast(t('rh.toast.errAttendance'), 'error')
+      onToastRef.current(tRef.current('rh.toast.errAttendance'), 'error')
     } finally {
       setLoading(false)
     }
-  }, [onToast, t])
+  }, [])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    load(true)
+  }, [load])
 
   const requalifier = async (id: string, statut: 'PRESENT' | 'ABSENT' | 'RETARD') => {
     setBusyId(id)
@@ -50,10 +59,10 @@ export default function SectionStaffAttendanceAVerifier({ onToast }: { onToast: 
       })
       const d = await r.json()
       if (!d.success) throw new Error(d.message ?? 'Erreur')
-      onToast(t('rh.attendanceSaved'), 'success')
-      load()
+      onToastRef.current(tRef.current('rh.attendanceSaved'), 'success')
+      load(false)
     } catch (err) {
-      onToast(err instanceof Error ? err.message : t('rh.toast.errAttendance'), 'error')
+      onToastRef.current(err instanceof Error ? err.message : tRef.current('rh.toast.errAttendance'), 'error')
     } finally {
       setBusyId(null)
     }

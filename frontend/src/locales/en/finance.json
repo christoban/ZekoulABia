@@ -2,8 +2,17 @@
   "title": "Finance",
   "subtitle": "Fee Plans · Invoices · Mobile Money Payments",
   "tabs": {
+    "supervision": "Supervision & Decisions",
     "plans": "Fee Plans",
     "invoices": "Invoices"
+  },
+  "supervision_queue": {
+    "title": "Awaiting your decision / arbitration",
+    "all_clear": "No urgent actions pending — Daily management is handled by the Bursar/Treasurer.",
+    "pending_plans": "{count} fee plan(s) to monitor",
+    "overdue_invoices": "{count} overdue invoice(s) requiring attention",
+    "go_to_plans": "Manage fee plans",
+    "go_to_invoices": "View invoices"
   },
   "kpi": {
     "total_billed": "Total Billed",

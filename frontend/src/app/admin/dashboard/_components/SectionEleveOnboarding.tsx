@@ -4,7 +4,12 @@ import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import DelegationSupervisionBanner from './DelegationSupervisionBanner'
 
-interface Props { onToast: (msg: string, type?: 'success' | 'error' | 'info') => void }
+import type { AdminSection } from '../_types'
+
+interface Props {
+  onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
+  onNav?: (section: AdminSection) => void
+}
 
 interface ClasseItem { id: string; name: string }
 
@@ -46,7 +51,7 @@ const btnDanger = { padding: '6px 12px', borderRadius: 8, border: '1px solid var
 const btnSmall = { padding: '6px 12px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
 const inputStyle = { padding: '9px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 14, width: '100%', boxSizing: 'border-box' as const }
 
-export default function SectionEleveOnboarding({ onToast }: Props) {
+export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
   const t = useT('admin')
   const [settings, setSettings] = useState<Settings | null>(null)
   const [classes, setClasses] = useState<ClasseItem[]>([])
@@ -219,17 +224,57 @@ export default function SectionEleveOnboarding({ onToast }: Props) {
 
   return (
     <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
-        <div>
-          <h2 className="text-[22px] md:text-[28px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('eleveOnboarding.title')}</h2>
-          <p className="text-[13px] md:text-[14px]" style={{ color: 'var(--text3)', marginTop: 4 }}>{t('eleveOnboarding.subtitle')}</p>
-        </div>
-        <button onClick={() => setCreateOpen(true)} style={{ ...btnPri, borderRadius: 20, padding: '9px 14px', fontSize: 12 }}>{t('eleveOnboarding.createBtn')}</button>
+      <div style={{ marginBottom: 18 }}>
+        <h2 className="text-[22px] md:text-[28px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('eleveOnboarding.title')}</h2>
+        <p className="text-[13px] md:text-[14px]" style={{ color: 'var(--text3)', marginTop: 4 }}>{t('eleveOnboarding.subtitle')}</p>
       </div>
 
       <div style={{ marginBottom: 20 }}>
-        <DelegationSupervisionBanner domainLabel="Inscriptions & Admissions Élèves" />
+        <DelegationSupervisionBanner actorTitle="Secrétaire / Service Inscriptions" domainLabel="Inscriptions & Admissions Élèves" onNav={onNav} />
       </div>
+
+      {/* Jauge d'avancement / Pipeline de supervision des dossiers */}
+      {(() => {
+        const total = dossiers.length
+        const pendingCount = dossiers.filter(d => ['DRAFT', 'LINK_SENT', 'SUBMITTED', 'PENDING_VALIDATION'].includes(d.status)).length
+        const validatedCount = dossiers.filter(d => ['VALIDATED', 'ACTIVATED'].includes(d.status)).length
+        const rejectedCount = dossiers.filter(d => ['REJECTED', 'EXPIRED'].includes(d.status)).length
+        const pendingPct = total > 0 ? Math.round((pendingCount / total) * 100) : 0
+        const validatedPct = total > 0 ? Math.round((validatedCount / total) * 100) : 0
+        const rejectedPct = total > 0 ? Math.round((rejectedCount / total) * 100) : 0
+
+        return (
+          <div className="mb-5 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-xs">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-extrabold text-[13.5px] text-[var(--text)]">Jauge d'avancement des Admissions</span>
+              <span className="text-[12px] font-bold text-[var(--text3)]">{total} dossier(s) total</span>
+            </div>
+
+            {/* Visual Bar */}
+            <div className="w-full h-3 rounded-full bg-[var(--bg2)] overflow-hidden flex mb-3 border border-[var(--border)]">
+              <div style={{ width: `${validatedPct}%`, background: 'var(--green)' }} title={`Validés: ${validatedCount} (${validatedPct}%)`} />
+              <div style={{ width: `${pendingPct}%`, background: '#f59e0b' }} title={`En attente: ${pendingCount} (${pendingPct}%)`} />
+              <div style={{ width: `${rejectedPct}%`, background: 'var(--red)' }} title={`Rejetés/Expirés: ${rejectedCount} (${rejectedPct}%)`} />
+            </div>
+
+            {/* Badges de comptage */}
+            <div className="grid grid-cols-3 gap-2 text-center text-xs">
+              <div className="p-2 rounded-lg bg-[rgba(22,163,74,0.08)] border border-[rgba(22,163,74,0.2)]">
+                <span className="font-bold text-[var(--green)]">{validatedCount}</span>
+                <span className="block text-[11px] text-[var(--text2)] font-semibold">Inscrits / Validés</span>
+              </div>
+              <div className="p-2 rounded-lg bg-[rgba(245,158,11,0.08)] border border-[rgba(245,158,11,0.2)]">
+                <span className="font-bold text-amber-600">{pendingCount}</span>
+                <span className="block text-[11px] text-[var(--text2)] font-semibold">En attente / Pièces</span>
+              </div>
+              <div className="p-2 rounded-lg bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.2)]">
+                <span className="font-bold text-[var(--red)]">{rejectedCount}</span>
+                <span className="block text-[11px] text-[var(--text2)] font-semibold">Rejetés / Expirés</span>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Réglages */}
       {settings && (
@@ -252,8 +297,8 @@ export default function SectionEleveOnboarding({ onToast }: Props) {
         </div>
       )}
 
-      {/* Filtre statut */}
-      <div style={{ marginBottom: 14 }}>
+      {/* Barre de contrôle des dossiers */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
           className="rounded-[12px] md:rounded-[8px] px-[12px] md:px-[14px] py-[9px] md:py-[8px] text-[12.5px] md:text-[13px] font-semibold md:font-normal border-0 md:border md:border-[var(--border)] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none"
           style={{ background: 'var(--surface)', color: 'var(--text)' }}>
@@ -262,6 +307,10 @@ export default function SectionEleveOnboarding({ onToast }: Props) {
             <option key={s} value={s}>{t(`eleveOnboarding.status_${s}`)}</option>
           ))}
         </select>
+
+        <button onClick={() => setCreateOpen(true)} style={{ ...btnSec, borderRadius: 8, padding: '7px 14px', fontSize: 13, borderColor: 'var(--amber)', color: 'var(--amber-dark)' }}>
+          + Créer un dossier (Secours Admin)
+        </button>
       </div>
 
       {/* Liste */}

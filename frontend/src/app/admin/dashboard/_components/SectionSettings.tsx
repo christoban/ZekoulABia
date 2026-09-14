@@ -487,8 +487,21 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
       <style>{`@keyframes edu-settings-spin { to { transform: rotate(360deg); } }`}</style>
       <div className="mb-[16px] md:mb-[26px]" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <div className="text-[22px] md:text-[28px]" style={sTitle}>{t('settings.title')}</div>
+          <div className="text-[22px] md:text-[28px]" style={sTitle}>{t('settings.title')} — Configuration Établissement</div>
           <div className="text-[13px] md:text-[17px]" style={sSub}>{t('settings.subtitle')}</div>
+        </div>
+      </div>
+
+      {/* RACI Settings Governance Banner */}
+      <div className="mb-4 p-3.5 rounded-xl border border-blue-500/20 bg-blue-500/5 text-xs text-[var(--text)] flex items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-blue-500/15 text-blue-600 flex-shrink-0">
+            <School size={16} />
+          </div>
+          <div>
+            <p className="font-bold text-xs">Paramètres d'Établissement & Rentrée (Admin Exclusif)</p>
+            <p className="text-[11.5px] text-[var(--text2)]">Espace de configuration globale (identité, sous-domaine, règles de sécurité, journaux d'audit et restauration). Accessible ponctuellement depuis le pied de navigation.</p>
+          </div>
         </div>
       </div>
 

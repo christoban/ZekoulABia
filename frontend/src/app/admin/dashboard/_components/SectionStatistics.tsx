@@ -130,6 +130,19 @@ export default function SectionStatistics({ onToast }: Props) {
         <div className="text-[13px] md:text-[17px]" style={{ color: 'var(--text3)', marginTop: 3 }}>{t('statistics.subtitle')}</div>
       </div>
 
+      {/* RACI Ministerial Governance Notice */}
+      <div className="mb-5 p-3.5 rounded-xl border border-sky-500/20 bg-sky-500/5 text-xs text-[var(--text)] flex items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-sky-500/15 text-sky-600 flex-shrink-0">
+            <BarChart3 size={16} />
+          </div>
+          <div>
+            <p className="font-bold text-xs">Rapports & Synthèses Ministérielles (Supervision Directoriale)</p>
+            <p className="text-[11.5px] text-[var(--text2)]">Synthèse d'établissement exclusive du Chef d'Établissement. Utilisée pour la préparation des inspections régionales et rapports annuels (MINESEC / MINEDUB).</p>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 18 }}>
 
         {/* Évolution des moyennes */}

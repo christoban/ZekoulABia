@@ -371,8 +371,21 @@ export default function SectionRH({ onToast }: { onToast: OnToast }) {
   return (
     <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto' }}>
       <div className="mb-[16px] md:mb-[22px]">
-        <div className="text-[22px] md:text-[24px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('rh.title')}</div>
+        <div className="text-[22px] md:text-[24px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('rh.title')} — Gestion du Personnel</div>
         <div className="text-[13px] md:text-[14px]" style={{ color: 'var(--text3)', fontWeight: 500, marginTop: 4 }}>{t('rh.subtitle')}</div>
+      </div>
+
+      {/* RACI RH & Staff Governance Banner */}
+      <div className="mb-4 p-3.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-xs text-[var(--text)] flex items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-emerald-500/15 text-emerald-600 flex-shrink-0">
+            <Users size={16} />
+          </div>
+          <div>
+            <p className="font-bold text-xs">Supervision RH & Validation des Congés/Pointages</p>
+            <p className="text-[11.5px] text-[var(--text2)]">La gestion courante du pointage est portée par la Vie Scolaire / RH. L'Administrateur valide les congés, supervise les fiches de carrière et arbitre la paie.</p>
+          </div>
+        </div>
       </div>
 
       {/* Onglets — mobile : puces défilables avec indicateur glissant, fondu de bord (maquette) */}

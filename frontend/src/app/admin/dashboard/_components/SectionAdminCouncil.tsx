@@ -8,8 +8,11 @@ import { useT } from '@/lib/i18n'
 import { fetchApi } from '@/lib/fetchApi'
 import DelegationSupervisionBanner from './DelegationSupervisionBanner'
 
+import type { AdminSection } from '../_types'
+
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
+  onNav?: (section: AdminSection) => void
 }
 
 interface CouncilSession {
@@ -47,7 +50,7 @@ const DEC_COLOR: Record<string, { color: string; bg: string }> = {
   DELIBERATION: { color: 'var(--amber)', bg: 'var(--amber-light)' },
 }
 
-export default function SectionAdminCouncil({ onToast }: Props) {
+export default function SectionAdminCouncil({ onToast, onNav }: Props) {
   const t = useT('grades')
   const DEC_LABEL: Record<string, string> = {
     PASS: t('council.DEC_LABEL.PASS'), REPEAT: t('council.DEC_LABEL.REPEAT'), DELIBERATION: t('council.DEC_LABEL.DELIBERATION'),
@@ -135,7 +138,20 @@ export default function SectionAdminCouncil({ onToast }: Props) {
         )}
       </div>
 
-      <DelegationSupervisionBanner domainLabel="Conseils de Classe & Délibérations" />
+      <DelegationSupervisionBanner actorTitle="Censeur / Principal / Directeur" domainLabel="Conseils de Classe & Délibérations" onNav={onNav} />
+
+      {/* RACI Solemn Presidency Governance Notice */}
+      <div className="mb-4 p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-xs text-[var(--text)] flex items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-amber-500/15 text-amber-600 flex-shrink-0">
+            <GraduationCap size={16} />
+          </div>
+          <div>
+            <p className="font-bold text-xs">Instance Solennelle de Délibération Direction / Censeur</p>
+            <p className="text-[11.5px] text-[var(--text2)]">Le Conseil de classe est présidé par le Censeur ou le Directeur. La clôture officielle actée ici enregistre les délibérations (admissions, redoublements, exclusions) et débloque l'impression des bulletins.</p>
+          </div>
+        </div>
+      </div>
 
       {/* KPI cards */}
       {!loading && !error && sessions.length > 0 && (

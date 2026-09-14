@@ -6,8 +6,11 @@ import { useT } from '@/lib/i18n'
 import { X, AlertTriangle, CalendarDays, Calendar, Bot } from 'lucide-react'
 import DelegationSupervisionBanner from './DelegationSupervisionBanner'
 
+import type { AdminSection } from '../_types'
+
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
+  onNav?: (section: AdminSection) => void
 }
 
 interface ClassItem { id: string; name: string }
@@ -58,7 +61,7 @@ function subjectColor(id: string) {
   return SUBJECT_PALETTES[Math.abs(hash) % SUBJECT_PALETTES.length]
 }
 
-export default function SectionTimetable({ onToast }: Props) {
+export default function SectionTimetable({ onToast, onNav }: Props) {
   const t = useT('admin')
   const [classes, setClasses]                 = useState<ClassItem[]>([])
   const [classId, setClassId]                 = useState('')
@@ -185,6 +188,38 @@ export default function SectionTimetable({ onToast }: Props) {
   const remplis    = slots.filter(s => s.kind === 'CLASS' && s.subject).length
   const pct        = totalCours > 0 ? Math.round(remplis / totalCours * 100) : 0
 
+  const [generating, setGenerating]           = useState(false)
+
+  const handleProposeSchedule = async () => {
+    if (!classId) return
+    setGenerating(true)
+    try {
+      let targetId = timetable?.id
+      if (!targetId) {
+        const createRes = await fetchApi('/api/v2/timetables/manual', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ classId }),
+        })
+        const createData = await createRes.json()
+        targetId = createData.data?.id
+      }
+      if (!targetId) throw new Error(t('timetable.errGen'))
+
+      const res = await fetchApi(`/api/v2/timetables/${targetId}/propose-schedule`, {
+        method: 'POST', credentials: 'include',
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || t('timetable.errGen'))
+      onToast('Génération automatique d\'emploi du temps réussie', 'success')
+      fetchTimetable()
+    } catch (err) {
+      onToast(err instanceof Error ? err.message : t('timetable.errGen'), 'error')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
   return (
     <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
@@ -208,6 +243,13 @@ export default function SectionTimetable({ onToast }: Props) {
           </select>
 
           <div className="flex flex-wrap gap-2 md:gap-[10px] md:items-center">
+            {classId && (
+              <button className="text-[12.5px] md:text-[15px] font-semibold md:font-bold rounded-full md:rounded-[11px] px-[14px] py-[10px] md:px-[18px] md:py-[10px]"
+                style={{ ...btnSec, borderRadius: undefined, padding: undefined, fontSize: undefined }}
+                onClick={handleProposeSchedule} disabled={generating}>
+                {generating ? <><span style={spinInline} />{t('timetable.generating')}</> : <><Bot size={15} className="inline mr-1" />{t('timetable.autoGen')}</>}
+              </button>
+            )}
             {timetable && timetable.status !== 'PUBLISHED' && (
               <button className="text-[12.5px] md:text-[15px] font-semibold md:font-bold rounded-full md:rounded-[11px] px-[14px] py-[10px] md:px-[18px] md:py-[10px]" style={{ ...btnPrim, borderRadius: undefined, padding: undefined, fontSize: undefined, fontWeight: undefined }} onClick={handlePublish} disabled={publishing}>
                 {publishing ? <><span style={spinInline} />{t('timetable.publishing')}</> : t('timetable.publishBtn')}
@@ -218,7 +260,20 @@ export default function SectionTimetable({ onToast }: Props) {
       </div>
 
       {/* Supervision Banner */}
-      <DelegationSupervisionBanner domainLabel="Emplois du Temps & Plannings" />
+      <DelegationSupervisionBanner actorTitle="Censeur / Chef des Travaux" domainLabel="Emplois du Temps & Plannings" onNav={onNav} />
+
+      {/* RACI Governance Notice */}
+      <div className="mb-4 p-3.5 rounded-xl border border-sky-500/20 bg-sky-500/5 text-xs text-[var(--text)] flex items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-sky-500/15 text-sky-600 flex-shrink-0">
+            <CalendarDays size={16} />
+          </div>
+          <div>
+            <p className="font-bold text-xs">Validation & Publication des Emplois du Temps</p>
+            <p className="text-[11.5px] text-[var(--text2)]">L'élaboration technique des créneaux et plannings est assurée par le Censeur. L'Administrateur supervise la résolution des conflits et effectue la publication officielle.</p>
+          </div>
+        </div>
+      </div>
 
       {/* Panel résultats génération */}
 

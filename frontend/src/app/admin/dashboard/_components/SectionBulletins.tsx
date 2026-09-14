@@ -1,12 +1,16 @@
-﻿'use client'
+'use client'
 import { useState, useEffect } from 'react'
 import { PartyPopper, Search, AlertTriangle, CheckCircle2, Loader2, FileText, BarChart3, Package, Upload, Eye } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { fetchApi } from '@/lib/fetchApi'
 import AnimatedBackground from '@/components/AnimatedBackground'
+import DelegationSupervisionBanner from './DelegationSupervisionBanner'
+
+import type { AdminSection } from '../_types'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
+  onNav?: (section: AdminSection) => void
 }
 
 interface ClassItem { id: string; name: string }
@@ -33,7 +37,7 @@ interface ReportCardItem {
   student?: { firstName: string; lastName: string }
 }
 
-export default function SectionBulletins({ onToast }: Props) {
+export default function SectionBulletins({ onToast, onNav }: Props) {
   const t = useT('grades')
   const [classes, setClasses]     = useState<ClassItem[]>([])
   const [classId, setClassId]     = useState('')
@@ -217,6 +221,21 @@ export default function SectionBulletins({ onToast }: Props) {
       <div className="mb-[14px] md:mb-[26px]">
         <div className="text-[22px] md:text-[28px]" style={sTitle}>{t('bulletins.title')}</div>
         <div className="text-[13px] md:text-[17px]" style={sSub}>Génération et distribution</div>
+      </div>
+
+      <DelegationSupervisionBanner actorTitle="Saisie : Titulaire de classe | Validation : Censeur & Direction" domainLabel="Bulletins & Évaluations" onNav={onNav} />
+
+      {/* RACI 2-Step Validation Banner */}
+      <div className="mb-4 p-3.5 rounded-xl border border-purple-500/20 bg-purple-500/5 text-xs text-[var(--text)] flex items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-purple-500/15 text-purple-600 flex-shrink-0">
+            <FileText size={16} />
+          </div>
+          <div>
+            <p className="font-bold text-xs">Circuit de Validation & Signature des Bulletins</p>
+            <p className="text-[11.5px] text-[var(--text2)]">1. Les appréciations générales sont renseignées par les Titulaires. 2. Le Censeur et le Directeur vérifient la conformité, verrouillent et signent la publication officielle.</p>
+          </div>
+        </div>
       </div>
 
       {/* Sélecteur de classe */}

@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { fetchApi } from '@/lib/fetchApi'
@@ -11,8 +11,11 @@ import {
   Loader2, CheckCircle2, MoreHorizontal, MoreVertical, UserPlus, type LucideIcon,
 } from 'lucide-react'
 
+import type { AdminSection } from '../_types'
+
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
+  onNav?: (section: AdminSection) => void
 }
 
 // ── Mapping titre → permissions (doit correspondre au backend StaffPermissionRules.ts) ──
@@ -727,7 +730,7 @@ const EMPTY_CREATE_USER = {
 }
 interface SubjectItem2 { id: string; name: string }
 
-export default function SectionUsers({ onToast }: Props) {
+export default function SectionUsers({ onToast, onNav }: Props) {
   const t = useT('admin')
 
   const ROLE_TABS: { label: string; role: string }[] = [
@@ -1107,6 +1110,46 @@ export default function SectionUsers({ onToast }: Props) {
         </div>
       </div>
 
+      {/* RACI Governance Banner — clarification du rôle Admin */}
+      <div className="mb-4 p-3.5 rounded-xl border text-xs flex items-center justify-between gap-3 shadow-xs"
+        style={{
+          background: (ROLE_TABS[activeTab]?.role === 'STUDENT' || ROLE_TABS[activeTab]?.role === 'PARENT')
+            ? 'linear-gradient(135deg, rgba(59,130,246,0.08), rgba(30,58,138,0.04))'
+            : 'linear-gradient(135deg, rgba(16,185,129,0.08), rgba(6,78,59,0.04))',
+          borderColor: (ROLE_TABS[activeTab]?.role === 'STUDENT' || ROLE_TABS[activeTab]?.role === 'PARENT')
+            ? 'rgba(59,130,246,0.25)'
+            : 'rgba(16,185,129,0.25)',
+          color: 'var(--text)',
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg flex-shrink-0"
+            style={{
+              background: (ROLE_TABS[activeTab]?.role === 'STUDENT' || ROLE_TABS[activeTab]?.role === 'PARENT')
+                ? 'rgba(59,130,246,0.15)'
+                : 'rgba(16,185,129,0.15)',
+              color: (ROLE_TABS[activeTab]?.role === 'STUDENT' || ROLE_TABS[activeTab]?.role === 'PARENT')
+                ? '#2563eb'
+                : '#059669',
+            }}
+          >
+            {(ROLE_TABS[activeTab]?.role === 'STUDENT' || ROLE_TABS[activeTab]?.role === 'PARENT') ? <Eye size={16} /> : <UserCheck size={16} />}
+          </div>
+          <div>
+            <p className="font-bold text-xs" style={{ color: 'var(--text)' }}>
+              {(ROLE_TABS[activeTab]?.role === 'STUDENT' || ROLE_TABS[activeTab]?.role === 'PARENT')
+                ? 'Annuaire Général Élèves & Parents — Mode Consultation & Modification de secours'
+                : 'Gestion Directe du Personnel & Comptes Staff — Action Administrateur'}
+            </p>
+            <p className="text-[11.5px]" style={{ color: 'var(--text2)' }}>
+              {(ROLE_TABS[activeTab]?.role === 'STUDENT' || ROLE_TABS[activeTab]?.role === 'PARENT')
+                ? 'La saisie quotidienne des inscriptions est déléguée au Secrétariat (Module Onboarding Élèves). En tant qu’Admin, vous accédez à l’annuaire complet et aux modifications exceptionnelles.'
+                : 'Seul l’Administrateur peut créer des comptes pour les Enseignants et le Staff, attribuer les rôles et réinitialiser les accès.'}
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Tabs — mobile : puces défilables + indicateur glissant, fondu de bord (maquette) */}
       <div className="relative md:hidden mb-[14px] -mr-4">
         <div className="flex gap-[6px] overflow-x-auto pr-8 py-[2px]" style={{ scrollbarWidth: 'none' }}>
@@ -1131,7 +1174,7 @@ export default function SectionUsers({ onToast }: Props) {
         <div className="pointer-events-none absolute top-0 right-0 bottom-[4px] w-7" style={{ background: 'linear-gradient(90deg,transparent,var(--bg) 65%)' }} />
       </div>
 
-      {/* Tabs — desktop : segmented control inchangé */}
+      {/* Tabs — desktop : segmented control avec séparation visuelle des rôles */}
       <div className="hidden md:flex" style={{ gap: 2, background: 'var(--bg2)', padding: 5, borderRadius: 12, marginBottom: 20, width: 'fit-content', flexWrap: 'wrap' }}>
         {ROLE_TABS.map((tab, i) => {
           const cnt = i === 0 ? totalAll : (counts[tab.role] ?? 0)

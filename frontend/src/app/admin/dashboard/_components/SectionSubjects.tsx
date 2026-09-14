@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { DndContext, DragOverlay, useDraggable, useDroppable, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
@@ -9,8 +9,12 @@ import {
   Users, Pencil, BarChart3, FolderOpen, Presentation, Check, RefreshCw, type LucideIcon,
 } from 'lucide-react'
 
+import DelegationSupervisionBanner from './DelegationSupervisionBanner'
+import type { AdminSection } from '../_types'
+
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
+  onNav?: (section: AdminSection) => void
 }
 
 interface ClassItem { id: string; name: string; level: string | null }
@@ -56,7 +60,7 @@ const EMPTY_MOD    = { open: false, subjectId: '', name: '', code: '', coefficie
 const EMPTY_ASSIGN = { open: false, subjectId: '', subjectName: '', teacherSearch: '', teachers: [] as Teacher[], selected: null as Teacher | null, loading: false, error: '' }
 const EMPTY_COEFF = { open: false, subjectId: '', subjectName: '', loading: false, error: '' }
 
-export default function SectionSubjects({ onToast }: Props) {
+export default function SectionSubjects({ onToast, onNav }: Props) {
   const t = useT('admin')
   const [subjects, setSubjects]         = useState<SubjectItem[]>([])
   const [loading, setLoading]           = useState(true)
@@ -642,6 +646,21 @@ export default function SectionSubjects({ onToast }: Props) {
           {view === 'departements' && (
             <button style={btnPrim} onClick={() => setDeptCreateForm({ open: true, name: '', color: 'var(--text3)', loading: false, error: '' })}>{t('subjects.btn_create_dept')}</button>
           )}
+        </div>
+      </div>
+
+      <DelegationSupervisionBanner actorTitle="Animateur Pédagogique" domainLabel="Matières & Coefficients" onNav={onNav} />
+
+      {/* RACI Ministerial Compliance Matrix Banner */}
+      <div className="mb-4 p-3.5 rounded-xl border border-indigo-500/20 bg-indigo-500/5 text-xs text-[var(--text)] flex items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-indigo-500/15 text-indigo-600 flex-shrink-0">
+            <BookOpen size={16} />
+          </div>
+          <div>
+            <p className="font-bold text-xs">Matrice de Conformité Ministérielle & Coefficients</p>
+            <p className="text-[11.5px] text-[var(--text2)]">Le découpage disciplinaire est préparé par les Animateurs Pédagogiques (AP). L'Administrateur supervise la conformité des volumes horaires et l'équilibre des coefficients entre séries.</p>
+          </div>
         </div>
       </div>
 

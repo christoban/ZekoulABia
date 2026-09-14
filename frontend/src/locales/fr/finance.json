@@ -2,8 +2,17 @@
   "title": "Finance",
   "subtitle": "Plans de frais · Factures · Paiements Mobile Money",
   "tabs": {
+    "supervision": "Supervision & Décisions",
     "plans": "Plans de frais",
     "invoices": "Factures"
+  },
+  "supervision_queue": {
+    "title": "Ce qui attend votre décision / arbitrage",
+    "all_clear": "Aucune action urgente en attente — La gestion quotidienne est assurée par l'Intendant/Économe.",
+    "pending_plans": "{count} plan(s) de frais à surveiller",
+    "overdue_invoices": "{count} facture(s) en retard nécessitant attention",
+    "go_to_plans": "Gérer les plans de frais",
+    "go_to_invoices": "Consulter les factures"
   },
   "kpi": {
     "total_billed": "Total facturé",

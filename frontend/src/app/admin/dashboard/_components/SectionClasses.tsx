@@ -5,8 +5,11 @@ import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import DelegationSupervisionBanner from './DelegationSupervisionBanner'
 
+import type { AdminSection } from '../_types'
+
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
+  onNav?: (section: AdminSection) => void
 }
 
 interface ClassItem {
@@ -81,7 +84,7 @@ const EMPTY_LV2 = { open: false, classId: '', className: '', rows: [] as LV2Stud
 const EMPTY_PEBS = { open: false, classId: '', className: '', rows: [] as PEBSStudentRow[], loading: false, error: '', bulkSelected: new Set<string>(), bulkValue: '', bulkAssigning: false }
 const EMPTY_ALEVEL = { open: false, classId: '', className: '', rows: [] as ALevelStudentRow[], available: [] as SubjectItem[], combos: [] as ALevelCombo[], loading: false, error: '', bulkCombo: '', bulkApplying: false, editingStudentId: '' }
 
-export default function SectionClasses({ onToast }: Props) {
+export default function SectionClasses({ onToast, onNav }: Props) {
   const t = useT('admin')
 
   const secondCycleSeries: { value: string; label: string }[] = [
@@ -593,7 +596,7 @@ export default function SectionClasses({ onToast }: Props) {
           onClick={() => setCreateOpen(true)}>{t('classes.btn_create')}</button>
       </div>
 
-      <DelegationSupervisionBanner domainLabel="Classes & Structuration Pédagogique" />
+      <DelegationSupervisionBanner actorTitle="Censeur / Directrice des Études" domainLabel="Classes & Structuration Pédagogique" onNav={onNav} />
 
       {loading && (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}>
