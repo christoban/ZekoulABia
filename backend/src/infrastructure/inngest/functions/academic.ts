@@ -211,3 +211,96 @@ export const handleAssessmentScheduled = inngest.createFunction(
     return { examId, subjectId, classId };
   }
 );
+
+export const checkYearEndClosingProximity = inngest.createFunction(
+  { id: "check-year-end-closing-proximity", name: "Vérification quotidienne de proximité de fin d'année (6 semaines)", triggers: [{ cron: "0 5 * * *" }] },
+  async ({ step }) => {
+    await step.run("detect-and-notify-closing", async () => {
+      const now = new Date();
+
+      // Récupérer le calendrier officiel national actif
+      const officialCal = await (prisma as any).officialAcademicCalendar.findFirst({
+        where: { active: true },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      // Récupérer toutes les écoles avec leur année active
+      const activeYears = await prisma.academicYear.findMany({
+        where: { isCurrent: true, status: 'ACTIVE' },
+        include: {
+          school: {
+            include: {
+              users: {
+                where: { role: 'ADMIN' },
+                select: { id: true, schoolId: true },
+              },
+            },
+          },
+        },
+      });
+
+      for (const ay of activeYears) {
+        // Date de clôture : priorité au calendrier officiel national, sinon date de l'année scolaire
+        const closingDate = officialCal?.dateClotureOfficielle
+          ? new Date(officialCal.dateClotureOfficielle)
+          : new Date(ay.endDate);
+
+        const diffMs = closingDate.getTime() - now.getTime();
+        const diffDays = Math.floor(diffMs / (1000 * 3600 * 24));
+
+        // Seuil : uniquement dans la fenêtre de 6 semaines (42 jours) avant la clôture officielle
+        if (diffDays <= 42 && diffDays >= 0) {
+          const admins = ay.school?.users || [];
+          for (const admin of admins) {
+            // Vérifier l'idempotence : notification unique, jamais de répétition
+            const existingNotif = await prisma.notification.findFirst({
+              where: {
+                schoolId: ay.schoolId,
+                userId: admin.id,
+                type: 'ACADEMIC',
+                metadata: {
+                  path: ['action'],
+                  equals: 'OPEN_CLOTURE_MODAL',
+                },
+              },
+            });
+
+            if (!existingNotif) {
+              await prisma.notification.create({
+                data: {
+                  schoolId: ay.schoolId,
+                  userId: admin.id,
+                  type: 'ACADEMIC',
+                  urgency: 'HIGH',
+                  channel: 'IN_APP',
+                  title: "Préparation & Clôture de l'Année Scolaire N+1",
+                  body: `La clôture officielle approche (${closingDate.toLocaleDateString('fr-FR')}). La proposition de structure N+1 est prête pour validation.`,
+                  metadata: {
+                    action: 'OPEN_CLOTURE_MODAL',
+                    academicYearId: ay.id,
+                    targetClosingDate: closingDate.toISOString(),
+                  },
+                },
+              });
+
+              // Notification en temps réel via WebSocket
+              const socketService = new SocketNotificationService();
+              await socketService
+                .envoyer({
+                  schoolId: ay.schoolId,
+                  userId: admin.id,
+                  type: 'ACADEMIC_EVENT',
+                  titre: "Préparation & Clôture de l'Année Scolaire N+1",
+                  corps: `La clôture officielle approche (${closingDate.toLocaleDateString('fr-FR')}). La proposition de structure N+1 est prête pour validation.`,
+                  urgency: 'HIGH',
+                })
+                .catch(() => {});
+            }
+          }
+        }
+      }
+    });
+
+    return { processed: true };
+  }
+);

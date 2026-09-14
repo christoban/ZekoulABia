@@ -974,6 +974,23 @@ model AcademicYear {
   @@index([schoolId])
 }
 
+model OfficialAcademicCalendar {
+  id                    String   @id @default(cuid())
+  academicYear          String   // ex. "2026-2027"
+  establishmentType     String   @default("MINESEC") // "MINESEC" | "MINEDUB"
+  arreteReference       String?  // ex. "Arrêté conjoint MINESEC/MINEDUB du 14 août 2026"
+  dateRentreeOfficielle DateTime // ex. 2026-09-07
+  dateClotureOfficielle DateTime // ex. 2027-07-30
+  trimestres            Json     // [{ name: "Trimestre 1", startDate: "...", endDate: "..." }, ...]
+  periodesVacances      Json     // [{ name: "Noël", startDate: "...", endDate: "..." }, ...]
+  active                Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([academicYear, establishmentType])
+  @@index([academicYear, active])
+}
+
 model AcademicPeriod {
   id                   String                @id @default(cuid())
   academicYearId       String

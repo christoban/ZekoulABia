@@ -18,6 +18,18 @@ export const MINESEC_DEFAULTS = {
   SEUIL_LEGAL_SECOND_CYCLE: 10000,     // XAF — Art. 48 MINESEC
 } as const;
 
+export const CALENDRIER_OFFICIEL_NATIONAL_DEFAULTS = {
+  ANNEE: '2026-2027',
+  ARRETE: 'Arrêté conjoint MINESEC/MINEDUB du 14 août 2026',
+  RENTREE: '2026-09-07T00:00:00.000Z',
+  CLOTURE: '2027-07-30T23:59:59.000Z',
+  TRIMESTRES: [
+    { orderIndex: 1, name: 'Trimestre 1', startDate: '2026-09-07T00:00:00.000Z', endDate: '2026-12-04T23:59:59.000Z' },
+    { orderIndex: 2, name: 'Trimestre 2', startDate: '2027-01-04T00:00:00.000Z', endDate: '2027-04-02T23:59:59.000Z' },
+    { orderIndex: 3, name: 'Trimestre 3', startDate: '2027-04-19T00:00:00.000Z', endDate: '2027-07-30T23:59:59.000Z' },
+  ],
+} as const;
+
 export type SchoolLanguageMode = 'francophone' | 'anglophone' | 'bilingual';
 export type AcademicCalendarType = 'trimester' | 'semester';
 export type SchoolCycle =

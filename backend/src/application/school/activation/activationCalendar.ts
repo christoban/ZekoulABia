@@ -1,5 +1,6 @@
 import type { SchoolActivationTx } from '@domain/ports/repositories/SchoolActivationRepository';
 import { APC_UNITES } from '../curriculum/primaire-apc';
+import { CALENDRIER_OFFICIEL_NATIONAL_DEFAULTS } from '@domain/constants/SystemeEducatifCameroun';
 
 export interface CalendarCreationParams {
   tx: SchoolActivationTx;
@@ -20,12 +21,14 @@ export interface CalendarCreationResult {
 export async function creerCalendrierInitial(params: CalendarCreationParams): Promise<CalendarCreationResult> {
   const { tx, config, isPrimaire, isAnglophone, hasPrimaireContent, hasSecondaireContent, isComplexe } = params;
 
-  // 1. Créer l'année académique
-  const now = new Date();
-  const yStart = config.academicYearStart ? new Date(config.academicYearStart as string) : new Date(`${now.getFullYear()}-09-01`);
-  const startYear = yStart.getFullYear();
-  const yEnd = config.academicYearEnd ? new Date(config.academicYearEnd as string) : new Date(`${startYear + 1}-06-30`);
-  const academicYearName = `${startYear}-${yEnd.getFullYear()}`;
+  // 1. Créer l'année académique (adossement sur le calendrier officiel national par défaut)
+  const yStart = config.academicYearStart
+    ? new Date(config.academicYearStart as string)
+    : new Date(CALENDRIER_OFFICIEL_NATIONAL_DEFAULTS.RENTREE);
+  const yEnd = config.academicYearEnd
+    ? new Date(config.academicYearEnd as string)
+    : new Date(CALENDRIER_OFFICIEL_NATIONAL_DEFAULTS.CLOTURE);
+  const academicYearName = (config.academicYearName as string) || CALENDRIER_OFFICIEL_NATIONAL_DEFAULTS.ANNEE;
   const academicYear = await tx.creerAnnee({ name: academicYearName, startDate: yStart, endDate: yEnd });
 
   // 2. Créer les périodes

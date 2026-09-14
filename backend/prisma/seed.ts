@@ -9,6 +9,7 @@ import { getTechniqueAnEntries, TECHNICAL_EN_TEMPLATES } from '../src/applicatio
 import { primaryEN, PRIMARY_EN_TEMPLATES } from '../src/application/school/curriculum/anglophone/primary';
 import { getTemplateMeta } from '../src/application/school/schoolTemplateConfig';
 import { defaultsConfigLocalePourTemplate } from '../src/domain/rules/configLocaleTemplate';
+import { seedOfficialAcademicCalendar } from '../src/infrastructure/seed/officialAcademicCalendarDefaults';
 
 const prisma = new PrismaClient();
 // ─── LES 19 VRAIS TEMPLATES D'ÉTABLISSEMENTS CAMEROUNAIS ────────────────────
@@ -1432,6 +1433,9 @@ async function main() {
     }
   }
   console.log(`   ✓ ${tarifsCreated} tarifs (${anneesScolairesTarifs.join(', ')})`);
+
+  console.log("\n📅 Seeding Calendrier Académique Officiel (Arrêté Conjoint)...");
+  await seedOfficialAcademicCalendar(prisma);
 
   console.log("\n✅ Seed Phase 0 terminé.\n");
 }
