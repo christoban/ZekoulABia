@@ -199,6 +199,38 @@ export default function SectionAcademicYear({ onToast }: Props) {
     }
   }
 
+  // ── Pré-calcul intelligent de l'année candidat N+1 (Pattern Propose/Apply) ──
+  const openIntelligentCreate = () => {
+    const current = years.find(y => y.isCurrent)
+    let name = ''
+    let startDate = ''
+    let endDate = ''
+
+    if (current) {
+      const match = current.name.match(/(\d{4})[^\d]*(\d{4})/)
+      if (match) {
+        const y1 = parseInt(match[1], 10) + 1
+        const y2 = parseInt(match[2], 10) + 1
+        name = `${y1}-${y2}`
+      } else {
+        name = `${current.name} (N+1)`
+      }
+      if (current.startDate) {
+        const s = new Date(current.startDate)
+        s.setFullYear(s.getFullYear() + 1)
+        startDate = s.toISOString().slice(0, 10)
+      }
+      if (current.endDate) {
+        const e = new Date(current.endDate)
+        e.setFullYear(e.getFullYear() + 1)
+        endDate = e.toISOString().slice(0, 10)
+      }
+    }
+
+    setForm({ name, startDate, endDate, loading: false, error: '' })
+    setCreateOpen(true)
+  }
+
   // ── Reconduction des plans de frais vers la nouvelle année ────────────────
   const openReconductionReview = async (targetYearId: string, targetYearName: string, sourceYearId: string | null) => {
     setReconduction({ ...EMPTY_RECONDUCTION, open: true, targetYearId, targetYearName, loading: true })
@@ -381,14 +413,14 @@ export default function SectionAcademicYear({ onToast }: Props) {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 26 }}>
         <div>
-          <div className="text-[22px] md:text-[28px]" style={sTitle}>{t('academic_year.title')}</div>
+          <div className="text-[22px] md:text-[28px]" style={sTitle}>{t('academic_year.title')} — Transition & Rentrée</div>
           <div className="text-[13px] md:text-[17px]" style={sSub}>{t('academic_year.subtitle')}</div>
         </div>
-        <button className="hidden md:inline-block" style={btnPrim} onClick={() => setCreateOpen(true)}>{t('academic_year.newYear')}</button>
+        <button className="hidden md:inline-block" style={btnPrim} onClick={openIntelligentCreate}>🚀 Proposer & Ouvrir l'Année N+1</button>
         <button
           className="md:hidden inline-flex items-center rounded-full px-[14px] py-[9px] text-[12px] border-0 flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
-          onClick={() => setCreateOpen(true)}>+ {t('academic_year.newYear')}</button>
+          style={{ background: 'linear-gradient(135deg,var(--amber),var(--amber-dark, #d97706))', color: 'white', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+          onClick={openIntelligentCreate}>🚀 Proposer N+1</button>
       </div>
 
       {loading && (
@@ -725,12 +757,23 @@ export default function SectionAcademicYear({ onToast }: Props) {
         </div>
       )}
 
-      {/* ── Modal créer une année ── */}
+      {/* ── Modal créer une année (Pattern Propose/Apply) ── */}
       {createOpen && (
         <ModalOverlay onClose={() => { setCreateOpen(false); setForm(EMPTY_YEAR) }}>
-          <div className="text-[18px] md:text-[22px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 22 }}>
-            {t('academic_year.createYearTitle')}
+          <div className="text-[18px] md:text-[22px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>
+            Ouverture & Transition vers l'Année N+1
           </div>
+
+          <div className="mb-4 p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/10 text-xs text-[var(--text)] flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-amber-500/20 text-amber-600 flex-shrink-0 mt-0.5">
+              <Star size={16} />
+            </div>
+            <div>
+              <p className="font-bold text-xs">Proposition Automatique N+1 (Pattern Propose / Apply)</p>
+              <p className="text-[11.5px] text-[var(--text2)] mt-0.5">Le système a déduit la nouvelle année à partir de l’année courante. Validez les dates pré-calculées ou ajustez-les si besoin avant de déclencher la reconduction des tarifs.</p>
+            </div>
+          </div>
+
           <div className={sLbCls} style={sLb}>{t('academic_year.nameReq')}</div>
           <input
             className={sInCls} style={sIn}
@@ -750,12 +793,12 @@ export default function SectionAcademicYear({ onToast }: Props) {
             </div>
           </div>
           {form.error && <div style={{ background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{form.error}</div>}
-          <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+          <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
             <button style={{ flex: 1, padding: '10px', borderRadius: 11, fontSize: 15, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }}
               onClick={() => { setCreateOpen(false); setForm(EMPTY_YEAR) }}>{t('academic_year.cancel')}</button>
-            <button style={{ flex: 1, padding: '10px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: form.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: form.loading ? 0.7 : 1 }}
+            <button style={{ flex: 1, padding: '10px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: 'linear-gradient(135deg,var(--amber),var(--amber-dark, #d97706))', color: 'white', border: 'none', cursor: form.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: form.loading ? 0.7 : 1 }}
               onClick={submitCreate} disabled={form.loading}>
-              {form.loading ? t('academic_year.creating') : t('academic_year.create')}
+              {form.loading ? 'Ouverture en cours…' : 'Valider & Activer N+1'}
             </button>
           </div>
         </ModalOverlay>

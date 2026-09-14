@@ -47,7 +47,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" className={`${nunito.variable} ${spectral.variable}`} suppressHydrationWarning>
-      <body className="font-nunito antialiased">
+      <body className="font-nunito antialiased" suppressHydrationWarning>
         <Providers><LanguageProvider><NotificationProvider><SmoothScrollProvider>{children}</SmoothScrollProvider></NotificationProvider></LanguageProvider></Providers>
         <ServiceWorkerRegistration />
       </body>

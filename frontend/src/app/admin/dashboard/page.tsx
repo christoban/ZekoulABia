@@ -13,7 +13,6 @@ import SectionSubjects from './_components/SectionSubjects'
 import SectionGrades from './_components/SectionGrades'
 import SectionBulletins from './_components/SectionBulletins'
 import SectionTimetable from './_components/SectionTimetable'
-import SectionAcademicYear from './_components/SectionAcademicYear'
 import SectionSettings from './_components/SectionSettings'
 import SectionCorbeille from './_components/SectionCorbeille'
 import NotificationCenter from '@/components/NotificationCenter'
@@ -24,7 +23,6 @@ import SectionAdminCouncil from './_components/SectionAdminCouncil'
 import SectionBulletinValidation from '../../staff/dashboard/_components/SectionBulletinValidation'
 import SectionAdminAI from './_components/SectionAdminAI'
 import SectionStatistics from './_components/SectionStatistics'
-import SectionCommunications from './_components/SectionCommunications'
 import SectionPedagogie from './_components/SectionPedagogie'
 import AnomaliesAlertBanner from './_components/AnomaliesAlertBanner'
 import SectionRH from './_components/SectionRH'
@@ -38,12 +36,12 @@ import SectionMinedubStatistics from './_components/SectionMinedubStatistics'
 import SectionAdminPebsExams from './_components/SectionAdminPebsExams'
 import SectionAdminAcademicEvents from './_components/SectionAdminAcademicEvents'
 import SectionAdminGroupTransfers from './_components/SectionAdminGroupTransfers'
-import SectionTasks from './_components/SectionTasks'
 import EventCenterWidget from '@/features/communication/EventCenterWidget'
 import AdminToast from './_components/AdminToast'
 import AssistantWidget from './_components/AssistantWidget'
 import HighlightController from './_components/HighlightController'
 import SectionOrgPedagogyHub from './_components/SectionOrgPedagogyHub'
+import ClotureAnneeModal from './_components/ClotureAnneeModal'
 import type { AdminSection, Toast } from './_types'
 import { OfflineIndicator } from '@/components/OfflineIndicator'
 import ChangePasswordModal from '@/components/ChangePasswordModal'
@@ -57,9 +55,9 @@ let toastId = 0
 const ADMIN_SECTIONS: AdminSection[] = [
   'dashboard', 'users', 'classes', 'subjects',
   'attendance', 'grades', 'bulletins', 'timetable',
-  'council', 'academic-year', 'academic-events', 'finance', 'ai', 'statistics', 'communications', 'babillard', 'messagerie', 'settings', 'corbeille', 'sync-offline',
+  'council', 'academic-events', 'finance', 'ai', 'statistics', 'communications', 'babillard', 'messagerie', 'settings', 'corbeille', 'sync-offline',
   'bulletin-validation',
-  'pedagogie', 'rh', 'lv2-choice', 'entrance-exams', 'pebs-exams', 'matricules', 'school-payments', 'eleve-onboarding', 'minesec-stats', 'minedub-stats', 'ministerial-stats', 'group-transfers', 'tasks',
+  'pedagogie', 'rh', 'lv2-choice', 'entrance-exams', 'pebs-exams', 'matricules', 'school-payments', 'eleve-onboarding', 'minesec-stats', 'minedub-stats', 'ministerial-stats', 'group-transfers',
   'org-pedagogy',
 ]
 
@@ -88,6 +86,7 @@ export default function AdminDashboard() {
   const [hasActiveEntranceExam, setHasActiveEntranceExam] = useState(false)
   const [hasActivePebs, setHasActivePebs] = useState(false)
   const [hasPendingGroupTransfers, setHasPendingGroupTransfers] = useState(false)
+  const [clotureModalOpen, setClotureModalOpen] = useState(false)
 
   const showToast = useCallback((msg: string, type: Toast['type'] = 'success') => {
     const id = ++toastId
@@ -190,6 +189,13 @@ export default function AdminDashboard() {
     return () => window.removeEventListener('zekoulabia:navigate', onNavigate)
   }, [])
 
+  // Déclenchement automatique de la modal de clôture depuis la cloche de notification
+  useEffect(() => {
+    const onOpenCloture = () => setClotureModalOpen(true)
+    window.addEventListener('zekoulabia:open-cloture-modal', onOpenCloture)
+    return () => window.removeEventListener('zekoulabia:open-cloture-modal', onOpenCloture)
+  }, [])
+
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: 'var(--font-nunito),Nunito,sans-serif', background: 'var(--bg)' }}>
       <AdminSidebar current={section} onChange={setSection} schoolName={schoolInfo?.name} logoUrl={schoolInfo?.logoUrl} onLogout={logoutUser} badges={badges} sessionUser={sessionUser} activeEventTypes={activeEventTypes} hasActiveEntranceExam={hasActiveEntranceExam} hasActivePebs={hasActivePebs} hasPendingGroupTransfers={hasPendingGroupTransfers} isPrimaire={schoolInfo?.isPrimaire} mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
@@ -208,36 +214,33 @@ export default function AdminDashboard() {
             />
           )}
           {section === 'org-pedagogy' && <SectionOrgPedagogyHub onNav={s => setSection(s as AdminSection)} onToast={showToast} />}
-          {section === 'users'     && <SectionUsers     onToast={showToast} />}
-          {section === 'classes'      && <SectionClasses      onToast={showToast} />}
-          {section === 'subjects'     && <SectionSubjects     onToast={showToast} />}
+          {section === 'users'     && <SectionUsers     onNav={s => setSection(s as AdminSection)} onToast={showToast} />}
+          {section === 'classes'   && <SectionClasses   onNav={s => setSection(s as AdminSection)} onToast={showToast} />}
+          {section === 'subjects'  && <SectionSubjects  onNav={s => setSection(s as AdminSection)} onToast={showToast} />}
           {section === 'grades'    && <SectionGrades    onToast={showToast} />}
-          {section === 'bulletins' && <SectionBulletins onToast={showToast} />}
-          {section === 'timetable'      && <SectionTimetable     onToast={showToast} />}
-          {section === 'academic-year' && <SectionAcademicYear  onToast={showToast} />}
+          {section === 'bulletins' && <SectionBulletins onNav={s => setSection(s as AdminSection)} onToast={showToast} />}
+          {section === 'timetable' && <SectionTimetable onNav={s => setSection(s as AdminSection)} onToast={showToast} />}
           {section === 'academic-events' && <SectionAdminAcademicEvents onToast={showToast} />}
-          {section === 'finance'       && <SectionFinance       onToast={showToast} />}
+          {section === 'finance'       && <SectionFinance       onNav={s => setSection(s as AdminSection)} onToast={showToast} />}
           {section === 'attendance'    && <SectionAdminAttendance onToast={showToast} />}
-          {section === 'council'       && <SectionAdminCouncil  onToast={showToast} />}
+          {section === 'council'       && <SectionAdminCouncil  onNav={s => setSection(s as AdminSection)} onToast={showToast} />}
           {section === 'bulletin-validation' && <SectionBulletinValidation onToast={showToast} />}
           {section === 'ai'            && <SectionAdminAI       onToast={showToast} />}
           {section === 'statistics'    && <SectionStatistics    onToast={showToast} />}
-          {section === 'communications' && <SectionCommunications onToast={showToast} />}
           {section === 'babillard' && <Babillard role={sessionUser?.role ?? 'ADMIN'} title={t('page.section_titles.babillard')} subtitle={t('page.section_titles.babillard_subtitle')} />}
           {section === 'messagerie' && <Messagerie />}
-          {section === 'pedagogie'     && <SectionPedagogie     onToast={showToast} />}
+          {section === 'pedagogie'     && <SectionPedagogie     onNav={s => setSection(s as AdminSection)} onToast={showToast} />}
           {section === 'rh'            && <SectionRH            onToast={showToast} />}
           {section === 'matricules'    && <SectionMatricules    onToast={showToast} />}
           {section === 'school-payments' && <SectionSchoolPayments onToast={showToast} />}
           {section === 'entrance-exams' && <SectionAdminEntranceExams onToast={showToast} />}
-          {section === 'eleve-onboarding' && <SectionEleveOnboarding onToast={showToast} />}
+          {section === 'eleve-onboarding' && <SectionEleveOnboarding onNav={s => setSection(s as AdminSection)} onToast={showToast} />}
           {section === 'minesec-stats'  && <SectionMinesecStatistics onToast={showToast} />}
           {section === 'minedub-stats'  && <SectionMinedubStatistics onToast={showToast} />}
           {section === 'ministerial-stats' && (schoolInfo?.isPrimaire === true ? <SectionMinedubStatistics onToast={showToast} /> : <SectionMinesecStatistics onToast={showToast} />)}
           {section === 'pebs-exams'    && <SectionAdminPebsExams    onToast={showToast} />}
           {section === 'lv2-choice'    && <SectionAdminLV2Choice    onToast={showToast} />}
           {section === 'group-transfers' && <SectionAdminGroupTransfers onToast={showToast} />}
-          {section === 'tasks' && <SectionTasks onToast={showToast} />}
           {section === 'notifications' && <NotificationCenter />}
           {section === 'settings'      && <SectionSettings      onToast={showToast} schoolInfo={schoolInfo} onLogoUpdate={url => setSchoolInfo(s => s ? { ...s, logoUrl: url } : null)} />}
           {section === 'corbeille'     && <SectionCorbeille     onToast={showToast} />}
@@ -261,6 +264,15 @@ export default function AdminDashboard() {
       <HighlightController />
       <OfflineIndicator />
       {changePwdOpen && <ChangePasswordModal onClose={() => setChangePwdOpen(false)} onToast={showToast} />}
+      <ClotureAnneeModal
+        isOpen={clotureModalOpen}
+        onClose={() => setClotureModalOpen(false)}
+        onToast={showToast}
+        onSuccess={() => {
+          showToast("Transition d'année effectuée avec succès", "success")
+          window.location.reload()
+        }}
+      />
     </div>
   )
 }

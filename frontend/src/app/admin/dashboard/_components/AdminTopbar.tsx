@@ -7,6 +7,7 @@ import ThemeToggle from '@/components/ThemeToggle'
 import NotificationBell from '@/components/NotificationBell'
 import OfflineSyncButtonPopover from '@/components/OfflineSyncButtonPopover'
 import { useNotifications } from '@/hooks/NotificationContext'
+import CalendarProgressModal from './CalendarProgressModal'
 
 interface SessionUser {
   nomComplet?: string
@@ -39,6 +40,7 @@ export default function AdminTopbar({ title, onNavigate, onChangePassword, onMen
   const [notifOpen, setNotifOpen] = useState(false)
   const [kebabOpen, setKebabOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [calendarModalOpen, setCalendarModalOpen] = useState(false)
   const notifRef = useRef<HTMLDivElement>(null)
   const kebabRef = useRef<HTMLDivElement>(null)
   const profileRef = useRef<HTMLDivElement>(null)
@@ -110,9 +112,15 @@ export default function AdminTopbar({ title, onNavigate, onChangePassword, onMen
         )}
       </div>
       {todayLabel && (
-        <span className="hidden lg:inline" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, padding: '4px 10px', fontSize: 12.5, fontWeight: 600, color: 'var(--text3)' }}>
-          📅 {todayLabel}
-        </span>
+        <button
+          onClick={() => setCalendarModalOpen(true)}
+          className="hidden lg:inline-flex items-center gap-1.5 cursor-pointer transition-all hover:border-blue-500/50 hover:text-blue-500 font-nunito"
+          style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, padding: '4px 10px', fontSize: 12.5, fontWeight: 600, color: 'var(--text3)' }}
+          title="Visualiser le calendrier et la progression de l'année"
+        >
+          <span>📅</span>
+          <span>{todayLabel}</span>
+        </button>
       )}
 
       {/* Notifications — mobile : cercle 44px transparent + pastille de presence + panneau propre */}
@@ -212,6 +220,11 @@ export default function AdminTopbar({ title, onNavigate, onChangePassword, onMen
           )}
         </div>
       )}
+      {/* Modal d'évolution et calendrier de l'année scolaire */}
+      <CalendarProgressModal
+        isOpen={calendarModalOpen}
+        onClose={() => setCalendarModalOpen(false)}
+      />
     </header>
   )
 }

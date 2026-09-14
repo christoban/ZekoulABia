@@ -118,9 +118,15 @@ export default function NotificationBell({ onNav }: Props) {
             ) : dropdownItems.map(n => (
               <div
                 key={n.id}
-                onClick={() => !n.isRead && markAsRead(n.id)}
+                onClick={() => {
+                  if (!n.isRead) markAsRead(n.id)
+                  if (n.metadata && (n.metadata as any).action === 'OPEN_CLOTURE_MODAL') {
+                    setOpen(false)
+                    window.dispatchEvent(new CustomEvent('zekoulabia:open-cloture-modal', { detail: n.metadata }))
+                  }
+                }}
                 style={{
-                  padding: '12px 18px', cursor: n.isRead ? 'default' : 'pointer',
+                  padding: '12px 18px', cursor: 'pointer',
                   borderBottom: '1px solid var(--border)',
                   background: n.isRead ? 'transparent' : 'var(--bg2)',
                   display: 'flex', gap: 10, alignItems: 'flex-start',

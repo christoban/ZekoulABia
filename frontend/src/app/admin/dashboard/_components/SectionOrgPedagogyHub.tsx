@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react'
 import {
   School, Users, BookOpen, Calendar, UserPlus, ArrowRight,
-  Sparkles, Activity, AlertTriangle, CheckCircle2, ShieldAlert
+  Sparkles, Activity, AlertTriangle, CheckCircle2, ShieldAlert, CalendarClock
 } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import type { AdminSection } from '../_types'
+import ClotureAnneeModal from './ClotureAnneeModal'
 
 interface Props {
   onNav: (section: AdminSection) => void
@@ -37,7 +38,9 @@ export default function SectionOrgPedagogyHub({ onNav, onToast }: Props) {
   })
   const [activities, setActivities] = useState<ActivityItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [showManagementGrid, setShowManagementGrid] = useState(false)
+  const [clotureModalOpen, setClotureModalOpen] = useState(false)
+
+  const [isClosingWindowActive, setIsClosingWindowActive] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -46,10 +49,11 @@ export default function SectionOrgPedagogyHub({ onNav, onToast }: Props) {
       try {
         setLoading(true)
 
-        // Charger en parallèle les statistiques et les activités récentes
-        const [resClasses, resTimeline] = await Promise.allSettled([
+        // Charger en parallèle les statistiques, activités récentes et l'état des années
+        const [resClasses, resTimeline, resYears] = await Promise.allSettled([
           fetchApi('/api/v2/classes'),
           fetchApi('/api/v2/activities/timeline?limit=6'),
+          fetchApi('/api/v2/academic-years'),
         ])
 
         if (!isMounted) return
@@ -66,6 +70,19 @@ export default function SectionOrgPedagogyHub({ onNav, onToast }: Props) {
           const timelineData = await resTimeline.value.json()
           const items = Array.isArray(timelineData) ? timelineData : (timelineData?.data || [])
           timelineList = items
+        }
+
+        if (resYears.status === 'fulfilled' && resYears.value.ok) {
+          const yearsData = await resYears.value.json()
+          const years = yearsData.data || []
+          const current = years.find((y: any) => y.isCurrent)
+          if (current) {
+            // Seuil de proximité : uniquement dans la fenêtre de 6 semaines (42 jours) avant la clôture officielle
+            const now = new Date()
+            const end = current.endDate ? new Date(current.endDate) : null
+            const diffDays = end ? (end.getTime() - now.getTime()) / (1000 * 3600 * 24) : 999
+            setIsClosingWindowActive(diffDays > 0 && diffDays <= 42)
+          }
         }
 
         setStats(prev => ({
@@ -88,131 +105,230 @@ export default function SectionOrgPedagogyHub({ onNav, onToast }: Props) {
     {
       id: 'classes' as AdminSection,
       title: 'Structure & Classes',
-      desc: 'Gestion des niveaux, séries, professeurs principaux et effectifs par classe.',
+      desc: 'Niveaux, séries, affectations et professeurs principaux — Piloté par le Censeur',
       icon: School,
-      color: 'from-emerald-500/20 to-teal-500/10 border-emerald-500/30 text-emerald-400',
+      accentColor: 'var(--green)',
+      badgeBg: 'var(--green-light)',
+      statusBadge: 'Structure & Titulaires',
+      statusColor: 'var(--green)',
     },
     {
-      id: 'users' as AdminSection,
-      title: 'Utilisateurs & Fiches',
-      desc: 'Annuaire des élèves, enseignants, membres du staff et comptes parents.',
-      icon: Users,
-      color: 'from-blue-500/20 to-cyan-500/10 border-blue-500/30 text-blue-400',
+      id: 'pedagogie' as AdminSection,
+      title: 'Programmes & Progressions',
+      desc: 'Volume horaire, avancement des cours et alertes retard — Piloté par l’Animateur Pédagogique',
+      icon: Sparkles,
+      accentColor: 'var(--amber)',
+      badgeBg: 'var(--amber-light)',
+      statusBadge: 'Alertes Retard',
+      statusColor: '#d97706',
     },
     {
       id: 'subjects' as AdminSection,
       title: 'Matières & Coefficients',
-      desc: 'Volume horaire, groupes de matières et barème d’évaluation.',
+      desc: 'Volumes horaires et groupes de matières — Piloté par l’Animateur Pédagogique',
       icon: BookOpen,
-      color: 'from-indigo-500/20 to-purple-500/10 border-indigo-500/30 text-indigo-400',
+      accentColor: '#6366f1',
+      badgeBg: 'rgba(99,102,241,0.12)',
+      statusBadge: 'Coefficients & Groupes',
+      statusColor: '#4f46e5',
     },
     {
       id: 'timetable' as AdminSection,
       title: 'Emplois du temps',
-      desc: 'Supervision et affectation des salles, créneaux et plages de cours.',
+      desc: 'Créneaux, salles et séances de cours — Piloté par le Censeur',
       icon: Calendar,
-      color: 'from-amber-500/20 to-orange-500/10 border-amber-500/30 text-amber-400',
+      accentColor: '#0284c7',
+      badgeBg: 'rgba(2,132,199,0.12)',
+      statusBadge: 'Publication EDT',
+      statusColor: '#0284c7',
     },
     {
       id: 'eleve-onboarding' as AdminSection,
       title: 'Onboarding & Inscriptions',
-      desc: 'Attribution de matricules et inscription rapide des nouveaux admis.',
+      desc: 'Dossiers d’admissions et matricules élèves — Piloté par le Secrétaire',
       icon: UserPlus,
-      color: 'from-pink-500/20 to-rose-500/10 border-pink-500/30 text-pink-400',
+      accentColor: '#ec4899',
+      badgeBg: 'rgba(236,72,153,0.12)',
+      statusBadge: 'Dossiers Admissions',
+      statusColor: '#db2777',
+    },
+    {
+      id: 'users' as AdminSection,
+      title: 'Utilisateurs & Annuaire',
+      desc: 'Fiches et comptes Élèves, Enseignants, Staff & Parents — Supervision globale',
+      icon: Users,
+      accentColor: 'var(--text2)',
+      badgeBg: 'var(--surface2)',
+      statusBadge: 'Annuaire Transverse',
+      statusColor: 'var(--text2)',
     },
   ]
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-10">
+    <div className="h-full overflow-y-auto p-4 md:p-6 space-y-6 max-w-7xl mx-auto pb-16 font-nunito">
       {/* En-tête de supervision */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 relative overflow-hidden backdrop-blur-md">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-amber-500/10 via-emerald-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
-        
+      <div
+        className="rounded-2xl p-6 relative overflow-hidden backdrop-blur-md shadow-sm"
+        style={{
+          background: 'var(--surface)',
+          border: '1.5px solid var(--border)',
+        }}
+      >
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-semibold mb-3">
+            <div
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mb-3"
+              style={{
+                background: 'var(--amber-light)',
+                color: 'var(--amber)',
+                border: '1px solid var(--amber)',
+              }}
+            >
               <Sparkles size={14} />
               <span>Espace de Supervision Directoriale</span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white font-spectral">
+            <h1 className="text-2xl md:text-3xl font-bold font-spectral" style={{ color: 'var(--text)' }}>
               Organisation Pédagogique
             </h1>
-            <p className="text-slate-400 text-sm mt-1 max-w-2xl">
+            <p className="text-sm mt-1 max-w-2xl leading-relaxed" style={{ color: 'var(--text2)' }}>
               Vue d’ensemble de la structure scolaire. Validez les équilibres pédagogiques, suivez les activités récentes et intervenez sur la configuration de l’établissement.
             </p>
           </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowManagementGrid(!showManagementGrid)}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-emerald-600 hover:from-amber-400 hover:to-emerald-500 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20 flex items-center gap-2 transition-all cursor-pointer"
-            >
-              <span>{showManagementGrid ? 'Masquer la grille' : 'Gérer l’organisation'}</span>
-              <ArrowRight size={16} />
-            </button>
-          </div>
         </div>
       </div>
+
+      {/* BANNIÈRE CONTEXTUELLE SAISONNIÈRE (Catégorie D) - Déclencheur Temporel / État */}
+      {isClosingWindowActive && (
+        <div
+          className="rounded-2xl p-5 shadow-sm transition-all relative overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)',
+            border: '1.5px solid var(--amber)',
+          }}
+        >
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="p-3 rounded-xl flex-shrink-0" style={{ background: 'var(--amber-light)', color: 'var(--amber)' }}>
+                <CalendarClock size={24} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[11px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border" style={{ background: 'var(--amber-light)', color: 'var(--amber)', borderColor: 'var(--amber)' }}>
+                    Fenêtre Saisonnière (Catégorie D)
+                  </span>
+                  <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
+                    Pattern Propose / Apply
+                  </span>
+                </div>
+                <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>
+                  Préparation & Clôture de l'Année Scolaire N+1
+                </h3>
+                <p className="text-xs mt-1 max-w-2xl leading-relaxed" style={{ color: 'var(--text2)' }}>
+                  Le système a généré une proposition de structure (classes, niveaux, périodes). Validez ou ajustez les paramètres avant ouverture de la nouvelle rentrée.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0 self-end md:self-center">
+              <button
+                onClick={() => setClotureModalOpen(true)}
+                className="px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer border-none"
+                style={{ background: 'var(--amber)', color: '#ffffff' }}
+              >
+                <span>Accéder à la Clôture & Rentrée N+1</span>
+                <ArrowRight size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Cartes KPI de supervision */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-colors">
+        <div
+          className="rounded-xl p-5 shadow-sm transition-all"
+          style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}
+        >
           <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Classes Actives</span>
-            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text3)' }}>
+              Classes Actives
+            </span>
+            <div className="p-2 rounded-lg" style={{ background: 'var(--green-light)', color: 'var(--green)' }}>
               <School size={18} />
             </div>
           </div>
-          <div className="text-2xl font-bold text-white mt-2">
-            {loading ? '...' : stats.classesCount}
+          <div className="text-2xl font-black mt-2" style={{ color: 'var(--text)' }}>
+            {loading ? '...' : `${stats.classesCount} classe(s)`}
           </div>
-          <p className="text-slate-400 text-xs mt-1">Structure pédagogique</p>
+          <p className="text-xs mt-1 font-medium" style={{ color: 'var(--text2)' }}>
+            Structure pédagogique
+          </p>
         </div>
 
-        <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-colors">
+        <div
+          className="rounded-xl p-5 shadow-sm transition-all"
+          style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}
+        >
           <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Matières & Programmes</span>
-            <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
+            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text3)' }}>
+              Matières & Programmes
+            </span>
+            <div className="p-2 rounded-lg" style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>
               <BookOpen size={18} />
             </div>
           </div>
-          <div className="text-2xl font-bold text-white mt-2">
+          <div className="text-2xl font-black mt-2" style={{ color: 'var(--text)' }}>
             Configuré
           </div>
-          <p className="text-slate-400 text-xs mt-1">Coefficients & Volumes</p>
+          <p className="text-xs mt-1 font-medium" style={{ color: 'var(--text2)' }}>
+            Coefficients & Volumes
+          </p>
         </div>
 
-        <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-colors">
+        <div
+          className="rounded-xl p-5 shadow-sm transition-all"
+          style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}
+        >
           <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">Professeurs Principaux</span>
-            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400">
+            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text3)' }}>
+              Professeurs Principaux
+            </span>
+            <div className="p-2 rounded-lg" style={{ background: 'var(--amber-light)', color: 'var(--amber)' }}>
               <CheckCircle2 size={18} />
             </div>
           </div>
-          <div className="text-2xl font-bold text-emerald-400 mt-2">
+          <div className="text-2xl font-black mt-2" style={{ color: 'var(--green)' }}>
             Suivi actif
           </div>
-          <p className="text-slate-400 text-xs mt-1">Supervisé par le Censeur</p>
+          <p className="text-xs mt-1 font-medium" style={{ color: 'var(--text2)' }}>
+            Supervisé par le Censeur
+          </p>
         </div>
 
-        <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-colors">
+        <div
+          className="rounded-xl p-5 shadow-sm transition-all"
+          style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}
+        >
           <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">État Général</span>
-            <div className="p-2 rounded-lg bg-teal-500/10 text-teal-400">
+            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text3)' }}>
+              État Général
+            </span>
+            <div className="p-2 rounded-lg" style={{ background: 'rgba(2,132,199,0.12)', color: '#0284c7' }}>
               <Activity size={18} />
             </div>
           </div>
-          <div className="text-2xl font-bold text-white mt-2">
+          <div className="text-2xl font-black mt-2" style={{ color: 'var(--text)' }}>
             Opérationnel
           </div>
-          <p className="text-slate-400 text-xs mt-1">Aucun blocage critique</p>
+          <p className="text-xs mt-1 font-medium" style={{ color: 'var(--text2)' }}>
+            Aucun blocage critique
+          </p>
         </div>
       </div>
 
-      {/* Grille de gestion des modules (visible au clic "Gérer l'organisation" ou toujours accessible) */}
+      {/* Grille des modules d'intervention */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+          <h2 className="text-lg font-bold flex items-center gap-2" style={{ color: 'var(--text)' }}>
             <span>Modules de Gestion & Intervention</span>
           </h2>
         </div>
@@ -224,26 +340,46 @@ export default function SectionOrgPedagogyHub({ onNav, onToast }: Props) {
               <div
                 key={mod.id}
                 onClick={() => onNav(mod.id)}
-                className={`group bg-slate-900/60 border rounded-xl p-5 hover:bg-slate-800/80 transition-all cursor-pointer flex flex-col justify-between ${mod.color}`}
+                className="group rounded-xl p-5 transition-all cursor-pointer flex flex-col justify-between hover:shadow-md"
+                style={{
+                  background: 'var(--surface)',
+                  border: '1.5px solid var(--border)',
+                }}
               >
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <div className="p-2.5 rounded-lg bg-slate-800 border border-slate-700">
+                    <div
+                      className="p-2.5 rounded-lg border"
+                      style={{ background: mod.badgeBg, borderColor: 'var(--border)', color: mod.accentColor }}
+                    >
                       <Icon size={20} />
                     </div>
-                    <ArrowRight size={16} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all text-slate-300" />
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10.5px] font-bold px-2 py-0.5 rounded-full border"
+                        style={{ background: mod.badgeBg, color: mod.statusColor, borderColor: 'var(--border)' }}>
+                        {mod.statusBadge}
+                      </span>
+                      <ArrowRight
+                        size={16}
+                        className="opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all"
+                        style={{ color: 'var(--text2)' }}
+                      />
+                    </div>
                   </div>
-                  <h3 className="text-base font-bold text-white group-hover:text-amber-300 transition-colors">
+                  <h3 className="text-base font-bold transition-colors group-hover:opacity-80" style={{ color: 'var(--text)' }}>
                     {mod.title}
                   </h3>
-                  <p className="text-slate-400 text-xs mt-1 leading-relaxed">
+                  <p className="text-xs mt-1.5 leading-relaxed font-medium" style={{ color: 'var(--text2)' }}>
                     {mod.desc}
                   </p>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-medium text-amber-400/90">
+                <div
+                  className="mt-4 pt-3 border-t flex items-center justify-between text-xs font-bold"
+                  style={{ borderColor: 'var(--border)', color: mod.accentColor }}
+                >
                   <span>Accéder au module</span>
-                  <span className="text-slate-500">&rarr;</span>
+                  <span>&rarr;</span>
                 </div>
               </div>
             )
@@ -254,52 +390,68 @@ export default function SectionOrgPedagogyHub({ onNav, onToast }: Props) {
       {/* Points d'attention & Activité récente */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Points d'attention */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5 space-y-3">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            <AlertTriangle size={16} className="text-amber-400" />
+        <div
+          className="rounded-xl p-5 space-y-3 shadow-sm"
+          style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}
+        >
+          <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: 'var(--text)' }}>
+            <AlertTriangle size={16} style={{ color: 'var(--amber)' }} />
             <span>Points d’attention</span>
           </h3>
-          <div className="space-y-2.5 text-xs text-slate-300">
-            <div className="p-3 rounded-lg bg-slate-800/60 border border-slate-700/50 flex items-start gap-2.5">
-              <CheckCircle2 size={15} className="text-emerald-400 flex-shrink-0 mt-0.5" />
+          <div className="space-y-2.5 text-xs">
+            <div
+              className="p-3 rounded-lg flex items-start gap-2.5"
+              style={{ background: 'var(--surface2)', border: '1px solid var(--border)' }}
+            >
+              <CheckCircle2 size={15} className="flex-shrink-0 mt-0.5" style={{ color: 'var(--green)' }} />
               <div>
-                <p className="font-semibold text-slate-200">Affectations de cours</p>
-                <p className="text-slate-400 mt-0.5">Vérifiez les volumes horaires attribués aux enseignants.</p>
+                <p className="font-bold" style={{ color: 'var(--text)' }}>Affectations de cours</p>
+                <p className="mt-0.5 font-medium" style={{ color: 'var(--text2)' }}>Vérifiez les volumes horaires attribués aux enseignants.</p>
               </div>
             </div>
-            <div className="p-3 rounded-lg bg-slate-800/60 border border-slate-700/50 flex items-start gap-2.5">
-              <ShieldAlert size={15} className="text-amber-400 flex-shrink-0 mt-0.5" />
+            <div
+              className="p-3 rounded-lg flex items-start gap-2.5"
+              style={{ background: 'var(--surface2)', border: '1px solid var(--border)' }}
+            >
+              <ShieldAlert size={15} className="flex-shrink-0 mt-0.5" style={{ color: 'var(--amber)' }} />
               <div>
-                <p className="font-semibold text-slate-200">Professeurs Principaux</p>
-                <p className="text-slate-400 mt-0.5">Assurez-vous que chaque classe a un professeur principal désigné.</p>
+                <p className="font-bold" style={{ color: 'var(--text)' }}>Professeurs Principaux</p>
+                <p className="mt-0.5 font-medium" style={{ color: 'var(--text2)' }}>Assurez-vous que chaque classe a un professeur principal désigné.</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Activité récente */}
-        <div className="lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-xl p-5 space-y-3">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            <Activity size={16} className="text-emerald-400" />
+        <div
+          className="lg:col-span-2 rounded-xl p-5 space-y-3 shadow-sm"
+          style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}
+        >
+          <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: 'var(--text)' }}>
+            <Activity size={16} style={{ color: 'var(--green)' }} />
             <span>Dernières activités d’organisation</span>
           </h3>
 
           {loading ? (
-            <div className="text-xs text-slate-500 py-4 text-center">Chargement des activités...</div>
+            <div className="text-xs py-4 text-center font-medium" style={{ color: 'var(--text3)' }}>
+              Chargement des activités...
+            </div>
           ) : activities.length === 0 ? (
-            <div className="text-xs text-slate-500 py-4 text-center">Aucune activité récente enregistrée.</div>
+            <div className="text-xs py-4 text-center font-medium" style={{ color: 'var(--text3)' }}>
+              Aucune activité récente enregistrée.
+            </div>
           ) : (
-            <div className="divide-y divide-slate-800/60">
+            <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
               {activities.map((act) => (
                 <div key={act.id} className="py-2.5 flex items-center justify-between text-xs">
                   <div>
-                    <span className="font-medium text-slate-200">{act.action}</span>
-                    {act.details && <span className="text-slate-400 ml-2">({act.details})</span>}
+                    <span className="font-bold" style={{ color: 'var(--text)' }}>{act.action}</span>
+                    {act.details && <span className="ml-2 font-medium" style={{ color: 'var(--text2)' }}>({act.details})</span>}
                     {act.user?.nomComplet && (
-                      <span className="text-slate-500 block text-[11px]">Par : {act.user.nomComplet}</span>
+                      <span className="block text-[11px] font-medium" style={{ color: 'var(--text3)' }}>Par : {act.user.nomComplet}</span>
                     )}
                   </div>
-                  <span className="text-slate-500 text-[11px] font-mono">
+                  <span className="text-[11px] font-mono font-bold" style={{ color: 'var(--text3)' }}>
                     {new Date(act.createdAt).toLocaleDateString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
@@ -308,6 +460,13 @@ export default function SectionOrgPedagogyHub({ onNav, onToast }: Props) {
           )}
         </div>
       </div>
+
+      {/* Modal Guidée de Clôture & Transition N+1 */}
+      <ClotureAnneeModal
+        isOpen={clotureModalOpen}
+        onClose={() => setClotureModalOpen(false)}
+        onToast={onToast}
+      />
     </div>
   )
 }

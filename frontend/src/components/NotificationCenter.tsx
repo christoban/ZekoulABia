@@ -57,10 +57,15 @@ export default function NotificationCenter() {
         ) : (
           notifications.map((n) => (
             <div key={n.id}
-              onClick={() => !n.isRead && markAsRead(n.id)}
+              onClick={() => {
+                if (!n.isRead) markAsRead(n.id)
+                if (n.metadata && (n.metadata as any).action === 'OPEN_CLOTURE_MODAL') {
+                  window.dispatchEvent(new CustomEvent('zekoulabia:open-cloture-modal', { detail: n.metadata }))
+                }
+              }}
               style={{
                 padding: '14px 20px', display: 'flex', gap: 12, alignItems: 'flex-start',
-                borderBottom: '1px solid var(--bg2)', cursor: n.isRead ? 'default' : 'pointer',
+                borderBottom: '1px solid var(--bg2)', cursor: 'pointer',
                 background: n.isRead ? 'transparent' : 'var(--bg2)',
               }}>
               <Bell size={16} color="var(--text3)" style={{ marginTop: 2, flexShrink: 0 }} />

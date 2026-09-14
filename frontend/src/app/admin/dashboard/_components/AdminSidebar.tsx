@@ -35,8 +35,8 @@ const BADGE_STYLES = {
 }
 
 const DEFAULT_OPEN_GROUPS: Record<string, boolean> = {
+  admin: true,
   pedagogy: false,
-  org: false,
   pilotage: false,
   communication: false,
   config: false,
@@ -85,41 +85,40 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
   const userDisplayName = sessionUser?.nomComplet ?? sessionUser?.firstName ?? tcommon('user.fallbackName')
   const userInitials = userDisplayName.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0, 2)
 
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
-    if (typeof window === 'undefined') return DEFAULT_OPEN_GROUPS
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(DEFAULT_OPEN_GROUPS)
+
+  // Synchroniser le localStorage uniquement après le mount client pour éviter les erreurs d'hydratation SSR
+  useEffect(() => {
     try {
       const saved = localStorage.getItem('zekoulabia.admin.nav.groups')
-      return saved ? { ...DEFAULT_OPEN_GROUPS, ...JSON.parse(saved) } : DEFAULT_OPEN_GROUPS
-    } catch {
-      return DEFAULT_OPEN_GROUPS
-    }
-  })
+      if (saved) {
+        setOpenGroups(prev => ({ ...prev, ...JSON.parse(saved) }))
+      }
+    } catch {}
+  }, [])
 
   const NAV: NavSection[] = [
     {
+      id: 'admin',
+      label: 'Administration & Comptes',
+      items: [
+        { id: 'users', icon: Users, label: tnav('sidebar.users'), badge: badges.users, badgeColor: 'green' },
+      ],
+    },
+    {
       id: 'pedagogy',
-      label: tnav('group.pedagogie') ?? 'Pédagogie & Évaluations',
+      label: tnav('group.pedagogie') ?? 'Évaluations & Conseils',
       items: [
         { id: 'grades', icon: FileText, label: tnav('sidebar.grades'), badge: badges.grades, badgeColor: 'red' },
         { id: 'bulletins', icon: ScrollText, label: tnav('sidebar.bulletins') },
         { id: 'council', icon: GraduationCap, label: tnav('sidebar.council') },
-        { id: 'pedagogie', icon: NotebookPen, label: tnav('sidebar.pedagogie') },
-      ],
-    },
-    {
-      id: 'org',
-      label: tnav('group.orgPedagogy') ?? 'Organisation & Structure',
-      items: [
-        { id: 'users', icon: Users, label: tnav('sidebar.users'), badge: badges.users, badgeColor: 'green' },
-        { id: 'org-pedagogy', icon: School, label: tnav('sidebar.orgPedagogy') ?? 'Organisation pédagogique' },
-        { id: 'timetable', icon: Calendar, label: tnav('sidebar.timetable') },
-        { id: 'eleve-onboarding', icon: UserPlus, label: tnav('sidebar.eleveOnboarding') },
       ],
     },
     {
       id: 'pilotage',
       label: tnav('group.pilotage') ?? 'Pilotage & Statistiques',
       items: [
+        { id: 'finance', icon: Smartphone, label: tnav('sidebar.finance'), badge: badges.finance, badgeColor: 'amber' },
         { id: 'statistics', icon: BarChart3, label: tnav('sidebar.statistics') },
         { id: 'ministerial-stats', icon: ClipboardList, label: tnav('sidebar.ministerialStats') ?? 'Statistiques Ministérielles' },
         { id: 'rh', icon: Briefcase, label: tnav('sidebar.rh') },
@@ -131,7 +130,6 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
       label: tnav('group.communication') ?? 'Communication & Vie Scolaire',
       items: [
         { id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard') },
-        { id: 'communications', icon: Megaphone, label: tnav('sidebar.communications') },
         { id: 'academic-events', icon: CalendarClock, label: tnav('sidebar.academicEvents') },
         ...(hasActiveEntranceExam ? [{ id: 'entrance-exams' as const, icon: ClipboardEdit, label: tnav('sidebar.entranceExams') }] : []),
         ...(hasActivePebs ? [{ id: 'pebs-exams' as const, icon: Globe, label: tnav('sidebar.pebsExams') }] : []),
@@ -163,7 +161,7 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
 
   const handleChange = (id: AdminSection) => { onChange(id); onMobileClose?.() }
 
-  const isConfigActive = ['settings', 'academic-year', 'matricules', 'corbeille'].includes(current)
+  const isConfigActive = ['settings', 'matricules', 'corbeille'].includes(current)
 
   const sidebarBody = (
     <>
@@ -202,15 +200,39 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
             {/* Dashboard principal */}
             <button onClick={() => handleChange('dashboard')}
               className={cn(
-                'w-full flex items-center gap-2.5 rounded-md mb-[4px]',
+                'w-full flex items-center gap-2.5 rounded-r-md mb-[4px]',
                 'text-[12.5px] font-bold transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
-                current === 'dashboard' ? 'bg-[var(--sidebar-active)] text-white' : 'bg-transparent text-white/70 hover:bg-[var(--sidebar2)] hover:text-white'
+                current === 'dashboard'
+                  ? 'bg-gradient-to-r from-amber-500/25 to-amber-500/10 text-amber-300 border-l-3 border-amber-400 shadow-sm shadow-amber-500/10'
+                  : 'bg-transparent text-white/70 hover:bg-[var(--sidebar2)] hover:text-white border-l-3 border-transparent'
               )}
               style={{ padding: '7px 8px' }}>
               <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <LayoutDashboard size={16} strokeWidth={2} />
+                <LayoutDashboard size={16} strokeWidth={2} className={current === 'dashboard' ? 'text-amber-400' : ''} />
               </span>
               <span className="truncate flex-1">{tnav('sidebar.dashboard')}</span>
+            </button>
+
+            {/* Hub Hero Card : Organisation & Supervision Pédagogique */}
+            <button
+              onClick={() => handleChange('org-pedagogy')}
+              className={cn(
+                'w-full flex items-center gap-2.5 rounded-xl my-2.5 p-2.5 transition-all text-left border cursor-pointer font-nunito',
+                current === 'org-pedagogy'
+                  ? 'bg-gradient-to-r from-amber-500/30 via-emerald-500/25 to-teal-500/20 text-amber-300 border-amber-400/80 shadow-md shadow-amber-500/20 ring-1 ring-amber-400/30'
+                  : 'bg-white/[0.06] hover:bg-white/[0.1] text-white/90 border-white/15'
+              )}
+            >
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500/35 to-emerald-500/35 text-amber-300 flex items-center justify-center flex-shrink-0 border border-amber-500/40 shadow-sm">
+                <School size={16} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[12px] font-extrabold truncate text-white">Supervision Pédagogique</span>
+                  <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-500/30 text-amber-300 border border-amber-400/40 tracking-wider">HUB</span>
+                </div>
+                <div className="text-[10px] text-white/60 truncate font-semibold mt-0.5">Classes, programmes & inscriptions</div>
+              </div>
             </button>
 
             {/* Vie Scolaire & Suivi Quotidien */}
@@ -218,22 +240,24 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
               <div className="text-[10px] font-black text-white/30 tracking-[1px] uppercase" style={{ padding: '6px 6px 2px' }}>
                 Vie Scolaire & Suivi
               </div>
-              {[
-                { id: 'attendance' as const, icon: ClipboardCheck, label: tnav('sidebar.attendance') },
-                { id: 'finance' as const, icon: Smartphone, label: tnav('sidebar.finance'), badge: badges.finance, badgeColor: 'amber' as const },
-                { id: 'messagerie' as const, icon: MessageCircle, label: tnav('sidebar.messagerie'), ...(messagesNonLus > 0 ? { badge: String(messagesNonLus), badgeColor: 'red' as const } : {}) },
-                { id: 'ai' as const, icon: Bot, label: tnav('sidebar.ai') },
-                { id: 'tasks' as const, icon: ListChecks, label: tnav('sidebar.tasks') },
-              ].map(item => (
+              {(
+                [
+                  { id: 'attendance' as const, icon: ClipboardCheck, label: tnav('sidebar.attendance') },
+                  { id: 'messagerie' as const, icon: MessageCircle, label: tnav('sidebar.messagerie'), ...(messagesNonLus > 0 ? { badge: String(messagesNonLus), badgeColor: 'red' as const } : {}) },
+                  { id: 'ai' as const, icon: Bot, label: tnav('sidebar.ai') },
+                ] as NavItem[]
+              ).map(item => (
                 <button key={item.id} onClick={() => handleChange(item.id)}
                   className={cn(
-                    'w-full flex items-center gap-2.5 rounded-md mb-[2px]',
+                    'w-full flex items-center gap-2.5 rounded-r-md mb-[2px]',
                     'text-[12px] font-semibold transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
-                    current === item.id ? 'bg-[var(--sidebar-active)] text-white' : 'bg-transparent text-white/60 hover:bg-[var(--sidebar2)] hover:text-white/90'
+                    current === item.id
+                      ? 'bg-gradient-to-r from-amber-500/25 to-amber-500/10 text-amber-300 font-bold border-l-3 border-amber-400 shadow-sm shadow-amber-500/10'
+                      : 'bg-transparent text-white/60 hover:bg-[var(--sidebar2)] hover:text-white/90 border-l-3 border-transparent'
                   )}
                   style={{ padding: '6px 8px' }}>
                   <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <item.icon size={16} strokeWidth={2} />
+                    <item.icon size={16} strokeWidth={2} className={current === item.id ? 'text-amber-400' : ''} />
                   </span>
                   <span className="truncate flex-1">{item.label}</span>
                   {item.badge && (
@@ -257,12 +281,12 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
                     type="button"
                     onClick={() => toggleGroup(groupId)}
                     className={cn(
-                      'w-full flex items-center justify-between text-[10px] font-black tracking-[1px] uppercase pt-2 px-1.5 pb-1 cursor-pointer transition-colors border-none bg-transparent font-nunito',
-                      hasActiveItem ? 'text-amber-400/90' : 'text-white/35 hover:text-white/60'
+                      'w-full flex items-center justify-between text-[10px] font-black tracking-[0.5px] uppercase pt-2 px-1.5 pb-1 cursor-pointer transition-colors border-none bg-transparent font-nunito whitespace-nowrap',
+                      hasActiveItem ? 'text-amber-400 font-bold' : 'text-white/35 hover:text-white/60'
                     )}
                   >
-                    <span>{section.label}</span>
-                    {isOpen ? <ChevronDown size={13} className="text-white/40" /> : <ChevronRight size={13} className="text-white/40" />}
+                    <span className="truncate flex-1 text-left">{section.label}</span>
+                    {isOpen ? <ChevronDown size={13} className={hasActiveItem ? 'text-amber-400 flex-shrink-0 ml-1' : 'text-white/40 flex-shrink-0 ml-1'} /> : <ChevronRight size={13} className={hasActiveItem ? 'text-amber-400 flex-shrink-0 ml-1' : 'text-white/40 flex-shrink-0 ml-1'} />}
                   </button>
 
                   {isOpen && (
@@ -270,15 +294,15 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
                       {section.items.map(item => (
                         <button key={item.id} onClick={() => handleChange(item.id)}
                           className={cn(
-                            'relative w-full flex items-center gap-2.5 rounded-md mb-[2px]',
-                            'text-[12px] font-semibold text-left border-none cursor-pointer font-nunito',
-                            'py-1.5 px-2 transition-colors',
+                            'relative w-full flex items-center gap-2.5 rounded-r-md mb-[2px]',
+                            'text-[12px] text-left border-none cursor-pointer font-nunito',
+                            'py-1.5 px-2 transition-all',
                             current === item.id
-                              ? 'text-white bg-[var(--sidebar-active)]'
-                              : 'text-white/55 hover:bg-[var(--sidebar2)] hover:text-white/85'
+                              ? 'text-amber-300 font-bold bg-gradient-to-r from-amber-500/25 to-amber-500/10 border-l-3 border-amber-400 shadow-sm shadow-amber-500/10'
+                              : 'text-white/60 font-semibold hover:bg-[var(--sidebar2)] hover:text-white/90 border-l-3 border-transparent'
                           )}>
                           <span className="relative z-10 w-[18px] flex items-center justify-center flex-shrink-0">
-                            <item.icon size={15} strokeWidth={2} />
+                            <item.icon size={15} strokeWidth={2} className={current === item.id ? 'text-amber-400' : ''} />
                           </span>
                           <span className="relative z-10 truncate flex-1">{item.label}</span>
                           {item.badge && (
@@ -318,7 +342,6 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
                 <div className="mt-1.5 space-y-[2px] pl-1.5 border-l-2 border-blue-500/40 ml-2">
                   {[
                     { id: 'settings' as const, label: tnav('sidebar.settings') },
-                    { id: 'academic-year' as const, label: tnav('sidebar.academicYear') },
                     { id: 'matricules' as const, label: tnav('sidebar.matricules') },
                     { id: 'corbeille' as const, label: tnav('sidebar.corbeille') },
                   ].map(sub => (
@@ -364,7 +387,7 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
   return (
     <>
       {/* Desktop — sidebar statique, fait partie du flux flex normal */}
-      <aside className="hidden md:flex w-[225px] min-w-[225px] flex-shrink-0 relative" style={{ background: 'var(--sidebar)', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+      <aside className="hidden md:flex w-[250px] min-w-[250px] flex-shrink-0 relative" style={{ background: 'var(--sidebar)', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
         {sidebarBody}
       </aside>
 
@@ -374,7 +397,7 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
           <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true">
             <motion.div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onMobileClose}
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }} />
-            <motion.aside className="absolute left-0 top-0 h-full w-[85vw] max-w-[225px] flex flex-col relative" style={{ background: 'var(--sidebar)', overflow: 'hidden' }}
+            <motion.aside className="absolute left-0 top-0 h-full w-[85vw] max-w-[250px] flex flex-col relative" style={{ background: 'var(--sidebar)', overflow: 'hidden' }}
               initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ duration: 0.26, ease: [0.4, 0, 0.2, 1] }}>
               {sidebarBody}
             </motion.aside>
