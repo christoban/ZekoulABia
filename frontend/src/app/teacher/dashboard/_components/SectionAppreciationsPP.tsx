@@ -230,40 +230,40 @@ export default function SectionAppreciationsPP({ user: _user, classeId }: Props)
   }, [myClassId, currentPeriodId])
 
   return (
-    <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto' }}>
+    <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
-          <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 24, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <PenLine size={22} strokeWidth={2} />{t('pp.title')}
+          <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <PenLine size={18} strokeWidth={2} />{t('pp.title')}
           </div>
-          <div style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 500, marginTop: 4 }}>
+          <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 500, marginTop: 2 }}>
             {t('pp.subtitle')}
           </div>
         </div>
         <button
           onClick={handleBulkSave}
           disabled={bulkSaving || reportCards.length === 0}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 10, fontSize: 14, fontWeight: 800, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
             background: bulkSaving ? 'var(--border)' : 'var(--sidebar)', color: bulkSaving ? 'var(--text3)' : 'white', transition: 'all 0.15s' }}>
-          {bulkSaving ? <Loader2 size={14} strokeWidth={2} className="animate-spin" /> : <Save size={14} strokeWidth={2} />}
+          {bulkSaving ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : <Save size={13} strokeWidth={2} />}
           {bulkSaving ? t('pp.save_progress').replace('{progress}', String(bulkProgress)) : t('pp.save_all')}
         </button>
       </div>
 
       {/* Barre progression bulk */}
       {bulkSaving && (
-        <div style={{ background: 'var(--border)', borderRadius: 6, height: 6, marginBottom: 20, overflow: 'hidden' }}>
+        <div style={{ background: 'var(--border)', borderRadius: 4, height: 4, marginBottom: 14, overflow: 'hidden' }}>
           <div style={{ height: '100%', background: 'var(--sidebar)', width: `${bulkProgress}%`, transition: 'width 0.3s' }} />
         </div>
       )}
 
       {/* Sélecteur période */}
       {periods.length > 0 && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
           {periods.map(p => (
             <button key={p.id} onClick={() => setSelectedPeriodId(p.id)}
-              style={{ padding: '7px 16px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
+              style={{ padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
                 background: selectedPeriodId === p.id ? 'var(--sidebar)' : 'var(--bg2)',
                 color: selectedPeriodId === p.id ? 'white' : 'var(--text2)' }}>
               {p.name}
@@ -274,38 +274,38 @@ export default function SectionAppreciationsPP({ user: _user, classeId }: Props)
 
       {/* Zone de soumission bulletin */}
       {currentPeriodId && (
-        <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1.5px solid var(--border)', padding: '18px 22px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 200 }}>
+        <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', padding: '10px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 200 }}>
             {submissionStatus === null ? (
               <>
-                <Send size={18} strokeWidth={2} style={{ color: 'var(--amber)' }} />
+                <Send size={15} strokeWidth={2} style={{ color: 'var(--amber)' }} />
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>Prêt pour soumission</div>
-                  <div style={{ fontSize: 13, color: 'var(--text3)' }}>Les bulletins de la classe peuvent être soumis au censeur.</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Prêt pour soumission</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--text3)' }}>Les bulletins de la classe peuvent être soumis au censeur.</div>
                 </div>
               </>
             ) : submissionStatus === 'SUBMITTED' ? (
               <>
-                <Clock size={18} strokeWidth={2} style={{ color: 'var(--amber)' }} />
+                <Clock size={15} strokeWidth={2} style={{ color: 'var(--amber)' }} />
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--amber)' }}>En attente de validation</div>
-                  <div style={{ fontSize: 13, color: 'var(--text3)' }}>Le censeur doit valider avant publication.</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--amber)' }}>En attente de validation</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--text3)' }}>Le censeur doit valider avant publication.</div>
                 </div>
               </>
             ) : submissionStatus === 'VALIDATED' ? (
               <>
-                <CheckCircle2 size={18} strokeWidth={2} style={{ color: 'var(--green)' }} />
+                <CheckCircle2 size={15} strokeWidth={2} style={{ color: 'var(--green)' }} />
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--green)' }}>Validé, en attente de publication</div>
-                  <div style={{ fontSize: 13, color: 'var(--text3)' }}>L'administrateur doit publier les bulletins.</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--green)' }}>Validé, en attente de publication</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--text3)' }}>L'administrateur doit publier les bulletins.</div>
                 </div>
               </>
             ) : (
               <>
-                <CheckCircle2 size={18} strokeWidth={2} style={{ color: 'var(--blue)' }} />
+                <CheckCircle2 size={15} strokeWidth={2} style={{ color: 'var(--blue)' }} />
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--blue)' }}>Bulletins publiés</div>
-                  <div style={{ fontSize: 13, color: 'var(--text3)' }}>Les parents ont été notifiés.</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--blue)' }}>Bulletins publiés</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--text3)' }}>Les parents ont été notifiés.</div>
                 </div>
               </>
             )}
@@ -314,99 +314,96 @@ export default function SectionAppreciationsPP({ user: _user, classeId }: Props)
             <button
               onClick={handleSubmit}
               disabled={submitting || !isOnline}
-              style={{ padding: '10px 22px', borderRadius: 10, fontSize: 15, fontWeight: 800, cursor: submitting || !isOnline ? 'not-allowed' : 'pointer', border: 'none', fontFamily: 'inherit',
-                background: submitting ? 'var(--border)' : 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', display: 'inline-flex', alignItems: 'center', gap: 8, opacity: !isOnline ? 0.5 : 1 }}>
-              {submitting ? <Loader2 size={16} strokeWidth={2} className="animate-spin" /> : <Send size={16} strokeWidth={2} />}
+              style={{ padding: '6px 14px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, cursor: submitting || !isOnline ? 'not-allowed' : 'pointer', border: 'none', fontFamily: 'inherit',
+                background: submitting ? 'var(--border)' : 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', display: 'inline-flex', alignItems: 'center', gap: 6, opacity: !isOnline ? 0.5 : 1 }}>
+              {submitting ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : <Send size={13} strokeWidth={2} />}
               {submitting ? 'Envoi…' : 'Soumettre au censeur'}
             </button>
           )}
         </div>
       )}
       {submitError && (
-        <div style={{ padding: 14, background: 'var(--red-light)', borderRadius: 10, color: 'var(--red)', fontSize: 13, fontWeight: 600, marginBottom: 16, whiteSpace: 'pre-line' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={14} strokeWidth={2} /> </span>
+        <div style={{ padding: '10px 14px', background: 'var(--red-light)', borderRadius: 8, color: 'var(--red)', fontSize: 12, fontWeight: 600, marginBottom: 12, whiteSpace: 'pre-line' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><AlertTriangle size={13} strokeWidth={2} /> </span>
           {submitError}
         </div>
       )}
 
       {!isOnline && (
-        <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 12, padding: '12px 18px', marginBottom: 18, fontSize: 14, fontWeight: 700, color: 'var(--amber)' }}>
+        <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 8, padding: '8px 12px', marginBottom: 14, fontSize: 12, fontWeight: 700, color: 'var(--amber)' }}>
           {t('pp.offline_hint')}
         </div>
       )}
 
-      {error && <div style={{ padding: 16, background: 'var(--red-light)', borderRadius: 10, color: 'var(--red)', fontSize: 14, fontWeight: 600, marginBottom: 20 }}>{error}</div>}
+      {error && <div style={{ padding: '10px 14px', background: 'var(--red-light)', borderRadius: 8, color: 'var(--red)', fontSize: 12.5, fontWeight: 600, marginBottom: 14 }}>{error}</div>}
 
       {loadingCards ? (
-        <div style={{ padding: 60, textAlign: 'center', color: 'var(--text3)', fontSize: 14 }}>{t('pp.loading_bulletins')}</div>
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)', fontSize: 12.5 }}>{t('pp.loading_bulletins')}</div>
       ) : reportCards.length === 0 ? (
-        <div style={{ padding: 60, textAlign: 'center', background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><ScrollText size={36} strokeWidth={2} /></div>
-          <div style={{ fontSize: 15, color: 'var(--text3)', fontWeight: 600 }}>{t('pp.no_bulletins')}</div>
-          <div style={{ fontSize: 13, color: 'var(--border2)', marginTop: 6 }}>{t('pp.no_bulletins_hint')}</div>
+        <div style={{ padding: 40, textAlign: 'center', background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><ScrollText size={28} strokeWidth={2} /></div>
+          <div style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600 }}>{t('pp.no_bulletins')}</div>
+          <div style={{ fontSize: 11.5, color: 'var(--border2)', marginTop: 4 }}>{t('pp.no_bulletins_hint')}</div>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {reportCards.map(rc => {
             const locked = isLocked(rc)
             const text = comments[rc.id] ?? ''
             const charCount = text.length
             return (
-              <div key={rc.id} style={{ background: 'var(--surface)', borderRadius: 14, border: '1.5px solid var(--border)', padding: '20px 24px' }}>
+              <div key={rc.id} style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', padding: '12px 14px' }}>
                 {/* Élève info */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--sidebar)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 15, flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 7, background: 'var(--sidebar)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 12, flexShrink: 0 }}>
                       {rc.studentName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>{rc.studentName}</div>
+                      <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>{rc.studentName}</div>
                       {rc.generalAverage !== null && (
-                        <div style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 600 }}>{t('pp.average_label').replace('{average}', rc.generalAverage.toFixed(2))}</div>
+                        <div style={{ fontSize: 11.5, color: 'var(--text2)', fontWeight: 600 }}>{t('pp.average_label').replace('{average}', rc.generalAverage.toFixed(2))}</div>
                       )}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {saving[rc.id] && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--text3)', fontWeight: 600 }}><Loader2 size={12} strokeWidth={2} className="animate-spin" />{t('pp.saving')}</span>}
-                    {saved[rc.id] && !saving[rc.id] && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--green)', fontWeight: 700 }}><Save size={12} strokeWidth={2} />{t('pp.saved')}</span>}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {saving[rc.id] && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: 'var(--text3)', fontWeight: 600 }}><Loader2 size={11} strokeWidth={2} className="animate-spin" />{t('pp.saving')}</span>}
+                    {saved[rc.id] && !saving[rc.id] && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: 'var(--green)', fontWeight: 700 }}><Save size={11} strokeWidth={2} />{t('pp.saved')}</span>}
                     {locked && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--text2)', fontWeight: 700, background: 'var(--bg2)', padding: '4px 10px', borderRadius: 20 }}>
-                        <Lock size={12} strokeWidth={2} />{t('pp.locked')}
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: 'var(--text2)', fontWeight: 700, background: 'var(--bg2)', padding: '2px 8px', borderRadius: 12 }}>
+                        <Lock size={11} strokeWidth={2} />{t('pp.locked')}
                       </span>
                     )}
                   </div>
                 </div>
 
                 {locked ? (
-                  <div style={{ padding: '12px 16px', background: 'var(--bg)', borderRadius: 10, border: '1.5px solid var(--border)', color: 'var(--text3)', fontSize: 14, fontWeight: 600 }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Lock size={14} strokeWidth={2} />{t('pp.council_locked')}</span>
-                    {text && <div style={{ marginTop: 8, color: 'var(--text2)', fontStyle: 'italic' }}>&ldquo;{text}&rdquo;</div>}
+                  <div style={{ padding: '8px 12px', background: 'var(--bg)', borderRadius: 7, border: '1px solid var(--border)', color: 'var(--text3)', fontSize: 12, fontWeight: 600 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Lock size={12} strokeWidth={2} />{t('pp.council_locked')}</span>
+                    {text && <div style={{ marginTop: 4, color: 'var(--text2)', fontStyle: 'italic' }}>&ldquo;{text}&rdquo;</div>}
                   </div>
                 ) : (
                   <>
-                    {/* Génération IA */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+                    {/* Génération IA & Chips */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
                       <button
                         onClick={() => handleGenerateAI(rc.id)}
                         disabled={!isOnline || !!generatingAI[rc.id]}
                         title={!isOnline ? t('pp.ai_offline_disabled') : undefined}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 700,
-                          cursor: !isOnline || generatingAI[rc.id] ? 'not-allowed' : 'pointer', border: '1.5px solid var(--purple)',
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 9px', borderRadius: 12, fontSize: 11.5, fontWeight: 700,
+                          cursor: !isOnline || generatingAI[rc.id] ? 'not-allowed' : 'pointer', border: '1px solid var(--purple)',
                           background: 'var(--purple-light)', color: 'var(--purple)', fontFamily: 'inherit',
                           opacity: !isOnline ? 0.5 : 1 }}>
-                        {generatingAI[rc.id] ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : <Sparkles size={13} strokeWidth={2} />}
+                        {generatingAI[rc.id] ? <Loader2 size={11} strokeWidth={2} className="animate-spin" /> : <Sparkles size={11} strokeWidth={2} />}
                         {generatingAI[rc.id] ? t('pp.generating_ai') : t('pp.generate_ai')}
                       </button>
-                      {aiError[rc.id] && <span style={{ fontSize: 12, color: 'var(--red)', fontWeight: 600 }}>{t('pp.ai_error')}</span>}
-                    </div>
+                      {aiError[rc.id] && <span style={{ fontSize: 11, color: 'var(--red)', fontWeight: 600 }}>{t('pp.ai_error')}</span>}
 
-                    {/* Chips */}
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
                       {QUICK_CHIPS_KEYS.map(key => {
                         const chip = t(`pp.${key}`)
                         return (
                           <button key={key} onClick={() => setComments(c => ({ ...c, [rc.id]: chip }))}
-                            style={{ padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: '1.5px solid var(--border2)', background: 'var(--surface)', color: 'var(--text2)', fontFamily: 'inherit', transition: 'all 0.12s' }}
+                            style={{ padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: '1px solid var(--border2)', background: 'var(--surface)', color: 'var(--text2)', fontFamily: 'inherit', transition: 'all 0.12s' }}
                             onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { background: 'var(--sidebar)', color: 'white', borderColor: 'var(--sidebar)' })}
                             onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { background: 'var(--surface)', color: 'var(--text2)', borderColor: 'var(--border2)' })}>
                             {chip}
@@ -422,12 +419,12 @@ export default function SectionAppreciationsPP({ user: _user, classeId }: Props)
                         onChange={e => setComments(c => ({ ...c, [rc.id]: e.target.value }))}
                         maxLength={300}
                         placeholder={t('pp.write_placeholder')}
-                        rows={3}
-                        style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1.5px solid var(--border2)', fontSize: 14, fontFamily: 'inherit', fontWeight: 500, color: 'var(--text)', resize: 'vertical', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' }}
+                        rows={2}
+                        style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid var(--border2)', fontSize: 12.5, fontFamily: 'inherit', fontWeight: 500, color: 'var(--text)', resize: 'vertical', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' }}
                         onFocus={e => (e.currentTarget.style.borderColor = 'var(--sidebar)')}
                         onBlur={e => (e.currentTarget.style.borderColor = 'var(--border2)')}
                       />
-                      <div style={{ position: 'absolute', bottom: 8, right: 12, fontSize: 11, color: charCount > 270 ? 'var(--red)' : 'var(--text3)', fontWeight: 600 }}>
+                      <div style={{ position: 'absolute', bottom: 6, right: 10, fontSize: 10, color: charCount > 270 ? 'var(--red)' : 'var(--text3)', fontWeight: 600 }}>
                         {charCount}/300
                       </div>
                     </div>

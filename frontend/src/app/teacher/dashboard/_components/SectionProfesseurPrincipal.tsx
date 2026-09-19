@@ -76,62 +76,62 @@ export default function SectionProfesseurPrincipal({ user: _user, classeId, clas
     <button
       onClick={() => setTab(tabId)}
       style={{
-        padding: '8px 20px', borderRadius: 10, fontSize: 14, fontWeight: 800,
+        padding: '6px 14px', borderRadius: 7, fontSize: 12.5, fontWeight: 700,
         fontFamily: 'inherit', cursor: 'pointer', border: 'none',
         background: tab === tabId ? 'var(--sidebar)' : 'var(--bg2)',
         color: tab === tabId ? 'white' : 'var(--text2)',
         transition: 'all 0.15s',
-        display: 'inline-flex', alignItems: 'center', gap: 6,
+        display: 'inline-flex', alignItems: 'center', gap: 5,
       }}>
-      <Icon size={14} strokeWidth={2} />{label}
+      <Icon size={13} strokeWidth={2} />{label}
     </button>
   )
 
   return (
-    <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto' }}>
+    <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto' }}>
       {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 24, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <ClipboardList size={22} strokeWidth={2} />{t('pp.class_title').replace('{name}', classeNom)}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <ClipboardList size={18} strokeWidth={2} />{t('pp.class_title').replace('{name}', classeNom)}
         </div>
-        <div style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 500, marginTop: 4 }}>
+        <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 500, marginTop: 2 }}>
           {t('pp.view_title')}
         </div>
         {fromCache && cachedAt && (
-          <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 8, padding: '5px 12px', fontSize: 13, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10 }}>
-            <Package size={14} strokeWidth={2} /> {tcommon('cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}
+          <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 6, padding: '4px 10px', fontSize: 11.5, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 8 }}>
+            <Package size={13} strokeWidth={2} /> {tcommon('cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}
           </div>
         )}
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
         {tabBtn('eleves',   t('pp.tab_students'), BarChart3)}
         {tabBtn('presences',t('pp.tab_attendance'), CheckCircle2)}
       </div>
 
       {tab === 'eleves' && (
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', overflow: 'hidden' }}>
-          <div style={{ padding: '16px 22px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>Élèves — {classeNom}</span>
-            <span style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600 }}>{students.length} élève{students.length > 1 ? 's' : ''}</span>
+        <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
+          <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Élèves — {classeNom}</span>
+            <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 600 }}>{students.length} élève{students.length > 1 ? 's' : ''}</span>
           </div>
           {loading ? (
-            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)', fontSize: 14 }}>Chargement...</div>
+            <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)', fontSize: 12.5 }}>Chargement...</div>
           ) : error ? (
-            <div style={{ padding: 40, textAlign: 'center', color: 'var(--red)', fontSize: 14 }}>{error}</div>
+            <div style={{ padding: 24, textAlign: 'center', color: 'var(--red)', fontSize: 12.5 }}>{error}</div>
           ) : students.length === 0 ? (
-            <div style={{ padding: 40, textAlign: 'center' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><Inbox size={32} strokeWidth={2} /></div>
-              <div style={{ fontSize: 15, color: 'var(--text3)', fontWeight: 600 }}>Aucune note saisie pour cette classe</div>
+            <div style={{ padding: 24, textAlign: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><Inbox size={26} strokeWidth={2} /></div>
+              <div style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600 }}>Aucune note saisie pour cette classe</div>
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 550 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 500 }}>
                 <thead>
-                  <tr style={{ background: 'var(--bg)' }}>
+                  <tr style={{ background: 'var(--bg2)' }}>
                     {['Rang', 'Élève', 'Moyenne /20', 'Présence', 'Niveau'].map(h => (
-                      <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 12, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{h}</th>
+                      <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -139,23 +139,23 @@ export default function SectionProfesseurPrincipal({ user: _user, classeId, clas
                   {students.map((s, i) => {
                     const badge = BADGE(s.moyenne)
                     return (
-                      <tr key={s.id} style={{ borderTop: '1px solid var(--bg2)', background: i % 2 === 0 ? 'white' : 'var(--bg)' }}>
-                        <td style={{ padding: '12px 16px', fontSize: 14, fontWeight: 800, color: 'var(--text3)' }}>#{s.rang}</td>
-                        <td style={{ padding: '12px 16px', fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{s.lastName} {s.firstName}</td>
-                        <td style={{ padding: '12px 16px' }}>
-                          <span style={{ background: badge.bg, color: badge.color, padding: '4px 12px', borderRadius: 20, fontSize: 14, fontWeight: 800 }}>
+                      <tr key={s.id} style={{ borderTop: '1px solid var(--bg)', background: i % 2 === 0 ? 'white' : 'var(--bg)' }}>
+                        <td style={{ padding: '8px 12px', fontSize: 12, fontWeight: 800, color: 'var(--text3)' }}>#{s.rang}</td>
+                        <td style={{ padding: '8px 12px', fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>{s.lastName} {s.firstName}</td>
+                        <td style={{ padding: '8px 12px' }}>
+                          <span style={{ background: badge.bg, color: badge.color, padding: '2px 8px', borderRadius: 12, fontSize: 11.5, fontWeight: 800 }}>
                             {badge.label}
                           </span>
                         </td>
-                        <td style={{ padding: '12px 16px', fontSize: 14, color: 'var(--text2)', fontWeight: 600 }}>
+                        <td style={{ padding: '8px 12px', fontSize: 12.5, color: 'var(--text2)', fontWeight: 600 }}>
                           {s.tauxPresence}%
                         </td>
-                        <td style={{ padding: '12px 16px' }}>
+                        <td style={{ padding: '8px 12px' }}>
                           {s.moyenne !== null && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, padding: '3px 8px', borderRadius: 6,
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 5,
                               background: s.moyenne >= 12 ? 'var(--green-light)' : s.moyenne >= 8 ? 'var(--amber-light)' : 'var(--red-light)',
                               color: s.moyenne >= 12 ? 'var(--green)' : s.moyenne >= 8 ? 'var(--amber)' : 'var(--red)' }}>
-                              {s.moyenne >= 12 ? <CheckCircle2 size={12} strokeWidth={2} /> : s.moyenne >= 8 ? <AlertTriangle size={12} strokeWidth={2} /> : <Circle size={8} fill="var(--red)" stroke="none" />}
+                              {s.moyenne >= 12 ? <CheckCircle2 size={11} strokeWidth={2} /> : s.moyenne >= 8 ? <AlertTriangle size={11} strokeWidth={2} /> : <Circle size={7} fill="var(--red)" stroke="none" />}
                               {s.moyenne >= 12 ? 'Admis' : s.moyenne >= 8 ? 'Passable' : 'En difficulté'}
                             </span>
                           )}
@@ -171,28 +171,28 @@ export default function SectionProfesseurPrincipal({ user: _user, classeId, clas
       )}
 
       {tab === 'presences' && (
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', overflow: 'hidden' }}>
-          <div style={{ padding: '16px 22px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', flex: 1 }}>Présences — {classeNom}</span>
+        <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
+          <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', flex: 1 }}>Présences — {classeNom}</span>
             {(['semaine', 'mois'] as DateFilter[]).map(f => (
               <button key={f} onClick={() => setDateFilter(f)}
-                style={{ padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
+                style={{ padding: '4px 10px', borderRadius: 6, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
                   background: dateFilter === f ? 'var(--sidebar)' : 'var(--bg2)', color: dateFilter === f ? 'white' : 'var(--text2)' }}>
                 {f === 'semaine' ? '7 derniers jours' : '30 derniers jours'}
               </button>
             ))}
           </div>
           {loading ? (
-            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)', fontSize: 14 }}>Chargement...</div>
+            <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)', fontSize: 12.5 }}>Chargement...</div>
           ) : attendances.length === 0 ? (
-            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)', fontSize: 14 }}>Aucune présence enregistrée sur cette période</div>
+            <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)', fontSize: 12.5 }}>Aucune présence enregistrée sur cette période</div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 500 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
                 <thead>
-                  <tr style={{ background: 'var(--bg)' }}>
+                  <tr style={{ background: 'var(--bg2)' }}>
                     {['Date', 'Élève', 'Statut'].map(h => (
-                      <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 12, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{h}</th>
+                      <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -206,16 +206,16 @@ export default function SectionProfesseurPrincipal({ user: _user, classeId, clas
                     }
                     const s = statusStyle[a.status] ?? { bg: 'var(--bg2)', color: 'var(--text3)', label: a.status }
                     return (
-                      <tr key={a.id} style={{ borderTop: '1px solid var(--bg2)', background: i % 2 === 0 ? 'white' : 'var(--bg)' }}>
-                        <td style={{ padding: '12px 16px', fontSize: 14, color: 'var(--text2)', fontWeight: 600 }}>
+                      <tr key={a.id} style={{ borderTop: '1px solid var(--bg)', background: i % 2 === 0 ? 'white' : 'var(--bg)' }}>
+                        <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>
                           {new Date(a.date).toLocaleDateString('fr-FR')}
                         </td>
-                        <td style={{ padding: '12px 16px', fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
+                        <td style={{ padding: '8px 12px', fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>
                           {a.studentName ?? a.studentId}
                         </td>
-                        <td style={{ padding: '12px 16px' }}>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: s.bg, color: s.color, padding: '3px 10px', borderRadius: 20, fontSize: 13, fontWeight: 700 }}>
-                            {s.dot ? <Circle size={8} fill="var(--red)" stroke="none" /> : s.Icon ? <s.Icon size={13} strokeWidth={2} /> : null}
+                        <td style={{ padding: '8px 12px' }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: s.bg, color: s.color, padding: '2px 8px', borderRadius: 12, fontSize: 11.5, fontWeight: 700 }}>
+                            {s.dot ? <Circle size={7} fill="var(--red)" stroke="none" /> : s.Icon ? <s.Icon size={12} strokeWidth={2} /> : null}
                             {s.label}
                           </span>
                         </td>

@@ -333,20 +333,20 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
 
   if (loading && !grades.length) {
     return (
-      <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600 }}>{tcommon('status.loading')}</div>
+      <div className="px-4 py-4 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: 12.5, color: 'var(--text3)', fontWeight: 600 }}>{tcommon('status.loading')}</div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto' }}>
-        <div style={{ padding: 24, textAlign: 'center' }}>
-          <div style={{ color: 'var(--red)', fontSize: 13, fontWeight: 700, marginBottom: 12 }}>{error}</div>
+      <div className="px-4 py-4 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
+        <div style={{ padding: 20, textAlign: 'center' }}>
+          <div style={{ color: 'var(--red)', fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>{error}</div>
           <button onClick={loadGrades}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
-            <RefreshCw size={14} strokeWidth={2} />{t('grades_section.retry')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 13px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
+            <RefreshCw size={13} strokeWidth={2} />{t('grades_section.retry')}
           </button>
         </div>
       </div>
@@ -354,8 +354,8 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
   }
 
   return (
-    <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 26 }}>
+    <div className="px-4 py-4 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
           <div style={sTitle}>{t('grades_section.title')}</div>
           <div style={sSub}>{t('grades_section.subtitle')}</div>
@@ -363,46 +363,46 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
       </div>
 
       {!isOnline && (
-        <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 12, padding: '12px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ display: 'flex', alignItems: 'center' }}><WifiOff size={18} strokeWidth={2} /></span>
-          <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--amber)' }}>{t('grades_section.offline_banner')}</span>
+        <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 8, padding: '8px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ display: 'flex', alignItems: 'center' }}><WifiOff size={15} strokeWidth={2} /></span>
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--amber)' }}>{t('grades_section.offline_banner')}</span>
         </div>
       )}
 
       {/* Prompt restauration brouillon */}
       {showDraftPrompt && localDraft && (
-        <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 12, padding: '14px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ display: 'flex', alignItems: 'center' }}><Save size={22} strokeWidth={2} /></span>
+        <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 10, padding: '10px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ display: 'flex', alignItems: 'center' }}><Save size={18} strokeWidth={2} /></span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--amber)' }}>{t('grades_section.draft_prompt_title')}</div>
-            <div style={{ fontSize: 13, color: 'var(--amber)', marginTop: 2 }}>{t('grades_section.draft_prompt_desc')}</div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--amber)' }}>{t('grades_section.draft_prompt_title')}</div>
+            <div style={{ fontSize: 11.5, color: 'var(--amber)', marginTop: 1 }}>{t('grades_section.draft_prompt_desc')}</div>
           </div>
           <button onClick={() => { setNotes(localDraft.notes); setObservations(localDraft.observations); setShowDraftPrompt(false) }}
-            style={{ padding: '7px 14px', borderRadius: 9, fontSize: 14, fontWeight: 800, background: 'var(--amber)', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{ padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 800, background: 'var(--amber)', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
             {t('grades_section.draft_prompt_restore')}
           </button>
           <button onClick={() => setShowDraftPrompt(false)}
-            style={{ padding: '7px 14px', borderRadius: 9, fontSize: 14, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{ padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
             {t('grades_section.draft_prompt_ignore')}
           </button>
         </div>
       )}
 
       {grades.length > 0 && (
-        <div style={{ background: 'var(--bg2)', borderRadius: 12, padding: '14px 18px', marginBottom: 18 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, fontWeight: 800, color: 'var(--text2)', marginBottom: 8 }}>
+        <div style={{ background: 'var(--bg2)', borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, fontWeight: 700, color: 'var(--text2)', marginBottom: 6 }}>
             <span>{classes.find((c: any) => c.id === selectedClass)?.name || ''} — {subjects.find((s: any) => s.id === selectedSubject)?.name || ''}</span>
             <span style={{ color: 'var(--green)' }}>{t('grades_section.progress_text').replace('{validated}', String(validatedCount)).replace('{total}', String(grades.length)).replace('{pct}', String(grades.length ? Math.round(validatedCount / grades.length * 100) : 0))}</span>
           </div>
-          <div style={{ height: 8, background: 'var(--border2)', borderRadius: 8, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${grades.length ? Math.round(validatedCount / grades.length * 100) : 0}%`, background: 'var(--green)', borderRadius: 8, transition: 'width 1s' }} />
+          <div style={{ height: 6, background: 'var(--border2)', borderRadius: 6, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${grades.length ? Math.round(validatedCount / grades.length * 100) : 0}%`, background: 'var(--green)', borderRadius: 6, transition: 'width 1s' }} />
           </div>
         </div>
       )}
 
       {/* Filtres + table */}
-      <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', overflow: 'hidden', marginBottom: 18 }}>
-        <div style={{ padding: '14px 22px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1.5px solid var(--border)', overflow: 'hidden', marginBottom: 14 }}>
+        <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <select style={filterSt} value={selectedClass} onChange={e => setSelectedClass(e.target.value)}>
             <option value="">{t('grades_section.filter_class')}</option>
             {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -418,13 +418,13 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
           <button style={btnPrim} onClick={loadGrades} disabled={loading}>{t('grades_section.load')}</button>
           <div style={{ flex: 1 }} />
           <button
-            style={{ ...btnSec, fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            style={{ ...btnSec, fontSize: 12.5, display: 'inline-flex', alignItems: 'center', gap: 5 }}
             onClick={downloadTemplate}
             title={t('grades_section.template_tooltip')}>
-            <Download size={14} strokeWidth={2} />{t('grades_section.download_template')}
+            <Download size={13} strokeWidth={2} />{t('grades_section.download_template')}
           </button>
-          <label style={{ ...btnSec, fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 6, cursor: importing ? 'not-allowed' : 'pointer', opacity: importing ? 0.6 : 1 }}>
-            {importing ? <Loader2 size={14} strokeWidth={2} className="animate-spin" /> : <Upload size={14} strokeWidth={2} />}
+          <label style={{ ...btnSec, fontSize: 12.5, display: 'inline-flex', alignItems: 'center', gap: 5, cursor: importing ? 'not-allowed' : 'pointer', opacity: importing ? 0.6 : 1 }}>
+            {importing ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : <Upload size={13} strokeWidth={2} />}
             {importing ? t('grades_section.import_loading') : t('grades_section.import_excel')}
             <input
               type="file"
@@ -440,41 +440,41 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
         </div>
 
         {rosterLabel && (
-          <div style={{ background: 'var(--blue-light)', border: '1.5px solid var(--blue)', borderRadius: 12, padding: '12px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ display: 'flex', alignItems: 'center' }}><Target size={18} strokeWidth={2} /></span>
-            <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--blue)' }}>{rosterLabel}</span>
+          <div style={{ background: 'var(--blue-light)', border: '1.5px solid var(--blue)', borderRadius: 8, padding: '8px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ display: 'flex', alignItems: 'center' }}><Target size={15} strokeWidth={2} /></span>
+            <span style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--blue)' }}>{rosterLabel}</span>
           </div>
         )}
 
         {importResult && (
-          <div style={{ padding: '14px 22px', borderBottom: '1px solid var(--border)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: importResult.errors.length > 0 ? 10 : 0 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 800, fontSize: 15, color: importResult.errors.length > 0 ? 'var(--amber)' : 'var(--green)' }}>
-                {importResult.errors.length > 0 ? <AlertTriangle size={16} strokeWidth={2} /> : <CheckCircle2 size={16} strokeWidth={2} />}
+          <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: importResult.errors.length > 0 ? 8 : 0 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontWeight: 800, fontSize: 13, color: importResult.errors.length > 0 ? 'var(--amber)' : 'var(--green)' }}>
+                {importResult.errors.length > 0 ? <AlertTriangle size={14} strokeWidth={2} /> : <CheckCircle2 size={14} strokeWidth={2} />}
                 {t('grades_section.toast_import_result').replace('{imported}', String(importResult.imported))}
                 {importResult.errors.length > 0 && ` · ${t('grades_section.toast_import_errors').replace('{count}', String(importResult.errors.length))}`}
               </span>
               <button
                 onClick={() => setImportResult(null)}
                 style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}>
-                <X size={18} strokeWidth={2} />
+                <X size={15} strokeWidth={2} />
               </button>
             </div>
             {importResult.errors.length > 0 && (
-              <div style={{ background: 'var(--red-light)', border: '1px solid rgba(220,38,38,0.2)', borderRadius: 8, overflow: 'hidden' }}>
+              <div style={{ background: 'var(--red-light)', border: '1px solid rgba(220,38,38,0.2)', borderRadius: 7, overflow: 'hidden' }}>
                 <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 500 }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
                     <thead>
                       <tr>
                         {[t('grades_section.import_table_line'), t('grades_section.import_table_matricule'), t('grades_section.import_table_error')].map(h => (
-                          <th key={h} style={{ ...thSt, background: 'var(--red-light)', color: 'var(--red)', padding: '8px 14px' }}>{h}</th>
+                          <th key={h} style={{ ...thSt, background: 'var(--red-light)', color: 'var(--red)', padding: '6px 10px' }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {importResult.errors.map((e, i) => (
                         <tr key={i} style={{ borderTop: '1px solid rgba(220,38,38,0.1)' }}>
-                          <td style={{ ...tdSt, color: 'var(--red)', fontWeight: 700, width: 60 }}>{e.line}</td>
+                          <td style={{ ...tdSt, color: 'var(--red)', fontWeight: 700, width: 50 }}>{e.line}</td>
                           <td style={{ ...tdSt, fontWeight: 700 }}>{e.matricule || '—'}</td>
                           <td style={{ ...tdSt, color: 'var(--red)' }}>{e.error}</td>
                         </tr>
@@ -490,7 +490,7 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
         {grades.length > 0 && (
           <>
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 550 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
                 <thead>
                   <tr>{[t('grades_section.table_num'), t('grades_section.table_student'), t('grades_section.table_grade'), t('grades_section.table_observation'), t('grades_section.table_status')].map(h => (
                     <th key={h} style={thSt}>{h}</th>
@@ -513,10 +513,10 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
                       <tr key={sid}
                         onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
                         onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
-                        <td style={{ ...tdSt, color: 'var(--text3)', width: 44 }}>{i + 1}</td>
+                        <td style={{ ...tdSt, color: 'var(--text3)', width: 38 }}>{i + 1}</td>
                         <td style={{ ...tdSt, fontWeight: 700, color: 'var(--text)' }}>
                           {name}
-                          {rosterLabel && g.student?.className && <span style={{ fontWeight: 600, color: 'var(--text3)', fontSize: 14 }}> ({g.student.className})</span>}
+                          {rosterLabel && g.student?.className && <span style={{ fontWeight: 600, color: 'var(--text3)', fontSize: 11.5 }}> ({g.student.className})</span>}
                         </td>
                         <td style={tdSt}>
                           <input type="number" min={0} max={20} step={0.25}
@@ -527,7 +527,7 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
                               setNotes(a)
                             }}
                             disabled={status !== 'DRAFT' && status !== 'REJECTED'}
-                            style={{ width: 80, padding: '7px 10px', border: '1.5px solid var(--border2)', borderRadius: 9, fontSize: 17, fontWeight: 800, textAlign: 'center', fontFamily: 'inherit', outline: 'none', background: status !== 'DRAFT' && status !== 'REJECTED' ? 'var(--bg2)' : 'white', color: (notes[sid] ?? 0) < 10 ? 'var(--red)' : (notes[sid] ?? 0) >= 16 ? 'var(--green)' : 'var(--text)' }}
+                            style={{ width: 68, padding: '5px 8px', border: '1.5px solid var(--border2)', borderRadius: 7, fontSize: 13.5, fontWeight: 800, textAlign: 'center', fontFamily: 'inherit', outline: 'none', background: status !== 'DRAFT' && status !== 'REJECTED' ? 'var(--bg2)' : 'white', color: (notes[sid] ?? 0) < 10 ? 'var(--red)' : (notes[sid] ?? 0) >= 16 ? 'var(--green)' : 'var(--text)' }}
                           />
                         </td>
                         <td style={tdSt}>
@@ -538,11 +538,11 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
                               setObservations(a)
                             }}
                             disabled={status !== 'DRAFT' && status !== 'REJECTED'}
-                            style={{ width: 240, padding: '7px 12px', border: '1.5px solid var(--border2)', borderRadius: 9, fontSize: 16, fontFamily: 'inherit', outline: 'none', background: status !== 'DRAFT' && status !== 'REJECTED' ? 'var(--bg2)' : 'white', color: 'var(--text)' }}
+                            style={{ width: 200, padding: '5px 9px', border: '1.5px solid var(--border2)', borderRadius: 7, fontSize: 12, fontFamily: 'inherit', outline: 'none', background: status !== 'DRAFT' && status !== 'REJECTED' ? 'var(--bg2)' : 'white', color: 'var(--text)' }}
                           />
                         </td>
                         <td style={tdSt}>
-                          <span style={{ padding: '4px 12px', borderRadius: 22, fontSize: 14, fontWeight: 800, background: sc.bg, color: sc.color }}>
+                          <span style={{ padding: '2.5px 8px', borderRadius: 14, fontSize: 11, fontWeight: 700, background: sc.bg, color: sc.color }}>
                             {status === 'DRAFT' ? t('grades_section.status_draft') : status === 'SUBMITTED' ? t('grades_section.status_submitted') : status === 'VALIDATED' ? t('grades_section.status_validated') : status === 'REJECTED' ? t('grades_section.status_rejected') : status === 'LOCKED' ? t('grades_section.status_locked') : status}
                           </span>
                         </td>
@@ -553,25 +553,25 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
               </table>
             </div>
 
-            <div style={{ padding: '14px 22px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-              <span style={{ fontSize: 15, color: 'var(--text3)', fontWeight: 600 }}>
+            <div style={{ padding: '10px 14px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+              <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 600 }}>
                 {t('grades_section.summary_draft').replace('{count}', String(draftCount))}{rejectedCount > 0 ? ` · ${t('grades_section.summary_rejected').replace('{count}', String(rejectedCount))}` : ''} · {t('grades_section.summary_submitted').replace('{count}', String(grades.filter((g: any) => g.validationStatus === 'SUBMITTED').length))}
               </span>
-              <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
                 {modifiableCount > 0 ? (
                   <>
-                    <button style={{ ...btnSec, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={saveDraft} disabled={saving}>
-                      {saving ? <Loader2 size={14} strokeWidth={2} className="animate-spin" /> : <Save size={14} strokeWidth={2} />}
+                    <button style={{ ...btnSec, display: 'inline-flex', alignItems: 'center', gap: 5 }} onClick={saveDraft} disabled={saving}>
+                      {saving ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : <Save size={13} strokeWidth={2} />}
                       {saving ? '...' : t('grades_section.draft_save')}
                     </button>
-                    <button style={{ ...btnPrim, display: 'inline-flex', alignItems: 'center', gap: 6, opacity: !isOnline ? 0.5 : 1, cursor: !isOnline ? 'not-allowed' : 'pointer' }} onClick={submitGrades} disabled={saving || !isOnline}>
-                      {!isOnline ? <WifiOff size={14} strokeWidth={2} /> : <Upload size={14} strokeWidth={2} />}
+                    <button style={{ ...btnPrim, display: 'inline-flex', alignItems: 'center', gap: 5, opacity: !isOnline ? 0.5 : 1, cursor: !isOnline ? 'not-allowed' : 'pointer' }} onClick={submitGrades} disabled={saving || !isOnline}>
+                      {!isOnline ? <WifiOff size={13} strokeWidth={2} /> : <Upload size={13} strokeWidth={2} />}
                       {saving ? '...' : isOnline ? t('grades_section.submit_online') : t('grades_section.submit_offline')}
                     </button>
                   </>
                 ) : (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 15, color: 'var(--green)', fontWeight: 700 }}>
-                    <CheckCircle2 size={16} strokeWidth={2} />
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12.5, color: 'var(--green)', fontWeight: 700 }}>
+                    <CheckCircle2 size={14} strokeWidth={2} />
                     {t('grades_section.all_submitted')}
                   </span>
                 )}
@@ -583,13 +583,13 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
 
       {/* Notes rejetées */}
       {rejectedGrades.length > 0 && (
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid rgba(220,38,38,0.3)', overflow: 'hidden' }}>
-          <div style={{ padding: '14px 22px', background: 'var(--red-light)', borderBottom: '1px solid rgba(220,38,38,0.15)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <X size={16} strokeWidth={2} color="var(--red)" />
-            <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--red)' }}>{t('grades_section.rejected_title').replace('{count}', String(rejectedGrades.length))}</span>
+        <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1.5px solid rgba(220,38,38,0.3)', overflow: 'hidden' }}>
+          <div style={{ padding: '8px 14px', background: 'var(--red-light)', borderBottom: '1px solid rgba(220,38,38,0.15)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <X size={14} strokeWidth={2} color="var(--red)" />
+            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--red)' }}>{t('grades_section.rejected_title').replace('{count}', String(rejectedGrades.length))}</span>
           </div>
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 500 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
               <thead><tr>{[t('grades_section.rejected_table_student'), t('grades_section.rejected_table_grade'), t('grades_section.rejected_table_reason'), t('grades_section.rejected_table_actions')].map(h => <th key={h} style={thSt}>{h}</th>)}</tr></thead>
               <tbody>
                 {rejectedGrades.map((g: any) => (
@@ -599,14 +599,14 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
                     <td style={{ ...tdSt, color: 'var(--red)', fontWeight: 700 }}>{g.rejectionReason || t('grades_section.rejected_no_reason')}</td>
                     <td style={tdSt}>
                       <button
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 9, fontSize: 15, fontWeight: 800, background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid rgba(217,119,6,0.3)', cursor: 'pointer', fontFamily: 'inherit' }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, fontSize: 12, fontWeight: 800, background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid rgba(217,119,6,0.3)', cursor: 'pointer', fontFamily: 'inherit' }}
                         onClick={() => {
                           setSelectedClass(g.classId || '')
                           setSelectedSubject(g.subjectId || '')
                           setSelectedSequence(g.sequenceId || '')
                           loadGrades()
                         }}>
-                        <Pencil size={14} strokeWidth={2} />{t('grades_section.rejected_correct')}
+                        <Pencil size={13} strokeWidth={2} />{t('grades_section.rejected_correct')}
                       </button>
                     </td>
                   </tr>
@@ -620,10 +620,10 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
   )
 }
 
-const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 28, fontWeight: 700, color: 'var(--text)' }
-const sSub: React.CSSProperties = { fontSize: 17, color: 'var(--text3)', marginTop: 3 }
-const btnPrim: React.CSSProperties = { padding: '10px 20px', borderRadius: 11, fontSize: 16, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
-const btnSec: React.CSSProperties = { padding: '10px 18px', borderRadius: 10, fontSize: 16, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
-const filterSt: React.CSSProperties = { background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 10, padding: '8px 12px', fontSize: 16, fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }
-const thSt: React.CSSProperties = { padding: '11px 16px', textAlign: 'left', fontSize: 13, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.7px', whiteSpace: 'nowrap' }
-const tdSt: React.CSSProperties = { padding: '14px 16px', fontSize: 17, color: 'var(--text2)', borderBottom: '1px solid var(--bg)', verticalAlign: 'middle' }
+const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)' }
+const sSub: React.CSSProperties = { fontSize: 12, color: 'var(--text3)', marginTop: 2 }
+const btnPrim: React.CSSProperties = { padding: '6px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+const btnSec: React.CSSProperties = { padding: '6px 12px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
+const filterSt: React.CSSProperties = { background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '6px 10px', fontSize: 12.5, fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }
+const thSt: React.CSSProperties = { padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }
+const tdSt: React.CSSProperties = { padding: '8.5px 12px', fontSize: 12.5, color: 'var(--text2)', borderBottom: '1px solid var(--bg)', verticalAlign: 'middle' }

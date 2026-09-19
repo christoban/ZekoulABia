@@ -152,25 +152,25 @@ export default function SectionTeacherCorrectionAnonyme({
   }
 
   return (
-    <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto' }}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 className="text-[22px] font-bold text-[var(--text)] mb-2" style={{ fontFamily: 'var(--font-spectral),Spectral,serif' }}>
+    <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto' }}>
+      <div style={{ marginBottom: 16 }}>
+        <h1 style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
           Correction anonyme
         </h1>
-        <p className="text-[var(--text3)] text-sm">Saisissez les notes par code d'anonymat — aucun nom d'élève n'est affiché</p>
+        <p style={{ fontSize: 12, color: 'var(--text3)' }}>Saisissez les notes par code d'anonymat — aucun nom d'élève n'est affiché</p>
       </div>
 
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20, marginBottom: 24 }}>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'end', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: 280 }}>
-            <label className="block text-sm font-medium text-[var(--text2)] mb-1">Session à corriger</label>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'end', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 240 }}>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text2)', marginBottom: 3 }}>Session à corriger</label>
             <select
               value={sessionId}
               onChange={(e) => {
                 setSessionId(e.target.value)
                 setLines([])
               }}
-              className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+              style={{ width: '100%', padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 12.5, outline: 'none', fontFamily: 'inherit' }}
             >
               <option value="">— Session à corriger —</option>
               {mySessions.map((s) => (
@@ -184,34 +184,34 @@ export default function SectionTeacherCorrectionAnonyme({
           <button
             onClick={loadSheet}
             disabled={loading || !sessionId}
-            className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+            style={{ padding: '6px 14px', borderRadius: 7, background: 'var(--primary)', color: 'white', fontSize: 12.5, fontWeight: 700, border: 'none', cursor: loading || !sessionId ? 'not-allowed' : 'pointer', opacity: loading || !sessionId ? 0.5 : 1, display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}
           >
-            <Loader2 size={16} className={loading ? 'animate-spin' : ''} />
+            <Loader2 size={13} className={loading ? 'animate-spin' : ''} />
             {loading ? 'Chargement…' : 'Charger la fiche'}
           </button>
         </div>
       </div>
 
       {lines.length > 0 && (
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg2)' }}>
-                  <th className="text-left p-3 text-sm font-semibold text-[var(--text3)] uppercase tracking-wider">Code</th>
-                  <th className="text-left p-3 text-sm font-semibold text-[var(--text3)] uppercase tracking-wider">Classe</th>
-                  <th className="text-left p-3 text-sm font-semibold text-[var(--text3)] uppercase tracking-wider">Note /20</th>
-                  <th className="text-left p-3 text-sm font-semibold text-[var(--text3)] uppercase tracking-wider">Absent</th>
-                  <th className="text-left p-3 text-sm font-semibold text-[var(--text3)] uppercase tracking-wider">Illisible</th>
-                  <th className="text-left p-3 text-sm font-semibold text-[var(--text3)] uppercase tracking-wider">Statut</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Code</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Classe</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Note /20</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'center', fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Absent</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'center', fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Illisible</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Statut</th>
                 </tr>
               </thead>
               <tbody>
                 {lines.map((l) => (
                   <tr key={l.code} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td className="p-3 font-mono text-lg font-bold text-[var(--text)]" style={{ fontFamily: 'monospace' }}>{l.code}</td>
-                    <td className="p-3 text-sm text-[var(--text3)]">{l.className || l.classId}</td>
-                    <td className="p-3">
+                    <td style={{ padding: '7px 12px', fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{l.code}</td>
+                    <td style={{ padding: '7px 12px', fontSize: 12, color: 'var(--text3)' }}>{l.className || l.classId}</td>
+                    <td style={{ padding: '7px 12px' }}>
                       <input
                         type="number"
                         min={0}
@@ -220,33 +220,33 @@ export default function SectionTeacherCorrectionAnonyme({
                         value={scores[l.code] ?? ''}
                         onChange={(e) => handleScoreChange(l.code, e.target.value)}
                         disabled={submitted || l.status === 'SUBMITTED'}
-                        className="w-24 px-2 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] disabled:opacity-50"
+                        style={{ width: 68, padding: '4px 7px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 12.5, fontWeight: 700, outline: 'none', textAlign: 'center' }}
                       />
                     </td>
-                    <td className="p-3">
-                      <label className="flex items-center gap-2 cursor-pointer">
+                    <td style={{ padding: '7px 12px', textAlign: 'center' }}>
+                      <label style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
                         <input
                           type="checkbox"
                           checked={absents[l.code] ?? false}
                           onChange={(e) => handleAbsentChange(l.code, e.target.checked)}
                           disabled={submitted || l.status === 'SUBMITTED'}
-                          className="w-4 h-4 rounded border-[var(--border)] bg-[var(--bg)] text-[var(--primary)] focus:ring-[var(--primary)]"
+                          style={{ width: 14, height: 14, cursor: 'pointer' }}
                         />
                       </label>
                     </td>
-                    <td className="p-3">
-                      <label className="flex items-center gap-2 cursor-pointer">
+                    <td style={{ padding: '7px 12px', textAlign: 'center' }}>
+                      <label style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
                         <input
                           type="checkbox"
                           checked={illegibles[l.code] ?? false}
                           onChange={(e) => handleIllegibleChange(l.code, e.target.checked)}
                           disabled={submitted || l.status === 'SUBMITTED'}
-                          className="w-4 h-4 rounded border-[var(--border)] bg-[var(--bg)] text-[var(--primary)] focus:ring-[var(--primary)]"
+                          style={{ width: 14, height: 14, cursor: 'pointer' }}
                         />
                       </label>
                     </td>
-                    <td className="p-3 text-sm">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${l.status === 'SUBMITTED' ? 'bg-green-500/20 text-green-300' : 'bg-gray-500/20 text-gray-300'}`}>
+                    <td style={{ padding: '7px 12px', fontSize: 11.5 }}>
+                      <span style={{ padding: '2px 8px', borderRadius: 10, fontSize: 11, fontWeight: 700, background: l.status === 'SUBMITTED' ? 'var(--green-light)' : 'var(--bg2)', color: l.status === 'SUBMITTED' ? 'var(--green)' : 'var(--text3)' }}>
                         {l.status === 'SUBMITTED' ? 'Soumis' : 'Brouillon'}
                       </span>
                     </td>
@@ -257,40 +257,40 @@ export default function SectionTeacherCorrectionAnonyme({
           </div>
 
           {!submitted && (
-            <div style={{ padding: 16, borderTop: '1px solid var(--border)', display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+            <div style={{ padding: '10px 14px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button
                 onClick={saveDraft}
                 disabled={saving}
-                className="px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg2)] text-[var(--text)] text-sm font-medium hover:bg-[var(--border)] flex items-center gap-2"
+                style={{ padding: '6px 13px', borderRadius: 7, border: '1px solid var(--border2)', background: 'var(--bg2)', color: 'var(--text)', fontSize: 12.5, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'inherit' }}
               >
-                <Save size={16} />
+                <Save size={13} />
                 {saving ? 'Enregistrement…' : 'Enregistrer brouillon'}
               </button>
               <button
                 onClick={submit}
                 disabled={submitting}
-                className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+                style={{ padding: '6px 13px', borderRadius: 7, border: 'none', background: 'var(--primary)', color: 'white', fontSize: 12.5, fontWeight: 700, cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.5 : 1, display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'inherit' }}
               >
-                <Send size={16} />
+                <Send size={13} />
                 {submitting ? 'Soumission…' : 'Soumettre la correction'}
               </button>
             </div>
           )}
 
           {submitted && (
-            <div style={{ padding: 16, borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12 }}>
-              <CheckCircle size={20} className="text-green-400" />
-              <span className="text-green-400 font-medium">Correction soumise — aucune modification n'est plus possible</span>
+            <div style={{ padding: '10px 14px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <CheckCircle size={16} color="var(--green)" />
+              <span style={{ color: 'var(--green)', fontSize: 12.5, fontWeight: 700 }}>Correction soumise — aucune modification n'est plus possible</span>
             </div>
           )}
         </div>
       )}
 
       {sessionId && lines.length === 0 && !loading && (
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 32, textAlign: 'center' }}>
-          <AlertCircle size={48} className="text-[var(--text3)] mx-auto mb-4" />
-          <p className="text-[var(--text3)]">Aucune fiche de correction trouvée pour cette session.</p>
-          <p className="text-sm text-[var(--text3)] mt-1">Vérifiez l'ID de session et assurez-vous que la correction vous est assignée.</p>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 24, textAlign: 'center' }}>
+          <AlertCircle size={32} color="var(--text3)" style={{ margin: '0 auto 8px' }} />
+          <p style={{ color: 'var(--text3)', fontSize: 13, fontWeight: 600 }}>Aucune fiche de correction trouvée pour cette session.</p>
+          <p style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>Vérifiez l'ID de session et assurez-vous que la correction vous est assignée.</p>
         </div>
       )}
     </div>

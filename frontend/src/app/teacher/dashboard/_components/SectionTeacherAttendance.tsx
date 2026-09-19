@@ -195,20 +195,20 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
 
   if (loading && !students.length) {
     return (
-      <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600 }}>Chargement...</div>
+      <div className="px-4 py-4 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: 12.5, color: 'var(--text3)', fontWeight: 600 }}>Chargement...</div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto' }}>
-        <div style={{ padding: 24, textAlign: 'center' }}>
-          <div style={{ color: 'var(--red)', fontSize: 13, fontWeight: 700, marginBottom: 12 }}>{error}</div>
+      <div className="px-4 py-4 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
+        <div style={{ padding: 20, textAlign: 'center' }}>
+          <div style={{ color: 'var(--red)', fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>{error}</div>
           <button onClick={loadAttendance}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
-            <RefreshCw size={14} strokeWidth={2} /> Réessayer
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 13px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
+            <RefreshCw size={13} strokeWidth={2} /> Réessayer
           </button>
         </div>
       </div>
@@ -216,8 +216,8 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
   }
 
   return (
-    <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 26 }}>
+    <div className="px-4 py-4 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
           <div style={sTitle}>Présences</div>
           <div style={sSub}>Saisie par classe · {selectedDate}</div>
@@ -225,14 +225,14 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
       </div>
 
       {!isOnline && (
-        <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 12, padding: '12px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ display: 'flex', alignItems: 'center' }}><WifiOff size={18} strokeWidth={2} /></span>
-          <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--amber)' }}>Mode hors-ligne — les présences seront synchronisées à la reconnexion</span>
+        <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 8, padding: '9px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ display: 'flex', alignItems: 'center' }}><WifiOff size={15} strokeWidth={2} /></span>
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--amber)' }}>Mode hors-ligne — les présences seront synchronisées à la reconnexion</span>
         </div>
       )}
 
       {/* Filtres */}
-      <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: '14px 22px', marginBottom: 18, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1.5px solid var(--border)', padding: '10px 16px', marginBottom: 14, display: 'flex', gap: 7, alignItems: 'center', flexWrap: 'wrap' }}>
         <select style={filterSt} value={selectedClass} onChange={e => setSelectedClass(e.target.value)}>
           <option value="">Sélectionne une classe</option>
           {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -247,44 +247,44 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
       </div>
 
       {rosterLabel && (
-        <div style={{ background: 'var(--blue-light)', border: '1.5px solid var(--blue)', borderRadius: 12, padding: '12px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ display: 'flex', alignItems: 'center' }}><Target size={18} strokeWidth={2} /></span>
-          <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--blue)' }}>{rosterLabel}</span>
+        <div style={{ background: 'var(--blue-light)', border: '1.5px solid var(--blue)', borderRadius: 8, padding: '9px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ display: 'flex', alignItems: 'center' }}><Target size={15} strokeWidth={2} /></span>
+          <span style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--blue)' }}>{rosterLabel}</span>
         </div>
       )}
 
       {students.length > 0 && (
         <>
           {/* Stats rapides */}
-          <div style={{ display: 'flex', gap: 12, marginBottom: 18 }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
             {[
               { label: 'Présents', count: counts.P, bg: 'var(--green-light)', color: 'var(--green)' },
               { label: 'Absents',  count: counts.A, bg: 'var(--red-light)', color: 'var(--red)' },
               { label: 'Retards',  count: counts.R, bg: 'var(--amber-light)', color: 'var(--amber)' },
               { label: 'Excusés',  count: counts.E, bg: 'var(--blue-light)', color: 'var(--blue)' },
             ].map((s, i) => (
-              <div key={i} style={{ flex: 1, background: s.bg, borderRadius: 13, padding: '12px 16px', textAlign: 'center' }}>
-                <div style={{ fontSize: 28, fontWeight: 900, color: s.color }}>{s.count}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: s.color, marginTop: 2 }}>{s.label}</div>
+              <div key={i} style={{ flex: 1, background: s.bg, borderRadius: 8, padding: '8px 12px', textAlign: 'center' }}>
+                <div style={{ fontSize: 20, fontWeight: 900, color: s.color }}>{s.count}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: s.color, marginTop: 2 }}>{s.label}</div>
               </div>
             ))}
           </div>
 
           {/* Table présences */}
-          <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', overflow: 'hidden' }}>
-            <div style={{ padding: '12px 22px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1.5px solid var(--border)', overflow: 'hidden' }}>
+            <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--border)' }}>
               <button
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 15, fontWeight: 800, color: 'var(--green)', border: '1.5px solid rgba(5,150,105,0.3)', background: 'var(--green-light)', cursor: 'pointer', padding: '7px 16px', borderRadius: 10, fontFamily: 'inherit' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 800, color: 'var(--green)', border: '1.5px solid rgba(5,150,105,0.3)', background: 'var(--green-light)', cursor: 'pointer', padding: '5px 11px', borderRadius: 7, fontFamily: 'inherit' }}
                 onClick={() => {
                   const all: Record<string, AttStatus> = {}
                   students.forEach(s => { all[s.id] = 'PRESENT' })
                   setStatuses(all)
                 }}>
-                <Check size={16} strokeWidth={2.5} /> Tous présents
+                <Check size={13} strokeWidth={2.5} /> Tous présents
               </button>
             </div>
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 550 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 500 }}>
                 <thead>
                   <tr>
                     <th style={thSt}>N°</th>
@@ -301,10 +301,10 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
                       <tr key={student.id}
                         onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
                         onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
-                        <td style={{ ...tdSt, color: 'var(--text3)', width: 44 }}>{i + 1}</td>
+                        <td style={{ ...tdSt, color: 'var(--text3)', width: 38 }}>{i + 1}</td>
                         <td style={{ ...tdSt, fontWeight: 700, color: 'var(--text)' }}>
                           {student.name}
-                          {rosterLabel && student.className && <span style={{ fontWeight: 600, color: 'var(--text3)', fontSize: 14 }}> ({student.className})</span>}
+                          {rosterLabel && student.className && <span style={{ fontWeight: 600, color: 'var(--text3)', fontSize: 11.5 }}> ({student.className})</span>}
                         </td>
                         {(['P', 'A', 'R', 'E'] as const).map(s => {
                           const sel = shortStatus === s
@@ -318,7 +318,7 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
                                 }}
                                 title={attTitle(s)}
                                 style={{
-                                  width: 36, height: 36, borderRadius: 9, fontSize: 17,
+                                  width: 28, height: 28, borderRadius: 6, fontSize: 13,
                                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                                   cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800,
                                   border: `1.5px solid ${sel ? st.selBorder : 'var(--border2)'}`,
@@ -326,7 +326,7 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
                                   color: sel ? st.selColor : 'var(--text3)',
                                   transition: 'all 0.1s'
                                 }}>
-                                {st.Icon ? <st.Icon size={18} strokeWidth={2.5} /> : st.label}
+                                {st.Icon ? <st.Icon size={14} strokeWidth={2.5} /> : st.label}
                               </button>
                             </td>
                           )
@@ -337,9 +337,9 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
                 </tbody>
               </table>
             </div>
-            <div style={{ padding: '14px 22px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-              <button style={{ ...btnPrim, display: 'inline-flex', alignItems: 'center', gap: 8 }} onClick={saveAttendance} disabled={loading}>
-                {loading ? <Save size={16} strokeWidth={2} /> : isOnline ? <CheckCircle2 size={16} strokeWidth={2} /> : <WifiOff size={16} strokeWidth={2} />}
+            <div style={{ padding: '10px 16px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button style={{ ...btnPrim, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={saveAttendance} disabled={loading}>
+                {loading ? <Save size={14} strokeWidth={2} /> : isOnline ? <CheckCircle2 size={14} strokeWidth={2} /> : <WifiOff size={14} strokeWidth={2} />}
                 {loading ? 'Sauvegarde...' : isOnline ? 'Enregistrer les présences' : 'Mettre en file d\'attente'}
               </button>
             </div>
@@ -348,19 +348,19 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
       )}
 
       {!loading && students.length === 0 && (
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: 48, textAlign: 'center' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}><ClipboardList size={48} strokeWidth={2} /></div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>Sélectionne une classe et clique sur Charger</div>
-          <div style={{ fontSize: 14, color: 'var(--text3)' }}>Pour saisir les présences du jour</div>
+        <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1.5px solid var(--border)', padding: 36, textAlign: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><ClipboardList size={36} strokeWidth={2} /></div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>Sélectionne une classe et clique sur Charger</div>
+          <div style={{ fontSize: 12.5, color: 'var(--text3)' }}>Pour saisir les présences du jour</div>
         </div>
       )}
     </div>
   )
 }
 
-const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 28, fontWeight: 700, color: 'var(--text)' }
-const sSub: React.CSSProperties = { fontSize: 17, color: 'var(--text3)', marginTop: 3 }
-const btnPrim: React.CSSProperties = { padding: '10px 20px', borderRadius: 11, fontSize: 16, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
-const filterSt: React.CSSProperties = { background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 10, padding: '8px 12px', fontSize: 16, fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }
-const thSt: React.CSSProperties = { padding: '11px 16px', textAlign: 'left', fontSize: 13, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.7px', whiteSpace: 'nowrap' }
-const tdSt: React.CSSProperties = { padding: '14px 16px', fontSize: 17, color: 'var(--text2)', borderBottom: '1px solid var(--bg)', verticalAlign: 'middle' }
+const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)' }
+const sSub: React.CSSProperties = { fontSize: 12, color: 'var(--text3)', marginTop: 2 }
+const btnPrim: React.CSSProperties = { padding: '6px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+const filterSt: React.CSSProperties = { background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '6px 10px', fontSize: 12.5, fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }
+const thSt: React.CSSProperties = { padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }
+const tdSt: React.CSSProperties = { padding: '8.5px 12px', fontSize: 12.5, color: 'var(--text2)', borderBottom: '1px solid var(--bg)', verticalAlign: 'middle' }

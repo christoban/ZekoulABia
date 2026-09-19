@@ -154,22 +154,22 @@ export default function TeacherDashboard() {
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
         {/* Topbar */}
-        <header style={{ height: 68, background: 'var(--surface)', borderBottom: '1.5px solid var(--border)', display: 'flex', alignItems: 'center', padding: '0 32px', gap: 14, flexShrink: 0 }}>
+        <header style={{ height: 56, background: 'var(--surface)', borderBottom: '1.5px solid var(--border)', display: 'flex', alignItems: 'center', padding: '0 20px', gap: 12, flexShrink: 0 }}>
           <MobileMenuButton onClick={() => setMobileNavOpen(true)} />
-          <div className="truncate" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
+          <div className="truncate" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
             {TITLES[section]}
           </div>
-          <span className="hidden lg:inline" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 20, padding: '4px 14px', fontSize: 15, fontWeight: 700, color: 'var(--text3)' }}>
+          <span className="hidden lg:inline" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 20, padding: '3px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text3)' }}>
             Trimestre 2 · Séquence 3
           </span>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
             <div className="hidden sm:block" style={{ position: 'relative' }}>
-              <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)' }} />
-              <input placeholder={tcommon('actions.search') + '...'} style={{ background: 'var(--bg2)', border: '1.5px solid var(--border)', borderRadius: 10, padding: '8px 14px 8px 34px', fontSize: 15, fontWeight: 600, color: 'var(--text)', outline: 'none', width: 260, fontFamily: 'inherit' }} />
+              <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)' }} />
+              <input placeholder={tcommon('actions.search') + '...'} style={{ background: 'var(--bg2)', border: '1.5px solid var(--border)', borderRadius: 8, padding: '6px 12px 6px 30px', fontSize: 12.5, fontWeight: 600, color: 'var(--text)', outline: 'none', width: 210, fontFamily: 'inherit' }} />
             </div>
             <button onClick={() => setChangePwdOpen(true)} title={tcommon('auth.changePassword')}
-              style={{ width: 42, height: 42, borderRadius: 10, background: 'var(--bg2)', border: '1.5px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-              <KeyRound size={18} color="var(--text2)" />
+              style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--bg2)', border: '1.5px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              <KeyRound size={16} color="var(--text2)" />
             </button>
             <NotificationBell onNav={s => setSection(s as TeacherSection)} />
           </div>
@@ -203,7 +203,7 @@ export default function TeacherDashboard() {
           {section === 'correction-anonyme' && <SectionTeacherCorrectionAnonyme onToast={showToast} />}
           {section === 'mon-profil-rh' && <SectionMonProfilRH onToast={showToast} />}
           {section === 'notifications' && <NotificationCenter />}
-          {section === 'babillard' && <Babillard role={user?.role ?? 'TEACHER'} title={tnav('sidebar.babillard')} subtitle={tcommon('brand.roleTeacher')} />}
+          {section === 'babillard' && <Babillard role={user?.role ?? 'TEACHER'} title={tnav('sidebar.babillard')} subtitle={tcommon('brand.roleTeacher')} currentUserId={user?.id} />}
           {section === 'messagerie' && <Messagerie />}
           {Object.entries(PLACEHOLDERS).map(([key, val]) =>
             section === key ? (

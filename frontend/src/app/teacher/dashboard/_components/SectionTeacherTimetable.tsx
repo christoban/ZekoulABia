@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useState, useEffect } from 'react'
 import { Calendar, RefreshCw } from 'lucide-react'
 import type { UserInfo } from '../_types'
@@ -112,20 +112,20 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
 
   if (loading) {
     return (
-      <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600 }}>{tcommon('status.loading')}</div>
+      <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: 12.5, color: 'var(--text3)', fontWeight: 600 }}>{tcommon('status.loading')}</div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto' }}>
-        <div style={{ padding: 24, textAlign: 'center' }}>
-          <div style={{ color: 'var(--red)', fontSize: 13, fontWeight: 700, marginBottom: 12 }}>{error}</div>
+      <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto' }}>
+        <div style={{ padding: 16, textAlign: 'center' }}>
+          <div style={{ color: 'var(--red)', fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>{error}</div>
           <button onClick={fetchData}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
-            <RefreshCw size={14} strokeWidth={2} />{t('timetable.retry')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
+            <RefreshCw size={13} strokeWidth={2} />{t('timetable.retry')}
           </button>
         </div>
       </div>
@@ -143,24 +143,24 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
   }
 
   return (
-    <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 26 }}>
+    <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
           <div style={sTitle}>{t('timetable.title')}</div>
           <div style={sSub}>{getWeekRange()}</div>
         </div>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: 'var(--green)' }}>
-            <div style={{ width: 14, height: 14, borderRadius: 4, background: 'var(--green-light)', border: '2px solid var(--green)' }} />
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: 'var(--green)' }}>
+            <div style={{ width: 10, height: 10, borderRadius: 3, background: 'var(--green-light)', border: '1.5px solid var(--green)' }} />
             {t('timetable.my_courses')}
           </span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: 'var(--text3)' }}>
-            <div style={{ width: 14, height: 14, borderRadius: 4, background: 'var(--bg2)', border: '2px solid var(--border2)' }} />
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: 'var(--text3)' }}>
+            <div style={{ width: 10, height: 10, borderRadius: 3, background: 'var(--bg2)', border: '1.5px solid var(--border2)' }} />
             {t('timetable.free')}
           </span>
           <button onClick={openCatchupModal}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, fontSize: 14, fontWeight: 800, background: 'var(--surface)', color: 'var(--green)', border: '1.5px solid rgba(5,150,105,0.35)', cursor: 'pointer', fontFamily: 'inherit' }}>
-            <Calendar size={14} strokeWidth={2} />{t('timetable.catchup_request')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--green)', border: '1px solid rgba(5,150,105,0.35)', cursor: 'pointer', fontFamily: 'inherit' }}>
+            <Calendar size={13} strokeWidth={2} />{t('timetable.catchup_request')}
           </button>
         </div>
       </div>
@@ -168,8 +168,8 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
       {/* ── Modal demande de rattrapage ── */}
       {catchup.open && (
         <div onClick={() => setCatchup(EMPTY_CATCHUP)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} className="px-5 py-6 md:px-9 md:py-8" style={{ background: 'var(--surface)', borderRadius: 18, width: 480, maxWidth: '94vw', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
-            <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 22 }}>{t('timetable.catchup_title')}</div>
+          <div onClick={e => e.stopPropagation()} className="px-4 py-5 md:px-6 md:py-6" style={{ background: 'var(--surface)', borderRadius: 14, width: 440, maxWidth: '94vw', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 16px 40px rgba(0,0,0,0.18)' }}>
+            <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 14 }}>{t('timetable.catchup_title')}</div>
             <div style={catchSLb}>{t('timetable.catchup_class_label')}</div>
             <select style={catchSIn} value={catchup.classId} onChange={e => setCatchup(f => ({ ...f, classId: e.target.value }))}>
               <option value="">{t('timetable.catchup_class_placeholder')}</option>
@@ -184,7 +184,7 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
                 <option key={ts.subject.id} value={ts.subject.id}>{ts.subject.name}</option>
               ))}
             </select>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               <div>
                 <div style={catchSLb}>{t('timetable.catchup_start_label')}</div>
                 <input style={catchSIn} type="time" value={catchup.proposedStartTime} onChange={e => setCatchup(f => ({ ...f, proposedStartTime: e.target.value }))} />
@@ -195,12 +195,12 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
               </div>
             </div>
             <div style={catchSLb}>{t('timetable.catchup_reason_label')}</div>
-            <textarea style={{ ...catchSIn, minHeight: 70, resize: 'vertical' }} value={catchup.reason} onChange={e => setCatchup(f => ({ ...f, reason: e.target.value }))} placeholder={t('timetable.catchup_reason_placeholder')} />
-            {catchup.error && <div style={{ background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, marginBottom: 8, lineHeight: 1.5 }}>{catchup.error}</div>}
-            <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-              <button style={{ flex: 1, padding: '10px', borderRadius: 11, fontSize: 15, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => setCatchup(EMPTY_CATCHUP)}>{t('timetable.catchup_cancel')}</button>
-              <button style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: catchup.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: catchup.loading ? 0.7 : 1 }} onClick={submitCatchup} disabled={catchup.loading}>
-                <Calendar size={14} strokeWidth={2} />{catchup.loading ? t('timetable.catchup_submit_loading') : t('timetable.catchup_submit')}
+            <textarea style={{ ...catchSIn, minHeight: 60, resize: 'vertical' }} value={catchup.reason} onChange={e => setCatchup(f => ({ ...f, reason: e.target.value }))} placeholder={t('timetable.catchup_reason_placeholder')} />
+            {catchup.error && <div style={{ background: 'var(--red-light)', color: 'var(--red)', borderRadius: 6, padding: '6px 10px', fontSize: 12, fontWeight: 600, marginBottom: 8, lineHeight: 1.4 }}>{catchup.error}</div>}
+            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+              <button style={{ flex: 1, padding: '7px 12px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => setCatchup(EMPTY_CATCHUP)}>{t('timetable.catchup_cancel')}</button>
+              <button style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '7px 12px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: catchup.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: catchup.loading ? 0.7 : 1 }} onClick={submitCatchup} disabled={catchup.loading}>
+                <Calendar size={13} strokeWidth={2} />{catchup.loading ? t('timetable.catchup_submit_loading') : t('timetable.catchup_submit')}
               </button>
             </div>
           </div>
@@ -208,42 +208,42 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
       )}
 
       {grid.length === 0 ? (
-        <div style={{ padding: 32, textAlign: 'center', color: 'var(--text3)', fontSize: 14 }}>
+        <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
           {t('timetable.empty')}
         </div>
       ) : (
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 680 }}>
               <thead>
                 <tr>
-                  <th style={{ ...thSt, width: 100 }}>{t('timetable.header_schedule')}</th>
+                  <th style={{ ...thSt, width: 85 }}>{t('timetable.header_schedule')}</th>
                   {days.map(d => <th key={d} style={thSt}>{d}</th>)}
                 </tr>
               </thead>
               <tbody>
                 {grid.map((row) => (
                   <tr key={row.start}>
-                    <td style={{ padding: '10px 11px', background: 'var(--bg2)', fontSize: 13, fontWeight: 800, color: 'var(--text3)', textAlign: 'center', border: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
-                      {row.start}<br /><span style={{ fontSize: 11, color: 'var(--border2)' }}>{row.end}</span>
+                    <td style={{ padding: '6px 8px', background: 'var(--bg2)', fontSize: 11.5, fontWeight: 700, color: 'var(--text3)', textAlign: 'center', border: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
+                      {row.start}<br /><span style={{ fontSize: 10, color: 'var(--text3)' }}>{row.end}</span>
                     </td>
                     {[0, 1, 2, 3, 4].map((day) => {
                       const slot = slots[`${day}-${row.start}`]
                       return (
-                        <td key={day} style={{ padding: 0, border: '1px solid var(--border)', verticalAlign: 'top', minWidth: 140, height: 76 }}>
+                        <td key={day} style={{ padding: 0, border: '1px solid var(--border)', verticalAlign: 'top', minWidth: 120, height: 52 }}>
                           {slot ? (
                             <div
                               style={{
-                                padding: 10, height: '100%', cursor: 'pointer',
-                                background: 'linear-gradient(135deg,rgba(5,150,105,0.1),rgba(5,150,105,0.05))',
-                                borderLeft: '3px solid var(--green)',
+                                padding: '6px 8px', height: '100%', cursor: 'pointer',
+                                background: 'linear-gradient(135deg,rgba(5,150,105,0.09),rgba(5,150,105,0.04))',
+                                borderLeft: '2.5px solid var(--green)',
                               }}
                               onClick={() => onToast(`${slot.subject} — ${slot.classe}`, 'info')}>
-                              <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--green2)' }}>{slot.subject}</div>
-                              <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 3 }}>{slot.classe}</div>
+                              <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--green2)', lineHeight: 1.2 }}>{slot.subject}</div>
+                              <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{slot.classe}</div>
                             </div>
                           ) : (
-                            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--border2)', fontSize: 20 }}>·</div>
+                            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--border2)', fontSize: 16 }}>·</div>
                           )}
                         </td>
                       )
@@ -259,8 +259,8 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
   )
 }
 
-const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 28, fontWeight: 700, color: 'var(--text)' }
-const sSub: React.CSSProperties = { fontSize: 17, color: 'var(--text3)', marginTop: 3 }
-const thSt: React.CSSProperties = { padding: '11px 10px', textAlign: 'center', fontSize: 13, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', border: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px' }
-const catchSLb: React.CSSProperties = { fontSize: 13, fontWeight: 700, color: 'var(--text3)', marginBottom: 6 }
-const catchSIn: React.CSSProperties = { width: '100%', padding: '10px 14px', borderRadius: 10, fontSize: 14, border: '1.5px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 14, outline: 'none' }
+const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)' }
+const sSub: React.CSSProperties = { fontSize: 12, color: 'var(--text3)', marginTop: 2 }
+const thSt: React.CSSProperties = { padding: '8px 8px', textAlign: 'center', fontSize: 11, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', border: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px' }
+const catchSLb: React.CSSProperties = { fontSize: 11.5, fontWeight: 700, color: 'var(--text3)', marginBottom: 4 }
+const catchSIn: React.CSSProperties = { width: '100%', padding: '7px 10px', borderRadius: 7, fontSize: 12.5, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 10, outline: 'none' }

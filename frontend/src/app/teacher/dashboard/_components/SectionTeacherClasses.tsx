@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useState, useEffect, useCallback } from 'react'
 import type { UserInfo } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
@@ -70,19 +70,19 @@ export default function SectionTeacherClasses({ onNav, onToast, user }: Props) {
 
   if (loading) {
     return (
-      <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600 }}>{tcommon('user.loading')}</div>
+      <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: 12.5, color: 'var(--text3)', fontWeight: 600 }}>{tcommon('user.loading')}</div>
       </div>
     )
   }
 
   if (error && error !== 'OFFLINE_NO_CACHE') {
     return (
-      <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto' }}>
-        <div style={{ padding: 24, textAlign: 'center' }}>
-          <div style={{ color: 'var(--red)', fontSize: 13, fontWeight: 700, marginBottom: 12 }}>{error}</div>
+      <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto' }}>
+        <div style={{ padding: 16, textAlign: 'center' }}>
+          <div style={{ color: 'var(--red)', fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>{error}</div>
           <button onClick={fetchData}
-            style={{ padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{ padding: '6px 14px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
             {t('classes.retry')}
           </button>
         </div>
@@ -91,55 +91,53 @@ export default function SectionTeacherClasses({ onNav, onToast, user }: Props) {
   }
 
   return (
-    <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto' }}>
-      <div style={{ marginBottom: 26 }}>
+    <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto' }}>
+      <div style={{ marginBottom: 18 }}>
         <div style={sTitle}>{t('classes.title')}</div>
         <div style={sSub}>{t('classes.subtitle').replace('{count}', String(classes.length)).replace('{students}', String(totalStudents))}</div>
         {fromCache && cachedAt && (
-          <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 8, padding: '5px 12px', fontSize: 13, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10 }}>
-            <Package size={14} strokeWidth={2} /> {tcommon('cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}
+          <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 6, padding: '4px 10px', fontSize: 11.5, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 8 }}>
+            <Package size={13} strokeWidth={2} /> {tcommon('cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}
           </div>
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 18 }}>
-        {classes.map((cls, i) => {
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
+        {classes.map((cls) => {
           const isPP = cls.professorPrincipalId === user?.id
           return (
             <div key={cls.id}
-              style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: 26, cursor: 'pointer', transition: 'all 0.15s' }}
-              onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { transform: 'translateY(-2px)', boxShadow: '0 6px 20px rgba(0,0,0,0.07)', borderColor: 'var(--border2)' })}
+              style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: 16, cursor: 'pointer', transition: 'all 0.15s' }}
+              onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { transform: 'translateY(-1px)', boxShadow: '0 4px 14px rgba(0,0,0,0.06)', borderColor: 'var(--border2)' })}
               onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { transform: 'none', boxShadow: 'none', borderColor: 'var(--border)' })}>
 
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 }}>
-                <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 33, fontWeight: 700, color: 'var(--text)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>
                   {cls.name}
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {isPP && (
-                    <span style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '4px 12px', borderRadius: 22, fontSize: 14, fontWeight: 800 }}>
-                      {t('classes.badge_pp')}
-                    </span>
-                  )}
-                </div>
+                {isPP && (
+                  <span style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 700 }}>
+                    {t('classes.badge_pp')}
+                  </span>
+                )}
               </div>
 
-              <div style={{ display: 'flex', gap: 22, fontSize: 17, fontWeight: 600, color: 'var(--text2)', marginBottom: 18 }}>
-                <span>{t('classes.students_count').replace('{count}', String(cls._count?.students || 0))}</span>
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text2)', marginBottom: 12 }}>
+                {t('classes.students_count').replace('{count}', String(cls._count?.students || 0))}
               </div>
 
               {/* Stats boxes */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
-                <div style={{ background: 'var(--bg2)', borderRadius: 12, padding: '12px 14px' }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text3)', marginBottom: 6 }}>{t('classes.stats_avg')}</div>
-                  <div style={{ fontSize: 26, fontWeight: 900, color: stats[cls.id]?.average != null ? MOY_COLOR(stats[cls.id].average!) : 'var(--text3)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+                <div style={{ background: 'var(--bg2)', borderRadius: 8, padding: '8px 12px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text3)', marginBottom: 4 }}>{t('classes.stats_avg')}</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: stats[cls.id]?.average != null ? MOY_COLOR(stats[cls.id].average!) : 'var(--text3)' }}>
                     {stats[cls.id]?.average != null ? `${stats[cls.id].average!.toFixed(1)}` : '--'}
-                    <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--text3)' }}>/20</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)' }}>/20</span>
                   </div>
                 </div>
-                <div style={{ background: 'var(--bg2)', borderRadius: 12, padding: '12px 14px' }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text3)', marginBottom: 6 }}>{t('classes.stats_attendance')}</div>
-                  <div style={{ fontSize: 26, fontWeight: 900, color: stats[cls.id]?.attendanceRate ? 'var(--green)' : 'var(--text3)' }}>
+                <div style={{ background: 'var(--bg2)', borderRadius: 8, padding: '8px 12px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text3)', marginBottom: 4 }}>{t('classes.stats_attendance')}</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: stats[cls.id]?.attendanceRate ? 'var(--green)' : 'var(--text3)' }}>
                     {stats[cls.id]?.attendanceRate ?? '--'}
                   </div>
                 </div>
@@ -160,28 +158,28 @@ export default function SectionTeacherClasses({ onNav, onToast, user }: Props) {
                   label = t('classes.grade_partial').replace('{done}', String(done)).replace('{total}', String(total)); bg = 'var(--amber-light)'; color = 'var(--amber)'
                 }
                 return (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text3)' }}>{t('classes.grade_label')}</span>
-                    <span style={{ background: bg, color, padding: '3px 10px', borderRadius: 20, fontSize: 13, fontWeight: 800 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14 }}>
+                    <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text3)' }}>{t('classes.grade_label')}</span>
+                    <span style={{ background: bg, color, padding: '2px 8px', borderRadius: 10, fontSize: 11, fontWeight: 700 }}>
                       {label}
                     </span>
                     {total > 0 && done < total && (
-                      <div style={{ flex: 1, height: 6, background: 'var(--border)', borderRadius: 4, overflow: 'hidden' }}>
-                        <div style={{ width: `${(done / total) * 100}%`, height: '100%', background: 'var(--amber)', borderRadius: 4 }} />
+                      <div style={{ flex: 1, height: 4, background: 'var(--border)', borderRadius: 3, overflow: 'hidden' }}>
+                        <div style={{ width: `${(done / total) * 100}%`, height: '100%', background: 'var(--amber)', borderRadius: 3 }} />
                       </div>
                     )}
                   </div>
                 )
               })()}
 
-              <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
                 <button
-                  style={{ flex: 1, padding: '9px', borderRadius: 10, fontSize: 15, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.12s' }}
+                  style={{ flex: 1, padding: '6px 10px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.12s' }}
                   onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--green)', color: 'var(--green)' })}
                   onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--border2)', color: 'var(--text2)' })}
                   onClick={() => onNav('attendance')}>{t('classes.btn_attendance')}</button>
                 <button
-                  style={{ flex: 1, padding: '9px', borderRadius: 10, fontSize: 15, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.12s' }}
+                  style={{ flex: 1, padding: '6px 10px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.12s' }}
                   onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--green)', color: 'var(--green)' })}
                   onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--border2)', color: 'var(--text2)' })}
                   onClick={() => onNav('grades')}>{t('classes.btn_grades')}</button>
@@ -194,5 +192,5 @@ export default function SectionTeacherClasses({ onNav, onToast, user }: Props) {
   )
 }
 
-const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 28, fontWeight: 700, color: 'var(--text)' }
-const sSub: React.CSSProperties = { fontSize: 17, color: 'var(--text3)', marginTop: 3 }
+const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)' }
+const sSub: React.CSSProperties = { fontSize: 12.5, color: 'var(--text3)', marginTop: 2 }

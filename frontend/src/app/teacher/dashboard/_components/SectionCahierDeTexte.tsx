@@ -32,19 +32,19 @@ type Tab = 'saisie' | 'historique'
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const SEL: React.CSSProperties = {
-  width: '100%', padding: '14px 16px', borderRadius: 12, border: '1.5px solid var(--border)',
-  fontSize: 16, fontWeight: 600, fontFamily: 'inherit', color: 'var(--text)',
+  width: '100%', padding: '7px 11px', borderRadius: 7, border: '1px solid var(--border)',
+  fontSize: 12.5, fontWeight: 600, fontFamily: 'inherit', color: 'var(--text)',
   background: 'var(--surface)', outline: 'none', boxSizing: 'border-box', appearance: 'none',
   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a89478' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
-  backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center',
+  backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center',
 }
 const LBL: React.CSSProperties = {
   fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase',
-  letterSpacing: '0.6px', marginBottom: 6, display: 'block',
+  letterSpacing: '0.5px', marginBottom: 3, display: 'block',
 }
 const AREA: React.CSSProperties = {
-  width: '100%', padding: '14px 16px', borderRadius: 12, border: '1.5px solid var(--border)',
-  fontSize: 16, fontWeight: 500, fontFamily: 'inherit', color: 'var(--text)',
+  width: '100%', padding: '7px 11px', borderRadius: 7, border: '1px solid var(--border)',
+  fontSize: 12.5, fontWeight: 500, fontFamily: 'inherit', color: 'var(--text)',
   background: 'var(--surface)', outline: 'none', boxSizing: 'border-box', resize: 'vertical',
 }
 
@@ -281,41 +281,41 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
 
   const tabBtn = (tabId: Tab, label: string, Icon: typeof Calendar) => (
     <button key={tabId} onClick={() => setTab(tabId)} style={{
-      padding: '10px 18px', borderRadius: 10, fontSize: 14, fontWeight: 800,
+      padding: '6px 14px', borderRadius: 7, fontSize: 12.5, fontWeight: 700,
       fontFamily: 'inherit', cursor: 'pointer', border: 'none',
       background: tab === tabId ? 'var(--sidebar)' : 'var(--bg2)',
       color: tab === tabId ? 'white' : 'var(--text2)', transition: 'all 0.15s',
-      display: 'inline-flex', alignItems: 'center', gap: 6,
-    }}><Icon size={14} strokeWidth={2} />{label}</button>
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+    }}><Icon size={13} strokeWidth={2} />{label}</button>
   )
 
   return (
-    <div style={{ padding: '20px 16px', height: '100%', overflowY: 'auto', boxSizing: 'border-box', background: 'var(--bg)' }}>
+    <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto', boxSizing: 'border-box', background: 'var(--bg)' }}>
 
       {/* Indicateur hors-ligne */}
       {!isOnline && (
         <div style={{
-          background: 'var(--orange-light)', border: '1.5px solid var(--orange)', borderRadius: 10,
-          padding: '8px 14px', marginBottom: 14, fontSize: 13, color: 'var(--orange)', fontWeight: 700,
-          display: 'flex', alignItems: 'center', gap: 8,
+          background: 'var(--orange-light)', border: '1px solid var(--orange)', borderRadius: 8,
+          padding: '7px 12px', marginBottom: 12, fontSize: 12, color: 'var(--orange)', fontWeight: 700,
+          display: 'flex', alignItems: 'center', gap: 7,
         }}>
-          <WifiOff size={16} strokeWidth={2} />
+          <WifiOff size={15} strokeWidth={2} />
           {t('cahier_de_texte.offline_banner')}
         </div>
       )}
 
       {/* Titre */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>
           {t('cahier_de_texte.title')}
         </div>
-        <div style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 500, marginTop: 3 }}>
+        <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 500, marginTop: 2 }}>
           {t('cahier_de_texte.subtitle')}
         </div>
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
         {tabBtn('saisie', t('cahier_de_texte.tab_new_entry'), Pencil)}
         {tabBtn('historique', t('cahier_de_texte.tab_history'), ClipboardList)}
       </div>
@@ -327,31 +327,31 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
           {/* Bannière slot du jour */}
           {slotBanner && (
             <div style={{
-              background: 'var(--green-light)', border: '1.5px solid var(--green)', borderRadius: 12,
-              padding: '10px 14px', marginBottom: 14, fontSize: 13, color: 'var(--green)', fontWeight: 600,
-              display: 'flex', alignItems: 'center', gap: 8,
+              background: 'var(--green-light)', border: '1px solid var(--green)', borderRadius: 8,
+              padding: '8px 12px', marginBottom: 12, fontSize: 12, color: 'var(--green)', fontWeight: 600,
+              display: 'flex', alignItems: 'center', gap: 7,
             }}>
-              <span style={{ display: 'flex', alignItems: 'center' }}><Calendar size={16} strokeWidth={2} /></span>
+              <span style={{ display: 'flex', alignItems: 'center' }}><Calendar size={14} strokeWidth={2} /></span>
               <span style={{ flex: 1 }}>{slotBanner}</span>
-              <button onClick={() => setSlotBanner(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--green)', fontSize: 18, lineHeight: 1 }}>×</button>
+              <button onClick={() => setSlotBanner(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--green)', fontSize: 16, lineHeight: 1 }}>×</button>
             </div>
           )}
 
           {/* Bannière qualité scan */}
           {scanBanner && (
             <div style={{
-              background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 12,
-              padding: '10px 14px', marginBottom: 14, fontSize: 13, color: 'var(--amber)', fontWeight: 600,
-              display: 'flex', alignItems: 'center', gap: 8,
+              background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 8,
+              padding: '8px 12px', marginBottom: 12, fontSize: 12, color: 'var(--amber)', fontWeight: 600,
+              display: 'flex', alignItems: 'center', gap: 7,
             }}>
-              <span style={{ display: 'flex', alignItems: 'center' }}><AlertTriangle size={16} strokeWidth={2} /></span>
+              <span style={{ display: 'flex', alignItems: 'center' }}><AlertTriangle size={14} strokeWidth={2} /></span>
               <span style={{ flex: 1 }}>{scanBanner}</span>
-              <button onClick={() => setScanBanner(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--amber)', fontSize: 18, lineHeight: 1 }}>×</button>
+              <button onClick={() => setScanBanner(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--amber)', fontSize: 16, lineHeight: 1 }}>×</button>
             </div>
           )}
 
           {/* ── CAS 1 : Formulaire principal — toujours visible en premier ── */}
-          <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
             {/* Classe */}
             <div>
@@ -393,7 +393,7 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
                     rows={3} style={AREA}
                     autoFocus
                   />
-                  <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4, fontWeight: 600 }}>
+                  <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 3, fontWeight: 600 }}>
                     {t('cahier_de_texte.free_text_hint')}
                   </div>
                 </div>
@@ -407,27 +407,27 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
                 <textarea
                   value={contenu} onChange={e => setContenu(e.target.value)}
                   placeholder={t('cahier_de_texte.content_placeholder')}
-                  rows={3} style={{ ...AREA, minHeight: 88 }}
+                  rows={3} style={{ ...AREA, minHeight: 70 }}
                 />
               </div>
             )}
 
             {/* Devoirs — toggle */}
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: devoirsOn ? 10 : 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: devoirsOn ? 8 : 0 }}>
                 <label style={{ ...LBL, marginBottom: 0, flex: 1 }}>{t('cahier_de_texte.homework_label')}</label>
                 <button
                   onClick={() => { setDevoirsOn(v => !v); if (devoirsOn) setDevoirs('') }}
                   style={{
-                    width: 52, height: 28, borderRadius: 14, border: 'none', cursor: 'pointer',
+                    width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
                     background: devoirsOn ? 'var(--sidebar)' : 'var(--border)', transition: 'background 0.2s',
                     position: 'relative', flexShrink: 0,
                   }}
                 >
                   <span style={{
-                    position: 'absolute', top: 3, left: devoirsOn ? 26 : 4,
-                    width: 22, height: 22, borderRadius: '50%', background: 'var(--surface)',
-                    transition: 'left 0.2s', display: 'block', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                    position: 'absolute', top: 2, left: devoirsOn ? 22 : 3,
+                    width: 20, height: 20, borderRadius: '50%', background: 'var(--surface)',
+                    transition: 'left 0.2s', display: 'block', boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
                   }} />
                 </button>
               </div>
@@ -444,26 +444,26 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
             <div>
               <label style={LBL}>{t('cahier_de_texte.date_label')}</label>
               <input type="date" value={date} onChange={e => setDate(e.target.value)}
-                style={{ ...SEL, paddingTop: 13, paddingBottom: 13 }} />
+                style={{ ...SEL, paddingTop: 6, paddingBottom: 6 }} />
             </div>
           </div>
 
           {/* ── CAS 1 : Scan optionnel — secondaire, sous le formulaire ── */}
-          <div style={{ marginTop: 12 }}>
+          <div style={{ marginTop: 10 }}>
             <button
               onClick={handleScanClick}
               disabled={scanning}
               style={{
-                width: '100%', padding: '11px 16px', borderRadius: 12,
-                border: '1.5px dashed var(--border)', background: 'transparent',
-                color: 'var(--text3)', fontSize: 13, fontWeight: 700,
+                width: '100%', padding: '8px 12px', borderRadius: 8,
+                border: '1px dashed var(--border2)', background: 'transparent',
+                color: 'var(--text3)', fontSize: 12, fontWeight: 700,
                 fontFamily: 'inherit', cursor: scanning ? 'not-allowed' : 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}
             >
               {scanning
-                ? <><Loader2 size={16} strokeWidth={2} className="animate-spin" /> {t('cahier_de_texte.scan_scanning')}</>
-                : <><Camera size={16} strokeWidth={2} /> {t('cahier_de_texte.scan_idle')}</>
+                ? <><Loader2 size={14} strokeWidth={2} className="animate-spin" /> {t('cahier_de_texte.scan_scanning')}</>
+                : <><Camera size={14} strokeWidth={2} /> {t('cahier_de_texte.scan_idle')}</>
               }
             </button>
             <input ref={cameraRef} type="file" accept="image/*" capture="environment"
@@ -471,20 +471,20 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
           </div>
 
           {/* ── Bouton Enregistrer — sticky ── */}
-          <div style={{ position: 'sticky', bottom: 0, background: 'var(--bg)', paddingTop: 10, paddingBottom: 20 }}>
+          <div style={{ position: 'sticky', bottom: 0, background: 'var(--bg)', paddingTop: 8, paddingBottom: 16 }}>
             <button
               onClick={handleSave}
               disabled={saving || !isFormValid}
               style={{
-                width: '100%', padding: '16px 20px', borderRadius: 14,
+                width: '100%', padding: '10px 16px', borderRadius: 8,
                 background: (saving || !isFormValid) ? 'var(--border)' : 'var(--sidebar)',
-                color: 'white', border: 'none', fontSize: 16, fontWeight: 800,
+                color: 'white', border: 'none', fontSize: 13, fontWeight: 700,
                 fontFamily: 'inherit', cursor: (saving || !isFormValid) ? 'not-allowed' : 'pointer',
                 transition: 'background 0.15s',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}
             >
-              {saving ? <Save size={18} strokeWidth={2} /> : !isOnline ? <WifiOff size={18} strokeWidth={2} /> : <Check size={18} strokeWidth={2} />}
+              {saving ? <Save size={15} strokeWidth={2} /> : !isOnline ? <WifiOff size={15} strokeWidth={2} /> : <Check size={15} strokeWidth={2} />}
               {saving ? t('cahier_de_texte.save_saving') : !isOnline ? t('cahier_de_texte.save_offline') : t('cahier_de_texte.save_online')}
             </button>
           </div>
@@ -494,7 +494,7 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
       {/* ── Onglet Historique ── */}
       {tab === 'historique' && (
         <div style={{ maxWidth: 480, width: '100%' }}>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16, alignItems: 'flex-end' }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'flex-end' }}>
             <div style={{ flex: 1 }}>
               <label style={LBL}>{t('cahier_de_texte.history_filter_label')}</label>
               <select value={filterClass} onChange={e => setFilterClass(e.target.value)} style={SEL}>
@@ -503,54 +503,54 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
               </select>
             </div>
             <button onClick={loadEntries} style={{
-              padding: '13px 18px', borderRadius: 12, background: 'var(--sidebar)', color: 'white',
-              border: 'none', fontSize: 14, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer', flexShrink: 0,
+              padding: '7px 12px', borderRadius: 7, background: 'var(--sidebar)', color: 'white',
+              border: 'none', fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', flexShrink: 0,
               display: 'flex', alignItems: 'center',
-            }}><RotateCcw size={16} strokeWidth={2} /></button>
+            }}><RotateCcw size={14} strokeWidth={2} /></button>
           </div>
 
           {/* ── CAS 3 : Entrées hors-ligne en attente ── */}
           {pendingEntries.length > 0 && (
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--amber)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--amber)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>
                 {t('cahier_de_texte.history_pending_title').replace('{count}', String(pendingEntries.length))}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {pendingEntries.map(entry => {
                   const p = entry.payload as any
                   const isFailed = entry.status === 'FAILED'
                   return (
                     <div key={entry.id} style={{
                       background: isFailed ? 'var(--red-light)' : 'var(--amber-light)',
-                      border: `1.5px solid ${isFailed ? 'var(--red-light)' : 'var(--amber)'}`,
-                      borderRadius: 14, padding: '14px 16px', position: 'relative',
+                      border: `1px solid ${isFailed ? 'var(--red-light)' : 'var(--amber)'}`,
+                      borderRadius: 10, padding: '10px 12px', position: 'relative',
                     }}>
-                      <div style={{ position: 'absolute', top: 12, right: 14, display: 'flex' }}>
-                        {isFailed ? <X size={16} strokeWidth={2} /> : <Loader2 size={16} strokeWidth={2} className="animate-spin" />}
+                      <div style={{ position: 'absolute', top: 10, right: 10, display: 'flex' }}>
+                        {isFailed ? <X size={14} strokeWidth={2} /> : <Loader2 size={14} strokeWidth={2} className="animate-spin" />}
                       </div>
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
-                        <span style={{ background: 'var(--amber-light)', color: 'var(--amber)', padding: '2px 8px', borderRadius: 20, fontSize: 11, fontWeight: 800 }}>
+                      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6 }}>
+                        <span style={{ background: 'var(--amber-light)', color: 'var(--amber)', padding: '1px 6px', borderRadius: 12, fontSize: 10.5, fontWeight: 700 }}>
                           {p._className ?? p.classId}
                         </span>
-                        <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '2px 8px', borderRadius: 20, fontSize: 11, fontWeight: 800 }}>
+                        <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '1px 6px', borderRadius: 12, fontSize: 10.5, fontWeight: 700 }}>
                           {p._subjectName ?? p.subjectId}
                         </span>
                         <span style={{
                           background: isFailed ? 'var(--red-light)' : 'var(--amber-light)', color: isFailed ? 'var(--red)' : 'var(--amber)',
-                          padding: '2px 8px', borderRadius: 20, fontSize: 11, fontWeight: 800,
+                          padding: '1px 6px', borderRadius: 12, fontSize: 10.5, fontWeight: 700,
                         }}>
                           {isFailed ? t('cahier_de_texte.history_pending_failed') : t('cahier_de_texte.history_pending_pending')}
                         </span>
                       </div>
-                      <div style={{ fontSize: 14, color: 'var(--text)', fontWeight: 600 }}>
+                      <div style={{ fontSize: 12.5, color: 'var(--text)', fontWeight: 600 }}>
                         {p.contenuRealise ?? p.contenuLibre ?? '—'}
                       </div>
                       {p.devoirsDonnes && (
-                        <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 6, fontStyle: 'italic' }}>
+                        <div style={{ fontSize: 11.5, color: 'var(--text2)', marginTop: 4, fontStyle: 'italic' }}>
                           {t('cahier_de_texte.history_pending_homework').replace('{text}', p.devoirsDonnes ?? '')}
                         </div>
                       )}
-                      <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>
+                      <div style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 4 }}>
                         {p.date ? new Date(p.date).toLocaleDateString('fr-FR') : '—'}
                       </div>
                     </div>
@@ -562,44 +562,44 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
 
           {/* Entrées synchronisées (API) */}
           {loadingEntries ? (
-            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)', fontSize: 14 }}>{t('cahier_de_texte.history_loading')}</div>
+            <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)', fontSize: 12.5 }}>{t('cahier_de_texte.history_loading')}</div>
           ) : entries.length === 0 && pendingEntries.length === 0 ? (
-            <div style={{ padding: 48, textAlign: 'center', background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><Inbox size={32} strokeWidth={2} /></div>
-              <div style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 600 }}>{t('cahier_de_texte.history_empty')}</div>
+            <div style={{ padding: 32, textAlign: 'center', background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><Inbox size={26} strokeWidth={2} /></div>
+              <div style={{ fontSize: 12.5, color: 'var(--text3)', fontWeight: 600 }}>{t('cahier_de_texte.history_empty')}</div>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {entries.map(e => (
-                <div key={e.id} style={{ background: 'var(--surface)', borderRadius: 14, border: '1.5px solid var(--border)', padding: '16px' }}>
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    <div style={{ background: 'var(--bg2)', borderRadius: 10, padding: '8px 12px', textAlign: 'center', flexShrink: 0, minWidth: 44 }}>
-                      <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase' }}>
+                <div key={e.id} style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', padding: '12px 14px' }}>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                    <div style={{ background: 'var(--bg2)', borderRadius: 8, padding: '6px 8px', textAlign: 'center', flexShrink: 0, minWidth: 38 }}>
+                      <div style={{ fontSize: 9.5, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase' }}>
                         {new Date(e.date).toLocaleDateString('fr-FR', { month: 'short' })}
                       </div>
-                      <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)' }}>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>
                         {new Date(e.date).getDate()}
                       </div>
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
-                        <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '3px 9px', borderRadius: 20, fontSize: 11, fontWeight: 800 }}>
+                      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 4 }}>
+                        <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '2px 7px', borderRadius: 12, fontSize: 10.5, fontWeight: 700 }}>
                           {e.class.name}
                         </span>
-                        <span style={{ background: 'var(--amber-light)', color: 'var(--amber)', padding: '3px 9px', borderRadius: 20, fontSize: 11, fontWeight: 800 }}>
+                        <span style={{ background: 'var(--amber-light)', color: 'var(--amber)', padding: '2px 7px', borderRadius: 12, fontSize: 10.5, fontWeight: 700 }}>
                           {e.subject.name}
                         </span>
                         {e.chapitre && (
-                          <span style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '3px 9px', borderRadius: 20, fontSize: 11, fontWeight: 800 }}>
+                          <span style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '2px 7px', borderRadius: 12, fontSize: 10.5, fontWeight: 700 }}>
                             Ch.{e.chapitre.ordre} — {e.chapitre.titre}
                           </span>
                         )}
                       </div>
-                      <div style={{ fontSize: 14, color: 'var(--text)', fontWeight: 600, marginBottom: (e.devoirsDonnes || e.contenuLibre) ? 8 : 0 }}>
+                      <div style={{ fontSize: 12.5, color: 'var(--text)', fontWeight: 600, marginBottom: (e.devoirsDonnes || e.contenuLibre) ? 6 : 0 }}>
                         {e.contenuRealise ?? e.contenuLibre ?? '—'}
                       </div>
                       {e.contenuLibre && e.contenuRealise && (
-                        <div style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 6 }}>{e.contenuLibre}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 4 }}>{e.contenuLibre}</div>
                       )}
                       {e.devoirsDonnes && (
                         <div style={{ fontSize: 12, color: 'var(--text2)', fontStyle: 'italic', padding: '6px 10px', background: 'var(--amber-light)', borderRadius: 8, borderLeft: '3px solid var(--amber)' }}>
