@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Calendar, Clock, CheckCircle2, AlertCircle, Sparkles, PartyPopper } from 'lucide-react'
+import { X, Calendar, Clock, CheckCircle2, Sparkles, PartyPopper } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 
 interface Props {
@@ -35,7 +35,10 @@ export default function CalendarProgressModal({ isOpen, onClose }: Props) {
         setLoading(true)
         const [resYears, resEvents] = await Promise.allSettled([
           fetchApi('/api/v2/academic-years'),
-          fetchApi('/api/v2/academic-events'),
+          fetchApi('/api/v2/academic-events').then(async (r) => {
+            if (!r.ok) return fetchApi('/api/v2/academic-events/active')
+            return r
+          }),
         ])
 
         if (!isMounted) return
@@ -43,9 +46,9 @@ export default function CalendarProgressModal({ isOpen, onClose }: Props) {
         if (resYears.status === 'fulfilled' && resYears.value.ok) {
           const data = await resYears.value.json()
           const years = data.data || []
-          const current = years.find((y: any) => y.isCurrent) || years[0]
+          const current = years.find((y: { isCurrent?: boolean }) => y.isCurrent) || years[0]
           if (current) {
-            setActiveYearName(current.name)
+            setActiveYearName(current.name || '2026-2027')
             if (current.startDate && current.endDate) {
               const start = new Date(current.startDate)
               const end = new Date(current.endDate)
