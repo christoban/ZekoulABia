@@ -26,7 +26,7 @@ function CacheBadge({ cachedAt, label }: { cachedAt: number | null; label: strin
   if (!cachedAt) return null
   const date = new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
   return (
-    <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 8, padding: '5px 12px', fontSize: 13, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 16 }}>
+    <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 6, padding: '3px 8px', fontSize: 11.5, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5, marginBottom: 12 }}>
       {label.replace('{date}', date)}
     </div>
   )
@@ -94,8 +94,8 @@ export default function SectionParentTimetable({ onToast, userId }: Props) {
 
   if (loading) {
     return (
-      <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600 }}>{t('loading')}</div>
+      <div style={{ padding: '20px 24px', height: '100%', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: 12.5, color: 'var(--text3)', fontWeight: 600 }}>{t('loading')}</div>
       </div>
     )
   }
@@ -104,11 +104,11 @@ export default function SectionParentTimetable({ onToast, userId }: Props) {
 
   if (error) {
     return (
-      <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto' }}>
-        <div style={{ padding: 24, textAlign: 'center' }}>
-          <div style={{ color: 'var(--red)', fontSize: 13, fontWeight: 700, marginBottom: 12 }}>{error}</div>
+      <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto' }}>
+        <div style={{ padding: 20, textAlign: 'center' }}>
+          <div style={{ color: 'var(--red)', fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>{error}</div>
           <button onClick={refetch}
-            style={{ padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{ padding: '5px 12px', borderRadius: 7, fontSize: 11.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
             {t('retry')}
           </button>
         </div>
@@ -123,8 +123,8 @@ export default function SectionParentTimetable({ onToast, userId }: Props) {
   const DAYS = t('timetable.days').split(',')
 
   return (
-    <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto' }}>
-      <div style={{ marginBottom: fromCache ? 8 : 26 }}>
+    <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto' }}>
+      <div style={{ marginBottom: fromCache ? 6 : 14 }}>
         <div style={sTitle}>{t('timetable.title')}</div>
         <div style={sSub}>{className} · {getWeekRange()}</div>
       </div>
@@ -132,42 +132,42 @@ export default function SectionParentTimetable({ onToast, userId }: Props) {
       {fromCache && <CacheBadge cachedAt={cachedAt} label={t('cacheBadge')} />}
 
       {children.length > 1 && (
-        <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
           {children.map((c, i) => (
             <button key={c.studentId} onClick={() => setSelectedChild(i)}
-              style={{ padding: '8px 18px', borderRadius: 10, fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', border: '1.5px solid', transition: 'all 0.12s', background: selectedChild === i ? 'var(--green-light)' : 'white', borderColor: selectedChild === i ? 'var(--green)' : 'var(--border2)', color: selectedChild === i ? 'var(--green)' : 'var(--text2)' }}>
+              style={{ padding: '5px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: '1.5px solid', transition: 'all 0.12s', background: selectedChild === i ? 'var(--green-light)' : 'white', borderColor: selectedChild === i ? 'var(--green)' : 'var(--border2)', color: selectedChild === i ? 'var(--green)' : 'var(--text2)' }}>
               {c.prenom} {c.nom}
             </button>
           ))}
         </div>
       )}
 
-      <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', overflow: 'hidden' }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 680 }}>
             <thead>
               <tr>
-                <th style={{ ...thSt, width: 100 }}>{t('timetable.schedule')}</th>
+                <th style={{ ...thSt, width: 85 }}>{t('timetable.schedule')}</th>
                 {DAYS.map((d, i) => <th key={i} style={thSt}>{d}</th>)}
               </tr>
             </thead>
             <tbody>
               {TIMES.map((time, ti) => (
                 <tr key={ti}>
-                  <td style={{ padding: '10px 11px', background: 'var(--bg2)', fontSize: 13, fontWeight: 800, color: 'var(--text3)', textAlign: 'center', border: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
-                    {time}<br /><span style={{ fontSize: 11, color: 'var(--border2)' }}>{TIMES_END[ti]}</span>
+                  <td style={{ padding: '6px 8px', background: 'var(--bg2)', fontSize: 11.5, fontWeight: 800, color: 'var(--text3)', textAlign: 'center', border: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
+                    {time}<br /><span style={{ fontSize: 10, color: 'var(--border2)' }}>{TIMES_END[ti]}</span>
                   </td>
                   {DAYS.map((_, di) => {
                     const slot = slots[`${di}-${ti}`]
                     return (
-                      <td key={di} style={{ padding: 0, border: '1px solid var(--border)', verticalAlign: 'top', minWidth: 140, height: 76 }}>
+                      <td key={di} style={{ padding: 0, border: '1px solid var(--border)', verticalAlign: 'top', minWidth: 110, height: 56 }}>
                         {slot ? (
-                          <div style={{ padding: 10, height: '100%', background: `${slot.color}12`, borderLeft: `3px solid ${slot.color}` }}>
-                            <div style={{ fontSize: 14, fontWeight: 800, color: slot.color }}>{slot.subject}</div>
-                            <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 3 }}>{slot.teacher}</div>
+                          <div style={{ padding: '6px 8px', height: '100%', background: `${slot.color}12`, borderLeft: `3px solid ${slot.color}` }}>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: slot.color }}>{slot.subject}</div>
+                            <div style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 2 }}>{slot.teacher}</div>
                           </div>
                         ) : (
-                          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--border2)', fontSize: 20 }}>·</div>
+                          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--border2)', fontSize: 16 }}>·</div>
                         )}
                       </td>
                     )
@@ -182,6 +182,7 @@ export default function SectionParentTimetable({ onToast, userId }: Props) {
   )
 }
 
-const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 28, fontWeight: 700, color: 'var(--text)' }
-const sSub: React.CSSProperties = { fontSize: 17, color: 'var(--text3)', marginTop: 3 }
-const thSt: React.CSSProperties = { padding: '11px 10px', textAlign: 'center', fontSize: 13, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', border: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px' }
+const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)' }
+const sSub: React.CSSProperties = { fontSize: 12, color: 'var(--text3)', marginTop: 2 }
+const thSt: React.CSSProperties = { padding: '7px 8px', textAlign: 'center', fontSize: 11, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', border: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.4px' }
+

@@ -49,25 +49,25 @@ export default function OrientationCheckpointParentView({ children }: { children
   if (loading || entries.length === 0) return null
 
   return (
-    <div style={{ marginBottom: 22 }}>
-      <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Compass size={18} strokeWidth={2} /> {t('orientationCheckpoint.section_title')}
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <Compass size={15} strokeWidth={2} /> {t('orientationCheckpoint.section_title')}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {entries.map(({ child, checkpointType, reco }) => (
-          <div key={`${child.studentId}-${checkpointType}`} style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 14, padding: '16px 20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
-              <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{child.prenom} {child.nom}</span>
-              <span style={{ background: 'var(--bg2)', color: 'var(--text2)', borderRadius: 8, padding: '3px 10px', fontSize: 12, fontWeight: 700 }}>
+          <div key={`${child.studentId}-${checkpointType}`} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, flexWrap: 'wrap', gap: 6 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{child.prenom} {child.nom}</span>
+              <span style={{ background: 'var(--bg2)', color: 'var(--text2)', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>
                 {t(`orientationCheckpoint.${checkpointType === 'FIN_TROISIEME' ? 'checkpoint_3e' : 'checkpoint_2ndeC'}`)}
               </span>
             </div>
             {reco.finalTrack ? (
-              <div style={{ fontSize: 14, color: 'var(--green)', fontWeight: 700 }}>
+              <div style={{ fontSize: 12, color: 'var(--green)', fontWeight: 700 }}>
                 {t('orientationCheckpoint.parent_final_track')} <strong>{reco.finalTrack}</strong>
               </div>
             ) : (
-              <div style={{ fontSize: 14, color: 'var(--text3)' }}>
+              <div style={{ fontSize: 12, color: 'var(--text3)' }}>
                 {t('orientationCheckpoint.parent_status_prefix')} {STATUS_LABEL_KEY[reco.status] ? t(STATUS_LABEL_KEY[reco.status]!) : reco.status}
               </div>
             )}

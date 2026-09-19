@@ -18,9 +18,9 @@ function ToastItem({ t, onRemove }: { t: Toast; onRemove: () => void }) {
   }, [onRemove])
   const Icon = ICONS[t.type]
   return (
-    <div className={`flex items-center gap-[10px] px-5 py-[14px] rounded-[12px] border-[1.5px] min-w-[280px] max-w-[400px] text-[15px] font-bold shadow-lg ${STYLES[t.type]}`}
+    <div className={`flex items-center gap-2 px-3.5 py-2.5 rounded-lg border min-w-[240px] max-w-[360px] text-[12.5px] font-bold shadow-md ${STYLES[t.type]}`}
       style={{ animation: 'slideInRight 0.3s ease' }}>
-      <span className="flex-shrink-0 flex items-center"><Icon size={18} strokeWidth={2} /></span>
+      <span className="flex-shrink-0 flex items-center"><Icon size={15} strokeWidth={2} /></span>
       <span>{t.msg}</span>
     </div>
   )

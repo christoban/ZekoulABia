@@ -162,7 +162,7 @@ export default function ParentDashboard() {
           {section === 'timetable'  && <SectionParentTimetable {...sProps} userId={user?.id} />}
           {section === 'settings'   && <SectionParentSettings />}
           {section === 'library'    && <SectionParentLibrary userId={user?.id} />}
-          {section === 'babillard' && <Babillard role={user?.role ?? 'PARENT'} title={tnav('sidebar.babillard')} subtitle={tnav('group.communication')} />}
+          {section === 'babillard' && <Babillard role={user?.role ?? 'PARENT'} title={tnav('sidebar.babillard')} subtitle={tnav('group.communication')} currentUserId={user?.id} />}
           {section === 'messagerie' && <Messagerie />}
         </main>
       </div>
