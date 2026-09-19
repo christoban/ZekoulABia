@@ -16,7 +16,9 @@ import { creerGroupDashboardRoutes } from '@infrastructure/http/routes/groupDash
 import { creerGroupTransferRoutes } from '@infrastructure/http/routes/groupTransfer.routes';
 import { creerAdminGroupTransferRoutes } from '@infrastructure/http/routes/adminGroupTransfer.routes';
 import { SchoolTemplateAdminController } from '@infrastructure/http/controllers/SchoolTemplateAdminController';
+import { MasterReferentielsController } from '@infrastructure/http/controllers/MasterReferentielsController';
 import { creerSchoolTemplateAdminRoutes } from '@infrastructure/http/routes/schoolTemplateAdmin.routes';
+import { creerMasterReferentielsRoutes } from '@infrastructure/http/routes/masterReferentiels.routes';
 import { PublierVersionTemplateUseCase } from '@application/schoolSettings/PublierVersionTemplateUseCase';
 import { ProposerReapplicationToutesEcolesUseCase } from '@application/schoolSettings/ProposerReapplicationToutesEcolesUseCase';
 import { AppliquerReapplicationToutesEcolesUseCase } from '@application/schoolSettings/AppliquerReapplicationToutesEcolesUseCase';
@@ -149,6 +151,9 @@ export function registerUserRoutes(app: Application, prismaParam: typeof prisma 
   const masterAuthController = new MasterAuthController(loginMasterUseCase, verifyMfaUseCase, masterUserAuthRepository);
   app.use('/api/v2/master/auth', creerMasterAuthRoutes(masterAuthController));
   app.use('/api/v2/master', creerMasterAdminHexRoutes(masterAdminHexController));
+
+  const masterReferentielsController = new MasterReferentielsController();
+  app.use('/api/v2/master/referentiels', creerMasterReferentielsRoutes(masterReferentielsController));
 
   // V0.4 — Publication de versions + ré-application en masse (master-admin)
   const templateVersionRepo = new PrismaSchoolTemplateVersionRepository(prisma);

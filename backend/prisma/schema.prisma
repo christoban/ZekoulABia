@@ -146,6 +146,7 @@ model School {
   contractEnd                  DateTime?
   hasPEBSFrancophone           Boolean                       @default(false)
   hasPEBSAnglophone            Boolean                       @default(false)
+  adminGereInscriptions        Boolean                       @default(false)
   createdAt                    DateTime                      @default(now())
   updatedAt                    DateTime                      @updatedAt
   templateCode                 String?
@@ -857,6 +858,7 @@ model SchoolTemplate {
   cycleCoefficients      CycleCoefficient[]
   bacCoefficients        BacCoefficient[]
   anglophoneSubjectLoads AnglophoneSubjectLoad[]
+  officialProgrammeProgressions OfficialProgrammeProgression[]
   versions               SchoolTemplateVersion[]
 }
 
@@ -897,6 +899,23 @@ model AnglophoneSubjectLoad {
   template      SchoolTemplate @relation(fields: [templateCode], references: [code])
 
   @@unique([templateCode, classLevel, subjectName, filiere])
+}
+
+model OfficialProgrammeProgression {
+  id           String         @id @default(cuid())
+  templateCode String
+  level        String         // ex. "6e", "2nde", "Form1"
+  filiere      String?        // ex. "FR_GENERAL", "A4", "C"
+  subjectName  String
+  titre        String         // ex. "Programme Officiel Mathématiques 6e"
+  chapitres    Json           // [{ ordre: 1, titre: "...", volumeHeuresPrevu: 6, sequenceCibleFin: 1 }]
+  active       Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  template     SchoolTemplate @relation(fields: [templateCode], references: [code])
+
+  @@unique([templateCode, level, subjectName])
+  @@index([templateCode, level])
 }
 
 // ── P2 ──────────────────────────────────────────────────────────────────────
@@ -3700,9 +3719,8 @@ enum ExamRegStatus {
 enum OnboardingStatus {
   DRAFT // squelette créé par l'établissement, lien pas encore envoyé
   LINK_SENT // lien envoyé, en attente de saisie
-  SUBMITTED // formulaire rempli, matching en cours
-  PENDING_VALIDATION // matching terminé, en attente de validation humaine
-  VALIDATED // validé, compte en cours de création
+  SUBMITTED // formulaire rempli, prêt pour inscription directe
+  VALIDATED // validé/inscrit, compte en cours de création
   ACTIVATED // compte créé, email de config mot de passe envoyé
   REJECTED // rejeté par le responsable (doublon, erreur, etc.)
   EXPIRED // token expiré sans soumission

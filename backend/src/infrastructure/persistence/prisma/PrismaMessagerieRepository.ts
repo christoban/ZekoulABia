@@ -280,14 +280,31 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
       ? {}
       : { OR: [{ moderationStatus: 'APPROVED' as ModerationStatus }, { senderId: cmd.appelantId }] };
 
+    const includeOpts = {
+      sender: { select: { id: true, firstName: true, lastName: true, role: true } },
+      readStatuses: { select: { userId: true, readAt: true } },
+    };
+
+    const mapperMessage = (m: any): MessageData => ({
+      id: m.id,
+      conversationId: m.conversationId,
+      senderId: m.senderId,
+      content: m.content,
+      moderationStatus: m.moderationStatus,
+      createdAt: m.createdAt,
+      sender: m.sender,
+      readStatuses: m.readStatuses ?? [],
+      isRead: Array.isArray(m.readStatuses) && m.readStatuses.some((r: any) => r.userId !== m.senderId),
+    });
+
     if (cmd.since) {
       const messages = await this.prisma.message.findMany({
         where: { conversationId: cmd.conversationId, createdAt: { gt: cmd.since }, ...filtreModeration },
         orderBy: { createdAt: 'asc' },
         take: TAILLE_RATTRAPAGE_MAX,
-        include: { sender: { select: { id: true, firstName: true, lastName: true, role: true } } },
+        include: includeOpts,
       });
-      return { messages, mode: 'rattrapage' };
+      return { messages: messages.map(mapperMessage), mode: 'rattrapage' };
     }
 
     const page = Math.max(1, cmd.page);
@@ -296,10 +313,10 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * TAILLE_PAGE,
       take: TAILLE_PAGE,
-      include: { sender: { select: { id: true, firstName: true, lastName: true, role: true } } },
+      include: includeOpts,
     });
 
-    return { messages: messagesDesc.reverse(), mode: 'page', page };
+    return { messages: messagesDesc.reverse().map(mapperMessage), mode: 'page', page };
   }
 
   async compterMessagesNonLus(where: Record<string, unknown>): Promise<number> {
@@ -354,6 +371,24 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
       skipDuplicates: true,
     });
     return resultat.count;
+  }
+
+  async marquerNotificationsConversationLues(params: { userId: string; schoolId: string; conversationId: string }): Promise<void> {
+    await this.prisma.notification.updateMany({
+      where: {
+        userId: params.userId,
+        schoolId: params.schoolId,
+        type: 'COMMUNICATION',
+        readAt: null,
+        metadata: {
+          path: ['conversationId'],
+          equals: params.conversationId,
+        },
+      },
+      data: {
+        readAt: new Date(),
+      },
+    });
   }
 
   async listerContacts(where: Record<string, unknown>): Promise<unknown[]> {

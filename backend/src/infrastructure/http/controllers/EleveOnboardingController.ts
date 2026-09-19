@@ -11,6 +11,9 @@ import { notifierOnboardingLienCreeAvecEcole, notifierOnboardingValidationAvecEc
 import { generateOnboardingFormPdf } from '../../pdf/onboarding/OnboardingFormPdfRenderer';
 import { canManageEnrollment } from '@domain/rules/EnrollmentRules';
 
+import { InscrireEleveUseCase } from '@application/eleveOnboarding/InscrireEleveUseCase';
+import { ChangerGestionInscriptionsAdminUseCase } from '@application/eleveOnboarding/ChangerGestionInscriptionsAdminUseCase';
+
 /**
  * Préfixe /api/v2/eleve-onboarding — distinct de /api/v2/onboarding.
  */
@@ -23,12 +26,17 @@ export class EleveOnboardingController {
     private readonly onboardingRepository: EleveOnboardingRepository,
     private readonly schoolRepository: SchoolRepository,
     private readonly credentialsNotifier: CredentialsNotificationPort,
+    private readonly _inscrire: InscrireEleveUseCase,
+    private readonly _changerGestionAdmin: ChangerGestionInscriptionsAdminUseCase,
   ) {}
 
-  private checkEnrollmentPermission(req: Request, res: Response): boolean {
+  private async checkEnrollmentPermission(req: Request, res: Response): Promise<boolean> {
     const user = req.user!;
-    if (!canManageEnrollment({ role: user.role, staffPermissions: user.permissions })) {
-      res.status(403).json({ success: false, message: 'Permission MANAGE_ENROLLMENT requise' });
+    const school = await this.schoolRepository.findById(user.schoolId);
+    const adminGereInscriptions = school?.adminGereInscriptions ?? false;
+
+    if (!canManageEnrollment({ role: user.role, staffPermissions: user.permissions, adminGereInscriptions })) {
+      res.status(403).json({ success: false, message: 'Permission MANAGE_ENROLLMENT requise (ou option Admin non activée)' });
       return false;
     }
     return true;
@@ -37,7 +45,7 @@ export class EleveOnboardingController {
   // POST /api/v2/eleve-onboarding
   creer = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!this.checkEnrollmentPermission(req, res)) return;
+      if (!await this.checkEnrollmentPermission(req, res)) return;
       const schoolId = req.user!.schoolId;
       const createdById = req.user!.userId;
 
@@ -136,25 +144,28 @@ export class EleveOnboardingController {
   // GET /api/v2/eleve-onboarding?status=PENDING_VALIDATION
   lister = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!this.checkEnrollmentPermission(req, res)) return;
-      const schoolId = req.user!.schoolId;
+      const user = req.user!;
+      if (user.role !== 'ADMIN') {
+        if (!await this.checkEnrollmentPermission(req, res)) return;
+      }
+      const schoolId = user.schoolId;
       const status = req.query['status'] as string | undefined;
       const dossiers = await this.onboardingRepository.listOnboardings(schoolId, status);
       res.json({ success: true, data: dossiers });
     } catch (err) { next(err); }
   };
 
-  // POST /api/v2/eleve-onboarding/:id/validate
-  valider = async (req: Request, res: Response, next: NextFunction) => {
+  // POST /api/v2/eleve-onboarding/:id/inscrire — Inscription directe en 1 étape
+  inscrire = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!this.checkEnrollmentPermission(req, res)) return;
+      if (!await this.checkEnrollmentPermission(req, res)) return;
       const schoolId = req.user!.schoolId;
       const validatedById = req.user!.userId;
       const validatorRole = req.user!.role;
       const onboardingId = String(req.params['id']);
       const { classId } = req.body as { classId?: string };
 
-      const result = await this._valider.execute({ schoolId, onboardingId, validatedById, validatorRole, classId });
+      const result = await this._inscrire.execute({ schoolId, onboardingId, validatedById, validatorRole, classId });
       const data = {
         ...result,
         comptesCrees: result.comptesCrees.map(({ temporaryPassword: _temporaryPassword, dispositifOS: _dispositifOS, ...compte }) => compte),
@@ -165,10 +176,15 @@ export class EleveOnboardingController {
     } catch (err) { next(err); }
   };
 
+  // POST /api/v2/eleve-onboarding/:id/validate (alias conservé pour rétrocompatibilité)
+  valider = async (req: Request, res: Response, next: NextFunction) => {
+    return this.inscrire(req, res, next);
+  };
+
   // POST /api/v2/eleve-onboarding/:id/reject
   rejeter = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!this.checkEnrollmentPermission(req, res)) return;
+      if (!await this.checkEnrollmentPermission(req, res)) return;
       const schoolId = req.user!.schoolId;
       const rejectedById = req.user!.userId;
       const validatorRole = req.user!.role;
@@ -184,17 +200,44 @@ export class EleveOnboardingController {
     } catch (err) { next(err); }
   };
 
+  // PATCH /api/v2/eleve-onboarding/admin-gestion
+  toggleAdminGestion = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (req.user!.role !== 'ADMIN' && req.user!.role !== 'DIRECTEUR') {
+        res.status(403).json({ success: false, message: 'Seul un Administrateur peut modifier cette option' });
+        return;
+      }
+      const schoolId = req.user!.schoolId;
+      const userId = req.user!.userId;
+      const { enabled } = req.body as { enabled?: boolean };
+      if (enabled === undefined || typeof enabled !== 'boolean') {
+        res.status(400).json({ success: false, message: 'Propriété "enabled" (boolean) requise' });
+        return;
+      }
+
+      const result = await this._changerGestionAdmin.execute({ schoolId, adminUserId: userId, actif: enabled });
+      res.json({ success: true, data: { adminGereInscriptions: result.adminGereInscriptions } });
+    } catch (err) { next(err); }
+  };
+
   // GET /api/v2/eleve-onboarding/settings
   getSettings = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!this.checkEnrollmentPermission(req, res)) return;
-      const schoolId = req.user!.schoolId;
+      const user = req.user!;
+      if (user.role !== 'ADMIN') {
+        if (!await this.checkEnrollmentPermission(req, res)) return;
+      }
+      const schoolId = user.schoolId;
       const settings = await this.onboardingRepository.findSettings(schoolId);
+      const school = await this.schoolRepository.findById(schoolId);
       res.json({
         success: true,
-        data: settings ?? {
-          schoolId, selfServiceEnabled: false, defaultRecipient: 'ELEVE', ageThresholdForParent: 15,
-          tokenExpiryDays: 14, reminderDelayDays: [3, 7], escalationDelayDays: 10, responsableRole: 'ADMIN',
+        data: {
+          ...(settings ?? {
+            schoolId, selfServiceEnabled: false, defaultRecipient: 'ELEVE', ageThresholdForParent: 15,
+            tokenExpiryDays: 14, reminderDelayDays: [3, 7], escalationDelayDays: 10, responsableRole: 'ADMIN',
+          }),
+          adminGereInscriptions: school?.adminGereInscriptions ?? false,
         },
       });
     } catch (err) { next(err); }
@@ -227,7 +270,7 @@ export class EleveOnboardingController {
   // POST /api/v2/eleve-onboarding/:id/resend-link
   renvoyerLien = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!this.checkEnrollmentPermission(req, res)) return;
+      if (!await this.checkEnrollmentPermission(req, res)) return;
       const schoolId = req.user!.schoolId;
       const createdById = req.user!.userId;
       const onboardingId = String(req.params['id']);
@@ -269,7 +312,7 @@ export class EleveOnboardingController {
   // GET /api/v2/eleve-onboarding/:id/pdf
   exporterPdf = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!this.checkEnrollmentPermission(req, res)) return;
+      if (!await this.checkEnrollmentPermission(req, res)) return;
       const schoolId = req.user!.schoolId;
       const onboardingId = String(req.params['id']);
 

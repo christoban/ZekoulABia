@@ -62,14 +62,16 @@ describe('determinerRecipientType', () => {
   });
 });
 
-describe('peutTransitionnerDepuisPendingValidation (règle métier n°1 : PENDING_VALIDATION obligatoire)', () => {
-  it('autorise la transition uniquement depuis PENDING_VALIDATION', () => {
-    expect(peutTransitionnerDepuisPendingValidation('PENDING_VALIDATION')).toBe(true);
+describe('peutEtreInscritOuRejete (inscription directe en 1 étape)', () => {
+  it('autorise l inscription directe depuis SUBMITTED, DRAFT, LINK_SENT', () => {
+    expect(peutTransitionnerDepuisPendingValidation('SUBMITTED')).toBe(true);
+    expect(peutTransitionnerDepuisPendingValidation('DRAFT')).toBe(true);
+    expect(peutTransitionnerDepuisPendingValidation('LINK_SENT')).toBe(true);
   });
 
-  it('refuse toute transition directe vers VALIDATED/ACTIVATED depuis les autres statuts', () => {
-    const autresStatuts = ['DRAFT', 'LINK_SENT', 'SUBMITTED', 'VALIDATED', 'ACTIVATED', 'REJECTED', 'EXPIRED'] as const;
-    for (const statut of autresStatuts) {
+  it('refuse toute transition depuis les statuts terminaux', () => {
+    const statutsTerminaux = ['VALIDATED', 'ACTIVATED', 'REJECTED', 'EXPIRED'] as const;
+    for (const statut of statutsTerminaux) {
       expect(peutTransitionnerDepuisPendingValidation(statut)).toBe(false);
     }
   });
@@ -78,7 +80,7 @@ describe('peutTransitionnerDepuisPendingValidation (règle métier n°1 : PENDIN
     expect(peutTransitionnerDepuisPendingValidation('ACTIVATED')).toBe(false);
   });
 
-  it('refuse de rejeter un dossier déjà REJECTED', () => {
+  it('refuse de réinscrire ou rejeter un dossier déjà REJECTED', () => {
     expect(peutTransitionnerDepuisPendingValidation('REJECTED')).toBe(false);
   });
 });
@@ -89,7 +91,7 @@ describe('peutSoumettreFormulaire', () => {
   });
 
   it('refuse la soumission depuis les autres statuts (déjà soumis, expiré, etc.)', () => {
-    const autresStatuts = ['DRAFT', 'SUBMITTED', 'PENDING_VALIDATION', 'VALIDATED', 'ACTIVATED', 'REJECTED', 'EXPIRED'] as const;
+    const autresStatuts = ['DRAFT', 'SUBMITTED', 'VALIDATED', 'ACTIVATED', 'REJECTED', 'EXPIRED'] as const;
     for (const statut of autresStatuts) {
       expect(peutSoumettreFormulaire(statut)).toBe(false);
     }

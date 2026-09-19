@@ -67,6 +67,7 @@ export class InMemoryMessagerieRepository implements MessagerieRepository {
   async modererMessage(): Promise<MessageData> { throw new Error('not implemented'); }
   async trouverMessagesNonLus(): Promise<{ id: string }[]> { return []; }
   async marquerMessagesLus(): Promise<number> { return 0; }
+  async marquerNotificationsConversationLues(): Promise<void> { /* in-memory noop */ }
   async listerContacts(): Promise<unknown[]> { return []; }
   async listerParticipantsConversation(): Promise<string[]> { return []; }
   async listerEnseignantsClasse(): Promise<string[]> { return []; }

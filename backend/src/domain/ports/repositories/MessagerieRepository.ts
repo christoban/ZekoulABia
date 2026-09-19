@@ -13,6 +13,8 @@ export interface MessageData {
   moderationStatus: string;
   createdAt: Date;
   sender?: { id: string; firstName: string; lastName: string; role: string };
+  readStatuses?: { userId: string; readAt: Date }[];
+  isRead?: boolean;
 }
 
 export interface MessageModerationRef {
@@ -82,6 +84,7 @@ export interface MessagerieRepository {
   }): Promise<MessageData>;
   trouverMessagesNonLus(conversationId: string, seuilDate: Date, userId: string): Promise<{ id: string }[]>;
   marquerMessagesLus(messageIds: string[], userId: string): Promise<number>;
+  marquerNotificationsConversationLues(params: { userId: string; schoolId: string; conversationId: string }): Promise<void>;
   listerContacts(where: Record<string, unknown>): Promise<unknown[]>;
 
   // Participants / destinataires de notification

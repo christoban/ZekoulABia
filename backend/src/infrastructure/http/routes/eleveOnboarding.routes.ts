@@ -11,6 +11,8 @@ export function creerEleveOnboardingRoutes(controller: EleveOnboardingController
   router.get('/', requireAuth, requireRole('ADMIN', 'STAFF'), controller.lister);
   router.get('/settings', requireAuth, requireRole('ADMIN', 'STAFF'), controller.getSettings);
   router.patch('/settings', requireAuth, requireRole('ADMIN'), controller.updateSettings);
+  router.patch('/admin-gestion', requireAuth, requireRole('ADMIN'), controller.toggleAdminGestion);
+  router.post('/:id/inscrire', requireAuth, requireRole('ADMIN', 'STAFF'), controller.inscrire);
   router.post('/:id/validate', requireAuth, requireRole('ADMIN', 'STAFF'), controller.valider);
   router.post('/:id/reject', requireAuth, requireRole('ADMIN', 'STAFF'), controller.rejeter);
   router.post('/:id/resend-link', requireAuth, requireRole('ADMIN', 'STAFF'), controller.renvoyerLien);

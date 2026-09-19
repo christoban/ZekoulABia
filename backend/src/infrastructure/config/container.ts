@@ -111,7 +111,9 @@ import { CarteScolaireScrapingAdapter } from '@infrastructure/services/scraping/
 import { CreerSqueletteOnboardingUseCase } from '@application/eleveOnboarding/CreerSqueletteOnboardingUseCase';
 import { SoumettreFormulaireOnboardingUseCase } from '@application/eleveOnboarding/SoumettreFormulaireOnboardingUseCase';
 import { ValiderOnboardingUseCase } from '@application/eleveOnboarding/ValiderOnboardingUseCase';
+import { InscrireEleveUseCase } from '@application/eleveOnboarding/InscrireEleveUseCase';
 import { RejeterOnboardingUseCase } from '@application/eleveOnboarding/RejeterOnboardingUseCase';
+import { ChangerGestionInscriptionsAdminUseCase } from '@application/eleveOnboarding/ChangerGestionInscriptionsAdminUseCase';
 import { VerifierCompletudeSupplementUseCase } from '@application/statisticalCampaign/VerifierCompletudeSupplementUseCase';
 import { GenererDeclarationStatistiqueMinesecUseCase } from '@application/statisticalCampaign/GenererDeclarationStatistiqueMinesecUseCase';
 import { GenererRapportSyntheseMinedubUseCase } from '@application/statisticalCampaignMinedub/GenererRapportSyntheseMinedubUseCase';
@@ -1179,7 +1181,9 @@ export function creerContainer() {
       creerSquelette: creerSqueletteOnboarding,
       soumettreFormulaire: new SoumettreFormulaireOnboardingUseCase(eleveOnboardingRepository),
       valider: new ValiderOnboardingUseCase(eleveOnboardingRepository, activityLog),
-      rejeter: new RejeterOnboardingUseCase(eleveOnboardingRepository, activityLog),
+      inscrire: new InscrireEleveUseCase(eleveOnboardingRepository, schoolRepository, activityLog),
+      rejeter: new RejeterOnboardingUseCase(eleveOnboardingRepository, schoolRepository, activityLog),
+      changerGestionAdmin: new ChangerGestionInscriptionsAdminUseCase(schoolRepository, activityLog),
       repository: eleveOnboardingRepository,
     },
     credentialsNotificationService,

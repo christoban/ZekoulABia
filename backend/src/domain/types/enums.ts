@@ -119,7 +119,7 @@ export type TypeFraisMinesec = 'SCOLARITE_PREMIER_CYCLE' | 'SCOLARITE_SECOND_CYC
 export type OnboardingRecipient = 'ELEVE' | 'PARENT' | 'LES_DEUX';
 export type OnboardingSource = 'IMPORT_MASSE' | 'AUTOSERVICE' | 'CONCOURS' | 'GROUPE_TRANSFERT';
 export type OnboardingStatus =
-  | 'DRAFT' | 'LINK_SENT' | 'SUBMITTED' | 'PENDING_VALIDATION'
+  | 'DRAFT' | 'LINK_SENT' | 'SUBMITTED'
   | 'VALIDATED' | 'ACTIVATED' | 'REJECTED' | 'EXPIRED';
 
 export type TemplateMeta = {

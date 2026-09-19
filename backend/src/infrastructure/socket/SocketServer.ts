@@ -32,7 +32,7 @@ function authentifierSocket(socket: Socket): AuthPayload | null {
   }
 }
 
-export const initSocket = (httpServer: HttpServer, origin?: string) => {
+export const initSocket = (httpServer: HttpServer, origin?: string | string[]) => {
   io = new Server(httpServer, {
     cors: {
       origin: origin || true,
@@ -41,25 +41,45 @@ export const initSocket = (httpServer: HttpServer, origin?: string) => {
   });
 
   io.on("connection", (socket) => {
-    const auth = authentifierSocket(socket);
-    if (auth) {
-      socket.join(`user:${auth.userId}`);
-      socket.join(`school:${auth.schoolId}:role:${auth.role}`);
+    let auth = authentifierSocket(socket);
 
-      // Marquer les subscriptions push de cet utilisateur comme actives (seuil 30 jours
-      // utilisé par PushSubscriptionRepository.hasActiveToken pour le routage des
-      // notifications URGENT → PUSH vs SMS). Fire-and-forget : ne bloque pas la connexion.
+    const synchroniserRooms = (payload: AuthPayload) => {
+      socket.join(`user:${payload.userId}`);
+      socket.join(`school:${payload.schoolId}:role:${payload.role}`);
       void new PrismaPushSubscriptionRepository(prisma)
-        .updateLastSeenAt(auth.userId)
+        .updateLastSeenAt(payload.userId)
         .catch(() => {});
+    };
+
+    if (auth) {
+      synchroniserRooms(auth);
     }
+
+    // Permet au client de rafraîchir son authentification après un login sans reconnecter le transport
+    socket.on("auth:refresh", () => {
+      const refreshed = authentifierSocket(socket);
+      if (refreshed) {
+        auth = refreshed;
+        synchroniserRooms(refreshed);
+      }
+    });
 
     // Room jointe à la demande (pas à la connexion) — pas de coût de room pour des
     // conversations jamais ouvertes. Vérification d'appartenance AVANT le join : sans ça,
     // n'importe quel client connecté pourrait rejoindre n'importe quelle conversation en
     // devinant un ID et écouter les messages d'autrui.
     socket.on("conversation:join", async (conversationId: string, callback?: (ok: boolean) => void) => {
-      if (!auth || typeof conversationId !== "string") { callback?.(false); return; }
+      // Si non authentifié au handshake initial (ex: socket monté avant login), on ré-essaie avec le cookie actuel
+      if (!auth) {
+        auth = authentifierSocket(socket);
+        if (auth) synchroniserRooms(auth);
+      }
+
+      if (!auth || typeof conversationId !== "string") {
+        callback?.(false);
+        return;
+      }
+
       try {
         const messagerieRepository = new PrismaMessagerieRepository(prisma);
         await messagerieRepository.verifierAppartenanceConversation({

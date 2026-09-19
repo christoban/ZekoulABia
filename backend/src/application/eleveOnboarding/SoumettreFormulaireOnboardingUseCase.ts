@@ -73,6 +73,6 @@ export class SoumettreFormulaireOnboardingUseCase {
       ...(cmd.parentADispositif !== undefined && { parentADispositif: cmd.parentADispositif }),
     });
 
-    return { id: onboarding.id, status: 'PENDING_VALIDATION', matchScore, matchedStudentId };
+    return { id: onboarding.id, status: 'SUBMITTED', matchScore, matchedStudentId };
   }
 }

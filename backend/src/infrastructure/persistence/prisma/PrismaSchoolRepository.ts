@@ -86,9 +86,17 @@ export class PrismaSchoolRepository implements SchoolRepository {
         templateCode: data.templateCode,
         onboardingConfig: data.onboardingConfig ?? undefined,
         saturdaySchedule: data.saturdaySchedule,
+        adminGereInscriptions: data.adminGereInscriptions ?? undefined,
         contractEnd: data.contractEnd,
         updatedAt: new Date(),
       },
+    });
+  }
+
+  async updateAdminGereInscriptions(schoolId: string, adminGereInscriptions: boolean): Promise<void> {
+    await this.prisma.school.update({
+      where: { id: schoolId },
+      data: { adminGereInscriptions },
     });
   }
 
@@ -130,6 +138,7 @@ export class PrismaSchoolRepository implements SchoolRepository {
       templateCode: data.templateCode ?? undefined,
       onboardingConfig: data.onboardingConfig ?? undefined,
       saturdaySchedule: data.saturdaySchedule,
+      adminGereInscriptions: data.adminGereInscriptions ?? false,
       contractEnd: data.contractEnd ?? undefined,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,

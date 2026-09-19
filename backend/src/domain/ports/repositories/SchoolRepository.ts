@@ -17,6 +17,7 @@ export interface SchoolRepository {
   // Écriture
   save(school: School): Promise<void>;
   update(school: School): Promise<void>;
+  updateAdminGereInscriptions(schoolId: string, adminGereInscriptions: boolean): Promise<void>;
   delete(id: string): Promise<void>;
 
   // Notif. frais — FinanceController.notifierCreationPlanFrais

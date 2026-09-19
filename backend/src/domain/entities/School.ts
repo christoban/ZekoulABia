@@ -25,6 +25,7 @@ export interface SchoolProps {
   templateCode?: string;
   onboardingConfig?: JsonValue | null;
   saturdaySchedule: boolean;
+  adminGereInscriptions?: boolean;
   contractEnd?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -87,6 +88,7 @@ export class School {
   get subsystem(): SchoolSubsystem { return this.props.subsystem; }
   get templateCode(): string | undefined { return this.props.templateCode; }
   get onboardingConfig(): JsonValue | null | undefined { return this.props.onboardingConfig; }
+  get adminGereInscriptions(): boolean { return this.props.adminGereInscriptions ?? false; }
 
   // --- Méthodes métier ---
 

@@ -32,4 +32,15 @@ export class InMemorySchoolRepository implements SchoolRepository {
   }
   async countEleves(_schoolId: string) { return 0; }
   async isEmailDigestAdminEnabled(_schoolId: string) { return false; }
+  async updateAdminGereInscriptions(schoolId: string, adminGereInscriptions: boolean) {
+    const s = this.store.get(schoolId);
+    if (s) {
+      const updated = School.reconstituer({
+        ...s.toObject(),
+        adminGereInscriptions,
+        updatedAt: new Date(),
+      });
+      this.store.set(s.id, updated);
+    }
+  }
 }

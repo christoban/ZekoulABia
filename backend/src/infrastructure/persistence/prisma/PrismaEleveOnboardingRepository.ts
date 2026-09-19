@@ -36,30 +36,30 @@ export class PrismaEleveOnboardingRepository implements EleveOnboardingRepositor
   }
 
   async findOnboardingById(id: string, schoolId: string): Promise<OnboardingRecord | null> {
-    return this.prisma.studentOnboarding.findFirst({ where: { id, schoolId } });
+    return (await this.prisma.studentOnboarding.findFirst({ where: { id, schoolId } })) as unknown as OnboardingRecord | null;
   }
 
   async findOnboardingByToken(token: string): Promise<OnboardingRecord | null> {
-    return this.prisma.studentOnboarding.findUnique({ where: { token } });
+    return (await this.prisma.studentOnboarding.findUnique({ where: { token } })) as unknown as OnboardingRecord | null;
   }
 
   async findOnboardingByTokenWithClasse(token: string): Promise<(OnboardingRecord & { classe?: { name: string; level: string } | null }) | null> {
-    return this.prisma.studentOnboarding.findUnique({ where: { token }, include: { classe: { select: { name: true, level: true } } } });
+    return (await this.prisma.studentOnboarding.findUnique({ where: { token }, include: { classe: { select: { name: true, level: true } } } })) as unknown as (OnboardingRecord & { classe?: { name: string; level: string } | null }) | null;
   }
 
   async listOnboardings(schoolId: string, status?: string): Promise<OnboardingRecord[]> {
-    return this.prisma.studentOnboarding.findMany({
+    return (await this.prisma.studentOnboarding.findMany({
       where: { schoolId, ...(status ? { status: status as any } : {}) },
       orderBy: { createdAt: 'desc' },
       take: 100,
-    });
+    })) as unknown as OnboardingRecord[];
   }
 
   async findOnboardingForPdf(id: string, schoolId: string): Promise<(OnboardingRecord & { classe?: { name: string } | null; school?: { name: string } | null }) | null> {
-    return this.prisma.studentOnboarding.findFirst({
+    return (await this.prisma.studentOnboarding.findFirst({
       where: { id, schoolId },
       include: { classe: { select: { name: true } }, school: { select: { name: true } } },
-    });
+    })) as unknown as (OnboardingRecord & { classe?: { name: string } | null; school?: { name: string } | null }) | null;
   }
 
   async findClassOnboardingInfo(classId: string): Promise<{ level: string; templateCode: string | null } | null> {
@@ -97,7 +97,7 @@ export class PrismaEleveOnboardingRepository implements EleveOnboardingRepositor
     parentADispositif: boolean | null; parentDispositifOS: string | null;
     token: string; tokenExpiresAt: Date;
   }): Promise<OnboardingRecord> {
-    return this.prisma.studentOnboarding.create({
+    return (await this.prisma.studentOnboarding.create({
       data: {
         schoolId: data.schoolId,
         nomProvisoire: data.nomProvisoire,
@@ -117,7 +117,7 @@ export class PrismaEleveOnboardingRepository implements EleveOnboardingRepositor
         tokenExpiresAt: data.tokenExpiresAt,
         status: 'LINK_SENT',
       },
-    });
+    })) as unknown as OnboardingRecord;
   }
 
   async marquerOnboardingExpire(id: string): Promise<void> {
@@ -135,7 +135,7 @@ export class PrismaEleveOnboardingRepository implements EleveOnboardingRepositor
         submittedData: data.submittedData as Prisma.InputJsonValue,
         submittedAt: data.submittedAt,
         tokenUsedAt: data.tokenUsedAt,
-        status: 'PENDING_VALIDATION',
+        status: 'SUBMITTED',
         matchScore: data.matchScore,
         matchedStudentId: data.matchedStudentId,
         ...(data.eleveADispositif !== undefined && { eleveADispositif: data.eleveADispositif }),

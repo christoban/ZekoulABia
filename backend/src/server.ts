@@ -205,7 +205,7 @@ app.use((req, res, next) => {
 });
 
 bootstrapHexagonal(app);
-initSocket(httpServer, clientUrl);
+initSocket(httpServer, allowedOrigins);
 httpServer.listen(PORT, () => {
   console.log("Server is running on port 5000");
 });

@@ -172,6 +172,8 @@ export function registerCoreRoutes(app: Application, prismaParam: typeof prisma 
     c.eleveOnboarding.repository,
     c.school.schoolRepository,
     c.credentialsNotificationService,
+    c.eleveOnboarding.inscrire,
+    c.eleveOnboarding.changerGestionAdmin,
   );
   app.use('/api/v2/eleve-onboarding', creerEleveOnboardingRoutes(eleveOnboardingController));
 

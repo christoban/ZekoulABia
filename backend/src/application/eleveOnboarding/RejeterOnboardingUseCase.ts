@@ -2,29 +2,35 @@
  * APPLICATION — Use case : Rejeter un onboarding élève (doublon, erreur de saisie, etc.)
  */
 import type { EleveOnboardingRepository } from '@domain/ports/repositories/EleveOnboardingRepository';
+import type { SchoolRepository } from '@domain/ports/repositories/SchoolRepository';
 import type { ActivityLogPort } from '@domain/ports/services/ActivityLogPort';
-import { peutTransitionnerDepuisPendingValidation } from './rules';
+import { canGererInscriptions } from '@domain/rules/EnrollmentRules';
+import type { OnboardingStatus } from '@domain/types/enums';
 import type { RejeterOnboardingCommande, RejeterOnboardingResultat } from './types';
 
 export class RejeterOnboardingUseCase {
   constructor(
     private readonly eleveOnboardingRepository: EleveOnboardingRepository,
+    private readonly schoolRepository: SchoolRepository,
     private readonly activityLog: ActivityLogPort,
   ) {}
 
-  async execute(cmd: RejeterOnboardingCommande): Promise<RejeterOnboardingResultat> {
+  async execute(cmd: RejeterOnboardingCommande & { staffPermissions?: readonly string[] }): Promise<RejeterOnboardingResultat> {
     if (!cmd.rejectionReason?.trim()) throw new Error('Un motif de rejet est requis');
+
+    const school = await this.schoolRepository.findById(cmd.schoolId);
+    const adminGere = school?.adminGereInscriptions ?? false;
+
+    if (!canGererInscriptions({ role: cmd.validatorRole, staffPermissions: cmd.staffPermissions, adminGereInscriptions: adminGere })) {
+      throw new Error('Vous n’avez pas les droits nécessaires pour rejeter des dossiers.');
+    }
 
     const onboarding = await this.eleveOnboardingRepository.findOnboardingById(cmd.onboardingId, cmd.schoolId);
     if (!onboarding) throw new Error('Dossier introuvable');
-    if (!peutTransitionnerDepuisPendingValidation(onboarding.status)) {
-      throw new Error(`Ce dossier ne peut pas être rejeté depuis son statut actuel (${onboarding.status}) — seul PENDING_VALIDATION peut être rejeté`);
-    }
 
-    const settings = await this.eleveOnboardingRepository.findSettings(cmd.schoolId);
-    const responsableRole = settings?.responsableRole ?? 'ADMIN';
-    if (cmd.validatorRole !== responsableRole) {
-      throw new Error(`Seul un utilisateur avec le rôle ${responsableRole} peut rejeter ce dossier`);
+    const statusValides: OnboardingStatus[] = ['SUBMITTED', 'DRAFT', 'LINK_SENT'];
+    if (!statusValides.includes(onboarding.status)) {
+      throw new Error(`Ce dossier ne peut pas être rejeté depuis son statut actuel (${onboarding.status})`);
     }
 
     await this.eleveOnboardingRepository.rejeterOnboarding(onboarding.id, {
@@ -33,12 +39,6 @@ export class RejeterOnboardingUseCase {
       rejectedAt: new Date(),
     });
 
-    // Rejet d'un dossier GROUPE_TRANSFERT : l'Admin cible avait déjà accepté la demande de
-    // transfert (GroupTransferRequest.status=ACCEPTED), qui avait marqué l'ancien StudentProfile
-    // TRANSFERRED côté école source. Si la famille échoue à compléter ce dossier (ou que l'Admin
-    // le rejette), l'élève ne doit pas rester en limbe — on le réactive côté école source. Le
-    // GroupTransferRequest reste ACCEPTED (fait historique : l'Admin a bien accepté le principe
-    // du transfert), l'échec réel se lit sur le statut REJECTED du StudentOnboarding lui-même.
     if (onboarding.sourceType === 'GROUPE_TRANSFERT') {
       const demande = await this.eleveOnboardingRepository.findGroupTransferRequestByOnboarding(onboarding.id);
       if (demande) {

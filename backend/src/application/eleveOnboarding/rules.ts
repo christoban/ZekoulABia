@@ -50,15 +50,17 @@ export function determinerRecipientType(params: {
 }
 
 /**
- * Règle métier n°1 : le statut PENDING_VALIDATION est une étape obligatoire, jamais
- * optionnelle — aucun dossier ne peut passer directement à VALIDATED/ACTIVATED (ni être
- * rejeté) depuis un autre statut (DRAFT, LINK_SENT, SUBMITTED, déjà VALIDATED/ACTIVATED/
- * REJECTED/EXPIRED). Utilisée à l'identique par ValiderOnboardingUseCase et
- * RejeterOnboardingUseCase : les deux seules actions humaines possibles sur un dossier
- * partagent exactement la même précondition de statut.
+ * Règle d'éligibilité à l'inscription ou au rejet : un dossier peut être finalisé
+ * directement (sans étape intermédiaire de validation) depuis le statut SUBMITTED,
+ * ou par secours admin/secrétaire depuis DRAFT / LINK_SENT.
  */
+export function peutEtreInscritOuRejete(status: OnboardingStatus): boolean {
+  return (['SUBMITTED', 'DRAFT', 'LINK_SENT'] as OnboardingStatus[]).includes(status);
+}
+
+/** Alias de compatibilité ascendante */
 export function peutTransitionnerDepuisPendingValidation(status: OnboardingStatus): boolean {
-  return status === 'PENDING_VALIDATION';
+  return peutEtreInscritOuRejete(status);
 }
 
 /** Un formulaire ne peut être soumis que sur un dossier dont le lien a été envoyé et pas encore utilisé. */

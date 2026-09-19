@@ -113,40 +113,44 @@ describe('ValiderOnboardingUseCase', () => {
       .rejects.toThrow('introuvable');
   });
 
-  it('échoue si statut non PENDING_VALIDATION', async () => {
-    const onboarding = { status: 'SUBMITTED' };
+  it('échoue si statut terminal non validable', async () => {
+    const onboarding = { status: 'EXPIRED' };
     const useCase = new ValiderOnboardingUseCase(stubRepo({ onboarding }) as any, activityLog);
     await expect(useCase.execute({ onboardingId: 'ob-1', schoolId: SCHOOL, validatedById: 'admin-1', validatorRole: 'ADMIN' }))
       .rejects.toThrow('peut pas être validé');
   });
 
   it('échoue si rôle non autorisé', async () => {
-    const onboarding = { status: 'PENDING_VALIDATION' };
+    const onboarding = { status: 'SUBMITTED' };
     const useCase = new ValiderOnboardingUseCase(stubRepo({ onboarding }) as any, activityLog);
     await expect(useCase.execute({ onboardingId: 'ob-1', schoolId: SCHOOL, validatedById: 'teacher-1', validatorRole: 'TEACHER' }))
       .rejects.toThrow('peut valider');
   });
 });
 
+function stubSchoolRepo(adminGere = false) {
+  return { findById: async () => ({ adminGereInscriptions: adminGere }) };
+}
+
 // ─── RejeterOnboardingUseCase ──────────────────────────────────────────────
 
 describe('RejeterOnboardingUseCase', () => {
   it('échoue si motif manquant', async () => {
-    const useCase = new RejeterOnboardingUseCase(stubRepo() as any, activityLog);
-    await expect(useCase.execute({ onboardingId: 'ob-1', schoolId: SCHOOL, rejectionReason: '', rejectedById: 'admin-1', validatorRole: 'ADMIN' }))
+    const useCase = new RejeterOnboardingUseCase(stubRepo() as any, stubSchoolRepo() as any, activityLog as any);
+    await expect(useCase.execute({ onboardingId: 'ob-1', schoolId: SCHOOL, rejectionReason: '', rejectedById: 'admin-1', validatorRole: 'STAFF', staffPermissions: ['MANAGE_ENROLLMENT'] }))
       .rejects.toThrow('motif');
   });
 
   it('échoue si dossier introuvable', async () => {
-    const useCase = new RejeterOnboardingUseCase(stubRepo({ onboarding: null }) as any, activityLog);
-    await expect(useCase.execute({ onboardingId: 'bad', schoolId: SCHOOL, rejectionReason: 'Pas conforme', rejectedById: 'admin-1', validatorRole: 'ADMIN' }))
+    const useCase = new RejeterOnboardingUseCase(stubRepo({ onboarding: null }) as any, stubSchoolRepo() as any, activityLog as any);
+    await expect(useCase.execute({ onboardingId: 'bad', schoolId: SCHOOL, rejectionReason: 'Pas conforme', rejectedById: 'admin-1', validatorRole: 'STAFF', staffPermissions: ['MANAGE_ENROLLMENT'] }))
       .rejects.toThrow('introuvable');
   });
 
-  it('échoue si statut non PENDING_VALIDATION', async () => {
-    const onboarding = { status: 'SUBMITTED' };
-    const useCase = new RejeterOnboardingUseCase(stubRepo({ onboarding }) as any, activityLog);
-    await expect(useCase.execute({ onboardingId: 'ob-1', schoolId: SCHOOL, rejectionReason: 'Non conforme', rejectedById: 'admin-1', validatorRole: 'ADMIN' }))
+  it('échoue si statut non actif', async () => {
+    const onboarding = { status: 'EXPIRED' };
+    const useCase = new RejeterOnboardingUseCase(stubRepo({ onboarding }) as any, stubSchoolRepo() as any, activityLog as any);
+    await expect(useCase.execute({ onboardingId: 'ob-1', schoolId: SCHOOL, rejectionReason: 'Non conforme', rejectedById: 'admin-1', validatorRole: 'STAFF', staffPermissions: ['MANAGE_ENROLLMENT'] }))
       .rejects.toThrow('peut pas être rejeté');
   });
 });

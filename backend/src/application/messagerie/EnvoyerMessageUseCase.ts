@@ -56,7 +56,7 @@ export class EnvoyerMessageUseCase {
     this.realtimeSocket.emitter(`conversation:${conversation.id}`, 'message:new', message);
 
     if (moderationStatus === 'APPROVED') {
-      await this.notifierParticipants(conversation, cmd.appelantId, cmd.schoolId, message.content);
+      await this.notifierParticipants(conversation, cmd.appelantId, cmd.schoolId, message.content, message);
     }
 
     return message;
@@ -92,12 +92,13 @@ export class EnvoyerMessageUseCase {
     );
   }
 
-  /** Notifie (push + cloche) les autres participants d'une conversation qu'un message est arrivé. */
+  /** Notifie (socket temps réel + push + cloche) les autres participants d'une conversation qu'un message est arrivé. */
   private async notifierParticipants(
     conversation: { id: string; type: string; classId: string | null },
     expediteurId: string,
     schoolId: string,
     contenu: string,
+    message: unknown,
   ) {
     let destinataireIds: string[] = [];
 
@@ -122,6 +123,12 @@ export class EnvoyerMessageUseCase {
         ...parentsLinks,
       ].filter((id) => id !== expediteurId);
       destinataireIds = Array.from(new Set(destinataireIds));
+    }
+
+    // Émettre en direct vers la room personnelle de chaque destinataire connecté
+    // (met à jour instantanément la liste des conversations et le badge sidebar)
+    for (const userId of destinataireIds) {
+      this.realtimeSocket.emitter(`user:${userId}`, 'message:new', message);
     }
 
     const apercu = contenu.length > 80 ? `${contenu.slice(0, 80)}…` : contenu;
