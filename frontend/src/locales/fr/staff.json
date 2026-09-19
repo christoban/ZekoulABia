@@ -412,8 +412,8 @@
     }
   },
   "finance": {
-    "title": "Mobile Money — Paiements",
-    "subtitle": "MTN MoMo & Orange Money · Suivi des impayés",
+    "title": "Finances — Factures & Paiements",
+    "subtitle": "Plans de frais · Factures · Paiements & Dépenses",
     "recordExpense": "Enregistrer une dépense",
     "refresh": "Rafraîchir",
     "kpiTotalUnpaid": "Total impayé (page)",

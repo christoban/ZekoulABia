@@ -10,7 +10,12 @@ let socket: Socket | null = null
  * côté backend.
  */
 export function getNotificationSocket(): Socket {
-  if (socket) return socket
+  if (socket) {
+    if (socket.connected) {
+      socket.emit('auth:refresh')
+    }
+    return socket
+  }
 
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
   socket = io(backendUrl, {
@@ -19,5 +24,17 @@ export function getNotificationSocket(): Socket {
     reconnection: true,
   })
 
+  socket.on('connect', () => {
+    socket?.emit('auth:refresh')
+  })
+
   return socket
 }
+
+export function resetNotificationSocket(): void {
+  if (socket) {
+    socket.disconnect()
+    socket = null
+  }
+}
+

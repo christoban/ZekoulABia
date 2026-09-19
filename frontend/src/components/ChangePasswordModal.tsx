@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
 import PasswordStrengthBar, { getPasswordStrength } from './PasswordStrengthBar'
 import { useT } from '@/lib/i18n'
-import { CheckCircle2, EyeOff, Eye, AlertTriangle } from 'lucide-react'
+import { CheckCircle2, EyeOff, Eye, AlertTriangle, X } from 'lucide-react'
 
 interface Props {
   onClose: () => void
@@ -57,23 +57,28 @@ export default function ChangePasswordModal({ onClose, onToast }: Props) {
       onClick={() => !loading && onClose()}
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div onClick={e => e.stopPropagation()}
-        style={{ background: 'var(--surface)', borderRadius: 18, padding: '32px 36px', width: 440, maxWidth: '94vw', boxShadow: 'var(--shadow-lg)' }}>
+        style={{ background: 'var(--surface)', borderRadius: 14, padding: '20px 24px', width: 420, maxWidth: '94vw', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--shadow-lg)' }}>
 
-        <div style={{ fontFamily: 'var(--font-spectral,Spectral,serif)', fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
-          {t('password.changeTitle')}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <div style={{ fontFamily: 'var(--font-spectral,Spectral,serif)', fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+            {t('password.changeTitle')}
+          </div>
+          <button type="button" onClick={onClose} disabled={loading} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', padding: 0, display: 'flex' }}>
+            <X size={18} />
+          </button>
         </div>
-        <div style={{ fontSize: 14, color: 'var(--text3)', marginBottom: 24, lineHeight: 1.5 }}>
+        <div style={{ fontSize: 11.5, color: 'var(--text3)', marginBottom: 16, lineHeight: 1.4 }}>
           {t('password.subtitle')}
         </div>
 
         {success ? (
-          <div style={{ textAlign: 'center', padding: '20px 0' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--green)', marginBottom: 12 }}><CheckCircle2 size={48} strokeWidth={2} /></div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--green)' }}>{t('password.successTitle')}</div>
+          <div style={{ textAlign: 'center', padding: '16px 0' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--green)', marginBottom: 10 }}><CheckCircle2 size={40} strokeWidth={2} /></div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--green)' }}>{t('password.successTitle')}</div>
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: 12 }}>
               <label style={labelSt}>{t('password.currentLabel')}</label>
               <div style={{ position: 'relative' }}>
                 <input
@@ -81,11 +86,11 @@ export default function ChangePasswordModal({ onClose, onToast }: Props) {
                   value={currentPwd}
                   onChange={e => setCurrentPwd(e.target.value)}
                   placeholder="••••••••••••"
-                  style={{ ...inputSt, paddingRight: 44 }}
+                  style={{ ...inputSt, paddingRight: 38 }}
                   autoComplete="current-password"
                 />
                 <button type="button" onClick={() => setShowCurrent(s => !s)} style={eyeSt}>
-                  {showCurrent ? <EyeOff size={17} strokeWidth={2} /> : <Eye size={17} strokeWidth={2} />}
+                  {showCurrent ? <EyeOff size={15} strokeWidth={2} /> : <Eye size={15} strokeWidth={2} />}
                 </button>
               </div>
             </div>
@@ -98,17 +103,17 @@ export default function ChangePasswordModal({ onClose, onToast }: Props) {
                   value={newPwd}
                   onChange={e => setNewPwd(e.target.value)}
                   placeholder="••••••••••••"
-                  style={{ ...inputSt, paddingRight: 44 }}
+                  style={{ ...inputSt, paddingRight: 38 }}
                   autoComplete="new-password"
                 />
                 <button type="button" onClick={() => setShowNew(s => !s)} style={eyeSt}>
-                  {showNew ? <EyeOff size={17} strokeWidth={2} /> : <Eye size={17} strokeWidth={2} />}
+                  {showNew ? <EyeOff size={15} strokeWidth={2} /> : <Eye size={15} strokeWidth={2} />}
                 </button>
               </div>
               {newPwd && <PasswordStrengthBar password={newPwd} />}
             </div>
 
-            <div style={{ marginBottom: 20, marginTop: 14 }}>
+            <div style={{ marginBottom: 16, marginTop: 10 }}>
               <label style={labelSt}>{t('password.confirmLabel')}</label>
               <div style={{ position: 'relative' }}>
                 <input
@@ -116,38 +121,38 @@ export default function ChangePasswordModal({ onClose, onToast }: Props) {
                   value={confirmPwd}
                   onChange={e => setConfirmPwd(e.target.value)}
                   placeholder="••••••••••••"
-                  style={{ ...inputSt, paddingRight: 44, borderColor: mismatch ? 'var(--red)' : 'var(--border2)' }}
+                  style={{ ...inputSt, paddingRight: 38, borderColor: mismatch ? 'var(--red)' : 'var(--border2)' }}
                   autoComplete="new-password"
                 />
                 <button type="button" onClick={() => setShowConfirm(s => !s)} style={eyeSt}>
-                  {showConfirm ? <EyeOff size={17} strokeWidth={2} /> : <Eye size={17} strokeWidth={2} />}
+                  {showConfirm ? <EyeOff size={15} strokeWidth={2} /> : <Eye size={15} strokeWidth={2} />}
                 </button>
               </div>
               {mismatch && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--red)', marginTop: 4, fontWeight: 600 }}>
-                  <AlertTriangle size={13} strokeWidth={2} /> {t('password.errorMismatch')}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--red)', marginTop: 3, fontWeight: 600 }}>
+                  <AlertTriangle size={12} strokeWidth={2} /> {t('password.errorMismatch')}
                 </div>
               )}
             </div>
 
             {error && (
-              <div style={{ background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8, padding: '10px 14px', fontSize: 14, fontWeight: 600, marginBottom: 16 }}>
+              <div style={{ background: 'var(--red-light)', color: 'var(--red)', borderRadius: 7, padding: '7px 11px', fontSize: 12, fontWeight: 600, marginBottom: 12 }}>
                 {error}
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <button
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                style={{ flex: 1, padding: '11px', borderRadius: 11, fontSize: 15, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ flex: '0 0 auto', minWidth: 85, padding: '8px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'center' }}>
                 {t('password.buttonCancel')}
               </button>
               <button
                 type="submit"
                 disabled={loading || strength < 5 || mismatch}
-                style={{ flex: 1, padding: '11px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: (loading || strength < 5 || mismatch) ? 'var(--text3)' : 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: (loading || strength < 5 || mismatch) ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'background 0.2s' }}>
+                style={{ flex: 1, padding: '8px 16px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'center', background: (loading || strength < 5 || mismatch) ? 'var(--text3)' : 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: (loading || strength < 5 || mismatch) ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'background 0.2s' }}>
                 {loading ? t('password.buttonSubmitting') : t('password.buttonSubmit')}
               </button>
             </div>
@@ -158,6 +163,6 @@ export default function ChangePasswordModal({ onClose, onToast }: Props) {
   )
 }
 
-const labelSt: React.CSSProperties = { display: 'block', fontSize: 13, fontWeight: 800, color: 'var(--text2)', marginBottom: 6, letterSpacing: '0.5px', textTransform: 'uppercase' }
-const inputSt: React.CSSProperties = { width: '100%', padding: '11px 14px', background: 'var(--bg2)', border: '1.5px solid var(--border2)', borderRadius: 10, color: 'var(--text)', fontSize: 15, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }
-const eyeSt: React.CSSProperties = { position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)', padding: 0 }
+const labelSt: React.CSSProperties = { display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text2)', marginBottom: 4, letterSpacing: '0.3px', textTransform: 'uppercase' }
+const inputSt: React.CSSProperties = { width: '100%', padding: '7px 11px', background: 'var(--bg2)', border: '1.5px solid var(--border2)', borderRadius: 8, color: 'var(--text)', fontSize: 13, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }
+const eyeSt: React.CSSProperties = { position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)', padding: 0 }

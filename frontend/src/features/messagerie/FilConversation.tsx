@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { ArrowLeft, Send, Clock, Check, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Send, Clock, Check, CheckCheck, AlertCircle } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
@@ -52,13 +52,16 @@ export default function FilConversation({ conversationId, conversation, currentU
   const dernierTimestampConfirmeRef = useRef<string | null>(null)
 
   const marquerCommeLu = useCallback(async (jusquAMessageId?: string) => {
+    const currentConvId = conversationIdRef.current
     try {
-      await fetchApi(`/api/v2/messagerie/conversations/${conversationIdRef.current}/lu`, {
+      await fetchApi(`/api/v2/messagerie/conversations/${currentConvId}/lu`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(jusquAMessageId ? { jusquAMessageId } : {}),
       })
-      window.dispatchEvent(new Event(EVENEMENT_MESSAGERIE_NON_LUS_CHANGE))
+      window.dispatchEvent(new CustomEvent(EVENEMENT_MESSAGERIE_NON_LUS_CHANGE, {
+        detail: { conversationId: currentConvId },
+      }))
     } catch { /* silencieux — se resynchronisera au prochain passage en ligne */ }
   }, [])
 
@@ -138,14 +141,46 @@ export default function FilConversation({ conversationId, conversation, currentU
       setMessages((prev) => (prev.some((m) => m.id === message.id) ? prev : [...prev, { ...message, status: 'SENT' }]))
       if (message.senderId !== currentUser.id) marquerCommeLu(message.id)
     }
+
+    const onMessagesRead = (payload: { conversationId: string; readerId: string; readAt: string; messageIds?: string[] }) => {
+      if (payload.conversationId !== conversationIdRef.current) return
+      if (payload.readerId === currentUser.id) return
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.senderId === currentUser.id) {
+            if (!payload.messageIds || payload.messageIds.includes(m.id)) {
+              return { ...m, isRead: true }
+            }
+          }
+          return m
+        })
+      )
+    }
+
     socket.on('message:new', onNewMessage)
+    socket.on('messages:read', onMessagesRead)
     // Une reconnexion socket (redémarrage serveur, coupure réseau brève) n'est pas forcément
     // accompagnée d'un événement navigateur 'online' — le rattrapage doit couvrir les deux cas.
     socket.on('connect', rattraper)
 
+    // Polling doux de secours (4 secondes si onglet actif) + rattrapage immédiat au focus de la fenêtre
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') void rattraper()
+    }, 4000)
+
+    const onVisibilityOrFocus = () => {
+      if (document.visibilityState === 'visible') void rattraper()
+    }
+    document.addEventListener('visibilitychange', onVisibilityOrFocus)
+    window.addEventListener('focus', onVisibilityOrFocus)
+
     return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisibilityOrFocus)
+      window.removeEventListener('focus', onVisibilityOrFocus)
       socket.emit('conversation:leave', conversationId)
       socket.off('message:new', onNewMessage)
+      socket.off('messages:read', onMessagesRead)
       socket.off('connect', rattraper)
     }
   }, [conversationId, currentUser.id, marquerCommeLu, rattraper])
@@ -182,9 +217,21 @@ export default function FilConversation({ conversationId, conversation, currentU
   }
 
   const statutIcone = (message: DisplayMessage) => {
-    if (message.status === 'PENDING') return <Clock size={12} />
+    if (message.status === 'PENDING') return <Clock size={12} color="var(--text3)" />
     if (message.status === 'FAILED') return <AlertCircle size={12} color="var(--red)" />
-    return <Check size={12} />
+    const isRead = message.isRead || (Array.isArray(message.readStatuses) && message.readStatuses.some((r) => r.userId !== currentUser.id))
+    if (isRead) {
+      return (
+        <span title="Lu" style={{ display: 'inline-flex', alignItems: 'center' }}>
+          <CheckCheck size={14} color="#2563eb" />
+        </span>
+      )
+    }
+    return (
+      <span title="Envoyé" style={{ display: 'inline-flex', alignItems: 'center' }}>
+        <Check size={12} color="var(--text3)" />
+      </span>
+    )
   }
 
   return (

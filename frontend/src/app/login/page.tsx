@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import AnimatedBackground from '@/components/AnimatedBackground'
 import LanguageSwitch from '@/components/LanguageSwitch'
 import { useT } from '@/lib/i18n'
+import { resetNotificationSocket } from '@/lib/notificationSocket'
 
 // ── Configuration d'affichage par rôle (icônes, badges, couleurs, redirections) ──
 type SuccessInfo = { icon: LucideIcon; badge: string; color: string; bg: string; dest: string; firstName: string }
@@ -145,6 +146,8 @@ export default function LoginPage() {
     const config = ROLE_CONFIG[role] ?? { icon: User, badge: role, color: 'var(--text3)', bg: 'var(--bg2)', dest: '/' }
     const dest = mustChangePassword ? '/change-password' : (redirectTo ?? config.dest)
     const firstName = nomComplet?.split(' ')[0] ?? 'Bienvenue'
+
+    resetNotificationSocket()
 
     localStorage.setItem('zekoulabia_user', JSON.stringify({
       userId, role, nomComplet, firstName,
@@ -728,7 +731,7 @@ export default function LoginPage() {
               <input type="tel" maxLength={6} value={totpCode} placeholder="123456" autoComplete="one-time-code"
                 onChange={e => { setTotpCode(e.target.value.replace(/\D/g, '')); setTotpAlert(null) }}
                 onKeyDown={e => e.key === 'Enter' && submitTotp()}
-                className="text-[20px] md:text-[22px] tracking-[4px] md:tracking-[6px] px-3.5 py-2.5 md:px-4 md:py-3"
+                className="text-[20px] md:text-[22px] placeholder:text-[12px] md:placeholder:text-[14px] placeholder:font-extrabold tracking-[4px] md:tracking-[6px] px-3.5 py-2.5 md:px-4 md:py-3"
                 style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontFamily: 'inherit', fontWeight: 900, textAlign: 'center', outline: 'none' }} />
             ) : (
               <input type="text" value={recoveryCode} placeholder="ABCD-1234-EFGH-5678" autoComplete="off"

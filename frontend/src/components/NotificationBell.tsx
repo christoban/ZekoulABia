@@ -28,11 +28,8 @@ export default function NotificationBell({ onNav }: Props) {
   }, [])
 
   const toggleOpen = () => {
-    setOpen(o => {
-      const next = !o
-      if (next) registerSeen()
-      return next
-    })
+    if (!open) registerSeen()
+    setOpen(o => !o)
   }
 
   const attention = unreadCount > 0 && !hasSeen

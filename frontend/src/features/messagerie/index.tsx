@@ -5,6 +5,7 @@ import { MessageCircle } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { putCachedData, getCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
+import { getNotificationSocket } from '@/lib/notificationSocket'
 import ListeConversations from './ListeConversations'
 import FilConversation from './FilConversation'
 import NouveauMessagePrive from './NouveauMessagePrive'
@@ -56,6 +57,58 @@ export default function Messagerie() {
   }, [currentUser])
 
   useEffect(() => { if (currentUser) chargerConversations() }, [currentUser, chargerConversations])
+
+  useEffect(() => {
+    if (!currentUser) return
+    const socket = getNotificationSocket()
+
+    const onNouveauMessage = (msg: { id: string; conversationId: string; senderId: string; content: string; createdAt: string | number }) => {
+      const dateIso = typeof msg.createdAt === 'number' ? new Date(msg.createdAt).toISOString() : String(msg.createdAt)
+      setConversations((prev) => {
+        const existe = prev.some((c) => c.id === msg.conversationId)
+        if (!existe) {
+          void chargerConversations()
+          return prev
+        }
+        return prev.map((c) => {
+          if (c.id === msg.conversationId) {
+            const estDansCeFil = selectedId === c.id
+            return {
+              ...c,
+              lastMessage: {
+                id: msg.id,
+                content: msg.content,
+                createdAt: dateIso,
+                senderId: msg.senderId,
+              },
+              unreadCount: estDansCeFil ? 0 : c.unreadCount + 1,
+            }
+          }
+          return c
+        }).sort((a, b) => {
+          const tA = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0
+          const tB = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0
+          return tB - tA
+        })
+      })
+    }
+
+    const onMessagesRead = (payload: { conversationId: string; readerId: string }) => {
+      if (payload.readerId === currentUser.id) {
+        setConversations((prev) =>
+          prev.map((c) => (c.id === payload.conversationId ? { ...c, unreadCount: 0 } : c))
+        )
+      }
+    }
+
+    socket.on('message:new', onNouveauMessage)
+    socket.on('messages:read', onMessagesRead)
+
+    return () => {
+      socket.off('message:new', onNouveauMessage)
+      socket.off('messages:read', onMessagesRead)
+    }
+  }, [currentUser, selectedId, chargerConversations])
 
   const handleSelect = (id: string) => {
     setSelectedId(id)

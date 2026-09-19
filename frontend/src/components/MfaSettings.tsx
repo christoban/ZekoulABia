@@ -14,19 +14,19 @@ type Mode = 'reconfigure' | 'regen'
 type Step = 'idle' | 'sensitive_auth' | 'qr_confirm' | 'show_codes'
 
 const card: React.CSSProperties = {
-  background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 14, padding: 24,
+  background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px',
 }
 const btn: React.CSSProperties = {
-  padding: '10px 18px', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer',
+  padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer',
   fontFamily: 'inherit', border: '1.5px solid var(--border)', background: 'var(--bg2)', color: 'var(--text2)',
 }
 const btnPrimary: React.CSSProperties = {
   ...btn, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none',
 }
 const input: React.CSSProperties = {
-  width: '100%', padding: '11px 14px', borderRadius: 10, border: '1.5px solid var(--border)',
-  background: 'var(--bg2)', color: 'var(--text)', fontSize: 14, fontFamily: 'inherit', outline: 'none',
-  marginBottom: 10, boxSizing: 'border-box',
+  width: '100%', padding: '8px 12px', borderRadius: 8, border: '1.5px solid var(--border)',
+  background: 'var(--bg2)', color: 'var(--text)', fontSize: 13, fontFamily: 'inherit', outline: 'none',
+  marginBottom: 8, boxSizing: 'border-box',
 }
 
 export default function MfaSettings() {
@@ -110,26 +110,26 @@ export default function MfaSettings() {
 
   return (
     <div style={card}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-        <ShieldCheck size={20} style={{ color: 'var(--green)', flexShrink: 0 }} />
-        <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>Double authentification</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+        <ShieldCheck size={18} style={{ color: 'var(--green)', flexShrink: 0 }} />
+        <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>Double authentification</div>
       </div>
-      <div style={{ fontSize: 13.5, color: 'var(--text3)', marginBottom: 18, lineHeight: 1.6 }}>
+      <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 14, lineHeight: 1.5 }}>
         {mfaEnabled === null ? 'Chargement…' : mfaEnabled
           ? 'Activée sur ce compte — obligatoire pour ce rôle, ne peut pas être désactivée.'
           : 'Non configurée. Reconnectez-vous pour finaliser la configuration obligatoire.'}
       </div>
 
       {step === 'idle' && mfaEnabled && (
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button style={btn} onClick={() => start('reconfigure')}><Shield size={14} style={{ marginRight: 6, verticalAlign: -2 }} />Reconfigurer</button>
-          <button style={btn} onClick={() => start('regen')}><KeyRound size={14} style={{ marginRight: 6, verticalAlign: -2 }} />Régénérer mes codes de récupération</button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button style={btn} onClick={() => start('reconfigure')}><Shield size={13} style={{ marginRight: 5, verticalAlign: -2 }} />Reconfigurer</button>
+          <button style={btn} onClick={() => start('regen')}><KeyRound size={13} style={{ marginRight: 5, verticalAlign: -2 }} />Régénérer mes codes de récupération</button>
         </div>
       )}
 
       {step === 'sensitive_auth' && (
         <div>
-          <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text2)', marginBottom: 10 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)', marginBottom: 8 }}>
             Confirmez votre identité pour continuer
           </div>
           {error && <Alert msg={error} />}
@@ -138,7 +138,7 @@ export default function MfaSettings() {
           <div style={{ display: 'flex', gap: 8 }}>
             <button style={btn} onClick={reset}>Annuler</button>
             <button style={btnPrimary} onClick={submitSensitiveAuth} disabled={loading}>
-              {loading ? <Loader2 size={14} className="animate-spin" /> : 'Continuer'}
+              {loading ? <Loader2 size={13} className="animate-spin" /> : 'Continuer'}
             </button>
           </div>
         </div>
@@ -147,17 +147,17 @@ export default function MfaSettings() {
       {step === 'qr_confirm' && (
         <div>
           {error && <Alert msg={error} />}
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
-            {qrDataUri && <img src={qrDataUri} alt="QR MFA" style={{ width: 160, height: 160, borderRadius: 10, border: '1.5px solid var(--border)', padding: 6, background: 'white' }} />}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+            {qrDataUri && <img src={qrDataUri} alt="QR MFA" style={{ width: 140, height: 140, borderRadius: 8, border: '1px solid var(--border)', padding: 5, background: 'white' }} />}
           </div>
           {manualKey && (
-            <div style={{ fontFamily: 'monospace', fontSize: 13, textAlign: 'center', background: 'var(--bg2)', borderRadius: 8, padding: '8px 12px', marginBottom: 12, wordBreak: 'break-all' }}>{manualKey}</div>
+            <div style={{ fontFamily: 'monospace', fontSize: 12, textAlign: 'center', background: 'var(--bg2)', borderRadius: 6, padding: '6px 10px', marginBottom: 10, wordBreak: 'break-all' }}>{manualKey}</div>
           )}
-          <input type="text" maxLength={6} placeholder="Nouveau code à 6 chiffres" value={newTotp} onChange={e => setNewTotp(e.target.value.replace(/\D/g, ''))} style={{ ...input, textAlign: 'center', fontSize: 20, fontWeight: 800, letterSpacing: 4 }} />
+          <input type="text" maxLength={6} placeholder="Nouveau code à 6 chiffres" value={newTotp} onChange={e => setNewTotp(e.target.value.replace(/\D/g, ''))} style={{ ...input, textAlign: 'center', fontSize: 18, fontWeight: 800, letterSpacing: 3 }} />
           <div style={{ display: 'flex', gap: 8 }}>
             <button style={btn} onClick={reset}>Annuler</button>
             <button style={btnPrimary} onClick={confirmReconfigure} disabled={loading}>
-              {loading ? <Loader2 size={14} className="animate-spin" /> : 'Activer le nouveau secret'}
+              {loading ? <Loader2 size={13} className="animate-spin" /> : 'Activer le nouveau secret'}
             </button>
           </div>
         </div>

@@ -27,6 +27,8 @@ export interface DisplayMessage {
   moderationStatus?: 'PENDING' | 'APPROVED' | 'REJECTED'
   moderationReason?: string | null
   status?: 'PENDING' | 'SENT' | 'FAILED'
+  readStatuses?: { userId: string; readAt: string }[]
+  isRead?: boolean
 }
 
 export interface CurrentUser {

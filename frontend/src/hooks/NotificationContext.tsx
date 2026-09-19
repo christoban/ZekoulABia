@@ -91,7 +91,40 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       void markNotificationDelivered(n.id)
     }
     socket.on('notification', onNotification)
-    return () => { socket.off('notification', onNotification) }
+
+    const onConversationRead = (payload: { conversationId: string }) => {
+      setRecentNotifications(prev => {
+        let reduits = 0
+        const updated = prev.map(n => {
+          const matchConv = n.metadata && typeof n.metadata === 'object' && (n.metadata as Record<string, unknown>).conversationId === payload.conversationId
+          if (matchConv && !n.isRead) {
+            reduits++
+            return { ...n, isRead: true }
+          }
+          return n
+        })
+        if (reduits > 0) {
+          setUnreadCount(c => Math.max(0, c - reduits))
+        }
+        return updated
+      })
+    }
+
+    const onWindowConvRead = (e: Event) => {
+      const custom = e as CustomEvent<{ conversationId?: string }>
+      if (custom.detail?.conversationId) {
+        onConversationRead({ conversationId: custom.detail.conversationId })
+      }
+    }
+
+    socket.on('notification:conversation-read', onConversationRead)
+    window.addEventListener('messagerie:unread-changed', onWindowConvRead)
+
+    return () => {
+      socket.off('notification', onNotification)
+      socket.off('notification:conversation-read', onConversationRead)
+      window.removeEventListener('messagerie:unread-changed', onWindowConvRead)
+    }
   }, [loadInitial])
 
   const markAsRead = useCallback(async (id: string) => {

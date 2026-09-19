@@ -39,15 +39,15 @@ export default function PushNotificationToggle({ style, onToggle }: Props) {
         ...style,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <span style={{ display: 'flex', color: subscribed ? 'var(--green)' : 'var(--text3)' }}>
-          {subscribed ? <Bell size={20} /> : <BellOff size={20} />}
+          {subscribed ? <Bell size={18} /> : <BellOff size={18} />}
         </span>
         <div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
             {t('pushNotifications.title')}
           </div>
-          <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
+          <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 2 }}>
             {permission === 'denied'
               ? t('pushNotifications.denied')
               : subscribed
@@ -65,12 +65,12 @@ export default function PushNotificationToggle({ style, onToggle }: Props) {
         disabled={loading || permission === 'denied'}
         style={{
           position: 'relative',
-          width: 48,
-          height: 26,
-          borderRadius: 13,
+          width: 44,
+          height: 24,
+          borderRadius: 12,
           border: 'none',
           cursor: loading || permission === 'denied' ? 'not-allowed' : 'pointer',
-          background: subscribed ? 'var(--green)' : 'var(--border)',
+          background: subscribed ? 'var(--green)' : 'var(--border2)',
           transition: 'background 0.2s',
           opacity: permission === 'denied' ? 0.5 : 1,
           flexShrink: 0,
@@ -79,19 +79,20 @@ export default function PushNotificationToggle({ style, onToggle }: Props) {
         <span
           style={{
             position: 'absolute',
-            top: 3,
-            left: subscribed ? 25 : 3,
+            top: 2,
+            left: subscribed ? 22 : 2,
             width: 20,
             height: 20,
             borderRadius: '50%',
             background: '#fff',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
             transition: 'left 0.2s',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          {loading && <Loader2 size={12} style={{ animation: 'spin 0.8s linear infinite', color: 'var(--text3)' }} />}
+          {loading && <Loader2 size={11} style={{ animation: 'spin 0.8s linear infinite', color: 'var(--text3)' }} />}
         </span>
       </button>
     </div>

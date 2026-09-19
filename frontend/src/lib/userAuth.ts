@@ -48,6 +48,10 @@ export async function logoutUser(): Promise<void> {
   await db.messages.clear()
   localStorage.removeItem('zekoulabia_user')
   purgerCle() // clé de chiffrement — voir tâche 4
+  try {
+    const { resetNotificationSocket } = await import('@/lib/notificationSocket')
+    resetNotificationSocket()
+  } catch { /* ignore */ }
 
   window.location.href = '/login'
 }

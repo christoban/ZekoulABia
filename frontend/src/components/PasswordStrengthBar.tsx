@@ -44,12 +44,12 @@ export default function PasswordStrengthBar({ password, style }: Props) {
   const label  = STRENGTH_LABELS[score]!
 
   return (
-    <div style={{ marginTop: 10, ...style }}>
+    <div style={{ marginTop: 8, ...style }}>
       {/* Barre */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+      <div style={{ display: 'flex', gap: 3.5, marginBottom: 5 }}>
         {[1,2,3,4,5].map(i => (
           <div key={i} style={{
-            flex: 1, height: 5, borderRadius: 4,
+            flex: 1, height: 3.5, borderRadius: 3,
             background: i <= score ? color : 'var(--border)',
             transition: 'background 0.2s',
           }} />
@@ -58,16 +58,16 @@ export default function PasswordStrengthBar({ password, style }: Props) {
 
       {/* Label force */}
       {label && (
-        <div style={{ fontSize: 12, fontWeight: 700, color, marginBottom: 8 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color, marginBottom: 6 }}>
           {label}
         </div>
       )}
 
       {/* Règles */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {rules.map(r => (
-          <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-            <span style={{ display: 'flex', color: r.ok ? 'var(--green)' : 'var(--text3)' }}>{r.ok ? <Check size={13} strokeWidth={2.5} /> : <Circle size={13} strokeWidth={2} />}</span>
+          <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11 }}>
+            <span style={{ display: 'flex', color: r.ok ? 'var(--green)' : 'var(--text3)' }}>{r.ok ? <Check size={11.5} strokeWidth={2.5} /> : <Circle size={11.5} strokeWidth={2} />}</span>
             <span style={{ color: r.ok ? 'var(--text)' : 'var(--text3)', fontWeight: r.ok ? 600 : 400 }}>{r.label}</span>
           </div>
         ))}

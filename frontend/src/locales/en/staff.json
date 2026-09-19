@@ -412,8 +412,8 @@
     }
   },
   "finance": {
-    "title": "Mobile Money — Payments",
-    "subtitle": "MTN MoMo & Orange Money · Unpaid invoice tracking",
+    "title": "Finance — Invoices & Payments",
+    "subtitle": "Fee plans · Invoices · Payments & Expenses",
     "recordExpense": "Record an Expense",
     "refresh": "Refresh",
     "kpiTotalUnpaid": "Total Unpaid (page)",

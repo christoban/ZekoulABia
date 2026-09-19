@@ -34,13 +34,13 @@ const DOCUMENT_TYPES = [
   { value: 'AUTRE', labelKey: 'docAutre' },
 ]
 
-const btnPri = { padding: '10px 20px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' as const }
-const btnSec = { padding: '9px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 13, cursor: 'pointer' as const }
-const inputStyle = { padding: '9px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 14, width: '100%', boxSizing: 'border-box' as const }
-const cardStyle = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20, marginBottom: 20 }
+const btnPri = { padding: '6px 14px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 600, fontSize: 12.5, cursor: 'pointer' as const }
+const btnSec = { padding: '5px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 12, cursor: 'pointer' as const }
+const inputStyle = { padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 12.5, width: '100%', boxSizing: 'border-box' as const }
+const cardStyle = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 18px', marginBottom: 14 }
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)', margin: '12px 0 6px' }}>{children}</div>
+  return <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)', margin: '8px 0 4px' }}>{children}</div>
 }
 
 export default function SectionMonProfilRH({ onToast }: Props) {
@@ -149,35 +149,35 @@ export default function SectionMonProfilRH({ onToast }: Props) {
     onToast(t('suggestionApplied'), 'success')
   }
 
-  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>{t('common.loading') || '...'}</div>
+  if (loading) return <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>{t('common.loading') || '...'}</div>
 
   return (
-    <div style={{ padding: '28px 32px' }}>
-      <div style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)' }}>{t('title')}</h2>
-        <p style={{ fontSize: 14, color: 'var(--text3)', marginTop: 4 }}>{t('subtitle')}</p>
+    <div className="px-4 py-4 md:px-7 md:py-6" style={{ height: '100%', overflowY: 'auto' }}>
+      <div style={{ marginBottom: 16 }}>
+        <h2 style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 19, fontWeight: 700, color: 'var(--text)' }}>{t('title')}</h2>
+        <p style={{ fontSize: 12.5, color: 'var(--text3)', marginTop: 2 }}>{t('subtitle')}</p>
       </div>
 
-      <div style={{ marginBottom: 20 }}>
+      <div style={{ marginBottom: 14 }}>
         <PushNotificationToggle />
       </div>
 
-      <div style={{ marginBottom: 20 }}>
+      <div style={{ marginBottom: 14 }}>
         <MfaSettings />
       </div>
 
       {file?.selfServiceCompletedAt ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(22,163,74,0.1)', border: '1px solid var(--green)', borderRadius: 10, padding: '10px 16px', marginBottom: 20, fontSize: 13, color: 'var(--green)' }}>
-          <CheckCircle2 size={15} strokeWidth={2} /> {t('completedOn', { date: new Date(file.selfServiceCompletedAt).toLocaleDateString() })}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(22,163,74,0.1)', border: '1px solid var(--green)', borderRadius: 8, padding: '8px 12px', marginBottom: 14, fontSize: 12, color: 'var(--green)' }}>
+          <CheckCircle2 size={14} strokeWidth={2} /> {t('completedOn', { date: new Date(file.selfServiceCompletedAt).toLocaleDateString() })}
         </div>
       ) : (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(234,179,8,0.1)', border: '1px solid #eab308', borderRadius: 10, padding: '10px 16px', marginBottom: 20, fontSize: 13, color: '#92400e' }}>
-          <AlertTriangle size={15} strokeWidth={2} /> {t('notCompletedYet')}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(234,179,8,0.1)', border: '1px solid #eab308', borderRadius: 8, padding: '8px 12px', marginBottom: 14, fontSize: 12, color: '#92400e' }}>
+          <AlertTriangle size={14} strokeWidth={2} /> {t('notCompletedYet')}
         </div>
       )}
 
       <div style={cardStyle}>
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{t('sectionIdentite')}</h3>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{t('sectionIdentite')}</h3>
 
         <FieldLabel>{t('fieldDateNaissance')}</FieldLabel>
         <input style={inputStyle} type="date" value={form.dateNaissance ? String(form.dateNaissance).slice(0, 10) : ''}
@@ -201,29 +201,29 @@ export default function SectionMonProfilRH({ onToast }: Props) {
       </div>
 
       <div style={cardStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>{t('sectionDiplomes')}</h3>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{t('sectionDiplomes')}</h3>
           <button onClick={addDiplome} style={btnSec}>+ {t('addDiplome')}</button>
         </div>
-        {(form.diplomes ?? []).length === 0 && <p style={{ fontSize: 13, color: 'var(--text3)' }}>{t('diplomesEmpty')}</p>}
+        {(form.diplomes ?? []).length === 0 && <p style={{ fontSize: 12, color: 'var(--text3)' }}>{t('diplomesEmpty')}</p>}
         {(form.diplomes ?? []).map((d: string, idx: number) => (
-          <div key={idx} style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
+          <div key={idx} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
             <input style={inputStyle} value={d} onChange={(e) => updateDiplome(idx, e.target.value)} placeholder={t('diplomePlaceholder')} />
-            <button onClick={() => removeDiplome(idx)} style={{ ...btnSec, color: 'var(--red)', borderColor: 'var(--red)' }}>×</button>
+            <button onClick={() => removeDiplome(idx)} style={{ ...btnSec, color: 'var(--red)', borderColor: 'var(--red)', padding: '5px 9px' }}>×</button>
           </div>
         ))}
       </div>
 
       <div style={cardStyle}>
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>{t('sectionDocuments')}</h3>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{t('sectionDocuments')}</h3>
         {(file?.documentsUrls ?? []).length === 0 ? (
-          <p style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 14 }}>{t('documentsEmpty')}</p>
+          <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 10 }}>{t('documentsEmpty')}</p>
         ) : (
-          <div style={{ marginBottom: 14 }}>
+          <div style={{ marginBottom: 10 }}>
             {(file?.documentsUrls ?? []).map((d, idx) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--bg)' }}>
-                <span style={{ fontSize: 13 }}>{d.label} <span style={{ color: 'var(--text3)' }}>({new Date(d.uploadedAt).toLocaleDateString()})</span></span>
-                <button onClick={() => downloadDocument(idx)} style={{ ...btnSec, padding: '4px 10px', fontSize: 12 }}>{t('downloadBtn')}</button>
+              <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid var(--border)' }}>
+                <span style={{ fontSize: 12 }}>{d.label} <span style={{ color: 'var(--text3)' }}>({new Date(d.uploadedAt).toLocaleDateString()})</span></span>
+                <button onClick={() => downloadDocument(idx)} style={{ ...btnSec, padding: '3px 8px', fontSize: 11.5 }}>{t('downloadBtn')}</button>
               </div>
             ))}
           </div>
@@ -235,56 +235,56 @@ export default function SectionMonProfilRH({ onToast }: Props) {
         <FieldLabel>{t('fieldDocLabel')}</FieldLabel>
         <input style={inputStyle} value={docLabel} onChange={(e) => setDocLabel(e.target.value)} placeholder={t('fieldDocLabelPlaceholder')} />
         <FieldLabel>{t('fieldDocFile')}</FieldLabel>
-        <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => {
+        <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ fontSize: 12 }} onChange={(e) => {
           setDocFile(e.target.files?.[0] ?? null)
           setAnalyse(null)
           setAnalyseWarnings([])
         }} />
 
         {docFile && docFile.type.startsWith('image/') && (
-          <div style={{ marginTop: 10 }}>
-            <button onClick={analyserAvecIA} disabled={analysing} style={{ ...btnSec, display: 'flex', alignItems: 'center', gap: 6, borderColor: 'var(--blue)', color: 'var(--blue)' }}>
-              {analysing ? t('analysing') : <><Sparkles size={14} strokeWidth={2} /> {t('analyseWithAI')}</>}
+          <div style={{ marginTop: 8 }}>
+            <button onClick={analyserAvecIA} disabled={analysing} style={{ ...btnSec, display: 'flex', alignItems: 'center', gap: 5, borderColor: 'var(--blue)', color: 'var(--blue)' }}>
+              {analysing ? t('analysing') : <><Sparkles size={13} strokeWidth={2} /> {t('analyseWithAI')}</>}
             </button>
-            <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>{t('analyseHint')}</p>
+            <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>{t('analyseHint')}</p>
           </div>
         )}
 
         {analyse && (
-          <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: 14, marginTop: 12 }}>
-            <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text2)', marginBottom: 8 }}>{t('analyseResultTitle')}</p>
+          <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', marginTop: 10 }}>
+            <p style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text2)', marginBottom: 6 }}>{t('analyseResultTitle')}</p>
             {analyse.intitule ? (
               <>
-                <div style={{ fontSize: 13, marginBottom: 4 }}><strong>{t('analyseIntitule')}:</strong> {analyse.intitule}</div>
-                {analyse.institution && <div style={{ fontSize: 13, marginBottom: 4 }}><strong>{t('analyseInstitution')}:</strong> {analyse.institution}</div>}
-                {analyse.anneeObtention && <div style={{ fontSize: 13, marginBottom: 4 }}><strong>{t('analyseAnnee')}:</strong> {analyse.anneeObtention}</div>}
+                <div style={{ fontSize: 12, marginBottom: 3 }}><strong>{t('analyseIntitule')}:</strong> {analyse.intitule}</div>
+                {analyse.institution && <div style={{ fontSize: 12, marginBottom: 3 }}><strong>{t('analyseInstitution')}:</strong> {analyse.institution}</div>}
+                {analyse.anneeObtention && <div style={{ fontSize: 12, marginBottom: 3 }}><strong>{t('analyseAnnee')}:</strong> {analyse.anneeObtention}</div>}
                 {analyse.suggestionTermeOfficiel && (
-                  <div style={{ fontSize: 13, marginBottom: 8, color: 'var(--green)' }}>
+                  <div style={{ fontSize: 12, marginBottom: 6, color: 'var(--green)' }}>
                     <strong>{t('analyseTermeOfficiel')}:</strong> {analyse.suggestionTermeOfficiel}
                   </div>
                 )}
-                <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 8 }}>
+                <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 6 }}>
                   {t('analyseConfidence')}: {t(`confidence_${analyse.confidence}`)}
                 </div>
-                <button onClick={() => appliquerSuggestionDiplome(analyse.suggestionTermeOfficiel || analyse.intitule!)} style={{ ...btnSec, padding: '6px 12px', fontSize: 12 }}>
+                <button onClick={() => appliquerSuggestionDiplome(analyse.suggestionTermeOfficiel || analyse.intitule!)} style={{ ...btnSec, padding: '4px 10px', fontSize: 11.5 }}>
                   {t('applySuggestion')}
                 </button>
               </>
             ) : (
-              <p style={{ fontSize: 13, color: 'var(--text3)' }}>{t('analyseNoResult')}</p>
+              <p style={{ fontSize: 12, color: 'var(--text3)' }}>{t('analyseNoResult')}</p>
             )}
             {analyseWarnings.map((w, i) => (
-              <p key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#b45309', marginTop: 6 }}><AlertTriangle size={11} strokeWidth={2} /> {w}</p>
+              <p key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#b45309', marginTop: 4 }}><AlertTriangle size={11} strokeWidth={2} /> {w}</p>
             ))}
           </div>
         )}
 
-        <div style={{ marginTop: 12 }}>
+        <div style={{ marginTop: 10 }}>
           <button onClick={uploadDocument} disabled={uploading} style={btnSec}>{uploading ? '...' : t('uploadBtn')}</button>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 10 }}>
+      <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
         <button onClick={() => save(false)} disabled={saving} style={btnSec}>{saving ? '...' : t('saveBtn')}</button>
         <button onClick={() => save(true)} disabled={saving} style={btnPri}>{saving ? '...' : t('confirmBtn')}</button>
       </div>
