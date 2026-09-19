@@ -3,7 +3,8 @@ import type { MasterUserDto, SchoolDto, AuditLogDto, SchoolDetailDto } from './_
 
 export type { MasterUserDto, SchoolDto, AuditLogDto, SchoolDetailDto }
 
-export type Section = 'overview' | 'schools' | 'logs'
+export type Section = 'overview' | 'schools' | 'referentiels' | 'logs'
+export type ReferentielModule = 'calendar' | 'bac' | 'templates' | 'progressions' | 'tarifs'
 export type SchoolTab = 'all' | 'pending' | 'approved' | 'active' | 'suspended' | 'draft' | 'rejected'
 export type LogTab = 'emails' | 'auth' | 'security'
 export type ModalId =

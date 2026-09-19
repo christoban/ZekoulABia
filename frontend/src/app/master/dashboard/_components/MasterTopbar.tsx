@@ -11,9 +11,10 @@ interface Props {
 }
 
 const NAV: { id: Section; label: string; dotColor: string }[] = [
-  { id: 'overview', label: "Vue d'ensemble", dotColor: '#4ade80' },
-  { id: 'schools',  label: 'Écoles',          dotColor: '#d97706' },
-  { id: 'logs',     label: 'Logs & Sécurité', dotColor: '#94a3b8' },
+  { id: 'overview',     label: "Vue d'ensemble",           dotColor: '#4ade80' },
+  { id: 'schools',      label: 'Écoles',                   dotColor: '#d97706' },
+  { id: 'referentiels', label: 'Référentiels Nationaux',   dotColor: '#60a5fa' },
+  { id: 'logs',         label: 'Logs & Sécurité',          dotColor: '#94a3b8' },
 ]
 
 function initials(name: string): string {

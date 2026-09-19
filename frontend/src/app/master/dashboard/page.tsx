@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import MasterTopbar from './_components/MasterTopbar'
 import SectionOverview from './_components/SectionOverview'
 import SectionSchools from './_components/SectionSchools'
+import SectionReferentielsHub from './_components/SectionReferentielsHub'
 import SectionLogs from './_components/SectionLogs'
 import MasterModals from './_components/MasterModals'
 import SchoolSlideOver from './_components/SchoolSlideOver'
@@ -295,6 +296,10 @@ export default function SuperAdminDashboard() {
               setModal('confirmAction')
             }}
           />
+        )}
+
+        {section === 'referentiels' && (
+          <SectionReferentielsHub onToast={showToast} />
         )}
 
         {section === 'logs' && <SectionLogs logs={logs} loading={logsLoading} onChangePwd={() => setModal('changePwd')} mfaEnabled={mfaEnabled} />}
