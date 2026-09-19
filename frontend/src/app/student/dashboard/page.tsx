@@ -26,6 +26,7 @@ import AssistantWidget from '../../admin/dashboard/_components/AssistantWidget'
 import { useRouter } from 'next/navigation'
 import Babillard from '@/features/communication/Babillard'
 import Messagerie from '@/features/messagerie'
+import CalendarTopbarButton from '@/components/CalendarTopbarButton'
 
 interface SessionUser {
   userId: string
@@ -73,6 +74,17 @@ export default function StudentDashboard() {
       if (raw) {
         const sessionUser = JSON.parse(raw) as SessionUser
         setUser({ id: sessionUser.userId, firstName: sessionUser.firstName ?? '', lastName: sessionUser.nomComplet?.split(' ').slice(1).join(' ') ?? '', email: '', role: sessionUser.role })
+      }
+      const params = new URLSearchParams(window.location.search)
+      const convId = params.get('conversationId')
+      const targetSection = params.get('section')
+      if (convId) {
+        setSection('messagerie')
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('zekoulabia:open-conversation', { detail: { conversationId: convId } }))
+        }, 150)
+      } else if (targetSection && STUDENT_SECTIONS.includes(targetSection as StudentSection)) {
+        setSection(targetSection as StudentSection)
       }
     } catch { /* silencieux — données absentes ou corrompues */ }
   }, [])
@@ -167,6 +179,7 @@ export default function StudentDashboard() {
             Trimestre 2 · Séquence 3
           </span>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <CalendarTopbarButton />
             <NotificationBell onNav={s => setSection(s as StudentSection)} />
           </div>
         </header>
@@ -181,7 +194,7 @@ export default function StudentDashboard() {
           {section === 'attendance' && <SectionStudentAttendance {...sProps} />}
           {section === 'library'    && <SectionStudentLibrary />}
           {section === 'health-tracking' && <SectionStudentHealthTracking user={user} />}
-          {section === 'notifications' && <NotificationCenter />}
+          {section === 'notifications' && <NotificationCenter onNav={s => setSection(s as StudentSection)} />}
           {section === 'babillard' && <Babillard role={user?.role ?? 'STUDENT'} title={tnav('sidebar.babillard')} subtitle={tnav('group.communication')} currentUserId={user?.id} />}
           {section === 'messagerie' && <Messagerie />}
           {section === 'academic-profile' && <SectionProfilAcademique studentId={user?.id ?? ''} />}

@@ -6,7 +6,9 @@ import { getSectionsFromPermissions } from './_types'
 
 import StaffSidebar     from './_components/StaffSidebar'
 import StaffTopbar      from './_components/StaffTopbar'
+import StaffBottomNav   from './_components/StaffBottomNav'
 import StaffToast       from './_components/StaffToast'
+import { logoutUser }   from '@/lib/userAuth'
 import SectionStaffDashboard   from './_components/SectionStaffDashboard'
 import SectionCouncil          from './_components/SectionCouncil'
 import SectionBulletinValidation  from './_components/SectionBulletinValidation'
@@ -69,7 +71,20 @@ export default function StaffDashboard() {
       if (raw) {
         const user = JSON.parse(raw) as SessionUser
         setSessionUser(user)
-        setAllowedSections(getSectionsFromPermissions(user.permissions ?? []))
+        const allowed = getSectionsFromPermissions(user.permissions ?? [])
+        setAllowedSections(allowed)
+
+        const params = new URLSearchParams(window.location.search)
+        const convId = params.get('conversationId')
+        const targetSection = params.get('section')
+        if (convId) {
+          setSection('messagerie')
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('zekoulabia:open-conversation', { detail: { conversationId: convId } }))
+          }, 150)
+        } else if (targetSection && allowed.has(targetSection as StaffSection)) {
+          setSection(targetSection as StaffSection)
+        }
       }
     } catch { /* silencieux — données absentes ou corrompues */ }
   }, [])
@@ -130,11 +145,18 @@ export default function StaffDashboard() {
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
-        <StaffTopbar section={section} onChangePassword={() => setChangePwdOpen(true)} onNav={s => navTo(s as StaffSection)} onMenuClick={() => setMobileNavOpen(true)} />
+        <StaffTopbar
+          section={section}
+          onChangePassword={() => setChangePwdOpen(true)}
+          onNav={s => navTo(s as StaffSection)}
+          onMenuClick={() => setMobileNavOpen(true)}
+          sessionUser={sessionUser}
+          onLogout={logoutUser}
+        />
         <EventCenterWidget />
         <APEEAlertBanner visible={can('apee')} onNav={s => navTo(s as StaffSection)} />
 
-        <main style={{ flex: 1, overflow: 'hidden', background: 'var(--bg)' }}>
+        <main className="pb-[calc(68px+env(safe-area-inset-bottom,0px))] md:pb-0" style={{ flex: 1, overflow: 'hidden', background: 'var(--bg)' }}>
 
           {section === 'dashboard' && (
             <SectionStaffDashboard
@@ -202,7 +224,7 @@ export default function StaffDashboard() {
           )}
 
           {section === 'mon-profil-rh' && <SectionMonProfilRH onToast={showToast} />}
-          {section === 'notifications' && <NotificationCenter />}
+          {section === 'notifications' && <NotificationCenter onNav={s => setSection(s as StaffSection)} />}
           {section === 'sync-offline' && <SectionOfflineStatus onToast={showToast} namespace="staff" />}
           {section === 'babillard' && <Babillard role={sessionUser?.role ?? 'STAFF'} title={tnav('sidebar.babillard')} subtitle={tnav('group.communication')} currentUserId={sessionUser?.userId} />}
           {section === 'messagerie' && <Messagerie />}
@@ -215,6 +237,7 @@ export default function StaffDashboard() {
       <OfflineIndicator />
       {changePwdOpen && <ChangePasswordModal onClose={() => setChangePwdOpen(false)} onToast={showToast} />}
       <AssistantWidget section={section} rolePrefix="staff" suggestions={STAFF_ASSISTANT_SUGGESTIONS} />
+      <StaffBottomNav current={section} onChange={navTo} allowedSections={allowedSections} onOpenMenu={() => setMobileNavOpen(true)} />
     </div>
   )
 }

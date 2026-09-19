@@ -410,7 +410,11 @@ export default function LandingPage() {
       const raw = localStorage.getItem('zekoulabia_user')
       const role = raw ? JSON.parse(raw)?.role : null
       const dest = role ? DASHBOARD_BY_ROLE[role] : null
-      if (dest) { router.replace(dest); return }
+      if (dest) {
+        const search = typeof window !== 'undefined' ? window.location.search : ''
+        router.replace(`${dest}${search}`)
+        return
+      }
     } catch { /* localStorage absent/corrompu — afficher la landing page normalement */ }
     setCheckingSession(false)
   }, [router])

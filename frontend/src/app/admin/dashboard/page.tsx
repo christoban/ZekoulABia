@@ -18,6 +18,7 @@ import SectionCorbeille from './_components/SectionCorbeille'
 import NotificationCenter from '@/components/NotificationCenter'
 import SectionFinance from './_components/SectionFinance'
 import SectionPlaceholder from './_components/SectionPlaceholder'
+import AdminBottomNav from './_components/AdminBottomNav'
 import SectionAdminAttendance from './_components/SectionAdminAttendance'
 import SectionAdminCouncil from './_components/SectionAdminCouncil'
 import SectionBulletinValidation from '../../staff/dashboard/_components/SectionBulletinValidation'
@@ -132,6 +133,16 @@ export default function AdminDashboard() {
           showToast(t('page.toast.welcome_active'), 'success')
           window.history.replaceState(null, '', '/admin/dashboard')
         }
+        const targetSection = params.get('section')
+        const convId = params.get('conversationId')
+        if (convId) {
+          setSection('messagerie')
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('zekoulabia:open-conversation', { detail: { conversationId: convId } }))
+          }, 150)
+        } else if (targetSection && ADMIN_SECTIONS.includes(targetSection as AdminSection)) {
+          setSection(targetSection as AdminSection)
+        }
       })
       .catch(err => { if (err !== 'auth') console.warn('[dashboard] Erreur réseau:', err) })
 
@@ -205,7 +216,7 @@ export default function AdminDashboard() {
         <EventCenterWidget onNav={s => setSection(s as AdminSection)} />
         <AnomaliesAlertBanner onNav={s => setSection(s as AdminSection)} />
 
-        <main style={{ flex: 1, overflow: 'hidden' }}>
+        <main className="flex-1 overflow-hidden pb-[60px] md:pb-0">
           {section === 'dashboard' && (
             <SectionDashboard
               onNav={s => setSection(s as AdminSection)}
@@ -241,7 +252,7 @@ export default function AdminDashboard() {
           {section === 'pebs-exams'    && <SectionAdminPebsExams    onToast={showToast} />}
           {section === 'lv2-choice'    && <SectionAdminLV2Choice    onToast={showToast} />}
           {section === 'group-transfers' && <SectionAdminGroupTransfers onToast={showToast} />}
-          {section === 'notifications' && <NotificationCenter />}
+          {section === 'notifications' && <NotificationCenter onNav={s => setSection(s as AdminSection)} />}
           {section === 'settings'      && <SectionSettings      onToast={showToast} schoolInfo={schoolInfo} onLogoUpdate={url => setSchoolInfo(s => s ? { ...s, logoUrl: url } : null)} />}
           {section === 'corbeille'     && <SectionCorbeille     onToast={showToast} />}
           {section === 'sync-offline' && <SectionOfflineStatus onToast={showToast} namespace="admin" />}
@@ -273,6 +284,7 @@ export default function AdminDashboard() {
           window.location.reload()
         }}
       />
+      <AdminBottomNav current={section} onChange={setSection} />
     </div>
   )
 }

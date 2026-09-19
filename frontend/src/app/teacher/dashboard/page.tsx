@@ -104,6 +104,17 @@ export default function TeacherDashboard() {
         const sessionUser = JSON.parse(raw) as SessionUser
         setUser({ id: sessionUser.userId, firstName: sessionUser.firstName ?? '', lastName: sessionUser.nomComplet?.split(' ').slice(1).join(' ') ?? '', email: '', role: sessionUser.role })
       }
+      const params = new URLSearchParams(window.location.search)
+      const convId = params.get('conversationId')
+      const targetSection = params.get('section')
+      if (convId) {
+        setSection('messagerie')
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('zekoulabia:open-conversation', { detail: { conversationId: convId } }))
+        }, 150)
+      } else if (targetSection && TEACHER_SECTIONS.includes(targetSection as TeacherSection)) {
+        setSection(targetSection as TeacherSection)
+      }
     } catch { /* silencieux — données absentes ou corrompues */ }
   }, [])
 
@@ -202,7 +213,7 @@ export default function TeacherDashboard() {
           {section === 'mon-suivi' && <SectionMesActionsSuivi onToast={showToast} />}
           {section === 'correction-anonyme' && <SectionTeacherCorrectionAnonyme onToast={showToast} />}
           {section === 'mon-profil-rh' && <SectionMonProfilRH onToast={showToast} />}
-          {section === 'notifications' && <NotificationCenter />}
+          {section === 'notifications' && <NotificationCenter onNav={s => setSection(s as TeacherSection)} />}
           {section === 'babillard' && <Babillard role={user?.role ?? 'TEACHER'} title={tnav('sidebar.babillard')} subtitle={tcommon('brand.roleTeacher')} currentUserId={user?.id} />}
           {section === 'messagerie' && <Messagerie />}
           {Object.entries(PLACEHOLDERS).map(([key, val]) =>

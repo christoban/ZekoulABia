@@ -314,11 +314,11 @@ export default function StaffSidebar({ current, onChange, allowedSections, sessi
 
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true">
-          <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onMobileClose} />
-          <aside className="absolute left-0 top-0 h-full w-[85vw] max-w-[225px] flex flex-col relative overflow-hidden" style={{ background: 'var(--sidebar)' }}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onMobileClose} />
+          <aside className="absolute left-0 top-0 h-full w-[85vw] max-w-[280px] flex flex-col overflow-hidden shadow-2xl" style={{ background: 'var(--sidebar)' }}>
             <button onClick={onMobileClose} aria-label="Fermer"
-              className="absolute z-20" style={{ top: 10, right: 10, width: 28, height: 28, borderRadius: 8, background: 'rgba(255,255,255,0.08)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-              <X size={13} color="white" />
+              className="absolute z-20" style={{ top: 12, right: 12, width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.12)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              <X size={16} color="white" />
             </button>
             {sidebarBody}
           </aside>

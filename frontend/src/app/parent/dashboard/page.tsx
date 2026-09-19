@@ -26,6 +26,7 @@ import AssistantWidget from '../../admin/dashboard/_components/AssistantWidget'
 import { useRouter } from 'next/navigation'
 import Babillard from '@/features/communication/Babillard'
 import Messagerie from '@/features/messagerie'
+import CalendarTopbarButton from '@/components/CalendarTopbarButton'
 
 interface SessionUser {
   userId: string
@@ -75,6 +76,17 @@ export default function ParentDashboard() {
       if (raw) {
         const sessionUser = JSON.parse(raw) as SessionUser
         setUser({ id: sessionUser.userId, firstName: sessionUser.firstName ?? '', lastName: sessionUser.nomComplet?.split(' ').slice(1).join(' ') ?? '', email: '', role: sessionUser.role })
+      }
+      const params = new URLSearchParams(window.location.search)
+      const convId = params.get('conversationId')
+      const targetSection = params.get('section')
+      if (convId) {
+        setSection('messagerie')
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('zekoulabia:open-conversation', { detail: { conversationId: convId } }))
+        }, 150)
+      } else if (targetSection && PARENT_SECTIONS.includes(targetSection as ParentSection)) {
+        setSection(targetSection as ParentSection)
       }
     } catch { /* silencieux — données absentes ou corrompues */ }
   }, [])
@@ -146,6 +158,7 @@ export default function ParentDashboard() {
             {TITLES[section]}
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <CalendarTopbarButton />
             <NotificationBell onNav={s => setSection(s as ParentSection)} />
           </div>
         </header>
@@ -158,7 +171,7 @@ export default function ParentDashboard() {
           {section === 'attendance' && <SectionParentAttendance {...sProps} userId={user?.id} />}
           {section === 'payments'   && <SectionParentPayments {...sProps} />}
           {section === 'apee'       && <SectionParentAPEE {...sProps} />}
-          {section === 'notifications' && <NotificationCenter />}
+          {section === 'notifications' && <NotificationCenter onNav={s => setSection(s as ParentSection)} />}
           {section === 'timetable'  && <SectionParentTimetable {...sProps} userId={user?.id} />}
           {section === 'settings'   && <SectionParentSettings />}
           {section === 'library'    && <SectionParentLibrary userId={user?.id} />}
