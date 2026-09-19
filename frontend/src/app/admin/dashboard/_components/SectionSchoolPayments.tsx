@@ -92,10 +92,10 @@ export default function SectionSchoolPayments({ onToast }: Props) {
   return (
     <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto' }}>
       <div className="mb-[16px] md:mb-[20px]">
-        <h2 className="text-[22px] md:text-[28px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <h2 className="text-[15px] md:text-[17px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Wallet size={20} strokeWidth={2} /> {t('page.section_titles.school-payments')}
         </h2>
-        <div className="text-[13px] md:text-[17px]" style={{ color: 'var(--text3)', marginTop: 3 }}>{anneeScolaire || t('matricules.minesec_dashboard_title')}</div>
+        <div className="text-[11px] md:text-[12px]" style={{ color: 'var(--text3)', marginTop: 3 }}>{anneeScolaire || t('matricules.minesec_dashboard_title')}</div>
       </div>
 
       {/* Filtre année */}

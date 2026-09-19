@@ -167,7 +167,7 @@ export default function SectionAdminLV2Choice({ onToast }: Props) {
 
   return (
     <div className="px-4 py-5 md:px-8 md:py-6" style={{ height: '100%', overflowY: 'auto' }}>
-      <h2 className="text-[22px] md:text-[28px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+      <h2 className="text-[15px] md:text-[17px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
         <Globe size={22} /> {t('lv2_choice.title')}
       </h2>
 

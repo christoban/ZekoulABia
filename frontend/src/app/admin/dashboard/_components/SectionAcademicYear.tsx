@@ -413,8 +413,8 @@ export default function SectionAcademicYear({ onToast }: Props) {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 26 }}>
         <div>
-          <div className="text-[22px] md:text-[28px]" style={sTitle}>{t('academic_year.title')} — Transition & Rentrée</div>
-          <div className="text-[13px] md:text-[17px]" style={sSub}>{t('academic_year.subtitle')}</div>
+          <div className="text-[15px] md:text-[17px]" style={sTitle}>{t('academic_year.title')} — Transition & Rentrée</div>
+          <div className="text-[11px] md:text-[12px]" style={sSub}>{t('academic_year.subtitle')}</div>
         </div>
         <button className="hidden md:inline-block" style={btnPrim} onClick={openIntelligentCreate}>🚀 Proposer & Ouvrir l'Année N+1</button>
         <button

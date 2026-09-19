@@ -165,32 +165,32 @@ export default function SectionOrgPedagogyHub({ onNav, onToast }: Props) {
   ]
 
   return (
-    <div className="h-full overflow-y-auto p-4 md:p-6 space-y-6 max-w-7xl mx-auto pb-16 font-nunito">
+    <div className="h-full overflow-y-auto p-4 md:p-5 space-y-4 max-w-7xl mx-auto pb-12 font-nunito">
       {/* En-tête de supervision */}
       <div
-        className="rounded-2xl p-6 relative overflow-hidden backdrop-blur-md shadow-sm"
+        className="rounded-xl p-4 md:p-5 relative overflow-hidden backdrop-blur-md shadow-sm"
         style={{
           background: 'var(--surface)',
           border: '1.5px solid var(--border)',
         }}
       >
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mb-3"
+              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold mb-2"
               style={{
                 background: 'var(--amber-light)',
                 color: 'var(--amber)',
                 border: '1px solid var(--amber)',
               }}
             >
-              <Sparkles size={14} />
+              <Sparkles size={13} />
               <span>Espace de Supervision Directoriale</span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold font-spectral" style={{ color: 'var(--text)' }}>
+            <h1 className="text-[15px] md:text-[17px] font-bold font-spectral" style={{ color: 'var(--text)' }}>
               Organisation Pédagogique
             </h1>
-            <p className="text-sm mt-1 max-w-2xl leading-relaxed" style={{ color: 'var(--text2)' }}>
+            <p className="text-[11px] md:text-[12px] mt-0.5 max-w-2xl leading-relaxed" style={{ color: 'var(--text3)' }}>
               Vue d’ensemble de la structure scolaire. Validez les équilibres pédagogiques, suivez les activités récentes et intervenez sur la configuration de l’établissement.
             </p>
           </div>
@@ -200,30 +200,30 @@ export default function SectionOrgPedagogyHub({ onNav, onToast }: Props) {
       {/* BANNIÈRE CONTEXTUELLE SAISONNIÈRE (Catégorie D) - Déclencheur Temporel / État */}
       {isClosingWindowActive && (
         <div
-          className="rounded-2xl p-5 shadow-sm transition-all relative overflow-hidden"
+          className="rounded-xl p-4 md:p-4.5 shadow-sm transition-all relative overflow-hidden"
           style={{
             background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)',
             border: '1.5px solid var(--amber)',
           }}
         >
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-start gap-3.5">
-              <div className="p-3 rounded-xl flex-shrink-0" style={{ background: 'var(--amber-light)', color: 'var(--amber)' }}>
-                <CalendarClock size={24} />
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-lg flex-shrink-0" style={{ background: 'var(--amber-light)', color: 'var(--amber)' }}>
+                <CalendarClock size={20} />
               </div>
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[11px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border" style={{ background: 'var(--amber-light)', color: 'var(--amber)', borderColor: 'var(--amber)' }}>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border" style={{ background: 'var(--amber-light)', color: 'var(--amber)', borderColor: 'var(--amber)' }}>
                     Fenêtre Saisonnière (Catégorie D)
                   </span>
-                  <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
+                  <span className="text-[10.5px] font-bold text-blue-600 dark:text-blue-400">
                     Pattern Propose / Apply
                   </span>
                 </div>
-                <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>
+                <h3 className="text-sm md:text-base font-bold" style={{ color: 'var(--text)' }}>
                   Préparation & Clôture de l'Année Scolaire N+1
                 </h3>
-                <p className="text-xs mt-1 max-w-2xl leading-relaxed" style={{ color: 'var(--text2)' }}>
+                <p className="text-xs mt-0.5 max-w-2xl leading-relaxed" style={{ color: 'var(--text2)' }}>
                   Le système a généré une proposition de structure (classes, niveaux, périodes). Validez ou ajustez les paramètres avant ouverture de la nouvelle rentrée.
                 </p>
               </div>
@@ -231,11 +231,11 @@ export default function SectionOrgPedagogyHub({ onNav, onToast }: Props) {
             <div className="flex items-center gap-2 flex-shrink-0 self-end md:self-center">
               <button
                 onClick={() => setClotureModalOpen(true)}
-                className="px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer border-none"
+                className="px-3.5 py-2 rounded-lg font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer border-none"
                 style={{ background: 'var(--amber)', color: '#ffffff' }}
               >
                 <span>Accéder à la Clôture & Rentrée N+1</span>
-                <ArrowRight size={14} />
+                <ArrowRight size={13} />
               </button>
             </div>
           </div>
@@ -243,139 +243,139 @@ export default function SectionOrgPedagogyHub({ onNav, onToast }: Props) {
       )}
 
       {/* Cartes KPI de supervision */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div
-          className="rounded-xl p-5 shadow-sm transition-all"
+          className="rounded-xl p-4 shadow-sm transition-all"
           style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text3)' }}>
+            <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text3)' }}>
               Classes Actives
             </span>
-            <div className="p-2 rounded-lg" style={{ background: 'var(--green-light)', color: 'var(--green)' }}>
-              <School size={18} />
+            <div className="p-1.5 rounded-lg" style={{ background: 'var(--green-light)', color: 'var(--green)' }}>
+              <School size={16} />
             </div>
           </div>
-          <div className="text-2xl font-black mt-2" style={{ color: 'var(--text)' }}>
+          <div className="text-xl md:text-2xl font-extrabold mt-1.5" style={{ color: 'var(--text)' }}>
             {loading ? '...' : `${stats.classesCount} classe(s)`}
           </div>
-          <p className="text-xs mt-1 font-medium" style={{ color: 'var(--text2)' }}>
+          <p className="text-[11.5px] mt-0.5 font-medium" style={{ color: 'var(--text2)' }}>
             Structure pédagogique
           </p>
         </div>
 
         <div
-          className="rounded-xl p-5 shadow-sm transition-all"
+          className="rounded-xl p-4 shadow-sm transition-all"
           style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text3)' }}>
+            <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text3)' }}>
               Matières & Programmes
             </span>
-            <div className="p-2 rounded-lg" style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>
-              <BookOpen size={18} />
+            <div className="p-1.5 rounded-lg" style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>
+              <BookOpen size={16} />
             </div>
           </div>
-          <div className="text-2xl font-black mt-2" style={{ color: 'var(--text)' }}>
+          <div className="text-xl md:text-2xl font-extrabold mt-1.5" style={{ color: 'var(--text)' }}>
             Configuré
           </div>
-          <p className="text-xs mt-1 font-medium" style={{ color: 'var(--text2)' }}>
+          <p className="text-[11.5px] mt-0.5 font-medium" style={{ color: 'var(--text2)' }}>
             Coefficients & Volumes
           </p>
         </div>
 
         <div
-          className="rounded-xl p-5 shadow-sm transition-all"
+          className="rounded-xl p-4 shadow-sm transition-all"
           style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text3)' }}>
+            <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text3)' }}>
               Professeurs Principaux
             </span>
-            <div className="p-2 rounded-lg" style={{ background: 'var(--amber-light)', color: 'var(--amber)' }}>
-              <CheckCircle2 size={18} />
+            <div className="p-1.5 rounded-lg" style={{ background: 'var(--amber-light)', color: 'var(--amber)' }}>
+              <CheckCircle2 size={16} />
             </div>
           </div>
-          <div className="text-2xl font-black mt-2" style={{ color: 'var(--green)' }}>
+          <div className="text-xl md:text-2xl font-extrabold mt-1.5" style={{ color: 'var(--green)' }}>
             Suivi actif
           </div>
-          <p className="text-xs mt-1 font-medium" style={{ color: 'var(--text2)' }}>
+          <p className="text-[11.5px] mt-0.5 font-medium" style={{ color: 'var(--text2)' }}>
             Supervisé par le Censeur
           </p>
         </div>
 
         <div
-          className="rounded-xl p-5 shadow-sm transition-all"
+          className="rounded-xl p-4 shadow-sm transition-all"
           style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text3)' }}>
+            <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text3)' }}>
               État Général
             </span>
-            <div className="p-2 rounded-lg" style={{ background: 'rgba(2,132,199,0.12)', color: '#0284c7' }}>
-              <Activity size={18} />
+            <div className="p-1.5 rounded-lg" style={{ background: 'rgba(2,132,199,0.12)', color: '#0284c7' }}>
+              <Activity size={16} />
             </div>
           </div>
-          <div className="text-2xl font-black mt-2" style={{ color: 'var(--text)' }}>
+          <div className="text-xl md:text-2xl font-extrabold mt-1.5" style={{ color: 'var(--text)' }}>
             Opérationnel
           </div>
-          <p className="text-xs mt-1 font-medium" style={{ color: 'var(--text2)' }}>
+          <p className="text-[11.5px] mt-0.5 font-medium" style={{ color: 'var(--text2)' }}>
             Aucun blocage critique
           </p>
         </div>
       </div>
 
       {/* Grille des modules d'intervention */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold flex items-center gap-2" style={{ color: 'var(--text)' }}>
+          <h2 className="text-base font-bold flex items-center gap-2 font-spectral" style={{ color: 'var(--text)' }}>
             <span>Modules de Gestion & Intervention</span>
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {modules.map(mod => {
             const Icon = mod.icon
             return (
               <div
                 key={mod.id}
                 onClick={() => onNav(mod.id)}
-                className="group rounded-xl p-5 transition-all cursor-pointer flex flex-col justify-between hover:shadow-md"
+                className="group rounded-xl p-4 transition-all cursor-pointer flex flex-col justify-between hover:shadow-md"
                 style={{
                   background: 'var(--surface)',
                   border: '1.5px solid var(--border)',
                 }}
               >
                 <div>
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-2.5">
                     <div
-                      className="p-2.5 rounded-lg border"
+                      className="p-2 rounded-lg border"
                       style={{ background: mod.badgeBg, borderColor: 'var(--border)', color: mod.accentColor }}
                     >
-                      <Icon size={20} />
+                      <Icon size={18} />
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10.5px] font-bold px-2 py-0.5 rounded-full border"
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border"
                         style={{ background: mod.badgeBg, color: mod.statusColor, borderColor: 'var(--border)' }}>
                         {mod.statusBadge}
                       </span>
                       <ArrowRight
-                        size={16}
+                        size={15}
                         className="opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all"
                         style={{ color: 'var(--text2)' }}
                       />
                     </div>
                   </div>
-                  <h3 className="text-base font-bold transition-colors group-hover:opacity-80" style={{ color: 'var(--text)' }}>
+                  <h3 className="text-sm md:text-base font-bold transition-colors group-hover:opacity-80" style={{ color: 'var(--text)' }}>
                     {mod.title}
                   </h3>
-                  <p className="text-xs mt-1.5 leading-relaxed font-medium" style={{ color: 'var(--text2)' }}>
+                  <p className="text-xs mt-1 leading-relaxed font-medium" style={{ color: 'var(--text2)' }}>
                     {mod.desc}
                   </p>
                 </div>
 
                 <div
-                  className="mt-4 pt-3 border-t flex items-center justify-between text-xs font-bold"
+                  className="mt-3 pt-2.5 border-t flex items-center justify-between text-xs font-bold"
                   style={{ borderColor: 'var(--border)', color: mod.accentColor }}
                 >
                   <span>Accéder au module</span>
@@ -388,14 +388,14 @@ export default function SectionOrgPedagogyHub({ onNav, onToast }: Props) {
       </div>
 
       {/* Points d'attention & Activité récente */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Points d'attention */}
         <div
-          className="rounded-xl p-5 space-y-3 shadow-sm"
+          className="rounded-xl p-4 space-y-2.5 shadow-sm"
           style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}
         >
-          <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: 'var(--text)' }}>
-            <AlertTriangle size={16} style={{ color: 'var(--amber)' }} />
+          <h3 className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5" style={{ color: 'var(--text)' }}>
+            <AlertTriangle size={15} style={{ color: 'var(--amber)' }} />
             <span>Points d’attention</span>
           </h3>
           <div className="space-y-2.5 text-xs">
@@ -424,11 +424,11 @@ export default function SectionOrgPedagogyHub({ onNav, onToast }: Props) {
 
         {/* Activité récente */}
         <div
-          className="lg:col-span-2 rounded-xl p-5 space-y-3 shadow-sm"
+          className="lg:col-span-2 rounded-xl p-4 space-y-2.5 shadow-sm"
           style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}
         >
-          <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: 'var(--text)' }}>
-            <Activity size={16} style={{ color: 'var(--green)' }} />
+          <h3 className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5" style={{ color: 'var(--text)' }}>
+            <Activity size={15} style={{ color: 'var(--green)' }} />
             <span>Dernières activités d’organisation</span>
           </h3>
 

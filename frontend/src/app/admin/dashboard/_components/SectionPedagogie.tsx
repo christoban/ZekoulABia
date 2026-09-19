@@ -186,59 +186,59 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
 
   const tabBtn = (t: Tab, label: React.ReactNode) => (
     <button onClick={() => setTab(t)}
-      className="flex-1 md:flex-none text-[12px] md:text-[14px] px-[4px] md:px-[20px] py-[9px] md:py-[8px] rounded-[12px] md:rounded-[10px]"
-      style={{ fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer', border: 'none',
+      className="flex-1 md:flex-none text-xs md:text-sm px-3 md:px-4 py-2 md:py-1.5 rounded-lg"
+      style={{ fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', border: 'none',
         background: tab === t ? 'var(--sidebar)' : 'var(--bg2)', color: tab === t ? 'white' : 'var(--text2)', transition: 'all 0.15s' }}>
       {label}
     </button>
   )
 
   const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid var(--border)',
-    fontSize: 14, fontWeight: 600, fontFamily: 'inherit', color: 'var(--text)',
+    width: '100%', padding: '8px 12px', borderRadius: 8, border: '1.5px solid var(--border)',
+    fontSize: 13, fontWeight: 600, fontFamily: 'inherit', color: 'var(--text)',
     background: 'var(--surface)', outline: 'none', boxSizing: 'border-box',
   }
   const labelStyle: React.CSSProperties = {
-    fontSize: 12, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6, display: 'block',
+    fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: 3, display: 'block',
   }
 
   const niveauColor = (n: 'CRITIQUE' | 'MODERE') =>
     n === 'CRITIQUE' ? { bg: 'var(--red-light)', color: 'var(--red)' } : { bg: 'var(--amber-light)', color: 'var(--amber)' }
 
   return (
-    <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto' }}>
-      <div className="mb-[16px] md:mb-[24px]">
-        <div className="text-[22px] md:text-[24px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
+    <div className="h-full overflow-y-auto p-4 md:p-5 space-y-4 max-w-7xl mx-auto pb-12 font-nunito">
+      <div className="pb-1.5 border-b border-[var(--border)]">
+        <h1 className="text-[15px] md:text-[17px] font-bold font-spectral" style={{ color: 'var(--text)' }}>
           {t('pedagogie.title')}
-        </div>
-        <div className="text-[13px] md:text-[14px]" style={{ color: 'var(--text3)', fontWeight: 500, marginTop: 4 }}>
+        </h1>
+        <p className="text-[11px] md:text-[12px] font-medium mt-0.5" style={{ color: 'var(--text3)' }}>
           Programmes, cahiers de texte et suivi des progressions
-        </div>
+        </p>
       </div>
 
       <DelegationSupervisionBanner actorTitle="Animateur Pédagogique" domainLabel="Suivi Pédagogique & Avancement des Programmes" onNav={onNav} />
 
       {!isOnline && (
-        <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 12, padding: '12px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ display: 'flex', alignItems: 'center' }}><WifiOff size={18} strokeWidth={2} /></span>
-          <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--amber)' }}>Mode hors-ligne — les nouveaux programmes/chapitres seront synchronisés à la reconnexion</span>
+        <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ display: 'flex', alignItems: 'center' }}><WifiOff size={16} strokeWidth={2} /></span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--amber)' }}>Mode hors-ligne — les nouveaux programmes/chapitres seront synchronisés à la reconnexion</span>
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 28, flexWrap: 'wrap' }}>
-        {tabBtn('alertes', <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Circle size={10} fill="var(--red)" stroke="none" /> Alertes retard</span>)}
-        {tabBtn('progression', <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><TrendingUp size={15} strokeWidth={2} /> Progression</span>)}
-        {tabBtn('programmes', <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><BookOpen size={15} strokeWidth={2} /> Programmes</span>)}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {tabBtn('alertes', <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Circle size={8} fill="var(--red)" stroke="none" /> Alertes retard</span>)}
+        {tabBtn('progression', <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><TrendingUp size={14} strokeWidth={2} /> Progression</span>)}
+        {tabBtn('programmes', <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><BookOpen size={14} strokeWidth={2} /> Programmes</span>)}
       </div>
 
       {/* ─── Onglet Alertes ─── */}
       {tab === 'alertes' && (
         <div>
-          <div className="flex-col sm:flex-row gap-3 sm:gap-2" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-            <div className="text-[12.5px] md:text-[14px]" style={{ color: 'var(--text2)', fontWeight: 600 }}>
+          <div className="flex-col sm:flex-row gap-3 sm:gap-2" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+            <div className="text-xs font-medium" style={{ color: 'var(--text2)' }}>
               Classes/matières avec un retard significatif par rapport au calendrier prévu
             </div>
-            <button onClick={loadAlertes} className="w-full sm:w-auto flex-shrink-0" style={{ padding: '8px 16px', borderRadius: 10, background: 'var(--sidebar)', color: 'white', border: 'none', fontSize: 13, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer' }}>
+            <button onClick={loadAlertes} className="w-full sm:w-auto flex-shrink-0" style={{ padding: '7px 14px', borderRadius: 8, background: 'var(--sidebar)', color: 'white', border: 'none', fontSize: 12, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer' }}>
               Actualiser
             </button>
           </div>
@@ -246,10 +246,10 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
           {loading ? (
             <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>Calcul en cours...</div>
           ) : alertes.length === 0 ? (
-            <div style={{ padding: 60, textAlign: 'center', background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12, color: 'var(--green)' }}><CheckCircle2 size={40} strokeWidth={1.5} /></div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--green)', marginBottom: 4 }}>Aucun retard significatif détecté</div>
-              <div style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 500 }}>
+            <div className="px-5 py-8 text-center" style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8, color: 'var(--green)' }}><CheckCircle2 size={32} strokeWidth={1.5} /></div>
+              <div className="text-xs md:text-sm font-bold mb-1" style={{ color: 'var(--green)' }}>Aucun retard significatif détecté</div>
+              <div className="text-xs font-medium" style={{ color: 'var(--text3)' }}>
                 Toutes les classes sont dans les délais prévus, ou aucun programme n'est encore défini.
               </div>
             </div>
@@ -258,18 +258,18 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
               {alertes.map((a, i) => {
                 const nc = niveauColor(a.niveau)
                 return (
-                  <div key={i} className="rounded-[16px] md:rounded-[14px] gap-[12px] md:gap-[20px] p-[15px] md:px-[22px] md:py-[18px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none" style={{ background: 'var(--surface)', border: `1.5px solid ${a.niveau === 'CRITIQUE' ? 'var(--red-light)' : 'var(--amber-light)'}`, display: 'flex', alignItems: 'flex-start' }}>
-                    <div className="px-[12px] py-[8px] md:px-[14px] md:py-[10px]" style={{ flexShrink: 0, textAlign: 'center', background: nc.bg, borderRadius: 12 }}>
-                      <div className="text-[17px] md:text-[22px]" style={{ fontWeight: 900, color: nc.color }}>-{a.retardPct}%</div>
-                      <div className="text-[9px] md:text-[11px]" style={{ fontWeight: 800, color: nc.color, textTransform: 'uppercase' }}>{a.niveau}</div>
+                  <div key={i} className="rounded-xl p-4 md:px-5 md:py-4 border border-[var(--border)] bg-[var(--surface)] shadow-xs flex items-start gap-3.5 md:gap-5" style={{ borderLeft: `4px solid ${a.niveau === 'CRITIQUE' ? 'var(--red)' : 'var(--amber)'}` }}>
+                    <div className="px-3 py-2 md:px-3.5 md:py-2.5 flex-shrink-0 text-center rounded-xl" style={{ background: nc.bg }}>
+                      <div className="text-base md:text-xl font-black" style={{ color: nc.color }}>-{a.retardPct}%</div>
+                      <div className="text-[10px] md:text-xs font-bold uppercase" style={{ color: nc.color }}>{a.niveau}</div>
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div className="gap-[6px] md:gap-[8px] mb-[6px] md:mb-[8px]" style={{ display: 'flex', flexWrap: 'wrap' }}>
-                        <span className="text-[10.5px] md:text-[12px] px-[8px] py-[2px] md:px-[10px] md:py-[3px]" style={{ background: 'var(--blue-light)', color: 'var(--blue)', borderRadius: 20, fontWeight: 800 }}>{a.className}</span>
-                        <span className="text-[10.5px] md:text-[12px] px-[8px] py-[2px] md:px-[10px] md:py-[3px]" style={{ background: 'var(--amber-light)', color: 'var(--amber)', borderRadius: 20, fontWeight: 800 }}>{a.subjectName}</span>
+                      <div className="flex flex-wrap gap-2 mb-1.5">
+                        <span className="text-xs px-2.5 py-0.5 rounded-full font-bold" style={{ background: 'var(--blue-light)', color: 'var(--blue)' }}>{a.className}</span>
+                        <span className="text-xs px-2.5 py-0.5 rounded-full font-bold" style={{ background: 'var(--amber-light)', color: 'var(--amber)' }}>{a.subjectName}</span>
                       </div>
-                      <div className="text-[13px] md:text-[14px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>{a.programmeTitre}</div>
-                      <div className="gap-[10px] md:gap-[20px] text-[11.5px] md:text-[13px]" style={{ display: 'flex', flexWrap: 'wrap', color: 'var(--text2)', fontWeight: 600 }}>
+                      <div className="text-xs md:text-sm font-bold mb-1" style={{ color: 'var(--text)' }}>{a.programmeTitre}</div>
+                      <div className="flex flex-wrap gap-3 md:gap-5 text-xs font-semibold" style={{ color: 'var(--text2)' }}>
                         <span>Réalisé : {a.progressionPct}%</span>
                         <span>Attendu : {a.attenduPct}%</span>
                         <span>{a.chapitresRealises}/{a.chapitresTotal} chapitres</span>
@@ -285,7 +285,7 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
                         </div>
                       </div>
 
-                      {/* Actions RACI Admin : Signaler (par défaut) vs Intervenir directement */}
+                      {/* Actions RACI Admin */}
                       <div className="mt-3 flex items-center gap-2 flex-wrap">
                         <button
                           onClick={() => onToast(`Signalement d'alerte transmis à l'Animateur Pédagogique et à l'Enseignant (${a.className} — ${a.subjectName})`, 'success')}
@@ -314,7 +314,7 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
       {/* ─── Onglet Progression ─── */}
       {tab === 'progression' && (
         <div>
-          <div className="grid grid-cols-2 sm:flex" style={{ gap: 12, marginBottom: 24, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div className="grid grid-cols-2 sm:flex" style={{ gap: 12, marginBottom: 20, flexWrap: 'wrap', alignItems: 'flex-end' }}>
             <div className="col-span-1 sm:w-[200px]">
               <label style={labelStyle}>Classe</label>
               <select value={progClassId} onChange={e => setProgClassId(e.target.value)} className="w-full" style={inputStyle}>
@@ -331,7 +331,7 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
             </div>
             <button onClick={loadProgression} disabled={!progClassId || !progSubjectId}
               className="col-span-2 sm:col-span-1"
-              style={{ padding: '10px 20px', borderRadius: 10, background: !progClassId || !progSubjectId ? 'var(--text3)' : 'var(--sidebar)', color: 'white', border: 'none', fontSize: 14, fontWeight: 800, fontFamily: 'inherit', cursor: !progClassId || !progSubjectId ? 'not-allowed' : 'pointer' }}>
+              style={{ padding: '8px 16px', borderRadius: 8, background: !progClassId || !progSubjectId ? 'var(--text3)' : 'var(--sidebar)', color: 'white', border: 'none', fontSize: 12, fontWeight: 800, fontFamily: 'inherit', cursor: !progClassId || !progSubjectId ? 'not-allowed' : 'pointer' }}>
               Voir progression
             </button>
           </div>
@@ -341,36 +341,36 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
           {!loadingProg && progressionData && (
             <>
               {!progressionData.programme ? (
-                <div style={{ padding: 40, textAlign: 'center', background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12, color: 'var(--text3)' }}><Inbox size={36} strokeWidth={1.5} /></div>
-                  <div style={{ fontSize: 15, color: 'var(--text3)', fontWeight: 600 }}>Aucun programme défini pour cette classe/matière</div>
-                  <div style={{ fontSize: 13, color: 'var(--border2)', marginTop: 4 }}>Créez d'abord un programme dans l'onglet Programmes.</div>
+                <div className="px-5 py-8 text-center" style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8, color: 'var(--text3)' }}><Inbox size={32} strokeWidth={1.5} /></div>
+                  <div className="text-xs md:text-sm font-bold mb-1" style={{ color: 'var(--text3)' }}>Aucun programme défini pour cette classe/matière</div>
+                  <div className="text-xs font-medium" style={{ color: 'var(--text3)' }}>Créez d'abord un programme dans l'onglet Programmes.</div>
                 </div>
               ) : (
-                <div className="p-[16px] md:p-[28px]" style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)' }}>
-                  <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 18 }}>
+                <div className="p-4 md:p-5 rounded-xl border border-[var(--border)] bg-[var(--surface)]">
+                  <div className="text-sm md:text-base font-bold font-spectral mb-3" style={{ color: 'var(--text)' }}>
                     {progressionData.programme.titre}
                   </div>
 
                   {/* Métriques */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-[10px] md:gap-[12px] mb-[18px] md:mb-[24px]">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
                     {[
                       { label: 'Chapitres réalisés', value: `${progressionData.chapitresRealises}/${progressionData.chapitresTotal}`, color: 'var(--sidebar)' },
                       { label: 'Progression réelle', value: progressionData.progressionPct !== null ? `${progressionData.progressionPct}%` : '—', color: progressionData.progressionPct !== null && progressionData.progressionPct >= (progressionData.attenduPct ?? 0) ? 'var(--green)' : 'var(--red)' },
                       { label: 'Progression attendue', value: progressionData.attenduPct !== null ? `${progressionData.attenduPct}%` : '—', color: 'var(--text3)' },
                       { label: 'Retard', value: progressionData.retardPct !== null ? (progressionData.retardPct > 0 ? `-${progressionData.retardPct}%` : 'À jour') : '—', color: (progressionData.retardPct ?? 0) > 15 ? 'var(--red)' : (progressionData.retardPct ?? 0) > 0 ? 'var(--amber)' : 'var(--green)' },
                     ].map(m => (
-                      <div key={m.label} className="rounded-[12px] px-[12px] py-[12px] md:px-[18px] md:py-[14px]" style={{ background: 'var(--bg)', textAlign: 'center' }}>
-                        <div className="text-[18px] md:text-[22px]" style={{ fontWeight: 900, color: m.color }}>{m.value}</div>
-                        <div className="text-[10px] md:text-[12px]" style={{ fontWeight: 700, color: 'var(--text3)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.4px' }}>{m.label}</div>
+                      <div key={m.label} className="rounded-lg px-3 py-2.5 md:px-3.5 md:py-3 text-center bg-[var(--bg)]">
+                        <div className="text-base md:text-lg font-black" style={{ color: m.color }}>{m.value}</div>
+                        <div className="text-[10px] font-bold text-[var(--text3)] mt-0.5 uppercase tracking-wider">{m.label}</div>
                       </div>
                     ))}
                   </div>
 
                   {/* Barre double */}
-                  <div style={{ marginBottom: 24 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)', marginBottom: 6 }}>Progression du programme</div>
-                    <div style={{ background: 'var(--bg2)', borderRadius: 8, height: 20, overflow: 'hidden', position: 'relative' }}>
+                  <div style={{ marginBottom: 20 }}>
+                    <div className="text-xs font-bold mb-1 text-[var(--text3)] uppercase tracking-wider">Progression du programme</div>
+                    <div style={{ background: 'var(--bg2)', borderRadius: 8, height: 16, overflow: 'hidden', position: 'relative' }}>
                       {progressionData.attenduPct !== null && (
                         <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${progressionData.attenduPct}%`, background: 'var(--border)', zIndex: 1 }} />
                       )}
@@ -378,26 +378,26 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
                         <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${progressionData.progressionPct}%`, background: (progressionData.retardPct ?? 0) > 15 ? 'var(--red)' : 'var(--green)', zIndex: 2, borderRadius: 8, transition: 'width 0.5s ease' }} />
                       )}
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
                       <span>Vert = réalisé · Gris = attendu à date</span>
                       <span>{progressionData.heuresRealisees}h / {progressionData.totalHeuresPrevu}h</span>
                     </div>
                   </div>
 
                   {/* Liste des chapitres */}
-                  <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text2)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  <div className="text-[11px] font-bold text-[var(--text3)] mb-2 uppercase tracking-wider">
                     Chapitres
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {(progressionData.chapitres ?? []).map((c: Chapitre & { realise: boolean }) => (
-                      <div key={c.id} className="gap-[10px] md:gap-[14px] px-[12px] py-[9px] md:px-[16px] md:py-[10px]" style={{ display: 'flex', alignItems: 'center', background: c.realise ? 'var(--green-light)' : 'var(--bg)', borderRadius: 10, border: `1px solid ${c.realise ? 'var(--green-light)' : 'var(--bg2)'}` }}>
-                        <div className="w-[22px] h-[22px] md:w-6 md:h-6 text-[11px] md:text-[12px]" style={{ borderRadius: '50%', background: c.realise ? 'var(--green)' : 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.realise ? 'white' : 'var(--text3)', fontWeight: 900, flexShrink: 0 }}>
-                          {c.realise ? <Check size={13} strokeWidth={3} /> : c.ordre}
+                      <div key={c.id} className="gap-2.5 md:gap-3.5 px-3 py-2 md:px-3.5 md:py-2 flex items-center rounded-lg" style={{ background: c.realise ? 'var(--green-light)' : 'var(--bg)', border: `1px solid ${c.realise ? 'var(--green-light)' : 'var(--bg2)'}` }}>
+                        <div className="w-5 h-5 text-xs rounded-full flex items-center justify-center font-black flex-shrink-0" style={{ background: c.realise ? 'var(--green)' : 'var(--border)', color: c.realise ? 'white' : 'var(--text3)' }}>
+                          {c.realise ? <Check size={12} strokeWidth={3} /> : c.ordre}
                         </div>
-                        <span className="text-[12.5px] md:text-[14px]" style={{ flex: 1, fontWeight: c.realise ? 700 : 600, color: c.realise ? 'var(--green)' : 'var(--text2)' }}>{c.titre}</span>
-                        <span className="text-[11px] md:text-[12px]" style={{ color: 'var(--text3)', fontWeight: 600 }}>{c.volumeHeuresPrevu}h</span>
+                        <span className="text-xs md:text-sm flex-1 font-semibold" style={{ color: c.realise ? 'var(--green)' : 'var(--text2)' }}>{c.titre}</span>
+                        <span className="text-xs font-semibold" style={{ color: 'var(--text3)' }}>{c.volumeHeuresPrevu}h</span>
                         {c.sequenceCibleFin && (
-                          <span className="text-[10.5px] md:text-[11px]" style={{ background: 'var(--purple-light)', color: 'var(--purple)', padding: '2px 8px', borderRadius: 20, fontWeight: 800 }}>
+                          <span className="text-[10px] md:text-[11px] px-2 py-0.5 rounded-full font-bold" style={{ background: 'var(--purple-light)', color: 'var(--purple)' }}>
                             Seq {c.sequenceCibleFin}
                           </span>
                         )}
@@ -415,9 +415,9 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
       {tab === 'programmes' && (
         <div>
           {/* Formulaire création */}
-          <div className="p-[16px] md:p-[24px]" style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', marginBottom: 24 }}>
-            <div className="text-[14px] md:text-[16px]" style={{ fontWeight: 800, color: 'var(--text)', marginBottom: 16 }}>Nouveau programme</div>
-            <div className="grid grid-cols-2 sm:[grid-template-columns:2fr_1fr_1fr]" style={{ gap: 14, marginBottom: 14 }}>
+          <div className="p-4 md:p-5 mb-5 rounded-xl border border-[var(--border)] bg-[var(--surface)]">
+            <div className="text-xs md:text-sm font-bold text-[var(--text)] mb-2.5">Nouveau programme</div>
+            <div className="grid grid-cols-2 sm:[grid-template-columns:2fr_1fr_1fr] gap-3 mb-3">
               <div className="col-span-2 sm:col-span-1">
                 <label style={labelStyle}>Titre *</label>
                 <input value={formTitre} onChange={e => setFormTitre(e.target.value)} placeholder="Ex: Programme Maths 3ème 2025-2026" style={inputStyle} />
@@ -438,65 +438,63 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
               </div>
             </div>
             {!formClassId && (
-              <div style={{ marginBottom: 14 }}>
+              <div className="mb-3">
                 <label style={labelStyle}>Niveau (si non lié à une classe précise)</label>
                 <input value={formLevel} onChange={e => setFormLevel(e.target.value)} placeholder="Ex: 3ème, Terminale..." style={{ ...inputStyle, maxWidth: 300 }} />
               </div>
             )}
             <button onClick={handleCreateProgramme} disabled={saving || !formTitre.trim() || !formSubjectId}
-              className="w-full sm:w-auto"
-              style={{ padding: '10px 24px', borderRadius: 12, background: saving || !formTitre.trim() || !formSubjectId ? 'var(--text3)' : 'var(--sidebar)', color: 'white', border: 'none', fontSize: 14, fontWeight: 800, fontFamily: 'inherit', cursor: saving ? 'not-allowed' : 'pointer' }}>
+              className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs md:text-sm font-extrabold text-white border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ background: saving || !formTitre.trim() || !formSubjectId ? 'var(--text3)' : 'var(--sidebar)' }}>
               {saving ? 'Création...' : 'Créer le programme'}
             </button>
           </div>
 
           {/* Liste */}
           {loading ? (
-            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>Chargement...</div>
+            <div className="p-8 text-center text-xs md:text-sm text-[var(--text3)]">Chargement...</div>
           ) : programmes.length === 0 ? (
-            <div style={{ padding: 60, textAlign: 'center', background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12, color: 'var(--text3)' }}><Inbox size={36} strokeWidth={1.5} /></div>
-              <div style={{ fontSize: 15, color: 'var(--text3)', fontWeight: 600 }}>Aucun programme défini</div>
-              <div style={{ fontSize: 13, color: 'var(--border2)', marginTop: 4 }}>Créez un programme ci-dessus, puis ajoutez ses chapitres.</div>
+            <div className="px-5 py-8 text-center bg-[var(--surface)] rounded-xl border border-[var(--border)]">
+              <div className="flex justify-center mb-2 text-[var(--text3)]"><Inbox size={32} strokeWidth={1.5} /></div>
+              <div className="text-sm font-semibold text-[var(--text3)]">Aucun programme défini</div>
+              <div className="text-xs text-[var(--border2)] mt-1">Créez un programme ci-dessus, puis ajoutez ses chapitres.</div>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="flex flex-col gap-3">
               {programmes.map(p => (
-                <div key={p.id} className="rounded-[16px] md:rounded-[14px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', overflow: 'hidden' }}>
+                <div key={p.id} className="rounded-xl shadow-xs md:shadow-none bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
                   {/* Header prog */}
-                  <div className="p-[14px] md:px-[20px] md:py-[16px]" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', cursor: 'pointer' }}
+                  <div className="p-3 md:px-4 md:py-3.5 flex items-center gap-3 flex-wrap cursor-pointer"
                     onClick={() => setExpandedProg(expandedProg === p.id ? null : p.id)}>
-                    <span className="text-[15px] md:text-[18px]">{expandedProg === p.id ? '▼' : '▶'}</span>
-                    <div style={{ flex: 1, minWidth: 160 }}>
-                      <div className="text-[14px] md:text-[15px]" style={{ fontWeight: 800, color: 'var(--text)' }}>{p.titre}</div>
-                      <div className="gap-[6px] md:gap-[8px]" style={{ display: 'flex', flexWrap: 'wrap', marginTop: 4 }}>
-                        <span className="text-[10.5px] md:text-[12px]" style={{ background: 'var(--amber-light)', color: 'var(--amber)', padding: '2px 8px', borderRadius: 20, fontWeight: 800 }}>{p.subject.name}</span>
-                        {p.class && <span className="text-[10.5px] md:text-[12px]" style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '2px 8px', borderRadius: 20, fontWeight: 800 }}>{p.class.name}</span>}
-                        {p.level && !p.class && <span className="text-[10.5px] md:text-[12px]" style={{ background: 'var(--bg2)', color: 'var(--text3)', padding: '2px 8px', borderRadius: 20, fontWeight: 800 }}>{p.level}</span>}
-                        <span className="text-[10.5px] md:text-[12px]" style={{ background: 'var(--bg2)', color: 'var(--text3)', padding: '2px 8px', borderRadius: 20, fontWeight: 700 }}>{p.chapitres.length} chapitre{p.chapitres.length !== 1 ? 's' : ''}</span>
+                    <span className="text-xs md:text-sm text-[var(--text2)]">{expandedProg === p.id ? '▼' : '▶'}</span>
+                    <div className="flex-1 min-w-[160px]">
+                      <div className="text-xs md:text-sm font-bold text-[var(--text)]">{p.titre}</div>
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                        <span className="text-[11px] md:text-xs px-2 py-0.5 rounded-full font-extrabold" style={{ background: 'var(--amber-light)', color: 'var(--amber)' }}>{p.subject.name}</span>
+                        {p.class && <span className="text-[11px] md:text-xs px-2 py-0.5 rounded-full font-extrabold" style={{ background: 'var(--blue-light)', color: 'var(--blue)' }}>{p.class.name}</span>}
+                        {p.level && !p.class && <span className="text-[11px] md:text-xs px-2 py-0.5 rounded-full font-extrabold" style={{ background: 'var(--bg2)', color: 'var(--text3)' }}>{p.level}</span>}
+                        <span className="text-[11px] md:text-xs px-2 py-0.5 rounded-full font-bold" style={{ background: 'var(--bg2)', color: 'var(--text3)' }}>{p.chapitres.length} chapitre{p.chapitres.length !== 1 ? 's' : ''}</span>
                       </div>
                     </div>
                     <button onClick={e => { e.stopPropagation(); handleDeleteProgramme(p.id) }}
-                      className="text-[11px] md:text-[12px] px-[10px] py-[5px] md:px-[12px] md:py-[6px]"
-                      style={{ borderRadius: 8, background: 'var(--red-light)', color: 'var(--red)', border: 'none', fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer' }}>
+                      className="text-xs px-2.5 py-1 rounded-md font-bold bg-[var(--red-light)] text-[var(--red)] border-none cursor-pointer">
                       Supprimer
                     </button>
                   </div>
 
                   {expandedProg === p.id && (
-                    <div className="p-[12px] md:px-[20px] md:py-[16px]" style={{ borderTop: '1px solid var(--border)' }}>
+                    <div className="p-3 md:px-4 md:py-3.5 border-t border-[var(--border)]">
                       {/* Chapitres */}
                       {p.chapitres.length > 0 && (
-                        <div style={{ marginBottom: 16 }}>
+                        <div className="mb-3 space-y-1.5">
                           {p.chapitres.map(c => (
-                            <div key={c.id} className="gap-[8px] md:gap-[12px] px-[10px] py-[7px] md:px-[12px] md:py-[8px]" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', background: 'var(--bg)', borderRadius: 8, marginBottom: 6 }}>
-                              <span className="w-5 h-5 md:w-6 md:h-6 text-[10.5px] md:text-[12px]" style={{ borderRadius: '50%', background: 'var(--sidebar)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, flexShrink: 0 }}>{c.ordre}</span>
-                              <span className="text-[12.5px] md:text-[14px]" style={{ flex: 1, minWidth: 120, fontWeight: 700, color: 'var(--text)' }}>{c.titre}</span>
-                              <span className="text-[10.5px] md:text-[12px]" style={{ color: 'var(--text3)', fontWeight: 600 }}>{c.volumeHeuresPrevu}h</span>
-                              {c.sequenceCibleFin && <span className="text-[10px] md:text-[11px]" style={{ background: 'var(--purple-light)', color: 'var(--purple)', padding: '2px 8px', borderRadius: 20, fontWeight: 800 }}>Seq {c.sequenceCibleFin}</span>}
+                            <div key={c.id} className="gap-2 md:gap-3 px-2.5 py-1.5 md:px-3 md:py-2 flex items-center flex-wrap bg-[var(--bg)] rounded-lg">
+                              <span className="w-5 h-5 md:w-5.5 md:h-5.5 text-xs rounded-full flex items-center justify-center font-extrabold flex-shrink-0 text-white" style={{ background: 'var(--sidebar)' }}>{c.ordre}</span>
+                              <span className="text-xs md:text-sm font-semibold flex-1 min-w-[120px] text-[var(--text)]">{c.titre}</span>
+                              <span className="text-xs font-semibold text-[var(--text3)]">{c.volumeHeuresPrevu}h</span>
+                              {c.sequenceCibleFin && <span className="text-[11px] px-2 py-0.5 rounded-full font-bold" style={{ background: 'var(--purple-light)', color: 'var(--purple)' }}>Seq {c.sequenceCibleFin}</span>}
                               <button onClick={() => handleDeleteChapitre(c.id)}
-                                className="text-[11px] md:text-[12px]"
-                                style={{ padding: '3px 8px', borderRadius: 6, background: 'var(--red-light)', color: 'var(--red)', border: 'none', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+                                className="text-xs px-2 py-0.5 rounded-md font-extrabold bg-[var(--red-light)] text-[var(--red)] border-none cursor-pointer">
                                 ×
                               </button>
                             </div>
@@ -506,8 +504,8 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
 
                       {/* Formulaire ajout chapitre */}
                       {addingChapFor === p.id ? (
-                        <div style={{ background: 'var(--bg)', borderRadius: 10, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                          <div className="grid grid-cols-2 sm:[grid-template-columns:2fr_1fr_1fr]" style={{ gap: 10 }}>
+                        <div className="bg-[var(--bg)] rounded-lg p-3 md:p-3.5 flex flex-col gap-2.5">
+                          <div className="grid grid-cols-2 sm:[grid-template-columns:2fr_1fr_1fr] gap-2.5">
                             <div className="col-span-2 sm:col-span-1">
                               <label style={labelStyle}>Titre *</label>
                               <input value={chapTitre} onChange={e => setChapTitre(e.target.value)} placeholder="Ex: Fonctions numériques" style={inputStyle} />
@@ -524,22 +522,20 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
                               </select>
                             </div>
                           </div>
-                          <div className="flex-col sm:flex-row" style={{ display: 'flex', gap: 10 }}>
+                          <div className="flex flex-col sm:flex-row gap-2.5">
                             <button onClick={() => handleAddChapitre(p.id)}
-                              className="w-full sm:w-auto"
-                              style={{ padding: '8px 18px', borderRadius: 10, background: 'var(--sidebar)', color: 'white', border: 'none', fontSize: 13, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer' }}>
+                              className="w-full sm:w-auto px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-[var(--sidebar)] border-none cursor-pointer">
                               Ajouter
                             </button>
                             <button onClick={() => { setAddingChapFor(null); setChapTitre(''); setChapHeures(2); setChapSeq('') }}
-                              className="w-full sm:w-auto"
-                              style={{ padding: '8px 18px', borderRadius: 10, background: 'var(--bg2)', color: 'var(--text2)', border: 'none', fontSize: 13, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer' }}>
+                              className="w-full sm:w-auto px-3.5 py-1.5 rounded-lg text-xs font-bold text-[var(--text2)] bg-[var(--bg2)] border-none cursor-pointer">
                               Annuler
                             </button>
                           </div>
                         </div>
                       ) : (
                         <button onClick={() => setAddingChapFor(p.id)}
-                          style={{ padding: '8px 16px', borderRadius: 10, background: 'var(--bg2)', color: 'var(--sidebar)', border: '1.5px dashed var(--border2)', fontSize: 13, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer' }}>
+                          className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-[var(--sidebar)] bg-[var(--bg2)] border border-dashed border-[var(--border2)] cursor-pointer">
                           + Ajouter un chapitre
                         </button>
                       )}

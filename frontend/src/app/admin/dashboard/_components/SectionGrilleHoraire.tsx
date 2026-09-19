@@ -155,10 +155,10 @@ export default function SectionGrilleHoraire({ onToast }: { onToast: (msg: strin
   return (
     <div className="px-4 py-5 md:px-10 md:py-8" style={{ ...sScroll, padding: undefined }}>
       <div style={{ marginBottom: 28 }}>
-        <div className="text-[21px] md:text-[26px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
+        <div className="text-[15px] md:text-[17px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
           {t('grille_horaire.title')}
         </div>
-        <div style={{ fontSize: 15, color: 'var(--text3)' }}>
+        <div className="text-[11px] md:text-[12px]" style={{ color: 'var(--text3)' }}>
           {t('grille_horaire.subtitle')}
         </div>
       </div>

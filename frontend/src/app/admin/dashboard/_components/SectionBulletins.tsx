@@ -191,7 +191,7 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
   ] : []
 
   return (
-    <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto' }}>
+    <div className="px-4 py-4 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
       {/* Célébration ponctuelle après génération réussie — teinte fixe, texte clair fixe */}
@@ -199,135 +199,135 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
         <div style={{ position: 'fixed', inset: 0, zIndex: 3000, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'edu-celebIn 0.3s ease both' }}>
           <style>{`@keyframes edu-celebIn { from { opacity: 0; } to { opacity: 1; } }`}</style>
           <AnimatedBackground variant="celebration" style={{ zIndex: 0 }} />
-          <div className="px-[24px] py-[24px] md:px-[32px] md:py-[32px] max-w-[92vw] md:max-w-[460px]" style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14, color: 'white' }}>
-              <PartyPopper size={52} className="md:hidden" /><PartyPopper size={74} className="hidden md:block" />
+          <div className="px-[20px] py-[20px] md:px-[28px] md:py-[28px] max-w-[92vw] md:max-w-[440px]" style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12, color: 'white' }}>
+              <PartyPopper size={44} className="md:hidden" /><PartyPopper size={60} className="hidden md:block" />
             </div>
-            <div className="text-[22px] md:text-[30px] mb-[8px] md:mb-[10px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'white' }}>
+            <div className="text-[19px] md:text-[24px] mb-[6px] md:mb-[8px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'white' }}>
               {t('bulletins.celebrate.title')}
             </div>
-            <div className="text-[14px] md:text-[17px] mb-[22px] md:mb-[30px]" style={{ color: 'rgba(247,243,238,0.75)', lineHeight: 1.6 }}>
+            <div className="text-[13px] md:text-[14.5px] mb-[18px] md:mb-[24px]" style={{ color: 'rgba(247,243,238,0.75)', lineHeight: 1.5 }}>
               {t('bulletins.celebrate.subtitle')}
             </div>
             <button onClick={() => setCelebrate(false)}
-              className="w-full md:w-auto text-[14px] md:text-[16px] px-[24px] md:px-[34px] py-[11px] md:py-[13px]"
-              style={{ background: 'var(--green)', color: 'white', fontWeight: 800, borderRadius: 11, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+              className="w-full md:w-auto text-[13px] md:text-[14px] px-[20px] md:px-[28px] py-[9px] md:py-[10px]"
+              style={{ background: 'var(--green)', color: 'white', fontWeight: 800, borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
               {t('bulletins.celebrate.cta')}
             </button>
           </div>
         </div>
       )}
 
-      <div className="mb-[14px] md:mb-[26px]">
-        <div className="text-[22px] md:text-[28px]" style={sTitle}>{t('bulletins.title')}</div>
-        <div className="text-[13px] md:text-[17px]" style={sSub}>Génération et distribution</div>
+      <div className="mb-[12px] md:mb-[16px]">
+        <div className="text-[15px] md:text-[17px]" style={sTitle}>{t('bulletins.title')}</div>
+        <div className="text-[11px] md:text-[12px]" style={sSub}>Génération et distribution</div>
       </div>
 
       <DelegationSupervisionBanner actorTitle="Saisie : Titulaire de classe | Validation : Censeur & Direction" domainLabel="Bulletins & Évaluations" onNav={onNav} />
 
       {/* RACI 2-Step Validation Banner */}
-      <div className="mb-4 p-3.5 rounded-xl border border-purple-500/20 bg-purple-500/5 text-xs text-[var(--text)] flex items-center justify-between gap-3 shadow-xs">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-purple-500/15 text-purple-600 flex-shrink-0">
-            <FileText size={16} />
+      <div className="mb-3.5 p-2.5 rounded-lg border border-purple-500/20 bg-purple-500/5 text-xs text-[var(--text)] flex items-center justify-between gap-2.5 shadow-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="p-1.5 rounded-md bg-purple-500/15 text-purple-600 flex-shrink-0">
+            <FileText size={14} />
           </div>
           <div>
-            <p className="font-bold text-xs">Circuit de Validation & Signature des Bulletins</p>
-            <p className="text-[11.5px] text-[var(--text2)]">1. Les appréciations générales sont renseignées par les Titulaires. 2. Le Censeur et le Directeur vérifient la conformité, verrouillent et signent la publication officielle.</p>
+            <p className="font-bold text-[11.5px]">Circuit de Validation & Signature des Bulletins</p>
+            <p className="text-[10.5px] text-[var(--text2)]">1. Les appréciations générales sont renseignées par les Titulaires. 2. Le Censeur et le Directeur vérifient la conformité, verrouillent et signent la publication officielle.</p>
           </div>
         </div>
       </div>
 
       {/* Sélecteur de classe */}
-      <div className="rounded-[12px] md:rounded-[16px] px-[12px] py-[10px] md:px-[20px] md:py-[14px] mb-[14px] md:mb-[18px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div className="rounded-[10px] md:rounded-[12px] px-[10px] py-[8px] md:px-[14px] md:py-[10px] mb-[12px] md:mb-[14px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
         <select value={classId} onChange={e => setClassId(e.target.value)} className={selectStCls} style={selectSt} disabled={loadingClasses}>
           <option value="">{loadingClasses ? 'Chargement…' : 'Sélectionner une classe'}</option>
           {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <button className="text-[12.5px] md:text-[16px] px-[14px] py-[8px] md:px-[20px] md:py-[10px] rounded-[9px] md:rounded-[11px]" style={{ ...btnPrim, display: 'inline-flex', alignItems: 'center', gap: 7 }} onClick={loadClass} disabled={loadingClasses || loadingCheck || !classId}>
-          {loadingCheck ? <><Loader2 size={15} className="animate-spin" /> Chargement…</> : 'Charger'}
+        <button className="text-[12px] md:text-[12.5px] px-[12px] py-[6px] md:px-[13px] md:py-[6px] rounded-[7px]" style={{ ...btnPrim, display: 'inline-flex', alignItems: 'center', gap: 5 }} onClick={loadClass} disabled={loadingClasses || loadingCheck || !classId}>
+          {loadingCheck ? <><Loader2 size={13} className="animate-spin" /> Chargement…</> : 'Charger'}
         </button>
       </div>
 
       {loadingCheck && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
-          <div style={{ width: 32, height: 32, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 36 }}>
+          <div style={{ width: 24, height: 24, border: '2.5px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
         </div>
       )}
 
       {!loadingCheck && check && (
-        <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 18 }}>
+        <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 12 }}>
 
           {/* Pré-vérification */}
-          <div className="rounded-[16px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)', overflow: 'hidden' }}>
-            <div className="px-[16px] pt-[14px] pb-2 md:px-[22px] md:py-4 md:border-b md:border-[var(--border)]">
-              <span className="text-[14px] md:text-[17px] font-extrabold" style={{ color: 'var(--text)', display: 'inline-flex', alignItems: 'center', gap: 8 }}><Search size={16} /> Pré-vérification — {className}</span>
+          <div className="rounded-[12px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)', overflow: 'hidden' }}>
+            <div className="px-[12px] pt-[10px] pb-2 md:px-[16px] md:py-[10px] md:border-b md:border-[var(--border)]">
+              <span className="text-[13px] md:text-[14px] font-extrabold" style={{ color: 'var(--text)', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Search size={14} /> Pré-vérification — {className}</span>
             </div>
-            <div className="p-[16px] md:p-[20px] gap-[10px] md:gap-[12px]" style={{ display: 'flex', flexDirection: 'column' }}>
+            <div className="p-[12px] md:p-[14px] gap-[8px] md:gap-[10px]" style={{ display: 'flex', flexDirection: 'column' }}>
               {checks.map((c, i) => (
-                <div key={i} className="gap-[10px] md:gap-[12px] p-[12px] md:px-[16px] md:py-[13px] rounded-[10px] md:rounded-[11px]" style={{ display: 'flex', alignItems: 'flex-start', background: c.warn ? 'var(--amber-light)' : 'var(--green-light)' }}>
-                  {c.warn ? <AlertTriangle size={20} color="var(--amber)" /> : <CheckCircle2 size={20} color="var(--green)" />}
+                <div key={i} className="gap-[8px] md:gap-[10px] p-[9px] md:px-[12px] md:py-[10px] rounded-[8px]" style={{ display: 'flex', alignItems: 'flex-start', background: c.warn ? 'var(--amber-light)' : 'var(--green-light)' }}>
+                  {c.warn ? <AlertTriangle size={16} color="var(--amber)" /> : <CheckCircle2 size={16} color="var(--green)" />}
                   <div>
-                    <div className="text-[13px] md:text-[16px]" style={{ fontWeight: 800, color: c.warn ? 'var(--amber)' : 'var(--green)' }}>{c.title}</div>
-                    <div className="text-[11.5px] md:text-[14px]" style={{ color: c.warn ? 'var(--amber)' : 'var(--green)', marginTop: 3, lineHeight: 1.5 }}>{c.sub}</div>
+                    <div className="text-[12px] md:text-[13px]" style={{ fontWeight: 800, color: c.warn ? 'var(--amber)' : 'var(--green)' }}>{c.title}</div>
+                    <div className="text-[10.5px] md:text-[11.5px]" style={{ color: c.warn ? 'var(--amber)' : 'var(--green)', marginTop: 2, lineHeight: 1.4 }}>{c.sub}</div>
                   </div>
                 </div>
               ))}
               <button
                 data-help-id="bulletins-generate-btn"
-                className="w-full md:w-auto justify-center text-[13.5px] md:text-[16px] py-[12px] md:py-[10px] px-[16px] md:px-[20px] rounded-[12px] md:rounded-[11px]"
-                style={{ ...btnPrim, fontWeight: 800, marginTop: 6, opacity: check.canGenerateReportCard ? 1 : 0.45, cursor: check.canGenerateReportCard ? 'pointer' : 'not-allowed', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+                className="w-full md:w-auto justify-center text-[12px] md:text-[12.5px] py-[8px] md:py-[7px] px-[14px] md:px-[16px] rounded-[7px]"
+                style={{ ...btnPrim, fontWeight: 700, marginTop: 4, opacity: check.canGenerateReportCard ? 1 : 0.45, cursor: check.canGenerateReportCard ? 'pointer' : 'not-allowed', display: 'inline-flex', alignItems: 'center', gap: 6 }}
                 onClick={handleGenerate}
                 disabled={!check.canGenerateReportCard || generating}>
-                {generating ? <><Loader2 size={16} className="animate-spin" /> Génération en cours…</> : <><FileText size={16} /> Générer les bulletins →</>}
+                {generating ? <><Loader2 size={13} className="animate-spin" /> Génération en cours…</> : <><FileText size={13} /> Générer les bulletins →</>}
               </button>
             </div>
           </div>
 
           {/* Bulletins générés */}
-          <div className="rounded-[16px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)', overflow: 'hidden' }}>
-            <div className="px-[16px] pt-[14px] pb-2 md:px-[22px] md:py-4 md:border-b md:border-[var(--border)]" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-              <span className="text-[14px] md:text-[17px] font-extrabold" style={{ color: 'var(--text)', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <BarChart3 size={16} /> Bulletins générés ({reportCards.length})
+          <div className="rounded-[12px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)', overflow: 'hidden' }}>
+            <div className="px-[12px] pt-[10px] pb-2 md:px-[16px] md:py-[10px] md:border-b md:border-[var(--border)]" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+              <span className="text-[13px] md:text-[14px] font-extrabold" style={{ color: 'var(--text)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <BarChart3 size={14} /> Bulletins générés ({reportCards.length})
               </span>
               {reportCards.length > 0 && (
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="text-[11px] md:text-[15px] px-[10px] py-[6px] md:px-[14px] md:py-[7px] rounded-[8px] md:rounded-[10px] border-0 md:border md:border-[1.5px] md:border-[var(--border2)] bg-[var(--bg2)] md:bg-[var(--surface)]" style={{ fontWeight: 800, color: 'var(--text2)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={handleExportZip} disabled={exporting}>
-                    {exporting ? <Loader2 size={14} className="animate-spin" /> : <Package size={14} />} ZIP
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button className="text-[11px] md:text-[12px] px-[9px] py-[4.5px] md:px-[11px] md:py-[5px] rounded-[7px] border-0 md:border md:border-[1.5px] md:border-[var(--border2)] bg-[var(--bg2)] md:bg-[var(--surface)]" style={{ fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }} onClick={handleExportZip} disabled={exporting}>
+                    {exporting ? <Loader2 size={12} className="animate-spin" /> : <Package size={12} />} ZIP
                   </button>
-                  <button className="text-[11px] md:text-[15px] px-[10px] py-[6px] md:px-[14px] md:py-[7px] rounded-[8px] md:rounded-[10px] border-0 md:border md:border-[1.5px] md:border-[var(--border2)] bg-[var(--bg2)] md:bg-[var(--surface)]" style={{ fontWeight: 800, color: 'var(--text2)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={handleSendParents} disabled={sending}>
-                    {sending ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} Envoyer
+                  <button className="text-[11px] md:text-[12px] px-[9px] py-[4.5px] md:px-[11px] md:py-[5px] rounded-[7px] border-0 md:border md:border-[1.5px] md:border-[var(--border2)] bg-[var(--bg2)] md:bg-[var(--surface)]" style={{ fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }} onClick={handleSendParents} disabled={sending}>
+                    {sending ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />} Envoyer
                   </button>
                 </div>
               )}
             </div>
 
             {reportCards.length === 0 ? (
-              <div className="text-[13.5px] md:text-[16px] px-[16px] py-[32px] md:px-[20px] md:py-[40px]" style={{ textAlign: 'center', color: 'var(--text3)' }}>
+              <div className="text-[12px] md:text-[13px] px-[14px] py-[24px] md:px-[16px] md:py-[28px]" style={{ textAlign: 'center', color: 'var(--text3)' }}>
                 Aucun bulletin généré pour cette classe
               </div>
             ) : (
               <>
               {/* ── Cartes empilées — mobile ── */}
-              <div className="md:hidden flex flex-col" style={{ gap: 10 }}>
+              <div className="md:hidden flex flex-col" style={{ gap: 7 }}>
                 {reportCards.slice(0, 15).map((b) => (
-                  <div key={b.id} className="rounded-[14px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                  <div key={b.id} className="rounded-[10px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: 9, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                     <div>
-                      <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 15 }}>
+                      <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 13 }}>
                         {b.student ? `${b.student.firstName} ${b.student.lastName}` : 'Élève'}
                       </div>
-                      <div style={{ fontSize: 12.5, color: 'var(--text3)', marginTop: 2 }}>
+                      <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1.5 }}>
                         {b.generalAverage != null ? `${b.generalAverage.toFixed(2)}/20` : '—'} · {b.rank != null ? `${b.rank}e` : '—'}
                       </div>
                     </div>
-                    <button className="text-[11.5px] px-[12px] py-[7px] rounded-[8px] border-0" style={{ background: 'var(--bg2)', color: 'var(--text2)', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5, flexShrink: 0 }}
+                    <button className="text-[10.5px] px-[9px] py-[4.5px] rounded-[6px] border-0" style={{ background: 'var(--bg2)', color: 'var(--text2)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}
                       onClick={() => window.open(`/api/v2/report-cards/${b.id}/pdf`, '_blank')}>
-                      <Eye size={14} /> PDF
+                      <Eye size={12} /> PDF
                     </button>
                   </div>
                 ))}
                 {reportCards.length > 15 && (
-                  <div style={{ textAlign: 'center', color: 'var(--text3)', fontStyle: 'italic', fontSize: 13, padding: '6px 0' }}>
+                  <div style={{ textAlign: 'center', color: 'var(--text3)', fontStyle: 'italic', fontSize: 11.5, padding: '4px 0' }}>
                     + {reportCards.length - 15} autres bulletins
                   </div>
                 )}
@@ -335,7 +335,7 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
 
               {/* ── Tableau — desktop ── */}
               <div className="hidden md:block" style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 500 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 440 }}>
                   <thead>
                     <tr>{['Élève', 'Moy. gén.', 'Rang', 'PDF'].map(h => (
                       <th key={h} style={thSt}>{h}</th>
@@ -352,7 +352,7 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
                           </strong>
                         </td>
                         <td style={tdSt}>
-                          <strong style={{ color: (b.generalAverage ?? 0) < 10 ? 'var(--red)' : 'var(--green)', fontSize: 18 }}>
+                          <strong style={{ color: (b.generalAverage ?? 0) < 10 ? 'var(--red)' : 'var(--green)', fontSize: 14.5 }}>
                             {b.generalAverage != null ? b.generalAverage.toFixed(2) : '—'}
                           </strong>
                         </td>
@@ -360,7 +360,7 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
                         <td style={tdSt}>
                           <button style={{ ...btnSec, display: 'inline-flex', alignItems: 'center', gap: 5 }}
                             onClick={() => window.open(`/api/v2/report-cards/${b.id}/pdf`, '_blank')}>
-                            <Eye size={14} /> PDF
+                            <Eye size={13} /> PDF
                           </button>
                         </td>
                       </tr>
@@ -382,14 +382,14 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
       )}
 
       {!loadingCheck && !check && (
-        <div className="px-[24px] py-[44px] md:px-[32px] md:py-[70px]" style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', textAlign: 'center' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
-            <FileText size={40} className="md:hidden" /><FileText size={52} className="hidden md:block" />
+        <div className="px-[20px] py-[32px] md:px-[28px] md:py-[44px]" style={{ background: 'var(--surface)', borderRadius: 12, border: '1.5px solid var(--border)', textAlign: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+            <FileText size={32} className="md:hidden" /><FileText size={40} className="hidden md:block" />
           </div>
-          <div className="text-[16px] md:text-[20px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
+          <div className="text-[14px] md:text-[16px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
             Sélectionnez une classe
           </div>
-          <div className="text-[13.5px] md:text-[16px]" style={{ color: 'var(--text3)' }}>
+          <div className="text-[12px] md:text-[13px]" style={{ color: 'var(--text3)' }}>
             Choisissez une classe et cliquez sur « Charger » pour voir les bulletins.
           </div>
         </div>
@@ -399,10 +399,10 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
 }
 
 const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }
-const sSub: React.CSSProperties = { color: 'var(--text3)', marginTop: 3 }
-const btnPrim: React.CSSProperties = { fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
-const btnSec: React.CSSProperties = { padding: '7px 14px', borderRadius: 10, fontSize: 15, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
-const selectStCls = 'rounded-[10px] px-[10px] py-[7px] md:px-[12px] md:py-[8px] text-[13px] md:text-[16px] font-semibold md:font-bold border-0 md:border md:border-[1.5px] md:border-[var(--border2)] flex-1 md:flex-none'
+const sSub: React.CSSProperties = { color: 'var(--text3)', marginTop: 2 }
+const btnPrim: React.CSSProperties = { fontWeight: 700, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+const btnSec: React.CSSProperties = { padding: '4.5px 10px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
+const selectStCls = 'rounded-[7px] px-[10px] py-[6px] text-[12px] md:text-[13px] font-semibold md:font-bold border-0 md:border md:border-[1.5px] md:border-[var(--border2)] flex-1 md:flex-none'
 const selectSt: React.CSSProperties = { background: 'var(--surface)', color: 'var(--text2)', cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }
-const thSt: React.CSSProperties = { padding: '11px 16px', textAlign: 'left', fontSize: 13, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.7px' }
-const tdSt: React.CSSProperties = { padding: '14px 16px', fontSize: 17, color: 'var(--text2)', borderBottom: '1px solid var(--border)', verticalAlign: 'middle' }
+const thSt: React.CSSProperties = { padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px' }
+const tdSt: React.CSSProperties = { padding: '8.5px 12px', fontSize: 12.5, color: 'var(--text2)', borderBottom: '1px solid var(--border)', verticalAlign: 'middle' }

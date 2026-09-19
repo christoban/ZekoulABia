@@ -180,29 +180,29 @@ function InviteModal({ onClose, onSuccess, staffTitles }: { onClose: () => void;
         style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(26,18,9,0.5)', backdropFilter: 'blur(3px)' }} />
 
       {/* Conteneur centrage */}
-      <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 201, width: '96%', maxWidth: 640, maxHeight: '92vh', overflowY: 'auto', borderRadius: 20 }}>
-        <div className="px-5 py-6 md:px-11 md:py-10" style={{ background: 'var(--surface)', borderRadius: 20, boxShadow: '0 32px 80px rgba(0,0,0,0.22)', animation: 'popIn 0.22s ease' }}>
+      <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 201, width: '96%', maxWidth: 580, maxHeight: '92vh', overflowY: 'auto', borderRadius: 16 }}>
+        <div className="px-5 py-5 md:px-7 md:py-6" style={{ background: 'var(--surface)', borderRadius: 16, boxShadow: '0 24px 64px rgba(0,0,0,0.18)', animation: 'popIn 0.22s ease' }}>
 
           {/* Header */}
-          <div className="mb-[16px] md:mb-[24px]" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div className="mb-[12px] md:mb-[18px]" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <div>
-              <div className="text-[18px] md:text-[22px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
+              <div className="text-[16px] md:text-[18px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
                 {t('users.invite_modal.title')}
               </div>
-              <div className="text-[12.5px] md:text-[14px]" style={{ color: 'var(--text3)', marginTop: 4 }}>
+              <div className="text-[12px] md:text-[12.5px]" style={{ color: 'var(--text3)', marginTop: 2 }}>
                 {t('users.invite_modal.subtitle')}
               </div>
             </div>
             <button onClick={onClose}
-              style={{ background: 'var(--bg2)', border: 'none', cursor: 'pointer', color: 'var(--text2)', fontSize: 18, padding: '6px 11px', borderRadius: 9, lineHeight: 1, flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}><X size={16} strokeWidth={2} /></button>
+              style={{ background: 'var(--bg2)', border: 'none', cursor: 'pointer', color: 'var(--text2)', fontSize: 16, padding: '5px 9px', borderRadius: 8, lineHeight: 1, flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}><X size={15} strokeWidth={2} /></button>
           </div>
 
-          <div className="mb-[18px] md:mb-[26px]" style={{ height: 1, background: 'var(--border)' }} />
+          <div className="mb-[14px] md:mb-[18px]" style={{ height: 1, background: 'var(--border)' }} />
 
-          <div className="gap-[14px] md:gap-[20px]" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className="gap-[10px] md:gap-[14px]" style={{ display: 'flex', flexDirection: 'column' }}>
 
             {/* Nom + Prénom */}
-            <div className="gap-[12px] md:gap-[16px]" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+            <div className="gap-[10px] md:gap-[12px]" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
               <Field label={t('users.invite_modal.first_name_label')}>
                 <input value={form.firstName} onChange={e => set('firstName', e.target.value)}
                   placeholder={t('users.invite_modal.first_name_placeholder')} className={inputStCls} style={inputSt} />
@@ -232,24 +232,24 @@ function InviteModal({ onClose, onSuccess, staffTitles }: { onClose: () => void;
             {/* Section STAFF — postes avec checkboxes */}
               {isStaff && (
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text2)', marginBottom: 12 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text2)', marginBottom: 8 }}>
                     {t('users.invite_modal.staff_positions')}
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {staffTitles.length === 0 && (
-                      <div style={{ fontSize: 13, color: 'var(--text3)', padding: '8px 0' }}>{t('users.invite_modal.loading_titles')}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text3)', padding: '6px 0' }}>{t('users.invite_modal.loading_titles')}</div>
                     )}
                   {staffTitles.map(title => {
                     const checked = form.selectedTitles.includes(title.key)
                     const TitleIcon = iconForTitle(title.key)
                     return (
                       <label key={title.key}
-                        style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 14px', borderRadius: 12, border: `1.5px solid ${checked ? 'var(--green)' : 'var(--border)'}`, background: checked ? 'var(--green-light)' : 'white', cursor: 'pointer', transition: 'all 0.12s' }}>
+                        style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '9px 11px', borderRadius: 10, border: `1.5px solid ${checked ? 'var(--green)' : 'var(--border)'}`, background: checked ? 'var(--green-light)' : 'white', cursor: 'pointer', transition: 'all 0.12s' }}>
                         <input type="checkbox" checked={checked} onChange={() => toggleTitle(title.key)}
-                          style={{ marginTop: 3, accentColor: 'var(--green)', width: 16, height: 16, cursor: 'pointer', flexShrink: 0 }} />
+                          style={{ marginTop: 2, accentColor: 'var(--green)', width: 15, height: 15, cursor: 'pointer', flexShrink: 0 }} />
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}><TitleIcon size={16} strokeWidth={2} /> {title.label}</div>
-                          <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 3, lineHeight: 1.5 }}>
+                          <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 5 }}><TitleIcon size={14} strokeWidth={2} /> {title.label}</div>
+                          <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 2, lineHeight: 1.4 }}>
                             {(title.permissions as StaffPermission[]).slice(0, 4).map(p => t(`users.permissions.${p}`)).join(' · ')}
                             {title.permissions.length > 4 ? ` + ${title.permissions.length - 4}` : ''}
                           </div>
@@ -260,35 +260,35 @@ function InviteModal({ onClose, onSuccess, staffTitles }: { onClose: () => void;
 
                   {/* Personnalisé */}
                   <label
-                    style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 14px', borderRadius: 12, border: `1.5px solid ${form.showCustomPerms ? 'var(--purple)' : 'var(--border)'}`, background: form.showCustomPerms ? 'var(--purple-light)' : 'white', cursor: 'pointer', transition: 'all 0.12s' }}>
+                    style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '9px 11px', borderRadius: 10, border: `1.5px solid ${form.showCustomPerms ? 'var(--purple)' : 'var(--border)'}`, background: form.showCustomPerms ? 'var(--purple-light)' : 'white', cursor: 'pointer', transition: 'all 0.12s' }}>
                     <input type="checkbox" checked={form.showCustomPerms} onChange={() => setForm(prev => ({ ...prev, showCustomPerms: !prev.showCustomPerms }))}
-                      style={{ marginTop: 3, accentColor: 'var(--purple)', width: 16, height: 16, cursor: 'pointer', flexShrink: 0 }} />
+                      style={{ marginTop: 2, accentColor: 'var(--purple)', width: 15, height: 15, cursor: 'pointer', flexShrink: 0 }} />
                     <div>
-                      <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>{t('users.invite_modal.custom_title')}</div>
-                      <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 3 }}>{t('users.invite_modal.custom_subtitle')}</div>
+                      <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>{t('users.invite_modal.custom_title')}</div>
+                      <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 2 }}>{t('users.invite_modal.custom_subtitle')}</div>
                     </div>
                   </label>
                 </div>
 
                 {/* Permissions personnalisées */}
                 {form.showCustomPerms && (
-                  <div style={{ marginTop: 14, padding: '14px 16px', background: 'var(--bg2)', borderRadius: 12, border: '1px solid var(--border)' }}>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 12 }}>
+                  <div style={{ marginTop: 10, padding: '10px 12px', background: 'var(--bg2)', borderRadius: 10, border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>
                       {t('users.invite_modal.custom_perms_header')}
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5 }}>
                       {(Object.keys(t('users.permissions') as unknown as Record<string, string>) as StaffPermission[]).map(perm => {
                         const isInherited = mergePermissions(form.selectedTitles, [], staffTitles).includes(perm)
                         const isChecked = mergedPerms.includes(perm)
                         return (
                           <label key={perm}
-                            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, background: isInherited ? 'var(--green-light)' : 'white', border: `1px solid ${isInherited ? 'rgba(5,150,105,0.2)' : 'var(--border)'}`, cursor: isInherited ? 'default' : 'pointer', opacity: 1 }}>
+                            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px', borderRadius: 6, background: isInherited ? 'var(--green-light)' : 'white', border: `1px solid ${isInherited ? 'rgba(5,150,105,0.2)' : 'var(--border)'}`, cursor: isInherited ? 'default' : 'pointer', opacity: 1 }}>
                             <input type="checkbox" checked={isChecked} disabled={isInherited}
                               onChange={() => !isInherited && toggleCustomPerm(perm)}
-                              style={{ accentColor: 'var(--green)', width: 14, height: 14, flexShrink: 0 }} />
-                            <span style={{ fontSize: 13, fontWeight: 600, color: isInherited ? 'var(--green)' : 'var(--text2)', lineHeight: 1.2 }}>
+                              style={{ accentColor: 'var(--green)', width: 13, height: 13, flexShrink: 0 }} />
+                            <span style={{ fontSize: 11.5, fontWeight: 600, color: isInherited ? 'var(--green)' : 'var(--text2)', lineHeight: 1.2 }}>
                               {t(`users.permissions.${perm}`)}
-                              {isInherited && <span style={{ fontSize: 11, color: 'var(--green)', marginLeft: 4 }}>{t('users.permission_inherited')}</span>}
+                              {isInherited && <span style={{ fontSize: 10, color: 'var(--green)', marginLeft: 3 }}>{t('users.permission_inherited')}</span>}
                             </span>
                           </label>
                         )
@@ -299,7 +299,7 @@ function InviteModal({ onClose, onSuccess, staffTitles }: { onClose: () => void;
 
                 {/* Résumé des permissions fusionnées */}
                 {mergedPerms.length > 0 && (
-                  <div style={{ marginTop: 12, padding: '10px 14px', background: 'var(--green-light)', borderRadius: 10, border: '1px solid rgba(5,150,105,0.2)', fontSize: 13, color: 'var(--green)', fontWeight: 600 }}>
+                  <div style={{ marginTop: 10, padding: '8px 12px', background: 'var(--green-light)', borderRadius: 8, border: '1px solid rgba(5,150,105,0.2)', fontSize: 11.5, color: 'var(--green)', fontWeight: 600 }}>
                     {t('users.invite_modal.merged_count').replace('{count}', String(mergedPerms.length))} :&nbsp;
                     {mergedPerms.slice(0, 5).map(p => t(`users.permissions.${p}`)).join(', ')}
                     {mergedPerms.length > 5 ? t('users.invite_modal.merged_plus').replace('{count}', String(mergedPerms.length - 5)) : ''}
@@ -310,15 +310,15 @@ function InviteModal({ onClose, onSuccess, staffTitles }: { onClose: () => void;
 
             {/* Erreur */}
             {form.error && (
-              <div style={{ padding: '10px 14px', background: 'var(--red-light)', borderRadius: 10, border: '1px solid rgba(220,38,38,0.2)', fontSize: 14, fontWeight: 700, color: 'var(--red)' }}>
+              <div style={{ padding: '8px 12px', background: 'var(--red-light)', borderRadius: 8, border: '1px solid rgba(220,38,38,0.2)', fontSize: 12.5, fontWeight: 700, color: 'var(--red)' }}>
                 {form.error}
               </div>
             )}
 
             {/* Submit */}
             <button onClick={submit} disabled={form.loading}
-              className="text-[14.5px] md:text-[17px] py-[13px] px-[20px] md:py-[16px] md:px-[24px]"
-              style={{ width: '100%', background: form.loading ? 'var(--border)' : 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', fontWeight: 800, borderRadius: 11, border: 'none', cursor: form.loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+              className="text-[13px] md:text-[14px] py-[10px] px-[18px]"
+              style={{ width: '100%', background: form.loading ? 'var(--border)' : 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', fontWeight: 800, borderRadius: 9, border: 'none', cursor: form.loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               {form.loading ? t('users.invite_modal.sending') : t('users.invite_modal.send')}
             </button>
           </div>
@@ -706,7 +706,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
-const inputStCls = 'rounded-[10px] px-[12px] py-[10px] text-[14px] md:px-[14px] md:py-[12px] md:text-[16px]'
+const inputStCls = 'rounded-[9px] px-[10px] py-[7.5px] text-[12.5px] md:px-[11px] md:py-[8px] md:text-[13px]'
 const inputSt: React.CSSProperties = {
   width: '100%', border: '1.5px solid var(--border)',
   fontFamily: 'inherit', color: 'var(--text)', background: 'var(--bg)',
@@ -1069,40 +1069,40 @@ export default function SectionUsers({ onToast, onNav }: Props) {
   return (
     <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 26 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
         <div>
-          <div className="text-[22px] md:text-[28px]" style={sTitle}>{t('users.title')}</div>
-          <div className="text-[13px] md:text-[17px]" style={sSub}>{loading ? '…' : t('users.count_label').replace('{count}', String(totalAll))}</div>
+          <div className="text-[15px] md:text-[17px]" style={sTitle}>{t('users.title')}</div>
+          <div className="text-[11px] md:text-[12px]" style={sSub}>{loading ? '…' : t('users.count_label').replace('{count}', String(totalAll))}</div>
         </div>
-        {/* Desktop — 3 boutons inchangés */}
-        <div className="hidden md:flex" style={{ gap: 10, flexWrap: 'wrap' }}>
-          <button style={{ ...btnSecSm, padding: '10px 18px' }} onClick={openCreateUser}>{t('users.btn_create')}</button>
+        {/* Desktop — 3 boutons action */}
+        <div className="hidden md:flex" style={{ gap: 6, flexWrap: 'wrap' }}>
+          <button style={btnSecSm} onClick={openCreateUser}>{t('users.btn_create')}</button>
           <button style={btnPrim} onClick={() => setInviteOpen(true)}>{t('users.btn_invite')}</button>
-          <button style={{ ...btnSecSm, padding: '10px 18px' }} onClick={() => setImportOpen(true)}>{t('users.btn_import')}</button>
+          <button style={btnSecSm} onClick={() => setImportOpen(true)}>{t('users.btn_import')}</button>
         </div>
-        {/* Mobile — CTA principal + "..." (Inviter / Import Excel), reproduction maquette */}
+        {/* Mobile — CTA principal + "..." */}
         <div className="flex md:hidden items-center gap-[6px] flex-shrink-0">
           <button onClick={openCreateUser}
-            className="inline-flex items-center gap-[6px] rounded-full px-[14px] py-[10px] text-[12.5px] whitespace-nowrap border-0"
-            style={{ background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 900 }}>
+            className="inline-flex items-center gap-[4px] rounded-full px-[11px] py-[6px] text-[11.5px] whitespace-nowrap border-0"
+            style={{ background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800 }}>
             {t('users.btn_create')}
           </button>
           <div ref={userActionsRef} className="relative flex-shrink-0">
             <button onClick={() => setUserActionsOpen(o => !o)} aria-label="Menu"
-              style={{ width: 38, height: 38, borderRadius: 19, border: 'none', background: 'var(--bg2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-              <MoreVertical size={17} strokeWidth={2} color="var(--text2)" />
+              style={{ width: 30, height: 30, borderRadius: 15, border: 'none', background: 'var(--bg2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              <MoreVertical size={15} strokeWidth={2} color="var(--text2)" />
             </button>
             {userActionsOpen && (
-              <div style={{ position: 'absolute', top: 44, right: 0, width: 190, background: 'var(--surface)', borderRadius: 14, boxShadow: '0 8px 24px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.08)', padding: 8, zIndex: 20 }}>
+              <div style={{ position: 'absolute', top: 36, right: 0, width: 170, background: 'var(--surface)', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.08)', padding: 6, zIndex: 20 }}>
                 <div onClick={() => { setUserActionsOpen(false); setInviteOpen(true) }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 10, cursor: 'pointer' }}>
-                  <UserPlus size={18} color="var(--text2)" strokeWidth={2} />
-                  <span style={{ fontSize: 14, color: 'var(--text2)', fontWeight: 500 }}>{t('users.btn_invite')}</span>
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, cursor: 'pointer' }}>
+                  <UserPlus size={15} color="var(--text2)" strokeWidth={2} />
+                  <span style={{ fontSize: 12.5, color: 'var(--text2)', fontWeight: 500 }}>{t('users.btn_invite')}</span>
                 </div>
                 <div onClick={() => { setUserActionsOpen(false); setImportOpen(true) }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 10, cursor: 'pointer' }}>
-                  <FileText size={18} color="var(--text2)" strokeWidth={2} />
-                  <span style={{ fontSize: 14, color: 'var(--text2)', fontWeight: 500 }}>{t('users.btn_import')}</span>
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, cursor: 'pointer' }}>
+                  <FileText size={15} color="var(--text2)" strokeWidth={2} />
+                  <span style={{ fontSize: 12.5, color: 'var(--text2)', fontWeight: 500 }}>{t('users.btn_import')}</span>
                 </div>
               </div>
             )}
@@ -1111,7 +1111,7 @@ export default function SectionUsers({ onToast, onNav }: Props) {
       </div>
 
       {/* RACI Governance Banner — clarification du rôle Admin */}
-      <div className="mb-4 p-3.5 rounded-xl border text-xs flex items-center justify-between gap-3 shadow-xs"
+      <div className="mb-4 p-3 rounded-xl border text-xs flex items-center justify-between gap-3 shadow-xs"
         style={{
           background: (ROLE_TABS[activeTab]?.role === 'STUDENT' || ROLE_TABS[activeTab]?.role === 'PARENT')
             ? 'linear-gradient(135deg, rgba(59,130,246,0.08), rgba(30,58,138,0.04))'
@@ -1175,14 +1175,14 @@ export default function SectionUsers({ onToast, onNav }: Props) {
       </div>
 
       {/* Tabs — desktop : segmented control avec séparation visuelle des rôles */}
-      <div className="hidden md:flex" style={{ gap: 2, background: 'var(--bg2)', padding: 5, borderRadius: 12, marginBottom: 20, width: 'fit-content', flexWrap: 'wrap' }}>
+      <div className="hidden md:flex" style={{ gap: 2, background: 'var(--bg2)', padding: 4, borderRadius: 10, marginBottom: 16, width: 'fit-content', flexWrap: 'wrap' }}>
         {ROLE_TABS.map((tab, i) => {
           const cnt = i === 0 ? totalAll : (counts[tab.role] ?? 0)
           return (
             <button key={i} onClick={() => setActiveTab(i)}
-              style={{ padding: '8px 18px', borderRadius: 9, fontSize: 16, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: 'none', display: 'flex', alignItems: 'center', gap: 6, background: activeTab === i ? 'white' : 'transparent', color: activeTab === i ? 'var(--text)' : 'var(--text3)', boxShadow: activeTab === i ? '0 1px 4px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.12s', whiteSpace: 'nowrap' }}>
+              style={{ padding: '6px 14px', borderRadius: 7, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: 'none', display: 'flex', alignItems: 'center', gap: 5, background: activeTab === i ? 'white' : 'transparent', color: activeTab === i ? 'var(--text)' : 'var(--text3)', boxShadow: activeTab === i ? '0 1px 3px rgba(0,0,0,0.06)' : 'none', transition: 'all 0.12s', whiteSpace: 'nowrap' }}>
               {tab.label}
-              <span style={{ fontSize: 13, padding: '2px 7px', borderRadius: 8, background: activeTab === i ? 'var(--green-light)' : 'var(--border)', color: activeTab === i ? 'var(--green2)' : 'var(--text3)', fontWeight: 800 }}>{cnt}</span>
+              <span style={{ fontSize: 11, padding: '1.5px 6px', borderRadius: 6, background: activeTab === i ? 'var(--green-light)' : 'var(--border)', color: activeTab === i ? 'var(--green2)' : 'var(--text3)', fontWeight: 800 }}>{cnt}</span>
             </button>
           )
         })}
@@ -1190,19 +1190,19 @@ export default function SectionUsers({ onToast, onNav }: Props) {
 
       {/* Table — carte bordee sur desktop ; sur mobile, la barre de recherche porte sa propre
           carte (ombre) et la liste flotte directement sur le fond de page (maquette). */}
-      <div className="rounded-none md:rounded-[16px] border-0 md:border md:border-[1.5px] md:border-[var(--border)] bg-transparent md:bg-[var(--surface)]">
-        <div className="p-0 mb-4 md:p-[14px] md:px-[20px] md:mb-0 md:border-b md:border-[var(--border)]" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <div className="rounded-[14px] md:rounded-[10px] px-[14px] py-[12px] md:px-[14px] md:py-[8px] border-0 md:border md:border-[1.5px] md:border-[var(--border)] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none bg-[var(--surface)] md:bg-[var(--bg2)]" style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 200 }}>
-            <Search size={16} strokeWidth={2} color="var(--text3)" />
+      <div className="rounded-none md:rounded-[14px] border-0 md:border md:border-[1.5px] md:border-[var(--border)] bg-transparent md:bg-[var(--surface)]">
+        <div className="p-0 mb-4 md:p-[10px] md:px-[16px] md:mb-0 md:border-b md:border-[var(--border)]" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <div className="rounded-[14px] md:rounded-[8px] px-[12px] py-[8px] md:px-[12px] md:py-[6px] border-0 md:border md:border-[1.5px] md:border-[var(--border)] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none bg-[var(--surface)] md:bg-[var(--bg2)]" style={{ display: 'flex', alignItems: 'center', gap: 7, flex: 1, minWidth: 200 }}>
+            <Search size={15} strokeWidth={2} color="var(--text3)" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && fetchUsers(ROLE_TABS[activeTab]?.role ?? '')}
               placeholder={t('users.search_placeholder')}
-              style={{ background: 'none', border: 'none', outline: 'none', fontSize: 16, fontFamily: 'inherit', fontWeight: 600, width: '100%', color: 'var(--text)' }}
+              style={{ background: 'none', border: 'none', outline: 'none', fontSize: 13, fontFamily: 'inherit', fontWeight: 600, width: '100%', color: 'var(--text)' }}
             />
           </div>
-          <button className="hidden md:inline-flex" style={{ ...btnSecSm, alignItems: 'center', gap: 6 }} onClick={() => fetchUsers(ROLE_TABS[activeTab]?.role ?? '')}><Search size={14} strokeWidth={2} /> Rechercher</button>
+          <button className="hidden md:inline-flex" style={{ ...btnSecSm, alignItems: 'center', gap: 6 }} onClick={() => fetchUsers(ROLE_TABS[activeTab]?.role ?? '')}><Search size={13} strokeWidth={2} /> Rechercher</button>
         </div>
 
         {loading && (
@@ -1222,7 +1222,7 @@ export default function SectionUsers({ onToast, onNav }: Props) {
         )}
 
         {!loading && !error && users.length === 0 && (
-          <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text3)', fontSize: 17 }}>
+          <div style={{ padding: '30px 20px', textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
             {t('users.no_users')}
           </div>
         )}
@@ -1238,14 +1238,14 @@ export default function SectionUsers({ onToast, onNav }: Props) {
               const ppClasses = user.classesProfessorPrincipal?.map((c: { name: string }) => c.name) ?? []
               const initials = `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase()
               return (
-                <div key={user.id} className="rounded-[16px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: 16, position: 'relative' }}>
-                  <div style={{ position: 'absolute', top: 16, right: 16 }}>
+                <div key={user.id} className="rounded-[14px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: 14, position: 'relative' }}>
+                  <div style={{ position: 'absolute', top: 14, right: 14 }}>
                     <button onClick={() => setOpenDD(openDD === user.id ? null : user.id)}
-                      style={{ width: 32, height: 32, borderRadius: 16, background: 'none', border: '1px solid var(--border2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text3)' }}>
-                      <MoreHorizontal size={15} strokeWidth={2} />
+                      style={{ width: 28, height: 28, borderRadius: 14, background: 'none', border: '1px solid var(--border2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text3)' }}>
+                      <MoreHorizontal size={14} strokeWidth={2} />
                     </button>
                     {openDD === user.id && (
-                      <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 4px)', background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.1)', minWidth: 200, zIndex: 100, overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 4px)', background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.1)', minWidth: 180, zIndex: 100, overflow: 'hidden' }}>
                         {[
                           { icon: Pencil, label: t('users.action_menu.edit'), danger: false, onClick: () => openModUser(user) },
                           ...(user.role === 'STUDENT' ? [
@@ -1257,8 +1257,8 @@ export default function SectionUsers({ onToast, onNav }: Props) {
                           const ItemIcon: LucideIcon = item.icon
                           return (
                           <div key={j} onClick={item.onClick}
-                            style={{ padding: '11px 16px', fontSize: 15, fontWeight: 600, color: item.danger ? 'var(--red)' : 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <ItemIcon size={15} strokeWidth={2} /> {item.label}
+                            style={{ padding: '7px 11px', fontSize: 12.5, fontWeight: 600, color: item.danger ? 'var(--red)' : 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+                            <ItemIcon size={14} strokeWidth={2} /> {item.label}
                           </div>
                           )
                         })}
@@ -1266,12 +1266,12 @@ export default function SectionUsers({ onToast, onNav }: Props) {
                     )}
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                    <div className="w-[42px] h-[42px] rounded-[12px] text-[14px] font-bold flex-shrink-0" style={{ background: avatarColorFor(user.id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <div className="w-[36px] h-[36px] rounded-[10px] text-[13px] font-bold flex-shrink-0" style={{ background: avatarColorFor(user.id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {initials}
                     </div>
-                    <div style={{ flex: 1, minWidth: 0, paddingRight: 34 }}>
-                      <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 15 }}>{user.firstName} {user.lastName}</div>
+                    <div style={{ flex: 1, minWidth: 0, paddingRight: 30 }}>
+                      <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 13.5 }}>{user.firstName} {user.lastName}</div>
                       <div style={{ fontSize: 12.5, color: 'var(--text3)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email ?? '—'}</div>
                     </div>
                   </div>
@@ -1326,8 +1326,8 @@ export default function SectionUsers({ onToast, onNav }: Props) {
                       onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
                       <td style={tdStyle}>
-                        <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 17 }}>{user.firstName} {user.lastName}</div>
-                        <div style={{ fontSize: 14, color: 'var(--text3)', marginTop: 2 }}>{user.email ?? '—'}</div>
+                        <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 13 }}>{user.firstName} {user.lastName}</div>
+                        <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 1 }}>{user.email ?? '—'}</div>
                       </td>
                       <td style={tdStyle}><span style={badge(rl.bg, rl.color)}>{rl.label}</span></td>
                       <td style={tdStyle}>
@@ -1355,13 +1355,13 @@ export default function SectionUsers({ onToast, onNav }: Props) {
                       <td style={tdStyle}>
                         <div style={{ position: 'relative', display: 'inline-block' }}>
                           <button onClick={() => setOpenDD(openDD === user.id ? null : user.id)}
-                            style={{ background: 'none', border: '1.5px solid var(--border2)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontSize: 16, color: 'var(--text3)', transition: 'all 0.12s' }}
+                            style={{ background: 'none', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', color: 'var(--text3)', transition: 'all 0.12s' }}
                             onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--green)', color: 'var(--green)', background: 'var(--green-light)' })}
                             onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--border2)', color: 'var(--text3)', background: 'none' })}>
-                            <MoreHorizontal size={16} strokeWidth={2} />
+                            <MoreHorizontal size={15} strokeWidth={2} />
                           </button>
                           {openDD === user.id && (
-                            <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 4px)', background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.1)', minWidth: 200, zIndex: 100, overflow: 'hidden' }}>
+                            <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 4px)', background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.1)', minWidth: 180, zIndex: 100, overflow: 'hidden' }}>
                               {[
                                 { icon: Pencil, label: t('users.action_menu.edit'), danger: false, onClick: () => openModUser(user) },
                                 ...(user.role === 'STUDENT' ? [
@@ -1373,10 +1373,10 @@ export default function SectionUsers({ onToast, onNav }: Props) {
                                 const ItemIcon: LucideIcon = item.icon
                                 return (
                                 <div key={j} onClick={item.onClick}
-                                  style={{ padding: '11px 16px', fontSize: 16, fontWeight: 600, color: item.danger ? 'var(--red)' : 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'background 0.1s' }}
+                                  style={{ padding: '7px 11px', fontSize: 12.5, fontWeight: 600, color: item.danger ? 'var(--red)' : 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7, transition: 'background 0.1s' }}
                                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = item.danger ? 'var(--red-light)' : 'var(--bg2)'}
                                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
-                                  <ItemIcon size={15} strokeWidth={2} /> {item.label}
+                                  <ItemIcon size={14} strokeWidth={2} /> {item.label}
                                 </div>
                                 )
                               })}
@@ -1406,8 +1406,8 @@ export default function SectionUsers({ onToast, onNav }: Props) {
       {/* ── Modal modifier utilisateur ── */}
       {modUser.open && (
         <div onClick={() => setModUser(EMPTY_MOD_USER)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} className="px-5 py-5 md:px-9 md:py-8" style={{ background: 'var(--surface)', borderRadius: 18, width: 440, maxWidth: '94vw', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
-            <div className="text-[18px] md:text-[22px] mb-[16px] md:mb-[22px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('users.edit_modal.title')}</div>
+          <div onClick={e => e.stopPropagation()} className="px-5 py-5 md:px-7 md:py-6" style={{ background: 'var(--surface)', borderRadius: 16, width: 440, maxWidth: '94vw', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
+            <div className="text-[16px] md:text-[18px] mb-[12px] md:mb-[16px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('users.edit_modal.title')}</div>
             <div className="gap-[10px] md:gap-[12px]" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
               <div>
                 <div className={sLbCls} style={sLb}>{t('users.edit_modal.first_name_label')}</div>
@@ -1421,7 +1421,7 @@ export default function SectionUsers({ onToast, onNav }: Props) {
             <div className={sLbCls} style={sLb}>{t('users.edit_modal.email_label')}</div>
             <input className={sInCls} style={sIn} type="email" value={modUser.email} onChange={e => setModUser(f => ({ ...f, email: e.target.value }))} />
             {modUser.role === 'STUDENT' && (
-              <div className="gap-[10px] md:gap-[12px] mt-[10px] md:mt-[12px]" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+              <div className="gap-[10px] md:gap-[12px] mt-[8px] md:mt-[10px]" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
                 <div>
                   <div className={sLbCls} style={sLb}>{t('users.create_modal.dob_label')}</div>
                   <input className={sInCls} style={sIn} type="date" value={modUser.dateOfBirth} onChange={e => setModUser(f => ({ ...f, dateOfBirth: e.target.value }))} />
@@ -1437,10 +1437,10 @@ export default function SectionUsers({ onToast, onNav }: Props) {
               </div>
             )}
             {modUser.error && <div style={sErr}>{modUser.error}</div>}
-            <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-              <button style={{ flex: 1, padding: '10px', borderRadius: 11, fontSize: 15, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => setModUser(EMPTY_MOD_USER)}>{t('users.i18n_ext.actions.cancel')}</button>
-              <button style={{ flex: 1, padding: '10px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: modUser.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: modUser.loading ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} onClick={submitModUser} disabled={modUser.loading}>
-                {modUser.loading ? <Loader2 size={15} strokeWidth={2} className="animate-spin" /> : t('users.edit_modal.btn_save')}
+            <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+              <button style={{ flex: 1, padding: '7.5px 12px', borderRadius: 9, fontSize: 13, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => setModUser(EMPTY_MOD_USER)}>{t('users.i18n_ext.actions.cancel')}</button>
+              <button style={{ flex: 1, padding: '7.5px 12px', borderRadius: 9, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: modUser.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: modUser.loading ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} onClick={submitModUser} disabled={modUser.loading}>
+                {modUser.loading ? <Loader2 size={14} strokeWidth={2} className="animate-spin" /> : t('users.edit_modal.btn_save')}
               </button>
             </div>
           </div>
@@ -1450,19 +1450,19 @@ export default function SectionUsers({ onToast, onNav }: Props) {
       {/* ── Modal changer de classe ── */}
       {transfer.open && (
         <div onClick={() => setTransfer(EMPTY_TRANSFER)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} className="px-5 py-6 md:px-9 md:py-8" style={{ background: 'var(--surface)', borderRadius: 18, width: 420, maxWidth: '94vw', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
-            <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>{t('users.transfer_modal.title')}</div>
-            <div style={{ fontSize: 15, color: 'var(--text3)', marginBottom: 22 }}>{t('users.transfer_modal.subtitle').replace('{name}', transfer.userName)}</div>
+          <div onClick={e => e.stopPropagation()} className="p-4 md:p-5" style={{ background: 'var(--surface)', borderRadius: 14, width: 400, maxWidth: '94vw', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
+            <div className="text-[15px] font-bold font-spectral" style={{ color: 'var(--text)', marginBottom: 3 }}>{t('users.transfer_modal.title')}</div>
+            <div className="text-[11.5px] font-medium" style={{ color: 'var(--text2)', marginBottom: 14 }}>{t('users.transfer_modal.subtitle').replace('{name}', transfer.userName)}</div>
             <div className={sLbCls} style={sLb}>{t('users.transfer_modal.select_label')}</div>
             <select className={sInCls} style={sIn} value={transfer.classId} onChange={e => setTransfer(f => ({ ...f, classId: e.target.value }))}>
               <option value="">{t('users.i18n_ext.form.selectClass')}</option>
               {transfer.classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             {transfer.error && <div style={sErr}>{transfer.error}</div>}
-            <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-              <button style={{ flex: 1, padding: '10px', borderRadius: 11, fontSize: 15, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => setTransfer(EMPTY_TRANSFER)}>{t('users.i18n_ext.actions.cancel')}</button>
-              <button style={{ flex: 1, padding: '10px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: transfer.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: transfer.loading ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} onClick={submitTransfer} disabled={transfer.loading}>
-                {transfer.loading ? <Loader2 size={15} strokeWidth={2} className="animate-spin" /> : t('users.transfer_modal.btn_transfer')}
+            <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+              <button style={{ flex: 1, padding: '7px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => setTransfer(EMPTY_TRANSFER)}>{t('users.i18n_ext.actions.cancel')}</button>
+              <button style={{ flex: 1, padding: '7px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: transfer.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: transfer.loading ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} onClick={submitTransfer} disabled={transfer.loading}>
+                {transfer.loading ? <Loader2 size={14} strokeWidth={2} className="animate-spin" /> : t('users.transfer_modal.btn_transfer')}
               </button>
             </div>
           </div>
@@ -1472,10 +1472,10 @@ export default function SectionUsers({ onToast, onNav }: Props) {
       {/* ── Modal Générer document scolaire ── */}
       {docModal.open && (
         <div onClick={() => setDocModal(EMPTY_DOC_MODAL)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} className="px-5 py-6 md:px-9 md:py-8" style={{ background: 'var(--surface)', borderRadius: 18, width: 460, maxWidth: '94vw', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
-            <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{t('users.doc_modal.title')}</div>
-            <div style={{ fontSize: 15, color: 'var(--text3)', marginBottom: 24 }}>{docModal.userName}</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div onClick={e => e.stopPropagation()} className="p-4 md:p-5" style={{ background: 'var(--surface)', borderRadius: 14, width: 420, maxWidth: '94vw', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
+            <div className="text-[15px] font-bold font-spectral" style={{ color: 'var(--text)', marginBottom: 2 }}>{t('users.doc_modal.title')}</div>
+            <div className="text-[11.5px] font-medium" style={{ color: 'var(--text2)', marginBottom: 14 }}>{docModal.userName}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[
                 { icon: ClipboardList, label: t('users.doc_modal.certificat'), sub: t('users.i18n_ext.certificatSub'), type: 'certificat' as const },
                 { icon: IdCard, label: t('users.doc_modal.carte'), sub: t('users.i18n_ext.carteSub'), type: 'carte' as const },
@@ -1485,21 +1485,21 @@ export default function SectionUsers({ onToast, onNav }: Props) {
                 return (
                 <button key={item.type} disabled={item.disabled || docModal.loading}
                   onClick={() => generateDoc(item.type)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', borderRadius: 12, border: `1.5px solid ${item.disabled ? 'var(--bg2)' : 'var(--border2)'}`, background: item.disabled ? 'var(--bg)' : 'white', cursor: item.disabled || docModal.loading ? 'not-allowed' : 'pointer', textAlign: 'left', fontFamily: 'inherit', opacity: item.disabled ? 0.45 : 1, transition: 'all 0.12s' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 10, border: `1.5px solid ${item.disabled ? 'var(--bg2)' : 'var(--border2)'}`, background: item.disabled ? 'var(--bg)' : 'white', cursor: item.disabled || docModal.loading ? 'not-allowed' : 'pointer', textAlign: 'left', fontFamily: 'inherit', opacity: item.disabled ? 0.45 : 1, transition: 'all 0.12s' }}
                   onMouseEnter={e => { if (!item.disabled && !docModal.loading) Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--green)', background: 'var(--green-light)' }) }}
                   onMouseLeave={e => { if (!item.disabled) Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--border2)', background: 'var(--surface)' }) }}>
-                  <ItemIcon size={26} strokeWidth={1.5} />
+                  <ItemIcon size={22} strokeWidth={1.5} />
                   <div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{item.label}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{item.sub}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{item.label}</div>
+                    <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 1 }}>{item.sub}</div>
                   </div>
                 </button>
                 )
               })}
             </div>
-            {docModal.loading && <div style={{ marginTop: 16, textAlign: 'center', color: 'var(--green)', fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Loader2 size={14} strokeWidth={2} className="animate-spin" /> {t('users.doc_modal.loading')}</div>}
-            {docModal.error && <div style={{ marginTop: 12, padding: '10px 14px', background: 'var(--red-light)', border: '1px solid var(--red-light)', borderRadius: 8, color: 'var(--red)', fontSize: 13 }}>{docModal.error}</div>}
-            <button style={{ marginTop: 20, width: '100%', padding: '11px', borderRadius: 11, fontSize: 15, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => setDocModal(EMPTY_DOC_MODAL)}>{t('users.i18n_ext.actions.close')}</button>
+            {docModal.loading && <div style={{ marginTop: 12, textAlign: 'center', color: 'var(--green)', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Loader2 size={13} strokeWidth={2} className="animate-spin" /> {t('users.doc_modal.loading')}</div>}
+            {docModal.error && <div style={{ marginTop: 10, padding: '8px 12px', background: 'var(--red-light)', border: '1px solid var(--red-light)', borderRadius: 8, color: 'var(--red)', fontSize: 12.5 }}>{docModal.error}</div>}
+            <button style={{ marginTop: 16, width: '100%', padding: '8.5px', borderRadius: 9, fontSize: 13, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => setDocModal(EMPTY_DOC_MODAL)}>{t('users.i18n_ext.actions.close')}</button>
           </div>
         </div>
       )}
@@ -1516,10 +1516,10 @@ export default function SectionUsers({ onToast, onNav }: Props) {
       {/* ── Modal créer un utilisateur ── */}
       {createOpen && (
         <div onClick={() => { setCreateOpen(false); setCreateForm(EMPTY_CREATE_USER) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} className="px-5 py-5 md:px-9 md:py-8" style={{ background: 'var(--surface)', borderRadius: 18, width: 540, maxWidth: '94vw', maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
-            <div className="text-[18px] md:text-[22px] mb-[16px] md:mb-[22px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('users.create_modal.title')}</div>
+          <div onClick={e => e.stopPropagation()} className="px-5 py-5 md:px-7 md:py-6" style={{ background: 'var(--surface)', borderRadius: 16, width: 520, maxWidth: '94vw', maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
+            <div className="text-[16px] md:text-[18px] mb-[12px] md:mb-[16px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('users.create_modal.title')}</div>
 
-            <div className="gap-[10px] md:gap-[14px]" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+            <div className="gap-[10px] md:gap-[12px]" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
               <Field label={t('users.create_modal.first_name_label')}>
                 <input value={createForm.firstName} onChange={e => setCreate('firstName', e.target.value)} placeholder="Marie" className={sInCls} style={sIn} />
               </Field>
@@ -1553,14 +1553,14 @@ export default function SectionUsers({ onToast, onNav }: Props) {
             {createForm.role === 'TEACHER' && (
               <div>
                 <div className={sLbCls} style={sLb}>{t('users.create_modal.subjects_label')}</div>
-                <div style={{ border: '1.5px solid var(--border)', borderRadius: 10, maxHeight: 160, overflowY: 'auto', padding: 4 }}>
-                  {availSubjects.length === 0 && <div style={{ padding: 12, color: 'var(--text3)', fontSize: 14, textAlign: 'center' }}>{t('users.i18n_ext.form.noSubjects')}</div>}
+                <div style={{ border: '1.5px solid var(--border)', borderRadius: 9, maxHeight: 150, overflowY: 'auto', padding: 4 }}>
+                  {availSubjects.length === 0 && <div style={{ padding: 10, color: 'var(--text3)', fontSize: 13, textAlign: 'center' }}>{t('users.i18n_ext.form.noSubjects')}</div>}
                   {availSubjects.map(sub => {
                     const checked = createForm.subjectIds.includes(sub.id)
                     return (
-                      <label key={sub.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, cursor: 'pointer', background: checked ? 'var(--green-light)' : 'transparent' }}>
-                        <input type="checkbox" checked={checked} onChange={() => toggleSubjectId(sub.id)} style={{ accentColor: 'var(--green)', width: 16, height: 16, cursor: 'pointer', flexShrink: 0 }} />
-                        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{sub.name}</span>
+                      <label key={sub.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', borderRadius: 6, cursor: 'pointer', background: checked ? 'var(--green-light)' : 'transparent' }}>
+                        <input type="checkbox" checked={checked} onChange={() => toggleSubjectId(sub.id)} style={{ accentColor: 'var(--green)', width: 14, height: 14, cursor: 'pointer', flexShrink: 0 }} />
+                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{sub.name}</span>
                       </label>
                     )
                   })}
@@ -1578,11 +1578,11 @@ export default function SectionUsers({ onToast, onNav }: Props) {
                   </select>
                 </Field>
                 {isEleveMaternellePrimaire && (
-                  <div style={{ padding: '10px 14px', background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 8, color: 'var(--amber)', fontSize: 13, fontWeight: 600, marginBottom: 14 }}>
+                  <div style={{ padding: '8px 12px', background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 8, color: 'var(--amber)', fontSize: 12.5, fontWeight: 600, marginBottom: 10 }}>
                     {t('users.create_modal.maternellePrimaireNote')}
                   </div>
                 )}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <Field label={t('users.create_modal.dob_label')}>
                     <input type="date" value={createForm.dateOfBirth} onChange={e => setCreate('dateOfBirth', e.target.value)} className={sInCls} style={sIn} />
                   </Field>
@@ -1608,10 +1608,10 @@ export default function SectionUsers({ onToast, onNav }: Props) {
             )}
 
             {createForm.error && <div style={sErr}>{createForm.error}</div>}
-            <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-              <button style={{ flex: 1, padding: '10px', borderRadius: 11, fontSize: 15, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => { setCreateOpen(false); setCreateForm(EMPTY_CREATE_USER) }}>{t('users.i18n_ext.actions.cancel')}</button>
-              <button style={{ flex: 1, padding: '10px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: createForm.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: createForm.loading ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} onClick={submitCreateUser} disabled={createForm.loading}>
-                {createForm.loading ? <Loader2 size={15} strokeWidth={2} className="animate-spin" /> : t('users.create_modal.btn_create')}
+            <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+              <button style={{ flex: 1, padding: '7.5px 12px', borderRadius: 9, fontSize: 13, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => { setCreateOpen(false); setCreateForm(EMPTY_CREATE_USER) }}>{t('users.i18n_ext.actions.cancel')}</button>
+              <button style={{ flex: 1, padding: '7.5px 12px', borderRadius: 9, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: createForm.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: createForm.loading ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} onClick={submitCreateUser} disabled={createForm.loading}>
+                {createForm.loading ? <Loader2 size={14} strokeWidth={2} className="animate-spin" /> : t('users.create_modal.btn_create')}
               </button>
             </div>
           </div>
@@ -1622,13 +1622,13 @@ export default function SectionUsers({ onToast, onNav }: Props) {
       {reauthPourUserId && (
         <>
           <div onClick={() => !reauthLoading && setReauthPourUserId(null)} style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(26,18,9,0.5)', backdropFilter: 'blur(3px)' }} />
-          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 201, width: '92%', maxWidth: 420, borderRadius: 20 }}>
-            <div className="px-5 py-6 md:px-8 md:py-8" style={{ background: 'var(--surface)', borderRadius: 20, boxShadow: '0 32px 80px rgba(0,0,0,0.22)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                <KeyRound size={20} color="var(--text)" />
-                <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>{t('users.reauth.title')}</span>
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 201, width: '92%', maxWidth: 400, borderRadius: 16 }}>
+            <div className="px-5 py-5 md:px-7 md:py-6" style={{ background: 'var(--surface)', borderRadius: 16, boxShadow: '0 24px 64px rgba(0,0,0,0.18)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <KeyRound size={17} color="var(--text)" />
+                <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>{t('users.reauth.title')}</span>
               </div>
-              <p style={{ fontSize: 13.5, color: 'var(--text3)', marginTop: 0, marginBottom: 16 }}>{t('users.reauth.subtitle')}</p>
+              <p style={{ fontSize: 12, color: 'var(--text3)', marginTop: 0, marginBottom: 14 }}>{t('users.reauth.subtitle')}</p>
 
               <label className={sLbCls} style={sLb}>{t('users.reauth.password_label')}</label>
               <input type="password" autoFocus value={reauthPassword} onChange={e => setReauthPassword(e.target.value)}
@@ -1641,12 +1641,12 @@ export default function SectionUsers({ onToast, onNav }: Props) {
 
               {reauthError && <div style={sErr}>{reauthError}</div>}
 
-              <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-                <button style={{ flex: 1, padding: '10px', borderRadius: 11, fontSize: 15, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }}
+              <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                <button style={{ flex: 1, padding: '7.5px 12px', borderRadius: 9, fontSize: 13, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }}
                   onClick={() => setReauthPourUserId(null)} disabled={reauthLoading}>{t('users.i18n_ext.actions.cancel')}</button>
-                <button style={{ flex: 1, padding: '10px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: '#dc2626', color: 'white', border: 'none', cursor: reauthLoading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: reauthLoading ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                <button style={{ flex: 1, padding: '7.5px 12px', borderRadius: 9, fontSize: 13, fontWeight: 800, background: '#dc2626', color: 'white', border: 'none', cursor: reauthLoading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: reauthLoading ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                   onClick={handleReauthEtSupprimer} disabled={reauthLoading}>
-                  {reauthLoading ? <Loader2 size={15} strokeWidth={2} className="animate-spin" /> : t('users.reauth.btn_confirm')}
+                  {reauthLoading ? <Loader2 size={14} strokeWidth={2} className="animate-spin" /> : t('users.reauth.btn_confirm')}
                 </button>
               </div>
             </div>
@@ -1668,22 +1668,22 @@ function avatarColorFor(id: string): string {
 }
 
 const badge = (bg: string, color: string): React.CSSProperties => ({
-  display: 'inline-flex', alignItems: 'center', padding: '3px 10px',
-  borderRadius: 20, fontSize: 12.5, fontWeight: 800, background: bg, color, whiteSpace: 'nowrap'
+  display: 'inline-flex', alignItems: 'center', padding: '2.5px 8.5px',
+  borderRadius: 14, fontSize: 11, fontWeight: 700, background: bg, color, whiteSpace: 'nowrap'
 })
 
 const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }
-const sSub: React.CSSProperties = { color: 'var(--text3)', marginTop: 3 }
-const btnPrim: React.CSSProperties = { padding: '10px 20px', borderRadius: 11, fontSize: 16, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
-const btnSecSm: React.CSSProperties = { padding: '7px 14px', borderRadius: 10, fontSize: 15, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
+const sSub: React.CSSProperties = { color: 'var(--text3)', marginTop: 2 }
+const btnPrim: React.CSSProperties = { padding: '6px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+const btnSecSm: React.CSSProperties = { padding: '6px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
 
-const thStyle: React.CSSProperties = { padding: '11px 16px', textAlign: 'left', fontSize: 13, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.7px', whiteSpace: 'nowrap' }
-const tdStyle: React.CSSProperties = { padding: '14px 16px', fontSize: 17, color: 'var(--text2)', borderBottom: '1px solid var(--bg)', verticalAlign: 'middle' }
+const thStyle: React.CSSProperties = { padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }
+const tdStyle: React.CSSProperties = { padding: '9px 12px', fontSize: 12.5, color: 'var(--text2)', borderBottom: '1px solid var(--bg)', verticalAlign: 'middle' }
 // Tailles resserrees vers la cible mobile — desktop inchangee via md: (meme technique que
 // AdminSidebar/AdminTopbar). fontSize/padding/marginBottom retires de l'objet style (qui gagne
 // toujours sur className) et portes par sLbCls/sInCls a la place.
 const sLb: React.CSSProperties = { fontWeight: 700, color: 'var(--text3)' }
 const sLbCls = 'text-[12px] md:text-[13px] mb-[4px] md:mb-[6px]'
 const sIn: React.CSSProperties = { width: '100%', border: '1.5px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none' }
-const sInCls = 'rounded-[10px] px-[12px] py-[9px] mb-[10px] text-[13px] md:px-[14px] md:py-[10px] md:mb-[14px] md:text-[14px]'
+const sInCls = 'rounded-[9px] px-[10px] py-[7.5px] mb-[8px] text-[12.5px] md:px-[11px] md:py-[8px] md:mb-[10px] md:text-[13px]'
 const sErr: React.CSSProperties = { background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, marginBottom: 8 }

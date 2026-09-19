@@ -581,18 +581,22 @@ export default function SectionClasses({ onToast, onNav }: Props) {
   }
 
   return (
-    <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto' }}>
+    <div className="h-full overflow-y-auto p-4 md:p-5 space-y-4 max-w-7xl mx-auto pb-12 font-nunito">
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
-      <div className="mb-[16px] md:mb-[26px]" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="pb-1.5 border-b border-[var(--border)]" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <div className="text-[22px] md:text-[28px]" style={sTitle}>{t('classes.title')}</div>
-          <div className="text-[13px] md:text-[17px]" style={sSub}>{loading ? '…' : t('classes.subtitle').replace('{count}', String(classes.length)).replace('{students}', String(totalEleves))}</div>
+          <h1 className="text-[15px] md:text-[17px] font-bold font-spectral" style={{ color: 'var(--text)' }}>
+            {t('classes.title')}
+          </h1>
+          <p className="text-[11px] md:text-[12px] font-medium mt-0.5" style={{ color: 'var(--text3)' }}>
+            {loading ? '…' : t('classes.subtitle').replace('{count}', String(classes.length)).replace('{students}', String(totalEleves))}
+          </p>
         </div>
         <button className="hidden md:inline-block" style={btnPrim} onClick={() => setCreateOpen(true)}>{t('classes.btn_create')}</button>
         <button
-          className="md:hidden inline-flex items-center gap-[6px] rounded-full px-[14px] py-[10px] text-[12.5px] border-0 flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 900 }}
+          className="md:hidden inline-flex items-center gap-[6px] rounded-lg px-[13px] py-[8px] text-[13px] border-0 flex-shrink-0"
+          style={{ background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800 }}
           onClick={() => setCreateOpen(true)}>{t('classes.btn_create')}</button>
       </div>
 
@@ -612,39 +616,39 @@ export default function SectionClasses({ onToast, onNav }: Props) {
       )}
 
       {!loading && !error && classes.length === 0 && (
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: '60px 32px', textAlign: 'center' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}><School size={52} /></div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{t('classes.empty.title')}</div>
-          <div style={{ fontSize: 16, color: 'var(--text3)', marginBottom: 22 }}>{t('classes.empty.desc')}</div>
+        <div className="px-6 py-12 text-center" style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><School size={40} strokeWidth={1.5} color="var(--text3)" /></div>
+          <div className="text-lg md:text-xl font-bold font-spectral mb-2" style={{ color: 'var(--text)' }}>{t('classes.empty.title')}</div>
+          <div className="text-sm md:text-base font-medium mb-5" style={{ color: 'var(--text3)' }}>{t('classes.empty.desc')}</div>
           <button style={btnPrim} onClick={() => setCreateOpen(true)}>{t('classes.btn_create')}</button>
         </div>
       )}
 
       {!loading && !error && classes.length > 0 && (
         <>
-        {/* ── Cartes empilées — mobile (reproduction maquette) ── */}
+        {/* ── Cartes empilées — mobile ── */}
         <div className="md:hidden flex flex-col" style={{ gap: 10 }}>
           {classes.map(cls => {
             const badge = getLevelBadge(cls.name)
             const ppName = cls.professorPrincipal ? `${cls.professorPrincipal.firstName} ${cls.professorPrincipal.lastName}` : t('classes.pp_not_assigned')
-            const cardBtnMobile: React.CSSProperties = { flex: 1, fontSize: 13, fontWeight: 850, color: 'var(--text2)', background: 'var(--bg2)', border: 'none', borderRadius: 10, padding: '9px 0', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }
+            const cardBtnMobile: React.CSSProperties = { flex: 1, fontSize: 13, fontWeight: 800, color: 'var(--text2)', background: 'var(--bg2)', border: 'none', borderRadius: 9, padding: '8px 0', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }
             return (
               <div key={cls.id} className="rounded-[16px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
-                  <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 16, fontWeight: 850, color: 'var(--text)' }}>{cls.name}</div>
+                  <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>{cls.name}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                    <span style={{ fontSize: 12, fontWeight: 850, color: badge.color, background: badge.bg, borderRadius: 8, padding: '3px 9px' }}>{badge.label}</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: badge.color, background: badge.bg, borderRadius: 8, padding: '3px 9px' }}>{badge.label}</span>
                     <button onClick={() => setDelConfirm({ classId: cls.id, className: cls.name })}
-                      style={{ width: 26, height: 26, borderRadius: 8, background: 'transparent', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--red)', flexShrink: 0, cursor: 'pointer' }}>
+                      style={{ width: 28, height: 28, borderRadius: 8, background: 'transparent', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--red)', flexShrink: 0, cursor: 'pointer' }}>
                       <Trash2 size={14} strokeWidth={2} />
                     </button>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 10 }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--text2)' }}><GraduationCap size={15} strokeWidth={2} color="var(--text3)" /> {t('classes.student_count').replace('{count}', String(cls._count.students))}</span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--text2)' }}><Armchair size={15} strokeWidth={2} color="var(--text3)" /> {t('classes.capacity_label').replace('{capacity}', String(cls.capacity))}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text2)' }}><GraduationCap size={15} strokeWidth={2} color="var(--text3)" /> {t('classes.student_count').replace('{count}', String(cls._count.students))}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text2)' }}><Armchair size={15} strokeWidth={2} color="var(--text3)" /> {t('classes.capacity_label').replace('{capacity}', String(cls.capacity))}</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, fontSize: 12.5, color: 'var(--text2)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, fontSize: 13, color: 'var(--text2)' }}>
                   <UserCheck size={15} strokeWidth={2} color="var(--text3)" /> {t('classes.pp_label')} <span style={{ fontStyle: cls.professorPrincipal ? 'normal' : 'italic', color: cls.professorPrincipal ? 'var(--text2)' : 'var(--text3)' }}>{ppName}</span>
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
@@ -653,37 +657,33 @@ export default function SectionClasses({ onToast, onNav }: Props) {
                     const isPEBSFiliere = cls.filiere === 'FR_PEBS' || cls.filiere === 'EN_PEBS'
                     if (pebsBadge === 'PEBS' || isPEBSFiliere) {
                       const label = cls.filiere === 'EN_PEBS' ? 'PEBS EN' : 'PEBS FR'
-                      return <span style={{ fontSize: 12, fontWeight: 850, color: 'var(--green)', background: 'var(--green-light)', borderRadius: 8, padding: '4px 10px' }}>{label}</span>
+                      return <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--green)', background: 'var(--green-light)', borderRadius: 8, padding: '3.5px 9.5px' }}>{label}</span>
                     }
-                    if (pebsBadge === 'MIXTE') return <span style={{ fontSize: 12.5, fontWeight: 850, color: '#b45309', background: 'rgba(234,179,8,0.12)', borderRadius: 8, padding: '4px 10px' }}>{t('classes.filiere_labels.MIXTE')}</span>
-                    if (pebsBadge === 'GENERAL') return <span style={{ fontSize: 12.5, fontWeight: 850, color: 'var(--blue)', background: 'var(--blue-light)', borderRadius: 8, padding: '4px 10px' }}>{t('classes.filiere_labels.GENERAL')}</span>
-                    if (cls.filiere && !['FR_PEBS', 'EN_PEBS', 'FR_GENERAL', 'EN_GENERAL'].includes(cls.filiere)) return <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--blue)', background: 'var(--blue-light)', borderRadius: 8, padding: '4px 10px' }}>{cls.filiere}</span>
+                    if (pebsBadge === 'MIXTE') return <span style={{ fontSize: 12, fontWeight: 800, color: '#b45309', background: 'rgba(234,179,8,0.12)', borderRadius: 8, padding: '3.5px 9.5px' }}>{t('classes.filiere_labels.MIXTE')}</span>
+                    if (pebsBadge === 'GENERAL') return <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--blue)', background: 'var(--blue-light)', borderRadius: 8, padding: '3.5px 9.5px' }}>{t('classes.filiere_labels.GENERAL')}</span>
+                    if (cls.filiere && !['FR_PEBS', 'EN_PEBS', 'FR_GENERAL', 'EN_GENERAL'].includes(cls.filiere)) return <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--blue)', background: 'var(--blue-light)', borderRadius: 8, padding: '3.5px 9.5px' }}>{cls.filiere}</span>
                     return null
                   })()}
-                  {cls.serie && <span style={{ fontSize: 12, fontWeight: 850, color: 'var(--text2)', background: 'var(--bg2)', borderRadius: 8, padding: '4px 10px' }}>{t('classes.serie_label').replace('{serie}', cls.serie)}</span>}
-                  {/* LV2/PEBS — pas d'équivalent maquette : intégrés comme pastilles dans la ligne
-                      des tags (filière/série), pas comme boutons pleine largeur dans le pied. */}
+                  {cls.serie && <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text2)', background: 'var(--bg2)', borderRadius: 8, padding: '3.5px 9.5px' }}>{t('classes.serie_label').replace('{serie}', cls.serie)}</span>}
                   {isLV2Level(cls) && (
                     <button onClick={() => openLV2(cls)}
-                      style={{ fontSize: 12, fontWeight: 850, color: 'var(--blue)', background: 'var(--blue-light)', border: 'none', borderRadius: 8, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      style={{ fontSize: 12, fontWeight: 800, color: 'var(--blue)', background: 'var(--blue-light)', border: 'none', borderRadius: 8, padding: '3.5px 9.5px', cursor: 'pointer', fontFamily: 'inherit' }}>
                       {t('classes.btn_lv2')}
                     </button>
                   )}
                   {(schoolInfo?.hasPEBSFrancophone || schoolInfo?.hasPEBSAnglophone) && (
                     <button onClick={() => openPEBS(cls)}
-                      style={{ fontSize: 12, fontWeight: 850, color: 'var(--green)', background: 'var(--green-light)', border: 'none', borderRadius: 8, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      style={{ fontSize: 12, fontWeight: 800, color: 'var(--green)', background: 'var(--green-light)', border: 'none', borderRadius: 8, padding: '3.5px 9.5px', cursor: 'pointer', fontFamily: 'inherit' }}>
                       {t('classes.btn_pebs')}
                     </button>
                   )}
                   {isSixthForm(cls) && (
                     <button onClick={() => openALevel(cls)}
-                      style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--purple)', background: 'var(--purple-light)', border: 'none', borderRadius: 8, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      style={{ fontSize: 12, fontWeight: 700, color: 'var(--purple)', background: 'var(--purple-light)', border: 'none', borderRadius: 8, padding: '3.5px 9.5px', cursor: 'pointer', fontFamily: 'inherit' }}>
                       {t('classes.btn_alevel')}
                     </button>
                   )}
                 </div>
-                {/* Pied — exactement les 3 boutons de la maquette (PP/Modifier/Sous-groupes,
-                    ratios 1/1/1.4), pas de retour à la ligne. */}
                 <div style={{ display: 'flex', gap: 6, marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--bg2)' }}>
                   <button onClick={() => openPP(cls)} style={cardBtnMobile}>{t('classes.btn_pp')}</button>
                   <button onClick={() => openMod(cls)} style={cardBtnMobile}>{t('classes.btn_edit')}</button>
@@ -694,48 +694,48 @@ export default function SectionClasses({ onToast, onNav }: Props) {
           })}
         </div>
 
-        {/* ── Grille — desktop (inchangée) ── */}
-        <div className="hidden md:grid" style={{ gridTemplateColumns: 'repeat(3,1fr)', gap: 18 }}>
+        {/* ── Grille — desktop ── */}
+        <div className="hidden md:grid" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(340px,1fr))', gap: 16 }}>
           {classes.map(cls => {
             const badge = getLevelBadge(cls.name)
             const ppName = cls.professorPrincipal ? `${cls.professorPrincipal.firstName} ${cls.professorPrincipal.lastName}` : t('classes.pp_not_assigned')
             return (
               <div key={cls.id}
-                style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: 22, transition: 'all 0.15s' }}
+                style={{ background: 'var(--surface)', borderRadius: 14, border: '1.5px solid var(--border)', padding: '16px 18px', transition: 'all 0.15s' }}
                 onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { transform: 'translateY(-2px)', boxShadow: '0 6px 20px rgba(0,0,0,0.07)', borderColor: 'var(--border2)' })}
                 onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { transform: 'none', boxShadow: 'none', borderColor: 'var(--border)' })}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
-                  <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 24, fontWeight: 700, color: 'var(--text)' }}>{cls.name}</div>
-                  <span style={{ background: badge.bg, color: badge.color, padding: '4px 12px', borderRadius: 22, fontSize: 14, fontWeight: 800 }}>{badge.label}</span>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>{cls.name}</div>
+                  <span style={{ background: badge.bg, color: badge.color, padding: '2.5px 9px', borderRadius: 20, fontSize: 11.5, fontWeight: 800 }}>{badge.label}</span>
                 </div>
-                <div style={{ display: 'flex', gap: 16, fontSize: 16, color: 'var(--text2)', fontWeight: 600, marginBottom: 12 }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><GraduationCap size={15} /> {t('classes.student_count').replace('{count}', String(cls._count.students))}</span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Armchair size={15} /> {t('classes.capacity_label').replace('{capacity}', String(cls.capacity))}</span>
+                <div style={{ display: 'flex', gap: 14, fontSize: 13, color: 'var(--text2)', fontWeight: 600, marginBottom: 9 }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><GraduationCap size={15} color="var(--text3)" /> {t('classes.student_count').replace('{count}', String(cls._count.students))}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Armchair size={15} color="var(--text3)" /> {t('classes.capacity_label').replace('{capacity}', String(cls.capacity))}</span>
                 </div>
-                <div style={{ fontSize: 15, color: 'var(--text3)', fontWeight: 600, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <UserCheck size={15} /> {t('classes.pp_label')} <strong style={{ color: cls.professorPrincipal ? 'var(--text2)' : 'var(--text3)', fontStyle: cls.professorPrincipal ? 'normal' : 'italic' }}>{ppName}</strong>
+                <div style={{ fontSize: 12.5, color: 'var(--text3)', fontWeight: 600, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <UserCheck size={15} color="var(--text3)" /> {t('classes.pp_label')} <strong style={{ color: cls.professorPrincipal ? 'var(--text2)' : 'var(--text3)', fontStyle: cls.professorPrincipal ? 'normal' : 'italic' }}>{ppName}</strong>
                 </div>
-                <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                   {(() => {
                     const badge = (cls as any).pebsBadge as string | null;
                     const isPEBSFiliere = cls.filiere === 'FR_PEBS' || cls.filiere === 'EN_PEBS';
                     if (badge === 'PEBS' || isPEBSFiliere) {
                       const label = cls.filiere === 'EN_PEBS' ? 'PEBS EN' : 'PEBS FR';
-                      return <span style={{ background: 'rgba(22,163,74,0.12)', color: 'var(--green)', padding: '3px 10px', borderRadius: 20, fontSize: 13, fontWeight: 700 }}>{label}</span>;
+                      return <span style={{ background: 'rgba(22,163,74,0.12)', color: 'var(--green)', padding: '2.5px 9.5px', borderRadius: 20, fontSize: 12, fontWeight: 800 }}>{label}</span>;
                     }
                     if (badge === 'MIXTE') {
-                      return <span style={{ background: 'rgba(234,179,8,0.12)', color: '#b45309', padding: '3px 10px', borderRadius: 20, fontSize: 13, fontWeight: 700 }}>{t('classes.filiere_labels.MIXTE')}</span>;
+                      return <span style={{ background: 'rgba(234,179,8,0.12)', color: '#b45309', padding: '2.5px 9.5px', borderRadius: 20, fontSize: 12, fontWeight: 800 }}>{t('classes.filiere_labels.MIXTE')}</span>;
                     }
                     if (badge === 'GENERAL') {
-                      return <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '3px 10px', borderRadius: 20, fontSize: 13, fontWeight: 700 }}>{t('classes.filiere_labels.GENERAL')}</span>;
+                      return <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '2.5px 9.5px', borderRadius: 20, fontSize: 12, fontWeight: 800 }}>{t('classes.filiere_labels.GENERAL')}</span>;
                     }
                     if (cls.filiere && !['FR_PEBS', 'EN_PEBS', 'FR_GENERAL', 'EN_GENERAL'].includes(cls.filiere)) {
-                      return <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '3px 10px', borderRadius: 20, fontSize: 13, fontWeight: 700 }}>{cls.filiere}</span>;
+                      return <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '2.5px 9.5px', borderRadius: 20, fontSize: 12, fontWeight: 800 }}>{cls.filiere}</span>;
                     }
                     return null;
                   })()}
                   {cls.serie && (
-                    <span style={{ background: 'var(--bg2)', color: 'var(--text2)', padding: '3px 10px', borderRadius: 20, fontSize: 13, fontWeight: 700 }}>{t('classes.serie_label').replace('{serie}', cls.serie)}</span>
+                    <span style={{ background: 'var(--bg2)', color: 'var(--text2)', padding: '2.5px 9.5px', borderRadius: 20, fontSize: 12, fontWeight: 700 }}>{t('classes.serie_label').replace('{serie}', cls.serie)}</span>
                   )}
                 </div>
                 <div style={{ paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -751,7 +751,7 @@ export default function SectionClasses({ onToast, onNav }: Props) {
                   {isSixthForm(cls) && (
                     <button onClick={() => openALevel(cls)} style={{ ...btnSecSm, color: 'var(--purple)', borderColor: 'rgba(124,58,237,0.3)' }}>{t('classes.btn_alevel')}</button>
                   )}
-                  <button onClick={() => setDelConfirm({ classId: cls.id, className: cls.name })} style={{ ...btnSecSm, color: 'var(--red)', borderColor: 'rgba(220,38,38,0.3)', display: 'inline-flex', alignItems: 'center' }}><Trash2 size={14} /></button>
+                  <button onClick={() => setDelConfirm({ classId: cls.id, className: cls.name })} style={{ ...btnSecSm, color: 'var(--red)', borderColor: 'rgba(220,38,38,0.3)', display: 'inline-flex', alignItems: 'center' }}><Trash2 size={13} /></button>
                 </div>
               </div>
             )
@@ -1420,7 +1420,7 @@ export default function SectionClasses({ onToast, onNav }: Props) {
 function ModalOverlay({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div onClick={e => e.stopPropagation()} className="px-5 py-5 md:px-9 md:py-8 max-h-[90vh] overflow-y-auto" style={{ background: 'var(--surface)', borderRadius: 18, width: 480, maxWidth: '94vw', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
+      <div onClick={e => e.stopPropagation()} className="p-5 md:p-6 max-h-[90vh] overflow-y-auto" style={{ background: 'var(--surface)', borderRadius: 14, width: 440, maxWidth: '94vw', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
         {children}
       </div>
     </div>
@@ -1429,17 +1429,14 @@ function ModalOverlay({ onClose, children }: { onClose: () => void; children: Re
 
 const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }
 const sSub: React.CSSProperties = { color: 'var(--text3)', marginTop: 3 }
-// Tailles resserrees vers la cible mobile (meme technique que SectionUsers) — desktop inchangee
-// via md:. fontSize/padding/marginBottom retires des objets style (toujours gagnants sur
-// className) et portes par les classNames compagnes ci-dessous.
-const sModalTitleCls = 'text-[18px] md:text-[22px] mb-[16px] md:mb-[22px]'
+const sModalTitleCls = 'text-lg font-bold font-spectral mb-3'
 const sModalTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }
-const sLabelCls = 'text-[12px] md:text-[13px] mb-[4px] md:mb-[6px]'
+const sLabelCls = 'text-xs font-bold mb-1'
 const sLabel: React.CSSProperties = { fontWeight: 700, color: 'var(--text3)' }
-const sInputCls = 'rounded-[10px] px-[12px] py-[9px] mb-[10px] text-[13px] md:px-[14px] md:py-[10px] md:mb-[14px] md:text-[14px]'
+const sInputCls = 'rounded-lg px-3 py-2 mb-3 text-xs md:text-sm font-nunito'
 const sInput: React.CSSProperties = { width: '100%', border: '1.5px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none' }
-const sError: React.CSSProperties = { background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, marginBottom: 8 }
-const btnPrim: React.CSSProperties = { padding: '10px 20px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
-const btnSec2: React.CSSProperties = { padding: '10px 20px', borderRadius: 11, fontSize: 15, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }
-const btnSecSm: React.CSSProperties = { padding: '7px 14px', borderRadius: 10, fontSize: 14, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
-const btnRetry: React.CSSProperties = { padding: '7px 16px', borderRadius: 9, background: 'var(--surface)', color: 'var(--red)', border: '1.5px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }
+const sError: React.CSSProperties = { background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8, padding: '7px 14px', fontSize: 13, fontWeight: 600, marginBottom: 10 }
+const btnPrim: React.CSSProperties = { padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+const btnSec2: React.CSSProperties = { padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }
+const btnSecSm: React.CSSProperties = { padding: '5.5px 11px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
+const btnRetry: React.CSSProperties = { padding: '6px 14px', borderRadius: 8, background: 'var(--surface)', color: 'var(--red)', border: '1.5px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 13 }

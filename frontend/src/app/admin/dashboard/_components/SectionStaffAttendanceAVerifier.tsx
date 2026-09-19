@@ -77,14 +77,14 @@ export default function SectionStaffAttendanceAVerifier({ onToast }: { onToast: 
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       {items.map(item => (
-        <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, border: '1px solid var(--bg2)', borderRadius: 12, padding: 10, background: 'var(--bg)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <AlertTriangle size={16} style={{ color: 'var(--amber)' }} />
+        <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, border: '1px solid var(--bg2)', borderRadius: 10, padding: '7px 10px', background: 'var(--bg)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <AlertTriangle size={15} style={{ color: 'var(--amber)' }} />
             <div>
-              <div style={{ fontWeight: 700, color: 'var(--text)' }}>{new Date(item.date).toLocaleDateString('fr-FR')}</div>
-              <div style={{ fontSize: 12, color: 'var(--text3)' }}>
+              <div style={{ fontWeight: 700, fontSize: 12.5, color: 'var(--text)' }}>{new Date(item.date).toLocaleDateString('fr-FR')}</div>
+              <div style={{ fontSize: 11, color: 'var(--text3)' }}>
                 {item.mode === 'GPS' ? 'GPS' : item.mode ?? '—'}
                 {item.latitude != null && item.longitude != null ? ` · ${item.latitude.toFixed(4)}, ${item.longitude.toFixed(4)}` : ''}
               </div>
@@ -92,11 +92,11 @@ export default function SectionStaffAttendanceAVerifier({ onToast }: { onToast: 
           </div>
           <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
             <button onClick={() => requalifier(item.id, 'PRESENT')} disabled={busyId === item.id}
-              style={{ padding: '5px 10px', borderRadius: 8, fontSize: 12, fontWeight: 700, background: 'var(--green-light)', color: 'var(--green)', border: '1px solid rgba(5,150,105,0.3)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <CheckCircle2 size={12} /> {t('rh.requalifyPresent')}
+              style={{ padding: '4px 8px', borderRadius: 6, fontSize: 11.5, fontWeight: 700, background: 'var(--green-light)', color: 'var(--green)', border: '1px solid rgba(5,150,105,0.3)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <CheckCircle2 size={11} /> {t('rh.requalifyPresent')}
             </button>
             <button onClick={() => requalifier(item.id, 'ABSENT')} disabled={busyId === item.id}
-              style={{ padding: '5px 10px', borderRadius: 8, fontSize: 12, fontWeight: 700, background: 'var(--red-light)', color: 'var(--red)', border: '1px solid rgba(220,38,38,0.3)', cursor: 'pointer' }}>
+              style={{ padding: '4px 8px', borderRadius: 6, fontSize: 11.5, fontWeight: 700, background: 'var(--red-light)', color: 'var(--red)', border: '1px solid rgba(220,38,38,0.3)', cursor: 'pointer' }}>
               {t('rh.requalifyAbsent')}
             </button>
           </div>

@@ -65,7 +65,7 @@ const PLACEHOLDERS: Partial<Record<AdminSection, { icon: string; desc: string }>
 
 interface SchoolInfo { id?: string; name: string; logoUrl: string | null; subdomain?: string; city?: string; phone?: string; email?: string; isPrimaire?: boolean | null }
 interface AdminBadges { users?: string; classes?: string; grades?: string; finance?: string }
-interface SessionUser { nomComplet?: string; firstName?: string; role?: string }
+interface SessionUser { id?: string; userId?: string; nomComplet?: string; firstName?: string; role?: string }
 
 export default function AdminDashboard() {
   const t = useT('admin')
@@ -227,7 +227,7 @@ export default function AdminDashboard() {
           {section === 'bulletin-validation' && <SectionBulletinValidation onToast={showToast} />}
           {section === 'ai'            && <SectionAdminAI       onToast={showToast} />}
           {section === 'statistics'    && <SectionStatistics    onToast={showToast} />}
-          {section === 'babillard' && <Babillard role={sessionUser?.role ?? 'ADMIN'} title={t('page.section_titles.babillard')} subtitle={t('page.section_titles.babillard_subtitle')} />}
+          {section === 'babillard' && <Babillard role={sessionUser?.role ?? 'ADMIN'} title={t('page.section_titles.babillard')} subtitle={t('page.section_titles.babillard_subtitle')} currentUserId={sessionUser?.userId ?? sessionUser?.id} />}
           {section === 'messagerie' && <Messagerie />}
           {section === 'pedagogie'     && <SectionPedagogie     onNav={s => setSection(s as AdminSection)} onToast={showToast} />}
           {section === 'rh'            && <SectionRH            onToast={showToast} />}

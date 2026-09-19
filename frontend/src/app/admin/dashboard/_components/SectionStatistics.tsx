@@ -37,13 +37,13 @@ const CHART_TOOLTIP = {
   itemStyle: { color: 'var(--text)' },
 } as const
 
-const cardCls = 'rounded-[16px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]'
+const cardCls = 'rounded-[12px] md:rounded-[14px] shadow-[0_1px_2px_rgba(20,20,15,0.05)] border border-[var(--border)]'
 const card: React.CSSProperties = { background: 'var(--surface)', overflow: 'hidden' }
-const cardHeaderCls = 'px-[16px] pt-[14px] pb-2 md:px-[22px] md:py-4 md:border-b md:border-[var(--border)]'
+const cardHeaderCls = 'px-[12px] py-[8px] md:px-[16px] md:py-[10px] border-b border-[var(--border)]'
 const cardHeader: React.CSSProperties = {}
-const cardTitle: React.CSSProperties = { fontWeight: 800, color: 'var(--text)', display: 'inline-flex', alignItems: 'center', gap: 8 }
-const selectCls = 'text-[12.5px] md:text-[14px] px-[10px] py-[7px] md:px-[12px] md:py-[8px]'
-const select: React.CSSProperties = { borderRadius: 9, border: '1.5px solid var(--border2)', fontFamily: 'inherit', color: 'var(--text)', background: 'var(--surface)' }
+const cardTitle: React.CSSProperties = { fontWeight: 700, color: 'var(--text)', display: 'inline-flex', alignItems: 'center', gap: 6 }
+const selectCls = 'text-[11.5px] md:text-[12.5px] px-[8px] py-[4px] md:px-[10px] md:py-[5px]'
+const select: React.CSSProperties = { borderRadius: 7, border: '1px solid var(--border2)', fontFamily: 'inherit', color: 'var(--text)', background: 'var(--surface)' }
 
 export default function SectionStatistics({ onToast }: Props) {
   const t = useT('admin')
@@ -120,36 +120,36 @@ export default function SectionStatistics({ onToast }: Props) {
   const levels = Array.from(new Set(classes.map(c => c.level).filter(Boolean))) as string[]
 
   return (
-    <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto' }}>
+    <div className="px-4 py-4 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
-      <div style={{ marginBottom: 26 }}>
-        <div className="text-[22px] md:text-[28px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
+      <div style={{ marginBottom: 14 }}>
+        <div className="text-[15px] md:text-[17px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
           {t('statistics.title')}
         </div>
-        <div className="text-[13px] md:text-[17px]" style={{ color: 'var(--text3)', marginTop: 3 }}>{t('statistics.subtitle')}</div>
+        <div className="text-[11px] md:text-[12px]" style={{ color: 'var(--text3)', marginTop: 2 }}>{t('statistics.subtitle')}</div>
       </div>
 
       {/* RACI Ministerial Governance Notice */}
-      <div className="mb-5 p-3.5 rounded-xl border border-sky-500/20 bg-sky-500/5 text-xs text-[var(--text)] flex items-center justify-between gap-3 shadow-xs">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-sky-500/15 text-sky-600 flex-shrink-0">
-            <BarChart3 size={16} />
+      <div className="mb-3.5 p-2.5 md:p-3 rounded-lg border border-sky-500/20 bg-sky-500/5 text-xs text-[var(--text)] flex items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="p-1.5 rounded-md bg-sky-500/15 text-sky-600 flex-shrink-0">
+            <BarChart3 size={15} />
           </div>
           <div>
-            <p className="font-bold text-xs">Rapports & Synthèses Ministérielles (Supervision Directoriale)</p>
-            <p className="text-[11.5px] text-[var(--text2)]">Synthèse d'établissement exclusive du Chef d'Établissement. Utilisée pour la préparation des inspections régionales et rapports annuels (MINESEC / MINEDUB).</p>
+            <p className="font-bold text-[11.5px] md:text-xs">Rapports & Synthèses Ministérielles (Supervision Directoriale)</p>
+            <p className="text-[10.5px] md:text-[11px] text-[var(--text2)]">Synthèse d'établissement exclusive du Chef d'Établissement. Utilisée pour la préparation des inspections régionales et rapports annuels (MINESEC / MINEDUB).</p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 18 }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-3.5">
 
         {/* Évolution des moyennes */}
         <div className={cardCls} style={card}>
-          <div className={cardHeaderCls} style={{ ...cardHeader, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-            <span className="text-[14px] md:text-[17px]" style={cardTitle}><TrendingUp size={17} strokeWidth={2} /> {t('statistics.evolution_title')} <CacheBadge fromCache={evoFromCache} cachedAt={evoCachedAt} t={t} /></span>
-            <div className="flex-wrap" style={{ display: 'flex', gap: 8 }}>
+          <div className={cardHeaderCls} style={{ ...cardHeader, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+            <span className="text-[13px] md:text-[14px]" style={cardTitle}><TrendingUp size={15} strokeWidth={2} /> {t('statistics.evolution_title')} <CacheBadge fromCache={evoFromCache} cachedAt={evoCachedAt} t={t} /></span>
+            <div className="flex-wrap" style={{ display: 'flex', gap: 6 }}>
               <select className={`min-w-0 ${selectCls}`} style={select} value={evoClassId} onChange={e => setEvoClassId(e.target.value)}>
                 <option value="">{t('statistics.all_classes')}</option>
                 {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -160,7 +160,7 @@ export default function SectionStatistics({ onToast }: Props) {
               </select>
             </div>
           </div>
-          <div className="p-[14px] md:px-[22px] md:py-[18px] h-[260px] md:h-[300px]">
+          <div className="p-[10px] md:p-[14px] h-[210px] md:h-[240px]">
 
             {evoLoading ? (
               <Spinner />
@@ -170,10 +170,10 @@ export default function SectionStatistics({ onToast }: Props) {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={evolution}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="sequenceName" tick={{ fontSize: 12, fill: 'var(--text3)' }} stroke="var(--border)" />
-                  <YAxis domain={[0, 20]} tick={{ fontSize: 12, fill: 'var(--text3)' }} stroke="var(--border)" />
+                  <XAxis dataKey="sequenceName" tick={{ fontSize: 11, fill: 'var(--text3)' }} stroke="var(--border)" />
+                  <YAxis domain={[0, 20]} tick={{ fontSize: 11, fill: 'var(--text3)' }} stroke="var(--border)" />
                   <Tooltip {...CHART_TOOLTIP} />
-                  <Line type="monotone" dataKey="moyenne" name={t('statistics.series_average')} stroke="var(--green)" strokeWidth={2.5} dot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="moyenne" name={t('statistics.series_average')} stroke="var(--green)" strokeWidth={2} dot={{ r: 3 }} />
                 </LineChart>
               </ResponsiveContainer>
             )}
@@ -182,14 +182,14 @@ export default function SectionStatistics({ onToast }: Props) {
 
         {/* Comparaison entre classes */}
         <div className={cardCls} style={card}>
-          <div className={cardHeaderCls} style={{ ...cardHeader, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-            <span className="text-[14px] md:text-[17px]" style={cardTitle}><BarChart3 size={17} strokeWidth={2} /> {t('statistics.comparison_title')} <CacheBadge fromCache={compFromCache} cachedAt={compCachedAt} t={t} /></span>
+          <div className={cardHeaderCls} style={{ ...cardHeader, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+            <span className="text-[13px] md:text-[14px]" style={cardTitle}><BarChart3 size={15} strokeWidth={2} /> {t('statistics.comparison_title')} <CacheBadge fromCache={compFromCache} cachedAt={compCachedAt} t={t} /></span>
             <select className={selectCls} style={select} value={level} onChange={e => setLevel(e.target.value)}>
               <option value="">{t('statistics.all_levels')}</option>
               {levels.map(l => <option key={l} value={l}>{l}</option>)}
             </select>
           </div>
-          <div className="p-[14px] md:px-[22px] md:py-[18px] h-[260px] md:h-[300px]">
+          <div className="p-[10px] md:p-[14px] h-[210px] md:h-[240px]">
 
             {compLoading ? (
               <Spinner />
@@ -199,10 +199,10 @@ export default function SectionStatistics({ onToast }: Props) {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={comparison}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="className" tick={{ fontSize: 12, fill: 'var(--text3)' }} stroke="var(--border)" />
-                  <YAxis domain={[0, 20]} tick={{ fontSize: 12, fill: 'var(--text3)' }} stroke="var(--border)" />
+                  <XAxis dataKey="className" tick={{ fontSize: 11, fill: 'var(--text3)' }} stroke="var(--border)" />
+                  <YAxis domain={[0, 20]} tick={{ fontSize: 11, fill: 'var(--text3)' }} stroke="var(--border)" />
                   <Tooltip {...CHART_TOOLTIP} />
-                  <Bar dataKey="moyenne" name={t('statistics.series_general_average')} fill="var(--blue)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="moyenne" name={t('statistics.series_general_average')} fill="var(--blue)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -211,15 +211,15 @@ export default function SectionStatistics({ onToast }: Props) {
 
         {/* Répartition des effectifs */}
         <div className={cardCls} style={card}>
-          <div className={cardHeaderCls} style={{ ...cardHeader, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-            <span className="text-[14px] md:text-[17px]" style={cardTitle}><PieChartIcon size={17} strokeWidth={2} /> {t('statistics.distribution_title')} <CacheBadge fromCache={distFromCache} cachedAt={distCachedAt} t={t} /></span>
+          <div className={cardHeaderCls} style={{ ...cardHeader, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+            <span className="text-[13px] md:text-[14px]" style={cardTitle}><PieChartIcon size={15} strokeWidth={2} /> {t('statistics.distribution_title')} <CacheBadge fromCache={distFromCache} cachedAt={distCachedAt} t={t} /></span>
             <select className={selectCls} style={select} value={criteria} onChange={e => setCriteria(e.target.value as typeof criteria)}>
               <option value="gender">{t('statistics.criteria_gender')}</option>
               <option value="level">{t('statistics.criteria_level')}</option>
               <option value="paymentStatus">{t('statistics.criteria_payment')}</option>
             </select>
           </div>
-          <div className="p-[14px] md:px-[22px] md:py-[18px] h-[260px] md:h-[300px]">
+          <div className="p-[10px] md:p-[14px] h-[210px] md:h-[240px]">
 
             {distLoading ? (
               <Spinner />
@@ -228,11 +228,11 @@ export default function SectionStatistics({ onToast }: Props) {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={distribution} dataKey="count" nameKey="label" cx="50%" cy="50%" outerRadius={90} label>
+                  <Pie data={distribution} dataKey="count" nameKey="label" cx="50%" cy="50%" outerRadius={72} label>
                     {distribution.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                   </Pie>
                   <Tooltip {...CHART_TOOLTIP} />
-                  <Legend wrapperStyle={{ fontSize: 12, color: 'var(--text2)' }} />
+                  <Legend wrapperStyle={{ fontSize: 11, color: 'var(--text2)' }} />
                 </PieChart>
               </ResponsiveContainer>
             )}
@@ -241,14 +241,14 @@ export default function SectionStatistics({ onToast }: Props) {
 
         {/* Performance enseignant */}
         <div className={cardCls} style={card}>
-          <div className={cardHeaderCls} style={{ ...cardHeader, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-            <span className="text-[14px] md:text-[17px]" style={cardTitle}><Apple size={17} strokeWidth={2} /> {t('statistics.teacher_title')} <CacheBadge fromCache={teacherFromCache} cachedAt={teacherCachedAt} t={t} /></span>
+          <div className={cardHeaderCls} style={{ ...cardHeader, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+            <span className="text-[13px] md:text-[14px]" style={cardTitle}><Apple size={15} strokeWidth={2} /> {t('statistics.teacher_title')} <CacheBadge fromCache={teacherFromCache} cachedAt={teacherCachedAt} t={t} /></span>
             <select className={selectCls} style={select} value={teacherId} onChange={e => setTeacherId(e.target.value)}>
               <option value="">{t('statistics.teacher_select_placeholder')}</option>
               {teachers.map(tc => <option key={tc.id} value={tc.id}>{tc.firstName} {tc.lastName}</option>)}
             </select>
           </div>
-          <div className="p-[14px] md:px-[22px] md:py-[18px]" style={{ minHeight: 300 }}>
+          <div className="p-[10px] md:p-[14px]" style={{ minHeight: 240 }}>
             {!teacherId ? (
               <EmptyState text={t('statistics.teacher_empty_no_selection')} />
             ) : teacherLoading ? (
@@ -257,14 +257,14 @@ export default function SectionStatistics({ onToast }: Props) {
               <EmptyState text={t('statistics.no_data_available')} />
             ) : (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 12, marginBottom: 18 }}>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-2.5 mb-3">
                   <Kpi label={t('statistics.kpi_hours_planned')} value={String(teacherPerf.heuresPrevuesParSemaine)} />
                   <Kpi label={t('statistics.kpi_sessions_recorded')} value={String(teacherPerf.seancesEnregistrees)} />
                   <Kpi label={t('statistics.kpi_attendance_rate')} value={`${teacherPerf.tauxPresence}%`} />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 160, overflowY: 'auto' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 140, overflowY: 'auto' }}>
                   {teacherPerf.moyennesParClasse.map((m, i) => (
-                    <div key={i} className="text-[13px] md:text-[14px]" style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg)', borderRadius: 8 }}>
+                    <div key={i} className="text-[11.5px] md:text-[12.5px]" style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 10px', background: 'var(--bg)', borderRadius: 7 }}>
                       <span style={{ color: 'var(--text2)', fontWeight: 600 }}>{m.subjectName} · {m.className}</span>
                       <span style={{ fontWeight: 800, color: 'var(--text)' }}>{m.moyenne !== null ? `${m.moyenne}/20` : '—'}</span>
                     </div>
@@ -282,14 +282,14 @@ export default function SectionStatistics({ onToast }: Props) {
 function Spinner() {
   return (
     <div style={{ height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-      <div style={{ width: 32, height: 32, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
+      <div style={{ width: 26, height: 26, border: '2.5px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
     </div>
   )
 }
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <div className="text-[12.5px] md:text-[14px]" style={{ height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text3)', textAlign: 'center', padding: '0 20px' }}>
+    <div className="text-[11.5px] md:text-[12.5px]" style={{ height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text3)', textAlign: 'center', padding: '0 16px' }}>
       {text}
     </div>
   )
@@ -298,17 +298,17 @@ function EmptyState({ text }: { text: string }) {
 function CacheBadge({ fromCache, cachedAt, t }: { fromCache: boolean; cachedAt: number | null; t: (key: string, params?: Record<string, string | number>) => string }) {
   if (!fromCache || !cachedAt) return null
   return (
-    <span className="text-[11px] md:text-[12px]" style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 8, padding: '3px 9px', fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-      <Package size={12} strokeWidth={2} /> {t('cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}
+    <span className="text-[10px] md:text-[11px]" style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 6, padding: '2px 7px', fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+      <Package size={11} strokeWidth={2} /> {t('cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}
     </span>
   )
 }
 
 function Kpi({ label, value }: { label: string; value: string }) {
   return (
-    <div className="p-[10px] md:p-[14px]" style={{ background: 'var(--bg)', borderRadius: 10, textAlign: 'center' }}>
-      <div className="text-[18px] md:text-[22px]" style={{ fontWeight: 900, color: 'var(--text)' }}>{value}</div>
-      <div className="text-[11px] md:text-[12px]" style={{ color: 'var(--text3)', fontWeight: 600, marginTop: 2 }}>{label}</div>
+    <div className="p-[8px] md:p-[10px]" style={{ background: 'var(--bg)', borderRadius: 8, textAlign: 'center' }}>
+      <div className="text-[16px] md:text-[19px]" style={{ fontWeight: 900, color: 'var(--text)' }}>{value}</div>
+      <div className="text-[10px] md:text-[11px]" style={{ color: 'var(--text3)', fontWeight: 600, marginTop: 1 }}>{label}</div>
     </div>
   )
 }

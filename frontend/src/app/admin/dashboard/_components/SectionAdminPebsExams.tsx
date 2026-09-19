@@ -171,7 +171,7 @@ export default function SectionAdminPebsExams({ onToast }: Props) {
 
   return (
     <div className="px-4 py-5 md:px-8 md:py-6" style={{ height: '100%', overflowY: 'auto' }}>
-      <h2 className="text-[22px] md:text-[28px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}><BookOpen size={22} /> {t('pebs_exams.title')}</h2>
+      <h2 className="text-[15px] md:text-[17px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}><BookOpen size={22} /> {t('pebs_exams.title')}</h2>
 
       {/* Création */}
       <div className="rounded-[16px] md:rounded-[12px] p-[16px] md:p-[20px] mb-[20px] md:mb-[24px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]" style={{ background: 'var(--surface)' }}>

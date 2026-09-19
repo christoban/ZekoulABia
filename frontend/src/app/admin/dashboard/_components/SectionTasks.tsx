@@ -116,8 +116,8 @@ export default function SectionTasks({ onToast }: Props) {
     <div className="px-4 py-5 md:px-8 md:py-7" style={{ overflowY: 'auto', height: '100%' }}>
       <div className="mb-[16px] md:mb-[20px]" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <div className="text-[22px] md:text-[28px]" style={sTitle}>{t('tasks.title')}</div>
-          <div className="text-[13px] md:text-[17px]" style={sSub}>{t('tasks.subtitle')}</div>
+          <div className="text-[15px] md:text-[17px]" style={sTitle}>{t('tasks.title')}</div>
+          <div className="text-[11px] md:text-[12px]" style={sSub}>{t('tasks.subtitle')}</div>
         </div>
         <button onClick={() => setFormOpen(true)} className="rounded-full md:rounded-[10px] text-[12px] md:text-[15px] px-[14px] md:px-[16px] py-[9px] md:py-[8px]" style={{ ...btnPrim, borderRadius: undefined, padding: undefined, fontSize: undefined, fontWeight: 700 }}>
           <Plus size={15} strokeWidth={2.5} /> {t('tasks.newTask')}

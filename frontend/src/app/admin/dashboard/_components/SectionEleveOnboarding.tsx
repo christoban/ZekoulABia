@@ -16,6 +16,7 @@ interface ClasseItem { id: string; name: string }
 interface Settings {
   selfServiceEnabled: boolean
   responsableRole: 'ADMIN' | 'STAFF'
+  adminGereInscriptions?: boolean
 }
 
 interface Dossier {
@@ -37,19 +38,18 @@ type DispositifReponse = '' | 'true' | 'false'
 const STATUT_COLORS: Record<string, { bg: string; color: string }> = {
   DRAFT: { bg: 'var(--bg2)', color: 'var(--text2)' },
   LINK_SENT: { bg: 'var(--blue-light)', color: 'var(--blue)' },
-  SUBMITTED: { bg: 'var(--blue-light)', color: 'var(--blue)' },
-  PENDING_VALIDATION: { bg: 'rgba(234,179,8,0.12)', color: '#b45309' },
+  SUBMITTED: { bg: 'rgba(234,179,8,0.12)', color: '#b45309' },
   VALIDATED: { bg: 'rgba(22,163,74,0.12)', color: 'var(--green)' },
   ACTIVATED: { bg: 'rgba(22,163,74,0.12)', color: 'var(--green)' },
   REJECTED: { bg: 'rgba(239,68,68,0.12)', color: 'var(--red)' },
   EXPIRED: { bg: 'var(--bg2)', color: 'var(--text3)' },
 }
 
-const btnPri = { padding: '8px 18px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' as const }
-const btnSec = { padding: '8px 18px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 14, cursor: 'pointer' as const }
+const btnPri = { padding: '8px 15px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 800, fontSize: 13, cursor: 'pointer' as const }
+const btnSec = { padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 700, fontSize: 13, cursor: 'pointer' as const }
 const btnDanger = { padding: '6px 12px', borderRadius: 8, border: '1px solid var(--red)', background: 'var(--surface)', color: 'var(--red)', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
 const btnSmall = { padding: '6px 12px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
-const inputStyle = { padding: '9px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 14, width: '100%', boxSizing: 'border-box' as const }
+const inputStyle = { padding: '7.5px 11px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 13, width: '100%', boxSizing: 'border-box' as const }
 
 export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
   const t = useT('admin')
@@ -70,10 +70,10 @@ export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
   const [createError, setCreateError] = useState('')
   const [creating, setCreating] = useState(false)
 
-  const [validateTarget, setValidateTarget] = useState<Dossier | null>(null)
-  const [validateClassId, setValidateClassId] = useState('')
-  const [validateError, setValidateError] = useState('')
-  const [validating, setValidating] = useState(false)
+  const [inscrireTarget, setInscrireTarget] = useState<Dossier | null>(null)
+  const [inscrireClassId, setInscrireClassId] = useState('')
+  const [inscrireError, setInscrireError] = useState('')
+  const [inscribing, setInscribing] = useState(false)
 
   const [rejectTarget, setRejectTarget] = useState<Dossier | null>(null)
   const [rejectReason, setRejectReason] = useState('')
@@ -111,6 +111,28 @@ export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
       if (data.success) onToast(t('eleveOnboarding.settingsSaved'), 'success')
       else onToast(data.message || t('eleveOnboarding.errorGeneric'), 'error')
     } catch { onToast(t('eleveOnboarding.errorGeneric'), 'error') }
+  }
+
+  const toggleAdminGestion = async () => {
+    if (!settings) return
+    const next = !settings.adminGereInscriptions
+    setSettings(s => s ? { ...s, adminGereInscriptions: next } : s)
+    try {
+      const res = await fetchApi('/api/v2/eleve-onboarding/admin-gestion', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ enabled: next }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        onToast(t('eleveOnboarding.settingsSaved'), 'success')
+      } else {
+        setSettings(s => s ? { ...s, adminGereInscriptions: !next } : s)
+        onToast(data.message || t('eleveOnboarding.errorGeneric'), 'error')
+      }
+    } catch {
+      setSettings(s => s ? { ...s, adminGereInscriptions: !next } : s)
+      onToast(t('eleveOnboarding.errorGeneric'), 'error')
+    }
   }
 
   const changeResponsableRole = async (role: 'ADMIN' | 'STAFF') => {
@@ -175,24 +197,41 @@ export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
     } catch { onToast(t('eleveOnboarding.pdfError'), 'error') }
   }
 
-  const openValidate = (d: Dossier) => { setValidateTarget(d); setValidateClassId(d.classId ?? ''); setValidateError('') }
+  const openInscrire = (d: Dossier) => {
+    if (!settings?.adminGereInscriptions) {
+      onToast("Activez l'option « Gérer moi-même les inscriptions » ci-dessus pour inscrire directement.", 'info')
+      return
+    }
+    setInscrireTarget(d)
+    setInscrireClassId(d.classId ?? '')
+    setInscrireError('')
+  }
 
-  const submitValidate = async () => {
-    if (!validateTarget) return
-    if (!validateClassId) { setValidateError(t('eleveOnboarding.validateErrorClasse')); return }
-    setValidating(true); setValidateError('')
+  const submitInscrire = async () => {
+    if (!inscrireTarget) return
+    if (!inscrireClassId) { setInscrireError(t('eleveOnboarding.validateErrorClasse')); return }
+    setInscribing(true); setInscrireError('')
     try {
-      const res = await fetchApi(`/api/v2/eleve-onboarding/${validateTarget.id}/validate`, {
+      const res = await fetchApi(`/api/v2/eleve-onboarding/${inscrireTarget.id}/inscrire`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ classId: validateClassId }),
+        body: JSON.stringify({ classId: inscrireClassId }),
       })
       const data = await res.json()
       if (data.success) {
-        onToast(t('eleveOnboarding.validateSuccess'), 'success')
-        setValidateTarget(null)
+        onToast(t('eleveOnboarding.inscrireSuccess'), 'success')
+        setInscrireTarget(null)
         fetchAll()
-      } else setValidateError(data.message || t('eleveOnboarding.errorGeneric'))
-    } catch { setValidateError(t('eleveOnboarding.errorGeneric')) } finally { setValidating(false) }
+      } else setInscrireError(data.message || t('eleveOnboarding.errorGeneric'))
+    } catch { setInscrireError(t('eleveOnboarding.errorGeneric')) } finally { setInscribing(false) }
+  }
+
+  const openReject = (d: Dossier) => {
+    if (!settings?.adminGereInscriptions) {
+      onToast("Activez l'option « Gérer moi-même les inscriptions » ci-dessus pour rejeter un dossier.", 'info')
+      return
+    }
+    setRejectTarget(d)
+    setRejectReason('')
   }
 
   const submitReject = async () => {
@@ -224,72 +263,110 @@ export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
 
   return (
     <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto' }}>
-      <div style={{ marginBottom: 18 }}>
-        <h2 className="text-[22px] md:text-[28px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('eleveOnboarding.title')}</h2>
-        <p className="text-[13px] md:text-[14px]" style={{ color: 'var(--text3)', marginTop: 4 }}>{t('eleveOnboarding.subtitle')}</p>
+      <div className="pb-1.5 border-b border-[var(--border)]" style={{ marginBottom: 16 }}>
+        <h1 className="text-[15px] md:text-[17px] font-bold font-spectral" style={{ color: 'var(--text)' }}>{t('eleveOnboarding.title')}</h1>
+        <p className="text-[11px] md:text-[12px] font-medium mt-0.5" style={{ color: 'var(--text3)' }}>{t('eleveOnboarding.subtitle')}</p>
       </div>
 
-      <div style={{ marginBottom: 20 }}>
+      <div style={{ marginBottom: 14 }}>
         <DelegationSupervisionBanner actorTitle="Secrétaire / Service Inscriptions" domainLabel="Inscriptions & Admissions Élèves" onNav={onNav} />
+      </div>
+
+      {/* Option Admin : Gérer moi-même les inscriptions */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl mb-4 border border-[var(--border)] bg-[var(--surface)] shadow-xs">
+        <div className="flex items-start gap-2.5">
+          <div style={{
+            width: 9, height: 9, borderRadius: '50%', marginTop: 4,
+            background: settings?.adminGereInscriptions ? 'var(--green)' : 'var(--amber)'
+          }} />
+          <div>
+            <div className="text-xs md:text-sm font-bold text-[var(--text)] flex items-center gap-2 flex-wrap">
+              {t('eleveOnboarding.adminGestionToggle')}
+              <span className="text-[10.5px] font-extrabold px-2 py-0.5 rounded-full" style={{
+                background: settings?.adminGereInscriptions ? 'rgba(22,163,74,0.12)' : 'rgba(245,158,11,0.12)',
+                color: settings?.adminGereInscriptions ? 'var(--green)' : '#b45309'
+              }}>
+                {settings?.adminGereInscriptions ? t('eleveOnboarding.adminGestionActiveBadge') : t('eleveOnboarding.adminGestionInactiveBadge')}
+              </span>
+            </div>
+            <div className="text-[11.5px] text-[var(--text3)] mt-0.5">
+              {settings?.adminGereInscriptions ? t('eleveOnboarding.adminGestionActiveDesc') : t('eleveOnboarding.adminGestionInactiveDesc')}
+            </div>
+          </div>
+        </div>
+        <div onClick={toggleAdminGestion} className="flex items-center gap-2 cursor-pointer select-none self-end sm:self-center">
+          <div style={{
+            width: 42, height: 24, borderRadius: 12,
+            background: settings?.adminGereInscriptions ? 'var(--green)' : 'var(--border2)',
+            position: 'relative', flexShrink: 0, transition: 'background 0.2s'
+          }}>
+            <div style={{
+              width: 18, height: 18, borderRadius: 9, background: '#fff',
+              position: 'absolute', top: 3,
+              left: settings?.adminGereInscriptions ? 21 : 3,
+              transition: 'left 0.2s',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+            }} />
+          </div>
+        </div>
       </div>
 
       {/* Jauge d'avancement / Pipeline de supervision des dossiers */}
       {(() => {
         const total = dossiers.length
-        const pendingCount = dossiers.filter(d => ['DRAFT', 'LINK_SENT', 'SUBMITTED', 'PENDING_VALIDATION'].includes(d.status)).length
-        const validatedCount = dossiers.filter(d => ['VALIDATED', 'ACTIVATED'].includes(d.status)).length
+        const pendingCount = dossiers.filter(d => ['DRAFT', 'LINK_SENT', 'SUBMITTED'].includes(d.status)).length
+        const registeredCount = dossiers.filter(d => ['VALIDATED', 'ACTIVATED'].includes(d.status)).length
         const rejectedCount = dossiers.filter(d => ['REJECTED', 'EXPIRED'].includes(d.status)).length
         const pendingPct = total > 0 ? Math.round((pendingCount / total) * 100) : 0
-        const validatedPct = total > 0 ? Math.round((validatedCount / total) * 100) : 0
+        const registeredPct = total > 0 ? Math.round((registeredCount / total) * 100) : 0
         const rejectedPct = total > 0 ? Math.round((rejectedCount / total) * 100) : 0
 
         return (
-          <div className="mb-5 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-xs">
+          <div className="mb-4 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-xs">
             <div className="flex items-center justify-between mb-2">
-              <span className="font-extrabold text-[13.5px] text-[var(--text)]">Jauge d'avancement des Admissions</span>
-              <span className="text-[12px] font-bold text-[var(--text3)]">{total} dossier(s) total</span>
+              <span className="font-bold text-xs md:text-sm text-[var(--text)]">Jauge d'avancement des Inscriptions</span>
+              <span className="text-xs font-bold text-[var(--text3)]">{total} dossier(s) au total</span>
             </div>
 
             {/* Visual Bar */}
-            <div className="w-full h-3 rounded-full bg-[var(--bg2)] overflow-hidden flex mb-3 border border-[var(--border)]">
-              <div style={{ width: `${validatedPct}%`, background: 'var(--green)' }} title={`Validés: ${validatedCount} (${validatedPct}%)`} />
-              <div style={{ width: `${pendingPct}%`, background: '#f59e0b' }} title={`En attente: ${pendingCount} (${pendingPct}%)`} />
-              <div style={{ width: `${rejectedPct}%`, background: 'var(--red)' }} title={`Rejetés/Expirés: ${rejectedCount} (${rejectedPct}%)`} />
+            <div className="w-full h-2.5 rounded-full bg-[var(--bg2)] overflow-hidden flex mb-3 border border-[var(--border)]">
+              <div style={{ width: `${registeredPct}%`, background: 'var(--green)' }} title={`Inscrits: ${registeredCount} (${registeredPct}%)`} />
+              <div style={{ width: `${pendingPct}%`, background: '#f59e0b' }} title={`À traiter: ${pendingCount} (${pendingPct}%)`} />
+              <div style={{ width: `${rejectedPct}%`, background: 'var(--red)' }} title={`Rejetés: ${rejectedCount} (${rejectedPct}%)`} />
             </div>
 
             {/* Badges de comptage */}
-            <div className="grid grid-cols-3 gap-2 text-center text-xs">
+            <div className="grid grid-cols-3 gap-2.5 text-center text-xs">
               <div className="p-2 rounded-lg bg-[rgba(22,163,74,0.08)] border border-[rgba(22,163,74,0.2)]">
-                <span className="font-bold text-[var(--green)]">{validatedCount}</span>
-                <span className="block text-[11px] text-[var(--text2)] font-semibold">Inscrits / Validés</span>
+                <span className="font-extrabold text-sm text-[var(--green)] block">{registeredCount}</span>
+                <span className="text-[11px] text-[var(--text2)] font-semibold">{t('eleveOnboarding.gaugeInscrits')}</span>
               </div>
               <div className="p-2 rounded-lg bg-[rgba(245,158,11,0.08)] border border-[rgba(245,158,11,0.2)]">
-                <span className="font-bold text-amber-600">{pendingCount}</span>
-                <span className="block text-[11px] text-[var(--text2)] font-semibold">En attente / Pièces</span>
+                <span className="font-extrabold text-sm text-amber-600 block">{pendingCount}</span>
+                <span className="text-[11px] text-[var(--text2)] font-semibold">{t('eleveOnboarding.gaugeATraiter')}</span>
               </div>
               <div className="p-2 rounded-lg bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.2)]">
-                <span className="font-bold text-[var(--red)]">{rejectedCount}</span>
-                <span className="block text-[11px] text-[var(--text2)] font-semibold">Rejetés / Expirés</span>
+                <span className="font-extrabold text-sm text-[var(--red)] block">{rejectedCount}</span>
+                <span className="text-[11px] text-[var(--text2)] font-semibold">{t('eleveOnboarding.gaugeRejetes')}</span>
               </div>
             </div>
           </div>
         )
       })()}
 
-      {/* Réglages */}
+      {/* Réglages généraux de l'auto-service */}
       {settings && (
-        <div className="flex-col md:flex-row gap-[12px] md:gap-[24px] rounded-[12px] md:rounded-[12px] px-[14px] py-[12px] md:px-[20px] md:py-[14px] mb-[16px] md:mb-[20px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[var(--border)]" style={{ display: 'flex', alignItems: 'stretch', background: 'var(--surface)' }}>
-          <div onClick={toggleSelfService} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, cursor: 'pointer' }}>
-            <span className="text-[12.5px] md:text-[14px]" style={{ fontWeight: 700, color: 'var(--text)' }}>{t('eleveOnboarding.settingsToggle')}</span>
+        <div className="flex flex-col md:flex-row gap-3 md:gap-6 rounded-xl p-3.5 md:px-5 md:py-3.5 mb-4 border border-[var(--border)] bg-[var(--surface)] items-stretch">
+          <div onClick={toggleSelfService} className="flex items-center justify-between gap-2.5 cursor-pointer">
+            <span className="text-xs md:text-sm font-bold text-[var(--text)]">{t('eleveOnboarding.settingsToggle')}</span>
             <div style={{ width: 38, height: 22, borderRadius: 11, background: settings.selfServiceEnabled ? 'var(--green)' : 'var(--border2)', position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
               <div style={{ width: 16, height: 16, borderRadius: 8, background: '#fff', position: 'absolute', top: 3, left: settings.selfServiceEnabled ? 19 : 3, transition: 'left 0.2s' }} />
             </div>
           </div>
-          <label className="text-[12.5px] md:text-[14px] gap-[8px] md:gap-[10px]" style={{ display: 'flex', alignItems: 'center', color: 'var(--text2)' }}>
+          <label className="text-xs md:text-sm font-medium flex items-center gap-2 text-[var(--text2)]">
             {t('eleveOnboarding.settingsResponsable')}
             <select value={settings.responsableRole} onChange={e => changeResponsableRole(e.target.value as 'ADMIN' | 'STAFF')}
-              className="text-[12.5px] md:text-[14px] px-[8px] md:px-[10px] py-[5px] md:py-[6px] rounded-[8px] md:rounded-[8px]"
-              style={{ border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)' }}>
+              className="text-xs md:text-sm px-2.5 py-1 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] font-bold">
               <option value="ADMIN">ADMIN</option>
               <option value="STAFF">STAFF</option>
             </select>
@@ -298,54 +375,59 @@ export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
       )}
 
       {/* Barre de contrôle des dossiers */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
+      <div className="flex items-center justify-between flex-wrap gap-2.5 mb-4">
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-          className="rounded-[12px] md:rounded-[8px] px-[12px] md:px-[14px] py-[9px] md:py-[8px] text-[12.5px] md:text-[13px] font-semibold md:font-normal border-0 md:border md:border-[var(--border)] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none"
-          style={{ background: 'var(--surface)', color: 'var(--text)' }}>
+          className="rounded-lg px-3.5 py-2 text-xs md:text-sm font-bold border border-[var(--border2)] bg-[var(--surface)] text-[var(--text)]">
           <option value="">{t('eleveOnboarding.filterAll')}</option>
-          {['DRAFT', 'LINK_SENT', 'SUBMITTED', 'PENDING_VALIDATION', 'VALIDATED', 'ACTIVATED', 'REJECTED', 'EXPIRED'].map(s => (
+          {['DRAFT', 'LINK_SENT', 'SUBMITTED', 'VALIDATED', 'ACTIVATED', 'REJECTED', 'EXPIRED'].map(s => (
             <option key={s} value={s}>{t(`eleveOnboarding.status_${s}`)}</option>
           ))}
         </select>
 
-        <button onClick={() => setCreateOpen(true)} style={{ ...btnSec, borderRadius: 8, padding: '7px 14px', fontSize: 13, borderColor: 'var(--amber)', color: 'var(--amber-dark)' }}>
-          + Créer un dossier (Secours Admin)
+        <button onClick={() => {
+          if (!settings?.adminGereInscriptions) {
+            onToast("Activez l'option « Gérer moi-même les inscriptions » pour créer un dossier.", 'info')
+            return
+          }
+          setCreateOpen(true)
+        }} className="px-3.5 py-2 text-xs md:text-sm font-bold rounded-lg border border-[var(--green)] text-[var(--green)] bg-[var(--surface)] cursor-pointer hover:bg-[rgba(22,163,74,0.06)]">
+          + Nouveau dossier
         </button>
       </div>
 
       {/* Liste */}
-      <div className="rounded-none md:rounded-[12px] border-0 md:border md:border-[var(--border)] bg-transparent md:bg-[var(--surface)]" style={{ overflow: 'hidden' }}>
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
         {loading ? (
-          <div className="text-[13.5px] md:text-[16px] py-[30px] md:py-[40px]" style={{ textAlign: 'center', color: 'var(--text3)' }}>{t('common.loading') || '...'}</div>
+          <div className="text-xs md:text-sm py-8 text-center text-[var(--text3)]">{t('common.loading') || '...'}</div>
         ) : dossiers.length === 0 ? (
-          <div className="text-[13.5px] md:text-[16px] py-[30px] md:py-[40px]" style={{ textAlign: 'center', color: 'var(--text3)' }}>{t('eleveOnboarding.listEmpty')}</div>
+          <div className="text-xs md:text-sm py-8 text-center text-[var(--text3)]">{t('eleveOnboarding.listEmpty')}</div>
         ) : (
           <>
           {/* ── Cartes empilées — mobile ── */}
-          <div className="md:hidden flex flex-col" style={{ gap: 10 }}>
+          <div className="md:hidden flex flex-col gap-2.5 p-3">
             {dossiers.map(d => (
-              <div key={d.id} className="rounded-[16px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: 15 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{d.nomProvisoire}</div>
+              <div key={d.id} className="rounded-xl p-3.5 border border-[var(--border)] bg-[var(--surface)] shadow-xs">
+                <div className="text-xs md:text-sm font-bold text-[var(--text)]">{d.nomProvisoire}</div>
                 {d.matchScore !== null && (
-                  <div style={{ fontSize: 11, color: '#b45309', marginTop: 3 }}>{t('eleveOnboarding.matchWarning', { score: String(d.matchScore) })}</div>
+                  <div className="text-[11px] text-amber-700 mt-1">{t('eleveOnboarding.matchWarning', { score: String(d.matchScore) })}</div>
                 )}
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-                  <span style={{ padding: '3px 10px', borderRadius: 16, fontSize: 12, fontWeight: 700, ...(STATUT_COLORS[d.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }) }}>
+                <div className="flex gap-1.5 flex-wrap mt-2">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold" style={STATUT_COLORS[d.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }}>
                     {t(`eleveOnboarding.status_${d.status}`)}
                   </span>
-                  <span style={{ padding: '3px 10px', borderRadius: 16, fontSize: 12, fontWeight: 700, background: 'var(--bg2)', color: 'var(--text2)' }}>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--bg2)] text-[var(--text2)]">
                     {t(`eleveOnboarding.source_${d.sourceType}`)}
                   </span>
                   {d.classe?.name && (
-                    <span style={{ padding: '3px 10px', borderRadius: 16, fontSize: 12, fontWeight: 700, background: 'var(--bg2)', color: 'var(--text2)' }}>{d.classe.name}</span>
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--bg2)] text-[var(--text2)]">{d.classe.name}</span>
                   )}
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 8 }}>{new Date(d.createdAt).toLocaleDateString()}</div>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--bg2)' }}>
-                  {d.status === 'PENDING_VALIDATION' && (
+                <div className="text-[11px] text-[var(--text3)] mt-2">{new Date(d.createdAt).toLocaleDateString()}</div>
+                <div className="flex gap-2 flex-wrap mt-3 pt-2.5 border-t border-[var(--border)]">
+                  {['SUBMITTED', 'DRAFT', 'LINK_SENT'].includes(d.status) && (
                     <>
-                      <button onClick={() => openValidate(d)} style={btnSmall}>{t('eleveOnboarding.validateBtn')}</button>
-                      <button onClick={() => setRejectTarget(d)} style={btnDanger}>{t('eleveOnboarding.rejectBtn')}</button>
+                      <button onClick={() => openInscrire(d)} style={btnSmall}>{t('eleveOnboarding.inscrireBtn')}</button>
+                      <button onClick={() => openReject(d)} style={btnDanger}>{t('eleveOnboarding.rejectBtn')}</button>
                     </>
                   )}
                   {(d.status === 'LINK_SENT' || d.status === 'EXPIRED') && (
@@ -358,35 +440,35 @@ export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
           </div>
 
           {/* ── Tableau — desktop ── */}
-          <div className="hidden md:block" style={{ overflowX: 'auto' }}>
+          <div className="hidden md:block overflow-x-auto">
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
               <thead>
                 <tr>{[t('eleveOnboarding.colName'), t('eleveOnboarding.colStatus'), t('eleveOnboarding.colSource'), t('eleveOnboarding.colClasse'), t('eleveOnboarding.colCreated'), t('eleveOnboarding.colActions')].map(h => (
-                  <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 12, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', textTransform: 'uppercase' }}>{h}</th>
+                  <th key={h} style={{ padding: '9px 16px', textAlign: 'left', fontSize: 12, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>{h}</th>
                 ))}</tr>
               </thead>
               <tbody>
                 {dossiers.map(d => (
-                  <tr key={d.id} style={{ borderBottom: '1px solid var(--bg)' }}>
-                    <td style={{ padding: '12px 16px', fontSize: 14, color: 'var(--text)' }}>
+                  <tr key={d.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={{ padding: '10px 16px', fontSize: 13, color: 'var(--text)', fontWeight: 600 }}>
                       {d.nomProvisoire}
                       {d.matchScore !== null && (
-                        <div style={{ fontSize: 11, color: '#b45309', marginTop: 3 }}>{t('eleveOnboarding.matchWarning', { score: String(d.matchScore) })}</div>
+                        <div style={{ fontSize: 11, color: '#b45309', marginTop: 2 }}>{t('eleveOnboarding.matchWarning', { score: String(d.matchScore) })}</div>
                       )}
                     </td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <span style={{ padding: '3px 10px', borderRadius: 16, fontSize: 12, fontWeight: 700, ...(STATUT_COLORS[d.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }) }}>
+                    <td style={{ padding: '10px 16px' }}>
+                      <span style={{ padding: '3px 10px', borderRadius: 16, fontSize: 11.5, fontWeight: 700, ...(STATUT_COLORS[d.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }) }}>
                         {t(`eleveOnboarding.status_${d.status}`)}
                       </span>
                     </td>
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text2)' }}>{t(`eleveOnboarding.source_${d.sourceType}`)}</td>
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text2)' }}>{d.classe?.name ?? '—'}</td>
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text3)' }}>{new Date(d.createdAt).toLocaleDateString()}</td>
-                    <td style={{ padding: '12px 16px', display: 'flex', gap: 8 }}>
-                      {d.status === 'PENDING_VALIDATION' && (
+                    <td style={{ padding: '10px 16px', fontSize: 12.5, color: 'var(--text2)' }}>{t(`eleveOnboarding.source_${d.sourceType}`)}</td>
+                    <td style={{ padding: '10px 16px', fontSize: 12.5, color: 'var(--text2)' }}>{d.classe?.name ?? '—'}</td>
+                    <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text3)' }}>{new Date(d.createdAt).toLocaleDateString()}</td>
+                    <td style={{ padding: '10px 16px', display: 'flex', gap: 6 }}>
+                      {['SUBMITTED', 'DRAFT', 'LINK_SENT'].includes(d.status) && (
                         <>
-                          <button onClick={() => openValidate(d)} style={btnSmall}>{t('eleveOnboarding.validateBtn')}</button>
-                          <button onClick={() => setRejectTarget(d)} style={btnDanger}>{t('eleveOnboarding.rejectBtn')}</button>
+                          <button onClick={() => openInscrire(d)} style={btnSmall}>{t('eleveOnboarding.inscrireBtn')}</button>
+                          <button onClick={() => openReject(d)} style={btnDanger}>{t('eleveOnboarding.rejectBtn')}</button>
                         </>
                       )}
                       {(d.status === 'LINK_SENT' || d.status === 'EXPIRED') && (
@@ -405,93 +487,133 @@ export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
 
       {/* Modal création */}
       {createOpen && (
-        <div onClick={() => !creating && setCreateOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div onClick={e => e.stopPropagation()} className="p-5 md:p-7" style={{ background: 'var(--surface)', borderRadius: 16, width: 460, maxWidth: '92vw' }}>
-            <h3 className="text-[16px] md:text-[18px]" style={{ fontWeight: 800, color: 'var(--text)', marginBottom: 18 }}>{t('eleveOnboarding.createModalTitle')}</h3>
+        <div onClick={() => !creating && setCreateOpen(false)} className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-[1000]">
+          <div onClick={e => e.stopPropagation()} className="p-5 md:p-6 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl w-[560px] max-w-[95vw] max-h-[88vh] flex flex-col">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border)] mb-4 flex-shrink-0">
+              <h3 className="text-base md:text-lg font-bold text-[var(--text)]">{t('eleveOnboarding.createModalTitle')}</h3>
+              <button onClick={() => !creating && setCreateOpen(false)} className="text-[var(--text3)] hover:text-[var(--text)] text-lg font-bold border-none bg-transparent cursor-pointer">×</button>
+            </div>
 
-            <FieldLabel>{t('eleveOnboarding.fieldNomProvisoire')}</FieldLabel>
-            <input style={inputStyle} value={createForm.nomProvisoire} onChange={e => setCreateForm(f => ({ ...f, nomProvisoire: e.target.value }))} />
+            <div className="overflow-y-auto flex-1 pr-1 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <FieldLabel>{t('eleveOnboarding.fieldNomProvisoire')}</FieldLabel>
+                  <input style={inputStyle} value={createForm.nomProvisoire} onChange={e => setCreateForm(f => ({ ...f, nomProvisoire: e.target.value }))} placeholder="Ex: Jean Dupont" />
+                </div>
+                <div>
+                  <FieldLabel>{t('eleveOnboarding.fieldClasse')}</FieldLabel>
+                  <select style={inputStyle} value={createForm.classId} onChange={e => setCreateForm(f => ({ ...f, classId: e.target.value }))}>
+                    <option value="">{t('eleveOnboarding.fieldClasseNone')}</option>
+                    {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+              </div>
 
-            <FieldLabel>{t('eleveOnboarding.fieldClasse')}</FieldLabel>
-            <select style={inputStyle} value={createForm.classId} onChange={e => setCreateForm(f => ({ ...f, classId: e.target.value }))}>
-              <option value="">{t('eleveOnboarding.fieldClasseNone')}</option>
-              {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <FieldLabel>{t('eleveOnboarding.fieldRecipient')}</FieldLabel>
+                  <select style={inputStyle} value={createForm.recipientType} onChange={e => setCreateForm(f => ({ ...f, recipientType: e.target.value as any }))}>
+                    <option value="ELEVE">{t('eleveOnboarding.recipientEleve')}</option>
+                    <option value="PARENT">{t('eleveOnboarding.recipientParent')}</option>
+                    <option value="LES_DEUX">{t('eleveOnboarding.recipientBoth')}</option>
+                  </select>
+                </div>
+                <div>
+                  <FieldLabel>{t('eleveOnboarding.fieldContactEmail')}</FieldLabel>
+                  <input style={inputStyle} type="email" value={createForm.contactEmail} onChange={e => setCreateForm(f => ({ ...f, contactEmail: e.target.value }))} disabled={createForm.aucunContactDisponible} placeholder="email@exemple.com" />
+                </div>
+              </div>
 
-            <FieldLabel>{t('eleveOnboarding.fieldContactEmail')}</FieldLabel>
-            <input style={inputStyle} type="email" value={createForm.contactEmail} onChange={e => setCreateForm(f => ({ ...f, contactEmail: e.target.value }))} disabled={createForm.aucunContactDisponible} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                <div>
+                  <FieldLabel>{t('eleveOnboarding.fieldContactTelephone')}</FieldLabel>
+                  <input style={inputStyle} value={createForm.contactTelephone} onChange={e => setCreateForm(f => ({ ...f, contactTelephone: e.target.value }))} disabled={createForm.aucunContactDisponible} placeholder="+237 6..." />
+                </div>
+                <div className="pb-1">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-[var(--text2)] cursor-pointer">
+                    <input type="checkbox" checked={createForm.aucunContactDisponible} onChange={e => setCreateForm(f => ({ ...f, aucunContactDisponible: e.target.checked }))} className="rounded" />
+                    {t('eleveOnboarding.aucunContactDisponibleLabel')}
+                  </label>
+                </div>
+              </div>
 
-            <FieldLabel>{t('eleveOnboarding.fieldContactTelephone')}</FieldLabel>
-            <input style={inputStyle} value={createForm.contactTelephone} onChange={e => setCreateForm(f => ({ ...f, contactTelephone: e.target.value }))} disabled={createForm.aucunContactDisponible} />
+              {createForm.recipientType === 'LES_DEUX' && (
+                <div className="p-3 bg-[var(--bg)] rounded-xl border border-[var(--border)] space-y-2">
+                  <div className="text-xs font-semibold text-[var(--text3)]">{t('eleveOnboarding.parentContactHint')}</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <FieldLabel>{t('eleveOnboarding.fieldParentContactEmail')}</FieldLabel>
+                      <input style={inputStyle} type="email" value={createForm.parentContactEmail} onChange={e => setCreateForm(f => ({ ...f, parentContactEmail: e.target.value }))} disabled={createForm.aucunContactDisponible} placeholder="parent@exemple.com" />
+                    </div>
+                    <div>
+                      <FieldLabel>{t('eleveOnboarding.fieldParentContactTelephone')}</FieldLabel>
+                      <input style={inputStyle} value={createForm.parentContactTelephone} onChange={e => setCreateForm(f => ({ ...f, parentContactTelephone: e.target.value }))} disabled={createForm.aucunContactDisponible} placeholder="+237 6..." />
+                    </div>
+                  </div>
+                </div>
+              )}
 
-            <FieldLabel>{t('eleveOnboarding.fieldRecipient')}</FieldLabel>
-            <select style={inputStyle} value={createForm.recipientType} onChange={e => setCreateForm(f => ({ ...f, recipientType: e.target.value as any }))}>
-              <option value="ELEVE">{t('eleveOnboarding.recipientEleve')}</option>
-              <option value="PARENT">{t('eleveOnboarding.recipientParent')}</option>
-              <option value="LES_DEUX">{t('eleveOnboarding.recipientBoth')}</option>
-            </select>
+              {/* Section Équipement Numérique */}
+              <div className="p-3.5 bg-[var(--bg)] rounded-xl border border-[var(--border)]">
+                <div className="text-xs md:text-sm font-bold text-[var(--text)]">{t('eleveOnboarding.digitalCapacityTitle')}</div>
+                <div className="text-[11px] text-[var(--text3)] mb-2.5">{t('eleveOnboarding.digitalCapacityHint')}</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <FieldLabel>{t('eleveOnboarding.fieldEleveADispositif')}</FieldLabel>
+                    <select style={inputStyle} value={createForm.eleveADispositif} onChange={e => setCreateForm(f => ({ ...f, eleveADispositif: e.target.value as DispositifReponse }))}>
+                      <option value="">{t('eleveOnboarding.deviceUnknown')}</option>
+                      <option value="true">{t('eleveOnboarding.deviceYes')}</option>
+                      <option value="false">{t('eleveOnboarding.deviceNo')}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <FieldLabel>{t('eleveOnboarding.fieldParentADispositif')}</FieldLabel>
+                    <select style={inputStyle} value={createForm.parentADispositif} onChange={e => setCreateForm(f => ({ ...f, parentADispositif: e.target.value as DispositifReponse }))}>
+                      <option value="">{t('eleveOnboarding.deviceUnknown')}</option>
+                      <option value="true">{t('eleveOnboarding.deviceYes')}</option>
+                      <option value="false">{t('eleveOnboarding.deviceNo')}</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
 
-            {createForm.recipientType === 'LES_DEUX' && (
-              <>
-                <div style={{ fontSize: 12, color: 'var(--text3)', margin: '10px 0 0' }}>{t('eleveOnboarding.parentContactHint')}</div>
-                <FieldLabel>{t('eleveOnboarding.fieldParentContactEmail')}</FieldLabel>
-                <input style={inputStyle} type="email" value={createForm.parentContactEmail} onChange={e => setCreateForm(f => ({ ...f, parentContactEmail: e.target.value }))} disabled={createForm.aucunContactDisponible} />
+              {createError && <div className="bg-[var(--red-light)] text-[var(--red)] border border-[var(--red-light)] rounded-lg p-2.5 text-xs font-bold">{createError}</div>}
+            </div>
 
-                <FieldLabel>{t('eleveOnboarding.fieldParentContactTelephone')}</FieldLabel>
-                <input style={inputStyle} value={createForm.parentContactTelephone} onChange={e => setCreateForm(f => ({ ...f, parentContactTelephone: e.target.value }))} disabled={createForm.aucunContactDisponible} />
-              </>
-            )}
-
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text2)', margin: '14px 0 0', cursor: 'pointer' }}>
-              <input type="checkbox" checked={createForm.aucunContactDisponible} onChange={e => setCreateForm(f => ({ ...f, aucunContactDisponible: e.target.checked }))} />
-              {t('eleveOnboarding.aucunContactDisponibleLabel')}
-            </label>
-
-            <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', margin: '18px 0 2px' }}>{t('eleveOnboarding.digitalCapacityTitle')}</div>
-            <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 8 }}>{t('eleveOnboarding.digitalCapacityHint')}</div>
-
-            <FieldLabel>{t('eleveOnboarding.fieldEleveADispositif')}</FieldLabel>
-            <select style={inputStyle} value={createForm.eleveADispositif} onChange={e => setCreateForm(f => ({ ...f, eleveADispositif: e.target.value as DispositifReponse }))}>
-              <option value="">{t('eleveOnboarding.deviceUnknown')}</option>
-              <option value="true">{t('eleveOnboarding.deviceYes')}</option>
-              <option value="false">{t('eleveOnboarding.deviceNo')}</option>
-            </select>
-
-            <FieldLabel>{t('eleveOnboarding.fieldParentADispositif')}</FieldLabel>
-            <select style={inputStyle} value={createForm.parentADispositif} onChange={e => setCreateForm(f => ({ ...f, parentADispositif: e.target.value as DispositifReponse }))}>
-              <option value="">{t('eleveOnboarding.deviceUnknown')}</option>
-              <option value="true">{t('eleveOnboarding.deviceYes')}</option>
-              <option value="false">{t('eleveOnboarding.deviceNo')}</option>
-            </select>
-
-            {createError && <div style={{ background: 'var(--red-light,#fef2f2)', color: 'var(--red)', borderRadius: 8, padding: '8px 12px', fontSize: 13, marginTop: 14 }}>{createError}</div>}
-
-            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-              <button onClick={() => setCreateOpen(false)} disabled={creating} style={{ ...btnSec, flex: 1 }}>{t('eleveOnboarding.cancel')}</button>
-              <button onClick={submitCreate} disabled={creating} style={{ ...btnPri, flex: 2 }}>{creating ? '...' : t('eleveOnboarding.createSubmit')}</button>
+            <div className="flex justify-end gap-2.5 pt-3 border-t border-[var(--border)] mt-4 flex-shrink-0">
+              <button onClick={() => setCreateOpen(false)} disabled={creating} className="px-4 py-2 rounded-lg text-xs md:text-sm font-bold bg-[var(--bg2)] text-[var(--text2)] border-none cursor-pointer">
+                {t('eleveOnboarding.cancel')}
+              </button>
+              <button onClick={submitCreate} disabled={creating} className="px-5 py-2 rounded-lg text-xs md:text-sm font-bold text-white bg-[var(--sidebar)] border-none cursor-pointer disabled:opacity-50">
+                {creating ? '...' : t('eleveOnboarding.createSubmit')}
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal validation */}
-      {validateTarget && (
-        <div onClick={() => !validating && setValidateTarget(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div onClick={e => e.stopPropagation()} className="p-5 md:p-7" style={{ background: 'var(--surface)', borderRadius: 16, width: 420, maxWidth: '92vw' }}>
-            <h3 className="text-[16px] md:text-[18px]" style={{ fontWeight: 800, color: 'var(--text)', marginBottom: 6 }}>{t('eleveOnboarding.validateModalTitle')}</h3>
-            <p style={{ fontSize: 14, color: 'var(--text3)', marginBottom: 16 }}>{validateTarget.nomProvisoire}</p>
+      {/* Modal inscription directe en 1 étape */}
+      {inscrireTarget && (
+        <div onClick={() => !inscribing && setInscrireTarget(null)} className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-[1000]">
+          <div onClick={e => e.stopPropagation()} className="p-5 md:p-6 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl w-[420px] max-w-[95vw]">
+            <h3 className="text-base md:text-lg font-bold text-[var(--text)] mb-1">{t('eleveOnboarding.inscrireModalTitle')}</h3>
+            <p className="text-xs text-[var(--text3)] mb-3">{inscrireTarget.nomProvisoire}</p>
 
-            <FieldLabel>{t('eleveOnboarding.validateClasseLabel')}</FieldLabel>
-            <select style={inputStyle} value={validateClassId} onChange={e => setValidateClassId(e.target.value)}>
+            <FieldLabel>{t('eleveOnboarding.inscrireClasseLabel')}</FieldLabel>
+            <select style={inputStyle} value={inscrireClassId} onChange={e => setInscrireClassId(e.target.value)}>
               <option value="">{t('eleveOnboarding.fieldClasseNone')}</option>
               {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
 
-            {validateError && <div style={{ background: 'var(--red-light,#fef2f2)', color: 'var(--red)', borderRadius: 8, padding: '8px 12px', fontSize: 13, marginTop: 14 }}>{validateError}</div>}
+            {inscrireError && <div className="bg-[var(--red-light)] text-[var(--red)] border border-[var(--red-light)] rounded-lg p-2.5 text-xs font-bold mt-3">{inscrireError}</div>}
 
-            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-              <button onClick={() => setValidateTarget(null)} disabled={validating} style={{ ...btnSec, flex: 1 }}>{t('eleveOnboarding.cancel')}</button>
-              <button onClick={submitValidate} disabled={validating} style={{ ...btnPri, flex: 2 }}>{validating ? '...' : t('eleveOnboarding.validateSubmit')}</button>
+            <div className="flex justify-end gap-2.5 pt-3 border-t border-[var(--border)] mt-4">
+              <button onClick={() => setInscrireTarget(null)} disabled={inscribing} className="px-4 py-2 rounded-lg text-xs md:text-sm font-bold bg-[var(--bg2)] text-[var(--text2)] border-none cursor-pointer">
+                {t('eleveOnboarding.cancel')}
+              </button>
+              <button onClick={submitInscrire} disabled={inscribing} className="px-5 py-2 rounded-lg text-xs md:text-sm font-bold text-white bg-[var(--green)] border-none cursor-pointer disabled:opacity-50">
+                {inscribing ? '...' : t('eleveOnboarding.inscrireSubmit')}
+              </button>
             </div>
           </div>
         </div>
@@ -499,17 +621,21 @@ export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
 
       {/* Modal rejet */}
       {rejectTarget && (
-        <div onClick={() => !rejecting && setRejectTarget(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div onClick={e => e.stopPropagation()} className="p-5 md:p-7" style={{ background: 'var(--surface)', borderRadius: 16, width: 420, maxWidth: '92vw' }}>
-            <h3 className="text-[16px] md:text-[18px]" style={{ fontWeight: 800, color: 'var(--text)', marginBottom: 6 }}>{t('eleveOnboarding.rejectModalTitle')}</h3>
-            <p style={{ fontSize: 14, color: 'var(--text3)', marginBottom: 16 }}>{rejectTarget.nomProvisoire}</p>
+        <div onClick={() => !rejecting && setRejectTarget(null)} className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-[1000]">
+          <div onClick={e => e.stopPropagation()} className="p-5 md:p-6 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl w-[420px] max-w-[95vw]">
+            <h3 className="text-base md:text-lg font-bold text-[var(--text)] mb-1">{t('eleveOnboarding.rejectModalTitle')}</h3>
+            <p className="text-xs text-[var(--text3)] mb-3">{rejectTarget.nomProvisoire}</p>
 
             <FieldLabel>{t('eleveOnboarding.rejectReasonLabel')}</FieldLabel>
-            <textarea style={{ ...inputStyle, minHeight: 80 }} value={rejectReason} onChange={e => setRejectReason(e.target.value)} />
+            <textarea style={{ ...inputStyle, minHeight: 70 }} value={rejectReason} onChange={e => setRejectReason(e.target.value)} />
 
-            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-              <button onClick={() => setRejectTarget(null)} disabled={rejecting} style={{ ...btnSec, flex: 1 }}>{t('eleveOnboarding.cancel')}</button>
-              <button onClick={submitReject} disabled={rejecting || !rejectReason.trim()} style={{ ...btnPri, flex: 2, background: 'var(--red)' }}>{rejecting ? '...' : t('eleveOnboarding.rejectSubmit')}</button>
+            <div className="flex justify-end gap-2.5 pt-3 border-t border-[var(--border)] mt-4">
+              <button onClick={() => setRejectTarget(null)} disabled={rejecting} className="px-4 py-2 rounded-lg text-xs md:text-sm font-bold bg-[var(--bg2)] text-[var(--text2)] border-none cursor-pointer">
+                {t('eleveOnboarding.cancel')}
+              </button>
+              <button onClick={submitReject} disabled={rejecting || !rejectReason.trim()} className="px-5 py-2 rounded-lg text-xs md:text-sm font-bold text-white bg-[var(--red)] border-none cursor-pointer disabled:opacity-50">
+                {rejecting ? '...' : t('eleveOnboarding.rejectSubmit')}
+              </button>
             </div>
           </div>
         </div>
@@ -519,5 +645,5 @@ export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
 }
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <div className="text-[12px] md:text-[13px]" style={{ fontWeight: 700, color: 'var(--text2)', margin: '12px 0 6px' }}>{children}</div>
+  return <div className="text-xs font-bold text-[var(--text3)] uppercase tracking-wider mb-1 mt-1.5 block">{children}</div>
 }

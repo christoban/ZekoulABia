@@ -71,10 +71,10 @@ export default function SectionCorbeille({ onToast }: Props) {
     <div className="px-4 py-5 md:px-8 md:py-7" style={{ overflowY: 'auto', height: '100%' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
         <div>
-          <div className="text-[22px] md:text-[28px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
+          <div className="text-[15px] md:text-[17px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
             {t('corbeille.titre')}
           </div>
-          <div className="text-[13px] md:text-[16px]" style={{ color: 'var(--text3)', marginTop: 3 }}>{t('corbeille.sous_titre')}</div>
+          <div className="text-[11px] md:text-[12px]" style={{ color: 'var(--text3)', marginTop: 3 }}>{t('corbeille.sous_titre')}</div>
         </div>
       </div>
 

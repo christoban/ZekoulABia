@@ -203,8 +203,8 @@ export default function SectionCommunications({ onToast }: Props) {
     <div className="px-4 py-5 md:px-9 md:py-8" style={{ height: '100%', overflow: 'auto', background: 'var(--bg)' }}>
       {/* Header */}
       <div className="mb-[16px] md:mb-[28px]">
-        <h2 className="text-[22px] md:text-[28px]" style={{ margin: 0, fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('communications.title')}</h2>
-        <p className="text-[13px] md:text-[14px]" style={{ margin: '6px 0 0', color: 'var(--text3)' }}>
+        <h2 className="text-[15px] md:text-[17px]" style={{ margin: 0, fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('communications.title')}</h2>
+        <p className="text-[11px] md:text-[12px]" style={{ margin: '6px 0 0', color: 'var(--text3)' }}>
           {t('communications.subtitle')}
         </p>
       </div>

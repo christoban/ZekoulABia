@@ -591,52 +591,55 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
     (departments.find(d => d.id === deptId)?.subjects.length ?? 0) > 0
 
   return (
-    <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto' }}>
+    <div className="h-full overflow-y-auto p-4 md:p-5 space-y-4 max-w-7xl mx-auto pb-12 font-nunito">
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
-      {/* En-tête */}
-      <div className="mb-[16px] md:mb-[20px]" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+      <div className="pb-1.5 border-b border-[var(--border)]" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <div className="text-[22px] md:text-[28px]" style={sTitle}>{t('subjects.title')}</div>
-          <div className="text-[13px] md:text-[17px]" style={sSub}>{loading ? '…' : t('subjects.count').replace('{count}', String(subjects.length))}</div>
+          <h1 className="text-[15px] md:text-[17px] font-bold font-spectral" style={{ color: 'var(--text)' }}>
+            {t('subjects.title')}
+          </h1>
+          <p className="text-[11px] md:text-[12px] font-medium mt-0.5" style={{ color: 'var(--text3)' }}>
+            {loading ? '…' : t('subjects.count').replace('{count}', String(subjects.length))}
+          </p>
         </div>
-        {/* Actions — mobile : sync compact + CTA pilule (vert, nôtre), reproduction maquette */}
+        {/* Actions — mobile : sync compact + CTA pilule */}
         <div className="flex md:hidden items-center gap-[6px] flex-shrink-0">
           <button onClick={handleSync} disabled={syncing} title={t('subjects.sync_title')}
-            style={{ width: 38, height: 38, borderRadius: 19, border: 'none', background: 'var(--bg2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text2)', opacity: syncing ? 0.7 : 1 }}>
+            style={{ width: 36, height: 36, borderRadius: 9, border: 'none', background: 'var(--bg2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text2)', opacity: syncing ? 0.7 : 1 }}>
             {syncing ? <Loader2 size={16} strokeWidth={2} className="animate-spin" /> : <RefreshCw size={16} strokeWidth={2} />}
           </button>
           {view === 'catalogue' && (
             <button onClick={() => setCreateOpen(true)}
-              className="inline-flex items-center gap-[6px] rounded-full px-[14px] py-[10px] text-[12.5px] whitespace-nowrap border-0"
-              style={{ background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 900 }}>
+              className="inline-flex items-center gap-[6px] rounded-lg px-[13px] py-[8px] text-[13px] whitespace-nowrap border-0"
+              style={{ background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800 }}>
               {t('subjects.btn_create')}
             </button>
           )}
           {view === 'departements' && (
             <button onClick={() => setDeptCreateForm({ open: true, name: '', color: 'var(--text3)', loading: false, error: '' })}
-              className="inline-flex items-center gap-[6px] rounded-full px-[14px] py-[10px] text-[12.5px] whitespace-nowrap border-0"
-              style={{ background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 900 }}>
+              className="inline-flex items-center gap-[6px] rounded-lg px-[13px] py-[8px] text-[13px] whitespace-nowrap border-0"
+              style={{ background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800 }}>
               {t('subjects.btn_create_dept')}
             </button>
           )}
         </div>
-        {/* Actions — desktop, inchangées */}
+        {/* Actions — desktop */}
         <div className="hidden md:flex" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           {/* Toggle Vue */}
-          <div style={{ display: 'flex', background: 'var(--bg2)', borderRadius: 10, padding: 3, gap: 2 }}>
+          <div style={{ display: 'flex', background: 'var(--bg2)', borderRadius: 10, padding: 3.5, gap: 2 }}>
             {(['catalogue', 'par-classe', 'departements', 'par-enseignant'] as const).map(v => (
               <button key={v} onClick={() => setView(v)}
-                style={{ padding: '6px 14px', borderRadius: 8, fontSize: 14, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                style={{ padding: '7px 14px', borderRadius: 8, fontSize: 13.5, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                   background: view === v ? 'white' : 'transparent',
                   color:      view === v ? 'var(--text)' : 'var(--text3)',
-                  boxShadow:  view === v ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+                  boxShadow:  view === v ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
                 }}>
                 {t(`subjects.view_toggles.${v === 'par-classe' ? 'par_classe' : v === 'par-enseignant' ? 'par_enseignant' : v}`)}
               </button>
             ))}
           </div>
-          <button style={{ ...btnPrim, opacity: syncing ? 0.7 : 1, fontSize: 14, padding: '8px 14px' }}
+          <button style={{ ...btnPrim, opacity: syncing ? 0.7 : 1, fontSize: 13.5, padding: '8px 15px' }}
             onClick={handleSync} disabled={syncing} title={t('subjects.sync_title')}>
             {syncing ? t('subjects.syncing') : t('subjects.btn_sync')}
           </button>
@@ -652,33 +655,33 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
       <DelegationSupervisionBanner actorTitle="Animateur Pédagogique" domainLabel="Matières & Coefficients" onNav={onNav} />
 
       {/* RACI Ministerial Compliance Matrix Banner */}
-      <div className="mb-4 p-3.5 rounded-xl border border-indigo-500/20 bg-indigo-500/5 text-xs text-[var(--text)] flex items-center justify-between gap-3 shadow-xs">
+      <div className="mb-4 p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 text-sm text-[var(--text)] flex items-center justify-between gap-3 shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-indigo-500/15 text-indigo-600 flex-shrink-0">
-            <BookOpen size={16} />
+          <div className="p-2.5 rounded-lg bg-indigo-500/15 text-indigo-600 flex-shrink-0">
+            <BookOpen size={18} />
           </div>
           <div>
-            <p className="font-bold text-xs">Matrice de Conformité Ministérielle & Coefficients</p>
-            <p className="text-[11.5px] text-[var(--text2)]">Le découpage disciplinaire est préparé par les Animateurs Pédagogiques (AP). L'Administrateur supervise la conformité des volumes horaires et l'équilibre des coefficients entre séries.</p>
+            <p className="font-bold text-sm">Matrice de Conformité Ministérielle & Coefficients</p>
+            <p className="text-xs text-[var(--text2)]">Le découpage disciplinaire est préparé par les Animateurs Pédagogiques (AP). L'Administrateur supervise la conformité des volumes horaires et l'équilibre des coefficients entre séries.</p>
           </div>
         </div>
       </div>
 
-      {/* Onglets de vue — mobile : puces défilables avec indicateur glissant, fondu de bord (maquette) */}
+      {/* Onglets de vue — mobile */}
       <div className="relative md:hidden mb-[14px] -mr-4">
         <div className="flex gap-[6px] overflow-x-auto" style={{ padding: '2px 32px 4px 0', scrollbarWidth: 'none' }}>
           {(['catalogue', 'par-classe', 'departements', 'par-enseignant'] as const).map(v => {
             const active = view === v
             return (
               <button key={v} onClick={() => setView(v)}
-                className="relative flex-shrink-0 rounded-full px-[14px] py-[9px] whitespace-nowrap border-0"
+                className="relative flex-shrink-0 rounded-full px-[15px] py-[9.5px] whitespace-nowrap border-0"
                 style={{ background: 'transparent', cursor: 'pointer', fontFamily: 'inherit' }}>
                 {active && (
                   <motion.div layoutId="subjects-view-pill" className="absolute inset-0 rounded-full"
                     style={{ background: 'var(--sidebar)' }}
                     transition={{ type: 'spring', stiffness: 380, damping: 30 }} />
                 )}
-                <span className="relative z-10 text-[12.5px]" style={{ fontWeight: active ? 700 : 500, color: active ? '#fff' : 'var(--text3)' }}>
+                <span className="relative z-10 text-[13px]" style={{ fontWeight: active ? 700 : 500, color: active ? '#fff' : 'var(--text3)' }}>
                   {t(`subjects.view_toggles.${v === 'par-classe' ? 'par_classe' : v === 'par-enseignant' ? 'par_enseignant' : v}`)}
                 </span>
               </button>
@@ -691,45 +694,45 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
       {/* ── Vue par Classe ─────────────────────────────────────────────────────── */}
       {view === 'par-classe' && (
         <div>
-          <div className="p-4 md:p-[20px] md:px-[24px] mb-[16px] md:mb-[20px] md:max-w-[480px]" style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)' }}>
-            <div className="text-[11px] md:text-[13px]" style={{ fontWeight: 700, color: 'var(--text2)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{t('subjects.class_view.selector_label')}</div>
+          <div className="p-3.5 md:p-4.5 mb-4 max-w-lg" style={{ background: 'var(--surface)', borderRadius: 12, border: '1.5px solid var(--border)' }}>
+            <div className="text-xs font-bold" style={{ color: 'var(--text2)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{t('subjects.class_view.selector_label')}</div>
             <select
               value={selectedClass}
               onChange={e => handleSelectClass(e.target.value)}
-              className="text-[14px] md:text-[15px] px-[13px] md:px-[14px] py-[10px] md:py-[10px] rounded-[10px] md:rounded-[10px]"
+              className="text-sm md:text-base px-3.5 py-2 rounded-lg"
               style={{ width: '100%', border: '1.5px solid var(--border)', color: 'var(--text)', background: 'var(--surface)', fontFamily: 'inherit', cursor: 'pointer', boxSizing: 'border-box' }}>
               <option value="">{t('subjects.class_view.selector_placeholder')}</option>
               {classList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
 
-          {loadingCV && <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div style={{ width: 32, height: 32, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} /></div>}
+          {loadingCV && <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} /></div>}
 
           {classViewError && (
-            <div style={{ background: 'var(--red-light)', borderRadius: 14, padding: '14px 18px', color: 'var(--red)', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}><AlertTriangle size={15} strokeWidth={2} /> {classViewError}</div>
+            <div style={{ background: 'var(--red-light)', borderRadius: 10, padding: '12px 16px', color: 'var(--red)', fontWeight: 700, fontSize: 13.5, display: 'flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={16} strokeWidth={2} /> {classViewError}</div>
           )}
 
           {!loadingCV && selectedClass && classSubjects.length === 0 && !classViewError && (
-            <div className="px-[20px] py-[36px] md:px-[24px] md:py-[48px]" style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', textAlign: 'center' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12, color: 'var(--text3)' }}>
-                <BookOpen size={34} strokeWidth={1.5} className="md:hidden" /><BookOpen size={40} strokeWidth={1.5} className="hidden md:block" />
+            <div className="px-5 py-8 text-center" style={{ background: 'var(--surface)', borderRadius: 12, border: '1.5px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8, color: 'var(--text3)' }}>
+                <BookOpen size={28} strokeWidth={1.5} />
               </div>
-              <div className="text-[14px] md:text-[16px]" style={{ color: 'var(--text3)', marginBottom: 16 }} dangerouslySetInnerHTML={{ __html: t('subjects.class_view.no_subjects').replace('{name}', selectedClassName ?? '') }} />
-              <div className="text-[12.5px] md:text-[14px]" style={{ color: 'var(--text3)' }} dangerouslySetInnerHTML={{ __html: t('subjects.class_view.sync_hint') }} />
+              <div className="text-sm md:text-base font-medium" style={{ color: 'var(--text3)', marginBottom: 6 }} dangerouslySetInnerHTML={{ __html: t('subjects.class_view.no_subjects').replace('{name}', selectedClassName ?? '') }} />
+              <div className="text-xs md:text-sm font-medium" style={{ color: 'var(--text3)' }} dangerouslySetInnerHTML={{ __html: t('subjects.class_view.sync_hint') }} />
             </div>
           )}
 
           {!loadingCV && classSubjects.length > 0 && (
-            <div className="rounded-none md:rounded-[16px] border-0 md:border md:border-[1.5px] md:border-[var(--border)] bg-transparent md:bg-[var(--surface)]" style={{ overflow: 'hidden' }}>
-              <div className="gap-[8px] mb-[14px] md:mb-0 md:p-[14px] md:px-[22px] md:border-b md:border-[var(--border)]" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-                <span className="text-[14px] md:text-[16px]" style={{ fontWeight: 700, color: 'var(--text)' }} dangerouslySetInnerHTML={{ __html: t('subjects.class_view.program_label').replace('{name}', selectedClassName ?? '') }} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span className="text-[11.5px] md:text-[14px] px-[10px] md:px-[12px] py-[3px] md:py-[4px]" style={{ background: 'var(--blue-light)', color: 'var(--blue)', borderRadius: 20, fontWeight: 800 }}>
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
+              <div className="px-4.5 py-3.5 border-b border-[var(--border)] flex items-center justify-between gap-3 flex-wrap">
+                <span className="text-sm md:text-base font-bold" style={{ color: 'var(--text)' }} dangerouslySetInnerHTML={{ __html: t('subjects.class_view.program_label').replace('{name}', selectedClassName ?? '') }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span className="text-xs md:text-sm px-3 py-1" style={{ background: 'var(--blue-light)', color: 'var(--blue)', borderRadius: 20, fontWeight: 800 }}>
                     {t('subjects.class_view.count_badge').replace('{count}', String(classSubjects.length))}
                   </span>
                   <button onClick={() => { setAddSubjectOpen(true); setAddError(''); setAddSubjectId(''); setAddCoefficient(''); setAddClassOnly(false) }}
-                    className="text-[12px] md:text-[13px] px-[12px] md:px-[14px] py-[5px] md:py-[6px]"
-                    style={{ borderRadius: 8, fontWeight: 700, border: '1.5px solid var(--green)', background: 'var(--green-light)', color: 'var(--green)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                    className="text-xs md:text-sm px-3.5 py-1.5 rounded-lg font-bold shadow-xs"
+                    style={{ border: '1.5px solid var(--green)', background: 'var(--green-light)', color: 'var(--green)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                     {t('subjects.class_view.btn_add')}
                   </button>
                 </div>
@@ -740,7 +743,7 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
                   <div key={s.id} className="rounded-[16px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: 16 }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                       <div>
-                        <span style={{ fontWeight: 700, color: 'var(--text)', fontSize: 15 }}>{s.name}</span>
+                        <span style={{ fontWeight: 700, color: 'var(--text)', fontSize: 14 }}>{s.name}</span>
                         {s.classOnly && (
                           <span style={{ marginLeft: 6, background: 'var(--purple-light)', color: 'var(--purple)', padding: '2px 7px', borderRadius: 12, fontSize: 11, fontWeight: 800 }}>
                             {t('subjects.class_view.class_only_badge')}
@@ -758,20 +761,20 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           <input type="number" min="0.5" step="0.5" value={editingCoeffValue}
                             onChange={e => setEditingCoeffValue(e.target.value)}
-                            style={{ width: 56, padding: '4px 8px', borderRadius: 6, fontSize: 13, border: '1.5px solid var(--green)', background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', textAlign: 'center', outline: 'none' }} />
+                            style={{ width: 54, padding: '4px 7px', borderRadius: 6, fontSize: 12.5, border: '1.5px solid var(--green)', background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', textAlign: 'center', outline: 'none' }} />
                           <button onClick={() => handleUpdateCoefficient(s.subjectId)}
-                            style={{ background: 'var(--green)', color: 'white', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'inherit' }}>OK</button>
+                            style={{ background: 'var(--green)', color: 'white', border: 'none', borderRadius: 6, padding: '4px 7px', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'inherit' }}>OK</button>
                           <button onClick={() => setEditingCoeffId(null)}
-                            style={{ background: 'var(--bg2)', color: 'var(--text2)', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><X size={12} strokeWidth={2} /></button>
+                            style={{ background: 'var(--bg2)', color: 'var(--text2)', border: 'none', borderRadius: 6, padding: '4px 7px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><X size={12} strokeWidth={2} /></button>
                         </div>
                       ) : (
                         <span onClick={() => { setEditingCoeffId(s.id); setEditingCoeffValue(String(s.coefficient)) }}
-                          style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '3px 10px', borderRadius: 22, fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>×{s.coefficient}</span>
+                          style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '3px 9px', borderRadius: 22, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>×{s.coefficient}</span>
                       )}
-                      {s.code && <code style={{ background: 'var(--bg2)', padding: '3px 7px', borderRadius: 6, fontSize: 10.5, fontWeight: 700, letterSpacing: '0.03em', color: 'var(--text2)' }}>{s.code}</code>}
+                      {s.code && <code style={{ background: 'var(--bg2)', padding: '2.5px 7px', borderRadius: 5, fontSize: 11, fontWeight: 700, letterSpacing: '0.03em', color: 'var(--text2)' }}>{s.code}</code>}
                       {s.serieCode
-                        ? <span style={{ background: 'var(--amber-light)', color: 'var(--amber)', padding: '3px 9px', borderRadius: 20, fontSize: 12, fontWeight: 700 }}>{s.serieCode}</span>
-                        : <span style={{ color: 'var(--text3)', fontSize: 12.5 }}>{t('subjects.class_view.first_cycle')}</span>}
+                        ? <span style={{ background: 'var(--amber-light)', color: 'var(--amber)', padding: '2.5px 8px', borderRadius: 20, fontSize: 11.5, fontWeight: 700 }}>{s.serieCode}</span>
+                        : <span style={{ color: 'var(--text3)', fontSize: 11.5 }}>{t('subjects.class_view.first_cycle')}</span>}
                     </div>
                   </div>
                 ))}
@@ -792,43 +795,43 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
                     <tr key={s.id}
                       onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
-                      <td style={{ ...tdStyle, fontWeight: 700, color: 'var(--text)', fontSize: 16 }}>
+                      <td style={{ ...tdStyle, fontWeight: 700, color: 'var(--text)', fontSize: 13 }}>
                         {s.name}
                         {s.classOnly && (
                           <span title={t('subjects.class_view.class_only_badge')}
-                            style={{ marginLeft: 6, background: 'var(--purple-light)', color: 'var(--purple)', padding: '2px 7px', borderRadius: 12, fontSize: 11, fontWeight: 800, verticalAlign: 'middle' }}>
+                            style={{ marginLeft: 6, background: 'var(--purple-light)', color: 'var(--purple)', padding: '1.5px 6.5px', borderRadius: 11, fontSize: 11, fontWeight: 800, verticalAlign: 'middle' }}>
                             {t('subjects.class_view.class_only_badge')}
                           </span>
                         )}
                       </td>
                       <td style={tdStyle}>
-                        {s.code ? <code style={{ background: 'var(--bg2)', padding: '3px 8px', borderRadius: 6, fontSize: 13 }}>{s.code}</code> : <span style={{ color: 'var(--text3)' }}>—</span>}
+                        {s.code ? <code style={{ background: 'var(--bg2)', padding: '2.5px 7px', borderRadius: 6, fontSize: 12 }}>{s.code}</code> : <span style={{ color: 'var(--text3)' }}>—</span>}
                       </td>
                       <td style={tdStyle}>
                         {editingCoeffId === s.id ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                             <input type="number" min="0.5" step="0.5" value={editingCoeffValue}
                               onChange={e => setEditingCoeffValue(e.target.value)}
-                              style={{ width: 64, padding: '4px 8px', borderRadius: 6, fontSize: 14, border: '1.5px solid var(--green)', background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', textAlign: 'center', outline: 'none' }} />
+                              style={{ width: 54, padding: '4px 7px', borderRadius: 6, fontSize: 12.5, border: '1.5px solid var(--green)', background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', textAlign: 'center', outline: 'none' }} />
                             <button onClick={() => handleUpdateCoefficient(s.subjectId)}
-                              style={{ background: 'var(--green)', color: 'white', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: 'inherit' }}>OK</button>
+                              style={{ background: 'var(--green)', color: 'white', border: 'none', borderRadius: 6, padding: '4px 7px', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'inherit' }}>OK</button>
                             <button onClick={() => setEditingCoeffId(null)}
-                              style={{ background: 'var(--bg2)', color: 'var(--text2)', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center' }}><X size={13} strokeWidth={2} /></button>
+                              style={{ background: 'var(--bg2)', color: 'var(--text2)', border: 'none', borderRadius: 6, padding: '4px 7px', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center' }}><X size={12} strokeWidth={2} /></button>
                           </div>
                         ) : (
                           <span onClick={() => { setEditingCoeffId(s.id); setEditingCoeffValue(String(s.coefficient)) }}
-                            style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '4px 12px', borderRadius: 22, fontSize: 14, fontWeight: 900, cursor: 'pointer' }}
+                            style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '3px 9px', borderRadius: 20, fontSize: 12, fontWeight: 800, cursor: 'pointer' }}
                             title={t('subjects.class_view.coeff_edit_tooltip')}>×{s.coefficient}</span>
                         )}
                       </td>
                       <td style={tdStyle}>
                         {s.serieCode
-                          ? <span style={{ background: 'var(--amber-light)', color: 'var(--amber)', padding: '4px 10px', borderRadius: 20, fontSize: 13, fontWeight: 700 }}>{s.serieCode}</span>
-                          : <span style={{ color: 'var(--text3)', fontSize: 14 }}>{t('subjects.class_view.first_cycle')}</span>}
+                          ? <span style={{ background: 'var(--amber-light)', color: 'var(--amber)', padding: '3px 9px', borderRadius: 16, fontSize: 12, fontWeight: 700 }}>{s.serieCode}</span>
+                          : <span style={{ color: 'var(--text3)', fontSize: 12 }}>{t('subjects.class_view.first_cycle')}</span>}
                       </td>
                       <td style={{ ...tdStyle, textAlign: 'center' }}>
                         <button onClick={() => handleDeleteSubject(s.subjectId, s.name)}
-                          style={{ background: 'none', border: '1.5px solid var(--red-light)', borderRadius: 8, padding: '4px 10px', cursor: 'pointer', fontSize: 16, color: deletingSubjId === s.subjectId ? 'var(--text3)' : 'var(--red)', opacity: deletingSubjId === s.subjectId ? 0.5 : 1 }}
+                          style={{ background: 'none', border: '1.5px solid var(--red-light)', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', color: deletingSubjId === s.subjectId ? 'var(--text3)' : 'var(--red)', opacity: deletingSubjId === s.subjectId ? 0.5 : 1 }}
                           disabled={deletingSubjId === s.subjectId}
                           onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { background: 'var(--red-light)' })}
                           onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { background: 'none' })}>
@@ -844,11 +847,11 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
           )}
 
           {!selectedClass && !loadingCV && (
-            <div className="py-[44px] md:py-[60px]" style={{ textAlign: 'center', color: 'var(--text3)' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-                <GraduationCap size={40} strokeWidth={1.5} className="md:hidden" /><GraduationCap size={48} strokeWidth={1.5} className="hidden md:block" />
+            <div className="py-7 text-center" style={{ color: 'var(--text3)' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
+                <GraduationCap size={25} strokeWidth={1.5} />
               </div>
-              <div className="text-[14px] md:text-[17px]">{t('subjects.class_view.no_selection')}</div>
+              <div className="text-xs md:text-sm font-medium">{t('subjects.class_view.no_selection')}</div>
             </div>
           )}
         </div>
@@ -866,19 +869,18 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
 
       {view === 'catalogue' && !loading && !error && (
         <div className="rounded-none md:rounded-[16px] border-0 md:border md:border-[1.5px] md:border-[var(--border)] bg-transparent md:bg-[var(--surface)]">
-          <div className="p-0 mb-4 md:p-[14px] md:px-[20px] md:mb-0 md:border-b md:border-[var(--border)]">
-            <div className="rounded-[14px] md:rounded-[10px] px-[14px] py-[12px] md:px-[14px] md:py-[8px] border-0 md:border md:border-[1.5px] md:border-[var(--border)] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none bg-[var(--surface)] md:bg-[var(--bg2)]" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div className="p-0 mb-3 md:p-3 md:px-4 md:mb-0 md:border-b md:border-[var(--border)]">
+            <div className="rounded-[12px] md:rounded-[8px] px-3.5 py-2.5 md:px-4 md:py-2.5 border-0 md:border md:border-[1.5px] md:border-[var(--border)] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none bg-[var(--surface)] md:bg-[var(--bg2)]" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <Search size={16} strokeWidth={2} color="var(--text3)" />
               <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('subjects.search_placeholder')}
-                className="text-[14px] md:text-[16px]" style={{ background: 'none', border: 'none', outline: 'none', fontFamily: 'inherit', fontWeight: 600, width: '100%' }} />
+                className="text-sm md:text-base font-semibold" style={{ background: 'none', border: 'none', outline: 'none', fontFamily: 'inherit', width: '100%' }} />
             </div>
           </div>
 
           {filtered.length === 0 ? (
-            <div className="gap-[8px] px-[16px] py-[36px] md:py-[50px]" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', color: 'var(--text3)' }}>
-              <Search size={30} strokeWidth={1.6} className="md:hidden" color="var(--border2)" />
-              <Search size={34} strokeWidth={1.6} className="hidden md:block" color="var(--border2)" />
-              <div className="text-[13.5px] md:text-[17px]">
+            <div className="px-5 py-8 flex flex-col items-center text-center gap-2" style={{ color: 'var(--text3)' }}>
+              <Search size={28} strokeWidth={1.5} color="var(--border2)" />
+              <div className="text-sm md:text-base font-medium">
                 {subjects.length === 0 ? 'Aucune matière configurée' : 'Aucun résultat'}
               </div>
             </div>
@@ -890,11 +892,11 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
                 <div key={sub.id} className="rounded-[16px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: 16, position: 'relative' }}>
                   <div style={{ position: 'absolute', top: 16, right: 16 }}>
                     <button onClick={() => setOpenDD(openDD === sub.id ? null : sub.id)}
-                      style={{ width: 30, height: 30, borderRadius: 15, background: 'transparent', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text3)' }}>
+                      style={{ width: 32, height: 32, borderRadius: 16, background: 'transparent', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text3)' }}>
                       {deletingId === sub.id ? <Loader2 size={16} strokeWidth={2} className="animate-spin" /> : <MoreHorizontal size={16} strokeWidth={2} />}
                     </button>
                     {openDD === sub.id && (
-                      <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 4px)', background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.1)', minWidth: 210, zIndex: 100, overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 4px)', background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 11, boxShadow: '0 8px 24px rgba(0,0,0,0.1)', minWidth: 190, zIndex: 100, overflow: 'hidden' }}>
                         {[
                           { icon: Users, key: 'assign_teacher', action: () => openAssign(sub), danger: false },
                           { icon: Pencil, key: 'edit',            action: () => openMod(sub),    danger: false },
@@ -904,7 +906,7 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
                           const ItemIcon: LucideIcon = item.icon
                           return (
                           <div key={j} onClick={item.action}
-                            style={{ padding: '11px 16px', fontSize: 15, fontWeight: 600, color: item.danger ? 'var(--red)' : 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+                            style={{ padding: '8px 12px', fontSize: 13, fontWeight: 600, color: item.danger ? 'var(--red)' : 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
                             <ItemIcon size={15} strokeWidth={2} /> {t(`subjects.action_menu.${item.key}`)}
                           </div>
                           )
@@ -912,15 +914,15 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
                       </div>
                     )}
                   </div>
-                  <div style={{ paddingRight: 40, fontWeight: 700, color: 'var(--text)', fontSize: 15.5 }}>{sub.name}</div>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginTop: 8 }}>
-                    <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '3px 10px', borderRadius: 22, fontSize: 12.5, fontWeight: 700 }}>×{sub.coefficient}</span>
-                    {sub.code && <code style={{ background: 'var(--bg2)', padding: '3px 7px', borderRadius: 6, fontSize: 10.5, fontWeight: 700, letterSpacing: '0.03em', color: 'var(--text2)' }}>{sub.code}</code>}
-                    <span style={{ background: 'var(--bg2)', color: 'var(--text2)', padding: '4px 10px', borderRadius: 8, fontSize: 11.5, fontWeight: 600 }}>{sub.hoursPerWeek}h</span>
-                    <span style={{ background: 'var(--bg2)', color: 'var(--text2)', padding: '4px 10px', borderRadius: 8, fontSize: 11.5, fontWeight: 600 }}>{t(`subjects.type_labels.${sub.subjectType}`) || sub.subjectType}</span>
+                  <div style={{ paddingRight: 36, fontWeight: 700, color: 'var(--text)', fontSize: 14 }}>{sub.name}</div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginTop: 6 }}>
+                    <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '2.5px 8.5px', borderRadius: 20, fontSize: 12, fontWeight: 700 }}>×{sub.coefficient}</span>
+                    {sub.code && <code style={{ background: 'var(--bg2)', padding: '2.5px 7px', borderRadius: 5, fontSize: 11, fontWeight: 700, letterSpacing: '0.03em', color: 'var(--text2)' }}>{sub.code}</code>}
+                    <span style={{ background: 'var(--bg2)', color: 'var(--text2)', padding: '3px 8px', borderRadius: 6, fontSize: 11.5, fontWeight: 600 }}>{sub.hoursPerWeek}h</span>
+                    <span style={{ background: 'var(--bg2)', color: 'var(--text2)', padding: '3px 8px', borderRadius: 6, fontSize: 11.5, fontWeight: 600 }}>{t(`subjects.type_labels.${sub.subjectType}`) || sub.subjectType}</span>
                   </div>
-                  <div style={{ marginTop: 8 }}>
-                    <span style={{ background: sub.teacherSubjects.length > 0 ? 'var(--green-light)' : 'var(--bg2)', color: sub.teacherSubjects.length > 0 ? 'var(--green)' : 'var(--text2)', padding: '3px 10px', borderRadius: 22, fontSize: 12.5, fontWeight: 800 }}>
+                  <div style={{ marginTop: 6 }}>
+                    <span style={{ background: sub.teacherSubjects.length > 0 ? 'var(--green-light)' : 'var(--bg2)', color: sub.teacherSubjects.length > 0 ? 'var(--green)' : 'var(--text2)', padding: '3px 9px', borderRadius: 20, fontSize: 12, fontWeight: 800 }}>
                       {sub.teacherSubjects.length > 0 ? t('subjects.assign_status.assigned').replace('{count}', String(sub.teacherSubjects.length)) : t('subjects.assign_status.unassigned')}
                     </span>
                   </div>
@@ -941,28 +943,28 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
                   <tr key={sub.id}
                     onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
                     onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
-                    <td style={{ ...tdStyle, fontWeight: 700, color: 'var(--text)', fontSize: 17 }}>{sub.name}</td>
+                    <td style={{ ...tdStyle, fontWeight: 700, color: 'var(--text)', fontSize: 13.5 }}>{sub.name}</td>
                     <td style={tdStyle}>
-                      {sub.code ? <code style={{ background: 'var(--bg2)', padding: '3px 9px', borderRadius: 7, fontSize: 14 }}>{sub.code}</code> : <span style={{ color: 'var(--text3)' }}>—</span>}
+                      {sub.code ? <code style={{ background: 'var(--bg2)', padding: '3px 8px', borderRadius: 6, fontSize: 12.5 }}>{sub.code}</code> : <span style={{ color: 'var(--text3)' }}>—</span>}
                     </td>
-                    <td style={tdStyle}><span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '4px 12px', borderRadius: 22, fontSize: 14, fontWeight: 900 }}>×{sub.coefficient}</span></td>
-                    <td style={{ ...tdStyle, fontWeight: 700, color: 'var(--text)' }}>{sub.hoursPerWeek}h</td>
+                    <td style={tdStyle}><span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '3px 9px', borderRadius: 20, fontSize: 12.5, fontWeight: 800 }}>×{sub.coefficient}</span></td>
+                    <td style={{ ...tdStyle, fontWeight: 700, color: 'var(--text)', fontSize: 13.5 }}>{sub.hoursPerWeek}h</td>
                     <td style={tdStyle}>{t(`subjects.type_labels.${sub.subjectType}`) || sub.subjectType}</td>
                     <td style={tdStyle}>
-                      <span style={{ background: sub.teacherSubjects.length > 0 ? 'var(--green-light)' : 'var(--bg2)', color: sub.teacherSubjects.length > 0 ? 'var(--green)' : 'var(--text2)', padding: '4px 12px', borderRadius: 22, fontSize: 14, fontWeight: 800 }}>
+                      <span style={{ background: sub.teacherSubjects.length > 0 ? 'var(--green-light)' : 'var(--bg2)', color: sub.teacherSubjects.length > 0 ? 'var(--green)' : 'var(--text2)', padding: '3px 9.5px', borderRadius: 20, fontSize: 12.5, fontWeight: 800 }}>
                         {sub.teacherSubjects.length > 0 ? t('subjects.assign_status.assigned').replace('{count}', String(sub.teacherSubjects.length)) : t('subjects.assign_status.unassigned')}
                       </span>
                     </td>
                     <td style={tdStyle}>
                       <div style={{ position: 'relative', display: 'inline-block' }}>
                         <button onClick={() => setOpenDD(openDD === sub.id ? null : sub.id)}
-                          style={{ background: 'none', border: '1.5px solid var(--border2)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontSize: 16, color: 'var(--text3)' }}
+                          style={{ background: 'none', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '5px 9px', cursor: 'pointer', color: 'var(--text3)' }}
                           onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--green)', color: 'var(--green)', background: 'var(--green-light)' })}
                           onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--border2)', color: 'var(--text3)', background: 'none' })}>
-                          {deletingId === sub.id ? <Loader2 size={16} strokeWidth={2} className="animate-spin" /> : <MoreHorizontal size={16} strokeWidth={2} />}
+                          {deletingId === sub.id ? <Loader2 size={15} strokeWidth={2} className="animate-spin" /> : <MoreHorizontal size={15} strokeWidth={2} />}
                         </button>
                         {openDD === sub.id && (
-                          <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 4px)', background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.1)', minWidth: 210, zIndex: 100, overflow: 'hidden' }}>
+                          <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 4px)', background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 11, boxShadow: '0 8px 24px rgba(0,0,0,0.1)', minWidth: 190, zIndex: 100, overflow: 'hidden' }}>
                             {[
                               { icon: Users, key: 'assign_teacher', action: () => openAssign(sub), danger: false },
                               { icon: Pencil, key: 'edit',            action: () => openMod(sub),    danger: false },
@@ -972,7 +974,7 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
                               const ItemIcon: LucideIcon = item.icon
                               return (
                               <div key={j} onClick={item.action}
-                                style={{ padding: '11px 16px', fontSize: 16, fontWeight: 600, color: item.danger ? 'var(--red)' : 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
+                                style={{ padding: '8px 12px', fontSize: 13, fontWeight: 600, color: item.danger ? 'var(--red)' : 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
                                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = item.danger ? 'var(--red-light)' : 'var(--bg2)'}
                                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
                                 <ItemIcon size={15} strokeWidth={2} /> {t(`subjects.action_menu.${item.key}`)}
@@ -996,27 +998,23 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
       {/* ── Vue Départements ───────────────────────────────────────────────────── */}
       {view === 'departements' && (
         <DndContext sensors={sensors} onDragStart={e => setActiveDragId(e.active.id as string)} onDragEnd={handleDragEnd}>
-          {/* Barre d'outils — le bouton "Créer un département" a été retiré d'ici : il fait
-              doublon avec celui de l'en-tête (maquette : un seul bouton, dans l'en-tête). Ça
-              libère la ligne pour que le badge de résultats de recherche et l'alerte "sans AP"
-              s'affichent sans être à l'étroit ; ils passent sur une deuxième ligne au besoin. */}
-          <div className="flex flex-col md:flex-row md:items-center gap-[10px] md:gap-3 mb-[14px] md:mb-4">
-            <div className="rounded-[14px] md:rounded-[10px] px-[14px] py-[12px] md:py-[8px] border-0 md:border md:border-[1.5px] md:border-[var(--border)] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none bg-[var(--surface)] md:bg-[var(--bg2)] md:max-w-[400px]" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 mb-3.5 md:mb-4">
+            <div className="rounded-[11px] md:rounded-[9px] px-3.5 py-2.5 border-0 md:border md:border-[1.5px] md:border-[var(--border)] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none bg-[var(--surface)] md:bg-[var(--bg2)] md:max-w-[380px]" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
               <Search size={16} strokeWidth={2} color="var(--text3)" />
               <input value={deptSearch} onChange={e => setDeptSearch(e.target.value)}
                 placeholder={t('subjects.departments.search_placeholder')}
-                className="text-[14px] md:text-[16px]" style={{ background: 'none', border: 'none', outline: 'none', fontFamily: 'inherit', fontWeight: 600, width: '100%' }} />
-              {deptSearch && <span onClick={() => setDeptSearch('')} style={{ cursor: 'pointer', color: 'var(--text3)', fontSize: 14, display: 'inline-flex' }}><X size={14} strokeWidth={2} /></span>}
+                className="text-sm md:text-base font-semibold" style={{ background: 'none', border: 'none', outline: 'none', fontFamily: 'inherit', width: '100%' }} />
+              {deptSearch && <span onClick={() => setDeptSearch('')} style={{ cursor: 'pointer', color: 'var(--text3)', fontSize: 13, display: 'inline-flex' }}><X size={15} strokeWidth={2} /></span>}
             </div>
             {(deptSearch && searchMatchCount > 0) || depsWithoutAp.length > 0 ? (
-              <div className="flex flex-wrap items-center gap-[8px]">
+              <div className="flex flex-wrap items-center gap-[7px]">
                 {deptSearch && searchMatchCount > 0 && (
-                  <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '4px 12px', borderRadius: 20, fontSize: 14, fontWeight: 800 }}>
+                  <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '4px 11px', borderRadius: 18, fontSize: 12.5, fontWeight: 800 }}>
                     {t('subjects.departments.subject_count').replace('{count}', String(searchMatchCount))}
                   </span>
                 )}
                 {depsWithoutAp.length > 0 && (
-                  <span style={{ background: 'var(--red-light)', color: 'var(--red)', padding: '4px 12px', borderRadius: 20, fontSize: 14, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ background: 'var(--red-light)', color: 'var(--red)', padding: '4px 11px', borderRadius: 18, fontSize: 12.5, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 5 }}>
                     {t('subjects.departments.ap_warning').replace('{count}', String(depsWithoutAp.length))}
                   </span>
                 )}
@@ -1024,21 +1022,21 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
             ) : null}
           </div>
 
-          {deptLoading && <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}><div style={{ width: 36, height: 36, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} /></div>}
+          {deptLoading && <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div style={{ width: 34, height: 34, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} /></div>}
 
           {!deptLoading && deptError && (
-            <div style={{ background: 'var(--red-light)', borderRadius: 14, padding: '18px 22px', display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontWeight: 700, color: 'var(--red)', flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}><AlertTriangle size={16} strokeWidth={2} /> {deptError}</span>
+            <div style={{ background: 'var(--red-light)', borderRadius: 13, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 11 }}>
+              <span style={{ fontWeight: 700, color: 'var(--red)', flex: 1, display: 'flex', alignItems: 'center', gap: 7, fontSize: 13.5 }}><AlertTriangle size={16} strokeWidth={2} /> {deptError}</span>
               <button onClick={fetchDepartments} style={btnRetry}>Réessayer</button>
             </div>
           )}
 
           {!deptLoading && !deptError && allDepartments.length === 0 && (
-            <div className="px-[24px] py-[44px] md:px-[24px] md:py-[64px]" style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', textAlign: 'center' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-                <FolderOpen size={40} strokeWidth={1.5} className="md:hidden" /><FolderOpen size={48} strokeWidth={1.5} className="hidden md:block" />
+            <div className="px-5 py-8 text-center" style={{ background: 'var(--surface)', borderRadius: 13, border: '1.5px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+                <FolderOpen size={28} strokeWidth={1.5} />
               </div>
-              <div className="text-[14px] md:text-[17px]" style={{ color: 'var(--text3)', marginBottom: 16 }}>
+              <div className="text-sm md:text-base font-medium mb-3" style={{ color: 'var(--text3)' }}>
                 {t('subjects.departments.no_depts')}
               </div>
               <button className="w-full md:w-auto justify-center" style={{ ...btnPrim, display: 'inline-flex', alignItems: 'center' }} onClick={() => setDeptCreateForm({ open: true, name: '', color: 'var(--text3)', loading: false, error: '' })}>
@@ -1048,7 +1046,7 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
           )}
 
           {!deptLoading && !deptError && allDepartments.length > 0 && (
-            <div className="grid grid-cols-1 md:[grid-template-columns:repeat(auto-fill,minmax(360px,1fr))]" style={{ gap: 16 }}>
+            <div className="grid grid-cols-1 md:[grid-template-columns:repeat(auto-fill,minmax(350px,1fr))]" style={{ gap: 16 }}>
               {allDepartments.map(dept => {
                 const isVirtual = dept._virtual
                 const hasSearch = deptSearch.length > 0
@@ -1060,25 +1058,22 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
                 return (
                   <DeptDroppable key={dept.id} deptId={dept.id}>
                     <div style={{
-                      background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)',
+                      background: 'var(--surface)', borderRadius: 14, border: '1.5px solid var(--border)',
                       opacity: hasSearch && !hasAnyMatch ? 0.4 : 1,
                       transition: 'opacity 0.2s',
                     }}>
-                      {/* Barre de couleur — coins hauts arrondis pour epouser la forme de la
-                          carte, plutot que overflow:hidden sur le conteneur (qui coupait aussi
-                          le menu "Deplacer vers" quand il debordait en bas de la carte). */}
-                      <div className="h-[5px] md:h-[6px]" style={{ borderTopLeftRadius: 16, borderTopRightRadius: 16, background: isVirtual ? 'var(--border2)' : dept.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }} />
-                      <div className="p-[14px] md:px-[18px] md:py-[16px]">
+                      <div className="h-[5px]" style={{ borderTopLeftRadius: 14, borderTopRightRadius: 14, background: isVirtual ? 'var(--border2)' : dept.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }} />
+                      <div className="p-4 md:p-4.5">
                         {/* En-tête */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ width: 11, height: 11, borderRadius: '50%', background: isVirtual ? 'var(--border2)' : dept.color, flexShrink: 0 }} />
-                            <span className="text-[15px] md:text-[17px]" style={{ fontWeight: 800, color: 'var(--text)' }}>{dept.name}</span>
-                            <span className="text-[12px] md:text-[13px]" style={{ color: 'var(--text3)', fontWeight: 700 }}>({dept.subjects.length})</span>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                            <div style={{ width: 9, height: 9, borderRadius: '50%', background: isVirtual ? 'var(--border2)' : dept.color, flexShrink: 0 }} />
+                            <span className="text-sm md:text-base font-bold" style={{ color: 'var(--text)' }}>{dept.name}</span>
+                            <span className="text-xs md:text-sm font-bold" style={{ color: 'var(--text3)' }}>({dept.subjects.length})</span>
                           </div>
                           {!isVirtual && (
                             <button onClick={() => openEditDept(dept)}
-                              style={{ background: 'var(--bg2)', border: 'none', borderRadius: 8, padding: '5px 10px', cursor: 'pointer', fontSize: 14, color: 'var(--text2)', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center' }}
+                              style={{ background: 'var(--bg2)', border: 'none', borderRadius: 6, padding: '3.5px 7px', cursor: 'pointer', fontSize: 12.5, color: 'var(--text2)', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center' }}
                               title={t('subjects.departments.edit_modal.title')}>
                               <Pencil size={13} strokeWidth={2} />
                             </button>
@@ -1086,20 +1081,20 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
                         </div>
 
                         {/* AP */}
-                        <div style={{ marginBottom: 10 }}>
+                        <div style={{ marginBottom: 8 }}>
                           {dept.head
-                            ? <span style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '3px 10px', borderRadius: 20, fontSize: 13, fontWeight: 700 }}>
+                            ? <span style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '2.5px 9px', borderRadius: 15, fontSize: 12, fontWeight: 700 }}>
                                 AP : {dept.head.firstName} {dept.head.lastName}
                               </span>
                             : !isVirtual
-                              ? <span style={{ color: 'var(--red)', fontSize: 13, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}><AlertTriangle size={13} strokeWidth={2} /> {t('subjects.departments.no_head')}</span>
-                              : <span style={{ color: 'var(--text3)', fontSize: 13, fontStyle: 'italic' }}>{t('subjects.departments.unassigned')}</span>
+                              ? <span style={{ color: 'var(--red)', fontSize: 12, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}><AlertTriangle size={13} strokeWidth={2} /> {t('subjects.departments.no_head')}</span>
+                              : <span style={{ color: 'var(--text3)', fontSize: 12, fontStyle: 'italic' }}>{t('subjects.departments.unassigned')}</span>
                           }
                         </div>
 
                         {/* Matières */}
                         {dept.subjects.length > 0 ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                             {dept.subjects
                               .sort((a, b) => a.name.localeCompare(b.name))
                               .map(s => {
@@ -1107,7 +1102,7 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
                                 return (
                                   <DraggableSubject key={s.id} subjectId={s.id} deptId={dept.id}>
                                     <div style={{
-                                      display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px', borderRadius: 8,
+                                      display: 'flex', alignItems: 'center', gap: 7, padding: '5.5px 8px', borderRadius: 7,
                                       background: isMatch && activeDragId === s.id ? 'var(--green-light)' : 'transparent',
                                       opacity: hasSearch && !isMatch ? 0.3 : 1,
                                       transition: 'opacity 0.2s, background 0.15s',
@@ -1115,24 +1110,24 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
                                     }}
                                       onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
                                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = isMatch && activeDragId === s.id ? 'var(--green-light)' : 'transparent'}>
-                                      <span style={{ fontSize: 14, color: 'var(--text3)', cursor: 'grab', opacity: activeDragId === s.id ? 1 : 0.3 }}>⠿</span>
-                                      <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: isMatch ? 'var(--text)' : 'var(--text3)' }}>
+                                      <span style={{ fontSize: 13, color: 'var(--text3)', cursor: 'grab', opacity: activeDragId === s.id ? 1 : 0.3 }}>⠿</span>
+                                      <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: isMatch ? 'var(--text)' : 'var(--text3)' }}>
                                         {hasSearch && isMatch ? highlightMatch(s.name, deptSearch) : s.name}
                                       </span>
                                       <span style={{ position: 'relative' }}>
                                         <button onClick={(e) => { e.stopPropagation(); setOpenDeptMenu(openDeptMenu === s.id ? null : s.id) }}
-                                          style={{ background: 'none', border: 'none', borderRadius: 6, padding: '2px 6px', cursor: 'pointer', fontSize: 16, color: 'var(--text3)', fontFamily: 'inherit' }}>⋯</button>
+                                          style={{ background: 'none', border: 'none', borderRadius: 4, padding: '1px 6px', cursor: 'pointer', fontSize: 14, color: 'var(--text3)', fontFamily: 'inherit' }}>⋯</button>
                                         {openDeptMenu === s.id && (
-                                          <div style={{ position: 'absolute', right: 0, top: '100%', background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.1)', minWidth: 200, zIndex: 200, overflow: 'hidden' }}>
-                                            <div style={{ padding: '8px 14px', fontSize: 13, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '1px solid var(--bg2)' }}>
+                                          <div style={{ position: 'absolute', right: 0, top: '100%', background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 9, boxShadow: '0 8px 24px rgba(0,0,0,0.1)', minWidth: 175, zIndex: 200, overflow: 'hidden' }}>
+                                            <div style={{ padding: '6px 9px', fontSize: 11.5, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '1px solid var(--bg2)' }}>
                                               {t('subjects.departments.move_to')}
                                             </div>
                                             {allDepartments.filter(other => other.id !== dept.id).map(other => (
                                               <div key={other.id} onClick={() => { setOpenDeptMenu(null); moveSubjectToDept(s.id, s.name, other.id, other.name) }}
-                                                style={{ padding: '9px 14px', fontSize: 14, fontWeight: 600, color: 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
+                                                style={{ padding: '7px 10px', fontSize: 12.5, fontWeight: 600, color: 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}
                                                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg2)'}
                                                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
-                                                <div style={{ width: 10, height: 10, borderRadius: '50%', background: other.color, flexShrink: 0 }} />
+                                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: other.color, flexShrink: 0 }} />
                                                 {other.name}
                                               </div>
                                             ))}
@@ -1145,16 +1140,16 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
                               })}
                           </div>
                         ) : (
-                          <div style={{ color: 'var(--text3)', fontSize: 13, fontStyle: 'italic', textAlign: 'center', padding: '12px 0' }}>
+                          <div style={{ color: 'var(--text3)', fontSize: 12.5, fontStyle: 'italic', textAlign: 'center', padding: '12px 0' }}>
                             {t('subjects.departments.subjects_zero')}
                           </div>
                         )}
 
                         {/* Pied */}
                         {isVirtual && (
-                          <div style={{ marginTop: 8, background: 'var(--red-light)', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div style={{ marginTop: 7, background: 'var(--red-light)', borderRadius: 7, padding: '7px 11px', display: 'flex', alignItems: 'center', gap: 6 }}>
                             <AlertTriangle size={14} strokeWidth={2} color="var(--red)" />
-                            <span style={{ fontSize: 13, color: 'var(--red)', fontWeight: 600 }}>{t('subjects.teacher_view.unassigned_title')}</span>
+                            <span style={{ fontSize: 12, color: 'var(--red)', fontWeight: 600 }}>{t('subjects.teacher_view.unassigned_title')}</span>
                           </div>
                         )}
                       </div>
@@ -1179,15 +1174,15 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
       {view === 'par-enseignant' && (
         <div>
           {/* Barre outils */}
-          <div className="mb-[14px] md:mb-[16px]" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <div className="rounded-[14px] md:rounded-[10px] px-[14px] py-[12px] md:py-[8px] border-0 md:border md:border-[1.5px] md:border-[var(--border)] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none bg-[var(--surface)] md:bg-[var(--bg2)]" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, maxWidth: 400 }}>
+          <div className="mb-3.5 md:mb-4" style={{ display: 'flex', alignItems: 'center', gap: 11, flexWrap: 'wrap' }}>
+            <div className="rounded-[11px] md:rounded-[9px] px-3.5 py-2.5 border-0 md:border md:border-[1.5px] md:border-[var(--border)] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none bg-[var(--surface)] md:bg-[var(--bg2)]" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, maxWidth: 380 }}>
               <Search size={16} strokeWidth={2} color="var(--text3)" />
               <input value={teacherViewSearch} onChange={e => setTeacherViewSearch(e.target.value)}
                 placeholder={t('subjects.teacher_view.search_placeholder')}
-                className="text-[14px] md:text-[16px]" style={{ background: 'none', border: 'none', outline: 'none', fontFamily: 'inherit', fontWeight: 600, width: '100%' }} />
-              {teacherViewSearch && <span onClick={() => setTeacherViewSearch('')} style={{ cursor: 'pointer', color: 'var(--text3)', fontSize: 14, display: 'inline-flex' }}><X size={14} strokeWidth={2} /></span>}
+                className="text-sm md:text-base font-semibold" style={{ background: 'none', border: 'none', outline: 'none', fontFamily: 'inherit', width: '100%' }} />
+              {teacherViewSearch && <span onClick={() => setTeacherViewSearch('')} style={{ cursor: 'pointer', color: 'var(--text3)', fontSize: 13, display: 'inline-flex' }}><X size={15} strokeWidth={2} /></span>}
             </div>
-            <span style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 600 }}>{teacherViewTeachers.length} enseignant{teacherViewTeachers.length > 1 ? 's' : ''}</span>
+            <span style={{ fontSize: 13.5, color: 'var(--text3)', fontWeight: 600 }}>{teacherViewTeachers.length} enseignant{teacherViewTeachers.length > 1 ? 's' : ''}</span>
           </div>
 
           {teacherViewLoading && (
@@ -1197,16 +1192,16 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
           )}
 
           {!teacherViewLoading && teacherViewTeachers.length === 0 && (
-            <div className="px-[24px] py-[44px] md:py-[64px]" style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', textAlign: 'center' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-                <Presentation size={40} strokeWidth={1.5} className="md:hidden" /><Presentation size={48} strokeWidth={1.5} className="hidden md:block" />
+            <div className="px-5 py-8 text-center" style={{ background: 'var(--surface)', borderRadius: 13, border: '1.5px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+                <Presentation size={28} strokeWidth={1.5} />
               </div>
-              <div className="text-[14px] md:text-[17px]" style={{ color: 'var(--text3)' }}>{t('subjects.teacher_view.no_results')}</div>
+              <div className="text-sm md:text-base font-medium" style={{ color: 'var(--text3)' }}>{t('subjects.teacher_view.no_results')}</div>
             </div>
           )}
 
           {!teacherViewLoading && teacherViewTeachers.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {teacherViewTeachers
                 .filter(t => !teacherViewSearch || `${t.firstName} ${t.lastName}`.toLowerCase().includes(teacherViewSearch.toLowerCase()))
                 .map(teacher => {
@@ -1215,16 +1210,16 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
                     s => !teacherSubjects.some(ts => ts.subjectId === s.id)
                   )
                   return (
-                    <div key={teacher.id} className="rounded-[16px] border-0 md:border md:border-[1.5px] md:border-[var(--border)] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none" style={{ background: 'var(--surface)' }}>
-                      <div className="p-4 md:px-[20px] md:py-[16px]">
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 8 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                            <div className="w-8 h-8 md:hidden" style={{ borderRadius: 10, background: avatarColor(teacher.id), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: 'white', flexShrink: 0 }}>
+                    <div key={teacher.id} className="rounded-xl border border-[var(--border)] p-4" style={{ background: 'var(--surface)' }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 6 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                            <div className="w-7.5 h-7.5" style={{ borderRadius: 8, background: avatarColor(teacher.id), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: 'white', flexShrink: 0 }}>
                               {teacher.firstName[0]?.toUpperCase()}{teacher.lastName[0]?.toUpperCase()}
                             </div>
-                            <div className="text-[14.5px] md:text-[17px]" style={{ fontWeight: 800, color: 'var(--text)', minWidth: 0 }}>{teacher.firstName} {teacher.lastName}</div>
+                            <div className="text-sm md:text-base font-bold" style={{ color: 'var(--text)', minWidth: 0 }}>{teacher.firstName} {teacher.lastName}</div>
                           </div>
-                          <span className="text-[11.5px] md:text-[13px] px-[9px] md:px-[10px] py-[3px]" style={{ background: 'var(--blue-light)', color: 'var(--blue)', borderRadius: 20, fontWeight: 800, flexShrink: 0 }}>
+                          <span className="text-xs md:text-sm px-3 py-1 font-bold" style={{ background: 'var(--blue-light)', color: 'var(--blue)', borderRadius: 16, flexShrink: 0 }}>
                             {t('subjects.class_view.count_badge').replace('{count}', String(teacherSubjects.length))}
                           </span>
                         </div>
@@ -1234,8 +1229,8 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
                             {teacherSubjects.map(ts => (
                               <span key={ts.subjectId} style={{
                                 display: 'inline-flex', alignItems: 'center', gap: 4,
-                                background: 'var(--green-light)', color: 'var(--green)', padding: '4px 10px', borderRadius: 20,
-                                fontSize: 13, fontWeight: 700,
+                                background: 'var(--green-light)', color: 'var(--green)', padding: '3px 9px', borderRadius: 17,
+                                fontSize: 12, fontWeight: 700,
                               }}>
                                 {ts.subject?.name ?? ts.subjectId}
                                 <span onClick={async () => {
@@ -1251,21 +1246,21 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
                                     fetchTeacherView()
                                   } catch { onToast(t('subjects.departments.toast_move_error'), 'error') }
                                 }}
-                                  style={{ cursor: 'pointer', marginLeft: 2, fontSize: 14, lineHeight: 1, display: 'inline-flex', alignItems: 'center' }} title="Retirer">
-                                  <X size={12} strokeWidth={2} />
+                                  style={{ cursor: 'pointer', marginLeft: 2, fontSize: 13, lineHeight: 1, display: 'inline-flex', alignItems: 'center' }} title="Retirer">
+                                  <X size={13} strokeWidth={2} />
                                 </span>
                               </span>
                             ))}
                           </div>
                         )}
                         {teacherSubjects.length === 0 && (
-                          <div style={{ color: 'var(--text3)', fontSize: 13, fontStyle: 'italic', marginBottom: 10 }}>{t('subjects.teacher_view.no_subjects')}</div>
+                          <div style={{ color: 'var(--text3)', fontSize: 12, fontStyle: 'italic', marginBottom: 10 }}>{t('subjects.teacher_view.no_subjects')}</div>
                         )}
 
                         <div style={{ position: 'relative' }}>
                           <button onClick={() => setTeacherViewAdding(teacherViewAdding === teacher.id ? null : teacher.id)}
                             style={{
-                              padding: '5px 12px', borderRadius: 8, fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
+                              padding: '5px 11px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit',
                               background: teacherViewAdding === teacher.id ? 'var(--green)' : 'var(--green-light)',
                               color: teacherViewAdding === teacher.id ? 'white' : 'var(--green)',
                               border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4,
@@ -1276,10 +1271,10 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
                           {teacherViewAdding === teacher.id && unassignedSubjects.length > 0 && (
                             <div style={{
                               position: 'absolute', left: 0, top: 'calc(100% + 4px)', background: 'var(--surface)',
-                              border: '1.5px solid var(--border2)', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
-                              minWidth: 250, maxHeight: 240, overflowY: 'auto', zIndex: 200,
+                              border: '1.5px solid var(--border2)', borderRadius: 11, boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
+                              minWidth: 220, maxHeight: 230, overflowY: 'auto', zIndex: 200,
                             }}>
-                              <div style={{ padding: '8px 14px', fontSize: 13, fontWeight: 700, color: 'var(--text3)', borderBottom: '1px solid var(--bg2)' }}>
+                              <div style={{ padding: '8px 12px', fontSize: 12, fontWeight: 700, color: 'var(--text3)', borderBottom: '1px solid var(--bg2)' }}>
                                 {t('subjects.teacher_view.choose_subject')}
                               </div>
                               {unassignedSubjects.map(sub => (
@@ -1296,7 +1291,7 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
                                     fetchTeacherView()
                                   } catch { onToast('Erreur lors de l\'assignation', 'error') }
                                 }}
-                                  style={{ padding: '9px 14px', fontSize: 14, fontWeight: 600, color: 'var(--text2)', cursor: 'pointer', borderBottom: '1px solid var(--bg2)' }}
+                                  style={{ padding: '8px 12px', fontSize: 13, fontWeight: 600, color: 'var(--text2)', cursor: 'pointer', borderBottom: '1px solid var(--bg2)' }}
                                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg2)'}
                                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
                                   {sub.name}
@@ -1307,10 +1302,10 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
                           {teacherViewAdding === teacher.id && unassignedSubjects.length === 0 && (
                             <div style={{
                               position: 'absolute', left: 0, top: 'calc(100% + 4px)', background: 'var(--surface)',
-                              border: '1.5px solid var(--border2)', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
-                              minWidth: 250, zIndex: 200,
+                              border: '1.5px solid var(--border2)', borderRadius: 11, boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
+                              minWidth: 220, zIndex: 200,
                             }}>
-                              <div style={{ padding: '14px', textAlign: 'center', color: 'var(--text3)', fontSize: 14 }}>{t('subjects.teacher_view.all_assigned')}</div>
+                              <div style={{ padding: '12px', textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>{t('subjects.teacher_view.all_assigned')}</div>
                             </div>
                           )}
                         </div>
@@ -1323,10 +1318,10 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
 
           {/* ── Matières sans enseignant ── */}
           {!teacherViewLoading && subjects.length > 0 && (
-            <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', overflow: 'hidden', marginTop: 18 }}>
-              <div className="px-[16px] py-[12px] md:px-[20px] md:py-[14px] gap-[6px] md:gap-[8px]" style={{ borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center' }}>
-                <AlertTriangle size={15} strokeWidth={2} className="md:hidden" /><AlertTriangle size={16} strokeWidth={2} className="hidden md:block" />
-                <span className="text-[14px] md:text-[16px]" style={{ fontWeight: 700, color: 'var(--text)' }}>{t('subjects.teacher_view.unassigned_title')}</span>
+            <div style={{ background: 'var(--surface)', borderRadius: 13, border: '1.5px solid var(--border)', overflow: 'hidden', marginTop: 14 }}>
+              <div className="px-4 py-3 gap-2 border-b border-[var(--border)] flex items-center">
+                <AlertTriangle size={16} strokeWidth={2} style={{ color: 'var(--amber)' }} />
+                <span className="text-sm md:text-base font-bold" style={{ color: 'var(--text)' }}>{t('subjects.teacher_view.unassigned_title')}</span>
               </div>
               {(() => {
                 const assignedSubjectIds = new Set(
@@ -1334,16 +1329,16 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
                 )
                 const unassignedSubjs = subjects.filter(s => !assignedSubjectIds.has(s.id))
                 if (unassignedSubjs.length === 0) return (
-                  <div className="text-[13.5px] md:text-[15px]" style={{ padding: '20px', textAlign: 'center', color: 'var(--text3)' }}>
+                  <div className="text-xs md:text-sm py-4 text-center font-medium" style={{ color: 'var(--text3)' }}>
                     {t('subjects.teacher_view.all_covered')}
                   </div>
                 )
                 return (
-                  <div className="px-[16px] py-[12px] md:px-[20px] md:py-[14px]" style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  <div className="p-3.5 flex flex-wrap gap-2">
                     {unassignedSubjs.map(s => (
                       <span key={s.id} style={{
-                        background: 'var(--amber-light)', color: 'var(--amber)', padding: '4px 12px', borderRadius: 20,
-                        fontSize: 13, fontWeight: 700,
+                        background: 'var(--amber-light)', color: 'var(--amber)', padding: '3px 9px', borderRadius: 15,
+                        fontSize: 12, fontWeight: 700,
                       }}>
                         {s.name}
                       </span>
@@ -1436,7 +1431,7 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
       {coeffForm.open && (
         <ModalOverlay onClose={() => setCoeffForm(EMPTY_COEFF)}>
           <div className={sModalTitleCls} style={sModalTitle}>{t('subjects.coeff_modal.title')}</div>
-          <div style={{ fontSize: 15, color: 'var(--text3)', marginBottom: 18 }}>{coeffForm.subjectName}</div>
+          <div className="text-xs font-medium" style={{ color: 'var(--text2)', marginBottom: 14 }}>{coeffForm.subjectName}</div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16 }}>
               <thead>
@@ -1481,7 +1476,7 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
       {addSubjectOpen && (
         <ModalOverlay onClose={() => { setAddSubjectOpen(false); setAddSubjectId(''); setAddCoefficient(''); setAddError(''); setAddClassOnly(false) }}>
           <div className={sModalTitleCls} style={sModalTitle}>{t('subjects.class_view.add_modal.title')}</div>
-          <div style={{ fontSize: 15, color: 'var(--text3)', marginBottom: 18 }} dangerouslySetInnerHTML={{ __html: t('subjects.class_view.add_modal.to_label').replace('{name}', selectedClassName ?? '') }} />
+          <div className="text-xs font-medium" style={{ color: 'var(--text2)', marginBottom: 14 }} dangerouslySetInnerHTML={{ __html: t('subjects.class_view.add_modal.to_label').replace('{name}', selectedClassName ?? '') }} />
           <div className={sLabelCls} style={sLabel}>{t('subjects.class_view.add_modal.subject_label')}</div>
           <select value={addSubjectId} onChange={e => setAddSubjectId(e.target.value)}
             className={sInputCls} style={sInput}>
@@ -1536,7 +1531,7 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
       {assignForm.open && (
         <ModalOverlay onClose={() => setAssignForm(EMPTY_ASSIGN)}>
           <div className={sModalTitleCls} style={sModalTitle}>{t('subjects.assign_modal.title')}</div>
-          <div style={{ fontSize: 15, color: 'var(--text3)', marginBottom: 18 }}>{assignForm.subjectName}</div>
+          <div className="text-xs font-medium" style={{ color: 'var(--text2)', marginBottom: 14 }}>{assignForm.subjectName}</div>
           <div className={sLabelCls} style={sLabel}>{t('subjects.assign_modal.search_placeholder')}</div>
           <input className={sInputCls} style={sInput} placeholder={t('subjects.assign_modal.search_placeholder')} value={assignForm.teacherSearch}
             onChange={e => setAssignForm(f => ({ ...f, teacherSearch: e.target.value, selected: null }))} />
@@ -1740,7 +1735,7 @@ function highlightMatch(text: string, query: string): React.ReactNode {
 function ModalOverlay({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div onClick={e => e.stopPropagation()} className="px-5 py-5 md:px-9 md:py-8 max-h-[90vh] overflow-y-auto" style={{ background: 'var(--surface)', borderRadius: 18, width: 480, maxWidth: '94vw', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
+      <div onClick={e => e.stopPropagation()} className="p-5 md:p-6 max-h-[90vh] overflow-y-auto" style={{ background: 'var(--surface)', borderRadius: 14, width: 440, maxWidth: '94vw', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
         {children}
       </div>
     </div>
@@ -1749,17 +1744,15 @@ function ModalOverlay({ onClose, children }: { onClose: () => void; children: Re
 
 const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }
 const sSub: React.CSSProperties = { color: 'var(--text3)', marginTop: 3 }
-// Tailles resserrees vers la cible mobile (meme technique que SectionUsers/SectionClasses) —
-// desktop inchangee via md:. fontSize/padding/marginBottom portes par les classNames compagnes.
-const sModalTitleCls = 'text-[18px] md:text-[22px] mb-[16px] md:mb-[22px]'
+const sModalTitleCls = 'text-lg font-bold font-spectral mb-3'
 const sModalTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }
-const sLabelCls = 'text-[12px] md:text-[13px] mb-[4px] md:mb-[6px]'
+const sLabelCls = 'text-xs font-bold mb-1'
 const sLabel: React.CSSProperties = { fontWeight: 700, color: 'var(--text3)' }
-const sInputCls = 'rounded-[10px] px-[12px] py-[9px] mb-[10px] text-[13px] md:px-[14px] md:py-[10px] md:mb-[14px] md:text-[14px]'
+const sInputCls = 'rounded-lg px-3 py-2 mb-3 text-xs md:text-sm font-nunito'
 const sInput: React.CSSProperties = { width: '100%', border: '1.5px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none' }
-const sError: React.CSSProperties = { background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, marginBottom: 8 }
-const btnPrim: React.CSSProperties = { padding: '10px 20px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
-const btnSec2: React.CSSProperties = { padding: '10px 20px', borderRadius: 11, fontSize: 15, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }
-const btnRetry: React.CSSProperties = { padding: '7px 16px', borderRadius: 9, background: 'var(--surface)', color: 'var(--red)', border: '1.5px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }
-const thStyle: React.CSSProperties = { padding: '11px 16px', textAlign: 'left', fontSize: 13, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.7px', whiteSpace: 'nowrap' }
-const tdStyle: React.CSSProperties = { padding: '14px 16px', fontSize: 16, color: 'var(--text2)', borderBottom: '1px solid var(--border)', verticalAlign: 'middle' }
+const sError: React.CSSProperties = { background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8, padding: '7px 14px', fontSize: 13, fontWeight: 600, marginBottom: 10 }
+const btnPrim: React.CSSProperties = { padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+const btnSec2: React.CSSProperties = { padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }
+const btnRetry: React.CSSProperties = { padding: '6px 14px', borderRadius: 8, background: 'var(--surface)', color: 'var(--red)', border: '1.5px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 13 }
+const thStyle: React.CSSProperties = { padding: '8px 12px', textAlign: 'left', fontSize: 12, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.4px', whiteSpace: 'nowrap' }
+const tdStyle: React.CSSProperties = { padding: '8px 12px', fontSize: 13, color: 'var(--text2)', borderBottom: '1px solid var(--border)', verticalAlign: 'middle' }

@@ -76,10 +76,10 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
       <div className="space-y-3 mb-5">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <div>
-            <div className="text-[18px] md:text-[20px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
+            <div className="text-[15px] md:text-[17px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
               {t('dashboard.overview_title')} — Tour de Contrôle
             </div>
-            <div className="text-[12px] md:text-[13px]" style={{ color: 'var(--text3)', marginTop: 2 }}>{t('dashboard.overview_subtitle')}</div>
+            <div className="text-[11px] md:text-[12px]" style={{ color: 'var(--text3)', marginTop: 2 }}>{t('dashboard.overview_subtitle')}</div>
             {fromCache && cachedAt && (
               <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 8, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 8 }}>
                 <Package size={12} strokeWidth={2} /> {t('cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}

@@ -66,8 +66,8 @@ export default function SectionAdminGroupTransfers({ onToast }: Props) {
 
   return (
     <div style={{ padding: 32, overflowY: 'auto', height: '100%' }}>
-      <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', marginBottom: 8 }}>Transferts entrants du groupe scolaire</h2>
-      <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 20 }}>
+      <h2 className="text-[15px] md:text-[17px] font-bold font-spectral" style={{ color: 'var(--text)', marginBottom: 4 }}>Transferts entrants du groupe scolaire</h2>
+      <p className="text-[11px] md:text-[12px]" style={{ color: 'var(--text3)', marginBottom: 20 }}>
         Demandes initiées par le Fondateur de Groupe pour transférer un élève ou un enseignant vers votre établissement.
       </p>
 

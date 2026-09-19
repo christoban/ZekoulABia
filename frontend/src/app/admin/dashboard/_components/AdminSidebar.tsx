@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LogOut, LayoutDashboard, Users, School, BookOpen, ClipboardCheck, FileText,
   ScrollText, Calendar, GraduationCap, NotebookPen, Briefcase, CalendarDays,
-  Smartphone, IdCard, Wallet, ClipboardEdit, UserPlus, BarChart3, ClipboardList,
+  Smartphone, IdCard, Wallet, Banknote, ClipboardEdit, UserPlus, BarChart3, ClipboardList,
   Globe, Languages, Bot, Megaphone, Settings, CalendarClock, X, ArrowRightLeft, Trash2,
   MessageCircle, ListChecks, ChevronDown, ChevronRight,
 } from 'lucide-react'
@@ -118,7 +118,7 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
       id: 'pilotage',
       label: tnav('group.pilotage') ?? 'Pilotage & Statistiques',
       items: [
-        { id: 'finance', icon: Smartphone, label: tnav('sidebar.finance'), badge: badges.finance, badgeColor: 'amber' },
+        { id: 'finance', icon: Banknote, label: tnav('sidebar.finance'), badge: badges.finance, badgeColor: 'amber' },
         { id: 'statistics', icon: BarChart3, label: tnav('sidebar.statistics') },
         { id: 'ministerial-stats', icon: ClipboardList, label: tnav('sidebar.ministerialStats') ?? 'Statistiques Ministérielles' },
         { id: 'rh', icon: Briefcase, label: tnav('sidebar.rh') },

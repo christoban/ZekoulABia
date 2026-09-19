@@ -10,22 +10,23 @@ interface Props {
 export default function SectionPlaceholder({ title, icon, description, onToast }: Props) {
   const t = useT('admin')
   return (
-    <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto' }}>
-      <div style={{ marginBottom: 26 }}>
-        <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 28, fontWeight: 700, color: 'var(--text)' }}>{title}</div>
-        <div style={{ fontSize: 17, color: 'var(--text3)', marginTop: 3 }}>{description}</div>
+    <div className="p-4 md:p-6 space-y-5 max-w-7xl mx-auto font-nunito" style={{ height: '100%', overflowY: 'auto' }}>
+      <div>
+        <h1 className="text-xl md:text-2xl font-bold font-spectral" style={{ color: 'var(--text)' }}>{title}</h1>
+        <p className="text-xs md:text-sm font-medium mt-0.5" style={{ color: 'var(--text2)' }}>{description}</p>
       </div>
-      <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: 52, textAlign: 'center', maxWidth: 620 }}>
-        <div style={{ fontSize: 60, marginBottom: 22 }}>{icon}</div>
-        <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 26, fontWeight: 700, color: 'var(--text)', marginBottom: 14 }}>
+      <div className="rounded-xl p-8 text-center max-w-md mx-auto" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+        <div className="text-4xl mb-3">{icon}</div>
+        <h2 className="text-base font-bold font-spectral mb-2" style={{ color: 'var(--text)' }}>
           {title}
-        </div>
-        <div style={{ fontSize: 17, color: 'var(--text3)', fontWeight: 500, marginBottom: 32, lineHeight: 1.7 }}>
+        </h2>
+        <p className="text-xs text-[var(--text2)] font-medium mb-5 leading-relaxed">
           {t('placeholder.message')}
-        </div>
+        </p>
         <button
           onClick={() => onToast(`Section ${title} bientôt disponible`, 'info')}
-          style={{ padding: '10px 24px', borderRadius: 11, fontSize: 16, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+          className="px-4 py-2 rounded-xl text-xs font-bold cursor-pointer border-none transition-all shadow-sm"
+          style={{ background: 'var(--amber)', color: 'white' }}
         >
           Accéder à {title} →
         </button>
