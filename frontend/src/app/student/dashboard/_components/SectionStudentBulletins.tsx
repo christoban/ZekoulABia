@@ -29,7 +29,7 @@ function CacheBadge({ cachedAt }: { cachedAt: number | null }) {
   if (!cachedAt) return null
   const date = new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
   return (
-    <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 8, padding: '5px 12px', fontSize: 13, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 16 }}>
+    <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 6, padding: '3px 8px', fontSize: 11.5, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5, marginBottom: 12 }}>
       {t('common.offline_badge').replace('{date}', date)}
     </div>
   )
@@ -74,8 +74,8 @@ export default function SectionStudentBulletins({ onToast, user }: Props) {
 
   if (!user || loading) {
     return (
-      <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600 }}>{tcommon('status.loading')}</div>
+      <div className="px-4 py-4 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: 12.5, color: 'var(--text3)', fontWeight: 600 }}>{tcommon('status.loading')}</div>
       </div>
     )
   }
@@ -84,11 +84,11 @@ export default function SectionStudentBulletins({ onToast, user }: Props) {
 
   if (error) {
     return (
-      <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto' }}>
-        <div style={{ padding: 24, textAlign: 'center' }}>
-          <div style={{ color: 'var(--red)', fontSize: 13, fontWeight: 700, marginBottom: 12 }}>{error}</div>
+      <div className="px-4 py-4 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
+        <div style={{ padding: 20, textAlign: 'center' }}>
+          <div style={{ color: 'var(--red)', fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>{error}</div>
           <button onClick={refetch}
-            style={{ padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{ padding: '6px 13px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
             {t('common.retry')}
           </button>
         </div>
@@ -100,59 +100,59 @@ export default function SectionStudentBulletins({ onToast, user }: Props) {
 
   if (!list.length) {
     return (
-      <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto' }}>
-        <div style={{ marginBottom: 26 }}>
+      <div className="px-4 py-4 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
+        <div style={{ marginBottom: 16 }}>
           <div style={sTitle}>{t('bulletins.title')}</div>
           <div style={sSub}>{t('bulletins.subtitle')}</div>
         </div>
         {fromCache && <CacheBadge cachedAt={cachedAt} />}
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: 48, textAlign: 'center' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}><ScrollText size={48} strokeWidth={2} /></div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{t('bulletins.empty_title')}</div>
-          <div style={{ fontSize: 14, color: 'var(--text3)' }}>{t('bulletins.empty_subtitle')}</div>
+        <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1.5px solid var(--border)', padding: 36, textAlign: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><ScrollText size={36} strokeWidth={2} /></div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>{t('bulletins.empty_title')}</div>
+          <div style={{ fontSize: 12, color: 'var(--text3)' }}>{t('bulletins.empty_subtitle')}</div>
         </div>
       </div>
     )
   }
 
   return (
-    <div style={{ padding: '28px 32px', overflowY: 'auto', height: '100%' }}>
-      <div style={{ marginBottom: fromCache ? 8 : 26 }}>
-                  <div style={sTitle}>{t('bulletins.title')}</div>
+    <div className="px-4 py-4 md:px-6 md:py-5" style={{ overflowY: 'auto', height: '100%' }}>
+      <div style={{ marginBottom: fromCache ? 8 : 16 }}>
+        <div style={sTitle}>{t('bulletins.title')}</div>
         <div style={sSub}>{t('bulletins.subtitle')}</div>
       </div>
 
       {fromCache && <CacheBadge cachedAt={cachedAt} />}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 18 }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
         {list.map((b) => {
           const [mBg, mC] = MENTION_COLOR(b.mention)
           const avg = b.generalAverage
           const rankDisplay = b.rank ? `${b.rank}e` : '—'
           const totalDisplay = b.totalStudents || '—'
           return (
-            <div key={b.id} style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', overflow: 'hidden' }}>
-              <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--border)', background: 'linear-gradient(135deg,var(--sidebar),var(--sidebar2))', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 19, fontWeight: 700, color: 'white' }}>{b.academicPeriod?.name || t('bulletins.title')}</div>
-                {b.mention && <span style={{ background: mBg, color: mC, padding: '4px 14px', borderRadius: 22, fontSize: 14, fontWeight: 800 }}>{b.mention}</span>}
+            <div key={b.id} style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
+              <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', background: 'linear-gradient(135deg,var(--sidebar),var(--sidebar2))', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 13.5, fontWeight: 700, color: 'white' }}>{b.academicPeriod?.name || t('bulletins.title')}</div>
+                {b.mention && <span style={{ background: mBg, color: mC, padding: '2px 7px', borderRadius: 12, fontSize: 10.5, fontWeight: 700 }}>{b.mention}</span>}
               </div>
-              <div style={{ padding: '22px 22px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 18 }}>
-                  <div style={{ background: 'var(--bg2)', borderRadius: 12, padding: '16px 18px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 40, fontWeight: 900, color: NOTE_COLOR(avg) }}>{avg !== null ? avg.toFixed(1) : '—'}</div>
-                    <div style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 700, marginTop: 4 }}>{t('bulletins.average_label')}</div>
+              <div style={{ padding: '10px 14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
+                  <div style={{ background: 'var(--bg2)', borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: NOTE_COLOR(avg) }}>{avg !== null ? avg.toFixed(1) : '—'}</div>
+                    <div style={{ fontSize: 10.5, color: 'var(--text3)', fontWeight: 700, marginTop: 2 }}>{t('bulletins.average_label')}</div>
                   </div>
-                  <div style={{ background: 'var(--bg2)', borderRadius: 12, padding: '16px 18px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 30, fontWeight: 900, color: 'var(--text)' }}>{rankDisplay}</div>
-                    <div style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 700, marginTop: 4 }}>{t('bulletins.rank_label').replace('{total}', String(totalDisplay))}</div>
+                  <div style={{ background: 'var(--bg2)', borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--text)' }}>{rankDisplay}</div>
+                    <div style={{ fontSize: 10.5, color: 'var(--text3)', fontWeight: 700, marginTop: 2 }}>{t('bulletins.rank_label').replace('{total}', String(totalDisplay))}</div>
                   </div>
                 </div>
                 <button
                   title={!isOnline ? t('bulletins.toast_download_offline') : undefined}
-                  style={{ width: '100%', padding: '12px 16px', borderRadius: 11, fontSize: 16, fontWeight: 800, background: isOnline ? 'linear-gradient(135deg,var(--green),var(--green2))' : 'var(--border2)', color: 'white', border: 'none', cursor: isOnline ? 'pointer' : 'not-allowed', fontFamily: 'inherit', opacity: downloading === b.id ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                  style={{ width: '100%', padding: '6px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: isOnline ? 'linear-gradient(135deg,var(--green),var(--green2))' : 'var(--border2)', color: 'white', border: 'none', cursor: isOnline ? 'pointer' : 'not-allowed', fontFamily: 'inherit', opacity: downloading === b.id ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}
                   onClick={() => downloadPdf(b.id, b.academicPeriod?.name || 'bulletin')}
                   disabled={downloading === b.id || !isOnline}>
-                  {!isOnline ? <><WifiOff size={16} strokeWidth={2} /> {t('bulletins.offline_label')}</> : downloading === b.id ? <><Loader2 size={16} strokeWidth={2} className="animate-spin" /> {t('bulletins.downloading_label')}</> : <><Download size={16} strokeWidth={2} /> {t('bulletins.download_button')}</>}
+                  {!isOnline ? <><WifiOff size={12} strokeWidth={2} /> {t('bulletins.offline_label')}</> : downloading === b.id ? <><Loader2 size={12} strokeWidth={2} className="animate-spin" /> {t('bulletins.downloading_label')}</> : <><Download size={12} strokeWidth={2} /> {t('bulletins.download_button')}</>}
                 </button>
               </div>
             </div>
@@ -163,5 +163,5 @@ export default function SectionStudentBulletins({ onToast, user }: Props) {
   )
 }
 
-const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 28, fontWeight: 700, color: 'var(--text)' }
-const sSub: React.CSSProperties = { fontSize: 17, color: 'var(--text3)', marginTop: 3 }
+const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)' }
+const sSub: React.CSSProperties = { fontSize: 12, color: 'var(--text3)', marginTop: 2 }

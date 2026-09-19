@@ -44,7 +44,7 @@ function CacheBadge({ cachedAt }: { cachedAt: number | null }) {
   if (!cachedAt) return null
   const date = new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
   return (
-    <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 8, padding: '5px 12px', fontSize: 13, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 16 }}>
+    <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 6, padding: '3px 8px', fontSize: 11.5, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5, marginBottom: 12 }}>
       {t('common.offline_badge').replace('{date}', date)}
     </div>
   )
@@ -141,40 +141,40 @@ export default function SectionStudentGrades({ onToast, user }: Props) {
   void mBg; void mC
 
   return (
-    <div style={{ padding: '28px 32px', overflowY: 'auto', height: '100%' }}>
-      <div style={{ marginBottom: fromCache ? 8 : 26 }}>
+    <div className="px-4 py-4 md:px-6 md:py-5" style={{ overflowY: 'auto', height: '100%' }}>
+      <div style={{ marginBottom: fromCache ? 8 : 16 }}>
         <div style={sTitle}>{t('grades.title')}</div>
         <div style={sSub}>{t('grades.subtitle')}</div>
       </div>
 
       {fromCache && <CacheBadge cachedAt={cachedAt} />}
 
-      <div style={{ background: 'linear-gradient(135deg,var(--sidebar),var(--sidebar2))', borderRadius: 16, padding: '22px 28px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 28 }}>
+      <div style={{ background: 'linear-gradient(135deg,var(--sidebar),var(--sidebar2))', borderRadius: 10, padding: '10px 16px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 16 }}>
         <div style={{ textAlign: 'center', flexShrink: 0 }}>
-          <div style={{ fontSize: 48, fontWeight: 900, color: 'white', lineHeight: 1 }}>{displayAvg.toFixed(1)}</div>
-          <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', marginTop: 5 }}>{t('grades.average_label')}</div>
+          <div style={{ fontSize: 24, fontWeight: 900, color: 'white', lineHeight: 1 }}>{displayAvg.toFixed(1)}</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>{t('grades.average_label')}</div>
         </div>
-        <div style={{ width: 1, height: 60, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
-        <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap' }}>
+        <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           {[
             { label: t('grades.rank_label'), val: rank ? `${rank.pos}e / ${rank.total}` : '—' },
             { label: t('grades.mention_label'), val: mentionFull },
             { label: t('grades.subjects_above_10'), val: `${subjectsAbove10}/${subjectRows.length}` },
           ].map((s, i) => (
             <div key={i}>
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontWeight: 700 }}>{s.label}</div>
-              <div style={{ fontSize: 19, fontWeight: 900, color: 'white', marginTop: 4 }}>{s.val}</div>
+              <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.4)', fontWeight: 700 }}>{s.label}</div>
+              <div style={{ fontSize: 13.5, fontWeight: 900, color: 'white', marginTop: 2 }}>{s.val}</div>
             </div>
           ))}
         </div>
       </div>
 
-      <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', overflow: 'hidden' }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1.5px solid var(--border)', overflow: 'hidden' }}>
         {subjectRows.length === 0 ? (
-          <div style={{ padding: 48, textAlign: 'center', color: 'var(--text3)', fontSize: 15, fontWeight: 600 }}>{t('grades.empty')}</div>
+          <div style={{ padding: 36, textAlign: 'center', color: 'var(--text3)', fontSize: 13, fontWeight: 600 }}>{t('grades.empty')}</div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 500 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
               <thead>
                 <tr>{[
                   t('grades.table_header_subject'),
@@ -195,13 +195,13 @@ export default function SectionStudentGrades({ onToast, user }: Props) {
                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
                       <td style={{ ...tdSt, fontWeight: 700, color: 'var(--text)' }}>{sub.name}</td>
                       <td style={tdSt}>
-                        <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '4px 10px', borderRadius: 22, fontSize: 14, fontWeight: 900 }}>×{sub.coeff}</span>
+                        <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '2.5px 7px', borderRadius: 14, fontSize: 11, fontWeight: 800 }}>×{sub.coeff}</span>
                       </td>
                       <td style={tdSt}>
-                        <span style={{ fontSize: 22, fontWeight: 900, color: NOTE_COLOR(sub.note) }}>{sub.note.toFixed(1)}</span>
+                        <span style={{ fontSize: 15, fontWeight: 900, color: NOTE_COLOR(sub.note) }}>{sub.note.toFixed(1)}</span>
                       </td>
                       <td style={tdSt}>
-                        <span style={{ padding: '4px 12px', borderRadius: 22, fontSize: 14, fontWeight: 800, background: smBg, color: smC }}>{subMention}</span>
+                        <span style={{ padding: '2.5px 8px', borderRadius: 14, fontSize: 11, fontWeight: 700, background: smBg, color: smC }}>{subMention}</span>
                       </td>
                     </tr>
                   )
@@ -215,7 +215,7 @@ export default function SectionStudentGrades({ onToast, user }: Props) {
   )
 }
 
-const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 28, fontWeight: 700, color: 'var(--text)' }
-const sSub: React.CSSProperties = { fontSize: 17, color: 'var(--text3)', marginTop: 3 }
-const thSt: React.CSSProperties = { padding: '11px 16px', textAlign: 'left', fontSize: 13, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.7px', whiteSpace: 'nowrap' }
-const tdSt: React.CSSProperties = { padding: '14px 16px', fontSize: 17, color: 'var(--text2)', borderBottom: '1px solid var(--bg)', verticalAlign: 'middle' }
+const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)' }
+const sSub: React.CSSProperties = { fontSize: 12, color: 'var(--text3)', marginTop: 2 }
+const thSt: React.CSSProperties = { padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }
+const tdSt: React.CSSProperties = { padding: '8.5px 12px', fontSize: 12.5, color: 'var(--text2)', borderBottom: '1px solid var(--bg)', verticalAlign: 'middle' }

@@ -182,7 +182,7 @@ export default function StudentDashboard() {
           {section === 'library'    && <SectionStudentLibrary />}
           {section === 'health-tracking' && <SectionStudentHealthTracking user={user} />}
           {section === 'notifications' && <NotificationCenter />}
-          {section === 'babillard' && <Babillard role={user?.role ?? 'STUDENT'} title={tnav('sidebar.babillard')} subtitle={tnav('group.communication')} />}
+          {section === 'babillard' && <Babillard role={user?.role ?? 'STUDENT'} title={tnav('sidebar.babillard')} subtitle={tnav('group.communication')} currentUserId={user?.id} />}
           {section === 'messagerie' && <Messagerie />}
           {section === 'academic-profile' && <SectionProfilAcademique studentId={user?.id ?? ''} />}
         </main>

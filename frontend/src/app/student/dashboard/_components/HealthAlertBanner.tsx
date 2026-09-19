@@ -38,30 +38,30 @@ export default function HealthAlertBanner({ onNav }: { onNav: (section: string) 
 
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px',
-      background: bg, borderBottom: `1.5px solid ${color}`,
+      display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px',
+      background: bg, borderBottom: `1px solid ${color}`,
       flexShrink: 0,
     }}>
-      <HeartPulse size={18} color={color} style={{ flexShrink: 0 }} />
-      <div style={{ flex: 1, minWidth: 0, fontSize: 13.5, color: 'var(--text)', fontWeight: 600 }}>
+      <HeartPulse size={15} color={color} style={{ flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0, fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>
         {t(critique ? 'healthAlert.messageCritical' : 'healthAlert.messageWarning', { score: String(child.healthScore) })}
       </div>
       <button
         onClick={() => onNav('health-tracking')}
         style={{
-          flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px',
-          background: color, color: 'white', border: 'none', borderRadius: 8,
-          fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
+          flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px',
+          background: color, color: 'white', border: 'none', borderRadius: 6,
+          fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
         }}
       >
-        {t('healthAlert.action')} <ArrowRight size={13} />
+        {t('healthAlert.action')} <ArrowRight size={12} />
       </button>
       <button
         onClick={() => setDismissed(true)}
         aria-label={t('healthAlert.dismiss')}
-        style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', padding: 4, display: 'flex' }}
+        style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', padding: 3, display: 'flex' }}
       >
-        <X size={16} />
+        <X size={14} />
       </button>
     </div>
   )

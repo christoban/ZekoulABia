@@ -60,31 +60,31 @@ export default function Lv2ChoiceBanner({ onToast }: Props) {
   const closeDate = new Date(data.window.closeDate).toLocaleDateString()
 
   return (
-    <div style={{ background: 'var(--blue-light)', border: '1.5px solid var(--blue)', borderRadius: 16, padding: '20px 24px', marginBottom: 22 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-        <Languages size={22} strokeWidth={2} />
-        <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>{t('lv2Choice.banner_title')}</span>
+    <div style={{ background: 'var(--blue-light)', border: '1px solid var(--blue)', borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+        <Languages size={16} strokeWidth={2} />
+        <span style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text)' }}>{t('lv2Choice.banner_title')}</span>
       </div>
 
       {data.currentChoice ? (
-        <div style={{ fontSize: 15, color: 'var(--text2)', fontWeight: 600 }}>
+        <div style={{ fontSize: 12.5, color: 'var(--text2)', fontWeight: 600 }}>
           {t('lv2Choice.already_submitted').replace('{subject}', data.currentChoice.subjectName || '')}
         </div>
       ) : (
         <>
-          <div style={{ fontSize: 15, color: 'var(--text2)', fontWeight: 600, marginBottom: 14 }}>
+          <div style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 600, marginBottom: 10 }}>
             {t('lv2Choice.banner_subtitle').replace('{date}', closeDate)}
           </div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <select value={selected} onChange={e => setSelected(e.target.value)}
-              style={{ padding: '9px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: 14, fontWeight: 600, minWidth: 220 }}>
+              style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: 12, fontWeight: 600, minWidth: 180 }}>
               <option value="">{t('lv2Choice.select_placeholder')}</option>
               {data.availableSubjects.map(s => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
             <button onClick={handleSubmit} disabled={!selected || submitting}
-              style={{ padding: '9px 20px', borderRadius: 8, border: 'none', background: 'var(--blue)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: selected && !submitting ? 'pointer' : 'not-allowed', opacity: selected && !submitting ? 1 : 0.6 }}>
+              style={{ padding: '6px 14px', borderRadius: 7, border: 'none', background: 'var(--blue)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: selected && !submitting ? 'pointer' : 'not-allowed', opacity: selected && !submitting ? 1 : 0.6 }}>
               {submitting ? t('lv2Choice.submitting') : t('lv2Choice.submit_btn')}
             </button>
           </div>

@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useCallback } from 'react'
 import { Hand, Trophy, TrendingUp, CheckCircle2, AlertTriangle, Siren, FileText, BookOpen, Package, type LucideIcon } from 'lucide-react'
 import type { UserInfo } from '../_types'
@@ -151,19 +151,19 @@ export default function SectionStudentDashboard({ onNav, onToast, user }: Props)
 
   if (loading) {
     return (
-      <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600 }}>{tcommon('status.loading')}</div>
+      <div style={{ padding: '20px 24px', height: '100%', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: 12.5, color: 'var(--text3)', fontWeight: 600 }}>{tcommon('status.loading')}</div>
       </div>
     )
   }
 
   if (error && error !== 'OFFLINE_NO_CACHE') {
     return (
-      <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto' }}>
-        <div style={{ padding: 24, textAlign: 'center' }}>
-          <div style={{ color: 'var(--red)', fontSize: 13, fontWeight: 700, marginBottom: 12 }}>{error}</div>
+      <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto' }}>
+        <div style={{ padding: 20, textAlign: 'center' }}>
+          <div style={{ color: 'var(--red)', fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>{error}</div>
           <button onClick={fetchData}
-            style={{ padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{ padding: '5px 12px', borderRadius: 7, fontSize: 11.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
             {t('common.retry')}
           </button>
         </div>
@@ -172,43 +172,43 @@ export default function SectionStudentDashboard({ onNav, onToast, user }: Props)
   }
 
   return (
-    <div style={{ padding: '28px 32px', overflowY: 'auto', height: '100%' }}>
+    <div style={{ padding: '16px 20px', overflowY: 'auto', height: '100%' }}>
       <Lv2ChoiceBanner onToast={onToast} />
       <OrientationCheckpointBanner onToast={onToast} />
-      <div style={{ background: 'linear-gradient(135deg,var(--sidebar),var(--sidebar2))', borderRadius: 20, padding: '32px 36px', marginBottom: 26, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', right: -50, top: -50, width: 240, height: 240, borderRadius: '50%', background: 'rgba(74,222,128,0.05)', pointerEvents: 'none' }} />
+      <div style={{ background: 'linear-gradient(135deg,var(--sidebar),var(--sidebar2))', borderRadius: 12, padding: '16px 20px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', right: -50, top: -50, width: 200, height: 200, borderRadius: '50%', background: 'rgba(74,222,128,0.05)', pointerEvents: 'none' }} />
         <div>
-          <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 30, fontWeight: 700, color: 'white', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Hand size={26} strokeWidth={2} />
+          <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'white', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Hand size={18} strokeWidth={2} />
             {t('dashboard.greeting').replace('{name}', user?.firstName || tcommon('user.studentFallback'))}
           </div>
-          <div style={{ fontSize: 17, color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>
+          <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>
             {className} · {t('dashboard.matricule_label')} {matricule}
           </div>
           {fromCache && cachedAt && (
-            <div style={{ background: 'rgba(217,119,6,0.25)', border: '1px solid rgba(217,119,6,0.5)', borderRadius: 8, padding: '5px 12px', fontSize: 13, fontWeight: 600, color: 'white', display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10 }}>
-              <Package size={14} strokeWidth={2} /> {tcommon('cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}
+            <div style={{ background: 'rgba(217,119,6,0.25)', border: '1px solid rgba(217,119,6,0.5)', borderRadius: 6, padding: '3px 8px', fontSize: 11.5, fontWeight: 600, color: 'white', display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
+              <Package size={13} strokeWidth={2} /> {tcommon('cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}
             </div>
           )}
-          <div style={{ marginTop: 16, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <span style={{ background: mBg, color: mC, padding: '5px 14px', borderRadius: 22, fontSize: 15, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <Trophy size={15} strokeWidth={2} /> {rankDisplay}
+          <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ background: mBg, color: mC, padding: '3px 10px', borderRadius: 16, fontSize: 12, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              <Trophy size={13} strokeWidth={2} /> {rankDisplay}
             </span>
-            <span style={{ background: hBg, color: hC, padding: '5px 14px', borderRadius: 22, fontSize: 15, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              {(() => { const HIcon = HEALTH_ICON[hLabel]; return <HIcon size={15} strokeWidth={2} /> })()} {t(hLabel)}
+            <span style={{ background: hBg, color: hC, padding: '3px 10px', borderRadius: 16, fontSize: 12, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              {(() => { const HIcon = HEALTH_ICON[hLabel]; return <HIcon size={13} strokeWidth={2} /> })()} {t(hLabel)}
             </span>
           </div>
         </div>
         <div style={{ textAlign: 'center', flexShrink: 0 }}>
-          <div style={{ fontSize: 56, fontWeight: 900, color: 'white', lineHeight: 1 }}>{displayAvg.toFixed(1)}</div>
-          <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', marginTop: 6 }}>{t('dashboard.average_label')}</div>
-          <div style={{ marginTop: 10, background: mBg, color: mC, padding: '5px 16px', borderRadius: 22, fontSize: 14, fontWeight: 800, display: 'inline-block' }}>
+          <div style={{ fontSize: 28, fontWeight: 900, color: 'white', lineHeight: 1 }}>{displayAvg.toFixed(1)}</div>
+          <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>{t('dashboard.average_label')}</div>
+          <div style={{ marginTop: 6, background: mBg, color: mC, padding: '3px 10px', borderRadius: 16, fontSize: 11.5, fontWeight: 800, display: 'inline-block' }}>
             {({ TB: t('grades.mention_tb'), B: t('grades.mention_b'), AB: t('grades.mention_ab'), P: t('grades.mention_p'), I: t('grades.mention_i') } as Record<string, string>)[mention] ?? t('grades.mention_i')}
           </div>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 18, marginBottom: 22 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 16 }}>
         {[
           { icon: FileText, bg: 'var(--green-light)', val: `${displayAvg.toFixed(1)}/20`, label: t('dashboard.general_avg_label'),  trend: mention,    tBg: mBg, tC: mC },
           { icon: Trophy, bg: 'var(--blue-light)', val: rank ? `${rank.pos}e` : '—', label: rank ? t('dashboard.rank_label').replace('{total}', String(rank.total)) : t('dashboard.rank_short'), trend: t('dashboard.trend_this_term'), tBg: 'var(--blue-light)', tC: 'var(--blue)' },
@@ -216,31 +216,31 @@ export default function SectionStudentDashboard({ onNav, onToast, user }: Props)
           { icon: BookOpen, bg: 'var(--purple-light)', val: String(subjectCount || '...'),  label: t('dashboard.subjects_label'), trend: t('dashboard.trend_year'), tBg: 'var(--purple-light)', tC: 'var(--purple)' },
         ].map((k, i) => (
           <div key={i}
-            style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: '22px 26px', cursor: 'pointer', transition: 'all 0.15s' }}
-            onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { transform: 'translateY(-2px)', boxShadow: '0 6px 20px rgba(0,0,0,0.07)' })}
+            style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', padding: '12px 14px', cursor: 'pointer', transition: 'all 0.15s' }}
+            onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { transform: 'translateY(-1px)', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' })}
             onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { transform: 'none', boxShadow: 'none' })}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: k.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><k.icon size={22} strokeWidth={2} /></div>
-              <span style={{ fontSize: 14, fontWeight: 800, padding: '3px 10px', borderRadius: 20, background: k.tBg, color: k.tC, whiteSpace: 'nowrap' }}>{k.trend}</span>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 8, background: k.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><k.icon size={16} strokeWidth={2} /></div>
+              <span style={{ fontSize: 10.5, fontWeight: 800, padding: '2px 7px', borderRadius: 12, background: k.tBg, color: k.tC, whiteSpace: 'nowrap' }}>{k.trend}</span>
             </div>
-            <div style={{ fontSize: 36, fontWeight: 900, color: 'var(--text)', lineHeight: 1 }}>{k.val}</div>
-            <div style={{ fontSize: 16, color: 'var(--text3)', marginTop: 5, fontWeight: 600 }}>{k.label}</div>
+            <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)', lineHeight: 1 }}>{k.val}</div>
+            <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 4, fontWeight: 600 }}>{k.label}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', overflow: 'hidden' }}>
-        <div style={{ padding: '16px 22px', borderBottom: '1px solid var(--border)' }}>
-          <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>{t('dashboard.today_title')}</span>
+      <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
+        <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
+          <span style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text)' }}>{t('dashboard.today_title')}</span>
         </div>
-        <div style={{ padding: '16px 22px', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+        <div style={{ padding: '10px 14px', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {todaySlots.length === 0 ? (
-            <div style={{ padding: 20, textAlign: 'center', color: 'var(--text3)', fontSize: 15, fontWeight: 600, width: '100%' }}>{t('dashboard.today_empty')}</div>
+            <div style={{ padding: 16, textAlign: 'center', color: 'var(--text3)', fontSize: 12.5, fontWeight: 600, width: '100%' }}>{t('dashboard.today_empty')}</div>
           ) : todaySlots.map((c, i) => (
-            <div key={i} style={{ flex: 1, minWidth: 180, background: 'var(--bg)', borderRadius: 12, padding: '14px 16px', borderLeft: `3px solid ${c.color || 'var(--green)'}` }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text3)', marginBottom: 5 }}>{c.time}</div>
-              <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>{c.subject}</div>
-              <div style={{ fontSize: 14, color: 'var(--text3)', marginTop: 4 }}>{c.teacher}{c.salle ? ` · ${c.salle}` : ''}</div>
+            <div key={i} style={{ flex: 1, minWidth: 160, background: 'var(--bg)', borderRadius: 8, padding: '8px 12px', borderLeft: `3px solid ${c.color || 'var(--green)'}` }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text3)', marginBottom: 3 }}>{c.time}</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>{c.subject}</div>
+              <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 2 }}>{c.teacher}{c.salle ? ` · ${c.salle}` : ''}</div>
             </div>
           ))}
         </div>

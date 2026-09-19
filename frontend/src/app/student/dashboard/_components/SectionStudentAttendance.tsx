@@ -24,7 +24,7 @@ function CacheBadge({ cachedAt }: { cachedAt: number | null }) {
   if (!cachedAt) return null
   const date = new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
   return (
-    <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 8, padding: '5px 12px', fontSize: 13, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 16 }}>
+    <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 6, padding: '3px 8px', fontSize: 11.5, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5, marginBottom: 12 }}>
       {t('common.offline_badge').replace('{date}', date)}
     </div>
   )
@@ -107,48 +107,48 @@ export default function SectionStudentAttendance({ onToast, user }: Props) {
   const rateNum = stats ? Number(stats.attendanceRate.replace('%', '')) : 0
 
   return (
-    <div style={{ padding: '28px 32px', overflowY: 'auto', height: '100%' }}>
-      <div style={{ marginBottom: fromCache ? 8 : 26 }}>
+    <div style={{ padding: '16px 20px', overflowY: 'auto', height: '100%' }}>
+      <div style={{ marginBottom: fromCache ? 6 : 14 }}>
         <div style={sTitle}>{t('attendance.title')}</div>
         <div style={sSub}>{t('attendance.subtitle')}</div>
       </div>
 
       {fromCache && <CacheBadge cachedAt={cachedAt} />}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 18, marginBottom: 22 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 16 }}>
         {[
           { icon: CheckCircle2, bg: 'var(--green-light)', val: `${rateNum}%`, label: t('attendance.rate_label'), color: 'var(--green)' },
           { icon: X,  bg: 'var(--red-light)', val: String(stats?.absent || 0), label: t('attendance.absences_label'), color: 'var(--red)' },
           { icon: '~',  bg: 'var(--amber-light)', val: String(stats?.late || 0), label: t('attendance.late_label'), color: 'var(--amber)' },
           { icon: 'E',  bg: 'var(--blue-light)', val: String(stats?.excused || 0), label: t('attendance.excused_label'), color: 'var(--blue)' },
         ].map((s, i) => (
-          <div key={i} style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: '22px 26px' }}>
-            <div style={{ width: 48, height: 48, borderRadius: 12, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 900, color: s.color, marginBottom: 12 }}>
-              {typeof s.icon === 'string' ? s.icon : <s.icon size={20} strokeWidth={2.5} />}
+          <div key={i} style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', padding: '12px 14px' }}>
+            <div style={{ width: 34, height: 34, borderRadius: 8, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 900, color: s.color, marginBottom: 8 }}>
+              {typeof s.icon === 'string' ? s.icon : <s.icon size={16} strokeWidth={2.5} />}
             </div>
-            <div style={{ fontSize: 36, fontWeight: 900, color: 'var(--text)', lineHeight: 1 }}>{s.val}</div>
-            <div style={{ fontSize: 16, color: 'var(--text3)', marginTop: 5, fontWeight: 600 }}>{s.label}</div>
+            <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)', lineHeight: 1 }}>{s.val}</div>
+            <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 4, fontWeight: 600 }}>{s.label}</div>
           </div>
         ))}
       </div>
 
       {weekly.length > 0 && (
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: '18px 22px' }}>
-          <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8 }}><BarChart3 size={17} strokeWidth={2} /> {t('attendance.weekly_evolution')}</div>
+        <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', padding: '12px 16px' }}>
+          <div style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}><BarChart3 size={15} strokeWidth={2} /> {t('attendance.weekly_evolution')}</div>
           {weekly.map((w, i) => {
             const total = w.present + w.absent + w.late + w.excused
             const pct = total > 0 ? Math.round((w.present + w.late) / total * 100) : 100
             return (
-              <div key={i} style={{ marginBottom: 14 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, fontWeight: 700, color: 'var(--text2)', marginBottom: 6 }}>
+              <div key={i} style={{ marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 700, color: 'var(--text2)', marginBottom: 4 }}>
                   <span>{w.week}</span>
-                  <span style={{ color: pct >= 100 ? 'var(--green)' : 'var(--red)', fontWeight: 900 }}>
+                  <span style={{ color: pct >= 100 ? 'var(--green)' : 'var(--red)', fontWeight: 800 }}>
                     {pct >= 100 ? t('attendance.week_present') : t('attendance.week_absent').replace('{pct}', String(100 - pct))}
                   </span>
                 </div>
-                <div style={{ display: 'flex', height: 8, borderRadius: 8, overflow: 'hidden' }}>
-                  <div style={{ flex: w.present + w.late, background: 'var(--green)', borderRadius: pct < 100 ? '8px 0 0 8px' : 8 }} />
-                  {(w.absent + w.excused) > 0 && <div style={{ flex: w.absent + w.excused, background: 'var(--red)', borderRadius: '0 8px 8px 0' }} />}
+                <div style={{ display: 'flex', height: 6, borderRadius: 6, overflow: 'hidden' }}>
+                  <div style={{ flex: w.present + w.late, background: 'var(--green)', borderRadius: pct < 100 ? '6px 0 0 6px' : 6 }} />
+                  {(w.absent + w.excused) > 0 && <div style={{ flex: w.absent + w.excused, background: 'var(--red)', borderRadius: '0 6px 6px 0' }} />}
                 </div>
               </div>
             )
@@ -157,15 +157,15 @@ export default function SectionStudentAttendance({ onToast, user }: Props) {
       )}
 
       {!stats && weekly.length === 0 && (
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: 48, textAlign: 'center' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}><ClipboardList size={48} strokeWidth={2} /></div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{t('attendance.empty_title')}</div>
-          <div style={{ fontSize: 14, color: 'var(--text3)' }}>{t('attendance.empty_subtitle')}</div>
+        <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: 36, textAlign: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><ClipboardList size={36} strokeWidth={2} /></div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{t('attendance.empty_title')}</div>
+          <div style={{ fontSize: 12, color: 'var(--text3)' }}>{t('attendance.empty_subtitle')}</div>
         </div>
       )}
     </div>
   )
 }
 
-const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 28, fontWeight: 700, color: 'var(--text)' }
-const sSub: React.CSSProperties = { fontSize: 17, color: 'var(--text3)', marginTop: 3 }
+const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)' }
+const sSub: React.CSSProperties = { fontSize: 12, color: 'var(--text3)', marginTop: 2 }

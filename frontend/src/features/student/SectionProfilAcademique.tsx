@@ -95,35 +95,35 @@ export default function SectionProfilAcademique({ studentId, academicYearId }: P
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       {/* En-tête : Moyenne générale annuelle */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '16px 20px',
+        padding: '10px 14px',
         background: 'var(--bg2)',
-        borderRadius: 12,
+        borderRadius: 10,
         border: '1px solid var(--border)',
         flexWrap: 'wrap',
-        gap: 12,
+        gap: 10,
       }}>
         <div>
-          <h3 style={{ margin: 0, fontSize: 18, color: 'var(--text)' }}>
+          <h3 style={{ margin: 0, fontSize: 15, color: 'var(--text)' }}>
             {t('academic.title')}
           </h3>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text2)' }}>
+          <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text2)' }}>
             {data.studentFirstName} {data.studentLastName}
           </p>
         </div>
         {data.moyenneGeneraleAnnuelle !== null && (
           <div style={{
-            padding: '8px 16px',
+            padding: '5px 12px',
             background: 'var(--blue-light)',
             color: 'var(--blue)',
-            borderRadius: 8,
+            borderRadius: 7,
             fontWeight: 700,
-            fontSize: 16,
+            fontSize: 13.5,
           }}>
             {t('academic.annual_average')} : {data.moyenneGeneraleAnnuelle.toFixed(2)}
           </div>
@@ -131,31 +131,31 @@ export default function SectionProfilAcademique({ studentId, academicYearId }: P
       </div>
 
       {/* Forces et Faiblesses */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 10 }}>
         {/* Points forts */}
         <div style={{
-          padding: 16,
+          padding: 12,
           background: 'var(--bg2)',
-          borderRadius: 12,
+          borderRadius: 10,
           border: '1px solid var(--border)',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, color: 'var(--green)' }}>
-            <Award size={18} />
-            <strong style={{ fontSize: 14 }}>{t('academic.strengths')}</strong>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, color: 'var(--green)' }}>
+            <Award size={15} />
+            <strong style={{ fontSize: 13 }}>{t('academic.strengths')}</strong>
           </div>
           {data.forces.length === 0 ? (
-            <p style={{ margin: 0, fontSize: 13, color: 'var(--text2)' }}>{t('academic.no_strengths')}</p>
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--text2)' }}>{t('academic.no_strengths')}</p>
           ) : (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
               {data.forces.map((f) => (
                 <span
                   key={f}
                   style={{
-                    padding: '4px 10px',
-                    borderRadius: 16,
+                    padding: '2px 8px',
+                    borderRadius: 12,
                     background: 'var(--green-light)',
                     color: 'var(--green)',
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: 600,
                   }}
                 >
@@ -168,28 +168,28 @@ export default function SectionProfilAcademique({ studentId, academicYearId }: P
 
         {/* Points à améliorer */}
         <div style={{
-          padding: 16,
+          padding: 12,
           background: 'var(--bg2)',
-          borderRadius: 12,
+          borderRadius: 10,
           border: '1px solid var(--border)',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, color: 'var(--red)' }}>
-            <AlertTriangle size={18} />
-            <strong style={{ fontSize: 14 }}>{t('academic.weaknesses')}</strong>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, color: 'var(--red)' }}>
+            <AlertTriangle size={15} />
+            <strong style={{ fontSize: 13 }}>{t('academic.weaknesses')}</strong>
           </div>
           {data.faiblesses.length === 0 ? (
-            <p style={{ margin: 0, fontSize: 13, color: 'var(--text2)' }}>{t('academic.no_weaknesses')}</p>
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--text2)' }}>{t('academic.no_weaknesses')}</p>
           ) : (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
               {data.faiblesses.map((w) => (
                 <span
                   key={w}
                   style={{
-                    padding: '4px 10px',
-                    borderRadius: 16,
+                    padding: '2px 8px',
+                    borderRadius: 12,
                     background: 'var(--red-light)',
                     color: 'var(--red)',
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: 600,
                   }}
                 >
@@ -204,24 +204,24 @@ export default function SectionProfilAcademique({ studentId, academicYearId }: P
       {/* Tableau détaillé des matières */}
       <div style={{
         background: 'var(--bg2)',
-        borderRadius: 12,
+        borderRadius: 10,
         border: '1px solid var(--border)',
         overflow: 'hidden',
       }}>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
               <tr style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
-                <th style={{ padding: '12px 16px', color: 'var(--text2)', fontWeight: 600 }}>{t('academic.subject')}</th>
-                <th style={{ padding: '12px 12px', color: 'var(--text2)', fontWeight: 600 }}>Coef</th>
+                <th style={{ padding: '8px 12px', color: 'var(--text2)', fontWeight: 700, fontSize: 11, textTransform: 'uppercase' }}>{t('academic.subject')}</th>
+                <th style={{ padding: '8px 10px', color: 'var(--text2)', fontWeight: 700, fontSize: 11, textTransform: 'uppercase' }}>Coef</th>
                 {data.periodes.map((p) => (
-                  <th key={p.periodId} style={{ padding: '12px 12px', color: 'var(--text2)', fontWeight: 600 }}>
+                  <th key={p.periodId} style={{ padding: '8px 10px', color: 'var(--text2)', fontWeight: 700, fontSize: 11, textTransform: 'uppercase' }}>
                     {p.nom}
                   </th>
                 ))}
-                <th style={{ padding: '12px 12px', color: 'var(--text2)', fontWeight: 600 }}>{t('academic.annual_avg_short')}</th>
-                <th style={{ padding: '12px 12px', color: 'var(--text2)', fontWeight: 600 }}>{t('academic.status')}</th>
-                <th style={{ padding: '12px 16px', color: 'var(--text2)', fontWeight: 600 }}>{t('academic.trend')}</th>
+                <th style={{ padding: '8px 10px', color: 'var(--text2)', fontWeight: 700, fontSize: 11, textTransform: 'uppercase' }}>{t('academic.annual_avg_short')}</th>
+                <th style={{ padding: '8px 10px', color: 'var(--text2)', fontWeight: 700, fontSize: 11, textTransform: 'uppercase' }}>{t('academic.status')}</th>
+                <th style={{ padding: '8px 12px', color: 'var(--text2)', fontWeight: 700, fontSize: 11, textTransform: 'uppercase' }}>{t('academic.trend')}</th>
               </tr>
             </thead>
             <tbody>
@@ -229,43 +229,43 @@ export default function SectionProfilAcademique({ studentId, academicYearId }: P
                 const style = CLASSIFICATION_STYLES[m.classification] || CLASSIFICATION_STYLES.ACQUIS
                 return (
                   <tr key={m.subjectId} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text)' }}>{m.subjectName}</td>
-                    <td style={{ padding: '12px 12px', color: 'var(--text2)' }}>{m.coefficient}</td>
+                    <td style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--text)', fontSize: 12.5 }}>{m.subjectName}</td>
+                    <td style={{ padding: '8px 10px', color: 'var(--text2)', fontSize: 12 }}>{m.coefficient}</td>
                     {m.moyennesParPeriode.map((avg, i) => (
-                      <td key={i} style={{ padding: '12px 12px', color: avg !== null ? 'var(--text)' : 'var(--text2)' }}>
+                      <td key={i} style={{ padding: '8px 10px', color: avg !== null ? 'var(--text)' : 'var(--text2)', fontSize: 12 }}>
                         {avg !== null ? avg.toFixed(2) : '—'}
                       </td>
                     ))}
-                    <td style={{ padding: '12px 12px', fontWeight: 700, color: 'var(--text)' }}>
+                    <td style={{ padding: '8px 10px', fontWeight: 700, color: 'var(--text)', fontSize: 12.5 }}>
                       {m.moyenneAnnuelle.toFixed(2)}
                     </td>
-                    <td style={{ padding: '12px 12px' }}>
+                    <td style={{ padding: '8px 10px' }}>
                       <span style={{
-                        padding: '3px 8px',
+                        padding: '2px 7px',
                         borderRadius: 6,
                         background: style.bg,
                         color: style.color,
-                        fontSize: 11,
+                        fontSize: 10.5,
                         fontWeight: 700,
                         textTransform: 'uppercase',
                       }}>
                         {t(style.labelKey)}
                       </span>
                     </td>
-                    <td style={{ padding: '12px 16px' }}>
+                    <td style={{ padding: '8px 12px' }}>
                       {m.tendance === 'HAUSSE' && (
-                        <span style={{ color: 'var(--green)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                          <TrendingUp size={14} /> {t('academic.trend_up')}
+                        <span style={{ color: 'var(--green)', display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11.5 }}>
+                          <TrendingUp size={13} /> {t('academic.trend_up')}
                         </span>
                       )}
                       {m.tendance === 'BAISSE' && (
-                        <span style={{ color: 'var(--red)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                          <TrendingDown size={14} /> {t('academic.trend_down')}
+                        <span style={{ color: 'var(--red)', display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11.5 }}>
+                          <TrendingDown size={13} /> {t('academic.trend_down')}
                         </span>
                       )}
                       {m.tendance === 'STABLE' && (
-                        <span style={{ color: 'var(--text2)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                          <Minus size={14} /> {t('academic.trend_stable')}
+                        <span style={{ color: 'var(--text2)', display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11.5 }}>
+                          <Minus size={13} /> {t('academic.trend_stable')}
                         </span>
                       )}
                     </td>

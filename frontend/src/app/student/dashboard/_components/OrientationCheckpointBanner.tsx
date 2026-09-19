@@ -100,35 +100,35 @@ export default function OrientationCheckpointBanner({ onToast }: Props) {
   if (proposition) {
     const deadline = proposition.reco.responseDeadline ? new Date(proposition.reco.responseDeadline) : null
     return (
-      <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 16, padding: '20px 24px', marginBottom: 22 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-          <Compass size={22} strokeWidth={2} />
-          <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>{t('orientationCheckpoint.banner_title')}</span>
+      <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+          <Compass size={16} strokeWidth={2} />
+          <span style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text)' }}>{t('orientationCheckpoint.banner_title')}</span>
         </div>
-        <div style={{ fontSize: 15, color: 'var(--text2)', fontWeight: 600, marginBottom: 14 }}>
+        <div style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 600, marginBottom: 10 }}>
           {t('orientationCheckpoint.banner_subtitle')}
           {deadline && (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginLeft: 8, color: 'var(--amber)' }}>
-              <Clock size={14} strokeWidth={2} /> {deadline.toLocaleDateString()}
+              <Clock size={13} strokeWidth={2} /> {deadline.toLocaleDateString()}
             </span>
           )}
         </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
           {(proposition.reco.suggestedTracks ?? []).map(st => (
             <button key={st.track} onClick={() => setSelectedTrack(st.track)}
               style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4, textAlign: 'left',
-                padding: '12px 16px', borderRadius: 12, minWidth: 160, cursor: 'pointer', fontFamily: 'inherit',
-                border: `2px solid ${selectedTrack === st.track ? 'var(--amber)' : 'var(--border)'}`,
+                display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3, textAlign: 'left',
+                padding: '8px 12px', borderRadius: 8, minWidth: 130, cursor: 'pointer', fontFamily: 'inherit',
+                border: `1.5px solid ${selectedTrack === st.track ? 'var(--amber)' : 'var(--border)'}`,
                 background: selectedTrack === st.track ? 'white' : 'var(--surface)',
               }}>
-              <span style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)' }}>{st.track}</span>
-              <span style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.5 }}>{st.justification}</span>
+              <span style={{ fontSize: 15, fontWeight: 900, color: 'var(--text)' }}>{st.track}</span>
+              <span style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.4 }}>{st.justification}</span>
             </button>
           ))}
         </div>
         <button onClick={handleChoisir} disabled={!selectedTrack || submitting}
-          style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: 'var(--amber)', color: 'white', fontWeight: 800, fontSize: 15, cursor: selectedTrack && !submitting ? 'pointer' : 'not-allowed', opacity: selectedTrack && !submitting ? 1 : 0.6 }}>
+          style={{ padding: '6px 14px', borderRadius: 7, border: 'none', background: 'var(--amber)', color: 'white', fontWeight: 800, fontSize: 12, cursor: selectedTrack && !submitting ? 'pointer' : 'not-allowed', opacity: selectedTrack && !submitting ? 1 : 0.6 }}>
           {submitting ? t('orientationCheckpoint.submitting') : t('orientationCheckpoint.confirm_choice')}
         </button>
       </div>
@@ -137,31 +137,31 @@ export default function OrientationCheckpointBanner({ onToast }: Props) {
 
   // Pas de proposition en attente — formulaire d'aspiration optionnel
   return (
-    <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 16, padding: '16px 22px', marginBottom: 22 }}>
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
       <button onClick={() => setAspirationOpen(o => !o)}
-        style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', width: '100%', textAlign: 'left' }}>
-        <Compass size={20} strokeWidth={2} color="var(--text3)" />
-        <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{t('orientationCheckpoint.aspiration_prompt')}</span>
+        style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', width: '100%', textAlign: 'left' }}>
+        <Compass size={16} strokeWidth={2} color="var(--text3)" />
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{t('orientationCheckpoint.aspiration_prompt')}</span>
       </button>
       {aspirationOpen && (
-        <div style={{ marginTop: 14 }}>
+        <div style={{ marginTop: 10 }}>
           {aspirationSaved ? (
-            <div style={{ fontSize: 14, color: 'var(--green)', fontWeight: 700 }}>{t('orientationCheckpoint.aspiration_confirmed')}</div>
+            <div style={{ fontSize: 12.5, color: 'var(--green)', fontWeight: 700 }}>{t('orientationCheckpoint.aspiration_confirmed')}</div>
           ) : (
             <>
-              <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
                 <select value={aspirationCheckpoint} onChange={e => setAspirationCheckpoint(e.target.value as any)}
-                  style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 13, fontWeight: 600 }}>
+                  style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 12, fontWeight: 600 }}>
                   <option value="FIN_TROISIEME">{t('orientationCheckpoint.checkpoint_3e')}</option>
                   <option value="FIN_SECONDE_C">{t('orientationCheckpoint.checkpoint_2ndeC')}</option>
                 </select>
                 <input value={desiredTrack} onChange={e => setDesiredTrack(e.target.value)} placeholder={t('orientationCheckpoint.desired_track_placeholder')}
-                  style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 13, minWidth: 140 }} />
+                  style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 12, minWidth: 140 }} />
               </div>
               <input value={careerInterest} onChange={e => setCareerInterest(e.target.value)} placeholder={t('orientationCheckpoint.career_interest_placeholder')}
-                style={{ width: '100%', boxSizing: 'border-box', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 13, marginBottom: 12 }} />
+                style={{ width: '100%', boxSizing: 'border-box', padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 12, marginBottom: 10 }} />
               <button onClick={handleSaveAspiration} disabled={savingAspiration}
-                style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: 'var(--green)', color: 'white', fontWeight: 700, fontSize: 13, cursor: savingAspiration ? 'wait' : 'pointer' }}>
+                style={{ padding: '6px 14px', borderRadius: 7, border: 'none', background: 'var(--green)', color: 'white', fontWeight: 700, fontSize: 12, cursor: savingAspiration ? 'wait' : 'pointer' }}>
                 {savingAspiration ? t('orientationCheckpoint.submitting') : t('orientationCheckpoint.save_aspiration')}
               </button>
             </>
