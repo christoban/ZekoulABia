@@ -5,6 +5,8 @@ import { Bell, ArrowRight } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { useNotifications } from '@/hooks/NotificationContext'
 
+import { handleNotificationClick } from '@/lib/notificationNavigation'
+
 interface Props {
   /** Pour le lien « Voir tout » du menu déroulant — navigue vers la section 'notifications',
    * identique sur les 5 dashboards. Omis : le lien reste caché (contexte sans navigation, ex. page publique). */
@@ -97,7 +99,7 @@ export default function NotificationBell({ onNav }: Props) {
       </div>
 
       {open && (
-        <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: 360, background: 'var(--surface)', borderRadius: 14, border: '1.5px solid var(--border)', boxShadow: 'var(--shadow-lg)', zIndex: 1000, display: 'flex', flexDirection: 'column', maxHeight: 460 }}>
+        <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: 360, maxWidth: 'calc(100vw - 28px)', background: 'var(--surface)', borderRadius: 14, border: '1.5px solid var(--border)', boxShadow: 'var(--shadow-lg)', zIndex: 1000, display: 'flex', flexDirection: 'column', maxHeight: 460 }}>
           <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
             <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>{t('notifications.title')}</span>
             {unreadCount > 0 && (
@@ -116,11 +118,11 @@ export default function NotificationBell({ onNav }: Props) {
               <div
                 key={n.id}
                 onClick={() => {
-                  if (!n.isRead) markAsRead(n.id)
-                  if (n.metadata && (n.metadata as any).action === 'OPEN_CLOTURE_MODAL') {
-                    setOpen(false)
-                    window.dispatchEvent(new CustomEvent('zekoulabia:open-cloture-modal', { detail: n.metadata }))
-                  }
+                  handleNotificationClick(n, {
+                    markAsRead,
+                    onNav,
+                    onClose: () => setOpen(false),
+                  })
                 }}
                 style={{
                   padding: '12px 18px', cursor: 'pointer',

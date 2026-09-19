@@ -58,6 +58,36 @@ export default function Messagerie() {
 
   useEffect(() => { if (currentUser) chargerConversations() }, [currentUser, chargerConversations])
 
+  // Ouvre automatiquement la conversation demandée lors d'un clic sur une notification (in-app ou out-app)
+  useEffect(() => {
+    const onOpenConversation = (e: Event) => {
+      const detail = (e as CustomEvent<{ conversationId?: string }>).detail
+      if (detail?.conversationId) {
+        setSelectedId(detail.conversationId)
+        setNouveauMessage(false)
+        setVueMobile('fil')
+        setConversations((prev) =>
+          prev.map((c) => (c.id === detail.conversationId ? { ...c, unreadCount: 0 } : c))
+        )
+      }
+    }
+    window.addEventListener('zekoulabia:open-conversation', onOpenConversation)
+    return () => window.removeEventListener('zekoulabia:open-conversation', onOpenConversation)
+  }, [])
+
+  // Vérifier si un conversationId a été passé dans l'URL lors d'une arrivée externe / push
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const convId = params.get('conversationId')
+      if (convId) {
+        setSelectedId(convId)
+        setNouveauMessage(false)
+        setVueMobile('fil')
+      }
+    } catch { /* ignore */ }
+  }, [])
+
   useEffect(() => {
     if (!currentUser) return
     const socket = getNotificationSocket()
@@ -135,46 +165,102 @@ export default function Messagerie() {
   const conversationSelectionnee = conversations.find((c) => c.id === selectedId)
 
   return (
-    <div
-      className="messagerie-shell"
-      data-vue={vueMobile}
-      style={{ height: '100%', display: 'grid', gridTemplateColumns: '300px 1fr', background: 'var(--bg)', borderRadius: 18, border: '1.5px solid var(--border)', overflow: 'hidden' }}
-    >
+    <div className="messagerie-root" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <style>{`
-        @media (max-width: 720px) {
-          .messagerie-shell { display: block !important; }
-          .messagerie-shell[data-vue="liste"] .messagerie-pane-fil { display: none !important; }
-          .messagerie-shell[data-vue="fil"] .messagerie-pane-liste { display: none !important; }
+        .messagerie-root {
+          --msg-sidebar-w: 340px;
+        }
+
+        /* Desktop : grille deux colonnes */
+        .messagerie-grid {
+          flex: 1;
+          display: grid;
+          grid-template-columns: var(--msg-sidebar-w) 1fr;
+          min-height: 0;
+          overflow: hidden;
+        }
+        .messagerie-pane-liste,
+        .messagerie-pane-fil {
+          display: flex;
+          flex-direction: column;
+          min-height: 0;
+        }
+
+        /* Tablette */
+        @media (min-width: 769px) and (max-width: 1024px) {
+          .messagerie-root { --msg-sidebar-w: 280px; }
+        }
+
+        /* Mobile : une seule vue à la fois, comme WhatsApp */
+        @media (max-width: 768px) {
+          .messagerie-grid {
+            display: flex !important;
+            flex-direction: column;
+          }
+          /* Vue liste : on cache le fil */
+          .messagerie-grid[data-vue="liste"] .messagerie-pane-fil {
+            display: none !important;
+          }
+          .messagerie-grid[data-vue="liste"] .messagerie-pane-liste {
+            display: flex !important;
+            flex: 1;
+          }
+          /* Vue fil : on cache la liste */
+          .messagerie-grid[data-vue="fil"] .messagerie-pane-liste {
+            display: none !important;
+          }
+          .messagerie-grid[data-vue="fil"] .messagerie-pane-fil {
+            display: flex !important;
+            flex: 1;
+          }
+          /* Pas de bordure droite sur mobile */
+          .messagerie-pane-liste {
+            border-right: none !important;
+          }
         }
       `}</style>
-      <div className="messagerie-pane-liste" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-        <ListeConversations
-          conversations={conversations}
-          loading={loading}
-          selectedId={selectedId}
-          currentUser={currentUser}
-          onSelect={handleSelect}
-          onNewMessage={() => { setNouveauMessage(true); setVueMobile('fil') }}
-        />
-      </div>
 
-      <div className="messagerie-pane-fil" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-        {nouveauMessage ? (
-          <NouveauMessagePrive onCreated={handleCreated} onCancel={() => setNouveauMessage(false)} />
-        ) : conversationSelectionnee ? (
-          <FilConversation
-            conversationId={conversationSelectionnee.id}
-            conversation={conversationSelectionnee}
+      <div className="messagerie-grid" data-vue={vueMobile}>
+        {/* Panneau liste */}
+        <div className="messagerie-pane-liste" style={{ borderRight: '1px solid var(--border)', background: 'var(--surface)' }}>
+          <ListeConversations
+            conversations={conversations}
+            loading={loading}
+            selectedId={selectedId}
             currentUser={currentUser}
-            onBack={() => setVueMobile('liste')}
-            onMessageSent={chargerConversations}
+            onSelect={handleSelect}
+            onNewMessage={() => { setNouveauMessage(true); setVueMobile('fil') }}
           />
-        ) : (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, color: 'var(--text3)' }}>
-            <MessageCircle size={32} />
-            <div style={{ fontSize: 13.5 }}>{t('messagerie.select_conversation') ?? 'Sélectionnez une conversation'}</div>
-          </div>
-        )}
+        </div>
+
+        {/* Panneau fil / nouveau message */}
+        <div className="messagerie-pane-fil" style={{ background: 'var(--bg)' }}>
+          {nouveauMessage ? (
+            <NouveauMessagePrive onCreated={handleCreated} onCancel={() => { setNouveauMessage(false); setVueMobile('liste') }} />
+          ) : conversationSelectionnee ? (
+            <FilConversation
+              conversationId={conversationSelectionnee.id}
+              conversation={conversationSelectionnee}
+              currentUser={currentUser}
+              onBack={() => setVueMobile('liste')}
+              onMessageSent={chargerConversations}
+            />
+          ) : (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, color: 'var(--text3)', padding: 32 }}>
+              <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(37,99,235,0.12), rgba(16,185,129,0.12))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <MessageCircle size={30} strokeWidth={1.5} style={{ color: 'var(--blue, #2563eb)' }} />
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
+                  {t('messagerie.select_conversation') ?? 'Sélectionnez une conversation'}
+                </div>
+                <div style={{ fontSize: 12.5, color: 'var(--text3)' }}>
+                  {t('messagerie.select_conversation_hint') ?? 'Choisissez un contact pour démarrer la discussion'}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
