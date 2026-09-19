@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import {
   Megaphone, Pin, CalendarClock, School, Users, GraduationCap, User, UserCircle2,
-  Send, Trash2, Plus, Edit2, X, Search, Filter, AlertCircle, CheckCircle2
+  Send, Trash2, Plus, Edit2, X, Search, AlertCircle, CheckCircle2, ArrowLeft, Check
 } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import type { ReactNode } from 'react'
@@ -74,6 +74,7 @@ export default function Babillard({
   const [publishPinned, setPublishPinned] = useState(false)
   const [publishExpiryMode, setPublishExpiryMode] = useState<'none' | 'days'>('none')
   const [publishExpiryDays, setPublishExpiryDays] = useState('7')
+  const [showExpiryPicker, setShowExpiryPicker] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
@@ -99,17 +100,24 @@ export default function Babillard({
       })
       .catch(() => {})
       .finally(() => {
-        if (mounted) setLoading(false)
+        setLoading(false)
       })
-
     return () => {
       mounted = false
     }
   }, [])
 
-  const toggleRole = (value: string) => {
-    setPublishRoles((current) =>
-      current.includes(value) ? current.filter((item) => item !== value) : [...current, value]
+  // Synchronisation avec l'Assistant IA pour masquer son FAB pendant que la modale est active
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('zekoulabia:modal-open', { detail: { open: isModalOpen } }))
+    return () => {
+      window.dispatchEvent(new CustomEvent('zekoulabia:modal-open', { detail: { open: false } }))
+    }
+  }, [isModalOpen])
+
+  const toggleRole = (r: string) => {
+    setPublishRoles((prev) =>
+      prev.includes(r) ? prev.filter((item) => item !== r) : [...prev, r]
     )
   }
 
@@ -121,6 +129,7 @@ export default function Babillard({
     setPublishPinned(false)
     setPublishExpiryMode('none')
     setPublishExpiryDays('7')
+    setShowExpiryPicker(false)
   }
 
   const openCreateModal = () => {
@@ -134,6 +143,7 @@ export default function Babillard({
     setPublishContent(item.content)
     setPublishRoles(item.targetRoles.length > 0 ? item.targetRoles : [role])
     setPublishPinned(item.isPinned)
+    setShowExpiryPicker(false)
     if (item.expiresAt) {
       setPublishExpiryMode('days')
       const remainingDays = Math.max(
@@ -266,73 +276,64 @@ export default function Babillard({
   const pinnedCount = announcements.filter((a) => a.isPinned).length
 
   return (
-    <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflow: 'auto', fontFamily: 'var(--font-nunito), Nunito, sans-serif' }}>
+    <div
+      className="px-3 py-3.5 sm:px-6 sm:py-5 md:px-8 md:py-6 pb-[calc(78px+env(safe-area-inset-bottom,0px))] md:pb-8 overflow-y-auto h-full font-nunito"
+      style={{
+        background: 'var(--bg)',
+        color: 'var(--text)',
+      }}
+    >
       {/* ── En-tête du Babillard ────────────────────────────────────────────── */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div className="mb-4 sm:mb-6">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             <div
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl flex items-center justify-center text-white flex-shrink-0 shadow-md"
               style={{
-                width: 42,
-                height: 42,
-                borderRadius: 12,
                 background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
                 boxShadow: '0 4px 12px rgba(245, 158, 11, 0.25)',
               }}
             >
-              <Megaphone size={20} />
+              <Megaphone size={19} strokeWidth={2.2} />
             </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <h1 className="text-[17px] md:text-[20px] font-bold font-spectral" style={{ color: 'var(--text)', margin: 0 }}>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-[16px] sm:text-[20px] font-bold font-spectral truncate" style={{ color: 'var(--text)' }}>
                   {title}
                 </h1>
                 <span
+                  className="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black"
                   style={{
-                    padding: '2px 8px',
-                    borderRadius: 999,
-                    fontSize: 11,
-                    fontWeight: 800,
                     background: 'var(--amber-light)',
                     color: 'var(--amber)',
                     border: '1px solid var(--amber)',
                   }}
                 >
-                  Tableau officiel
+                  Officiel
                 </span>
               </div>
-              <p className="text-[11px] md:text-[13px] font-medium" style={{ color: 'var(--text3)', marginTop: 2 }}>
+              <p className="text-[11px] sm:text-[12.5px] font-medium text-[var(--text3)] mt-0.5 truncate">
                 {subtitle}
               </p>
             </div>
           </div>
 
+          {/* Bouton visible sur mobile et desktop pour publier */}
           {canPublish && (
             <button
               type="button"
               onClick={openCreateModal}
+              className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs font-extrabold text-white cursor-pointer shadow-sm transition-all hover:opacity-90 active:scale-95 flex-shrink-0"
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '10px 16px',
-                borderRadius: 10,
+                background: 'linear-gradient(135deg, #10b981, #059669)',
                 border: 'none',
-                background: '#1a2e1e',
-                color: 'white',
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-                transition: 'transform 0.15s ease',
               }}
             >
-              <Plus size={16} />
-              <span>Publier un communiqué</span>
+              <Plus size={16} strokeWidth={2.5} />
+              <span>
+                <span className="sm:hidden">Publier</span>
+                <span className="hidden sm:inline">Publier un communiqué</span>
+              </span>
             </button>
           )}
         </div>
@@ -342,24 +343,15 @@ export default function Babillard({
       {notice && (
         <div
           aria-live="polite"
+          className="mb-3 p-3 rounded-xl text-xs font-bold flex items-center gap-2 max-w-xl transition-opacity duration-200"
           style={{
-            marginBottom: 14,
-            padding: '10px 14px',
-            borderRadius: 10,
             background: 'rgba(34, 197, 94, 0.12)',
             border: '1px solid rgba(34, 197, 94, 0.35)',
             color: '#15803d',
-            fontWeight: 700,
-            fontSize: 13,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            maxWidth: 600,
             opacity: noticeVisible ? 1 : 0,
-            transition: 'opacity 200ms ease',
           }}
         >
-          <CheckCircle2 size={16} />
+          <CheckCircle2 size={16} className="flex-shrink-0" />
           <span>{notice}</span>
         </div>
       )}
@@ -367,117 +359,79 @@ export default function Babillard({
       {errorNotice && (
         <div
           aria-live="assertive"
+          className="mb-3 p-3 rounded-xl text-xs font-bold flex items-center gap-2 max-w-xl transition-opacity duration-200"
           style={{
-            marginBottom: 14,
-            padding: '10px 14px',
-            borderRadius: 10,
             background: 'rgba(239, 68, 68, 0.10)',
             border: '1px solid rgba(239, 68, 68, 0.35)',
             color: '#b91c1c',
-            fontWeight: 700,
-            fontSize: 13,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            maxWidth: 600,
             opacity: errorVisible ? 1 : 0,
-            transition: 'opacity 200ms ease',
           }}
         >
-          <AlertCircle size={16} />
+          <AlertCircle size={16} className="flex-shrink-0" />
           <span>{errorNotice}</span>
         </div>
       )}
 
-      {/* ── Barre de Filtres & Recherche du Tableau d'Affichage ───────────────── */}
+      {/* ── Barre de Filtres & Recherche ─────────────────────────────────────── */}
       <div
+        className="p-2.5 sm:p-3.5 mb-4 sm:mb-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-2.5"
         style={{
           background: 'var(--surface)',
-          borderRadius: 14,
-          border: '1.5px solid var(--border)',
-          padding: '12px 16px',
-          marginBottom: 18,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 12,
+          border: '1px solid var(--border)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflowX: 'auto' }}>
+        {/* Onglets Pills défilables horizontalement */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5" style={{ WebkitOverflowScrolling: 'touch' }}>
           <button
             type="button"
             onClick={() => setFilterTab('all')}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold border-none cursor-pointer whitespace-nowrap transition-all"
             style={{
-              padding: '6px 14px',
-              borderRadius: 8,
-              border: 'none',
-              background: filterTab === 'all' ? '#1a2e1e' : 'transparent',
-              color: filterTab === 'all' ? 'white' : 'var(--text3)',
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
+              background: filterTab === 'all' ? 'var(--sidebar)' : 'var(--bg2)',
+              color: filterTab === 'all' ? '#ffffff' : 'var(--text2)',
             }}
           >
-            Toutes les annonces ({announcements.length})
+            Tous ({announcements.length})
           </button>
           <button
             type="button"
             onClick={() => setFilterTab('pinned')}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold border-none cursor-pointer whitespace-nowrap transition-all inline-flex items-center gap-1.5"
             style={{
-              padding: '6px 14px',
-              borderRadius: 8,
-              border: 'none',
-              background: filterTab === 'pinned' ? '#1a2e1e' : 'transparent',
-              color: filterTab === 'pinned' ? 'white' : 'var(--text3)',
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
+              background: filterTab === 'pinned' ? 'var(--sidebar)' : 'var(--bg2)',
+              color: filterTab === 'pinned' ? '#ffffff' : 'var(--text2)',
             }}
           >
-            <Pin size={13} color={filterTab === 'pinned' ? '#f59e0b' : 'var(--text3)'} />
-            <span>Épinglées ({pinnedCount})</span>
+            <Pin size={13} className={filterTab === 'pinned' ? 'text-amber-400' : 'text-[var(--text3)]'} />
+            <span>À la une ({pinnedCount})</span>
           </button>
           <button
             type="button"
             onClick={() => setFilterTab('for_me')}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold border-none cursor-pointer whitespace-nowrap transition-all"
             style={{
-              padding: '6px 14px',
-              borderRadius: 8,
-              border: 'none',
-              background: filterTab === 'for_me' ? '#1a2e1e' : 'transparent',
-              color: filterTab === 'for_me' ? 'white' : 'var(--text3)',
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
+              background: filterTab === 'for_me' ? 'var(--sidebar)' : 'var(--bg2)',
+              color: filterTab === 'for_me' ? '#ffffff' : 'var(--text2)',
             }}
           >
-            Pour mon rôle ({role})
+            Pour moi ({role})
           </button>
         </div>
 
-        <div style={{ position: 'relative', width: '100%', maxWidth: 280 }}>
-          <Search size={15} color="var(--text3)" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }} />
+        {/* Champ de recherche : pleine largeur sur mobile */}
+        <div className="relative w-full md:w-64 flex-shrink-0">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text3)]" />
           <input
             type="text"
             placeholder="Rechercher une annonce..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full py-2 pl-8 pr-3 rounded-xl text-xs font-medium outline-none transition-colors"
             style={{
-              width: '100%',
-              padding: '7px 10px 7px 32px',
-              borderRadius: 8,
               border: '1px solid var(--border)',
               background: 'var(--bg)',
               color: 'var(--text)',
-              fontSize: 13,
-              outline: 'none',
             }}
           />
         </div>
@@ -486,126 +440,101 @@ export default function Babillard({
       {/* ── LE TABLEAU D'AFFICHAGE (GRILLE DES ANNONCES) ─────────────────────── */}
       {loading ? (
         <div
+          className="p-10 text-center rounded-2xl text-xs sm:text-sm font-semibold text-[var(--text3)]"
           style={{
-            padding: 48,
-            textAlign: 'center',
-            color: 'var(--text3)',
             background: 'var(--surface)',
-            borderRadius: 16,
-            border: '1.5px solid var(--border)',
-            fontSize: 14,
+            border: '1px solid var(--border)',
           }}
         >
           Chargement des communiqués du babillard...
         </div>
       ) : filteredAnnouncements.length === 0 ? (
         <div
+          className="p-8 sm:p-12 text-center rounded-2xl"
           style={{
-            padding: 48,
-            textAlign: 'center',
-            color: 'var(--text3)',
             background: 'var(--surface)',
-            borderRadius: 16,
-            border: '1.5px solid var(--border)',
+            border: '1px solid var(--border)',
           }}
         >
-          <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--amber-light)', color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-            <Megaphone size={24} />
+          <div
+            className="w-12 h-12 rounded-2xl inline-flex items-center justify-center mb-3"
+            style={{ background: 'var(--amber-light)', color: 'var(--amber)' }}
+          >
+            <Megaphone size={24} strokeWidth={2} />
           </div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>
+          <div className="text-sm sm:text-base font-extrabold text-[var(--text)]">
             {searchQuery ? 'Aucune annonce ne correspond à votre recherche.' : t('babillard.empty') ?? 'Aucun communiqué affiché pour le moment.'}
           </div>
-          <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>
-            {canPublish ? 'Utilisez le bouton « Publier un communiqué » en haut à droite pour diffuser une note officielle.' : 'Revenez plus tard pour consulter les nouvelles circulaires.'}
+          <div className="text-xs text-[var(--text3)] mt-1.5 max-w-sm mx-auto">
+            {canPublish ? 'Appuyez sur le bouton pour diffuser une note officielle à l’établissement.' : 'Revenez plus tard pour consulter les nouvelles circulaires officielles.'}
           </div>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 16 }}>
+        /* Grille 1 colonne sur mobile, 2 colonnes sur tablette, 3 sur desktop */
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 md:gap-5">
           {filteredAnnouncements.map((item) => {
             const isManageable = canManageItem(item)
             const expiresAt = item.expiresAt
-              ? new Date(item.expiresAt).toLocaleDateString('fr-CM', { day: 'numeric', month: 'long', year: 'numeric' })
+              ? new Date(item.expiresAt).toLocaleDateString('fr-CM', { day: 'numeric', month: 'short', year: 'numeric' })
               : 'Permanent'
             const datePublication = new Date(item.createdAt).toLocaleDateString('fr-CM', { day: 'numeric', month: 'short', year: 'numeric' })
 
             return (
               <article
                 key={item.id}
+                className="p-3.5 sm:p-4 md:p-5 rounded-2xl flex flex-col relative transition-all duration-150 overflow-hidden"
                 style={{
                   background: 'var(--surface)',
-                  borderRadius: 16,
-                  border: item.isPinned ? '2px solid #f59e0b' : '1.5px solid var(--border)',
-                  padding: 20,
-                  boxShadow: item.isPinned ? '0 8px 24px rgba(245, 158, 11, 0.12)' : '0 2px 6px rgba(0,0,0,0.03)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                  border: item.isPinned ? '2px solid #f59e0b' : '1px solid var(--border)',
+                  boxShadow: item.isPinned ? '0 6px 20px rgba(245, 158, 11, 0.12)' : '0 2px 6px rgba(0,0,0,0.02)',
                 }}
               >
                 {/* Bandeau supérieur Épinglé */}
                 {item.isPinned && (
                   <div
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      height: 4,
-                      background: 'linear-gradient(90deg, #f59e0b, #d97706)',
-                    }}
+                    className="absolute top-0 left-0 right-0 h-1"
+                    style={{ background: 'linear-gradient(90deg, #f59e0b, #d97706)' }}
                   />
                 )}
 
                 {/* En-tête de l'Annonce */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+                <div className="flex justify-between items-start gap-2 mb-2 sm:mb-2.5">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap mb-1.5">
                       {item.isPinned && (
                         <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black"
                           style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 4,
-                            padding: '3px 8px',
-                            borderRadius: 6,
                             background: '#fef3c7',
                             color: '#92400e',
-                            fontSize: 11,
-                            fontWeight: 800,
                           }}
                         >
-                          <Pin size={12} fill="#d97706" color="#d97706" />
+                          <Pin size={11} fill="#d97706" color="#d97706" />
                           <span>À la une</span>
                         </span>
                       )}
-                      <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600 }}>
+                      <span className="text-[10.5px] sm:text-[11px] font-semibold text-[var(--text3)]">
                         {datePublication}
                       </span>
                     </div>
 
-                    <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: 'var(--text)', lineHeight: 1.35 }}>
+                    <h3 className="text-[14.5px] sm:text-[16px] font-black text-[var(--text)] leading-snug break-words">
                       {item.title}
                     </h3>
                   </div>
 
-                  {/* Actions (Modifier / Supprimer) STRICTEMENT RÉSERVÉES À L'ADMIN OU À L'AUTEUR */}
+                  {/* Actions (Modifier / Supprimer) */}
                   {isManageable && (
-                    <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                    <div className="flex items-center gap-1 flex-shrink-0">
                       <button
                         type="button"
                         onClick={() => handleEdit(item)}
                         title="Modifier mon annonce"
+                        className="p-1.5 rounded-lg border cursor-pointer transition-colors"
                         style={{
-                          background: 'var(--bg)',
-                          border: '1px solid var(--border)',
-                          borderRadius: 6,
-                          padding: '5px 8px',
-                          cursor: 'pointer',
+                          background: 'var(--bg2)',
+                          borderColor: 'var(--border)',
                           color: 'var(--text2)',
-                          display: 'inline-flex',
-                          alignItems: 'center',
                         }}
                       >
                         <Edit2 size={13} />
@@ -615,15 +544,11 @@ export default function Babillard({
                         onClick={() => handleDelete(item.id)}
                         disabled={deletingId === item.id}
                         title="Supprimer mon annonce"
+                        className="p-1.5 rounded-lg border cursor-pointer transition-colors"
                         style={{
                           background: 'rgba(239, 68, 68, 0.08)',
-                          border: '1px solid rgba(239, 68, 68, 0.25)',
-                          borderRadius: 6,
-                          padding: '5px 8px',
-                          cursor: deletingId === item.id ? 'wait' : 'pointer',
+                          borderColor: 'rgba(239, 68, 68, 0.25)',
                           color: '#dc2626',
-                          display: 'inline-flex',
-                          alignItems: 'center',
                         }}
                       >
                         <Trash2 size={13} />
@@ -634,48 +559,27 @@ export default function Babillard({
 
                 {/* Corps de l'Annonce */}
                 <div
-                  style={{
-                    color: 'var(--text2)',
-                    fontSize: 13.5,
-                    lineHeight: 1.65,
-                    whiteSpace: 'pre-wrap',
-                    flex: 1,
-                    marginBottom: 16,
-                  }}
+                  className="text-xs sm:text-[13px] text-[var(--text2)] leading-relaxed whitespace-pre-wrap flex-1 mb-3.5 break-words"
                 >
                   {item.content}
                 </div>
 
-                {/* Pied de l'Annonce : Métadonnées, rôles ciblés & Auteur */}
+                {/* Pied de l'Annonce */}
                 <div
-                  style={{
-                    paddingTop: 12,
-                    borderTop: '1px solid var(--border)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 8,
-                    fontSize: 12,
-                    color: 'var(--text3)',
-                  }}
+                  className="pt-2.5 border-t border-[var(--border)] flex flex-col gap-2 text-xs text-[var(--text3)]"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+                  <div className="flex items-center justify-between flex-wrap gap-2">
                     {/* Public ciblé */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 11, fontWeight: 700 }}>Destinataires:</span>
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <span className="text-[10.5px] font-bold">Cible :</span>
                       {item.targetRoles?.length > 0 ? (
                         item.targetRoles.map((tr) => (
                           <span
                             key={tr}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold"
                             style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 4,
-                              padding: '2px 6px',
-                              borderRadius: 4,
                               background: 'var(--bg2)',
                               color: 'var(--text2)',
-                              fontSize: 10.5,
-                              fontWeight: 700,
                             }}
                           >
                             {ROLE_ICON[tr.toUpperCase()] ?? null}
@@ -683,25 +587,28 @@ export default function Babillard({
                           </span>
                         ))
                       ) : (
-                        <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600 }}>Tous publics</span>
+                        <span className="text-[10px] text-[var(--text3)] font-semibold">Tous publics</span>
                       )}
                     </div>
 
                     {/* Expiration */}
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600 }}>
-                      <CalendarClock size={12} />
+                    <div className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-[var(--text3)]">
+                      <CalendarClock size={11} />
                       <span>{expiresAt}</span>
                     </div>
                   </div>
 
                   {/* Auteur */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: 'var(--text)' }}>
-                    <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#e0e7ff', color: '#4338ca', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--text)]">
+                    <div
+                      className="w-5 h-5 rounded-full flex items-center justify-center text-[9.5px] font-black"
+                      style={{ background: 'var(--blue-light)', color: 'var(--blue)' }}
+                    >
                       {item.author?.firstName?.[0] ?? 'A'}
                     </div>
-                    <span>
+                    <span className="truncate">
                       {item.author ? `${item.author.firstName} ${item.author.lastName}` : 'Direction de l’établissement'}
-                      <span style={{ fontWeight: 500, color: 'var(--text3)', marginLeft: 4 }}>
+                      <span className="font-medium text-[var(--text3)] ml-1">
                         ({item.author?.role ?? 'ADMIN'})
                       </span>
                     </span>
@@ -713,84 +620,41 @@ export default function Babillard({
         </div>
       )}
 
-      {/* ── Pied de babillard discret (information et comptage) ─────────────── */}
-      {filteredAnnouncements.length > 0 && (
-        <div
-          style={{
-            marginTop: 32,
-            padding: '14px 20px',
-            borderRadius: 12,
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            color: 'var(--text3)',
-            fontSize: 12.5,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <School size={14} />
-            <span>Babillard officiel de l’établissement</span>
-          </div>
-          <div>
-            {filteredAnnouncements.length} communiqué{filteredAnnouncements.length > 1 ? 's' : ''} affiché{filteredAnnouncements.length > 1 ? 's' : ''}
-          </div>
-        </div>
-      )}
-
-      {/* ── MODALE ÉLÉGANTE DE RÉDACTION / MODIFICATION ─────────────────────────── */}
+      {/* ── MODALE FLOTTANTE ÉLÉGANTE (PRÉSERVE TOPBAR & BOTTOMBAR AVEC MARGES LATÉRALES) ── */}
       {isModalOpen && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 120,
-            background: 'rgba(0, 0, 0, 0.55)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 16,
+          className="fixed inset-0 z-[1300] flex items-center justify-center bg-black/45 backdrop-blur-xs animate-in fade-in duration-150 px-3.5 sm:px-6 pt-[calc(56px+env(safe-area-inset-top,0px))] pb-[calc(76px+env(safe-area-inset-bottom,0px))]"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsModalOpen(false)
+              resetForm()
+            }
           }}
         >
           <div
+            className="w-full max-w-lg max-h-full rounded-2xl sm:rounded-3xl flex flex-col overflow-hidden shadow-2xl border border-[var(--border)] animate-in zoom-in-95 duration-200"
             style={{
-              background: '#ffffff',
-              borderRadius: 18,
-              width: '100%',
-              maxWidth: 600,
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              border: '1px solid #e5e7eb',
-              display: 'flex',
-              flexDirection: 'column',
+              background: 'var(--surface)',
             }}
           >
-            {/* Header Modale */}
+            {/* Header de la modale avec icône, titre et bouton fermeture */}
             <div
-              style={{
-                padding: '16px 20px',
-                borderBottom: '1px solid #f3f4f6',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                background: '#fafafa',
-                borderTopLeftRadius: 18,
-                borderTopRightRadius: 18,
-              }}
+              className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-[var(--border)] flex items-center justify-between flex-shrink-0"
+              style={{ background: 'var(--surface)' }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Megaphone size={16} />
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-amber-600 flex-shrink-0 shadow-sm"
+                  style={{ background: 'var(--amber-light)' }}
+                >
+                  <Megaphone size={17} strokeWidth={2.4} />
                 </div>
-                <div>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: '#111827' }}>
-                    {editingId ? 'Modifier le communiqué' : 'Publier sur le babillard'}
+                <div className="min-w-0">
+                  <div className="text-sm sm:text-base font-extrabold text-[var(--text)] truncate">
+                    {editingId ? 'Modifier le communiqué' : 'Nouveau communiqué'}
                   </div>
-                  <div style={{ fontSize: 12, color: '#6b7280', marginTop: 1 }}>
-                    {editingId ? 'Les modifications mettront à jour l’annonce affichée.' : 'L’annonce apparaîtra sur le tableau d’affichage officiel.'}
+                  <div className="text-[11px] text-[var(--text3)] truncate">
+                    Babillard officiel • {role}
                   </div>
                 </div>
               </div>
@@ -801,173 +665,173 @@ export default function Babillard({
                   setIsModalOpen(false)
                   resetForm()
                 }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#9ca3af',
-                  padding: 4,
-                  borderRadius: 6,
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
+                aria-label="Fermer"
+                className="w-8 h-8 rounded-full border-none bg-[var(--bg2)] text-[var(--text2)] flex items-center justify-center cursor-pointer hover:opacity-80 active:scale-90 transition-all flex-shrink-0"
               >
-                <X size={20} />
+                <X size={17} strokeWidth={2.2} />
               </button>
             </div>
 
-            {/* Formulaire Body */}
-            <form onSubmit={handlePublish} style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#374151', marginBottom: 5 }}>
-                  Titre du communiqué *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={publishTitle}
-                  onChange={(e) => setPublishTitle(e.target.value)}
-                  placeholder="ex. Réunion solennelle de rentrée, Calendrier des devoirs..."
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: 10,
-                    border: '1.5px solid #d1d5db',
-                    fontSize: 13.5,
-                    color: '#111827',
-                    outline: 'none',
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#374151', marginBottom: 5 }}>
-                  Contenu de l'annonce *
-                </label>
-                <textarea
-                  required
-                  rows={6}
-                  value={publishContent}
-                  onChange={(e) => setPublishContent(e.target.value)}
-                  placeholder="Rédigez le texte officiel du communiqué..."
-                  style={{
-                    width: '100%',
-                    padding: '12px 14px',
-                    borderRadius: 10,
-                    border: '1.5px solid #d1d5db',
-                    fontSize: 13.5,
-                    color: '#111827',
-                    outline: 'none',
-                    resize: 'vertical',
-                    fontFamily: 'inherit',
-                  }}
-                />
-              </div>
-
-              {/* Ciblage des Rôles */}
-              <div>
-                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#374151', marginBottom: 6 }}>
-                  Destinataires ciblés *
-                </label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {ROLE_OPTIONS.map((item) => {
-                    const selected = publishRoles.includes(item)
-                    return (
-                      <button
-                        key={item}
-                        type="button"
-                        onClick={() => toggleRole(item)}
-                        style={{
-                          border: selected ? '1.5px solid #d97706' : '1.5px solid #e5e7eb',
-                          background: selected ? '#fef3c7' : '#ffffff',
-                          color: selected ? '#92400e' : '#4b5563',
-                          borderRadius: 999,
-                          padding: '6px 14px',
-                          fontSize: 12,
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          transition: 'all 0.12s',
-                        }}
-                      >
-                        {ROLE_ICON[item]}
-                        <span>{t(`babillard.role_options.${item.toLowerCase()}`) ?? item}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Options : Épinglage et Expiration */}
-              <div
-                style={{
-                  background: '#f9fafb',
-                  borderRadius: 12,
-                  padding: '12px 16px',
-                  border: '1px solid #e5e7eb',
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: 16,
-                  alignItems: 'center',
-                }}
-              >
-                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, color: '#374151', cursor: 'pointer' }}>
+            {/* Formulaire complet avec corps défilable et footer fixe */}
+            <form onSubmit={handlePublish} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="p-4 sm:p-5 overflow-y-auto flex-1 space-y-3.5" style={{ WebkitOverflowScrolling: 'touch' }}>
+                {/* Champ Titre */}
+                <div>
+                  <label className="block text-xs font-bold text-[var(--text)] mb-1.5">
+                    Titre du communiqué <span className="text-amber-500">*</span>
+                  </label>
                   <input
-                    type="checkbox"
-                    checked={publishPinned}
-                    onChange={(e) => setPublishPinned(e.target.checked)}
-                    style={{ width: 16, height: 16, cursor: 'pointer' }}
-                  />
-                  <span>Épingler en tête du babillard</span>
-                </label>
-
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                  <select
-                    value={publishExpiryMode}
-                    onChange={(e) => setPublishExpiryMode(e.target.value as 'none' | 'days')}
+                    type="text"
+                    required
+                    value={publishTitle}
+                    onChange={(e) => setPublishTitle(e.target.value)}
+                    placeholder="ex. Assemblée Générale, Retrait des bulletins..."
+                    className="w-full h-10 px-3.5 rounded-xl text-xs sm:text-sm font-medium outline-none transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
                     style={{
-                      padding: '7px 10px',
-                      borderRadius: 8,
-                      border: '1px solid #d1d5db',
-                      background: 'white',
-                      fontSize: 12.5,
-                      fontWeight: 600,
+                      border: '1.5px solid var(--border)',
+                      background: 'var(--bg)',
+                      color: 'var(--text)',
                     }}
-                  >
-                    <option value="none">Sans expiration</option>
-                    <option value="days">Expirer dans N jours</option>
-                  </select>
+                  />
+                </div>
 
-                  {publishExpiryMode === 'days' && (
-                    <input
-                      type="number"
-                      min={1}
-                      value={publishExpiryDays}
-                      onChange={(e) => setPublishExpiryDays(e.target.value)}
-                      style={{
-                        width: 80,
-                        padding: '6px 10px',
-                        borderRadius: 8,
-                        border: '1px solid #d1d5db',
-                        fontSize: 12.5,
+                {/* Champ Message */}
+                <div>
+                  <label className="block text-xs font-bold text-[var(--text)] mb-1.5">
+                    Message officiel <span className="text-amber-500">*</span>
+                  </label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={publishContent}
+                    onChange={(e) => setPublishContent(e.target.value)}
+                    placeholder="Rédigez le texte officiel du communiqué..."
+                    className="w-full p-3 rounded-xl text-xs sm:text-sm font-medium outline-none transition-all resize-y min-h-[100px] focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                    style={{
+                      border: '1.5px solid var(--border)',
+                      background: 'var(--bg)',
+                      color: 'var(--text)',
+                      fontFamily: 'inherit',
+                      lineHeight: 1.5,
+                    }}
+                  />
+                </div>
+
+                {/* Public cible (Audience) */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-[var(--text)]">
+                      Public cible <span className="text-amber-500">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (publishRoles.length === ROLE_OPTIONS.length) {
+                          setPublishRoles([role])
+                        } else {
+                          setPublishRoles([...ROLE_OPTIONS])
+                        }
                       }}
+                      className="text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-transparent border-none cursor-pointer hover:underline"
+                    >
+                      {publishRoles.length === ROLE_OPTIONS.length ? 'Réduire' : 'Tous les rôles'}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-1.5 sm:gap-2">
+                    {ROLE_OPTIONS.map((item) => {
+                      const selected = publishRoles.includes(item)
+                      return (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => toggleRole(item)}
+                          className="flex items-center justify-center sm:justify-start gap-1.5 px-2.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all border active:scale-95"
+                          style={{
+                            background: selected ? 'var(--amber-light)' : 'var(--bg)',
+                            borderColor: selected ? 'var(--amber)' : 'var(--border)',
+                            color: selected ? 'var(--amber)' : 'var(--text2)',
+                          }}
+                        >
+                          {ROLE_ICON[item]}
+                          <span className="truncate">{t(`babillard.role_options.${item.toLowerCase()}`) ?? item}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Paramètres de diffusion (À la une et Durée) */}
+                <div
+                  className="p-3 rounded-2xl border space-y-2.5"
+                  style={{
+                    background: 'var(--bg)',
+                    borderColor: 'var(--border)',
+                  }}
+                >
+                  {/* Toggle Épinglé */}
+                  <label className="flex items-center gap-2.5 text-xs font-bold text-[var(--text)] cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={publishPinned}
+                      onChange={(e) => setPublishPinned(e.target.checked)}
+                      className="w-4 h-4 rounded cursor-pointer accent-amber-500"
                     />
-                  )}
+                    <span className="flex items-center gap-1.5">
+                      <Pin size={13} className={publishPinned ? 'text-amber-500' : 'text-[var(--text3)]'} />
+                      <span>Épingler en haut du babillard (À la une)</span>
+                    </span>
+                  </label>
+
+                  {/* Sélecteur de durée / expiration */}
+                  <div className="pt-2 border-t border-[var(--border)]">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[11px] font-bold text-[var(--text2)] flex items-center gap-1">
+                        <CalendarClock size={12} className="text-[var(--text3)]" />
+                        <span>Durée de visibilité :</span>
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { mode: 'none' as const, label: 'Permanent' },
+                        { mode: 'days' as const, days: '3', label: '3 jours' },
+                        { mode: 'days' as const, days: '7', label: '7 jours' },
+                        { mode: 'days' as const, days: '15', label: '15 jours' },
+                        { mode: 'days' as const, days: '30', label: '30 jours' },
+                      ].map((preset) => {
+                        const active =
+                          preset.mode === 'none'
+                            ? publishExpiryMode === 'none'
+                            : publishExpiryMode === 'days' && publishExpiryDays === preset.days
+                        return (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() => {
+                              setPublishExpiryMode(preset.mode)
+                              if (preset.days) setPublishExpiryDays(preset.days)
+                            }}
+                            className="h-7 px-2.5 rounded-lg text-xs font-bold border transition-all cursor-pointer active:scale-95"
+                            style={{
+                              background: active ? 'var(--amber-light)' : 'var(--surface)',
+                              borderColor: active ? 'var(--amber)' : 'var(--border)',
+                              color: active ? 'var(--amber)' : 'var(--text2)',
+                            }}
+                          >
+                            {preset.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Footer boutons */}
+              {/* Footer boutons fixe en bas */}
               <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'flex-end',
-                  gap: 10,
-                  marginTop: 8,
-                  paddingTop: 16,
-                  borderTop: '1px solid #f3f4f6',
-                }}
+                className="px-4 py-3 sm:px-5 sm:py-3 border-t border-[var(--border)] flex items-center justify-end gap-2.5 flex-shrink-0"
+                style={{ background: 'var(--surface)' }}
               >
                 <button
                   type="button"
@@ -976,15 +840,11 @@ export default function Babillard({
                     resetForm()
                   }}
                   disabled={publishing}
+                  className="flex-1 sm:flex-none h-10 px-4 rounded-xl text-xs font-bold cursor-pointer transition-colors border active:scale-95 text-center justify-center inline-flex items-center"
                   style={{
-                    padding: '9px 16px',
-                    borderRadius: 8,
-                    border: '1px solid #d1d5db',
-                    background: 'white',
-                    color: '#374151',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    cursor: 'pointer',
+                    background: 'var(--bg)',
+                    borderColor: 'var(--border)',
+                    color: 'var(--text2)',
                   }}
                 >
                   Annuler
@@ -992,23 +852,13 @@ export default function Babillard({
                 <button
                   type="submit"
                   disabled={publishing || !publishTitle.trim() || !publishContent.trim() || publishRoles.length === 0}
+                  className="flex-1 sm:flex-none h-10 inline-flex items-center justify-center gap-2 px-5 rounded-xl text-xs font-black text-white cursor-pointer border-none shadow-md transition-all hover:opacity-95 active:scale-95 disabled:opacity-50 min-w-[120px]"
                   style={{
-                    padding: '9px 20px',
-                    borderRadius: 8,
-                    border: 'none',
-                    background: '#1a2e1e',
-                    color: 'white',
-                    fontSize: 13,
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    opacity: publishing ? 0.7 : 1,
+                    background: 'linear-gradient(135deg, #10b981, #059669)',
                   }}
                 >
-                  <Send size={15} />
-                  <span>{publishing ? 'Publication...' : editingId ? 'Enregistrer les modifications' : 'Publier sur le tableau'}</span>
+                  <Send size={14} strokeWidth={2.4} />
+                  <span>{publishing ? 'En cours...' : editingId ? 'Enregistrer' : 'Diffuser'}</span>
                 </button>
               </div>
             </form>

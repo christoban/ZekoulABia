@@ -74,11 +74,23 @@ export default function AssistantWidget({ section, rolePrefix = 'admin', suggest
   const [, setTick] = useState(0)
   const t = useT('admin')
   const scrollRef = useRef<HTMLDivElement>(null)
+  const [modalActive, setModalActive] = useState(false)
   const isPriorityScreen = !!section && PRIORITY_SCREENS.includes(section)
   const isIdle = useIdleDetection(IDLE_THRESHOLD_MS, isPriorityScreen && !open)
+  const isMessagerieSection = section === 'messagerie'
   // Fil de conversation — généré côté serveur au premier message, réutilisé pour tous
   // les suivants afin que l'historique soit reconstitué à chaque appel (clarifications).
   const conversationIdRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    const handleModal = (e: Event) => {
+      const isOpen = Boolean((e as CustomEvent<{ open?: boolean }>).detail?.open)
+      setModalActive(isOpen)
+      if (isOpen) setOpen(false)
+    }
+    window.addEventListener('zekoulabia:modal-open', handleModal)
+    return () => window.removeEventListener('zekoulabia:modal-open', handleModal)
+  }, [])
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
@@ -200,16 +212,14 @@ export default function AssistantWidget({ section, rolePrefix = 'admin', suggest
 
   return (
     <>
-      {/* Bulle d'aide discrète — inactivité prolongée sur un écran prioritaire, widget fermé */}
-      {isIdle && !open && (
+      {/* Bulle d'aide discrète — inactivité prolongée sur un écran prioritaire, widget fermé et pas de modale active */}
+      {isIdle && !open && !modalActive && (
         <button
           onClick={() => setOpen(true)}
+          className={`fixed z-[1199] ${isMessagerieSection ? 'bottom-[calc(200px+env(safe-area-inset-bottom,0px))] md:bottom-[152px]' : 'bottom-[calc(136px+env(safe-area-inset-bottom,0px))] md:bottom-[92px]'} right-4 md:right-6 border-[1.5px] border-[var(--border)] rounded-xl md:rounded-2xl p-2.5 md:px-4 md:py-2.5 text-[12px] md:text-[13.5px] font-bold text-[var(--text)] cursor-pointer shadow-lg flex items-center gap-2 max-w-[200px] md:max-w-[220px]`}
           style={{
-            position: 'fixed', bottom: 92, right: 24, zIndex: 1199,
-            background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 14,
-            padding: '10px 16px', fontSize: 13.5, fontWeight: 700, color: 'var(--text)', cursor: 'pointer',
-            fontFamily: 'inherit', boxShadow: '0 8px 24px rgba(0,0,0,0.14)',
-            display: 'flex', alignItems: 'center', gap: 8, maxWidth: 220,
+            background: 'var(--surface)',
+            fontFamily: 'inherit',
             animation: 'edu-nudge-in 0.3s ease both',
           }}>
           <style>{`@keyframes edu-nudge-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }`}</style>
@@ -217,19 +227,14 @@ export default function AssistantWidget({ section, rolePrefix = 'admin', suggest
         </button>
       )}
 
-      {/* Bouton flottant — masqué quand le panneau est ouvert (pattern standard : la bulle
-          disparaît quand la conversation est ouverte, la croix de l'en-tête suffit à fermer ;
-          évite le chevauchement et le risque de double-tap accidentel sur le champ/l'envoi). */}
-      {!open && (
+      {/* Bouton flottant — masqué quand le panneau est ouvert ou qu'une modale est active */}
+      {!open && !modalActive && (
         <button
           onClick={() => setOpen(o => !o)}
-          className="w-[56px] h-[56px] md:w-auto md:h-[58px] rounded-[16px] md:rounded-[30px] md:px-[18px]"
+          className={`fixed z-[1200] ${isMessagerieSection ? 'bottom-[calc(130px+env(safe-area-inset-bottom,0px))] md:bottom-[72px]' : 'bottom-[calc(70px+env(safe-area-inset-bottom,0px))] md:bottom-6'} right-4 md:right-6 w-[52px] h-[52px] md:w-auto md:h-[58px] rounded-[16px] md:rounded-[30px] md:px-[18px] border-none cursor-pointer flex items-center justify-center gap-2 md:gap-2.5 font-extrabold text-[14px] md:text-[15px]`}
           style={{
-            position: 'fixed', bottom: 24, right: 24, zIndex: 1200,
-            border: 'none', cursor: 'pointer',
             background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white',
-            fontWeight: 800, fontSize: 15, fontFamily: 'inherit',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
+            fontFamily: 'inherit',
             boxShadow: '0 8px 24px rgba(5,150,105,0.4)',
           }}>
           <span style={{ display: 'flex', alignItems: 'center' }}><Bot size={22} /></span>
