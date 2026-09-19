@@ -80,9 +80,9 @@ export default function SectionBulletinValidation({ onToast }: Props) {
   const currentSessions = activeTab === 'SUBMITTED' ? submitted : validated
 
   return (
-    <div style={{ padding: '28px 32px', overflowY: 'auto', height: '100%' }}>
+    <div className="px-4 py-4 md:px-7 md:py-6" style={{ overflowY: 'auto', height: '100%' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <div>
           <div style={sTitle}>{t('bulletinValidation.title') || 'Validation des bulletins'}</div>
           <div style={sSub}>{loading ? '…' : `${submitted.length} en attente · ${validated.length} validé(s)`}</div>
@@ -91,39 +91,39 @@ export default function SectionBulletinValidation({ onToast }: Props) {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
         <button onClick={() => setActiveTab('SUBMITTED')}
-          style={{ padding: '8px 18px', borderRadius: 10, fontSize: 14, fontWeight: 800, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
+          style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
             background: activeTab === 'SUBMITTED' ? 'var(--amber)' : 'var(--surface)', color: activeTab === 'SUBMITTED' ? 'white' : 'var(--text2)' }}>
           En attente ({submitted.length})
         </button>
         <button onClick={() => setActiveTab('VALIDATED')}
-          style={{ padding: '8px 18px', borderRadius: 10, fontSize: 14, fontWeight: 800, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
+          style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
             background: activeTab === 'VALIDATED' ? 'var(--green)' : 'var(--surface)', color: activeTab === 'VALIDATED' ? 'white' : 'var(--text2)' }}>
           Validés ({validated.length})
         </button>
       </div>
 
       {loading && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
-          <div style={{ width: 32, height: 32, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+          <div style={{ width: 28, height: 28, border: '2.5px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
         </div>
       )}
 
       {error && (
-        <div style={{ background: 'var(--red-light)', borderRadius: 14, padding: '18px 22px', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <AlertTriangle size={18} color="var(--red)" /><span style={{ fontWeight: 700, color: 'var(--red)', flex: 1 }}>{error}</span>
+        <div style={{ background: 'var(--red-light)', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <AlertTriangle size={15} color="var(--red)" /><span style={{ fontWeight: 700, color: 'var(--red)', fontSize: 12.5, flex: 1 }}>{error}</span>
           <button onClick={fetchSessions} style={btnRetry}>Réessayer</button>
         </div>
       )}
 
       {!loading && !error && currentSessions.length === 0 && (
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: '60px 32px', textAlign: 'center' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}><CheckCircle2 size={52} /></div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
+        <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: '40px 24px', textAlign: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10, color: 'var(--text3)' }}><CheckCircle2 size={38} strokeWidth={1.8} /></div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
             {activeTab === 'SUBMITTED' ? 'Aucune session en attente' : 'Aucune session validée'}
           </div>
-          <div style={{ fontSize: 16, color: 'var(--text3)' }}>
+          <div style={{ fontSize: 12.5, color: 'var(--text3)' }}>
             {activeTab === 'SUBMITTED' ? 'Les soumissions apparaîtront ici.' : 'Les sessions validées seront publiées par un admin.'}
           </div>
         </div>
@@ -135,36 +135,36 @@ export default function SectionBulletinValidation({ onToast }: Props) {
             const st = STATUS_STYLE[s.status] ?? STATUS_STYLE.SUBMITTED
             const isLoading = actionLoading.has(s.id)
             return (
-              <div key={s.id} className="rounded-[16px] md:rounded-[14px] p-[14px] md:px-[18px] md:py-[16px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none"
-                style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>{s.class.name}</div>
-                  <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 800, background: st.bg, color: st.color }}>
+              <div key={s.id} className="rounded-xl p-3 md:px-4 md:py-3.5"
+                style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <div style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--text)' }}>{s.class.name}</div>
+                  <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 800, background: st.bg, color: st.color }}>
                     {s.status === 'SUBMITTED' ? 'En attente' : 'Validé'}
                   </span>
                 </div>
-                <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 4 }}>{s.academicPeriod.name}</div>
+                <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 3 }}>{s.academicPeriod.name}</div>
                 {s.submittedBy && (
-                  <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 10 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 8 }}>
                     Soumis par {s.submittedBy.firstName} {s.submittedBy.lastName}
                   </div>
                 )}
-                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
                   {s.status === 'SUBMITTED' && (
                     <button
-                      style={{ padding: '7px 14px', borderRadius: 9, fontSize: 14, fontWeight: 800, background: 'var(--green-light)', color: 'var(--green)', border: '1px solid rgba(5,150,105,0.25)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                      style={{ padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'var(--green-light)', color: 'var(--green)', border: '1px solid rgba(5,150,105,0.25)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}
                       onClick={() => handleValidate(s.id)}
                       disabled={isLoading}>
-                      {isLoading ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                      {isLoading ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
                       {isLoading ? '…' : 'Valider'}
                     </button>
                   )}
                   {s.status === 'VALIDATED' && (
                     <button
-                      style={{ padding: '7px 14px', borderRadius: 9, fontSize: 14, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                      style={{ padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}
                       onClick={() => handlePublish(s.id)}
                       disabled={isLoading}>
-                      {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                      {isLoading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
                       {isLoading ? '…' : 'Publier'}
                     </button>
                   )}
@@ -178,7 +178,7 @@ export default function SectionBulletinValidation({ onToast }: Props) {
   )
 }
 
-const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }
-const sSub: React.CSSProperties = { color: 'var(--text3)', marginTop: 3 }
-const btnSec: React.CSSProperties = { padding: '8px 16px', borderRadius: 10, fontSize: 15, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
-const btnRetry: React.CSSProperties = { padding: '6px 14px', borderRadius: 8, background: 'var(--surface)', color: 'var(--red)', border: '1.5px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }
+const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }
+const sSub: React.CSSProperties = { fontSize: 12.5, color: 'var(--text3)', marginTop: 2 }
+const btnSec: React.CSSProperties = { padding: '6px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }
+const btnRetry: React.CSSProperties = { padding: '5px 12px', borderRadius: 7, fontSize: 12, background: 'var(--surface)', color: 'var(--red)', border: '1px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }

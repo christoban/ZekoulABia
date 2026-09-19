@@ -141,28 +141,28 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
   const canSeeAPEE = sessionUser?.permissions?.some(p => p === 'VIEW_APEE' || p === 'MANAGE_APEE') ?? true
 
   return (
-    <div style={{ padding: '28px 32px', overflowY: 'auto', height: '100%' }}>
+    <div className="px-4 py-4 md:px-7 md:py-6" style={{ overflowY: 'auto', height: '100%' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
       {/* Onglets Finance & APEE */}
       {canSeeAPEE && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20, borderBottom: '1px solid var(--border)', paddingBottom: 10 }}>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 14, borderBottom: '1px solid var(--border)', paddingBottom: 8 }}>
           <button
             onClick={() => setTab('invoices')}
             style={{
-              padding: '8px 16px', borderRadius: 10, fontSize: 14, fontWeight: 800,
+              padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700,
               background: tab === 'invoices' ? 'var(--blue-light)' : 'transparent',
               color: tab === 'invoices' ? 'var(--blue)' : 'var(--text2)',
               border: tab === 'invoices' ? '1px solid rgba(29,78,216,0.3)' : '1px solid transparent',
               cursor: 'pointer', fontFamily: 'inherit'
             }}
           >
-            Factures & Mobile Money
+            Factures & Paiements
           </button>
           <button
             onClick={() => setTab('apee')}
             style={{
-              padding: '8px 16px', borderRadius: 10, fontSize: 14, fontWeight: 800,
+              padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700,
               background: tab === 'apee' ? 'var(--blue-light)' : 'transparent',
               color: tab === 'apee' ? 'var(--blue)' : 'var(--text2)',
               border: tab === 'apee' ? '1px solid rgba(29,78,216,0.3)' : '1px solid transparent',
@@ -178,12 +178,12 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
         <SectionAPEEStaff onToast={onToast} />
       ) : (
         <>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 26 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div>
               <div style={sTitle}>{t('finance.title')}</div>
               <div style={sSub}>{t('finance.subtitle')}</div>
             </div>
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
               {hasMF && (
                 <button style={btnPrim} onClick={() => { setDepenseOpen(true); setDepenseError(null); setDepenseForm(EMPTY_DEP) }}>
                   {t('finance.recordExpense')}
@@ -195,22 +195,22 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
 
       {/* KPIs */}
       {!loading && !error && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: 22 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 14 }}>
           {[
             { label: t('finance.kpiTotalUnpaid'),  val: fmtCFA(totalPending), bg: 'var(--red-light)', color: 'var(--red)' },
             { label: t('finance.kpiPartialPayments'),   val: fmtCFA(totalPartial), bg: 'var(--amber-light)', color: 'var(--amber)' },
             { label: '', val: t('finance.kpiResults', { count: pag.total }), bg: 'var(--bg2)', color: 'var(--text2)' },
           ].map((k, i) => (
-            <div key={i} style={{ background: 'var(--surface)', borderRadius: 14, border: '1.5px solid var(--border)', padding: '18px 22px' }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>{k.label}</div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: k.color }}>{k.val}</div>
+            <div key={i} style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: '10px 14px' }}>
+              <div style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>{k.label}</div>
+              <div style={{ fontSize: 16, fontWeight: 900, color: k.color }}>{k.val}</div>
             </div>
           ))}
         </div>
       )}
 
-      <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', overflow: 'hidden' }}>
-        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
+        <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={filterSt}>
             <option value="">{t('finance.filterAllStatuses')}</option>
             <option value="PENDING">{t('finance.filterUnpaid')}</option>
@@ -219,7 +219,7 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
             <option value="OVERDUE">{t('finance.filterOverdue')}</option>
           </select>
           <button style={btnPrim} onClick={() => { setPage(1); fetchInvoices(1) }}>{t('finance.filter')}</button>
-          <span style={{ marginLeft: 'auto', fontSize: 14, color: 'var(--text3)', fontWeight: 600 }}>
+          <span style={{ marginLeft: 'auto', fontSize: 11.5, color: 'var(--text3)', fontWeight: 600 }}>
             {t('finance.pageInfo', { page: pag.page, pages: pag.pages, total: pag.total })}
           </span>
         </div>
@@ -241,7 +241,7 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
         {!loading && !error && invoices.length > 0 && (
           <>
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 650 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
                 <thead>
                   <tr>{[
                     t('finance.tableHeaderStudent'),
@@ -266,7 +266,7 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
                         <td style={{ ...tdSt, fontWeight: 700, color: 'var(--text)' }}>
                           {inv.student.firstName} {inv.student.lastName}
                         </td>
-                        <td style={tdSt}>{inv.feePlan?.name ?? '—'}</td>
+                        <td style={{ ...tdSt, fontSize: 12 }}>{inv.feePlan?.name ?? '—'}</td>
                         <td style={{ ...tdSt, fontWeight: 700 }}>{fmtCFA(inv.amount)}</td>
                         <td style={tdSt}>
                           <span style={{ fontWeight: 700, color: paid > 0 ? 'var(--green)' : 'var(--text3)' }}>
@@ -274,24 +274,24 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
                           </span>
                         </td>
                         <td style={tdSt}>
-                          <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 13, fontWeight: 800, background: st.bg, color: st.color }}>
+                          <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 700, background: st.bg, color: st.color }}>
                             {t(`finance.${invStatusKey}`)}
                           </span>
                         </td>
                         <td style={tdSt}>
                           {(inv.status === 'PENDING' || inv.status === 'PARTIAL') && (
-                            <div style={{ display: 'flex', gap: 6 }}>
+                            <div style={{ display: 'flex', gap: 5 }}>
                               <button
-                                style={{ padding: '5px 10px', borderRadius: 8, fontSize: 13, fontWeight: 800, background: 'var(--blue-light)', color: 'var(--blue)', border: '1px solid rgba(29,78,216,0.2)', cursor: 'pointer', fontFamily: 'inherit' }}
+                                style={{ padding: '4px 8px', borderRadius: 6, fontSize: 11.5, fontWeight: 700, background: 'var(--blue-light)', color: 'var(--blue)', border: '1px solid rgba(29,78,216,0.2)', cursor: 'pointer', fontFamily: 'inherit' }}
                                 onClick={() => initiateMobileMoney(inv)}
                                 disabled={payingId === inv.id}>
-                                {payingId === inv.id ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : <Smartphone size={13} strokeWidth={2} />}
+                                {payingId === inv.id ? <Loader2 size={12} strokeWidth={2} className="animate-spin" /> : <Smartphone size={12} strokeWidth={2} />}
                               </button>
                               <button
-                                style={{ padding: '5px 10px', borderRadius: 8, fontSize: 13, fontWeight: 800, background: 'var(--bg2)', color: 'var(--text2)', border: '1px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                                style={{ padding: '4px 8px', borderRadius: 6, fontSize: 11.5, fontWeight: 700, background: 'var(--bg2)', color: 'var(--text2)', border: '1px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4 }}
                                 onClick={() => sendReminder(inv)}
                                 disabled={sendingId === inv.id}>
-                                {sendingId === inv.id ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : <><Smartphone size={13} strokeWidth={2} /> SMS</>}
+                                {sendingId === inv.id ? <Loader2 size={12} strokeWidth={2} className="animate-spin" /> : <><Smartphone size={12} strokeWidth={2} /> SMS</>}
                               </button>
                             </div>
                           )}
@@ -304,10 +304,10 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
             </div>
 
             {pag.pages > 1 && (
-              <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'center', gap: 8 }}>
+              <div style={{ padding: '8px 14px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'center', gap: 6 }}>
                 <button style={btnSec} disabled={page <= 1}
                   onClick={() => { const p = page - 1; setPage(p); fetchInvoices(p) }}>{t('finance.previous')}</button>
-                <span style={{ padding: '6px 12px', fontSize: 14, fontWeight: 700, color: 'var(--text2)' }}>{page}/{pag.pages}</span>
+                <span style={{ padding: '4px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text2)' }}>{page}/{pag.pages}</span>
                 <button style={btnSec} disabled={page >= pag.pages}
                   onClick={() => { const p = page + 1; setPage(p); fetchInvoices(p) }}>{t('finance.next')}</button>
               </div>
@@ -317,16 +317,16 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
       </div>
       {/* ── Modale : Enregistrer une dépense ── */}
       {depenseOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
           onClick={e => { if (e.target === e.currentTarget && !depenseSending) { setDepenseOpen(false) } }}>
-          <div style={{ background: 'var(--surface)', borderRadius: 20, border: '1.5px solid var(--border)', width: '100%', maxWidth: 480, boxShadow: '0 20px 60px rgba(0,0,0,0.18)', overflow: 'hidden' }}>
-            <div className="px-5 py-4 md:px-7 md:py-[22px]" style={{ borderBottom: '1.5px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 21, fontWeight: 700, color: 'var(--text)' }}>{t('finance.depenseModalTitle')}</div>
+          <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', width: '100%', maxWidth: 440, boxShadow: '0 20px 60px rgba(0,0,0,0.18)', overflow: 'hidden' }}>
+            <div className="px-4 py-3 md:px-5 md:py-3.5" style={{ borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>{t('finance.depenseModalTitle')}</div>
               <button onClick={() => !depenseSending && setDepenseOpen(false)}
-                style={{ background: 'none', border: 'none', fontSize: 22, color: 'var(--text3)', cursor: 'pointer', lineHeight: 1, padding: 4 }}>×</button>
+                style={{ background: 'none', border: 'none', fontSize: 18, color: 'var(--text3)', cursor: 'pointer', lineHeight: 1, padding: 2 }}>×</button>
             </div>
 
-            <form onSubmit={submitDepense} className="px-5 py-4 md:px-7 md:py-6" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <form onSubmit={submitDepense} className="px-4 py-3 md:px-5 md:py-4" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {/* Libellé */}
               <div>
                 <label style={fLb}>{t('finance.depenseLabelLabel')} <span style={{ color: 'var(--red)' }}>*</span></label>
@@ -358,7 +358,7 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
 
               {/* Catégorie */}
               <div>
-                <label style={fLb}>{t('finance.depenseCategoryLabel')} <span style={{ color: 'var(--text3)', fontWeight: 600, fontSize: 12 }}>({t('finance.depenseCategoryOptional')})</span></label>
+                <label style={fLb}>{t('finance.depenseCategoryLabel')} <span style={{ color: 'var(--text3)', fontWeight: 600, fontSize: 11 }}>({t('finance.depenseCategoryOptional')})</span></label>
                 <select
                   value={depenseForm.category}
                   onChange={e => setDepenseForm(f => ({ ...f, category: e.target.value }))}
@@ -370,7 +370,7 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
 
               {/* Date */}
               <div>
-                <label style={fLb}>{t('finance.depenseDateLabel')} <span style={{ color: 'var(--text3)', fontWeight: 600, fontSize: 12 }}>({t('finance.depenseDateOptional')})</span></label>
+                <label style={fLb}>{t('finance.depenseDateLabel')} <span style={{ color: 'var(--text3)', fontWeight: 600, fontSize: 11 }}>({t('finance.depenseDateOptional')})</span></label>
                 <input
                   type="date"
                   value={depenseForm.date}
@@ -383,12 +383,12 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
 
               {/* Erreur dans la modale */}
               {depenseError && (
-                <div style={{ background: 'var(--red-light)', border: '1.5px solid rgba(220,38,38,0.3)', borderRadius: 10, padding: '10px 14px', color: 'var(--red)', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <AlertTriangle size={14} strokeWidth={2} /> {depenseError}
+                <div style={{ background: 'var(--red-light)', border: '1px solid rgba(220,38,38,0.3)', borderRadius: 8, padding: '8px 12px', color: 'var(--red)', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <AlertTriangle size={13} strokeWidth={2} /> {depenseError}
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', paddingTop: 4 }}>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', paddingTop: 4 }}>
                 <button type="button" onClick={() => setDepenseOpen(false)} disabled={depenseSending} style={btnSec}>
                   {t('finance.cancel')}
                 </button>
@@ -407,12 +407,12 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
   )
 }
 
-const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 28, fontWeight: 700, color: 'var(--text)' }
-const sSub: React.CSSProperties = { fontSize: 17, color: 'var(--text3)', marginTop: 3 }
-const btnPrim: React.CSSProperties = { padding: '9px 18px', borderRadius: 10, fontSize: 15, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
-const btnSec: React.CSSProperties = { padding: '8px 14px', borderRadius: 10, fontSize: 14, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
-const filterSt: React.CSSProperties = { background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 10, padding: '8px 12px', fontSize: 15, fontWeight: 700, color: 'var(--text2)', outline: 'none', fontFamily: 'inherit' }
-const thSt: React.CSSProperties = { padding: '11px 14px', textAlign: 'left', fontSize: 12, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.7px', whiteSpace: 'nowrap' }
-const tdSt: React.CSSProperties = { padding: '12px 14px', fontSize: 15, color: 'var(--text2)', borderBottom: '1px solid var(--bg)', verticalAlign: 'middle' }
-const fLb: React.CSSProperties = { fontSize: 13, fontWeight: 800, color: 'var(--text2)', marginBottom: 7, display: 'block', letterSpacing: '0.5px', textTransform: 'uppercase' }
-const fIn: React.CSSProperties = { width: '100%', padding: '11px 14px', background: 'var(--bg2)', border: '1.5px solid var(--border2)', borderRadius: 11, color: 'var(--text)', fontSize: 15, fontFamily: 'inherit', fontWeight: 600, outline: 'none', transition: 'all 0.15s', boxSizing: 'border-box' }
+const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)' }
+const sSub: React.CSSProperties = { fontSize: 12, color: 'var(--text3)', marginTop: 2 }
+const btnPrim: React.CSSProperties = { padding: '6px 13px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+const btnSec: React.CSSProperties = { padding: '5px 11px', borderRadius: 8, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
+const filterSt: React.CSSProperties = { background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 8, padding: '5px 9px', fontSize: 12, fontWeight: 600, color: 'var(--text2)', outline: 'none', fontFamily: 'inherit' }
+const thSt: React.CSSProperties = { padding: '7px 11px', textAlign: 'left', fontSize: 10.5, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }
+const tdSt: React.CSSProperties = { padding: '8px 11px', fontSize: 12.5, color: 'var(--text2)', borderBottom: '1px solid var(--bg)', verticalAlign: 'middle' }
+const fLb: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: 'var(--text2)', marginBottom: 3, display: 'block', letterSpacing: '0.4px', textTransform: 'uppercase' }
+const fIn: React.CSSProperties = { width: '100%', padding: '7px 10px', background: 'var(--bg2)', border: '1.5px solid var(--border2)', borderRadius: 8, color: 'var(--text)', fontSize: 12.5, fontFamily: 'inherit', fontWeight: 600, outline: 'none', transition: 'all 0.15s', boxSizing: 'border-box' }

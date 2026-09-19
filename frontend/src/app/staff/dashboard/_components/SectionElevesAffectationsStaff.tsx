@@ -110,49 +110,49 @@ export default function SectionElevesAffectationsStaff({ onToast }: Props) {
   })
 
   return (
-    <div style={{ padding: '20px 24px', height: '100%', overflowY: 'auto', background: 'var(--bg)' }}>
+    <div className="px-4 py-4 md:px-7 md:py-6" style={{ height: '100%', overflowY: 'auto' }}>
       {/* Header */}
-      <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 800, color: 'var(--fg)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Users size={22} style={{ color: 'var(--amber)' }} />
+      <div style={{ marginBottom: 14 }}>
+        <h1 style={{ fontSize: 19, fontWeight: 800, color: 'var(--text)', margin: 0, display: 'flex', alignItems: 'center', gap: 7, fontFamily: 'var(--font-spectral),Spectral,serif' }}>
+          <Users size={20} style={{ color: 'var(--amber)' }} />
           Affectations & Transferts d'Élèves
         </h1>
-        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '4px 0 0 0' }}>
+        <p style={{ fontSize: 12, color: 'var(--text3)', margin: '3px 0 0 0' }}>
           Consultation des élèves par classe et changement de classe (Censeur / Vice-Principal)
         </p>
       </div>
 
       {/* Selecteur de classe + Barre de recherche */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <School size={16} style={{ color: 'rgba(255,255,255,0.5)' }} />
-          <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>Classe :</span>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <School size={15} style={{ color: 'var(--text3)' }} />
+          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>Classe :</span>
           <select
             value={selectedClassId}
             onChange={e => setSelectedClassId(e.target.value)}
             disabled={loadingClasses}
             style={{
-              padding: '6px 12px',
-              borderRadius: 6,
-              background: 'rgba(255,255,255,0.08)',
-              border: '1px solid rgba(255,255,255,0.15)',
-              color: '#fff',
+              padding: '6px 10px',
+              borderRadius: 8,
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              color: 'var(--text)',
               fontSize: 12,
               fontWeight: 700,
               outline: 'none',
-              minWidth: 160,
+              minWidth: 150,
             }}
           >
             {classes.map(c => (
-              <option key={c.id} value={c.id} style={{ background: '#18181b', color: '#fff' }}>
+              <option key={c.id} value={c.id}>
                 {c.name} {c.level ? `(${c.level})` : ''}
               </option>
             ))}
           </select>
         </div>
 
-        <div style={{ position: 'relative', flex: 1, maxWidth: 300 }}>
-          <Search size={14} style={{ position: 'absolute', left: 10, top: 9, color: 'rgba(255,255,255,0.4)' }} />
+        <div style={{ position: 'relative', flex: 1, maxWidth: 280 }}>
+          <Search size={13} style={{ position: 'absolute', left: 9, top: 8, color: 'var(--text3)' }} />
           <input
             type="text"
             value={search}
@@ -160,11 +160,11 @@ export default function SectionElevesAffectationsStaff({ onToast }: Props) {
             placeholder="Rechercher un élève..."
             style={{
               width: '100%',
-              padding: '6px 12px 6px 32px',
-              borderRadius: 6,
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              color: '#fff',
+              padding: '5px 10px 5px 28px',
+              borderRadius: 8,
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              color: 'var(--text)',
               fontSize: 12,
               outline: 'none',
             }}
@@ -174,33 +174,33 @@ export default function SectionElevesAffectationsStaff({ onToast }: Props) {
 
       {/* Liste des élèves */}
       {loadingStudents ? (
-        <div style={{ padding: 40, textAlign: 'center', color: 'rgba(255,255,255,0.4)' }}>
-          <Loader2 size={24} className="animate-spin" style={{ margin: '0 auto 8px' }} />
+        <div style={{ padding: 32, textAlign: 'center', color: 'var(--text3)', fontSize: 12.5 }}>
+          <Loader2 size={20} className="animate-spin" style={{ margin: '0 auto 6px' }} />
           Chargement de la liste des élèves...
         </div>
       ) : filteredStudents.length === 0 ? (
-        <div style={{ padding: 40, textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: 12, border: '1px border-dashed rgba(255,255,255,0.1)' }}>
-          <Users size={32} style={{ color: 'rgba(255,255,255,0.2)', marginBottom: 8 }} />
-          <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>Aucun élève dans cette classe</p>
+        <div style={{ padding: 32, textAlign: 'center', background: 'var(--surface)', borderRadius: 10, border: '1px dashed var(--border)' }}>
+          <Users size={28} style={{ color: 'var(--text3)', marginBottom: 6 }} />
+          <p style={{ margin: 0, fontSize: 12.5, color: 'var(--text3)' }}>Aucun élève dans cette classe</p>
         </div>
       ) : (
-        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, color: '#fff' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, color: 'var(--text)' }}>
             <thead>
-              <tr style={{ background: 'rgba(255,255,255,0.05)', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                <th style={{ padding: '10px 14px' }}>Nom & Prénom</th>
-                <th style={{ padding: '10px 14px' }}>Matricule</th>
-                <th style={{ padding: '10px 14px', textAlign: 'right' }}>Actions</th>
+              <tr style={{ background: 'var(--bg2)', textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
+                <th style={{ padding: '8px 12px', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px', color: 'var(--text3)' }}>Nom & Prénom</th>
+                <th style={{ padding: '8px 12px', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px', color: 'var(--text3)' }}>Matricule</th>
+                <th style={{ padding: '8px 12px', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px', color: 'var(--text3)', textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredStudents.map((st, idx) => {
                 const displayName = st.name || `${st.firstName || ''} ${st.lastName || ''}`.trim() || 'Élève'
                 return (
-                  <tr key={st.id || idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    <td style={{ padding: '10px 14px', fontWeight: 600 }}>{displayName}</td>
-                    <td style={{ padding: '10px 14px', color: 'rgba(255,255,255,0.5)' }}>{st.matricule || '—'}</td>
-                    <td style={{ padding: '10px 14px', textAlign: 'right' }}>
+                  <tr key={st.id || idx} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={{ padding: '8px 12px', fontWeight: 600 }}>{displayName}</td>
+                    <td style={{ padding: '8px 12px', color: 'var(--text3)' }}>{st.matricule || '—'}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right' }}>
                       <button
                         onClick={() => {
                           setTransferTarget(st)
@@ -210,18 +210,18 @@ export default function SectionElevesAffectationsStaff({ onToast }: Props) {
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: 6,
-                          padding: '4px 10px',
+                          gap: 5,
+                          padding: '3px 8px',
                           borderRadius: 6,
-                          background: 'rgba(245,158,11,0.15)',
-                          border: '1px solid rgba(245,158,11,0.3)',
-                          color: '#f59e0b',
+                          background: 'rgba(245,158,11,0.12)',
+                          border: '1px solid rgba(245,158,11,0.25)',
+                          color: 'var(--amber)',
                           fontSize: 11,
                           fontWeight: 700,
                           cursor: 'pointer',
                         }}
                       >
-                        <ArrowRightLeft size={12} />
+                        <ArrowRightLeft size={11} />
                         Changer de classe
                       </button>
                     </td>

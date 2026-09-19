@@ -331,44 +331,44 @@ export default function SectionAnonymatStaff({ onToast }: Props) {
   }
 
   return (
-    <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+    <div className="px-4 py-4 md:px-7 md:py-6" style={{ height: '100%', overflowY: 'auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
         <div>
-          <h1 className="text-[22px] font-bold text-[var(--text)]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif' }}>
+          <h1 className="text-lg md:text-xl font-bold text-[var(--text)]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif' }}>
             Anonymat / Compositions
           </h1>
-          <p className="text-[var(--text3)] text-sm mt-1">Gestion des sessions d'évaluation anonymisées</p>
+          <p className="text-[var(--text3)] text-xs md:text-[12.5px] mt-0.5">Gestion des sessions d'évaluation anonymisées</p>
         </div>
         <button
           onClick={loadSessions}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] text-sm font-medium hover:bg-[var(--bg2)] transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] text-xs font-semibold hover:bg-[var(--bg2)] transition-colors"
         >
-          <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
           Rafraîchir
         </button>
       </div>
 
       {/* Création de session */}
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20, marginBottom: 24 }}>
-        <h2 className="text-lg font-semibold text-[var(--text)] mb-4">Créer une session</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, alignItems: 'end' }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
+        <h2 className="text-sm md:text-base font-semibold text-[var(--text)] mb-3">Créer une session</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, alignItems: 'end' }}>
           <div>
-            <label className="block text-sm font-medium text-[var(--text2)] mb-1">Scope d'évaluation</label>
+            <label className="block text-xs font-medium text-[var(--text2)] mb-1">Scope d'évaluation</label>
             <input
               type="text"
               value={scopeId}
               onChange={(e) => setScopeId(e.target.value)}
               placeholder="ID du scope"
-              className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+              className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-xs md:text-[12.5px] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-[var(--text2)] mb-1">Matière</label>
+            <label className="block text-xs font-medium text-[var(--text2)] mb-1">Matière</label>
             <select
               value={subjectId}
               onChange={(e) => setSubjectId(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+              className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-xs md:text-[12.5px] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
             >
               <option value="">— Matière —</option>
               {subjects.map(s => (
@@ -377,11 +377,11 @@ export default function SectionAnonymatStaff({ onToast }: Props) {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-[var(--text2)] mb-1">Classe</label>
+            <label className="block text-xs font-medium text-[var(--text2)] mb-1">Classe</label>
             <select
               value={classId}
               onChange={(e) => setClassId(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+              className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-xs md:text-[12.5px] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
             >
               <option value="">— Classe —</option>
               {classes.map(c => (
@@ -390,20 +390,20 @@ export default function SectionAnonymatStaff({ onToast }: Props) {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-[var(--text2)] mb-1">Date prévue</label>
+            <label className="block text-xs font-medium text-[var(--text2)] mb-1">Date prévue</label>
             <input
               type="datetime-local"
               value={scheduledDate}
               onChange={(e) => setScheduledDate(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+              className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-xs md:text-[12.5px] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-[var(--text2)] mb-1">Séquence académique</label>
+            <label className="block text-xs font-medium text-[var(--text2)] mb-1">Séquence académique</label>
             <select
               value={academicSequenceId}
               onChange={(e) => setAcademicSequenceId(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+              className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-xs md:text-[12.5px] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
             >
               <option value="">— Séquence —</option>
               {sequences.map(s => (
@@ -411,23 +411,23 @@ export default function SectionAnonymatStaff({ onToast }: Props) {
               ))}
             </select>
           </div>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'end' }}>
-            <label className="flex items-center gap-2 cursor-pointer">
+          <div style={{ display: 'flex', gap: 10, alignItems: 'end' }}>
+            <label className="flex items-center gap-1.5 cursor-pointer">
               <input
                 type="checkbox"
                 checked={isAnonymized}
                 onChange={(e) => setIsAnonymized(e.target.checked)}
-                className="w-4 h-4 rounded border-[var(--border)] bg-[var(--bg)] text-[var(--primary)] focus:ring-[var(--primary)]"
+                className="w-3.5 h-3.5 rounded border-[var(--border)] bg-[var(--bg)] text-[var(--primary)] focus:ring-[var(--primary)]"
               />
-              <span className="text-sm text-[var(--text)]">Session anonymisée</span>
+              <span className="text-xs text-[var(--text)]">Session anonymisée</span>
             </label>
             {isAnonymized && (
               <div style={{ flex: 1 }}>
-                <label className="block text-sm font-medium text-[var(--text2)] mb-1">Mode correction</label>
+                <label className="block text-xs font-medium text-[var(--text2)] mb-1">Mode correction</label>
                 <select
                   value={correctionMode}
                   onChange={(e) => setCorrectionMode(e.target.value as 'OWN_CLASS' | 'CROSSED')}
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-xs md:text-[12.5px] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
                 >
                   <option value="OWN_CLASS">Propre classe</option>
                   <option value="CROSSED">Croisé</option>
@@ -439,9 +439,9 @@ export default function SectionAnonymatStaff({ onToast }: Props) {
             <button
               onClick={createSession}
               disabled={creating}
-              className="w-full px-4 py-2 rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center justify-center gap-2"
+              className="w-full px-3 py-1.5 rounded-lg bg-[var(--primary)] text-white text-xs md:text-[12.5px] font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center justify-center gap-1.5"
             >
-              <Plus size={16} />
+              <Plus size={14} />
               {creating ? 'Création...' : 'Créer la session'}
             </button>
           </div>
@@ -449,54 +449,54 @@ export default function SectionAnonymatStaff({ onToast }: Props) {
       </div>
 
       {/* Liste des sessions */}
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 size={24} className="text-[var(--primary)] animate-spin" />
+          <div className="flex items-center justify-center py-8">
+            <Loader2 size={20} className="text-[var(--primary)] animate-spin" />
           </div>
         ) : sessions.length === 0 ? (
-          <div className="text-center py-12 text-[var(--text3)]">
+          <div className="text-center py-8 text-[var(--text3)] text-xs">
             Aucune session trouvée. Créez votre première session ci-dessus.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                  <th className="text-left p-3 text-sm font-semibold text-[var(--text3)] uppercase tracking-wider">Session</th>
-                  <th className="text-left p-3 text-sm font-semibold text-[var(--text3)] uppercase tracking-wider">Classe</th>
-                  <th className="text-left p-3 text-sm font-semibold text-[var(--text3)] uppercase tracking-wider">Matière</th>
-                  <th className="text-left p-3 text-sm font-semibold text-[var(--text3)] uppercase tracking-wider">Date</th>
-                  <th className="text-left p-3 text-sm font-semibold text-[var(--text3)] uppercase tracking-wider">Statut</th>
-                  <th className="text-left p-3 text-sm font-semibold text-[var(--text3)] uppercase tracking-wider">Anonymat</th>
-                  <th className="text-left p-3 text-sm font-semibold text-[var(--text3)] uppercase tracking-wider">Actions</th>
+                <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg2)' }}>
+                  <th className="text-left px-2.5 py-2 text-[11px] font-bold text-[var(--text3)] uppercase tracking-wider">Session</th>
+                  <th className="text-left px-2.5 py-2 text-[11px] font-bold text-[var(--text3)] uppercase tracking-wider">Classe</th>
+                  <th className="text-left px-2.5 py-2 text-[11px] font-bold text-[var(--text3)] uppercase tracking-wider">Matière</th>
+                  <th className="text-left px-2.5 py-2 text-[11px] font-bold text-[var(--text3)] uppercase tracking-wider">Date</th>
+                  <th className="text-left px-2.5 py-2 text-[11px] font-bold text-[var(--text3)] uppercase tracking-wider">Statut</th>
+                  <th className="text-left px-2.5 py-2 text-[11px] font-bold text-[var(--text3)] uppercase tracking-wider">Anonymat</th>
+                  <th className="text-left px-2.5 py-2 text-[11px] font-bold text-[var(--text3)] uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {sessions.map((session) => (
                   <tr key={session.id} style={{ borderBottom: '1px solid var(--border)', background: selected?.id === session.id ? 'var(--bg2)' : 'transparent' }} onClick={() => setSelected(selected?.id === session.id ? null : session)}>
-                    <td className="p-3 text-sm font-mono text-[var(--text)]">{session.id.slice(0, 8)}…</td>
-                    <td className="p-3 text-sm text-[var(--text)]">{session.className || session.classId}</td>
-                    <td className="p-3 text-sm text-[var(--text)]">{session.subjectName || session.subjectId}</td>
-                    <td className="p-3 text-sm text-[var(--text3)]">{new Date(session.scheduledDate).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
-                    <td className="p-3 text-sm">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${session.status === 'PLANNED' ? 'bg-blue-500/20 text-blue-300' : session.status === 'IN_PROGRESS' ? 'bg-amber-500/20 text-amber-300' : 'bg-green-500/20 text-green-300'}`}>
+                    <td className="px-2.5 py-2 text-xs font-mono text-[var(--text)]">{session.id.slice(0, 8)}…</td>
+                    <td className="px-2.5 py-2 text-xs font-medium text-[var(--text)]">{session.className || session.classId}</td>
+                    <td className="px-2.5 py-2 text-xs text-[var(--text)]">{session.subjectName || session.subjectId}</td>
+                    <td className="px-2.5 py-2 text-xs text-[var(--text3)]">{new Date(session.scheduledDate).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                    <td className="px-2.5 py-2 text-xs">
+                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${session.status === 'PLANNED' ? 'bg-blue-500/20 text-blue-300' : session.status === 'IN_PROGRESS' ? 'bg-amber-500/20 text-amber-300' : 'bg-green-500/20 text-green-300'}`}>
                         {session.status}
                       </span>
                     </td>
-                    <td className="p-3 text-sm">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[session.anonymatStatus] || STATUS_COLORS.NONE}`}>
+                    <td className="px-2.5 py-2 text-xs">
+                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_COLORS[session.anonymatStatus] || STATUS_COLORS.NONE}`}>
                         {STATUS_LABELS[session.anonymatStatus] || session.anonymatStatus}
                       </span>
                     </td>
-                    <td className="p-3 text-sm">
-                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <td className="px-2.5 py-2 text-xs">
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                         {getActions(session).map((action, idx) => (
                           <button
                             key={idx}
                             onClick={(e) => { e.stopPropagation(); action.onClick() }}
                             disabled={generating === session.id || designating || assigning || reconciling}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                            className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
                               action.variant === 'primary'
                                 ? 'bg-[var(--primary)] text-white hover:opacity-90'
                                 : action.variant === 'danger'
@@ -520,24 +520,24 @@ export default function SectionAnonymatStaff({ onToast }: Props) {
 
       {/* Panneau de détail / actions */}
       {selected && (
-        <div style={{ marginTop: 24, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h2 className="text-lg font-semibold text-[var(--text)]">Session {selected.id.slice(0, 8)}…</h2>
-            <button onClick={() => setSelected(null)} className="text-[var(--text3)] hover:text-[var(--text)]">×</button>
+        <div style={{ marginTop: 16, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h2 className="text-sm md:text-base font-semibold text-[var(--text)]">Session {selected.id.slice(0, 8)}…</h2>
+            <button onClick={() => setSelected(null)} className="text-[var(--text3)] hover:text-[var(--text)] text-sm">×</button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 16 }}>
-            <div><span className="text-[var(--text3)] text-sm">Classe</span><br /><span className="font-medium">{selected.className || selected.classId}</span></div>
-            <div><span className="text-[var(--text3)] text-sm">Matière</span><br /><span className="font-medium">{selected.subjectName || selected.subjectId}</span></div>
-            <div><span className="text-[var(--text3)] text-sm">Statut anonymat</span><br /><span className={`font-medium px-2 py-1 rounded-full text-xs ${STATUS_COLORS[selected.anonymatStatus] || STATUS_COLORS.NONE}`}>{STATUS_LABELS[selected.anonymatStatus] || selected.anonymatStatus}</span></div>
-            <div><span className="text-[var(--text3)] text-sm">Mode correction</span><br /><span className="font-medium">{selected.correctionMode || '—'}</span></div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, marginBottom: 12 }}>
+            <div><span className="text-[var(--text3)] text-xs">Classe</span><br /><span className="font-semibold text-xs text-[var(--text)]">{selected.className || selected.classId}</span></div>
+            <div><span className="text-[var(--text3)] text-xs">Matière</span><br /><span className="font-semibold text-xs text-[var(--text)]">{selected.subjectName || selected.subjectId}</span></div>
+            <div><span className="text-[var(--text3)] text-xs">Statut anonymat</span><br /><span className={`font-semibold px-2 py-0.5 rounded-full text-[11px] ${STATUS_COLORS[selected.anonymatStatus] || STATUS_COLORS.NONE}`}>{STATUS_LABELS[selected.anonymatStatus] || selected.anonymatStatus}</span></div>
+            <div><span className="text-[var(--text3)] text-xs">Mode correction</span><br /><span className="font-semibold text-xs text-[var(--text)]">{selected.correctionMode || '—'}</span></div>
           </div>
 
           {['CODES_GENERES', 'EQUIPE_DESIGNEE'].includes(selected.anonymatStatus) && (
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
-              <h3 className="font-medium text-[var(--text)] mb-3">Désigner l'équipe d'anonymisation</h3>
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+              <h3 className="font-medium text-xs md:text-sm text-[var(--text)] mb-2">Désigner l'équipe d'anonymisation</h3>
               {teamProgress && (
-                <p className="text-sm text-[var(--text3)] mb-3">
+                <p className="text-xs text-[var(--text3)] mb-2">
                   Équipe : {teamProgress.done}/{teamProgress.total} lot(s) terminé(s)
                 </p>
               )}
@@ -545,16 +545,16 @@ export default function SectionAnonymatStaff({ onToast }: Props) {
                 value={teamEmails}
                 onChange={(e) => setTeamEmails(e.target.value)}
                 placeholder="Emails des membres (un par ligne ou séparés par des virgules)"
-                rows={3}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                rows={2}
+                className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
               />
-              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
                 <button
                   onClick={() => designateTeam(selected)}
                   disabled={designating}
-                  className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+                  className="px-3 py-1.5 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5"
                 >
-                  <Users size={16} />
+                  <Users size={14} />
                   {designating ? 'Envoi…' : 'Notifier l\'équipe'}
                 </button>
               </div>
@@ -562,67 +562,67 @@ export default function SectionAnonymatStaff({ onToast }: Props) {
           )}
 
           {selected.anonymatStatus === 'ANONYMISATION_TERMINEE' && (
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
-              <h3 className="font-medium text-[var(--text)] mb-3">Assigner les correcteurs</h3>
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+              <h3 className="font-medium text-xs md:text-sm text-[var(--text)] mb-2">Assigner les correcteurs</h3>
               {selected.correctionMode === 'CROSSED' ? (
                 <div>
-                  <p className="text-sm text-[var(--text3)] mb-2">Mode croisé : associez chaque classe à un correcteur</p>
+                  <p className="text-xs text-[var(--text3)] mb-2">Mode croisé : associez chaque classe à un correcteur</p>
                   <button
                     onClick={() => setCrossAssignments([...crossAssignments, { classId: selected.classId, correcteurUserId: '' }])}
-                    className="text-sm text-[var(--primary)] hover:underline mb-3 flex items-center gap-1"
+                    className="text-xs text-[var(--primary)] hover:underline mb-2 flex items-center gap-1"
                   >
-                    <UserPlus size={14} />
+                    <UserPlus size={13} />
                     + Ajouter une assignation
                   </button>
                   {crossAssignments.map((a, idx) => (
-                    <div key={idx} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+                    <div key={idx} style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
                       <select
                         value={a.correcteurUserId}
                         onChange={(e) => setCrossAssignments(crossAssignments.map((x, i) => i === idx ? { ...x, correcteurUserId: e.target.value } : x))}
-                        className="flex-1 px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-sm"
+                        className="flex-1 px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-xs"
                       >
                         <option value="">— Sélectionner un correcteur —</option>
                         {teachers.map(t => (
                           <option key={t.id} value={t.id}>{t.name}</option>
                         ))}
                       </select>
-                      <button onClick={() => setCrossAssignments(crossAssignments.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-300">×</button>
+                      <button onClick={() => setCrossAssignments(crossAssignments.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-300 text-sm">×</button>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-[var(--text3)] mb-3">Mode propre classe : les correcteurs sont les enseignants de la classe.</p>
+                <p className="text-xs text-[var(--text3)] mb-2">Mode propre classe : les correcteurs sont les enseignants de la classe.</p>
               )}
               <button
                 onClick={() => assignCorrection(selected)}
                 disabled={assigning}
-                className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50 mt-2 flex items-center gap-2"
+                className="px-3 py-1.5 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold hover:opacity-90 disabled:opacity-50 mt-1 flex items-center gap-1.5"
               >
-                <Edit size={16} />
+                <Edit size={14} />
                 {assigning ? 'Assignation…' : 'Assigner la correction'}
               </button>
             </div>
           )}
 
           {selected.anonymatStatus === 'CORRECTION_TERMINEE' && (
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
-              <h3 className="font-medium text-[var(--text)] mb-3">Réconcilier les notes</h3>
-              <p className="text-sm text-[var(--text3)] mb-3">Appliquer les notes anonymes aux bulletins des élèves.</p>
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+              <h3 className="font-medium text-xs md:text-sm text-[var(--text)] mb-2">Réconcilier les notes</h3>
+              <p className="text-xs text-[var(--text3)] mb-2">Appliquer les notes anonymes aux bulletins des élèves.</p>
               <button
                 onClick={() => reconcile(selected.id)}
                 disabled={reconciling}
-                className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+                className="px-3 py-1.5 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5"
               >
-                <CheckCircle size={16} />
+                <CheckCircle size={14} />
                 {reconciling ? 'Réconciliation…' : 'Réconcilier maintenant'}
               </button>
             </div>
           )}
 
           {selected.anonymatStatus === 'RECONCILIE' && (
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
-              <div className="flex items-center gap-3 text-green-400">
-                <CheckCircle size={24} />
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+              <div className="flex items-center gap-2 text-green-400 text-xs md:text-sm">
+                <CheckCircle size={18} />
                 <span className="font-medium">Session réconciliée — toutes les notes sont intégrées aux bulletins.</span>
               </div>
             </div>

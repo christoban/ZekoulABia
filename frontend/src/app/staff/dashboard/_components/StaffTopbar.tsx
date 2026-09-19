@@ -49,8 +49,8 @@ export default function StaffTopbar({ section, periodLabel, onChangePassword, on
         <OfflineSyncButtonPopover namespace="staff" />
         {onChangePassword && (
           <button onClick={onChangePassword} title={tcommon('auth.changePassword')}
-            style={{ width: 36, height: 36, borderRadius: 9, background: 'var(--bg2)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            <KeyRound size={16} color="var(--text2)" />
+            style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg2)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <KeyRound size={15} color="var(--text2)" />
           </button>
         )}
         <ThemeToggle />

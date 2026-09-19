@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
@@ -95,16 +95,16 @@ export default function SectionAttendanceStaff({ onToast }: Props) {
   const lateCount    = records.filter(r => r.status === 'LATE').length
 
   return (
-    <div style={{ padding: '28px 32px', overflowY: 'auto', height: '100%' }}>
+    <div className="px-4 py-4 md:px-7 md:py-6" style={{ overflowY: 'auto', height: '100%' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 26 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <div>
           <div style={sTitle}>{t('attendance.title')}</div>
           <div style={sSub}>{t('attendance.subtitle')}</div>
           {fromCache && cachedAt && (
-            <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 8, padding: '5px 12px', fontSize: 13, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10 }}>
-              <Package size={14} strokeWidth={2} /> {t('dashboard.cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}
+            <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 6, padding: '3.5px 9px', fontSize: 11.5, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
+              <Package size={13} strokeWidth={2} /> {t('dashboard.cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}
             </div>
           )}
         </div>
@@ -112,8 +112,8 @@ export default function SectionAttendanceStaff({ onToast }: Props) {
       </div>
 
       {loading && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
-          <div style={{ width: 32, height: 32, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+          <div style={{ width: 24, height: 24, border: '2.5px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
         </div>
       )}
 
@@ -121,64 +121,64 @@ export default function SectionAttendanceStaff({ onToast }: Props) {
         <>
           {/* KPIs globaux */}
           {stats && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginBottom: 22 }}>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 md:gap-3" style={{ marginBottom: 14 }}>
               {[
-                { icon: <CheckCircle2 size={18} strokeWidth={2} />, bg: 'var(--green-light)', val: stats.attendanceRate, label: t('attendance.kpiRate'), color: 'var(--green)' },
-                { icon: <Users size={18} strokeWidth={2} />, bg: 'var(--blue-light)', val: String(stats.total),   label: t('attendance.kpiRecords'), color: 'var(--blue)' },
-                { icon: <X size={18} strokeWidth={2} />,  bg: 'var(--red-light)', val: String(stats.absent),  label: t('attendance.kpiAbsences'), color: 'var(--red)' },
-                { icon: <AlarmClock size={18} strokeWidth={2} />, bg: 'var(--amber-light)', val: String(stats.late),    label: t('attendance.kpiLate'), color: 'var(--amber)' },
+                { icon: <CheckCircle2 size={16} strokeWidth={2} />, bg: 'var(--green-light)', val: stats.attendanceRate, label: t('attendance.kpiRate'), color: 'var(--green)' },
+                { icon: <Users size={16} strokeWidth={2} />, bg: 'var(--blue-light)', val: String(stats.total),   label: t('attendance.kpiRecords'), color: 'var(--blue)' },
+                { icon: <X size={16} strokeWidth={2} />,  bg: 'var(--red-light)', val: String(stats.absent),  label: t('attendance.kpiAbsences'), color: 'var(--red)' },
+                { icon: <AlarmClock size={16} strokeWidth={2} />, bg: 'var(--amber-light)', val: String(stats.late),    label: t('attendance.kpiLate'), color: 'var(--amber)' },
               ].map((k, i) => (
-                <div key={i} style={{ background: 'var(--surface)', borderRadius: 14, border: '1.5px solid var(--border)', padding: '18px 20px' }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, marginBottom: 10 }}>{k.icon}</div>
-                  <div style={{ fontSize: 26, fontWeight: 900, color: k.color }}>{k.val}</div>
-                  <div style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 600, marginTop: 4 }}>{k.label}</div>
+                <div key={i} style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', padding: '10px 14px' }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 7, background: k.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 5 }}>{k.icon}</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: k.color }}>{k.val}</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--text3)', fontWeight: 600, marginTop: 2 }}>{k.label}</div>
                 </div>
               ))}
             </div>
           )}
 
           {/* Filtres */}
-          <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', overflow: 'hidden' }}>
-            <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
+            <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center' }}>
               <select value={classId} onChange={e => setClassId(e.target.value)} style={filterSt}>
                 <option value="">{t('attendance.filterAllClasses')}</option>
                 {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
               <input type="date" value={date} onChange={e => setDate(e.target.value)}
                 style={{ ...filterSt, cursor: 'pointer' }} />
-              <button style={{ ...btnPrim, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={fetchRecords} disabled={loadingRecords}>
-                {loadingRecords ? <Loader2 size={15} strokeWidth={2} className="animate-spin" /> : <Search size={15} strokeWidth={2} />} {t('attendance.filter')}
+              <button style={{ ...btnPrim, display: 'inline-flex', alignItems: 'center', gap: 5 }} onClick={fetchRecords} disabled={loadingRecords}>
+                {loadingRecords ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : <Search size={13} strokeWidth={2} />} {t('attendance.filter')}
               </button>
               {records.length > 0 && (
-                <span style={{ marginLeft: 'auto', fontSize: 14, color: 'var(--text3)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                  <CheckCircle2 size={13} /> {presentCount} · <X size={13} /> {absentCount} · <AlarmClock size={13} /> {lateCount}
+                <span style={{ marginLeft: 'auto', fontSize: 12.5, color: 'var(--text3)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <CheckCircle2 size={12} /> {presentCount} · <X size={12} /> {absentCount} · <AlarmClock size={12} /> {lateCount}
                 </span>
               )}
             </div>
 
             {loadingRecords && (
-              <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
-                <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
+              <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}>
+                <div style={{ width: 24, height: 24, border: '2.5px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
               </div>
             )}
 
             {!loadingRecords && error === 'OFFLINE_NO_CACHE' && (
-              <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text3)' }}>{t('attendance.noSelection')}</div>
+              <div style={{ padding: '30px 16px', textAlign: 'center', fontSize: 13, color: 'var(--text3)' }}>{t('attendance.noSelection')}</div>
             )}
 
             {!loadingRecords && error && error !== 'OFFLINE_NO_CACHE' && (
-              <div style={{ padding: '16px 20px', color: 'var(--red)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={16} strokeWidth={2} /> {error}</div>
+              <div style={{ padding: '12px 16px', fontSize: 13, color: 'var(--red)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={15} strokeWidth={2} /> {error}</div>
             )}
 
             {!loadingRecords && !error && records.length === 0 && (
-              <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text3)' }}>
+              <div style={{ padding: '30px 16px', textAlign: 'center', fontSize: 13, color: 'var(--text3)' }}>
                 {classId || date ? t('attendance.noRecords') : t('attendance.noSelection')}
               </div>
             )}
 
             {!loadingRecords && !error && records.length > 0 && (
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
                   <thead>
                     <tr>{[
                       t('attendance.tableHeaderStudent'),
@@ -206,7 +206,7 @@ export default function SectionAttendanceStaff({ onToast }: Props) {
                           <td style={tdSt}>{new Date(r.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}</td>
                           <td style={tdSt}>{r.period}</td>
                           <td style={tdSt}>
-                            <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 13, fontWeight: 800, background: st.bg, color: st.color }}>
+                            <span style={{ padding: '2.5px 8px', borderRadius: 14, fontSize: 11.5, fontWeight: 700, background: st.bg, color: st.color }}>
                               {t(`attendance.${r.status === 'PRESENT' ? 'presentLabel' : r.status === 'ABSENT' ? 'absentLabel' : r.status === 'ABSENT_JUSTIFIED' ? 'justifiedLabel' : 'lateLabel'}`)}
                             </span>
                           </td>
@@ -214,10 +214,10 @@ export default function SectionAttendanceStaff({ onToast }: Props) {
                           <td style={tdSt}>
                             {r.status === 'ABSENT' && (
                               <button
-                                style={{ padding: '5px 12px', borderRadius: 8, fontSize: 13, fontWeight: 800, background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid rgba(217,119,6,0.25)', cursor: 'pointer', fontFamily: 'inherit' }}
+                                style={{ padding: '3.5px 9px', borderRadius: 6, fontSize: 11.5, fontWeight: 700, background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid rgba(217,119,6,0.25)', cursor: 'pointer', fontFamily: 'inherit' }}
                                 onClick={() => justify(r.id)}
                                 disabled={justifyingId === r.id}>
-                                {justifyingId === r.id ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : t('attendance.justify')}
+                                {justifyingId === r.id ? <Loader2 size={11} strokeWidth={2} className="animate-spin" /> : t('attendance.justify')}
                               </button>
                             )}
                           </td>
@@ -235,10 +235,10 @@ export default function SectionAttendanceStaff({ onToast }: Props) {
   )
 }
 
-const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 28, fontWeight: 700, color: 'var(--text)' }
-const sSub: React.CSSProperties = { fontSize: 17, color: 'var(--text3)', marginTop: 3 }
-const btnPrim: React.CSSProperties = { padding: '9px 18px', borderRadius: 10, fontSize: 15, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
-const btnSec: React.CSSProperties = { padding: '8px 16px', borderRadius: 10, fontSize: 15, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
-const filterSt: React.CSSProperties = { background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 10, padding: '8px 12px', fontSize: 15, fontWeight: 700, color: 'var(--text2)', outline: 'none', fontFamily: 'inherit' }
-const thSt: React.CSSProperties = { padding: '11px 14px', textAlign: 'left', fontSize: 12, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.7px', whiteSpace: 'nowrap' }
-const tdSt: React.CSSProperties = { padding: '12px 14px', fontSize: 15, color: 'var(--text2)', borderBottom: '1px solid var(--bg)', verticalAlign: 'middle' }
+const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)' }
+const sSub: React.CSSProperties = { fontSize: 12, color: 'var(--text3)', marginTop: 2 }
+const btnPrim: React.CSSProperties = { padding: '6px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+const btnSec: React.CSSProperties = { padding: '6px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
+const filterSt: React.CSSProperties = { background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '6px 10px', fontSize: 12.5, fontWeight: 700, color: 'var(--text2)', outline: 'none', fontFamily: 'inherit' }
+const thSt: React.CSSProperties = { padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }
+const tdSt: React.CSSProperties = { padding: '8.5px 12px', fontSize: 12.5, color: 'var(--text2)', borderBottom: '1px solid var(--bg)', verticalAlign: 'middle' }

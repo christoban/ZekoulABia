@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import {
   LogOut, LayoutDashboard, GraduationCap, ClipboardCheck,
-  Calendar, Landmark, Smartphone, AlertTriangle, BookOpen,
+  Calendar, Landmark, Smartphone, Banknote, AlertTriangle, BookOpen,
   Compass, IdCard, HandCoins, X, ShieldAlert,
   Megaphone, MessageCircle,
   ScanSearch, Users, Settings, ChevronDown, ChevronRight,
@@ -59,7 +59,7 @@ export default function StaffSidebar({ current, onChange, allowedSections, sessi
   if (can('discipline'))      vieScolaireItems.push({ id: 'discipline',  icon: AlertTriangle, label: tnav('sidebar.discipline') })
   if (can('suivi-eleves'))     vieScolaireItems.push({ id: 'suivi-eleves', icon: ShieldAlert, label: tnav('sidebar.suiviEleves') })
   if (can('timetable'))        vieScolaireItems.push({ id: 'timetable',    icon: Calendar, label: tnav('sidebar.timetable') })
-  if (can('finance'))          vieScolaireItems.push({ id: 'finance',      icon: Smartphone, label: tnav('sidebar.finance'), badge: badges.finance, badgeColor: 'red' })
+  if (can('finance'))          vieScolaireItems.push({ id: 'finance',      icon: Banknote, label: tnav('sidebar.finance'), badge: badges.finance, badgeColor: 'red' })
 
   // Évaluations & Examens
   const evalItems: NavItem[] = []
@@ -144,13 +144,15 @@ export default function StaffSidebar({ current, onChange, allowedSections, sessi
         {/* Dashboard principal */}
         <button onClick={() => handleChange('dashboard')}
           className={cn(
-            'w-full flex items-center gap-2.5 rounded-md mb-[4px]',
+            'w-full flex items-center gap-2.5 rounded-r-md mb-[4px]',
             'text-[12.5px] font-bold transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
-            current === 'dashboard' ? 'bg-[var(--sidebar-active)] text-white' : 'bg-transparent text-white/70 hover:bg-[var(--sidebar2)] hover:text-white'
+            current === 'dashboard'
+              ? 'bg-gradient-to-r from-amber-500/25 to-amber-500/10 text-amber-300 border-l-3 border-amber-400 shadow-sm shadow-amber-500/10'
+              : 'bg-transparent text-white/70 hover:bg-[var(--sidebar2)] hover:text-white border-l-3 border-transparent'
           )}
           style={{ padding: '7px 8px' }}>
           <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <LayoutDashboard size={16} strokeWidth={2} />
+            <LayoutDashboard size={16} strokeWidth={2} className={current === 'dashboard' ? 'text-amber-400' : ''} />
           </span>
           <span className="truncate flex-1">{tnav('sidebar.dashboard')}</span>
         </button>
@@ -164,13 +166,15 @@ export default function StaffSidebar({ current, onChange, allowedSections, sessi
             {vieScolaireItems.map(item => (
               <button key={item.id} onClick={() => handleChange(item.id)}
                 className={cn(
-                  'w-full flex items-center gap-2.5 rounded-md mb-[2px]',
+                  'w-full flex items-center gap-2.5 rounded-r-md mb-[2px]',
                   'text-[12px] font-semibold transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
-                  current === item.id ? 'bg-[var(--sidebar-active)] text-white' : 'bg-transparent text-white/60 hover:bg-[var(--sidebar2)] hover:text-white/90'
+                  current === item.id
+                    ? 'bg-gradient-to-r from-amber-500/25 to-amber-500/10 text-amber-300 font-bold border-l-3 border-amber-400 shadow-sm shadow-amber-500/10'
+                    : 'bg-transparent text-white/60 hover:bg-[var(--sidebar2)] hover:text-white/90 border-l-3 border-transparent'
                 )}
                 style={{ padding: '6px 8px' }}>
                 <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <item.icon size={16} strokeWidth={2} />
+                  <item.icon size={16} strokeWidth={2} className={current === item.id ? 'text-amber-400' : ''} />
                 </span>
                 <span className="truncate flex-1">{item.label}</span>
                 {item.badge && (
@@ -185,12 +189,16 @@ export default function StaffSidebar({ current, onChange, allowedSections, sessi
 
         {/* Groupes Accordéons (Évaluations, Pédagogie, Communication, Finance) */}
         {accordionGroups.map(grp => {
-          const isOpen = openAccordions[grp.id] ?? grp.items.some(it => it.id === current)
+          const isCurrentInGroup = grp.items.some(it => it.id === current)
+          const isOpen = openAccordions[grp.id] !== undefined ? openAccordions[grp.id] : isCurrentInGroup
           return (
             <div key={grp.id} style={{ marginBottom: 4 }}>
               <button
                 onClick={() => toggleAccordion(grp.id)}
-                className="w-full flex items-center justify-between text-[10px] font-black text-white/35 tracking-[0.8px] uppercase hover:text-white/60 transition-all border-none bg-transparent cursor-pointer font-nunito"
+                className={cn(
+                  'w-full flex items-center justify-between text-[10px] font-black tracking-[0.8px] uppercase hover:text-white/75 transition-all border-none bg-transparent cursor-pointer font-nunito',
+                  isCurrentInGroup ? 'text-amber-400/90 font-bold' : 'text-white/35'
+                )}
                 style={{ padding: '6px 6px 4px' }}
               >
                 <span>{grp.label}</span>
@@ -202,13 +210,15 @@ export default function StaffSidebar({ current, onChange, allowedSections, sessi
                   {grp.items.map(item => (
                     <button key={item.id} onClick={() => handleChange(item.id)}
                       className={cn(
-                        'w-full flex items-center gap-2.5 rounded-md mb-[2px]',
+                        'w-full flex items-center gap-2.5 rounded-r-md mb-[2px]',
                         'text-[12px] font-semibold transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
-                        current === item.id ? 'bg-[var(--sidebar-active)] text-white' : 'bg-transparent text-white/55 hover:bg-[var(--sidebar2)] hover:text-white/85'
+                        current === item.id
+                          ? 'bg-gradient-to-r from-amber-500/25 to-amber-500/10 text-amber-300 font-bold border-l-3 border-amber-400 shadow-sm shadow-amber-500/10'
+                          : 'bg-transparent text-white/55 hover:bg-[var(--sidebar2)] hover:text-white/85 border-l-3 border-transparent'
                       )}
                       style={{ padding: '6px 8px' }}>
                       <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <item.icon size={15} strokeWidth={2} />
+                        <item.icon size={15} strokeWidth={2} className={current === item.id ? 'text-amber-400' : ''} />
                       </span>
                       <span className="truncate flex-1">{item.label}</span>
                       {item.badge && (
@@ -227,22 +237,27 @@ export default function StaffSidebar({ current, onChange, allowedSections, sessi
         {/* Section Configuration Établissement (Séparée & Proéminente en bas de nav) */}
         {hasConfigAccess && (
           <div style={{ marginTop: 10, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-            <button
-              onClick={() => handleChange('configuration')}
-              className={cn(
-                'w-full flex items-center gap-2.5 rounded-lg transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
-                current === 'configuration' || ['import-eleves', 'classes', 'grille-horaire', 'affectations', 'cautions'].includes(current)
-                  ? 'bg-blue-600/30 text-blue-200 border border-blue-500/40'
-                  : 'bg-white/[0.04] text-white/70 hover:bg-white/[0.08] hover:text-white border border-white/10'
-              )}
-              style={{ padding: '8px 10px' }}
-            >
-              <Settings size={16} className="text-blue-400 flex-shrink-0" />
-              <div className="min-w-0 flex-1">
-                <div className="text-[12px] font-bold leading-tight">Configuration</div>
-                <div className="text-[10px] text-white/40">Grilles, Rentrée, Classes</div>
-              </div>
-            </button>
+            {(() => {
+              const isConfigActive = current === 'configuration' || ['import-eleves', 'classes', 'grille-horaire', 'affectations', 'cautions'].includes(current)
+              return (
+                <button
+                  onClick={() => handleChange('configuration')}
+                  className={cn(
+                    'w-full flex items-center gap-2.5 rounded-r-md transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
+                    isConfigActive
+                      ? 'bg-gradient-to-r from-amber-500/25 to-amber-500/10 text-amber-300 font-bold border-l-3 border-amber-400 shadow-sm shadow-amber-500/10'
+                      : 'bg-white/[0.04] text-white/70 hover:bg-white/[0.08] hover:text-white border-l-3 border-transparent'
+                  )}
+                  style={{ padding: '8px 10px' }}
+                >
+                  <Settings size={16} className={cn('flex-shrink-0', isConfigActive ? 'text-amber-400' : 'text-blue-400')} />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[12px] font-bold leading-tight">Configuration</div>
+                    <div className="text-[10px] text-white/40">Grilles, Rentrée, Classes</div>
+                  </div>
+                </button>
+              )
+            })()}
           </div>
         )}
 
@@ -254,13 +269,15 @@ export default function StaffSidebar({ current, onChange, allowedSections, sessi
           {can('mon-profil-rh') && (
             <button onClick={() => handleChange('mon-profil-rh')}
               className={cn(
-                'w-full flex items-center gap-2.5 rounded-md mb-[2px]',
+                'w-full flex items-center gap-2.5 rounded-r-md mb-[2px]',
                 'text-[12px] font-semibold transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
-                current === 'mon-profil-rh' ? 'bg-[var(--sidebar-active)] text-white' : 'bg-transparent text-white/50 hover:bg-[var(--sidebar2)] hover:text-white/80'
+                current === 'mon-profil-rh'
+                  ? 'bg-gradient-to-r from-amber-500/25 to-amber-500/10 text-amber-300 font-bold border-l-3 border-amber-400 shadow-sm shadow-amber-500/10'
+                  : 'bg-transparent text-white/50 hover:bg-[var(--sidebar2)] hover:text-white/80 border-l-3 border-transparent'
               )}
               style={{ padding: '6px 8px' }}>
               <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <IdCard size={15} strokeWidth={2} />
+                <IdCard size={15} strokeWidth={2} className={current === 'mon-profil-rh' ? 'text-amber-400' : ''} />
               </span>
               <span className="truncate flex-1">{tnav('sidebar.monProfilRH')}</span>
             </button>

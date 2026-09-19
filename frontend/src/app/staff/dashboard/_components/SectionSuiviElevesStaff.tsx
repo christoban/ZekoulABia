@@ -106,37 +106,37 @@ export default function SectionSuiviElevesStaff({ sessionUser, onToast }: Props)
   }
 
   return (
-    <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto' }}>
-      <div style={{ marginBottom: 26 }}>
+    <div className="px-4 py-4 md:px-7 md:py-6" style={{ height: '100%', overflowY: 'auto' }}>
+      <div style={{ marginBottom: 16 }}>
         <div style={sTitle}>{t('suivi.page_title')}</div>
         <div style={sSub}>{estCenseur ? t('suivi.censeur_subtitle') : t('suivi.conseiller_subtitle')}</div>
       </div>
 
       {estCenseur && (
-        <div style={{ marginBottom: 32 }}>
+        <div style={{ marginBottom: 20 }}>
           <div style={sBlockTitle}>{t('suivi.vigilance_title')}</div>
           {loadingVigilance ? (
-            <div style={{ fontSize: 13, color: 'var(--text3)' }}>{t('suivi.chargement')}</div>
+            <div style={{ fontSize: 12.5, color: 'var(--text3)' }}>{t('suivi.chargement')}</div>
           ) : studentsList.length === 0 ? (
-            <div style={{ fontSize: 13, color: 'var(--text3)', fontStyle: 'italic' }}>{t('suivi.vigilance_vide')}</div>
+            <div style={{ fontSize: 12.5, color: 'var(--text3)', fontStyle: 'italic' }}>{t('suivi.vigilance_vide')}</div>
           ) : (
             <>
               {vigilanceFromCache && (
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--amber)', marginBottom: 10 }}>
-                  <Package size={13} /> {t('suivi.hors_ligne')}
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: 'var(--amber)', marginBottom: 8 }}>
+                  <Package size={12} /> {t('suivi.hors_ligne')}
                 </div>
               )}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8 }}>
                 {studentsList.filter((s) => s.alertLevel === 'critical' || s.alertLevel === 'warning').map((s) => {
                   const style = ALERT_STYLE[s.alertLevel]
                   return (
-                    <div key={s.studentId} style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 12, padding: '12px 14px' }}>
+                    <div key={s.studentId} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '8px 12px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
                         <div>
-                          <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>{s.name}</div>
-                          <div style={{ fontSize: 12, color: 'var(--text3)' }}>{s.className}</div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{s.name}</div>
+                          <div style={{ fontSize: 11.5, color: 'var(--text3)' }}>{s.className}</div>
                         </div>
-                        <span style={{ background: style.bg, color: style.color, padding: '3px 10px', borderRadius: 14, fontSize: 12, fontWeight: 800 }}>
+                        <span style={{ background: style.bg, color: style.color, padding: '2px 7px', borderRadius: 10, fontSize: 11, fontWeight: 700 }}>
                           {s.healthScore}/100
                         </span>
                       </div>
@@ -153,30 +153,30 @@ export default function SectionSuiviElevesStaff({ sessionUser, onToast }: Props)
         <div style={sBlockTitle}>{estCenseur ? t('suivi.signalements_ecole_title') : t('suivi.mes_cas_title')}</div>
 
         {loadingActions ? (
-          <div style={{ fontSize: 13, color: 'var(--text3)' }}>{t('suivi.chargement')}</div>
+          <div style={{ fontSize: 12.5, color: 'var(--text3)' }}>{t('suivi.chargement')}</div>
         ) : error ? (
-          <div style={{ fontSize: 13, color: 'var(--red)' }}>{t('suivi.erreur')}</div>
+          <div style={{ fontSize: 12.5, color: 'var(--red)' }}>{t('suivi.erreur')}</div>
         ) : actionsOuvertes.length === 0 ? (
-          <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1.5px solid var(--border)', padding: 40, textAlign: 'center', maxWidth: 460 }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}><ShieldAlert size={36} color="var(--green)" /></div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{t('suivi.aucun_cas')}</div>
+          <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', padding: '28px 20px', textAlign: 'center', maxWidth: 420 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><ShieldAlert size={30} color="var(--green)" /></div>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>{t('suivi.aucun_cas')}</div>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {actionsOuvertes.map((a) => {
               const Icon = ICONS[a.type]
               return (
-                <div key={a.id} style={{ background: 'var(--surface)', borderRadius: 14, border: '1.5px solid var(--border)', padding: 18 }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <Icon size={18} color="var(--blue)" />
+                <div key={a.id} style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', padding: '12px 14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Icon size={16} color="var(--blue)" />
                       <div>
-                        <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>{a.studentName}</div>
-                        <div style={{ fontSize: 12.5, color: 'var(--text3)', fontWeight: 600 }}>{a.className ?? '—'}</div>
+                        <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>{a.studentName}</div>
+                        <div style={{ fontSize: 11.5, color: 'var(--text3)', fontWeight: 600 }}>{a.className ?? '—'}</div>
                       </div>
                     </div>
                     <span style={{
-                      fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 14,
+                      fontSize: 10.5, fontWeight: 700, padding: '2px 8px', borderRadius: 10,
                       background: a.status === 'EN_COURS' ? 'var(--amber-light)' : 'var(--bg2)',
                       color: a.status === 'EN_COURS' ? 'var(--amber)' : 'var(--text2)',
                     }}>
@@ -184,8 +184,8 @@ export default function SectionSuiviElevesStaff({ sessionUser, onToast }: Props)
                     </span>
                   </div>
 
-                  {a.note && <div style={{ fontSize: 13, color: 'var(--text2)', marginTop: 10 }}>{a.note}</div>}
-                  <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 8 }}>
+                  {a.note && <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 8 }}>{a.note}</div>}
+                  <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>
                     {t('suivi.cree_par').replace('{name}', a.createdByName)}
                     {a.assignedToName && ` · ${t('suivi.assigne_a').replace('{name}', a.assignedToName)}`}
                     {a.targetDate && ` · ${new Date(a.targetDate).toLocaleDateString()}`}
@@ -211,6 +211,6 @@ export default function SectionSuiviElevesStaff({ sessionUser, onToast }: Props)
   )
 }
 
-const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 28, fontWeight: 700, color: 'var(--text)' }
-const sSub: React.CSSProperties = { fontSize: 17, color: 'var(--text3)', marginTop: 3 }
-const sBlockTitle: React.CSSProperties = { fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 14 }
+const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }
+const sSub: React.CSSProperties = { fontSize: 12.5, color: 'var(--text3)', marginTop: 2 }
+const sBlockTitle: React.CSSProperties = { fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }

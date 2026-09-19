@@ -65,33 +65,33 @@ export default function SectionDepartementsStaff({ onToast }: Props) {
   }
 
   return (
-    <div style={{ padding: '28px 32px', overflowY: 'auto', height: '100%' }}>
+    <div className="px-4 py-4 md:px-7 md:py-6" style={{ overflowY: 'auto', height: '100%' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
       {/* En-tête */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, gap: 12, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14, gap: 10, flexWrap: 'wrap' }}>
         <div>
           <div style={sTitle}>{t('departements.title')}</div>
           <div style={sSub}>{loading ? '…' : t('departements.subtitle', { count: departments.length })}</div>
           {fromCache && cachedAt && (
-            <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 8, padding: '5px 12px', fontSize: 13, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10 }}>
-              <Package size={14} strokeWidth={2} /> {t('dashboard.cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}
+            <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
+              <Package size={13} strokeWidth={2} /> {t('dashboard.cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}
             </div>
           )}
         </div>
       </div>
 
       {/* Barre outils */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg2)', border: '1.5px solid var(--border)', borderRadius: 10, padding: '8px 14px', minWidth: 200, maxWidth: 400 }}>
-          <span style={{ display: 'inline-flex' }}><Search size={16} strokeWidth={2} /></span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '5px 10px', minWidth: 180, maxWidth: 360 }}>
+          <span style={{ display: 'inline-flex' }}><Search size={14} strokeWidth={2} /></span>
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder={t('departements.searchPlaceholder')}
-            style={{ background: 'none', border: 'none', outline: 'none', fontSize: 16, fontFamily: 'inherit', fontWeight: 600, width: '100%' }} />
-          {search && <span onClick={() => setSearch('')} style={{ cursor: 'pointer', color: 'var(--text3)', fontSize: 14, display: 'inline-flex' }}><X size={14} strokeWidth={2} /></span>}
+            style={{ background: 'none', border: 'none', outline: 'none', fontSize: 12.5, fontFamily: 'inherit', fontWeight: 600, width: '100%', color: 'var(--text)' }} />
+          {search && <span onClick={() => setSearch('')} style={{ cursor: 'pointer', color: 'var(--text3)', fontSize: 13, display: 'inline-flex' }}><X size={13} strokeWidth={2} /></span>}
         </div>
         {search && searchMatchCount > 0 && (
-          <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '4px 12px', borderRadius: 20, fontSize: 14, fontWeight: 800 }}>
+          <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '3px 9px', borderRadius: 12, fontSize: 11.5, fontWeight: 700 }}>
             {t('departements.resultsCount', { count: searchMatchCount })}
           </span>
         )}
@@ -99,16 +99,16 @@ export default function SectionDepartementsStaff({ onToast }: Props) {
 
       {/* Loading */}
       {loading && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}>
-          <div style={{ width: 36, height: 36, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 50 }}>
+          <div style={{ width: 28, height: 28, border: '2.5px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
         </div>
       )}
 
       {/* Empty */}
       {!loading && departments.length === 0 && (
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: '64px 24px', textAlign: 'center' }}>
-          <div style={{ fontSize: 48, marginBottom: 16, display: 'flex', justifyContent: 'center' }}><FolderOpen size={48} strokeWidth={2} /></div>
-          <div style={{ fontSize: 17, color: 'var(--text3)' }}>
+        <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: '40px 24px', textAlign: 'center' }}>
+          <div style={{ fontSize: 38, marginBottom: 10, display: 'flex', justifyContent: 'center', color: 'var(--text3)' }}><FolderOpen size={38} strokeWidth={1.8} /></div>
+          <div style={{ fontSize: 13.5, color: 'var(--text3)' }}>
             {t('departements.empty')}
           </div>
         </div>
@@ -116,56 +116,55 @@ export default function SectionDepartementsStaff({ onToast }: Props) {
 
       {/* Grid */}
       {!loading && departments.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
           {departments.sort((a, b) => a.name.localeCompare(b.name)).map(dept => {
             const hasSearch = search.length > 0
             const matchingSubjectIds = new Set(
               dept.subjects.filter(s => s.name.toLowerCase().includes(searchLower)).map(s => s.id)
             )
             const hasAnyMatch = !hasSearch || matchingSubjectIds.size > 0
-            const colorInfo = getColorInfo(dept.color)
 
             return (
               <div key={dept.id} style={{
-                background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', overflow: 'hidden',
+                background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden',
                 opacity: hasSearch && !hasAnyMatch ? 0.4 : 1,
                 transition: 'opacity 0.2s',
               }}>
-                <div style={{ height: 6, background: dept.color }} />
-                <div style={{ padding: '16px 18px' }}>
+                <div style={{ height: 4, background: dept.color }} />
+                <div style={{ padding: '12px 14px' }}>
                   {/* En-tête */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ width: 12, height: 12, borderRadius: '50%', background: dept.color, flexShrink: 0 }} />
-                      <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>{dept.name}</span>
-                      <span style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 700 }}>({dept.subjects.length})</span>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: dept.color, flexShrink: 0 }} />
+                      <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{dept.name}</span>
+                      <span style={{ fontSize: 11.5, color: 'var(--text3)', fontWeight: 600 }}>({dept.subjects.length})</span>
                     </div>
                   </div>
 
                   {/* AP */}
-                  <div style={{ marginBottom: 10 }}>
+                  <div style={{ marginBottom: 8 }}>
                     {dept.head
-                      ? <span style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '3px 10px', borderRadius: 20, fontSize: 13, fontWeight: 700 }}>
+                      ? <span style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '2px 7px', borderRadius: 8, fontSize: 11, fontWeight: 700 }}>
                           {t('departements.apLabel', { firstName: dept.head.firstName, lastName: dept.head.lastName })}
                         </span>
-                      : <span style={{ color: 'var(--red)', fontSize: 13, fontWeight: 600 }}>{t('departements.apNotAssigned')}</span>
+                      : <span style={{ color: 'var(--red)', fontSize: 11, fontWeight: 600 }}>{t('departements.apNotAssigned')}</span>
                     }
                   </div>
 
                   {/* Matières */}
                   {dept.subjects.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                       {dept.subjects
                         .sort((a, b) => a.name.localeCompare(b.name))
                         .map(s => {
                           const isMatch = !hasSearch || matchingSubjectIds.has(s.id)
                           return (
                             <div key={s.id} style={{
-                              display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px', borderRadius: 8,
+                              display: 'flex', alignItems: 'center', gap: 5, padding: '3px 6px', borderRadius: 6,
                               opacity: hasSearch && !isMatch ? 0.3 : 1,
                               transition: 'opacity 0.2s',
                             }}>
-                              <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: isMatch ? 'var(--text)' : 'var(--text3)' }}>
+                              <span style={{ flex: 1, fontSize: 12, fontWeight: 500, color: isMatch ? 'var(--text)' : 'var(--text3)' }}>
                                 {hasSearch && isMatch ? highlightMatch(s.name, search) : s.name}
                               </span>
                             </div>
@@ -173,7 +172,7 @@ export default function SectionDepartementsStaff({ onToast }: Props) {
                         })}
                     </div>
                   ) : (
-                    <div style={{ color: 'var(--text3)', fontSize: 13, fontStyle: 'italic', textAlign: 'center', padding: '12px 0' }}>
+                    <div style={{ color: 'var(--text3)', fontSize: 11.5, fontStyle: 'italic', textAlign: 'center', padding: '8px 0' }}>
                       {t('departements.noSubjects')}
                     </div>
                   )}
@@ -200,5 +199,6 @@ function highlightMatch(text: string, query: string): React.ReactNode {
   )
 }
 
-const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 28, fontWeight: 700, color: 'var(--text)' }
-const sSub: React.CSSProperties = { fontSize: 17, color: 'var(--text3)', marginTop: 3 }
+const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }
+const sSub: React.CSSProperties = { fontSize: 12.5, color: 'var(--text3)', marginTop: 2 }
+

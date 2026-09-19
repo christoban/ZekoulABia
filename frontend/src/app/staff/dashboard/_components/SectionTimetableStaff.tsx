@@ -297,7 +297,7 @@ export default function SectionTimetable({ onToast }: Props) {
   const pct        = totalCours > 0 ? Math.round(remplis / totalCours * 100) : 0
 
   return (
-    <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto' }}>
+    <div className="px-4 py-4 md:px-7 md:py-6" style={{ height: '100%', overflowY: 'auto' }}>
       <style>{`
         @keyframes edu-spin { to { transform: rotate(360deg); } }
         .tt-cell-hover:hover { background: rgba(5,150,105,0.05) !important; cursor: pointer; }
@@ -305,7 +305,7 @@ export default function SectionTimetable({ onToast }: Props) {
       `}</style>
 
       {/* En-tête */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 22, flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
         <div>
           <div style={sTitle}>{t('timetable.title')}</div>
           <div style={sSub}>
@@ -314,7 +314,7 @@ export default function SectionTimetable({ onToast }: Props) {
               : gridConfig ? t('timetable.selectClass') : t('timetable.gridNotConfigured')}
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <select value={classId} onChange={e => handleClassChange(e.target.value)} style={selectSt} disabled={loadingClasses}>
             <option value="">{loadingClasses ? t('timetable.loading') : t('timetable.selectClassOption')}</option>
             {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -329,35 +329,35 @@ export default function SectionTimetable({ onToast }: Props) {
 
       {/* Grille non configurée */}
       {!gridConfig && !loadingClasses && (
-        <div style={{ background: 'var(--orange-light)', border: '1.5px solid var(--orange-light)', borderRadius: 14, padding: '18px 22px', marginBottom: 20, fontSize: 14, color: 'var(--amber)' }} dangerouslySetInnerHTML={{ __html: t('timetable.gridNotConfiguredDesc') }}>
+        <div style={{ background: 'var(--orange-light)', border: '1px solid var(--orange-light)', borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontSize: 12.5, color: 'var(--amber)' }} dangerouslySetInnerHTML={{ __html: t('timetable.gridNotConfiguredDesc') }}>
         </div>
       )}
 
       {/* Chargement */}
-      {loading && <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}><div style={spinnerStyle} /></div>}
+      {loading && <div style={{ display: 'flex', justifyContent: 'center', padding: 50 }}><div style={spinnerStyle} /></div>}
 
       {/* Erreur */}
       {!loading && error && (
-        <div style={{ background: 'var(--red-light)', borderRadius: 14, padding: '18px 22px', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ display: 'inline-flex' }}><AlertTriangle size={16} strokeWidth={2} /></span>
-          <span style={{ fontWeight: 700, color: 'var(--red)', flex: 1 }}>{error}</span>
+        <div style={{ background: 'var(--red-light)', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ display: 'inline-flex' }}><AlertTriangle size={15} strokeWidth={2} /></span>
+          <span style={{ fontWeight: 700, color: 'var(--red)', flex: 1, fontSize: 13 }}>{error}</span>
           <button onClick={() => fetchTimetable()} style={btnSec}>{t('timetable.retry')}</button>
         </div>
       )}
 
       {/* Aucune classe */}
       {!loading && !error && !classId && (
-        <EmptyState icon={<CalendarDays size={52} strokeWidth={2} />} title={t('timetable.emptyStateTitle')} sub={t('timetable.emptyStateSub')} />
+        <EmptyState icon={<CalendarDays size={38} strokeWidth={1.8} />} title={t('timetable.emptyStateTitle')} sub={t('timetable.emptyStateSub')} />
       )}
 
       {/* Classe sélectionnée, pas d'EDT */}
       {!loading && !error && classId && !timetable && gridConfig && (
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: '60px 32px', textAlign: 'center' }}>
-          <div style={{ fontSize: 52, marginBottom: 14, display: 'flex', justifyContent: 'center' }}><Calendar size={52} strokeWidth={2} /></div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{t('timetable.noTimetableTitle')}</div>
-          <div style={{ fontSize: 15, color: 'var(--text3)', marginBottom: 28 }} dangerouslySetInnerHTML={{ __html: t('timetable.noTimetableDesc') }}>
+        <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: '40px 24px', textAlign: 'center' }}>
+          <div style={{ fontSize: 38, marginBottom: 10, display: 'flex', justifyContent: 'center', color: 'var(--text3)' }}><Calendar size={38} strokeWidth={1.8} /></div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{t('timetable.noTimetableTitle')}</div>
+          <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 20 }} dangerouslySetInnerHTML={{ __html: t('timetable.noTimetableDesc') }}>
           </div>
-          <button style={{ ...btnPrim, fontSize: 17, padding: '13px 28px' }} onClick={handleGenerate} disabled={generating}>
+          <button style={{ ...btnPrim, fontSize: 13.5, padding: '8px 18px' }} onClick={handleGenerate} disabled={generating}>
             {generating ? <><Spinner /> {t('timetable.generating')}</> : t('timetable.generateSkeleton')}
           </button>
         </div>
@@ -365,23 +365,23 @@ export default function SectionTimetable({ onToast }: Props) {
 
       {/* Grille EDT */}
       {!loading && !error && timetable && squelette.length > 0 && (
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
           {/* Barre de progression */}
-          <div style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)', whiteSpace: 'nowrap' }}>
+          <div style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text2)', whiteSpace: 'nowrap' }}>
               {t('timetable.slotsFilled', { filled: remplis, total: totalCours })}
             </span>
-            <div style={{ flex: 1, background: 'var(--border)', borderRadius: 4, height: 6, overflow: 'hidden' }}>
-              <div style={{ width: `${pct}%`, height: '100%', background: pct === 100 ? 'var(--green)' : 'var(--amber)', transition: 'width 0.3s', borderRadius: 4 }} />
+            <div style={{ flex: 1, background: 'var(--border)', borderRadius: 3, height: 5, overflow: 'hidden' }}>
+              <div style={{ width: `${pct}%`, height: '100%', background: pct === 100 ? 'var(--green)' : 'var(--amber)', transition: 'width 0.3s', borderRadius: 3 }} />
             </div>
-            <span style={{ fontSize: 13, fontWeight: 800, color: pct === 100 ? 'var(--green)' : 'var(--amber)' }}>{pct}%</span>
+            <span style={{ fontSize: 12, fontWeight: 800, color: pct === 100 ? 'var(--green)' : 'var(--amber)' }}>{pct}%</span>
           </div>
 
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
               <thead>
                 <tr>
-                  <th style={{ ...thSt, width: 100 }}>{t('timetable.scheduleHeader')}</th>
+                  <th style={{ ...thSt, width: 85 }}>{t('timetable.scheduleHeader')}</th>
                   {joursActifs.map(j => <th key={j} style={thSt}>{DAY_NAME[j] ?? j}</th>)}
                 </tr>
               </thead>
@@ -393,8 +393,8 @@ export default function SectionTimetable({ onToast }: Props) {
                     return (
                       <tr key={`pause-${idx}`}>
                         <td colSpan={joursActifs.length + 1}
-                          style={{ textAlign: 'center', padding: '5px 12px', background: 'var(--amber-light)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', fontSize: 12, fontWeight: 700, color: 'var(--amber)', letterSpacing: '0.5px' }}>
-                          {isPetite ? <Coffee size={13} strokeWidth={2} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} /> : <UtensilsCrossed size={13} strokeWidth={2} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />}{isPetite ? t('timetable.smallBreak') : t('timetable.bigBreak')} — {periode.debut} à {periode.fin} ({periode.duree} min)
+                          style={{ textAlign: 'center', padding: '3px 10px', background: 'var(--amber-light)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 700, color: 'var(--amber)', letterSpacing: '0.4px' }}>
+                          {isPetite ? <Coffee size={12} strokeWidth={2} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} /> : <UtensilsCrossed size={12} strokeWidth={2} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />}{isPetite ? t('timetable.smallBreak') : t('timetable.bigBreak')} — {periode.debut} à {periode.fin} ({periode.duree} min)
                         </td>
                       </tr>
                     )
@@ -402,8 +402,8 @@ export default function SectionTimetable({ onToast }: Props) {
 
                   return (
                     <tr key={`cours-${periode.debut}`}>
-                      <td style={{ padding: '8px 10px', background: 'var(--bg)', fontSize: 13, fontWeight: 800, color: 'var(--text3)', textAlign: 'center', border: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
-                        {periode.debut}<br /><span style={{ fontSize: 11, fontWeight: 600 }}>{periode.fin}</span>
+                      <td style={{ padding: '6px 8px', background: 'var(--bg)', fontSize: 11.5, fontWeight: 800, color: 'var(--text3)', textAlign: 'center', border: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
+                        {periode.debut}<br /><span style={{ fontSize: 10, fontWeight: 600 }}>{periode.fin}</span>
                       </td>
                       {joursActifs.map(jour => {
                         const dayNum = DAY_MAP[jour]
@@ -413,26 +413,26 @@ export default function SectionTimetable({ onToast }: Props) {
 
                         return (
                           <td key={jour}
-                            style={{ padding: 0, border: '1px solid var(--border)', verticalAlign: 'top', minWidth: 120, height: 68 }}
+                            style={{ padding: 0, border: '1px solid var(--border)', verticalAlign: 'top', minWidth: 105, height: 58 }}
                             onClick={() => slot && openModal(slot)}>
                             {slot ? (
                               filled ? (
                                 <div className="tt-cell-filled"
-                                  style={{ padding: '8px 10px', height: '100%', background: col!.bg, borderLeft: `3px solid ${col!.border}`, boxSizing: 'border-box' }}>
-                                  <div style={{ fontSize: 13, fontWeight: 800, color: col!.text, lineHeight: 1.2, display: 'flex', alignItems: 'center', gap: 5 }}>
-                                    <span>{slot.subject!.name}</span>
+                                  style={{ padding: '5px 8px', height: '100%', background: col!.bg, borderLeft: `3px solid ${col!.border}`, boxSizing: 'border-box' }}>
+                                  <div style={{ fontSize: 12, fontWeight: 800, color: col!.text, lineHeight: 1.2, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{slot.subject!.name}</span>
                                     {slot.isLV2Slot && (
-                                      <span title={t('timetable.lv2Tooltip')} style={{ background: 'rgba(3,105,161,0.14)', color: 'var(--blue)', fontSize: 9.5, fontWeight: 900, padding: '1px 5px', borderRadius: 6, letterSpacing: '0.3px', flexShrink: 0 }}>{t('timetable.lv2Badge')}</span>
+                                      <span title={t('timetable.lv2Tooltip')} style={{ background: 'rgba(3,105,161,0.14)', color: 'var(--blue)', fontSize: 9, fontWeight: 900, padding: '1px 4px', borderRadius: 4, letterSpacing: '0.2px', flexShrink: 0 }}>{t('timetable.lv2Badge')}</span>
                                     )}
                                   </div>
-                                  <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+                                  <div style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                     {slot.teacher ? `${slot.teacher.firstName} ${slot.teacher.lastName}` : <span style={{ color: 'var(--amber)' }}>{t('timetable.noTeacher')}</span>}
                                   </div>
                                 </div>
                               ) : (
                                 <div className="tt-cell-hover"
                                   style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
-                                  <span style={{ fontSize: 20, color: 'var(--border2)' }}>+</span>
+                                  <span style={{ fontSize: 16, color: 'var(--border2)' }}>+</span>
                                 </div>
                               )
                             ) : (
@@ -452,23 +452,23 @@ export default function SectionTimetable({ onToast }: Props) {
 
       {/* Modal saisie créneau */}
       {modalSlot && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 20 }}
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 16 }}
           onClick={e => { if (e.target === e.currentTarget) setModalSlot(null) }}>
-          <div className="px-6 py-6 md:px-8 md:py-7" style={{ background: 'var(--surface)', borderRadius: 18, width: '100%', maxWidth: 440, boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
-            <div style={{ fontFamily: 'var(--font-spectral,Spectral,serif)', fontSize: 21, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
+          <div className="px-5 py-5 md:px-6 md:py-6" style={{ background: 'var(--surface)', borderRadius: 14, width: '100%', maxWidth: 420, boxShadow: '0 18px 50px rgba(0,0,0,0.18)' }}>
+            <div style={{ fontFamily: 'var(--font-spectral,Spectral,serif)', fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
               {t('timetable.fillSlotTitle')}
             </div>
-            <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 22 }}>
+            <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 16 }}>
               {['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'][modalSlot.dayOfWeek]} · {modalSlot.startTime}–{modalSlot.endTime}
             </div>
 
             {conflictMsg && (
-              <div style={{ background: 'var(--orange-light)', border: '1px solid var(--orange-light)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: 'var(--amber)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <AlertTriangle size={14} strokeWidth={2} /> {conflictMsg}
+              <div style={{ background: 'var(--orange-light)', border: '1px solid var(--orange-light)', borderRadius: 8, padding: '8px 12px', marginBottom: 13, fontSize: 12, color: 'var(--amber)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
+                <AlertTriangle size={13} strokeWidth={2} /> {conflictMsg}
               </div>
             )}
 
-            <div style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: 13 }}>
               <label style={labelSt}>{t('timetable.subjectLabel')}</label>
               <select value={modalSubjectId} onChange={e => handleSubjectSelect(e.target.value)} style={inputSt}>
                 <option value="">{t('timetable.selectSubjectPlaceholder')}</option>
@@ -482,13 +482,13 @@ export default function SectionTimetable({ onToast }: Props) {
             </div>
 
             {lv2SubjectIds.has(modalSubjectId) && (
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', background: modalIsLV2Slot ? 'rgba(3,105,161,0.06)' : 'var(--bg)', border: `1.5px solid ${modalIsLV2Slot ? 'rgba(3,105,161,0.35)' : 'var(--border)'}`, borderRadius: 10, padding: '11px 13px' }}>
+              <div style={{ marginBottom: 13 }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', background: modalIsLV2Slot ? 'rgba(3,105,161,0.06)' : 'var(--bg)', border: `1px solid ${modalIsLV2Slot ? 'rgba(3,105,161,0.35)' : 'var(--border)'}`, borderRadius: 8, padding: '9px 11px' }}>
                   <input type="checkbox" checked={modalIsLV2Slot} onChange={e => setModalIsLV2Slot(e.target.checked)}
-                    style={{ width: 17, height: 17, marginTop: 1, cursor: 'pointer', accentColor: 'var(--blue)', flexShrink: 0 }} />
-                  <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text)', lineHeight: 1.45 }}>
+                    style={{ width: 15, height: 15, marginTop: 1, cursor: 'pointer', accentColor: 'var(--blue)', flexShrink: 0 }} />
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text)', lineHeight: 1.4 }}>
                     {t('timetable.lv2SlotLabel')}
-                    <span style={{ display: 'block', fontWeight: 400, color: 'var(--text3)', fontSize: 12.5, marginTop: 2 }}>
+                    <span style={{ display: 'block', fontWeight: 400, color: 'var(--text3)', fontSize: 11.5, marginTop: 1 }}>
                       {t('timetable.lv2SlotDesc')}
                     </span>
                   </span>
@@ -496,14 +496,14 @@ export default function SectionTimetable({ onToast }: Props) {
               </div>
             )}
 
-            <div style={{ marginBottom: 24 }}>
+            <div style={{ marginBottom: 18 }}>
               <label style={labelSt}>{t('timetable.teacherLabel')} <span style={{ fontWeight: 400, color: 'var(--text3)' }}>{t('timetable.teacherSubLabel')}</span></label>
               <div style={{ ...inputSt, background: 'var(--bg)', color: modalTeacherId ? 'var(--text)' : 'var(--text3)', pointerEvents: 'none' as const }}>
                 {modalTeacherId ? modalTeacherName : t('timetable.determinedByAssignments')}
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               {modalSlot.subject && (
                 <button style={{ ...btnSec, color: 'var(--red)', borderColor: 'rgba(220,38,38,0.3)' }} onClick={handleClearSlot} disabled={saving}>
                   {t('timetable.clear')}
@@ -524,27 +524,27 @@ export default function SectionTimetable({ onToast }: Props) {
 // ─── Petits composants ────────────────────────────────────────────────────────
 function EmptyState({ icon, title, sub }: { icon: React.ReactNode; title: string; sub: string }) {
   return (
-    <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: '60px 32px', textAlign: 'center' }}>
-      <div style={{ fontSize: 52, marginBottom: 14, display: 'flex', justifyContent: 'center' }}>{icon}</div>
-      <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{title}</div>
-      <div style={{ fontSize: 16, color: 'var(--text3)' }}>{sub}</div>
+    <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: '40px 24px', textAlign: 'center' }}>
+      <div style={{ fontSize: 38, marginBottom: 10, display: 'flex', justifyContent: 'center', color: 'var(--text3)' }}>{icon}</div>
+      <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{title}</div>
+      <div style={{ fontSize: 12.5, color: 'var(--text3)' }}>{sub}</div>
     </div>
   )
 }
 
 function Spinner() {
   return (
-    <span style={{ display: 'inline-block', width: 13, height: 13, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: 'white', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite', verticalAlign: 'middle', marginRight: 6 }} />
+    <span style={{ display: 'inline-block', width: 12, height: 12, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: 'white', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite', verticalAlign: 'middle', marginRight: 5 }} />
   )
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const sTitle:   React.CSSProperties = { fontFamily: 'var(--font-spectral,Spectral,serif)', fontSize: 28, fontWeight: 700, color: 'var(--text)' }
-const sSub:     React.CSSProperties = { fontSize: 16, color: 'var(--text3)', marginTop: 3 }
-const btnPrim:  React.CSSProperties = { padding: '10px 18px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center' }
-const btnSec:   React.CSSProperties = { padding: '9px 16px', borderRadius: 10, fontSize: 15, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
-const selectSt: React.CSSProperties = { background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 10, padding: '8px 12px', fontSize: 15, fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }
-const thSt:     React.CSSProperties = { padding: '10px 8px', textAlign: 'center', fontSize: 13, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', border: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px' }
-const labelSt:  React.CSSProperties = { display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text2)', marginBottom: 7 }
-const inputSt:  React.CSSProperties = { width: '100%', padding: '9px 12px', borderRadius: 9, border: '1.5px solid var(--border2)', fontSize: 15, fontWeight: 600, color: 'var(--text)', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none', background: 'var(--surface)' }
-const spinnerStyle: React.CSSProperties = { width: 36, height: 36, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }
+const sTitle:   React.CSSProperties = { fontFamily: 'var(--font-spectral,Spectral,serif)', fontSize: 20, fontWeight: 700, color: 'var(--text)' }
+const sSub:     React.CSSProperties = { fontSize: 12.5, color: 'var(--text3)', marginTop: 2 }
+const btnPrim:  React.CSSProperties = { padding: '7px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center' }
+const btnSec:   React.CSSProperties = { padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }
+const selectSt: React.CSSProperties = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 10px', fontSize: 12.5, fontWeight: 600, color: 'var(--text2)', cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }
+const thSt:     React.CSSProperties = { padding: '7px 8px', textAlign: 'center', fontSize: 11, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', border: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.4px' }
+const labelSt:  React.CSSProperties = { display: 'block', fontSize: 11.5, fontWeight: 700, color: 'var(--text2)', marginBottom: 4 }
+const inputSt:  React.CSSProperties = { width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 12.5, fontWeight: 600, color: 'var(--text)', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none', background: 'var(--surface)' }
+const spinnerStyle: React.CSSProperties = { width: 28, height: 28, border: '2.5px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }

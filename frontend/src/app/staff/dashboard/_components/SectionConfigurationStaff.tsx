@@ -43,16 +43,16 @@ export default function SectionConfigurationStaff({ onToast, allowedSections, in
         style={{
           background: 'var(--surface)',
           borderBottom: '1px solid var(--border)',
-          padding: '16px 24px 0 24px',
+          padding: '12px 20px 0 20px',
           flexShrink: 0,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
           <div
             style={{
-              width: 38,
-              height: 38,
-              borderRadius: 10,
+              width: 32,
+              height: 32,
+              borderRadius: 8,
               background: 'var(--blue-light)',
               color: 'var(--blue)',
               display: 'flex',
@@ -60,13 +60,13 @@ export default function SectionConfigurationStaff({ onToast, allowedSections, in
               justifyContent: 'center',
             }}
           >
-            <Settings size={20} />
+            <Settings size={16} />
           </div>
           <div>
             <h1
               style={{
                 fontFamily: 'var(--font-spectral),Spectral,serif',
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: 700,
                 color: 'var(--text)',
                 lineHeight: 1.2,
@@ -74,14 +74,14 @@ export default function SectionConfigurationStaff({ onToast, allowedSections, in
             >
               Configuration & Administration Établissement
             </h1>
-            <p style={{ fontSize: 13, color: 'var(--text3)', marginTop: 2 }}>
+            <p style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
               Paramétrage des structures, grilles horaires, affectations, cautions et admissions
             </p>
           </div>
         </div>
 
         {/* Tabs Bar */}
-        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 1 }}>
+        <div style={{ display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 1 }}>
           {availableTabs.map(tab => {
             const Icon = tab.icon
             const isActive = activeTab === tab.id
@@ -92,11 +92,11 @@ export default function SectionConfigurationStaff({ onToast, allowedSections, in
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 8,
-                  padding: '9px 16px',
-                  borderRadius: '10px 10px 0 0',
-                  fontSize: 13.5,
-                  fontWeight: isActive ? 800 : 600,
+                  gap: 6,
+                  padding: '6px 13px',
+                  borderRadius: '8px 8px 0 0',
+                  fontSize: 12.5,
+                  fontWeight: isActive ? 700 : 600,
                   border: 'none',
                   cursor: 'pointer',
                   fontFamily: 'inherit',
@@ -107,7 +107,7 @@ export default function SectionConfigurationStaff({ onToast, allowedSections, in
                   transition: 'all 0.15s ease',
                 }}
               >
-                <Icon size={16} color={isActive ? 'var(--blue)' : 'var(--text3)'} />
+                <Icon size={14} color={isActive ? 'var(--blue)' : 'var(--text3)'} />
                 <span>{tab.label}</span>
               </button>
             )

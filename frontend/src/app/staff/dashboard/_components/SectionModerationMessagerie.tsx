@@ -74,48 +74,48 @@ export default function SectionModerationMessagerie({ onToast }: Props) {
   }
 
   return (
-    <div style={{ height: '100%', overflow: 'auto', padding: '28px 32px' }}>
-      <div style={{ marginBottom: 22, display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--amber-light)', border: '1px solid var(--amber)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--amber)' }}>
-          <ShieldCheck size={20} />
+    <div className="px-4 py-4 md:px-7 md:py-6" style={{ height: '100%', overflowY: 'auto' }}>
+      <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--amber-light)', border: '1px solid var(--amber)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--amber)' }}>
+          <ShieldCheck size={16} />
         </div>
         <div>
-          <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 24, fontWeight: 700, color: 'var(--text)' }}>
+          <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
             {t('messagerie.moderation_title') ?? 'Modération des messages'}
           </div>
-          <div style={{ color: 'var(--text3)', fontSize: 14, fontWeight: 500, marginTop: 2 }}>
+          <div style={{ color: 'var(--text3)', fontSize: 12.5, fontWeight: 500, marginTop: 1 }}>
             {t('messagerie.moderation_subtitle') ?? 'Messages des canaux de classe et parents en attente de validation'}
           </div>
         </div>
       </div>
 
       {loading ? (
-        <div style={{ padding: 28, textAlign: 'center', color: 'var(--text3)', background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)' }}>
+        <div style={{ padding: '20px 16px', textAlign: 'center', color: 'var(--text3)', background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', fontSize: 13 }}>
           {t('messagerie.loading') ?? 'Chargement...'}
         </div>
       ) : messages.length === 0 ? (
-        <div style={{ padding: 28, textAlign: 'center', color: 'var(--text3)', background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)' }}>
+        <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--text3)', background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', fontSize: 13 }}>
           {t('messagerie.moderation_empty') ?? 'Aucun message en attente de modération.'}
         </div>
       ) : (
-        <div style={{ display: 'grid', gap: 14 }}>
+        <div style={{ display: 'grid', gap: 10 }}>
           {messages.map((message) => (
-            <article key={message.id} style={{ background: 'var(--surface)', borderRadius: 18, border: '1.5px solid var(--border)', padding: 20 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 10 }}>
+            <article key={message.id} style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: '12px 16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 8 }}>
                 <div>
-                  <div style={{ fontWeight: 800, color: 'var(--text)' }}>{message.sender.firstName} {message.sender.lastName}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text3)' }}>{nomCanal(message.conversation)} · {new Date(message.createdAt).toLocaleString('fr-FR')}</div>
+                  <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text)' }}>{message.sender.firstName} {message.sender.lastName}</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 1 }}>{nomCanal(message.conversation)} · {new Date(message.createdAt).toLocaleString('fr-FR')}</div>
                 </div>
               </div>
 
-              <div style={{ color: 'var(--text2)', lineHeight: 1.7, whiteSpace: 'pre-wrap', marginBottom: 14 }}>{message.content}</div>
+              <div style={{ color: 'var(--text2)', fontSize: 12.5, lineHeight: 1.6, whiteSpace: 'pre-wrap', marginBottom: 10 }}>{message.content}</div>
 
               {messageEnRejet === message.id && (
                 <input
                   value={motifParMessage[message.id] ?? ''}
                   onChange={(event) => setMotifParMessage((prev) => ({ ...prev, [message.id]: event.target.value }))}
                   placeholder={t('messagerie.rejection_reason_placeholder') ?? 'Motif du refus (optionnel)'}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', marginBottom: 12 }}
+                  style={{ width: '100%', padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 12.5, marginBottom: 10, boxSizing: 'border-box' }}
                 />
               )}
 
@@ -124,26 +124,26 @@ export default function SectionModerationMessagerie({ onToast }: Props) {
                   type="button"
                   onClick={() => moderer(message.id, 'APPROVED')}
                   disabled={traitementId === message.id}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: 'none', background: 'var(--green)', color: 'white', fontWeight: 800, cursor: 'pointer', opacity: traitementId === message.id ? 0.6 : 1 }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 8, border: 'none', background: 'var(--green)', color: 'white', fontWeight: 600, fontSize: 12, cursor: 'pointer', opacity: traitementId === message.id ? 0.6 : 1 }}
                 >
-                  <Check size={14} /> {t('messagerie.approve') ?? 'Approuver'}
+                  <Check size={13} /> {t('messagerie.approve') ?? 'Approuver'}
                 </button>
                 {messageEnRejet === message.id ? (
                   <button
                     type="button"
                     onClick={() => moderer(message.id, 'REJECTED')}
                     disabled={traitementId === message.id}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1.5px solid var(--red)', background: 'transparent', color: 'var(--red)', fontWeight: 800, cursor: 'pointer', opacity: traitementId === message.id ? 0.6 : 1 }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 8, border: '1px solid var(--red)', background: 'transparent', color: 'var(--red)', fontWeight: 600, fontSize: 12, cursor: 'pointer', opacity: traitementId === message.id ? 0.6 : 1 }}
                   >
-                    <IconX size={14} /> {t('messagerie.confirm_reject') ?? 'Confirmer le refus'}
+                    <IconX size={13} /> {t('messagerie.confirm_reject') ?? 'Confirmer le refus'}
                   </button>
                 ) : (
                   <button
                     type="button"
                     onClick={() => setMessageEnRejet(message.id)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'var(--bg)', color: 'var(--text3)', fontWeight: 800, cursor: 'pointer' }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text3)', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}
                   >
-                    <IconX size={14} /> {t('messagerie.reject') ?? 'Refuser'}
+                    <IconX size={13} /> {t('messagerie.reject') ?? 'Refuser'}
                   </button>
                 )}
               </div>

@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
@@ -279,10 +279,10 @@ export default function SectionDiscipline({ onToast }: Props) {
   const needsDates = form.type === 'TEMP_EXCLUSION' || form.type === 'PERMANENT_EXCLUSION'
 
   return (
-    <div style={{ padding: '28px 32px', overflowY: 'auto', height: '100%' }}>
+    <div className="px-4 py-4 md:px-7 md:py-6" style={{ overflowY: 'auto', height: '100%' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <div>
           <div style={sTitle}>{t('title')}</div>
           <div style={sSub}>{view === 'sanctions' ? (loading ? t('loading') : t('count_summary', { count: records.length, byStatus: statusFilter ? ` par statut ${statusFilter}` : '' })) : t('council.subtitle')}</div>
@@ -291,25 +291,25 @@ export default function SectionDiscipline({ onToast }: Props) {
           <button style={btnPrim} onClick={() => setForm(f => ({ ...f, open: true }))}>{t('actions.new_sanction')}</button>
         ) : (
           <button style={btnPrim} onClick={() => setConvokeForm(f => ({ ...f, open: true }))}>
-            <Gavel size={15} strokeWidth={2} style={{ marginRight: 6, verticalAlign: -2 }} />{t('council.actions.convoke')}
+            <Gavel size={14} strokeWidth={2} style={{ marginRight: 5, verticalAlign: -2 }} />{t('council.actions.convoke')}
           </button>
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
         <button style={view === 'sanctions' ? tabActiveSt : tabSt} onClick={() => setView('sanctions')}>{t('tabs.sanctions')}</button>
         <button style={view === 'council' ? tabActiveSt : tabSt} onClick={() => setView('council')}>{t('tabs.council')}</button>
       </div>
 
       {view === 'sanctions' && (<>
       {!isOnline && (
-        <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 12, padding: '12px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ display: 'flex', alignItems: 'center' }}><WifiOff size={18} strokeWidth={2} /></span>
-          <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--amber)' }}>{t('offline_hint')}</span>
+        <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 10, padding: '8px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ display: 'flex', alignItems: 'center' }}><WifiOff size={16} strokeWidth={2} /></span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--amber)' }}>{t('offline_hint')}</span>
         </div>
       )}
       {/* Filtres */}
-      <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1.5px solid var(--border)', padding: '12px 18px', display: 'flex', gap: 10, alignItems: 'center', marginBottom: 18, flexWrap: 'wrap' }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', padding: '8px 14px', display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14, flexWrap: 'wrap' }}>
         <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} style={filterSt}>
           <option value="">{t('filter_labels.all_types')}</option>
           {Object.keys(TYPE_STYLE).map(k => <option key={k} value={k}>{t(`sanction_types.${k}`)}</option>)}
@@ -324,30 +324,30 @@ export default function SectionDiscipline({ onToast }: Props) {
       </div>
 
       {loading && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
-          <div style={{ width: 32, height: 32, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+          <div style={{ width: 28, height: 28, border: '2.5px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
         </div>
       )}
 
       {!loading && error && (
-        <div style={{ background: 'var(--red-light)', borderRadius: 14, padding: '16px 22px', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ display: 'inline-flex' }}><AlertTriangle size={16} strokeWidth={2} /></span><span style={{ fontWeight: 700, color: 'var(--red)', flex: 1 }}>{error}</span>
+        <div style={{ background: 'var(--red-light)', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ display: 'inline-flex' }}><AlertTriangle size={15} strokeWidth={2} /></span><span style={{ fontWeight: 700, color: 'var(--red)', flex: 1, fontSize: 13 }}>{error}</span>
           <button onClick={fetchRecords} style={btnRetry}>{t('actions.retry')}</button>
         </div>
       )}
 
       {!loading && !error && records.length === 0 && (
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: '60px 32px', textAlign: 'center' }}>
-          <div style={{ fontSize: 52, marginBottom: 14, display: 'flex', justifyContent: 'center' }}><CheckCircle2 size={52} strokeWidth={2} /></div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{t('empty_state.title')}</div>
-          <div style={{ fontSize: 16, color: 'var(--text3)' }}>{t('empty_state.description')}</div>
+        <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: '40px 24px', textAlign: 'center' }}>
+          <div style={{ fontSize: 40, marginBottom: 10, display: 'flex', justifyContent: 'center', color: 'var(--text3)' }}><CheckCircle2 size={40} strokeWidth={1.8} /></div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{t('empty_state.title')}</div>
+          <div style={{ fontSize: 13, color: 'var(--text3)' }}>{t('empty_state.description')}</div>
         </div>
       )}
 
       {!loading && !error && records.length > 0 && (
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 800 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
               <thead>
                 <tr>{[
                   t('table_headers.student'),
@@ -373,18 +373,18 @@ export default function SectionDiscipline({ onToast }: Props) {
                         {r.student.firstName} {r.student.lastName}
                       </td>
                       <td style={tdSt}>
-                        <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 13, fontWeight: 800, background: tl.bg, color: tl.color }}>
+                        <span style={{ padding: '3px 8px', borderRadius: 12, fontSize: 11.5, fontWeight: 800, background: tl.bg, color: tl.color }}>
                           {t(`sanction_types.${r.type}`)}
                         </span>
                       </td>
                       <td style={tdSt}>
-                        <span style={{ fontSize: 14, color: 'var(--text2)', maxWidth: 200, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: 12.5, color: 'var(--text2)', maxWidth: 180, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {r.reason}
                         </span>
                       </td>
                       <td style={tdSt}>{new Date(r.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' })}</td>
                       <td style={tdSt}>
-                        <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 13, fontWeight: 800, background: sb.bg, color: sb.color }}>
+                        <span style={{ padding: '3px 8px', borderRadius: 12, fontSize: 11.5, fontWeight: 800, background: sb.bg, color: sb.color }}>
                           {t(`status_badges.${r.status}`)}
                         </span>
                       </td>
@@ -392,10 +392,10 @@ export default function SectionDiscipline({ onToast }: Props) {
                       <td style={tdSt}>
                         {r.status === 'ACTIVE' && (
                           <button
-                            style={{ padding: '5px 12px', borderRadius: 8, fontSize: 13, fontWeight: 800, background: 'var(--green-light)', color: 'var(--green)', border: '1px solid rgba(5,150,105,0.25)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                            style={{ padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 800, background: 'var(--green-light)', color: 'var(--green)', border: '1px solid rgba(5,150,105,0.25)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4 }}
                             onClick={() => liftSanction(r.id, `${r.student.firstName} ${r.student.lastName}`)}
                             disabled={liftingId === r.id}>
-                            {liftingId === r.id ? <Loader2 size={13} className="animate-spin" /> : t('actions.lift')}
+                            {liftingId === r.id ? <Loader2 size={12} className="animate-spin" /> : t('actions.lift')}
                           </button>
                         )}
                       </td>
@@ -412,17 +412,17 @@ export default function SectionDiscipline({ onToast }: Props) {
       {view === 'council' && (
         <div>
           {councilLoading ? (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
-              <div style={{ width: 32, height: 32, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
+            <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+              <div style={{ width: 28, height: 28, border: '2.5px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
             </div>
           ) : councilSessions.length === 0 ? (
-            <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: '60px 32px', textAlign: 'center' }}>
-              <div style={{ fontSize: 52, marginBottom: 14, display: 'flex', justifyContent: 'center' }}><Gavel size={52} strokeWidth={2} /></div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{t('council.empty_state.title')}</div>
-              <div style={{ fontSize: 16, color: 'var(--text3)' }}>{t('council.empty_state.description')}</div>
+            <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: '40px 24px', textAlign: 'center' }}>
+              <div style={{ fontSize: 40, marginBottom: 10, display: 'flex', justifyContent: 'center', color: 'var(--text3)' }}><Gavel size={40} strokeWidth={1.8} /></div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{t('council.empty_state.title')}</div>
+              <div style={{ fontSize: 13, color: 'var(--text3)' }}>{t('empty_state.description')}</div>
             </div>
           ) : (
-            <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', overflow: 'hidden' }}>
+            <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
                   <thead>
@@ -437,10 +437,10 @@ export default function SectionDiscipline({ onToast }: Props) {
                       return (
                         <tr key={s.id}>
                           <td style={{ ...tdSt, fontWeight: 700, color: 'var(--text)' }}>{s.student.firstName} {s.student.lastName}</td>
-                          <td style={{ ...tdSt, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.motif}</td>
+                          <td style={{ ...tdSt, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.motif}</td>
                           <td style={tdSt}>{new Date(s.scheduledAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
                           <td style={tdSt}>
-                            <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 13, fontWeight: 800, ...(s.status === 'TENU' ? { background: 'var(--green-light)', color: 'var(--green)' } : { background: 'var(--amber-light)', color: 'var(--amber)' }) }}>
+                            <span style={{ padding: '3px 8px', borderRadius: 12, fontSize: 11.5, fontWeight: 800, ...(s.status === 'TENU' ? { background: 'var(--green-light)', color: 'var(--green)' } : { background: 'var(--amber-light)', color: 'var(--amber)' }) }}>
                               {t(`council.status.${s.status}`)}
                             </span>
                           </td>
@@ -448,16 +448,16 @@ export default function SectionDiscipline({ onToast }: Props) {
                           <td style={tdSt}>
                             {s.status === 'CONVOQUE' && (
                               <button
-                                style={{ padding: '5px 12px', borderRadius: 8, fontSize: 13, fontWeight: 800, background: delayOk ? 'var(--purple-light)' : 'var(--bg2)', color: delayOk ? 'var(--purple)' : 'var(--text3)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                                style={{ padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 800, background: delayOk ? 'var(--purple-light)' : 'var(--bg2)', color: delayOk ? 'var(--purple)' : 'var(--text3)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
                                 title={delayOk ? '' : t('council.hint_delay_not_elapsed')}
                                 onClick={() => setTenirForm(f => ({ ...f, open: true, sessionId: s.id }))}>
                                 {t('council.actions.hold')}
                               </button>
                             )}
                             {s.status === 'TENU' && (
-                              <button style={{ padding: '5px 12px', borderRadius: 8, fontSize: 13, fontWeight: 800, background: 'var(--bg2)', color: 'var(--text2)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                              <button style={{ padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 800, background: 'var(--bg2)', color: 'var(--text2)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4 }}
                                 onClick={() => downloadPV(s.id)}>
-                                <Download size={13} /> {t('council.actions.download_pv')}
+                                <Download size={12} /> {t('council.actions.download_pv')}
                               </button>
                             )}
                           </td>
@@ -476,18 +476,18 @@ export default function SectionDiscipline({ onToast }: Props) {
       {form.open && (
         <>
           <div onClick={() => setForm(EMPTY_FORM)} style={{ position: 'fixed', inset: 0, background: 'rgba(26,18,9,0.5)', backdropFilter: 'blur(3px)', zIndex: 200 }} />
-          <div className="px-6 py-6 md:px-10 md:py-9" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 201, background: 'var(--surface)', borderRadius: 20, width: 520, maxWidth: '94vw', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 60px rgba(0,0,0,0.2)' }}>
-            <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 22 }}>{t('modal_title')}</div>
+          <div className="px-5 py-5 md:px-7 md:py-6" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 201, background: 'var(--surface)', borderRadius: 16, width: 500, maxWidth: '94vw', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 50px rgba(0,0,0,0.2)' }}>
+            <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 19, fontWeight: 700, color: 'var(--text)', marginBottom: 16 }}>{t('modal_title')}</div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
               {/* Recherche élève */}
               <div>
                 <label style={labelSt}>{t('form_fields.student_label')}</label>
                 {form.selectedStudent ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--green-light)', borderRadius: 10, border: '1.5px solid rgba(5,150,105,0.3)' }}>
-                    <span style={{ fontWeight: 700, color: 'var(--green)', flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}><Check size={16} strokeWidth={2} /> {form.selectedStudent.firstName} {form.selectedStudent.lastName}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--green-light)', borderRadius: 8, border: '1px solid rgba(5,150,105,0.3)' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--green)', flex: 1, display: 'flex', alignItems: 'center', gap: 5, fontSize: 13 }}><Check size={14} strokeWidth={2} /> {form.selectedStudent.firstName} {form.selectedStudent.lastName}</span>
                     <button onClick={() => setForm(f => ({ ...f, selectedStudent: null, studentSearch: '', studentResults: [] }))}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--green)', fontSize: 16, display: 'inline-flex' }}><X size={16} strokeWidth={2} /></button>
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--green)', fontSize: 14, display: 'inline-flex' }}><X size={14} strokeWidth={2} /></button>
                   </div>
                 ) : (
                   <div style={{ position: 'relative' }}>
@@ -498,11 +498,11 @@ export default function SectionDiscipline({ onToast }: Props) {
                       style={inputSt}
                     />
                     {form.studentResults.length > 0 && (
-                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 10, boxShadow: '0 8px 20px rgba(0,0,0,0.1)', zIndex: 10, overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 6px 16px rgba(0,0,0,0.1)', zIndex: 10, overflow: 'hidden' }}>
                         {form.studentResults.map(s => (
                           <div key={s.id}
                             onClick={() => setForm(f => ({ ...f, selectedStudent: s, studentSearch: '', studentResults: [] }))}
-                            style={{ padding: '10px 14px', fontSize: 15, fontWeight: 600, cursor: 'pointer', color: 'var(--text)', borderBottom: '1px solid var(--bg)' }}
+                            style={{ padding: '8px 12px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: 'var(--text)', borderBottom: '1px solid var(--bg)' }}
                             onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg2)'}
                             onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
                             {s.firstName} {s.lastName}
@@ -521,7 +521,7 @@ export default function SectionDiscipline({ onToast }: Props) {
                   {Object.keys(TYPE_STYLE).map(k => <option key={k} value={k}>{t(`sanction_types.${k}`)}</option>)}
                 </select>
                 {SEVERE_TYPES.includes(form.type) && (
-                  <div style={{ marginTop: 8, padding: '10px 14px', background: 'var(--purple-light)', borderRadius: 9, fontSize: 13, fontWeight: 700, color: 'var(--purple)' }}>
+                  <div style={{ marginTop: 6, padding: '8px 12px', background: 'var(--purple-light)', borderRadius: 8, fontSize: 12, fontWeight: 700, color: 'var(--purple)' }}>
                     {t('validation.severe_requires_council')}
                   </div>
                 )}
@@ -531,13 +531,13 @@ export default function SectionDiscipline({ onToast }: Props) {
               <div>
                 <label style={labelSt}>{t('form_fields.reason_label')}</label>
                 <textarea value={form.reason} onChange={e => setForm(f => ({ ...f, reason: e.target.value }))}
-                  rows={3} placeholder={t('form_fields.reason_placeholder')}
+                  rows={2} placeholder={t('form_fields.reason_placeholder')}
                   style={{ ...inputSt, resize: 'vertical' }} />
               </div>
 
               {/* Dates (exclusions) */}
               {needsDates && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <div>
                     <label style={labelSt}>{t('form_fields.start_date_label')}</label>
                     <input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} style={inputSt} />
@@ -550,12 +550,12 @@ export default function SectionDiscipline({ onToast }: Props) {
               )}
 
               {form.error && (
-                <div style={{ padding: '10px 14px', background: 'var(--red-light)', borderRadius: 9, fontSize: 14, fontWeight: 700, color: 'var(--red)' }}>
+                <div style={{ padding: '8px 12px', background: 'var(--red-light)', borderRadius: 8, fontSize: 13, fontWeight: 700, color: 'var(--red)' }}>
                   {form.error}
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
                 <button style={btnSec} onClick={() => setForm(EMPTY_FORM)}>{t('actions.cancel')}</button>
                 <button style={btnPrim} onClick={submitSanction} disabled={form.loading}>
                   {form.loading ? t('actions.saving') : t('actions.save')}
@@ -570,18 +570,18 @@ export default function SectionDiscipline({ onToast }: Props) {
       {convokeForm.open && (
         <>
           <div onClick={() => setConvokeForm(EMPTY_CONVOKE_FORM)} style={{ position: 'fixed', inset: 0, background: 'rgba(26,18,9,0.5)', backdropFilter: 'blur(3px)', zIndex: 200 }} />
-          <div className="px-6 py-6 md:px-10 md:py-9" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 201, background: 'var(--surface)', borderRadius: 20, width: 560, maxWidth: '94vw', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 60px rgba(0,0,0,0.2)' }}>
-            <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>{t('council.convoke_modal_title')}</div>
-            <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 22 }}>{t('council.convoke_modal_hint')}</div>
+          <div className="px-5 py-5 md:px-7 md:py-6" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 201, background: 'var(--surface)', borderRadius: 16, width: 540, maxWidth: '94vw', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 50px rgba(0,0,0,0.2)' }}>
+            <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 19, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{t('council.convoke_modal_title')}</div>
+            <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 16 }}>{t('council.convoke_modal_hint')}</div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
               <div>
                 <label style={labelSt}>{t('form_fields.student_label')}</label>
                 {convokeForm.selectedStudent ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--green-light)', borderRadius: 10, border: '1.5px solid rgba(5,150,105,0.3)' }}>
-                    <span style={{ fontWeight: 700, color: 'var(--green)', flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}><Check size={16} strokeWidth={2} /> {convokeForm.selectedStudent.firstName} {convokeForm.selectedStudent.lastName}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--green-light)', borderRadius: 8, border: '1px solid rgba(5,150,105,0.3)' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--green)', flex: 1, display: 'flex', alignItems: 'center', gap: 5, fontSize: 13 }}><Check size={14} strokeWidth={2} /> {convokeForm.selectedStudent.firstName} {convokeForm.selectedStudent.lastName}</span>
                     <button onClick={() => setConvokeForm(f => ({ ...f, selectedStudent: null, studentSearch: '', studentResults: [] }))}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--green)', display: 'inline-flex' }}><X size={16} strokeWidth={2} /></button>
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--green)', display: 'inline-flex' }}><X size={14} strokeWidth={2} /></button>
                   </div>
                 ) : (
                   <div style={{ position: 'relative' }}>
@@ -589,10 +589,10 @@ export default function SectionDiscipline({ onToast }: Props) {
                       onChange={e => { setConvokeForm(f => ({ ...f, studentSearch: e.target.value })); searchConvokeStudents(e.target.value) }}
                       placeholder={t('form_fields.student_placeholder')} style={inputSt} />
                     {convokeForm.studentResults.length > 0 && (
-                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 10, boxShadow: '0 8px 20px rgba(0,0,0,0.1)', zIndex: 10, overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 6px 16px rgba(0,0,0,0.1)', zIndex: 10, overflow: 'hidden' }}>
                         {convokeForm.studentResults.map(s => (
                           <div key={s.id} onClick={() => setConvokeForm(f => ({ ...f, selectedStudent: s, studentSearch: '', studentResults: [] }))}
-                            style={{ padding: '10px 14px', fontSize: 15, fontWeight: 600, cursor: 'pointer', color: 'var(--text)', borderBottom: '1px solid var(--bg)' }}>
+                            style={{ padding: '8px 12px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: 'var(--text)', borderBottom: '1px solid var(--bg)' }}>
                             {s.firstName} {s.lastName}
                           </div>
                         ))}
@@ -611,12 +611,12 @@ export default function SectionDiscipline({ onToast }: Props) {
               <div>
                 <label style={labelSt}>{t('council.form_fields.scheduled_label')}</label>
                 <input type="datetime-local" value={convokeForm.scheduledAt} onChange={e => setConvokeForm(f => ({ ...f, scheduledAt: e.target.value }))} style={inputSt} />
-                <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>{t('council.form_fields.scheduled_hint')}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 3 }}>{t('council.form_fields.scheduled_hint')}</div>
               </div>
 
               <div>
                 <label style={labelSt}>{t('council.form_fields.composition_label')}</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   {(Object.keys(EMPTY_COMPOSITION) as (keyof Composition)[]).map(role => (
                     <input key={role} value={convokeForm.composition[role]}
                       onChange={e => setConvokeForm(f => ({ ...f, composition: { ...f.composition, [role]: e.target.value } }))}
@@ -626,10 +626,10 @@ export default function SectionDiscipline({ onToast }: Props) {
               </div>
 
               {convokeForm.error && (
-                <div style={{ padding: '10px 14px', background: 'var(--red-light)', borderRadius: 9, fontSize: 14, fontWeight: 700, color: 'var(--red)' }}>{convokeForm.error}</div>
+                <div style={{ padding: '8px 12px', background: 'var(--red-light)', borderRadius: 8, fontSize: 13, fontWeight: 700, color: 'var(--red)' }}>{convokeForm.error}</div>
               )}
 
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
                 <button style={btnSec} onClick={() => setConvokeForm(EMPTY_CONVOKE_FORM)}>{t('actions.cancel')}</button>
                 <button style={btnPrim} onClick={submitConvoke} disabled={convokeForm.loading}>
                   {convokeForm.loading ? t('actions.saving') : t('council.actions.convoke')}
@@ -644,10 +644,10 @@ export default function SectionDiscipline({ onToast }: Props) {
       {tenirForm.open && (
         <>
           <div onClick={() => setTenirForm(EMPTY_TENIR_FORM)} style={{ position: 'fixed', inset: 0, background: 'rgba(26,18,9,0.5)', backdropFilter: 'blur(3px)', zIndex: 200 }} />
-          <div className="px-6 py-6 md:px-10 md:py-9" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 201, background: 'var(--surface)', borderRadius: 20, width: 480, maxWidth: '94vw', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 60px rgba(0,0,0,0.2)' }}>
-            <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 22 }}>{t('council.tenir_modal_title')}</div>
+          <div className="px-5 py-5 md:px-7 md:py-6" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 201, background: 'var(--surface)', borderRadius: 16, width: 480, maxWidth: '94vw', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 50px rgba(0,0,0,0.2)' }}>
+            <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 19, fontWeight: 700, color: 'var(--text)', marginBottom: 16 }}>{t('council.tenir_modal_title')}</div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
               <div>
                 <label style={labelSt}>{t('council.form_fields.decision_label')}</label>
                 <select value={tenirForm.decision} onChange={e => setTenirForm(f => ({ ...f, decision: e.target.value }))} style={inputSt}>
@@ -659,14 +659,14 @@ export default function SectionDiscipline({ onToast }: Props) {
               <div>
                 <label style={labelSt}>{t('council.form_fields.pv_label')}</label>
                 <textarea value={tenirForm.pv} onChange={e => setTenirForm(f => ({ ...f, pv: e.target.value }))}
-                  rows={5} placeholder={t('council.form_fields.pv_placeholder')} style={{ ...inputSt, resize: 'vertical' }} />
+                  rows={4} placeholder={t('council.form_fields.pv_placeholder')} style={{ ...inputSt, resize: 'vertical' }} />
               </div>
 
               {tenirForm.error && (
-                <div style={{ padding: '10px 14px', background: 'var(--red-light)', borderRadius: 9, fontSize: 14, fontWeight: 700, color: 'var(--red)' }}>{tenirForm.error}</div>
+                <div style={{ padding: '8px 12px', background: 'var(--red-light)', borderRadius: 8, fontSize: 13, fontWeight: 700, color: 'var(--red)' }}>{tenirForm.error}</div>
               )}
 
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
                 <button style={btnSec} onClick={() => setTenirForm(EMPTY_TENIR_FORM)}>{t('actions.cancel')}</button>
                 <button style={btnPrim} onClick={submitTenir} disabled={tenirForm.loading}>
                   {tenirForm.loading ? t('actions.saving') : t('council.actions.hold')}
@@ -680,15 +680,16 @@ export default function SectionDiscipline({ onToast }: Props) {
   )
 }
 
-const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 28, fontWeight: 700, color: 'var(--text)' }
-const sSub: React.CSSProperties = { fontSize: 17, color: 'var(--text3)', marginTop: 3 }
-const btnPrim: React.CSSProperties = { padding: '10px 20px', borderRadius: 11, fontSize: 16, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
-const btnSec: React.CSSProperties = { padding: '8px 16px', borderRadius: 10, fontSize: 15, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
-const btnRetry: React.CSSProperties = { padding: '6px 14px', borderRadius: 8, background: 'var(--surface)', color: 'var(--red)', border: '1.5px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }
-const filterSt: React.CSSProperties = { background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 10, padding: '8px 12px', fontSize: 15, fontWeight: 700, color: 'var(--text2)', outline: 'none', fontFamily: 'inherit' }
-const tabSt: React.CSSProperties = { padding: '8px 18px', borderRadius: 10, fontSize: 14, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
-const tabActiveSt: React.CSSProperties = { ...tabSt, background: 'var(--green)', color: 'white', border: 'none' }
-const inputSt: React.CSSProperties = { width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--border)', fontSize: 15, fontFamily: 'inherit', color: 'var(--text)', outline: 'none', background: 'var(--bg)', boxSizing: 'border-box' }
-const labelSt: React.CSSProperties = { display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text2)', marginBottom: 7, textTransform: 'uppercase', letterSpacing: '0.5px' }
-const thSt: React.CSSProperties = { padding: '11px 14px', textAlign: 'left', fontSize: 12, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.7px', whiteSpace: 'nowrap' }
-const tdSt: React.CSSProperties = { padding: '12px 14px', fontSize: 15, color: 'var(--text2)', borderBottom: '1px solid var(--bg)', verticalAlign: 'middle' }
+const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }
+const sSub: React.CSSProperties = { fontSize: 12.5, color: 'var(--text3)', marginTop: 2 }
+const btnPrim: React.CSSProperties = { padding: '7px 15px', borderRadius: 8, fontSize: 13, fontWeight: 700, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+const btnSec: React.CSSProperties = { padding: '6px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }
+const btnRetry: React.CSSProperties = { padding: '5px 12px', borderRadius: 6, background: 'var(--surface)', color: 'var(--red)', border: '1px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 12 }
+const filterSt: React.CSSProperties = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 10px', fontSize: 12.5, fontWeight: 600, color: 'var(--text2)', outline: 'none', fontFamily: 'inherit' }
+const tabSt: React.CSSProperties = { padding: '6px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }
+const tabActiveSt: React.CSSProperties = { ...tabSt, background: 'var(--green)', color: 'white', border: '1px solid var(--green)' }
+const inputSt: React.CSSProperties = { width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, fontFamily: 'inherit', color: 'var(--text)', outline: 'none', background: 'var(--bg)', boxSizing: 'border-box' }
+const labelSt: React.CSSProperties = { display: 'block', fontSize: 11.5, fontWeight: 700, color: 'var(--text2)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.4px' }
+const thSt: React.CSSProperties = { padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.6px', whiteSpace: 'nowrap' }
+const tdSt: React.CSSProperties = { padding: '9px 12px', fontSize: 13, color: 'var(--text2)', borderBottom: '1px solid var(--border)', verticalAlign: 'middle' }
+

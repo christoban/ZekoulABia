@@ -204,7 +204,7 @@ export default function StaffDashboard() {
           {section === 'mon-profil-rh' && <SectionMonProfilRH onToast={showToast} />}
           {section === 'notifications' && <NotificationCenter />}
           {section === 'sync-offline' && <SectionOfflineStatus onToast={showToast} namespace="staff" />}
-          {section === 'babillard' && <Babillard role={sessionUser?.role ?? 'STAFF'} title={tnav('sidebar.babillard')} subtitle={tnav('group.communication')} />}
+          {section === 'babillard' && <Babillard role={sessionUser?.role ?? 'STAFF'} title={tnav('sidebar.babillard')} subtitle={tnav('group.communication')} currentUserId={sessionUser?.userId} />}
           {section === 'messagerie' && <Messagerie />}
           {section === 'moderation-messagerie' && <SectionModerationMessagerie onToast={showToast} />}
 

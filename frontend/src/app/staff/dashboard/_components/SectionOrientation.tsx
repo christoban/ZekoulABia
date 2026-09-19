@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
@@ -810,7 +810,7 @@ export default function SectionOrientation({ onToast }: Props) {
     const b = map[value] ?? { bg: 'var(--bg2)', color: 'var(--text3)' }
     const lbl = labelMap?.[value] ? t(`orientation.${labelMap[value]}`) : value
     return (
-      <span style={{ background: b.bg, color: b.color, borderRadius: 8, padding: '3px 10px', fontSize: 13, fontWeight: 700 }}>
+      <span style={{ background: b.bg, color: b.color, borderRadius: 6, padding: '2px 8px', fontSize: 11.5, fontWeight: 600 }}>
         {lbl}
       </span>
     )
@@ -819,7 +819,7 @@ export default function SectionOrientation({ onToast }: Props) {
   function ModalOverlay({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
     return (
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div onClick={e => e.stopPropagation()} className="px-5 py-6 md:px-9 md:py-8" style={{ background: 'var(--surface)', borderRadius: 18, width: 520, maxWidth: '94vw', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
+        <div onClick={e => e.stopPropagation()} className="px-4 py-4 md:px-6 md:py-5" style={{ background: 'var(--surface)', borderRadius: 14, width: 480, maxWidth: '94vw', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 16px 40px rgba(0,0,0,0.14)' }}>
           {children}
         </div>
       </div>
@@ -835,26 +835,26 @@ export default function SectionOrientation({ onToast }: Props) {
     return (
       <>
         {/* En-tête */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 26 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
           <div>
             <div style={sTitle}>{t('orientation.title')}</div>
             <div style={sSub}>{t('orientation.subtitle')}</div>
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 8 }}>
             <button style={btnSec} onClick={() => setView('checkpoints')}>{t('orientation.checkpointsButton')}</button>
             <button style={btnPrim} onClick={() => setNewFicheOpen(true)}>{t('orientation.newFiche')}</button>
           </div>
         </div>
 
         {!isOnline && (
-          <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 12, padding: '12px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ display: 'flex', alignItems: 'center' }}><WifiOff size={18} strokeWidth={2} /></span>
-            <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--amber)' }}>Mode hors-ligne — les nouvelles fiches/entretiens/tests/suivis seront synchronisés à la reconnexion</span>
+          <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 10, padding: '9px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ display: 'flex', alignItems: 'center' }}><WifiOff size={16} strokeWidth={2} /></span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--amber)' }}>Mode hors-ligne — les nouvelles fiches/entretiens/tests/suivis seront synchronisés à la reconnexion</span>
           </div>
         )}
 
         {/* Filtre année + risque */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 22, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
           {years.length > 0 && (
             <select value={selectedYear} onChange={e => setSelectedYear(e.target.value)} style={sSelect}>
               {years.map(y => <option key={y.id} value={y.id}>{y.label}</option>)}
@@ -877,36 +877,36 @@ export default function SectionOrientation({ onToast }: Props) {
         </div>
 
         {/* KPIs */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 16, marginBottom: 26 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 12, marginBottom: 18 }}>
           {[
-            { icon: <ClipboardList size={20} strokeWidth={2} />, bg: 'var(--green-light)', color: 'var(--green)', val: loadingStats ? '…' : String(stats?.fichesOuvertes ?? 0),            label: t('orientation.kpiOpenFiches')          },
-            { icon: <Circle size={20} fill="var(--red)" stroke="none" />, bg: 'var(--red-light)', color: 'var(--red)', val: loadingStats ? '…' : String((stats?.elevesArisqueEleve ?? 0) + (stats?.elevesArisqueCritique ?? 0)), label: t('orientation.kpiAtRisk') },
-            { icon: <Calendar size={20} strokeWidth={2} />, bg: 'var(--blue-light)', color: 'var(--blue)', val: loadingStats ? '…' : String(stats?.entretiensThisMois ?? 0),        label: t('orientation.kpiInterviewsThisMonth') },
-            { icon: <GraduationCap size={20} strokeWidth={2} />, bg: 'var(--purple-light)', color: 'var(--purple)', val: loadingStats ? '…' : String(stats?.recommandationsEnAttente ?? 0),  label: t('orientation.kpiPendingRecommendations')},
+            { icon: <ClipboardList size={16} strokeWidth={2} />, bg: 'var(--green-light)', color: 'var(--green)', val: loadingStats ? '…' : String(stats?.fichesOuvertes ?? 0),            label: t('orientation.kpiOpenFiches')          },
+            { icon: <Circle size={16} fill="var(--red)" stroke="none" />, bg: 'var(--red-light)', color: 'var(--red)', val: loadingStats ? '…' : String((stats?.elevesArisqueEleve ?? 0) + (stats?.elevesArisqueCritique ?? 0)), label: t('orientation.kpiAtRisk') },
+            { icon: <Calendar size={16} strokeWidth={2} />, bg: 'var(--blue-light)', color: 'var(--blue)', val: loadingStats ? '…' : String(stats?.entretiensThisMois ?? 0),        label: t('orientation.kpiInterviewsThisMonth') },
+            { icon: <GraduationCap size={16} strokeWidth={2} />, bg: 'var(--purple-light)', color: 'var(--purple)', val: loadingStats ? '…' : String(stats?.recommandationsEnAttente ?? 0),  label: t('orientation.kpiPendingRecommendations')},
           ].map((s, i) => (
-            <div key={i} style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: '20px 24px' }}>
-              <div style={{ width: 44, height: 44, borderRadius: 11, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, marginBottom: 12 }}>{s.icon}</div>
-              <div style={{ fontSize: 30, fontWeight: 900, color: s.color }}>{s.val}</div>
-              <div style={{ fontSize: 14, color: 'var(--text3)', marginTop: 4, fontWeight: 600 }}>{s.label}</div>
+            <div key={i} style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: '10px 14px' }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>{s.icon}</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: s.color }}>{s.val}</div>
+              <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 2, fontWeight: 600 }}>{s.label}</div>
             </div>
           ))}
         </div>
 
         {/* Tableau */}
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', overflow: 'hidden' }}>
-          <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--text)' }}>{t('orientation.studentsMonitored')}</span>
-            <span style={{ fontSize: 14, color: 'var(--text3)' }}>{t('orientation.totalFiches')}</span>
+        <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
+          <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text)' }}>{t('orientation.studentsMonitored')}</span>
+            <span style={{ fontSize: 12, color: 'var(--text3)' }}>{t('orientation.totalFiches')}</span>
           </div>
 
           {loadingList ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text3)' }}>{t('orientation.loadingFiches')}</div>
+            <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>{t('orientation.loadingFiches')}</div>
           ) : error ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--red)' }}>{error}</div>
+            <div style={{ padding: '32px', textAlign: 'center', color: 'var(--red)', fontSize: 13 }}>{error}</div>
           ) : fiches.length === 0 ? (
-            <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text3)' }}>
-              <div style={{ fontSize: 40, marginBottom: 12, display: 'flex', justifyContent: 'center' }}><Compass size={40} strokeWidth={2} /></div>
-              <div style={{ fontSize: 16 }}>{t('orientation.noFichesForFilters')}</div>
+            <div style={{ padding: '36px', textAlign: 'center', color: 'var(--text3)' }}>
+              <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><Compass size={32} strokeWidth={1.75} /></div>
+              <div style={{ fontSize: 13.5 }}>{t('orientation.noFichesForFilters')}</div>
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
@@ -922,35 +922,35 @@ export default function SectionOrientation({ onToast }: Props) {
                       t('orientation.tableHeaderUpdated'),
                       t('orientation.tableHeaderActions'),
                     ].map(h => (
-                      <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 13, fontWeight: 700, color: 'var(--text3)', borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' }}>{h}</th>
+                      <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text3)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {fiches.map(f => (
                     <tr key={f.id} style={{ borderBottom: '1px solid var(--bg2)' }}>
-                      <td style={{ padding: '12px 16px', fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
+                      <td style={{ padding: '8px 12px', fontSize: 12.5, fontWeight: 600, color: 'var(--text)' }}>
                         {f.student.firstName} {f.student.lastName}
                       </td>
-                      <td style={{ padding: '12px 16px', fontSize: 14, color: 'var(--text3)' }}>
+                      <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text3)' }}>
                         {f.student.studentProfile?.class?.name ?? '—'}
                       </td>
-                      <td style={{ padding: '12px 16px' }}>
+                      <td style={{ padding: '8px 12px' }}>
                         <Badge value={f.riskLevel} map={RISK_STYLE} labelMap={RISK_LABEL_KEY} />
                       </td>
-                      <td style={{ padding: '12px 16px' }}>
+                      <td style={{ padding: '8px 12px' }}>
                         <Badge value={f.status} map={STATUS_STYLE} labelMap={STATUS_LABEL_KEY} />
                       </td>
-                      <td style={{ padding: '12px 16px', fontSize: 14, color: 'var(--text3)', textAlign: 'center' }}>
+                      <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text3)', textAlign: 'center' }}>
                         {f._count.entretiens}
                       </td>
-                      <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text3)' }}>
+                      <td style={{ padding: '8px 12px', fontSize: 11.5, color: 'var(--text3)' }}>
                         {fmt(f.updatedAt)}
                       </td>
-                      <td style={{ padding: '12px 16px' }}>
+                      <td style={{ padding: '8px 12px' }}>
                         <button
                           onClick={() => openFiche(f.id)}
-                          style={{ padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer' }}
+                          style={{ padding: '4px 10px', borderRadius: 6, fontSize: 11.5, fontWeight: 600, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer' }}
                         >
                           {t('orientation.viewFiche')}
                         </button>
@@ -963,10 +963,10 @@ export default function SectionOrientation({ onToast }: Props) {
           )}
 
           {pages > 1 && (
-            <div style={{ padding: '14px 24px', display: 'flex', gap: 8, justifyContent: 'center' }}>
+            <div style={{ padding: '10px 14px', display: 'flex', gap: 6, justifyContent: 'center' }}>
               {Array.from({ length: pages }, (_, i) => i + 1).map(p => (
                 <button key={p} onClick={() => { setPage(p); fetchFiches(p) }}
-                  style={{ padding: '6px 12px', borderRadius: 8, fontSize: 13, fontWeight: 700, border: '1.5px solid', borderColor: p === page ? 'var(--green)' : 'var(--border)', background: p === page ? 'var(--green)' : 'white', color: p === page ? 'white' : 'var(--text3)', cursor: 'pointer' }}>
+                  style={{ padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: '1px solid', borderColor: p === page ? 'var(--green)' : 'var(--border)', background: p === page ? 'var(--green)' : 'white', color: p === page ? 'white' : 'var(--text3)', cursor: 'pointer' }}>
                   {p}
                 </button>
               ))}
@@ -983,7 +983,7 @@ export default function SectionOrientation({ onToast }: Props) {
 
   function ViewFiche() {
     if (loadingFiche || !selectedFiche) {
-      return <div style={{ padding: 60, textAlign: 'center', color: 'var(--text3)' }}>{t('orientation.loadingFiches')}</div>
+      return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>{t('orientation.loadingFiches')}</div>
     }
     const f = selectedFiche
     const nomEleve = `${f.student.firstName} ${f.student.lastName}`
@@ -992,11 +992,11 @@ export default function SectionOrientation({ onToast }: Props) {
     return (
       <>
         {/* Retour + en-tête */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 22 }}>
-          <button onClick={() => setView('dashboard')} style={{ ...btnSec, padding: '8px 14px', fontSize: 14 }}>{t('orientation.backToDashboard')}</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          <button onClick={() => setView('dashboard')} style={{ ...btnSec, padding: '5px 11px', fontSize: 12 }}>{t('orientation.backToDashboard')}</button>
           <div>
             <div style={sTitle}>{nomEleve}</div>
-            <div style={{ ...sSub, display: 'flex', gap: 10, alignItems: 'center', marginTop: 4 }}>
+            <div style={{ ...sSub, display: 'flex', gap: 8, alignItems: 'center', marginTop: 2 }}>
               <span>{classe}</span>
               <Badge value={f.riskLevel} map={RISK_STYLE} labelMap={RISK_LABEL_KEY} />
               <Badge value={f.status} map={STATUS_STYLE} labelMap={STATUS_LABEL_KEY} />
@@ -1005,14 +1005,14 @@ export default function SectionOrientation({ onToast }: Props) {
         </div>
 
         {!isOnline && (
-          <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 12, padding: '12px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ display: 'flex', alignItems: 'center' }}><WifiOff size={18} strokeWidth={2} /></span>
-            <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--amber)' }}>Mode hors-ligne — les ajouts seront synchronisés à la reconnexion</span>
+          <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 10, padding: '9px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ display: 'flex', alignItems: 'center' }}><WifiOff size={16} strokeWidth={2} /></span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--amber)' }}>Mode hors-ligne — les ajouts seront synchronisés à la reconnexion</span>
           </div>
         )}
 
         {/* Onglets */}
-        <div style={{ display: 'flex', gap: 4, marginBottom: 22, borderBottom: '2px solid var(--border)', paddingBottom: 0 }}>
+        <div style={{ display: 'flex', gap: 4, marginBottom: 16, borderBottom: '1px solid var(--border)', paddingBottom: 0 }}>
           {([
             { key: 'entretiens', label: t('orientation.tabInterviews'), count: f.entretiens.length },
             { key: 'tests',      label: t('orientation.tabTests'),       count: f.tests.length },
@@ -1021,13 +1021,13 @@ export default function SectionOrientation({ onToast }: Props) {
           ] as const).map(tab => (
             <button key={tab.key} onClick={() => setFicheTab(tab.key)}
               style={{
-                padding: '10px 18px', borderRadius: '10px 10px 0 0', fontSize: 14, fontWeight: 700, cursor: 'pointer', border: 'none',
+                padding: '7px 14px', borderRadius: '8px 8px 0 0', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', border: 'none',
                 background: ficheTab === tab.key ? 'var(--green)' : 'transparent',
                 color: ficheTab === tab.key ? 'white' : 'var(--text3)',
                 borderBottom: ficheTab === tab.key ? '2px solid var(--green)' : '2px solid transparent',
-                marginBottom: -2,
+                marginBottom: -1,
               }}>
-              {tab.label} {tab.count > 0 && <span style={{ marginLeft: 6, background: ficheTab === tab.key ? 'rgba(255,255,255,0.3)' : 'var(--border)', borderRadius: 99, padding: '1px 8px', fontSize: 12 }}>{tab.count}</span>}
+              {tab.label} {tab.count > 0 && <span style={{ marginLeft: 5, background: ficheTab === tab.key ? 'rgba(255,255,255,0.3)' : 'var(--border)', borderRadius: 99, padding: '1px 6px', fontSize: 11 }}>{tab.count}</span>}
             </button>
           ))}
         </div>
@@ -1035,38 +1035,38 @@ export default function SectionOrientation({ onToast }: Props) {
         {/* Tab: Entretiens */}
         {ficheTab === 'entretiens' && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
               <button style={btnPrim} onClick={() => setEntretienOpen(true)}>{t('orientation.planInterview')}</button>
             </div>
             {f.entretiens.length === 0 ? (
-              <EmptyState icon={<ClipboardList size={36} strokeWidth={2} />} text={t('orientation.noInterviews')} />
+              <EmptyState icon={<ClipboardList size={30} strokeWidth={1.75} />} text={t('orientation.noInterviews')} />
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {f.entretiens.map(e => (
-                  <div key={e.id} style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 14, padding: '18px 22px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                  <div key={e.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
                       <div>
-                        <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)' }}>{fmt(e.date)}</span>
-                        <span style={{ marginLeft: 10, fontSize: 13, color: 'var(--text3)' }}>{e.type.replace('_', ' ')} · {e.motif.replace(/_/g, ' ')}</span>
+                        <span style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text)' }}>{fmt(e.date)}</span>
+                        <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--text3)' }}>{e.type.replace('_', ' ')} · {e.motif.replace(/_/g, ' ')}</span>
                       </div>
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                        {e.parentNotified && <span style={{ fontSize: 12, color: 'var(--green)', fontWeight: 700 }}>{t('orientation.parentNotifiedBadge')}</span>}
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                        {e.parentNotified && <span style={{ fontSize: 11.5, color: 'var(--green)', fontWeight: 600 }}>{t('orientation.parentNotifiedBadge')}</span>}
                         <span style={{
                           background: e.status === 'REALISE' ? 'var(--green-light)' : e.status === 'ANNULE' ? 'var(--red-light)' : 'var(--amber-light)',
                           color: e.status === 'REALISE' ? 'var(--green)' : e.status === 'ANNULE' ? 'var(--red)' : 'var(--amber)',
-                          borderRadius: 8, padding: '3px 10px', fontSize: 12, fontWeight: 700,
+                          borderRadius: 6, padding: '2px 8px', fontSize: 11.5, fontWeight: 600,
                         }}>{ENTRETIEN_STATUS_LABEL_KEY[e.status] ? t(`orientation.${ENTRETIEN_STATUS_LABEL_KEY[e.status]}`) : e.status}</span>
                         {canEditEnt && (
-                          <button onClick={() => openEditEntretien(e)} style={{ ...btnSec, fontSize: 12, padding: '4px 10px' }}>{t('orientation.modifyRecommendation')}</button>
+                          <button onClick={() => openEditEntretien(e)} style={{ ...btnSec, fontSize: 11.5, padding: '3px 8px' }}>{t('orientation.modifyRecommendation')}</button>
                         )}
                         {e.status === 'PLANIFIE' && (
-                          <button onClick={() => marquerRealise(e.id)} style={{ ...btnSec, fontSize: 12, padding: '4px 10px' }}>{t('orientation.markRealised')}</button>
+                          <button onClick={() => marquerRealise(e.id)} style={{ ...btnSec, fontSize: 11.5, padding: '3px 8px' }}>{t('orientation.markRealised')}</button>
                         )}
                       </div>
                     </div>
-                    {e.notes && <p style={{ fontSize: 14, color: 'var(--text3)', marginTop: 6, lineHeight: 1.6 }}><strong>{t('orientation.notesLabel')}</strong> {e.notes}</p>}
-                    {e.recommendations && <p style={{ fontSize: 14, color: 'var(--text3)', marginTop: 4, lineHeight: 1.6 }}><strong>{t('orientation.recommendationsLabel')}</strong> {e.recommendations}</p>}
-                    {e.followUpDate && <p style={{ fontSize: 13, color: 'var(--text3)', marginTop: 6 }}>{t('orientation.nextAppointment')}</p>}
+                    {e.notes && <p style={{ fontSize: 12.5, color: 'var(--text3)', marginTop: 4, lineHeight: 1.5 }}><strong>{t('orientation.notesLabel')}</strong> {e.notes}</p>}
+                    {e.recommendations && <p style={{ fontSize: 12.5, color: 'var(--text3)', marginTop: 3, lineHeight: 1.5 }}><strong>{t('orientation.recommendationsLabel')}</strong> {e.recommendations}</p>}
+                    {e.followUpDate && <p style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>{t('orientation.nextAppointment')}</p>}
                   </div>
                 ))}
               </div>
@@ -1077,26 +1077,26 @@ export default function SectionOrientation({ onToast }: Props) {
         {/* Tab: Tests */}
         {ficheTab === 'tests' && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
               <button style={btnPrim} onClick={() => setTestOpen(true)}>{t('orientation.addTest')}</button>
             </div>
             {f.tests.length === 0 ? (
-              <EmptyState icon={<FlaskConical size={36} strokeWidth={2} />} text={t('orientation.noTests')} />
+              <EmptyState icon={<FlaskConical size={30} strokeWidth={1.75} />} text={t('orientation.noTests')} />
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {f.tests.map(test => (
-                  <div key={test.id} style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 14, padding: '18px 22px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                      <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)' }}>{test.type.replace(/_/g, ' ')}</span>
-                      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <div key={test.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <span style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text)' }}>{test.type.replace(/_/g, ' ')}</span>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         {test.scoreGlobal != null && (
-                          <span style={{ background: 'var(--green-light)', color: 'var(--green)', borderRadius: 8, padding: '3px 10px', fontSize: 13, fontWeight: 700 }}>{test.scoreGlobal}/100</span>
+                          <span style={{ background: 'var(--green-light)', color: 'var(--green)', borderRadius: 6, padding: '2px 8px', fontSize: 12, fontWeight: 700 }}>{test.scoreGlobal}/100</span>
                         )}
-                        <span style={{ fontSize: 13, color: 'var(--text3)' }}>{fmt(test.datePassage)}</span>
+                        <span style={{ fontSize: 12, color: 'var(--text3)' }}>{fmt(test.datePassage)}</span>
                       </div>
                     </div>
-                    <p style={{ fontSize: 14, color: 'var(--text3)', lineHeight: 1.6 }}><strong>{t('orientation.resultsLabel')}</strong> {test.resultats}</p>
-                    {test.interpretation && <p style={{ fontSize: 14, color: 'var(--text3)', marginTop: 4, lineHeight: 1.6 }}><strong>{t('orientation.interpretationLabel')}</strong> {test.interpretation}</p>}
+                    <p style={{ fontSize: 12.5, color: 'var(--text3)', lineHeight: 1.5 }}><strong>{t('orientation.resultsLabel')}</strong> {test.resultats}</p>
+                    {test.interpretation && <p style={{ fontSize: 12.5, color: 'var(--text3)', marginTop: 3, lineHeight: 1.5 }}><strong>{t('orientation.interpretationLabel')}</strong> {test.interpretation}</p>}
                   </div>
                 ))}
               </div>
@@ -1108,18 +1108,18 @@ export default function SectionOrientation({ onToast }: Props) {
         {ficheTab === 'serie' && (
           <div>
             {!f.recommandation?.checkpointType && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
                 <button style={btnPrim} onClick={() => setRecoOpen(true)}>
                   {f.recommandation ? t('orientation.modifyRecommendation') : t('orientation.createRecommendation')}
                 </button>
               </div>
             )}
             {!f.recommandation ? (
-              <EmptyState icon={<GraduationCap size={36} strokeWidth={2} />} text={t('orientation.noRecommendation')} />
+              <EmptyState icon={<GraduationCap size={30} strokeWidth={1.75} />} text={t('orientation.noRecommendation')} />
             ) : f.recommandation.checkpointType ? (
-              <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 14, padding: '24px 28px' }}>
-                <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 18, flexWrap: 'wrap' }}>
-                  <span style={{ background: 'var(--bg2)', color: 'var(--text2)', borderRadius: 8, padding: '4px 12px', fontSize: 13, fontWeight: 700 }}>
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 18px' }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14, flexWrap: 'wrap' }}>
+                  <span style={{ background: 'var(--bg2)', color: 'var(--text2)', borderRadius: 6, padding: '3px 10px', fontSize: 12, fontWeight: 600 }}>
                     {t(`orientation.${CHECKPOINT_TYPE_LABEL_KEY[f.recommandation.checkpointType] ?? f.recommandation.checkpointType}`)}
                   </span>
                   <Badge value={f.recommandation.status} map={CHECKPOINT_STATUS_STYLE} labelMap={CHECKPOINT_STATUS_LABEL_KEY} />
@@ -1128,66 +1128,71 @@ export default function SectionOrientation({ onToast }: Props) {
                   )}
                 </div>
 
-                <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 700, marginBottom: 10 }}>{t('orientation.checkpointSuggestedTracks')}</div>
-                <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+                <div style={{ fontSize: 11.5, color: 'var(--text3)', fontWeight: 700, marginBottom: 8 }}>{t('orientation.checkpointSuggestedTracks')}</div>
+                <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
                   {(f.recommandation.suggestedTracks ?? []).map(st => (
                     <div key={st.track} style={{
-                      border: `1.5px solid ${st.track === f.recommandation!.serieRecommandee ? 'var(--green)' : 'var(--border)'}`,
-                      borderRadius: 12, padding: '14px 18px', minWidth: 140,
+                      border: `1px solid ${st.track === f.recommandation!.serieRecommandee ? 'var(--green)' : 'var(--border)'}`,
+                      borderRadius: 10, padding: '10px 14px', minWidth: 120,
                       background: st.track === f.recommandation!.serieRecommandee ? 'var(--green-light)' : 'var(--bg)',
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                        <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)' }}>{st.track}</span>
-                        <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--green)' }}>{st.score}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>{st.track}</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--green)' }}>{st.score}</span>
                       </div>
-                      <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.5 }}>{st.justification}</div>
+                      <div style={{ fontSize: 11.5, color: 'var(--text3)', lineHeight: 1.4 }}>{st.justification}</div>
                     </div>
                   ))}
                 </div>
 
                 {f.recommandation.finalTrack ? (
-                  <div style={{ background: 'var(--green-light)', borderRadius: 10, padding: '14px 18px', marginBottom: 12 }}>
-                    <div style={{ fontSize: 12, color: 'var(--green)', fontWeight: 700, marginBottom: 4 }}>{t('orientation.checkpointFinalTrack')}</div>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--green)' }}>{f.recommandation.finalTrack}</div>
+                  <div style={{ background: 'var(--green-light)', borderRadius: 8, padding: '10px 14px', marginBottom: 10 }}>
+                    <div style={{ fontSize: 11.5, color: 'var(--green)', fontWeight: 700, marginBottom: 2 }}>{t('orientation.checkpointFinalTrack')}</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--green)' }}>{f.recommandation.finalTrack}</div>
                     {f.recommandation.status === 'VALIDEE_PAR_DEFAUT' && (
-                      <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>{t('orientation.checkpointDefaultNote')}</div>
+                      <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 3 }}>{t('orientation.checkpointDefaultNote')}</div>
                     )}
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                     {f.recommandation.status === 'CALCULEE' && (
                       <button style={btnPrim} onClick={ouvrirValidationCheckpoint}>{t('orientation.checkpointValidate')}</button>
                     )}
                     {f.recommandation.status === 'VALIDEE_CONSEILLER' && (
                       <button style={btnPrim} onClick={proposerAuxEleve} disabled={proposingCheckpoint}>
-                        {proposingCheckpoint ? <Loader2 size={14} strokeWidth={2} className="animate-spin" /> : t('orientation.checkpointPropose')}
+                        {proposingCheckpoint ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : t('orientation.checkpointPropose')}
                       </button>
                     )}
                     {f.recommandation.status === 'PROPOSEE_A_L_ELEVE' && (
-                      <span style={{ fontSize: 14, color: 'var(--text3)' }}>
+                      <span style={{ fontSize: 12.5, color: 'var(--text3)' }}>
                         {t('orientation.checkpointWaitingStudent')}
                         {f.recommandation.responseDeadline && ` (${fmt(f.recommandation.responseDeadline)})`}
                       </span>
                     )}
                   </div>
                 )}
-                <p style={{ fontSize: 13, color: 'var(--text3)', lineHeight: 1.7, marginTop: 16 }}>{f.recommandation.justification}</p>
+                <p style={{ fontSize: 12.5, color: 'var(--text3)', lineHeight: 1.5, marginTop: 12 }}>{f.recommandation.justification}</p>
+                <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text3)' }}>
+                  {f.recommandation.adminValidated && `${t('orientation.validatedByAdmin')} · `}
+                  {f.recommandation.parentNotified && `${t('orientation.parentNotifiedBadge')} · `}
+                  {t('orientation.createdOn')}
+                </div>
               </div>
             ) : (
-              <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 14, padding: '24px 28px' }}>
-                <div style={{ display: 'flex', gap: 20, marginBottom: 16, flexWrap: 'wrap' }}>
-                  <div style={{ flex: 1, minWidth: 120 }}>
-                    <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 700, marginBottom: 4 }}>{t('orientation.currentSeries')}</div>
-                    <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--text)' }}>{f.recommandation.serieActuelle}</div>
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 18px' }}>
+                <div style={{ display: 'flex', gap: 14, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <div style={{ flex: 1, minWidth: 100 }}>
+                    <div style={{ fontSize: 11.5, color: 'var(--text3)', fontWeight: 700, marginBottom: 2 }}>{t('orientation.currentSeries')}</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>{f.recommandation.serieActuelle}</div>
                   </div>
-                  <div style={{ fontSize: 28, color: 'var(--text3)', alignSelf: 'center', display: 'flex' }}><ArrowRight size={28} strokeWidth={2} /></div>
-                  <div style={{ flex: 1, minWidth: 120 }}>
-                    <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 700, marginBottom: 4 }}>{t('orientation.recommendedSeries')}</div>
-                    <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--green)' }}>{f.recommandation.serieRecommandee}</div>
+                  <div style={{ color: 'var(--text3)', alignSelf: 'center', display: 'flex' }}><ArrowRight size={18} strokeWidth={2} /></div>
+                  <div style={{ flex: 1, minWidth: 100 }}>
+                    <div style={{ fontSize: 11.5, color: 'var(--text3)', fontWeight: 700, marginBottom: 2 }}>{t('orientation.recommendedSeries')}</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--green)' }}>{f.recommandation.serieRecommandee}</div>
                   </div>
                   <div>
-                    <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 700, marginBottom: 4 }}>{t('orientation.statusLabel')}</div>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <div style={{ fontSize: 11.5, color: 'var(--text3)', fontWeight: 700, marginBottom: 2 }}>{t('orientation.statusLabel')}</div>
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                       <Badge value={f.recommandation.status} map={{
                         PROPOSEE:        { bg: 'var(--amber-light)', color: 'var(--amber)' },
                         VALIDEE_ADMIN:   { bg: 'var(--green-light)', color: 'var(--green)' },
@@ -1203,15 +1208,15 @@ export default function SectionOrientation({ onToast }: Props) {
                       }} />
                       {f.recommandation.status === 'PROPOSEE' && (
                         <button onClick={validerRecommandation} disabled={validatingReco}
-                          style={{ padding: '5px 12px', borderRadius: 8, fontSize: 13, fontWeight: 800, background: 'var(--green-light)', color: 'var(--green)', border: '1px solid rgba(5,150,105,0.3)', cursor: validatingReco ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
-                          {validatingReco ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : t('orientation.validateReco')}
+                          style={{ padding: '4px 10px', borderRadius: 6, fontSize: 11.5, fontWeight: 700, background: 'var(--green-light)', color: 'var(--green)', border: '1px solid rgba(5,150,105,0.3)', cursor: validatingReco ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
+                          {validatingReco ? <Loader2 size={12} strokeWidth={2} className="animate-spin" /> : t('orientation.validateReco')}
                         </button>
                       )}
                     </div>
                   </div>
                 </div>
-                <p style={{ fontSize: 14, color: 'var(--text3)', lineHeight: 1.7 }}><strong>{t('orientation.justificationLabel')}</strong> {f.recommandation.justification}</p>
-                <div style={{ marginTop: 12, fontSize: 13, color: 'var(--text3)' }}>
+                <p style={{ fontSize: 12.5, color: 'var(--text3)', lineHeight: 1.5 }}><strong>{t('orientation.justificationLabel')}</strong> {f.recommandation.justification}</p>
+                <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text3)' }}>
                   {f.recommandation.adminValidated && `${t('orientation.validatedByAdmin')} · `}
                   {f.recommandation.parentNotified && `${t('orientation.parentNotifiedBadge')} · `}
                   {t('orientation.createdOn')}
@@ -1224,27 +1229,27 @@ export default function SectionOrientation({ onToast }: Props) {
         {/* Tab: Suivis */}
         {ficheTab === 'suivis' && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
               <button style={btnPrim} onClick={() => setSuiviOpen(true)}>{t('orientation.addFollowUp')}</button>
             </div>
             {f.suivis.length === 0 ? (
-              <EmptyState icon={<BarChart3 size={36} strokeWidth={2} />} text={t('orientation.noFollowUps')} />
+              <EmptyState icon={<BarChart3 size={30} strokeWidth={1.75} />} text={t('orientation.noFollowUps')} />
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {f.suivis.map(s => (
-                  <div key={s.id} style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 14, padding: '18px 22px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                      <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)' }}>{fmt(s.date)}</span>
-                      <div style={{ display: 'flex', gap: 8 }}>
+                  <div key={s.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <span style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text)' }}>{fmt(s.date)}</span>
+                      <div style={{ display: 'flex', gap: 6 }}>
                         <Badge value={s.riskLevel} map={RISK_STYLE} labelMap={RISK_LABEL_KEY} />
-                        <span style={{ background: 'var(--bg2)', color: 'var(--text2)', borderRadius: 8, padding: '3px 10px', fontSize: 13, fontWeight: 600 }}>
+                        <span style={{ background: 'var(--bg2)', color: 'var(--text2)', borderRadius: 6, padding: '2px 8px', fontSize: 11.5, fontWeight: 600 }}>
                           {s.mainConcern.replace(/_/g, ' ')}
                         </span>
                       </div>
                     </div>
-                    {s.interventions && <p style={{ fontSize: 14, color: 'var(--text3)', lineHeight: 1.6 }}><strong>{t('orientation.interventionsLabel')}</strong> {s.interventions}</p>}
-                    {s.notes && <p style={{ fontSize: 14, color: 'var(--text3)', marginTop: 4, lineHeight: 1.6 }}>{s.notes}</p>}
-                    {s.prochainRdv && <p style={{ fontSize: 13, color: 'var(--text3)', marginTop: 6 }}>{t('orientation.nextAppointment')}</p>}
+                    {s.interventions && <p style={{ fontSize: 12.5, color: 'var(--text3)', lineHeight: 1.5 }}><strong>{t('orientation.interventionsLabel')}</strong> {s.interventions}</p>}
+                    {s.notes && <p style={{ fontSize: 12.5, color: 'var(--text3)', marginTop: 3, lineHeight: 1.5 }}>{s.notes}</p>}
+                    {s.prochainRdv && <p style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>{t('orientation.nextAppointment')}</p>}
                   </div>
                 ))}
               </div>
@@ -1262,15 +1267,15 @@ export default function SectionOrientation({ onToast }: Props) {
   function ViewCheckpoints() {
     return (
       <>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 22 }}>
-          <button onClick={() => setView('dashboard')} style={{ ...btnSec, padding: '8px 14px', fontSize: 14 }}>{t('orientation.backToDashboard')}</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          <button onClick={() => setView('dashboard')} style={{ ...btnSec, padding: '5px 11px', fontSize: 12 }}>{t('orientation.backToDashboard')}</button>
           <div>
             <div style={sTitle}>{t('orientation.checkpointsTitle')}</div>
             <div style={sSub}>{t('orientation.checkpointsSubtitle')}</div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 12, marginBottom: 22, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
           <select value={checkpointType} onChange={e => setCheckpointType(e.target.value as 'FIN_TROISIEME' | 'FIN_SECONDE_C')} style={sSelect}>
             <option value="FIN_TROISIEME">{t('orientation.checkpointFinTroisieme')}</option>
             <option value="FIN_SECONDE_C">{t('orientation.checkpointFinSecondeC')}</option>
@@ -1279,23 +1284,23 @@ export default function SectionOrientation({ onToast }: Props) {
             {t('orientation.checkpointConfigButton')}
           </button>
           {checkpointConfig && (
-            <span style={{ fontSize: 13, color: 'var(--text3)' }}>
+            <span style={{ fontSize: 12, color: 'var(--text3)' }}>
               {t('orientation.checkpointWindowLabel')} {String(checkpointConfig.windowStartDay).padStart(2, '0')}/{String(checkpointConfig.windowStartMonth).padStart(2, '0')} → {String(checkpointConfig.windowEndDay).padStart(2, '0')}/{String(checkpointConfig.windowEndMonth).padStart(2, '0')}
               {checkpointConfig.psychotechnicalTestRequired ? ` · ${t('orientation.checkpointTestRequiredLabel')}` : ''}
             </span>
           )}
         </div>
 
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', overflow: 'hidden' }}>
-          <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)' }}>
-            <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--text)' }}>{t('orientation.checkpointEligibleStudents')}</span>
+        <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
+          <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
+            <span style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text)' }}>{t('orientation.checkpointEligibleStudents')}</span>
           </div>
           {loadingEleves ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text3)' }}>{t('orientation.loadingFiches')}</div>
+            <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>{t('orientation.loadingFiches')}</div>
           ) : elevesAOrienter.length === 0 ? (
-            <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text3)' }}>
-              <div style={{ fontSize: 40, marginBottom: 12, display: 'flex', justifyContent: 'center' }}><Compass size={40} strokeWidth={2} /></div>
-              <div style={{ fontSize: 16 }}>{t('orientation.checkpointNoEligibleStudents')}</div>
+            <div style={{ padding: '36px', textAlign: 'center', color: 'var(--text3)' }}>
+              <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><Compass size={32} strokeWidth={1.75} /></div>
+              <div style={{ fontSize: 13.5 }}>{t('orientation.checkpointNoEligibleStudents')}</div>
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
@@ -1303,24 +1308,24 @@ export default function SectionOrientation({ onToast }: Props) {
                 <thead>
                   <tr style={{ background: 'var(--bg)' }}>
                     {[t('orientation.tableHeaderStudent'), t('orientation.tableHeaderClass'), t('orientation.checkpointStatusColumn'), t('orientation.tableHeaderActions')].map(h => (
-                      <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 13, fontWeight: 700, color: 'var(--text3)', borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' }}>{h}</th>
+                      <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text3)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {elevesAOrienter.map(e => (
                     <tr key={e.studentId} style={{ borderBottom: '1px solid var(--bg2)' }}>
-                      <td style={{ padding: '12px 16px', fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{e.firstName} {e.lastName}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 14, color: 'var(--text3)' }}>{e.className}</td>
-                      <td style={{ padding: '12px 16px' }}>
+                      <td style={{ padding: '8px 12px', fontSize: 12.5, fontWeight: 600, color: 'var(--text)' }}>{e.firstName} {e.lastName}</td>
+                      <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text3)' }}>{e.className}</td>
+                      <td style={{ padding: '8px 12px' }}>
                         {e.hasRecommendation
                           ? <Badge value={e.recommendationStatus ?? ''} map={CHECKPOINT_STATUS_STYLE} labelMap={CHECKPOINT_STATUS_LABEL_KEY} />
-                          : <span style={{ fontSize: 13, color: 'var(--text3)' }}>{t('orientation.checkpointNotCalculated')}</span>}
+                          : <span style={{ fontSize: 12, color: 'var(--text3)' }}>{t('orientation.checkpointNotCalculated')}</span>}
                       </td>
-                      <td style={{ padding: '12px 16px' }}>
+                      <td style={{ padding: '8px 12px' }}>
                         {!e.hasRecommendation && (
-                          <button onClick={() => genererPourEleve(e.studentId)} disabled={generatingFor === e.studentId} style={{ ...btnSec, fontSize: 12, padding: '5px 12px' }}>
-                            {generatingFor === e.studentId ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : t('orientation.checkpointGenerate')}
+                          <button onClick={() => genererPourEleve(e.studentId)} disabled={generatingFor === e.studentId} style={{ ...btnSec, fontSize: 11.5, padding: '4px 10px' }}>
+                            {generatingFor === e.studentId ? <Loader2 size={12} strokeWidth={2} className="animate-spin" /> : t('orientation.checkpointGenerate')}
                           </button>
                         )}
                       </td>
@@ -1337,9 +1342,9 @@ export default function SectionOrientation({ onToast }: Props) {
 
   function EmptyState({ icon, text }: { icon: React.ReactNode; text: string }) {
     return (
-      <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text3)', background: 'var(--bg)', borderRadius: 14, border: '1.5px dashed var(--border)' }}>
-        <div style={{ fontSize: 36, marginBottom: 10, display: 'flex', justifyContent: 'center' }}>{icon}</div>
-        <div style={{ fontSize: 15 }}>{text}</div>
+      <div style={{ padding: '28px 16px', textAlign: 'center', color: 'var(--text3)', background: 'var(--bg)', borderRadius: 12, border: '1px dashed var(--border)' }}>
+        <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}>{icon}</div>
+        <div style={{ fontSize: 13 }}>{text}</div>
       </div>
     )
   }
@@ -1682,7 +1687,7 @@ export default function SectionOrientation({ onToast }: Props) {
   // ═══════════════════════════════════════════════════════════════════════════
 
   return (
-    <div style={{ padding: '28px 32px', overflowY: 'auto', height: '100%' }}>
+    <div className="px-4 py-4 md:px-7 md:py-6" style={{ overflowY: 'auto', height: '100%' }}>
       {view === 'dashboard'   && <ViewDashboard />}
       {view === 'fiche'       && <ViewFiche />}
       {view === 'checkpoints' && <ViewCheckpoints />}
@@ -1702,34 +1707,34 @@ export default function SectionOrientation({ onToast }: Props) {
 // ── Styles partagés ───────────────────────────────────────────────────────────
 
 const sTitle: React.CSSProperties = {
-  fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 28, fontWeight: 700, color: 'var(--text)',
+  fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: 'var(--text)',
 }
-const sSub: React.CSSProperties = { fontSize: 17, color: 'var(--text3)', marginTop: 3 }
+const sSub: React.CSSProperties = { fontSize: 12.5, color: 'var(--text3)', marginTop: 2 }
 const btnPrim: React.CSSProperties = {
-  padding: '10px 20px', borderRadius: 11, fontSize: 15, fontWeight: 800,
+  padding: '6px 13px', borderRadius: 8, fontSize: 12.5, fontWeight: 600,
   background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white',
   border: 'none', cursor: 'pointer', fontFamily: 'inherit',
 }
 const btnSec: React.CSSProperties = {
-  padding: '10px 20px', borderRadius: 11, fontSize: 15, fontWeight: 700,
-  background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)',
+  padding: '5px 11px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+  background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border)',
   cursor: 'pointer', fontFamily: 'inherit',
 }
 const sSelect: React.CSSProperties = {
-  padding: '8px 14px', borderRadius: 10, fontSize: 14, border: '1.5px solid var(--border)',
+  padding: '5px 10px', borderRadius: 8, fontSize: 12, border: '1px solid var(--border)',
   background: 'var(--surface)', color: 'var(--text2)', fontFamily: 'inherit', cursor: 'pointer',
 }
 const sInput: React.CSSProperties = {
-  width: '100%', padding: '10px 14px', borderRadius: 10, fontSize: 14,
-  border: '1.5px solid var(--border)', background: 'var(--surface)', color: 'var(--text)',
-  fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 12,
+  width: '100%', padding: '6px 10px', borderRadius: 8, fontSize: 12.5,
+  border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)',
+  fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 10,
 }
-const sLabel: React.CSSProperties = { fontSize: 13, fontWeight: 700, color: 'var(--text3)', marginBottom: 6 }
+const sLabel: React.CSSProperties = { fontSize: 11.5, fontWeight: 600, color: 'var(--text3)', marginBottom: 4 }
 const sError: React.CSSProperties = {
-  background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8,
-  padding: '8px 14px', fontSize: 13, fontWeight: 600, marginTop: 4,
+  background: 'var(--red-light)', color: 'var(--red)', borderRadius: 6,
+  padding: '6px 10px', fontSize: 12, fontWeight: 600, marginTop: 4,
 }
 const sModalTitle: React.CSSProperties = {
-  fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700,
-  color: 'var(--text)', marginBottom: 22,
+  fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700,
+  color: 'var(--text)', marginBottom: 14,
 }

@@ -35,7 +35,7 @@ function fmtCFA(n: number) {
 }
 
 function chipStyle(bg: string, color: string): React.CSSProperties {
-  return { background: bg, color, borderRadius: 20, padding: '5px 12px', fontSize: 13, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6 }
+  return { background: bg, color, borderRadius: 12, padding: '3px 9px', fontSize: 11.5, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }
 }
 
 export default function SectionAPEEStaff({ onToast }: Props) {
@@ -154,99 +154,99 @@ export default function SectionAPEEStaff({ onToast }: Props) {
   }
 
   return (
-    <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto' }}>
-      <div style={{ marginBottom: 22, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <div className="px-4 py-4 md:px-7 md:py-6" style={{ height: '100%', overflowY: 'auto' }}>
+      <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 24, fontWeight: 700, color: 'var(--text)' }}>{t('apee.title')}</div>
-          <div style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 500, marginTop: 4 }}>{t('apee.subtitle')}</div>
+          <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>{t('apee.title')}</div>
+          <div style={{ fontSize: 12.5, color: 'var(--text3)', fontWeight: 500, marginTop: 2 }}>{t('apee.subtitle')}</div>
         </div>
         <button onClick={downloadRapport} style={{ ...chipStyle('var(--bg2)', 'var(--text2)'), border: 'none', cursor: 'pointer' }}>
-          <Download size={14} /> {t('apee.downloadReport')}
+          <Download size={13} /> {t('apee.downloadReport')}
         </button>
       </div>
 
       {!isOnline && (
-        <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 12, padding: '12px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ display: 'flex', alignItems: 'center' }}><WifiOff size={18} strokeWidth={2} /></span>
-          <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--amber)' }}>{t('apee.offlineHint')}</span>
+        <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 10, padding: '8px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ display: 'flex', alignItems: 'center' }}><WifiOff size={16} strokeWidth={2} /></span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--amber)' }}>{t('apee.offlineHint')}</span>
         </div>
       )}
 
       {solde && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 22 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 14 }}>
           {[
             { label: t('apee.totalCollectes'), value: fmtCFA(solde.totalCollectes), color: 'var(--green)' },
             { label: t('apee.totalDepenses'), value: fmtCFA(solde.totalDepenses), color: 'var(--red)' },
             { label: t('apee.solde'), value: fmtCFA(solde.solde), color: 'var(--blue)' },
             { label: t('apee.enAttente'), value: String(solde.depensesEnAttenteDeJustificatifOuValidation), color: 'var(--amber)' },
           ].map((k) => (
-            <div key={k.label} style={{ background: 'var(--surface)', borderRadius: 14, border: '1.5px solid var(--border)', padding: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase' }}>{k.label}</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: k.color, marginTop: 6 }}>{k.value}</div>
+            <div key={k.label} style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', padding: '10px 14px' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase' }}>{k.label}</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: k.color, marginTop: 3 }}>{k.value}</div>
             </div>
           ))}
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 18 }}>
-        <form onSubmit={submitTransaction} style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: 20, display: 'flex', flexDirection: 'column', gap: 12, height: 'fit-content' }}>
-          <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <HandCoins size={16} /> {t('apee.newTransaction')}
+      <div style={{ display: 'grid', gridTemplateColumns: '270px 1fr', gap: 12 }}>
+        <form onSubmit={submitTransaction} style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 9, height: 'fit-content' }}>
+          <div style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <HandCoins size={15} /> {t('apee.newTransaction')}
           </div>
           <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as 'COLLECTE' | 'DEPENSE' })}
-            style={{ padding: '9px 12px', borderRadius: 10, border: '1.5px solid var(--border)', fontSize: 14, fontFamily: 'inherit' }}>
+            style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 12.5, fontFamily: 'inherit', background: 'var(--surface)', color: 'var(--text)' }}>
             <option value="COLLECTE">{t('apee.typeCollecte')}</option>
             <option value="DEPENSE">{t('apee.typeDepense')}</option>
           </select>
           <input type="number" min="1" placeholder={t('apee.amountPlaceholder')} value={form.montant}
             onChange={(e) => setForm({ ...form, montant: e.target.value })}
-            style={{ padding: '9px 12px', borderRadius: 10, border: '1.5px solid var(--border)', fontSize: 14, fontFamily: 'inherit' }} />
+            style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 12.5, fontFamily: 'inherit', background: 'var(--surface)', color: 'var(--text)' }} />
           <input type="text" placeholder={t('apee.categoryPlaceholder')} value={form.categorie}
             onChange={(e) => setForm({ ...form, categorie: e.target.value })}
-            style={{ padding: '9px 12px', borderRadius: 10, border: '1.5px solid var(--border)', fontSize: 14, fontFamily: 'inherit' }} />
+            style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 12.5, fontFamily: 'inherit', background: 'var(--surface)', color: 'var(--text)' }} />
           <textarea placeholder={t('apee.descriptionPlaceholder')} value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3}
-            style={{ padding: '9px 12px', borderRadius: 10, border: '1.5px solid var(--border)', fontSize: 14, fontFamily: 'inherit', resize: 'vertical' }} />
+            onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2}
+            style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 12.5, fontFamily: 'inherit', resize: 'vertical', background: 'var(--surface)', color: 'var(--text)' }} />
           <button type="submit" disabled={sending}
-            style={{ ...chipStyle('var(--green)', 'white'), border: 'none', cursor: sending ? 'default' : 'pointer', justifyContent: 'center', opacity: sending ? 0.7 : 1 }}>
-            {sending ? <Loader2 size={14} className="animate-spin" /> : t('apee.submit')}
+            style={{ ...chipStyle('var(--green)', 'white'), border: 'none', cursor: sending ? 'default' : 'pointer', justifyContent: 'center', opacity: sending ? 0.7 : 1, padding: '6px 12px' }}>
+            {sending ? <Loader2 size={13} className="animate-spin" /> : t('apee.submit')}
           </button>
         </form>
 
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>{t('apee.history')}</div>
+        <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
+          <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', fontSize: 13.5, fontWeight: 800, color: 'var(--text)' }}>{t('apee.history')}</div>
           {loading ? (
-            <div style={{ padding: 32, textAlign: 'center', color: 'var(--text3)' }}>{t('apee.loading')}</div>
+            <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)', fontSize: 12.5 }}>{t('apee.loading')}</div>
           ) : transactions.length === 0 ? (
-            <div style={{ padding: 32, textAlign: 'center', color: 'var(--text3)' }}>{t('apee.noTransactions')}</div>
+            <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)', fontSize: 12.5 }}>{t('apee.noTransactions')}</div>
           ) : (
             <div>
               {transactions.map((tx) => (
-                <div key={tx.id} style={{ padding: '14px 20px', borderBottom: '1px solid var(--bg2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                <div key={tx.id} style={{ padding: '9px 14px', borderBottom: '1px solid var(--bg2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
                   <div>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                       <span style={chipStyle(tx.type === 'COLLECTE' ? 'var(--green-light)' : 'var(--red-light)', tx.type === 'COLLECTE' ? 'var(--green)' : 'var(--red)')}>
                         {tx.type === 'COLLECTE' ? t('apee.typeCollecte') : t('apee.typeDepense')}
                       </span>
-                      <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>{fmtCFA(tx.montant)}</span>
-                      {tx.valide && <span style={chipStyle('var(--green-light)', 'var(--green)')}><CheckCircle2 size={12} /> {t('apee.validated')}</span>}
+                      <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>{fmtCFA(tx.montant)}</span>
+                      {tx.valide && <span style={chipStyle('var(--green-light)', 'var(--green)')}><CheckCircle2 size={11} /> {t('apee.validated')}</span>}
                     </div>
-                    <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>
+                    <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 2 }}>
                       {tx.categorie || '—'} {tx.description ? `· ${tx.description}` : ''} · {new Date(tx.date).toLocaleDateString('fr-FR')}
                     </div>
                   </div>
                   {tx.type === 'DEPENSE' && !tx.valide && (
-                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                       {!tx.justificatifUrl ? (
                         <label style={{ ...chipStyle('var(--blue-light)', 'var(--blue)'), cursor: 'pointer' }}>
-                          {uploadingId === tx.id ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />} {t('apee.uploadJustificatif')}
+                          {uploadingId === tx.id ? <Loader2 size={11} className="animate-spin" /> : <Upload size={11} />} {t('apee.uploadJustificatif')}
                           <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display: 'none' }}
                             onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadJustificatif(tx.id, f) }} />
                         </label>
                       ) : (
                         <button onClick={() => validerDepense(tx.id)} disabled={validatingId === tx.id}
                           style={{ ...chipStyle('var(--green-light)', 'var(--green)'), border: 'none', cursor: 'pointer' }}>
-                          {validatingId === tx.id ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />} {t('apee.validate')}
+                          {validatingId === tx.id ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle2 size={11} />} {t('apee.validate')}
                         </button>
                       )}
                     </div>

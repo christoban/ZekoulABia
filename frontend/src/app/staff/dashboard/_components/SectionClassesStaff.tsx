@@ -146,28 +146,28 @@ export default function SectionClassesStaff({ onToast }: Props) {
   )
 
   return (
-    <div style={{ padding: '20px 24px', height: '100%', overflowY: 'auto', background: 'var(--bg)' }}>
+    <div className="px-4 py-4 md:px-7 md:py-6" style={{ height: '100%', overflowY: 'auto', background: 'var(--bg)' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
-          <h1 style={{ fontSize: 20, fontWeight: 800, color: 'var(--fg)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <School size={22} style={{ color: 'var(--amber)' }} />
+          <h1 style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg)', margin: 0, display: 'flex', alignItems: 'center', gap: 7 }}>
+            <School size={18} style={{ color: 'var(--amber)' }} />
             Gestion des Classes
           </h1>
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '4px 0 0 0' }}>
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '2px 0 0 0' }}>
             Organisation pédagogique et effectifs des classes
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 8 }}>
           <button
             onClick={() => setProposeOpen(true)}
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
-              padding: '8px 14px',
-              borderRadius: 8,
+              gap: 5,
+              padding: '6px 12px',
+              borderRadius: 7,
               background: 'rgba(255,255,255,0.08)',
               color: 'var(--fg)',
               fontWeight: 600,
@@ -176,7 +176,7 @@ export default function SectionClassesStaff({ onToast }: Props) {
               cursor: 'pointer',
             }}
           >
-            <School size={16} />
+            <School size={14} />
             Proposer structure N+1
           </button>
           <button
@@ -184,9 +184,9 @@ export default function SectionClassesStaff({ onToast }: Props) {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
-              padding: '8px 14px',
-              borderRadius: 8,
+              gap: 5,
+              padding: '6px 12px',
+              borderRadius: 7,
               background: 'linear-gradient(135deg, var(--amber), #d97706)',
               color: '#000',
               fontWeight: 700,
@@ -195,16 +195,16 @@ export default function SectionClassesStaff({ onToast }: Props) {
               cursor: 'pointer',
             }}
           >
-            <Plus size={16} />
+            <Plus size={15} />
             Nouvelle classe
           </button>
         </div>
       </div>
 
       {/* Barre de recherche */}
-      <div style={{ marginBottom: 16, display: 'flex', gap: 12 }}>
-        <div style={{ position: 'relative', flex: 1, maxWidth: 360 }}>
-          <Search size={14} style={{ position: 'absolute', left: 10, top: 10, color: 'rgba(255,255,255,0.4)' }} />
+      <div style={{ marginBottom: 14, display: 'flex', gap: 10 }}>
+        <div style={{ position: 'relative', flex: 1, maxWidth: 340 }}>
+          <Search size={13} style={{ position: 'absolute', left: 9, top: 8, color: 'rgba(255,255,255,0.4)' }} />
           <input
             type="text"
             value={search}
@@ -212,7 +212,7 @@ export default function SectionClassesStaff({ onToast }: Props) {
             placeholder="Rechercher une classe..."
             style={{
               width: '100%',
-              padding: '6px 12px 6px 32px',
+              padding: '5px 10px 5px 28px',
               borderRadius: 6,
               background: 'rgba(255,255,255,0.06)',
               border: '1px solid rgba(255,255,255,0.1)',
@@ -226,43 +226,43 @@ export default function SectionClassesStaff({ onToast }: Props) {
 
       {/* Grille / Liste des classes */}
       {loading ? (
-        <div style={{ padding: 40, textAlign: 'center', color: 'rgba(255,255,255,0.4)' }}>
-          <Loader2 size={24} className="animate-spin" style={{ margin: '0 auto 8px' }} />
+        <div style={{ padding: 36, textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>
+          <Loader2 size={20} className="animate-spin" style={{ margin: '0 auto 6px' }} />
           Chargement des classes...
         </div>
       ) : filtered.length === 0 ? (
-        <div style={{ padding: 40, textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: 12, border: '1px border-dashed rgba(255,255,255,0.1)' }}>
-          <School size={32} style={{ color: 'rgba(255,255,255,0.2)', marginBottom: 8 }} />
-          <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>Aucune classe trouvée</p>
+        <div style={{ padding: 36, textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: 10, border: '1px border-dashed rgba(255,255,255,0.1)' }}>
+          <School size={28} style={{ color: 'rgba(255,255,255,0.2)', marginBottom: 6 }} />
+          <p style={{ margin: 0, fontSize: 12.5, color: 'rgba(255,255,255,0.5)' }}>Aucune classe trouvée</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
           {filtered.map(cls => (
             <div
               key={cls.id}
               style={{
                 background: 'rgba(255,255,255,0.04)',
                 border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: 10,
-                padding: 14,
+                borderRadius: 9,
+                padding: '10px 13px',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
               }}
             >
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <span style={{ fontSize: 15, fontWeight: 800, color: '#fff' }}>{cls.name}</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ fontSize: 13.5, fontWeight: 700, color: '#fff' }}>{cls.name}</span>
                   {cls.level && (
-                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, background: 'rgba(245,158,11,0.15)', color: '#f59e0b', fontWeight: 700 }}>
+                    <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: 'rgba(245,158,11,0.15)', color: '#f59e0b', fontWeight: 600 }}>
                       {cls.level}
                     </span>
                   )}
                 </div>
 
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Users size={12} />
+                <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.5)', display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <Users size={11} />
                     <span>Effectif : {cls._count?.students ?? 0} {cls.capacity ? `/ ${cls.capacity}` : ''} élèves</span>
                   </div>
                   {cls.mainTeacher && (
@@ -280,7 +280,7 @@ export default function SectionClassesStaff({ onToast }: Props) {
       {/* Modal Créer classe */}
       {createOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ background: '#18181b', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 20, width: '100%', maxWidth: 400 }}>
+          <div style={{ background: '#18181b', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: '16px 20px', width: '100%', maxWidth: 390 }}>
             <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 16px 0', color: '#fff' }}>
               Nouvelle classe
             </h2>
