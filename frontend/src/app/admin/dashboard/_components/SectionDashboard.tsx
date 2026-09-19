@@ -228,13 +228,13 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
                 </span>
                 
                 {/* Filtres par rôle */}
-                <div className="flex items-center gap-1 bg-[var(--bg2)] p-1 rounded-lg text-[11px] font-semibold">
-                  <Filter size={11} className="text-[var(--text3)] ml-1" />
+                <div className="flex items-center gap-1 bg-[var(--bg2)] p-1 rounded-lg text-[11px] font-semibold max-w-full overflow-x-auto no-scrollbar">
+                  <Filter size={11} className="text-[var(--text3)] ml-1 flex-shrink-0" />
                   {(['ALL', 'DIRECTION', 'CENSEUR', 'INTENDANCE', 'SECRETARIAT'] as RoleFilter[]).map(r => (
                     <button
                       key={r}
                       onClick={() => setActivityRoleFilter(r)}
-                      className={`px-2 py-0.5 rounded-md transition-all border-0 cursor-pointer ${
+                      className={`px-2 py-0.5 rounded-md transition-all border-0 cursor-pointer whitespace-nowrap flex-shrink-0 ${
                         activityRoleFilter === r
                           ? 'bg-[var(--surface)] text-[var(--text)] shadow-xs font-bold'
                           : 'bg-transparent text-[var(--text3)] hover:text-[var(--text2)]'

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
-import { Users, Palmtree, CheckCircle2, FileText, AlertTriangle } from 'lucide-react'
+import { Users, Palmtree, CheckCircle2, FileText, AlertTriangle, ArrowLeft } from 'lucide-react'
 import SectionStaffAttendanceAVerifier from './SectionStaffAttendanceAVerifier'
 
 interface OnToast { (msg: string, type?: 'success' | 'error' | 'info' | 'warning'): void }
@@ -104,17 +104,17 @@ const chipStyle = (bg: string, color: string): React.CSSProperties => ({
 })
 
 const TABS: Array<{ key: Tab; icon: React.ReactNode }> = [
-  { key: 'personnel', icon: <Users size={15} strokeWidth={2} /> },
-  { key: 'conges', icon: <Palmtree size={15} strokeWidth={2} /> },
-  { key: 'pointage', icon: <CheckCircle2 size={15} strokeWidth={2} /> },
-  { key: 'documents', icon: <FileText size={15} strokeWidth={2} /> },
+  { key: 'personnel', icon: <Users size={14} /> },
+  { key: 'conges', icon: <Palmtree size={14} /> },
+  { key: 'pointage', icon: <CheckCircle2 size={14} /> },
+  { key: 'documents', icon: <FileText size={14} /> },
 ]
 
-function fmtDate(value?: string | null): string {
-  if (!value) return '—'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '—'
-  return new Intl.DateTimeFormat('fr-CM', { day: '2-digit', month: 'short', year: 'numeric' }).format(date)
+function fmtDate(iso?: string | null): string {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return iso
+  return d.toLocaleDateString()
 }
 
 function fmtDateTime(value?: string | null): string {
@@ -369,17 +369,19 @@ export default function SectionRH({ onToast }: { onToast: OnToast }) {
   )
 
   return (
-    <div className="px-4 py-4 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
-      <div className="mb-[12px] md:mb-[14px]">
-        <div className="text-[15px] md:text-[17px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('rh.title')} — Gestion du Personnel</div>
-        <div className="text-[11px] md:text-[12px]" style={{ color: 'var(--text3)', fontWeight: 500, marginTop: 2 }}>{t('rh.subtitle')}</div>
+    <div className="px-4 py-4 md:px-6 md:py-5 space-y-3 md:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
+        <div className="flex items-center gap-2">
+          <Users className="w-5 h-5 text-[var(--sidebar)]" />
+          <h2 className="text-base md:text-lg font-bold text-[var(--text)]">{t('rh.title')}</h2>
+        </div>
       </div>
 
-      {/* RACI RH & Staff Governance Banner */}
-      <div className="mb-3.5 p-2.5 md:p-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 text-xs text-[var(--text)] flex items-center justify-between gap-3 shadow-xs">
-        <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-md bg-emerald-500/15 text-emerald-600 flex-shrink-0">
-            <Users size={15} />
+      {/* Bannière de cadrage du rôle Direction */}
+      <div className="p-3 md:p-3.5 rounded-xl border border-[var(--border)] bg-[var(--surface)]">
+        <div className="flex items-start gap-2.5">
+          <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-600 mt-0.5">
+            <Users size={14} />
           </div>
           <div>
             <p className="font-bold text-[11.5px] md:text-xs">Supervision RH & Validation des Congés/Pointages</p>
@@ -416,10 +418,10 @@ export default function SectionRH({ onToast }: { onToast: OnToast }) {
         {TABS.map(tb => tabButton(tb.key, t(`rh.tabs.${tb.key}`), tb.icon))}
       </div>
 
-      {/* Sur mobile, la liste employes / detail (360px fixe) ecrasait l'ecran — empile en 1
-          colonne en dessous de md, cote a cote a partir de md (inchange). */}
+      {/* Liste et Fiche Employé : empilés sur mobile, côte à côte sur desktop */}
       {tab === 'personnel' && (
         <div className="grid grid-cols-1 md:[grid-template-columns:320px_1fr] gap-3 md:gap-3.5">
+          {/* Colonne Liste du Personnel */}
           <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
             <div className="px-[12px] py-[10px] md:px-[16px] md:py-[11px]" style={{ borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
               <div className="text-[13px] md:text-[14px]" style={{ fontWeight: 800, color: 'var(--text)' }}>{t('rh.staffList')}</div>
@@ -445,7 +447,7 @@ export default function SectionRH({ onToast }: { onToast: OnToast }) {
             {loadingEmployees ? (
               <div style={{ padding: 32, textAlign: 'center', color: 'var(--text3)' }}>{t('rh.loading')}</div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className="flex flex-col max-h-[250px] md:max-h-[640px] overflow-y-auto">
                 {employees.map(emp => {
                   const active = selectedEmployeeId === emp.id
                   return (
@@ -487,7 +489,8 @@ export default function SectionRH({ onToast }: { onToast: OnToast }) {
             )}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {/* Colonne Fiche & Historique de l'employé (en dessous sur mobile, à droite sur desktop) */}
+          <div className="flex flex-col gap-3 md:gap-3.5">
             <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
               <div className="px-[12px] py-[10px] md:px-[16px] md:py-[11px]" style={{ borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div className="text-[13px] md:text-[14px]" style={{ fontWeight: 800, color: 'var(--text)' }}>{t('rh.employeeCard')}</div>

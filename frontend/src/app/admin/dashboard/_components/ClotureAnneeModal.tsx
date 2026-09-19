@@ -226,33 +226,33 @@ export default function ClotureAnneeModal({ isOpen, onClose, onSuccess, onToast 
       >
         {/* Header Modal */}
         <div
-          className="p-5 border-b flex items-center justify-between"
+          className="p-3.5 sm:p-5 border-b flex items-center justify-between gap-2"
           style={{
             background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(59, 130, 246, 0.12) 100%)',
             borderColor: 'var(--border)',
           }}
         >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl" style={{ background: 'var(--amber-light)', color: 'var(--amber)' }}>
-              <CalendarClock size={24} />
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="p-2 sm:p-2.5 rounded-xl flex-shrink-0" style={{ background: 'var(--amber-light)', color: 'var(--amber)' }}>
+              <CalendarClock size={20} className="sm:w-6 sm:h-6" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border" style={{ background: 'var(--amber-light)', color: 'var(--amber)', borderColor: 'var(--amber)' }}>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-1.5 sm:px-2 py-0.5 rounded-md border" style={{ background: 'var(--amber-light)', color: 'var(--amber)', borderColor: 'var(--amber)' }}>
                   Pattern Propose / Apply
                 </span>
-                <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400">
+                <span className="text-[10px] sm:text-[11px] font-semibold text-blue-600 dark:text-blue-400">
                   Workflow Guidé de Transition
                 </span>
               </div>
-              <h2 className="text-lg font-bold font-spectral" style={{ color: 'var(--text)' }}>
+              <h2 className="text-sm sm:text-lg font-bold font-spectral truncate sm:whitespace-normal" style={{ color: 'var(--text)' }}>
                 Clôture d'Année & Transition vers l'Année N+1
               </h2>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl transition-colors cursor-pointer border-none bg-transparent"
+            className="p-1.5 sm:p-2 rounded-xl transition-colors cursor-pointer border-none bg-transparent flex-shrink-0"
             style={{ color: 'var(--text2)' }}
           >
             <X size={20} />
@@ -402,10 +402,10 @@ export default function ClotureAnneeModal({ isOpen, onClose, onSuccess, onToast 
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t flex items-center justify-between" style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }}>
+        <div className="p-3.5 sm:p-4 border-t flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5" style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }}>
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-bold border-none cursor-pointer"
+            className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl text-xs font-bold border-none cursor-pointer text-center justify-center flex items-center"
             style={{ background: 'var(--surface)', color: 'var(--text2)' }}
           >
             Annuler
@@ -415,7 +415,7 @@ export default function ClotureAnneeModal({ isOpen, onClose, onSuccess, onToast 
             <button
               onClick={handleGenerateProposal}
               disabled={submitting || loading || !candidateName.trim()}
-              className="px-5 py-2.5 rounded-xl text-xs font-bold text-white flex items-center gap-2 border-none cursor-pointer shadow-sm transition-all disabled:opacity-50"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2 border-none cursor-pointer shadow-sm transition-all disabled:opacity-50"
               style={{ background: 'var(--amber)' }}
             >
               {submitting ? (
@@ -434,18 +434,18 @@ export default function ClotureAnneeModal({ isOpen, onClose, onSuccess, onToast 
             <button
               onClick={handleApplyClotureAndActivation}
               disabled={submitting}
-              className="px-6 py-2.5 rounded-xl text-xs font-extrabold text-white flex items-center gap-2 border-none cursor-pointer shadow-md transition-all disabled:opacity-50"
+              className="w-full sm:w-auto px-5 sm:px-6 py-2.5 rounded-xl text-xs font-extrabold text-white flex items-center justify-center gap-2 border-none cursor-pointer shadow-md transition-all disabled:opacity-50"
               style={{ background: 'var(--green)' }}
             >
               {submitting ? (
                 <>
                   <RefreshCw size={14} className="animate-spin" />
-                  <span>Application de la Clôture & Activation N+1...</span>
+                  <span>Application en cours...</span>
                 </>
               ) : (
                 <>
                   <CheckCircle2 size={16} />
-                  <span>Valider la Clôture & Activer l'Année N+1</span>
+                  <span>Valider la Clôture & Activer N+1</span>
                 </>
               )}
             </button>

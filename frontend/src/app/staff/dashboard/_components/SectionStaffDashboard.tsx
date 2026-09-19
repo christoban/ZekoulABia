@@ -86,24 +86,24 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
       )}
 
       {!loading && kpiCards.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 md:gap-3.5 mb-3.5 md:mb-5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-3.5 mb-3.5 md:mb-5">
           {kpiCards.map((k, i) => (
             <div key={i}
               onClick={() => onNav(k.nav)}
-              className="p-3 md:p-4 cursor-pointer transition-all duration-150"
+              className="p-2.5 sm:p-3 md:p-4 cursor-pointer transition-all duration-150"
               style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)' }}
               onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { transform: 'translateY(-1px)', boxShadow: '0 4px 14px rgba(0,0,0,0.06)' })}
               onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { transform: 'none', boxShadow: 'none' })}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: k.bg }}>
-                  <k.icon size={17} strokeWidth={2} />
+              <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: k.bg }}>
+                  <k.icon size={15} strokeWidth={2} />
                 </div>
-                <span className="text-[10.5px] md:text-[11.5px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap" style={{ background: k.tBg, color: k.tC }}>
+                <span className="text-[9.5px] sm:text-[10.5px] md:text-[11.5px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap truncate max-w-[65px] sm:max-w-none" style={{ background: k.tBg, color: k.tC }}>
                   {k.trend}
                 </span>
               </div>
-              <div className="text-2xl md:text-[26px] font-black leading-tight text-[var(--text)]">{k.val}</div>
-              <div className="text-xs md:text-[12.5px] text-[var(--text3)] mt-0.5 font-semibold truncate">{k.label}</div>
+              <div className="text-xl sm:text-2xl md:text-[26px] font-black leading-tight text-[var(--text)]">{k.val}</div>
+              <div className="text-[11px] sm:text-xs md:text-[12.5px] text-[var(--text3)] mt-0.5 font-semibold truncate">{k.label}</div>
             </div>
           ))}
         </div>

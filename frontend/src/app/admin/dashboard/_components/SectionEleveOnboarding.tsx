@@ -377,7 +377,7 @@ export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
       {/* Barre de contrôle des dossiers */}
       <div className="flex items-center justify-between flex-wrap gap-2.5 mb-4">
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-          className="rounded-lg px-3.5 py-2 text-xs md:text-sm font-bold border border-[var(--border2)] bg-[var(--surface)] text-[var(--text)]">
+          className="w-full sm:w-auto rounded-lg px-3.5 py-2 text-xs md:text-sm font-bold border border-[var(--border2)] bg-[var(--surface)] text-[var(--text)]">
           <option value="">{t('eleveOnboarding.filterAll')}</option>
           {['DRAFT', 'LINK_SENT', 'SUBMITTED', 'VALIDATED', 'ACTIVATED', 'REJECTED', 'EXPIRED'].map(s => (
             <option key={s} value={s}>{t(`eleveOnboarding.status_${s}`)}</option>
@@ -390,7 +390,7 @@ export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
             return
           }
           setCreateOpen(true)
-        }} className="px-3.5 py-2 text-xs md:text-sm font-bold rounded-lg border border-[var(--green)] text-[var(--green)] bg-[var(--surface)] cursor-pointer hover:bg-[rgba(22,163,74,0.06)]">
+        }} className="w-full sm:w-auto px-3.5 py-2 text-xs md:text-sm font-bold rounded-lg border border-[var(--green)] text-[var(--green)] bg-[var(--surface)] cursor-pointer hover:bg-[rgba(22,163,74,0.06)]">
           + Nouveau dossier
         </button>
       </div>
@@ -580,11 +580,11 @@ export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
               {createError && <div className="bg-[var(--red-light)] text-[var(--red)] border border-[var(--red-light)] rounded-lg p-2.5 text-xs font-bold">{createError}</div>}
             </div>
 
-            <div className="flex justify-end gap-2.5 pt-3 border-t border-[var(--border)] mt-4 flex-shrink-0">
-              <button onClick={() => setCreateOpen(false)} disabled={creating} className="px-4 py-2 rounded-lg text-xs md:text-sm font-bold bg-[var(--bg2)] text-[var(--text2)] border-none cursor-pointer">
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2.5 pt-3 border-t border-[var(--border)] mt-4 flex-shrink-0">
+              <button onClick={() => setCreateOpen(false)} disabled={creating} className="w-full sm:w-auto px-4 py-2.5 rounded-lg text-xs md:text-sm font-bold bg-[var(--bg2)] text-[var(--text2)] border-none cursor-pointer">
                 {t('eleveOnboarding.cancel')}
               </button>
-              <button onClick={submitCreate} disabled={creating} className="px-5 py-2 rounded-lg text-xs md:text-sm font-bold text-white bg-[var(--sidebar)] border-none cursor-pointer disabled:opacity-50">
+              <button onClick={submitCreate} disabled={creating} className="w-full sm:w-auto px-5 py-2.5 rounded-lg text-xs md:text-sm font-bold text-white bg-[var(--sidebar)] border-none cursor-pointer disabled:opacity-50">
                 {creating ? '...' : t('eleveOnboarding.createSubmit')}
               </button>
             </div>
@@ -607,11 +607,11 @@ export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
 
             {inscrireError && <div className="bg-[var(--red-light)] text-[var(--red)] border border-[var(--red-light)] rounded-lg p-2.5 text-xs font-bold mt-3">{inscrireError}</div>}
 
-            <div className="flex justify-end gap-2.5 pt-3 border-t border-[var(--border)] mt-4">
-              <button onClick={() => setInscrireTarget(null)} disabled={inscribing} className="px-4 py-2 rounded-lg text-xs md:text-sm font-bold bg-[var(--bg2)] text-[var(--text2)] border-none cursor-pointer">
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2.5 pt-3 border-t border-[var(--border)] mt-4">
+              <button onClick={() => setInscrireTarget(null)} disabled={inscribing} className="w-full sm:w-auto px-4 py-2.5 rounded-lg text-xs md:text-sm font-bold bg-[var(--bg2)] text-[var(--text2)] border-none cursor-pointer">
                 {t('eleveOnboarding.cancel')}
               </button>
-              <button onClick={submitInscrire} disabled={inscribing} className="px-5 py-2 rounded-lg text-xs md:text-sm font-bold text-white bg-[var(--green)] border-none cursor-pointer disabled:opacity-50">
+              <button onClick={submitInscrire} disabled={inscribing} className="w-full sm:w-auto px-5 py-2.5 rounded-lg text-xs md:text-sm font-bold text-white bg-[var(--green)] border-none cursor-pointer disabled:opacity-50">
                 {inscribing ? '...' : t('eleveOnboarding.inscrireSubmit')}
               </button>
             </div>
@@ -629,11 +629,11 @@ export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
             <FieldLabel>{t('eleveOnboarding.rejectReasonLabel')}</FieldLabel>
             <textarea style={{ ...inputStyle, minHeight: 70 }} value={rejectReason} onChange={e => setRejectReason(e.target.value)} />
 
-            <div className="flex justify-end gap-2.5 pt-3 border-t border-[var(--border)] mt-4">
-              <button onClick={() => setRejectTarget(null)} disabled={rejecting} className="px-4 py-2 rounded-lg text-xs md:text-sm font-bold bg-[var(--bg2)] text-[var(--text2)] border-none cursor-pointer">
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2.5 pt-3 border-t border-[var(--border)] mt-4">
+              <button onClick={() => setRejectTarget(null)} disabled={rejecting} className="w-full sm:w-auto px-4 py-2.5 rounded-lg text-xs md:text-sm font-bold bg-[var(--bg2)] text-[var(--text2)] border-none cursor-pointer">
                 {t('eleveOnboarding.cancel')}
               </button>
-              <button onClick={submitReject} disabled={rejecting || !rejectReason.trim()} className="px-5 py-2 rounded-lg text-xs md:text-sm font-bold text-white bg-[var(--red)] border-none cursor-pointer disabled:opacity-50">
+              <button onClick={submitReject} disabled={rejecting || !rejectReason.trim()} className="w-full sm:w-auto px-5 py-2.5 rounded-lg text-xs md:text-sm font-bold text-white bg-[var(--red)] border-none cursor-pointer disabled:opacity-50">
                 {rejecting ? '...' : t('eleveOnboarding.rejectSubmit')}
               </button>
             </div>

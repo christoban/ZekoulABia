@@ -1055,9 +1055,10 @@ export default function SectionClasses({ onToast, onNav }: Props) {
                 )}
 
                 {/* Liste des élèves */}
-                <div style={{ overflowY: 'auto', flex: 1, border: '1.5px solid var(--border)', borderRadius: 12 }}>
-                  {/* En-tête */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 200px', gap: 10, padding: '8px 14px', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', fontSize: 12, fontWeight: 800, color: 'var(--text3)', position: 'sticky', top: 0 }}>
+                <div style={{ overflow: 'auto', flex: 1, border: '1.5px solid var(--border)', borderRadius: 12 }}>
+                  <div style={{ minWidth: 420 }}>
+                    {/* En-tête */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 200px', gap: 10, padding: '8px 14px', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', fontSize: 12, fontWeight: 800, color: 'var(--text3)', position: 'sticky', top: 0 }}>
                     <div><input type="checkbox"
                       checked={lv2Form.rows.length > 0 && lv2Form.bulkSelected.size === lv2Form.rows.length}
                       onChange={e => setLV2Form(f => ({ ...f, bulkSelected: e.target.checked ? new Set(f.rows.map(r => r.id)) : new Set() }))}
@@ -1101,6 +1102,7 @@ export default function SectionClasses({ onToast, onNav }: Props) {
                       </div>
                     )
                   })}
+                  </div>
                 </div>
               </>
             )}
@@ -1188,54 +1190,56 @@ export default function SectionClasses({ onToast, onNav }: Props) {
                 )}
 
                 {/* Liste des élèves */}
-                <div style={{ overflowY: 'auto', flex: 1, border: '1.5px solid var(--border)', borderRadius: 12 }}>
-                  {/* En-tête */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 160px', gap: 10, padding: '8px 14px', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', fontSize: 12, fontWeight: 800, color: 'var(--text3)', position: 'sticky', top: 0 }}>
-                    <div><input type="checkbox"
-                      checked={pebsForm.rows.length > 0 && pebsForm.bulkSelected.size === pebsForm.rows.length}
-                      onChange={e => setPEBSForm(f => ({ ...f, bulkSelected: e.target.checked ? new Set(f.rows.map(r => r.id)) : new Set() }))}
-                      style={{ accentColor: 'var(--green)', cursor: 'pointer' }} /></div>
-                    <div>{t('classes.pebs.col_el')}</div>
-                    <div>{t('classes.pebs.col_status')}</div>
-                  </div>
+                <div style={{ overflow: 'auto', flex: 1, border: '1.5px solid var(--border)', borderRadius: 12 }}>
+                  <div style={{ minWidth: 420 }}>
+                    {/* En-tête */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 160px', gap: 10, padding: '8px 14px', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', fontSize: 12, fontWeight: 800, color: 'var(--text3)', position: 'sticky', top: 0 }}>
+                      <div><input type="checkbox"
+                        checked={pebsForm.rows.length > 0 && pebsForm.bulkSelected.size === pebsForm.rows.length}
+                        onChange={e => setPEBSForm(f => ({ ...f, bulkSelected: e.target.checked ? new Set(f.rows.map(r => r.id)) : new Set() }))}
+                        style={{ accentColor: 'var(--green)', cursor: 'pointer' }} /></div>
+                      <div>{t('classes.pebs.col_el')}</div>
+                      <div>{t('classes.pebs.col_status')}</div>
+                    </div>
 
-                  {pebsForm.rows.map((row, i) => {
-                    const pebsLabel = row.pebsFiliere === 'FR_PEBS' ? t('classes.pebs.status_fr')
-                      : row.pebsFiliere === 'EN_PEBS' ? t('classes.pebs.status_en')
-                      : null
-                    return (
-                      <div key={row.id} style={{ display: 'grid', gridTemplateColumns: '32px 1fr 160px', gap: 10, padding: '8px 14px', alignItems: 'center', borderBottom: i < pebsForm.rows.length - 1 ? '1px solid var(--bg2)' : 'none', background: pebsForm.bulkSelected.has(row.id) ? 'var(--green-light)' : 'white' }}>
-                        <div>
-                          <input type="checkbox"
-                            checked={pebsForm.bulkSelected.has(row.id)}
-                            onChange={() => setPEBSForm(f => {
-                              const next = new Set(f.bulkSelected)
-                              next.has(row.id) ? next.delete(row.id) : next.add(row.id)
-                              return { ...f, bulkSelected: next }
-                            })}
-                            style={{ accentColor: 'var(--green)', cursor: 'pointer' }} />
+                    {pebsForm.rows.map((row, i) => {
+                      const pebsLabel = row.pebsFiliere === 'FR_PEBS' ? t('classes.pebs.status_fr')
+                        : row.pebsFiliere === 'EN_PEBS' ? t('classes.pebs.status_en')
+                        : null
+                      return (
+                        <div key={row.id} style={{ display: 'grid', gridTemplateColumns: '32px 1fr 160px', gap: 10, padding: '8px 14px', alignItems: 'center', borderBottom: i < pebsForm.rows.length - 1 ? '1px solid var(--bg2)' : 'none', background: pebsForm.bulkSelected.has(row.id) ? 'var(--green-light)' : 'white' }}>
+                          <div>
+                            <input type="checkbox"
+                              checked={pebsForm.bulkSelected.has(row.id)}
+                              onChange={() => setPEBSForm(f => {
+                                const next = new Set(f.bulkSelected)
+                                next.has(row.id) ? next.delete(row.id) : next.add(row.id)
+                                return { ...f, bulkSelected: next }
+                              })}
+                              style={{ accentColor: 'var(--green)', cursor: 'pointer' }} />
+                          </div>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{row.lastName} {row.firstName}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            {row.saving ? (
+                              <div style={{ width: 16, height: 16, border: '2px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite', flexShrink: 0 }} />
+                            ) : pebsLabel ? (
+                              <span style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '2px 9px', borderRadius: 14, fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap' }}>{pebsLabel}</span>
+                            ) : (
+                              <span style={{ background: 'var(--bg2)', color: 'var(--text2)', padding: '2px 9px', borderRadius: 14, fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{t('classes.filiere_labels.GENERAL')}</span>
+                            )}
+                            <select
+                              value={row.pebsFiliere ?? ''}
+                              disabled={row.saving}
+                              onChange={e => updateStudentPEBS(row.id, e.target.value || null)}
+                              style={{ fontSize: 12, border: '1px solid var(--border2)', borderRadius: 7, padding: '3px 6px', color: 'var(--text2)', background: 'var(--surface)', cursor: 'pointer', maxWidth: 110 }}>
+                              <option value="">— Aucun —</option>
+                              {getPEBSOptions().map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                            </select>
+                          </div>
                         </div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{row.lastName} {row.firstName}</div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          {row.saving ? (
-                            <div style={{ width: 16, height: 16, border: '2px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite', flexShrink: 0 }} />
-                          ) : pebsLabel ? (
-                            <span style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '2px 9px', borderRadius: 14, fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap' }}>{pebsLabel}</span>
-                          ) : (
-                            <span style={{ background: 'var(--bg2)', color: 'var(--text2)', padding: '2px 9px', borderRadius: 14, fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{t('classes.filiere_labels.GENERAL')}</span>
-                          )}
-                          <select
-                            value={row.pebsFiliere ?? ''}
-                            disabled={row.saving}
-                            onChange={e => updateStudentPEBS(row.id, e.target.value || null)}
-                            style={{ fontSize: 12, border: '1px solid var(--border2)', borderRadius: 7, padding: '3px 6px', color: 'var(--text2)', background: 'var(--surface)', cursor: 'pointer', maxWidth: 110 }}>
-                            <option value="">— Aucun —</option>
-                            {getPEBSOptions().map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                          </select>
-                        </div>
-                      </div>
-                    )
-                  })}
+                      )
+                    })}
+                  </div>
                 </div>
               </>
             )}

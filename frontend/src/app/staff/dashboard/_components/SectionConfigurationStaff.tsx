@@ -40,12 +40,7 @@ export default function SectionConfigurationStaff({ onToast, allowedSections, in
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       {/* Banner / Tab bar Header */}
       <div
-        style={{
-          background: 'var(--surface)',
-          borderBottom: '1px solid var(--border)',
-          padding: '12px 20px 0 20px',
-          flexShrink: 0,
-        }}
+        className="px-3.5 sm:px-5 pt-3 bg-[var(--surface)] border-b border-[var(--border)] flex-shrink-0"
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
           <div
@@ -58,30 +53,29 @@ export default function SectionConfigurationStaff({ onToast, allowedSections, in
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              flexShrink: 0,
             }}
           >
             <Settings size={16} />
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <h1
+              className="truncate text-sm sm:text-lg font-bold font-spectral"
               style={{
-                fontFamily: 'var(--font-spectral),Spectral,serif',
-                fontSize: 18,
-                fontWeight: 700,
                 color: 'var(--text)',
                 lineHeight: 1.2,
               }}
             >
               Configuration & Administration Établissement
             </h1>
-            <p style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
+            <p className="hidden sm:block text-xs text-[var(--text3)] mt-0.5">
               Paramétrage des structures, grilles horaires, affectations, cautions et admissions
             </p>
           </div>
         </div>
 
-        {/* Tabs Bar */}
-        <div style={{ display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 1 }}>
+        {/* Tabs Bar — scrollable horizontalement sur mobile façon app native */}
+        <div className="flex gap-1 overflow-x-auto no-scrollbar pb-0.5" style={{ WebkitOverflowScrolling: 'touch' }}>
           {availableTabs.map(tab => {
             const Icon = tab.icon
             const isActive = activeTab === tab.id

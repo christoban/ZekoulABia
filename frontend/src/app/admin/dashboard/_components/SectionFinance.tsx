@@ -287,10 +287,10 @@ export default function SectionFinance({ onToast, onNav }: Props) {
       </div>
 
       {/* Tabs */}
-      <div className="gap-1 mb-3 md:mb-4" style={{ display: 'flex', background: 'var(--bg2)', padding: 3, borderRadius: 10, width: 'fit-content' }}>
+      <div className="gap-1 mb-3 md:mb-4 max-w-full overflow-x-auto no-scrollbar" style={{ display: 'flex', background: 'var(--bg2)', padding: 3, borderRadius: 10, width: 'fit-content' }}>
         {(['supervision', 'plans', 'invoices'] as const).map(tabKey => (
           <button key={tabKey} onClick={() => setTab(tabKey)}
-            className="px-2.5 md:px-3 py-1 md:py-1.5 text-[11.5px] md:text-[13px]"
+            className="px-2.5 md:px-3 py-1 md:py-1.5 text-[11.5px] md:text-[13px] whitespace-nowrap flex-shrink-0"
             style={{ borderRadius: 7, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: 'none', background: tab === tabKey ? 'white' : 'transparent', color: tab === tabKey ? 'var(--text)' : 'var(--text3)', boxShadow: tab === tabKey ? '0 1px 4px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.12s' }}>
             {tabKey === 'supervision' ? t('tabs.supervision') : tabKey === 'plans' ? t('tabs.plans') : t('tabs.invoices')}
           </button>

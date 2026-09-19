@@ -150,14 +150,14 @@ export default function SectionMatricules({ onToast }: Props) {
         <p className="text-[12px] md:text-[12.5px]" style={{ color: 'var(--text2)', marginBottom: 14, lineHeight: 1.45 }}>
           {t('matricules.import_desc')}
         </p>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="flex flex-col sm:flex-row gap-2">
           <input ref={fileRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} />
           <button onClick={() => fileRef.current?.click()}
-            className="text-xs md:text-[13px] py-2 md:py-2 px-3.5 rounded-lg"
-            style={{ ...btnSec, flex: 1, textAlign: 'center' }}>{t('matricules.select_file')}</button>
+            className="w-full sm:flex-1 text-xs md:text-[13px] py-2 px-3.5 rounded-lg text-center"
+            style={btnSec}>{t('matricules.select_file')}</button>
           <button data-help-id="matricules-import-btn" onClick={handleImport} disabled={importing}
-            className="text-xs md:text-[13px] py-2 md:py-2 px-3.5 rounded-lg"
-            style={{ ...btnPri, flex: 1 }}>{importing ? '...' : t('matricules.start_import')}</button>
+            className="w-full sm:flex-1 text-xs md:text-[13px] py-2 px-3.5 rounded-lg text-center"
+            style={btnPri}>{importing ? '...' : t('matricules.start_import')}</button>
         </div>
       </div>
 
@@ -222,8 +222,8 @@ export default function SectionMatricules({ onToast }: Props) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                 {fuzzyMatches.map(f => (
                   <div key={f.ligne} className="rounded-lg p-3 md:px-3.5 md:py-2.5" style={{ background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.3)' }}>
-                    <div className="gap-2 mb-1.5" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
-                      <div className="gap-3 md:gap-4" style={{ display: 'flex' }}>
+                    <div className="gap-2 mb-1.5 flex flex-col sm:flex-row sm:items-center justify-between">
+                      <div className="gap-3 md:gap-4 flex items-center flex-wrap">
                         <div>
                           <div className="text-[9.5px] md:text-[10.5px]" style={{ color: 'var(--text3)', fontWeight: 700, marginBottom: 1, textTransform: 'uppercase' }}>{t('matricules.fuzzy_base_label')}</div>
                           <div className="text-xs md:text-[13px]" style={{ fontWeight: 700, color: 'var(--text)' }}>{f.nomBase} {f.prenomBase}</div>
