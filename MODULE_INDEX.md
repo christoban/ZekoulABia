@@ -85,7 +85,7 @@ Chemins raccourcis : `app/` = `backend/src/application`, `infra/` = `backend/src
 | **Dashboard Group** | Propriétaire d'un groupe d'écoles | `fe/app/group` | `dashboard/`, `login`, `[token]` |
 | **Onboarding Phase 1** | Wizard d'inscription (token) | `fe/app/onboarding/[token]/page.tsx` | `detectTemplate`, `TEMPLATE_META`, PEBS, LV2 |
 | **Onboarding Phase 2** | Conversationnel + activation | `fe/app/admin/configuration` | `page.tsx`, `ConversationalOnboarding.tsx` (réconcilié depuis Phase 1) |
-| **Onboarding élève** | Squelette + formulaire + validation | `fe/app/eleve-onboarding` | Élève préinscrit valide son dossier |
+| **Onboarding élève** | Inscriptions en cours d'année (Secrétaire par défaut, Admin via option `adminGereInscriptions`), inscription directe en 1 étape | `fe/app/eleve-onboarding`, `SectionEleveOnboarding.tsx` | Traitement & inscription directe sans approbation tiers |
 | **Auth / public** | Login, reset, landing, invite | `fe/app/login`, `reset-password`, `invite`, `components/LandingPage` | |
 | **Socle i18n** | Traduction FR/EN | `fe/lib/i18n/`, `fe/locales/{fr,en}/*.json` (13 namespaces) | `useT`, `LanguageProvider`, `resolveLanguage`, `README.md` |
 | **Thème** | Clair/sombre | `fe/app/providers.tsx` (next-themes), `fe/app/globals.css` (`.dark`), `components/ThemeToggle` | |
