@@ -31,10 +31,18 @@ export class AnnouncementController {
         expiresAt?: string | null;
       };
 
+      let staffTitle: string | null = null;
+      if (user.role?.toUpperCase() === 'STAFF') {
+        const employee = await this.userRepository.findEmployeeById(user.userId, user.schoolId);
+        staffTitle = employee?.staffProfile?.title ?? null;
+      }
+
       const annonce = await this.creerAnnonce.execute({
         schoolId: user.schoolId,
         authorId: user.userId,
         role: user.role,
+        staffTitle,
+        permissions: (user as any).permissions ?? [],
         title: title ?? '',
         content: content ?? '',
         targetRoles: Array.isArray(targetRoles) ? targetRoles : [],

@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   LogOut, LayoutDashboard, GraduationCap, ClipboardCheck,
-  Calendar, Landmark, Smartphone, Banknote, AlertTriangle, BookOpen,
-  Compass, IdCard, HandCoins, X, ShieldAlert,
+  Calendar, Landmark, Banknote, AlertTriangle, BookOpen,
+  Compass, IdCard, ShieldAlert,
   Megaphone, MessageCircle,
   ScanSearch, Users, Settings, ChevronDown, ChevronRight,
 } from 'lucide-react'
@@ -139,8 +140,9 @@ export default function StaffSidebar({ current, onChange, allowedSections, sessi
         </div>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto" style={{ padding: '6px 6px' }}>
+      {/* Nav — wrapper relatif pour le fondu de défilement */}
+      <div className="relative" style={{ minHeight: 0, flex: 1 }}>
+        <nav className="overflow-y-auto px-2 pt-0 pb-3 h-full" style={{ minHeight: 0 }}>
         {/* Dashboard principal */}
         <button onClick={() => handleChange('dashboard')}
           className={cn(
@@ -283,20 +285,22 @@ export default function StaffSidebar({ current, onChange, allowedSections, sessi
             </button>
           )}
         </div>
-      </nav>
+        </nav>
+        <div className="md:hidden" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 16, background: 'linear-gradient(0deg,var(--sidebar),transparent)', pointerEvents: 'none' }} />
+      </div>
 
-      {/* User */}
-      <div className="border-t border-white/[0.07]" style={{ padding: '8px 10px' }}>
-        <div className="flex items-center gap-2.5 rounded-[8px] hover:bg-white/[0.06] cursor-pointer" style={{ padding: '6px 8px' }}>
+      {/* User — desktop uniquement (comme AdminSidebar) */}
+      <div className="hidden md:block border-t border-white/[0.07]" style={{ padding: '9px 12px', flexShrink: 0 }}>
+        <div className="flex items-center gap-2.5 rounded-[8px] hover:bg-white/[0.06]" style={{ padding: '6px 8px' }}>
           <div className="w-7 h-7 rounded-[6px] bg-gradient-to-br from-[var(--teal)] to-[var(--green)] flex items-center justify-center text-white font-black text-[11px] flex-shrink-0">
             {initials}
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-[12px] font-bold text-white truncate">{userFallback}</div>
-            <div className="text-[10px] text-white/35">Staff</div>
+            <div className="text-[10px] text-white/35">{tcommon('brand.roleStaff')}</div>
           </div>
           <button onClick={logoutUser} title={tcommon('user.logoutTitle')}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', padding: 3, borderRadius: 4, flexShrink: 0 }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', flexShrink: 0, padding: 3, borderRadius: 4 }}
             onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'rgba(239,68,68,0.8)'}
             onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)'}>
             <LogOut size={14} />
@@ -308,22 +312,24 @@ export default function StaffSidebar({ current, onChange, allowedSections, sessi
 
   return (
     <>
-      <aside className="hidden md:flex w-[225px] min-w-[225px] flex-col h-screen flex-shrink-0 relative overflow-hidden" style={{ background: 'var(--sidebar)' }}>
+      {/* Desktop — sidebar statique, fait partie du flux flex normal */}
+      <aside className="hidden md:flex w-[250px] min-w-[250px] flex-shrink-0 relative" style={{ background: 'var(--sidebar)', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
         {sidebarBody}
       </aside>
 
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onMobileClose} />
-          <aside className="absolute left-0 top-0 h-full w-[85vw] max-w-[280px] flex flex-col overflow-hidden shadow-2xl" style={{ background: 'var(--sidebar)' }}>
-            <button onClick={onMobileClose} aria-label="Fermer"
-              className="absolute z-20" style={{ top: 12, right: 12, width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.12)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-              <X size={16} color="white" />
-            </button>
-            {sidebarBody}
-          </aside>
-        </div>
-      )}
+      {/* Mobile — tiroir en overlay, glisse depuis la gauche (comme AdminSidebar) */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true">
+            <motion.div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onMobileClose}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }} />
+            <motion.aside className="absolute left-0 top-0 h-full w-[85vw] max-w-[250px] flex flex-col relative" style={{ background: 'var(--sidebar)', overflow: 'hidden' }}
+              initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ duration: 0.26, ease: [0.4, 0, 0.2, 1] }}>
+              {sidebarBody}
+            </motion.aside>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   )
 }

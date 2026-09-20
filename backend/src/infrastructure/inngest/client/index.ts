@@ -1,7 +1,10 @@
 import { Inngest } from "inngest";
 
 // Create a client to send and receive events
-export const inngest = new Inngest({ id: "sms-lms" });
+export const inngest = new Inngest({
+  id: "sms-lms",
+  eventKey: process.env.INNGEST_EVENT_KEY || "local-dev-event-key",
+});
 
 // Create an empty array where we'll export future Inngest functions
 export const functions = [];

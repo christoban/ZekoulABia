@@ -10,6 +10,7 @@ import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration'
 const nunito = Nunito({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700', '800', '900'],
+  style: ['normal', 'italic'],
   variable: '--font-nunito',
   display: 'swap',
 })
@@ -17,6 +18,7 @@ const nunito = Nunito({
 const spectral = Spectral({
   subsets: ['latin'],
   weight: ['400', '600', '700'],
+  style: ['normal', 'italic'],
   variable: '--font-spectral',
   display: 'swap',
 })

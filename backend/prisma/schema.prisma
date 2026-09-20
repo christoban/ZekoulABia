@@ -155,6 +155,8 @@ model School {
   academicYears                AcademicYear[]
   activitiesLogs               ActivitiesLog[]
   announcements                Announcement[]
+  publicationLectures          PublicationLecture[]
+  babillardAudits              BabillardAudit[]
   attendances                  Attendance[]
   classes                      Class[]
   classCouncilSessions         ClassCouncilSession[]
@@ -572,6 +574,8 @@ model User {
   deletedAt                       DateTime?
   deletedById                     String?
   announcements                   Announcement[]             @relation("AnnouncementAuthor")
+  publicationLectures             PublicationLecture[]
+  babillardAudits                 BabillardAudit[]
   conversationParticipants        ConversationParticipant[]
   attendancesRecorded             Attendance[]               @relation("RecordedAttendances")
   attendancesAsTeacher            Attendance[]               @relation("TeacherAttendances")
@@ -2146,21 +2150,121 @@ model StudentSubGroupAssignment {
 }
 
 model Announcement {
-  id          String     @id @default(cuid())
-  schoolId    String
-  title       String
-  content     String
-  targetRoles UserRole[]
-  isPinned    Boolean    @default(false)
-  authorId    String
-  createdAt   DateTime   @default(now())
-  expiresAt   DateTime?
-  author      User       @relation("AnnouncementAuthor", fields: [authorId], references: [id])
-  school      School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  id              String                     @id @default(cuid())
+  schoolId        String
+  title           String
+  content         String
+  targetRoles     UserRole[]
+  isPinned        Boolean                    @default(false)
+  authorId        String
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @default(now()) @updatedAt
+  expiresAt       DateTime?
+
+  type            PublicationType            @default(ANNONCE)
+  format          PublicationCorpsFormat     @default(HTML_SAFE)
+  categorie       PublicationCategorie       @default(COMMUNIQUE)
+  priorite        PublicationPriorite        @default(NORMALE)
+  statut          PublicationStatut          @default(PUBLIEE)
+  dureeVisibilite PublicationDureeVisibilite @default(PERMANENT)
+  publieeLe       DateTime                   @default(now())
+  programmeeLe    DateTime?
+  modifieLe       DateTime?
+  deletedAt       DateTime?
+  auteurRole      String?
+  auteurTitre     String?
+  targetNiveaux   String[]                   @default([])
+  targetClasses   String[]                   @default([])
+  piecesJointes   Json                       @default("[]")
+  payload         Json?
+  referenceType   String?
+  referenceId     String?
+
+  author          User                       @relation("AnnouncementAuthor", fields: [authorId], references: [id])
+  school          School                     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  lectures        PublicationLecture[]
+  audits          BabillardAudit[]
 
   @@index([schoolId])
+  @@index([schoolId, statut, publieeLe(sort: Desc)])
   @@index([schoolId, isPinned])
   @@index([schoolId, expiresAt])
+  @@index([schoolId, deletedAt])
+}
+
+model PublicationLecture {
+  id            String       @id @default(cuid())
+  publicationId String
+  userId        String
+  schoolId      String
+  luLe          DateTime     @default(now())
+
+  publication   Announcement @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  school        School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([publicationId, userId])
+  @@index([schoolId, userId])
+  @@index([publicationId])
+}
+
+model BabillardAudit {
+  id            String       @id @default(cuid())
+  schoolId      String
+  publicationId String
+  userId        String
+  action        String       // CREATE, UPDATE, PIN, UNPIN, DELETE, ARCHIVE
+  details       Json?
+  createdAt     DateTime     @default(now())
+
+  publication   Announcement @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  school        School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId, createdAt])
+  @@index([publicationId])
+}
+
+enum PublicationType {
+  ANNONCE
+  RESULTATS
+}
+
+enum PublicationCorpsFormat {
+  MARKDOWN
+  HTML_SAFE
+}
+
+enum PublicationCategorie {
+  COMMUNIQUE
+  CIRCULAIRE
+  EXAMENS
+  EVENEMENT
+  VIE_SCOLAIRE
+  ADMINISTRATIF
+}
+
+enum PublicationPriorite {
+  NORMALE
+  IMPORTANTE
+  URGENTE
+}
+
+enum PublicationStatut {
+  BROUILLON
+  EN_ATTENTE
+  PROGRAMMEE
+  PUBLIEE
+  ARCHIVEE
+}
+
+enum PublicationDureeVisibilite {
+  PERMANENT
+  J3
+  J7
+  J15
+  J30
+  PERSONNALISEE
 }
 
 model EmailLog {

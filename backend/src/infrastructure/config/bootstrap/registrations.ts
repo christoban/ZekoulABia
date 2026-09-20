@@ -37,6 +37,18 @@ import { creerPebsExamRoutes } from '@infrastructure/http/routes/pebsExam.routes
 import { creerPushNotificationRoutes } from '@infrastructure/http/routes/pushNotification.routes';
 import { creerNotificationRoutes } from '@infrastructure/http/routes/notification.routes';
 import { creerAnnouncementRoutes } from '@infrastructure/http/routes/announcement.routes';
+import { BabillardController } from '@infrastructure/http/controllers/BabillardController';
+import { creerBabillardRoutes } from '@infrastructure/http/routes/babillard.routes';
+import { PrismaPublicationRepository } from '@infrastructure/persistence/prisma/PrismaPublicationRepository';
+import { CreerPublicationUseCase } from '@application/babillard/CreerPublicationUseCase';
+import { ModifierPublicationUseCase } from '@application/babillard/ModifierPublicationUseCase';
+import { SupprimerPublicationUseCase } from '@application/babillard/SupprimerPublicationUseCase';
+import { ListerPublicationsUseCase } from '@application/babillard/ListerPublicationsUseCase';
+import { MarquerPublicationLueUseCase } from '@application/babillard/MarquerPublicationLueUseCase';
+import { EpinglerPublicationUseCase } from '@application/babillard/EpinglerPublicationUseCase';
+import { CalculerStatistiquesLectureUseCase } from '@application/babillard/CalculerStatistiquesLectureUseCase';
+import { UploaderPieceJointeUseCase } from '@application/babillard/UploaderPieceJointeUseCase';
+import { InngestEventPublisher } from '@infrastructure/events/InngestEventPublisher';
 import { creerMessagerieRoutes } from '@infrastructure/http/routes/messagerie.routes';
 import { creerApeeRoutes } from '@infrastructure/http/routes/apee.routes';
 import { creerDisciplineCouncilRoutes } from '@infrastructure/http/routes/disciplineCouncil.routes';
@@ -208,7 +220,7 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
   const notificationController = new NotificationController(c.notification.service);
   app.use('/api/v2/notifications', creerNotificationRoutes(notificationController));
 
-  // ── Babillard numérique ─────────────────────────────────────────────────────
+  // ── Babillard numérique (rétrocompatibilité) ───────────────────────────────
   const announcementRepository = new PrismaAnnouncementRepository(p);
   const creerAnnonceUseCase = new CreerAnnonceUseCase(announcementRepository);
   const listerAnnoncesUseCase = new ListerAnnoncesUseCase(announcementRepository);
@@ -222,6 +234,32 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
     supprimerAnnonceUseCase,
   );
   app.use('/api/v2/announcements', creerAnnouncementRoutes(announcementController));
+
+  // ── Babillard Officiel (nouvelle architecture) ──────────────────────────────
+  const publicationRepository = new PrismaPublicationRepository(p);
+  const inngestEventPublisher = new InngestEventPublisher();
+  const creerPublicationUseCase = new CreerPublicationUseCase(publicationRepository, inngestEventPublisher);
+  const modifierPublicationUseCase = new ModifierPublicationUseCase(publicationRepository);
+  const supprimerPublicationUseCase = new SupprimerPublicationUseCase(publicationRepository);
+  const listerPublicationsUseCase = new ListerPublicationsUseCase(publicationRepository);
+  const marquerLueUseCase = new MarquerPublicationLueUseCase(publicationRepository);
+  const epinglerPublicationUseCase = new EpinglerPublicationUseCase(publicationRepository);
+  const calculerStatsUseCase = new CalculerStatistiquesLectureUseCase(publicationRepository);
+  const uploaderPjUseCase = new UploaderPieceJointeUseCase();
+
+  const babillardController = new BabillardController(
+    p,
+    publicationRepository,
+    creerPublicationUseCase,
+    modifierPublicationUseCase,
+    supprimerPublicationUseCase,
+    listerPublicationsUseCase,
+    marquerLueUseCase,
+    epinglerPublicationUseCase,
+    calculerStatsUseCase,
+    uploaderPjUseCase,
+  );
+  app.use('/api/v2/babillard', creerBabillardRoutes(babillardController));
 
   // ── Messagerie bidirectionnelle ──────────────────────────────────────────────
   const messagerieRepository = new PrismaMessagerieRepository(p);

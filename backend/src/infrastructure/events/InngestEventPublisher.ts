@@ -10,6 +10,10 @@ import { inngest } from '../inngest/client';
 
 export class InngestEventPublisher implements EventPublisher {
   async emit(eventName: string, data: Record<string, unknown>): Promise<void> {
-    await inngest.send({ name: eventName, data });
+    try {
+      await inngest.send({ name: eventName, data });
+    } catch (err: any) {
+      console.warn(`[InngestEventPublisher] Événement '${eventName}' non transmis (Inngest hors ligne ou clé absente):`, err?.message || err);
+    }
   }
 }

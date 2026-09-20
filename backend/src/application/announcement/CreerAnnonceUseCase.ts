@@ -1,10 +1,13 @@
 import type { UserRole } from '@domain/types/enums';
 import type { AnnouncementRepository } from '@domain/ports/repositories/AnnouncementRepository';
+import { peutPublierBabillard } from '@domain/rules/BabillardPermissionRules';
 
 export interface CreerAnnonceCommande {
   schoolId: string;
   authorId: string;
   role: string;
+  staffTitle?: string | null;
+  permissions?: string[];
   title: string;
   content: string;
   targetRoles: UserRole[];
@@ -16,8 +19,17 @@ export class CreerAnnonceUseCase {
   constructor(private readonly announcementRepository: AnnouncementRepository) {}
 
   async execute(cmd: CreerAnnonceCommande) {
-    if (!['ADMIN', 'STAFF'].includes(cmd.role.toUpperCase())) {
-      throw new Error('Seuls l\'Admin et le Staff peuvent publier sur le babillard.');
+    const userContexte = {
+      userId: cmd.authorId,
+      schoolId: cmd.schoolId,
+      role: cmd.role,
+      titre: cmd.staffTitle ?? null,
+      permissions: cmd.permissions ?? [],
+      classeIds: [],
+    };
+
+    if (!peutPublierBabillard(userContexte)) {
+      throw new Error('Seuls la Direction et le Censeur peuvent publier sur le babillard.');
     }
 
     const title = cmd.title.trim();

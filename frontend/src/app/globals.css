@@ -78,8 +78,22 @@
   --orange: #ea580c;
   --orange-light: #ffedd5;
 
+  /* Babillard Officiel */
+  --board-bg: #ece5d8;
+  --board-texture: radial-gradient(#dfd5c3 1px, transparent 1px);
+  --cork-panel-bg: #f5efe0;
+  --cork-panel-border: #9c7a4a;
+  --cork-panel-dots: #b89e72;
+  --paper: #fcfbf9;
+  --paper-edge: #e6dfd3;
+  --paper-shadow: 0 4px 12px rgba(45, 35, 20, 0.08), 0 1px 3px rgba(45, 35, 20, 0.06);
+  --paper-shadow-hover: 0 8px 24px rgba(45, 35, 20, 0.14), 0 2px 6px rgba(45, 35, 20, 0.08);
+  --pin-red: #ef4444;
+  --pin-orange: #f97316;
+  --pin-green: #10b981;
+
   /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+  --shadow-sm: 0 1px 3px rgba(40,30,15,0.06);
   --shadow-md: 0 2px 8px rgba(0,0,0,0.06);
   --shadow-lg: 0 4px 16px rgba(0,0,0,0.08);
 }
@@ -134,6 +148,17 @@
   /* Orange */
   --orange: #f97316;
   --orange-light: #431407;
+
+  /* Babillard Officiel Dark — Le panneau physique reste crème dans les deux thèmes */
+  --board-bg: #141210;
+  --board-texture: radial-gradient(#262422 1px, transparent 1px);
+  --cork-panel-bg: #f5efe0;
+  --cork-panel-border: #9c7a4a;
+  --cork-panel-dots: #b89e72;
+  --paper: #fcfbf9;
+  --paper-edge: #d8d0c0;
+  --paper-shadow: 0 4px 16px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
+  --paper-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.6), 0 3px 8px rgba(0, 0, 0, 0.4);
 
   /* Shadows — light-on-dark */
   --shadow-sm: 0 1px 4px rgba(0,0,0,0.35);
@@ -278,11 +303,82 @@ body {
   to { transform: translateX(-20px); opacity: 0; }
 }
 
-/* ── ACCESSIBILITY — respect prefers-reduced-motion ── */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+/* ── BABILLARD RICH EDITOR & DOCUMENT RENDERING ── */
+.babillard-rich-editor:empty:before {
+  content: attr(data-placeholder);
+  color: #9c8e7d;
+  pointer-events: none;
+  display: block;
+}
+
+.babillard-prose p {
+  margin-bottom: 0.75rem;
+}
+.babillard-prose p:last-child {
+  margin-bottom: 0;
+}
+.babillard-prose ul {
+  list-style-type: disc;
+  margin-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+.babillard-prose ol {
+  list-style-type: decimal;
+  margin-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+.babillard-prose li {
+  margin-bottom: 0.25rem;
+}
+.babillard-prose a {
+  color: #047857;
+  text-decoration: underline;
+}
+
+/* ── BABILLARD TEXT FORMATTING GUARANTEES (BOLD, ITALIC, UNDERLINE) ── */
+.babillard-rich-editor strong,
+.babillard-rich-editor b,
+.babillard-prose strong,
+.babillard-prose b,
+.babillard-body-content strong,
+.babillard-body-content b,
+.babillard-card-excerpt strong,
+.babillard-card-excerpt b {
+  font-weight: 700 !important;
+}
+
+.babillard-card-excerpt strong,
+.babillard-card-excerpt b,
+.babillard-body-content strong,
+.babillard-body-content b {
+  color: #1a1209;
+}
+
+.babillard-rich-editor em,
+.babillard-rich-editor i,
+.babillard-prose em,
+.babillard-prose i,
+.babillard-body-content em,
+.babillard-body-content i,
+.babillard-card-excerpt em,
+.babillard-card-excerpt i {
+  font-style: italic !important;
+}
+
+.babillard-rich-editor u,
+.babillard-prose u,
+.babillard-body-content u,
+.babillard-card-excerpt u {
+  text-decoration: underline !important;
+  text-underline-offset: 3px;
+}
+
+.babillard-rich-editor mark,
+.babillard-prose mark,
+.babillard-body-content mark,
+.babillard-card-excerpt mark {
+  background-color: #fef08a !important;
+  color: #854d0e !important;
+  padding: 0.1em 0.25em;
+  border-radius: 2px;
 }
