@@ -265,19 +265,19 @@ export default function FilConversation({ conversationId, conversation, currentU
   }
 
   const statutIcone = (message: DisplayMessage) => {
-    if (message.status === 'PENDING') return <Clock size={13} color="var(--text3)" />
-    if (message.status === 'FAILED') return <AlertCircle size={13} color="var(--red)" />
+    if (message.status === 'PENDING') return <Clock size={13} color="#047857" />
+    if (message.status === 'FAILED') return <AlertCircle size={13} color="#dc2626" />
     const isRead = message.isRead || (Array.isArray(message.readStatuses) && message.readStatuses.some((r) => r.userId !== currentUser.id))
     if (isRead) {
       return (
         <span title="Lu" style={{ display: 'inline-flex', alignItems: 'center' }}>
-          <CheckCheck size={15} color="#2563eb" />
+          <CheckCheck size={15} color="#059669" />
         </span>
       )
     }
     return (
       <span title="Envoyé" style={{ display: 'inline-flex', alignItems: 'center' }}>
-        <Check size={13} color="var(--text3)" />
+        <Check size={13} color="#047857" />
       </span>
     )
   }
@@ -383,19 +383,19 @@ export default function FilConversation({ conversationId, conversation, currentU
                       ? 'linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%)'
                       : 'var(--surface)',
                     border: estMoi ? '1px solid rgba(16,185,129,0.2)' : '1px solid var(--border)',
-                    color: 'var(--text)', fontSize: 13.5, lineHeight: 1.45,
+                    color: estMoi ? '#0f172a' : 'var(--text)', fontSize: 13.5, lineHeight: 1.45,
                     opacity: rejete ? 0.55 : 1,
                     boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
                     wordBreak: 'break-word',
                   }}>
                     <span style={{ whiteSpace: 'pre-wrap' }}>{message.content}</span>
                     {rejete && (
-                      <div style={{ fontSize: 10.5, color: 'var(--red)', marginTop: 4, fontStyle: 'italic' }}>
+                      <div style={{ fontSize: 10.5, color: estMoi ? '#b91c1c' : 'var(--red)', marginTop: 4, fontStyle: 'italic' }}>
                         {t('messagerie.rejected') ?? 'Refusé par la modération'}{message.moderationReason ? ` — ${message.moderationReason}` : ''}
                       </div>
                     )}
                     {enAttente && !rejete && (
-                      <div style={{ fontSize: 10.5, color: 'var(--amber)', marginTop: 4, fontStyle: 'italic' }}>
+                      <div style={{ fontSize: 10.5, color: estMoi ? '#b45309' : 'var(--amber)', marginTop: 4, fontStyle: 'italic' }}>
                         {t('messagerie.pending_moderation') ?? 'En attente de modération'}
                       </div>
                     )}
@@ -404,7 +404,7 @@ export default function FilConversation({ conversationId, conversation, currentU
                       display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
                       gap: 4, marginTop: 2,
                     }}>
-                      <span style={{ fontSize: 10, color: 'var(--text3)' }}>
+                      <span style={{ fontSize: 10, color: estMoi ? '#047857' : 'var(--text3)' }}>
                         {formatHeureMessage(message.createdAt)}
                       </span>
                       {estMoi && statutIcone(message)}
