@@ -88,8 +88,8 @@ export default function AdminTopbar({ title, onNavigate, onChangePassword, onMen
     >
       {/* Hamburger — sous md uniquement */}
       {onMenuClick && (
-        <button onClick={onMenuClick} aria-label="Menu" className="md:hidden"
-          style={{ width: 40, height: 40, borderRadius: 20, border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
+        <button onClick={onMenuClick} aria-label="Menu" className="flex md:!hidden"
+          style={{ width: 40, height: 40, borderRadius: 20, border: 'none', background: 'transparent', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
           <Menu size={22} color="var(--text)" strokeWidth={2} />
         </button>
       )}

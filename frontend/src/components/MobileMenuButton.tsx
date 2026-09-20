@@ -5,7 +5,7 @@ import { Menu } from 'lucide-react'
  * navigation mobile. Utilisé dans chaque topbar/header de tableau de bord. */
 export default function MobileMenuButton({ onClick }: { onClick: () => void }) {
   return (
-    <button onClick={onClick} aria-label="Menu" className="flex md:hidden"
+    <button onClick={onClick} aria-label="Menu" className="flex md:!hidden"
       style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg2)', border: '1px solid var(--border)', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
       <Menu size={16} color="var(--text)" />
     </button>

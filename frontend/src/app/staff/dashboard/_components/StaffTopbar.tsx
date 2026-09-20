@@ -1,16 +1,15 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { KeyRound, MoreVertical, Moon, Sun, Calendar, LogOut } from 'lucide-react'
-import { useTheme } from 'next-themes'
-import type { StaffSection, SessionUser } from '../_types'
+import { useState, useEffect, useRef } from 'react'
+import { KeyRound, MoreVertical, Bell, Menu, Sun, Moon, LogOut } from 'lucide-react'
 import { useT } from '@/lib/i18n'
+import { useTheme } from 'next-themes'
 import ThemeToggle from '@/components/ThemeToggle'
 import NotificationBell from '@/components/NotificationBell'
-import MobileMenuButton from '@/components/MobileMenuButton'
-import CalendarTopbarButton from '@/components/CalendarTopbarButton'
 import OfflineSyncButtonPopover from '@/components/OfflineSyncButtonPopover'
-import CalendarProgressModal from '@/components/CalendarProgressModal'
+import { useNotifications } from '@/hooks/NotificationContext'
+import CalendarTopbarButton from '@/components/CalendarTopbarButton'
+import type { StaffSection, SessionUser } from '../_types'
 
 const SECTION_KEY: Record<string, string> = {
   'grille-horaire': 'grilleHoraire',
@@ -45,62 +44,77 @@ export default function StaffTopbar({
 }: Props) {
   const tnav = useT('navigation')
   const tcommon = useT('common')
-  const { theme, setTheme, resolvedTheme } = useTheme()
-  const isDark = (theme === 'system' ? resolvedTheme : theme) === 'dark'
 
+  const { theme, setTheme, resolvedTheme } = useTheme()
+  const { recentNotifications, unreadCount, markAsRead, registerSeen } = useNotifications()
+
+  // Même pattern que AdminTopbar : panneau notif + kebab + profil sur mobile
+  const [notifOpen, setNotifOpen] = useState(false)
   const [kebabOpen, setKebabOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
-  const [calendarModalOpen, setCalendarModalOpen] = useState(false)
-
+  const notifRef = useRef<HTMLDivElement>(null)
   const kebabRef = useRef<HTMLDivElement>(null)
   const profileRef = useRef<HTMLDivElement>(null)
 
+  const toggleNotif = () => {
+    if (!notifOpen) registerSeen()
+    setNotifOpen(o => !o)
+    setKebabOpen(false)
+    setProfileOpen(false)
+  }
+
+  const toggleKebab = () => {
+    setKebabOpen(o => !o)
+    setNotifOpen(false)
+    setProfileOpen(false)
+  }
+
+  const toggleProfile = () => {
+    setProfileOpen(o => !o)
+    setNotifOpen(false)
+    setKebabOpen(false)
+  }
+
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (kebabRef.current && !kebabRef.current.contains(e.target as Node)) {
-        setKebabOpen(false)
-      }
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
-        setProfileOpen(false)
-      }
+    const handleClickOutside = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false)
+      if (kebabRef.current && !kebabRef.current.contains(e.target as Node)) setKebabOpen(false)
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const userDisplayName = sessionUser?.firstName
-    ? `${sessionUser.firstName} ${sessionUser.nomComplet?.split(' ').slice(1).join(' ') || ''}`.trim()
-    : (sessionUser?.nomComplet || 'Membre Staff')
+  // Initiales utilisateur pour l'avatar mobile (même logique qu'admin)
+  const userDisplayName = sessionUser?.nomComplet || sessionUser?.firstName || tcommon('user.fallbackName')
+  const userInitials = userDisplayName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w: string) => w[0]?.toUpperCase())
+    .join('') || 'ST'
 
-  const userInitials = sessionUser?.firstName
-    ? `${sessionUser.firstName[0]}${sessionUser.nomComplet?.split(' ')?.[1]?.[0] || ''}`.toUpperCase()
-    : 'ST'
+  const isDark = resolvedTheme === 'dark'
+
+  const title = tnav(`pageTitle.staff_${SECTION_KEY[section] ?? section}`)
 
   return (
     <header
-      style={{
-        height: 52,
-        background: 'var(--surface)',
-        borderBottom: '1px solid var(--border)',
-        display: 'flex',
-        alignItems: 'center',
-        padding: '0 14px',
-        gap: 10,
-        flexShrink: 0,
-      }}
+      className="px-3 py-[8px] gap-1.5 md:gap-[10px] md:px-[20px] md:h-[48px] md:border-b-[1px] md:border-[var(--border)]"
+      style={{ background: 'var(--surface)', display: 'flex', alignItems: 'center', flexShrink: 0, position: 'relative', boxShadow: '0 1px 0 rgba(0,0,0,0.06)' }}
     >
-      {onMenuClick && <MobileMenuButton onClick={onMenuClick} />}
+      {/* Hamburger — sous md uniquement */}
+      {onMenuClick && (
+        <button onClick={onMenuClick} aria-label="Menu" className="flex md:!hidden"
+          style={{ width: 40, height: 40, borderRadius: 20, border: 'none', background: 'transparent', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
+          <Menu size={22} color="var(--text)" strokeWidth={2} />
+        </button>
+      )}
 
-      <div
-        className="truncate flex-1 min-w-0"
-        style={{
-          fontFamily: 'var(--font-spectral),Spectral,serif',
-          fontSize: 17,
-          fontWeight: 700,
-          color: 'var(--text)',
-        }}
-      >
-        {tnav(`pageTitle.staff_${SECTION_KEY[section] ?? section}`)}
+      <div className="min-w-0 flex-1">
+        <div className="text-[16px] md:text-[18px] truncate" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
+          {title}
+        </div>
       </div>
 
       {periodLabel && (
@@ -121,236 +135,128 @@ export default function StaffTopbar({
         </span>
       )}
 
-      {/* Boutons d'actions */}
-      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-        {/* Cloche de notifications : toujours visible sur mobile et desktop */}
+      {/* Bouton calendrier unifié (Mobile, Tablette, Desktop) */}
+      <CalendarTopbarButton />
+
+      {/* Notifications — mobile : cercle 40px + pastille + panneau responsive */}
+      <div ref={notifRef} className="relative md:hidden flex-shrink-0">
+        <button onClick={toggleNotif} aria-label={tnav('topbar.notifications') ?? 'Notifications'}
+          style={{ width: 40, height: 40, borderRadius: 20, border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', cursor: 'pointer' }}>
+          <Bell size={21} color="var(--text)" strokeWidth={2} />
+          {unreadCount > 0 && (
+            <div style={{ position: 'absolute', top: 9, right: 9, width: 8, height: 8, borderRadius: '50%', background: 'var(--red)', border: '1.5px solid var(--surface)' }} />
+          )}
+        </button>
+        {notifOpen && (
+          <div className="fixed inset-x-3 top-[54px] max-w-[340px] ml-auto sm:absolute sm:inset-auto sm:top-12 sm:right-0 sm:w-[320px] max-h-[380px] overflow-y-auto bg-[var(--surface)] rounded-2xl shadow-2xl border border-[var(--border)] p-2.5 z-50 animate-fade-in font-nunito">
+            <div className="flex items-center justify-between px-2.5 py-2 border-b border-[var(--border)]">
+              <span className="text-[13.5px] font-bold text-[var(--text)]">{tnav('topbar.notifications') ?? 'Notifications'}</span>
+              {unreadCount > 0 && (
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-600">
+                  {unreadCount} {tnav('topbar.unread') ?? 'non lue(s)'}
+                </span>
+              )}
+            </div>
+            {recentNotifications.length === 0 ? (
+              <div className="py-7 text-center text-[var(--text3)] text-xs font-medium">{tnav('topbar.no_notifications') ?? 'Aucune notification'}</div>
+            ) : (
+              <div className="divide-y divide-[var(--border)]/40 my-1">
+                {[...recentNotifications].sort((a, b) => Number(a.isRead) - Number(b.isRead)).slice(0, 8).map(n => (
+                  <div key={n.id} onClick={() => !n.isRead && markAsRead(n.id)}
+                    className={`flex items-start gap-2.5 p-2.5 rounded-xl cursor-pointer transition-colors ${n.isRead ? 'hover:bg-[var(--bg2)]' : 'bg-blue-500/5 hover:bg-blue-500/15'}`}>
+                    <div className="mt-1 flex-shrink-0">
+                      {!n.isRead ? (
+                        <div className="w-2 h-2 rounded-full bg-[var(--green)]" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-transparent" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[13px] font-bold text-[var(--text)] leading-snug">{n.title}</div>
+                      <div className="text-[12px] text-[var(--text2)] leading-relaxed mt-0.5 line-clamp-2">{n.body}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {onNav && (
+              <button onClick={() => { setNotifOpen(false); onNav('notifications') }}
+                className="w-full mt-1.5 py-2 px-3 rounded-xl bg-[var(--bg2)] text-[var(--green)] hover:text-green-700 text-xs font-bold border border-[var(--border)] cursor-pointer text-center transition-colors">
+                {tnav('topbar.view_all_notifications') ?? 'Voir toutes les notifications'}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Kebab — mobile */}
+      <div ref={kebabRef} className="relative md:hidden flex-shrink-0">
+        <button onClick={toggleKebab} aria-label="Menu"
+          style={{ width: 40, height: 40, borderRadius: 20, border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <MoreVertical size={21} color="var(--text)" strokeWidth={2} />
+        </button>
+        {kebabOpen && (
+          <div style={{ position: 'absolute', top: 48, right: 0, width: 216, background: 'var(--surface)', borderRadius: 14, boxShadow: '0 8px 24px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.08)', padding: 8, zIndex: 20 }}>
+            <div onClick={() => { setTheme(isDark ? 'light' : 'dark'); setKebabOpen(false) }}
+              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 10, cursor: 'pointer' }}>
+              {isDark ? <Sun size={18} color="var(--text)" strokeWidth={2} /> : <Moon size={18} color="var(--text)" strokeWidth={2} />}
+              <span style={{ fontSize: 14, color: 'var(--text)', fontWeight: 500 }}>{tcommon('theme.toggle') ?? 'Thème'}</span>
+            </div>
+            {onChangePassword && (
+              <div onClick={() => { onChangePassword(); setKebabOpen(false) }}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 10, cursor: 'pointer' }}>
+                <KeyRound size={18} color="var(--text)" strokeWidth={2} />
+                <span style={{ fontSize: 14, color: 'var(--text)', fontWeight: 500 }}>{tcommon('auth.changePassword') ?? 'Changer mot de passe'}</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Actions secondaires desktop */}
+      <div className="hidden md:flex" style={{ alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
+        <OfflineSyncButtonPopover namespace="staff" />
+        <ThemeToggle />
         <NotificationBell onNav={onNav} />
-
-        {/* Menu Kebab — mobile uniquement */}
-        <div ref={kebabRef} className="relative md:hidden flex-shrink-0">
-          <button
-            onClick={() => setKebabOpen(o => !o)}
-            aria-label="Options"
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
-              border: 'none',
-              background: 'transparent',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            <MoreVertical size={19} color="var(--text)" strokeWidth={2} />
+        {onChangePassword && (
+          <button onClick={onChangePassword} title={tcommon('auth.changePassword')}
+            style={{ width: 36, height: 36, borderRadius: 9, background: 'var(--bg2)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <KeyRound size={16} color="var(--text2)" />
           </button>
+        )}
+      </div>
 
-          {kebabOpen && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 44,
-                right: 0,
-                width: 220,
-                background: 'var(--surface)',
-                borderRadius: 14,
-                boxShadow: '0 8px 24px rgba(0,0,0,0.16), 0 2px 6px rgba(0,0,0,0.06)',
-                border: '1px solid var(--border)',
-                padding: 6,
-                zIndex: 50,
-              }}
-            >
-              <div
-                onClick={() => {
-                  setTheme(isDark ? 'light' : 'dark')
-                  setKebabOpen(false)
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: '10px 12px',
-                  borderRadius: 10,
-                  cursor: 'pointer',
-                  color: 'var(--text)',
-                  fontSize: 13.5,
-                  fontWeight: 600,
-                }}
-              >
-                {isDark ? <Sun size={17} /> : <Moon size={17} />}
-                <span>{tcommon('theme.toggle') ?? 'Thème'}</span>
+      {/* Profil utilisateur mobile — avatar circulaire identique à l'admin */}
+      {sessionUser && (
+        <div ref={profileRef} className="relative flex-shrink-0 md:hidden" style={{ marginLeft: 2 }}>
+          <button onClick={toggleProfile} aria-label={userDisplayName}
+            style={{ width: 34, height: 34, borderRadius: 17, border: 'none', background: 'linear-gradient(135deg,var(--teal,#0d9488),var(--blue,#2563eb))', color: '#fff', fontSize: 12.5, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            {userInitials}
+          </button>
+          {profileOpen && (
+            <div style={{ position: 'absolute', top: 48, right: 0, width: 220, background: 'var(--surface)', borderRadius: 14, boxShadow: '0 8px 24px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.08)', padding: 8, zIndex: 20 }}>
+              <div style={{ padding: '8px 10px 10px', borderBottom: '1px solid var(--border)', marginBottom: 4 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{userDisplayName}</div>
+                <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{tcommon('user.roleLabel')}</div>
               </div>
-
-              <div
-                onClick={() => {
-                  setCalendarModalOpen(true)
-                  setKebabOpen(false)
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: '10px 12px',
-                  borderRadius: 10,
-                  cursor: 'pointer',
-                  color: 'var(--text)',
-                  fontSize: 13.5,
-                  fontWeight: 600,
-                }}
-              >
-                <Calendar size={17} />
-                <span>{tcommon('calendar.title') ?? 'Calendrier'}</span>
-              </div>
-
-              {onChangePassword && (
-                <div
-                  onClick={() => {
-                    onChangePassword()
-                    setKebabOpen(false)
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '10px 12px',
-                    borderRadius: 10,
-                    cursor: 'pointer',
-                    color: 'var(--text)',
-                    fontSize: 13.5,
-                    fontWeight: 600,
-                  }}
-                >
-                  <KeyRound size={17} />
-                  <span>{tcommon('auth.changePassword') ?? 'Changer mot de passe'}</span>
+              {onNav && (
+                <div onClick={() => { setProfileOpen(false); onNav('mon-profil-rh') }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 10, cursor: 'pointer' }}>
+                  <span style={{ fontSize: 14, color: 'var(--text)', fontWeight: 500 }}>{tnav('sidebar.monProfilRh') ?? 'Mon profil'}</span>
+                </div>
+              )}
+              {onLogout && (
+                <div onClick={() => { setProfileOpen(false); onLogout() }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 10, cursor: 'pointer' }}>
+                  <LogOut size={18} color="var(--red)" strokeWidth={2} />
+                  <span style={{ fontSize: 14, color: 'var(--red)', fontWeight: 600 }}>{tcommon('logout')}</span>
                 </div>
               )}
             </div>
           )}
         </div>
+      )}
 
-        {/* Profil utilisateur mobile (avatar circulaire tactile) */}
-        {sessionUser && (
-          <div ref={profileRef} className="relative flex-shrink-0 md:hidden">
-            <button
-              onClick={() => setProfileOpen(o => !o)}
-              aria-label={userDisplayName}
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 16,
-                border: 'none',
-                background: 'linear-gradient(135deg, var(--teal, #0d9488), var(--blue, #2563eb))',
-                color: '#ffffff',
-                fontSize: 12,
-                fontWeight: 800,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-              }}
-            >
-              {userInitials}
-            </button>
-
-            {profileOpen && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 44,
-                  right: 0,
-                  width: 220,
-                  background: 'var(--surface)',
-                  borderRadius: 14,
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.16), 0 2px 6px rgba(0,0,0,0.06)',
-                  border: '1px solid var(--border)',
-                  padding: 8,
-                  zIndex: 50,
-                }}
-              >
-                <div style={{ padding: '8px 10px 10px', borderBottom: '1px solid var(--border)', marginBottom: 4 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>{userDisplayName}</div>
-                  <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 2 }}>{sessionUser.role}</div>
-                </div>
-
-                {onNav && (
-                  <div
-                    onClick={() => {
-                      setProfileOpen(false)
-                      onNav('mon-profil-rh')
-                    }}
-                    style={{
-                      padding: '9px 10px',
-                      borderRadius: 10,
-                      cursor: 'pointer',
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: 'var(--text)',
-                    }}
-                  >
-                    {tnav('sidebar.monProfilRh') ?? 'Mon profil'}
-                  </div>
-                )}
-
-                {onLogout && (
-                  <div
-                    onClick={() => {
-                      setProfileOpen(false)
-                      onLogout()
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      padding: '9px 10px',
-                      borderRadius: 10,
-                      cursor: 'pointer',
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: 'var(--red, #ef4444)',
-                    }}
-                  >
-                    <LogOut size={15} />
-                    <span>{tcommon('auth.logout') ?? 'Déconnexion'}</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Actions secondaires desktop complètes */}
-        <div className="hidden md:flex items-center gap-2">
-          <CalendarTopbarButton />
-          <OfflineSyncButtonPopover namespace="staff" />
-          {onChangePassword && (
-            <button
-              onClick={onChangePassword}
-              title={tcommon('auth.changePassword')}
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                background: 'var(--bg2)',
-                border: '1px solid var(--border)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-              }}
-            >
-              <KeyRound size={15} color="var(--text2)" />
-            </button>
-          )}
-          <ThemeToggle />
-        </div>
-      </div>
-
-      {/* Modal calendrier mobile */}
-      <CalendarProgressModal
-        isOpen={calendarModalOpen}
-        onClose={() => setCalendarModalOpen(false)}
-      />
     </header>
   )
 }
