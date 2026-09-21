@@ -4,6 +4,7 @@ import type { DeclencherEvenementUseCase } from '@application/academicEvent/Decl
 import type { AjusterFenetreEvenementUseCase } from '@application/academicEvent/AjusterFenetreEvenementUseCase';
 import type { ListerEvenementsUseCase } from '@application/academicEvent/ListerEvenementsUseCase';
 import type { ObtenirEvenementsActifsUseCase } from '@application/academicEvent/ObtenirEvenementsActifsUseCase';
+import type { CloturerEvenementAcademiqueUseCase } from '@application/academicEvent/CloturerEvenementAcademiqueUseCase';
 
 export class AcademicEventController {
   constructor(
@@ -12,13 +13,14 @@ export class AcademicEventController {
     private readonly ajusterFenetre: AjusterFenetreEvenementUseCase,
     private readonly listerEvenements: ListerEvenementsUseCase,
     private readonly obtenirEvenementsActifs: ObtenirEvenementsActifsUseCase,
+    private readonly cloturerEvenement?: CloturerEvenementAcademiqueUseCase,
   ) {}
 
   // POST /api/v2/academic-events — ADMIN uniquement
   creer = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const user = req.user!;
-      const { type, category, title, description, targetRoles, level, openDate, closeDate } = req.body;
+      const { type, category, title, description, targetRoles, level, openDate, closeDate, concoursConfig } = req.body;
       if (!type || !category || !title || !Array.isArray(targetRoles)) {
         res.status(400).json({ success: false, message: 'type, category, title et targetRoles sont requis' });
         return;
@@ -32,6 +34,10 @@ export class AcademicEventController {
         level,
         openDate: openDate ? new Date(openDate) : undefined,
         closeDate: closeDate ? new Date(closeDate) : undefined,
+        concoursConfig: concoursConfig ? {
+          ...concoursConfig,
+          officialExamExpectedDate: concoursConfig.officialExamExpectedDate ? new Date(concoursConfig.officialExamExpectedDate) : undefined,
+        } : undefined,
       });
       res.status(201).json({ success: true, data: r });
     } catch (error: any) {
@@ -91,6 +97,25 @@ export class AcademicEventController {
         eventId: req.params.id as string,
         schoolId: user.schoolId,
         nouvelleCloture: new Date(closeDate),
+      });
+      res.json({ success: true, data: r });
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error?.message ?? 'Erreur' });
+    }
+  };
+
+  // POST /api/v2/academic-events/:id/close — ADMIN uniquement
+  cloturer = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = req.user!;
+      if (!this.cloturerEvenement) {
+        res.status(500).json({ success: false, message: 'Service de clôture non configuré' });
+        return;
+      }
+      const r = await this.cloturerEvenement.execute({
+        eventId: req.params.id as string,
+        schoolId: user.schoolId,
+        clotureParId: user.userId,
       });
       res.json({ success: true, data: r });
     } catch (error: any) {

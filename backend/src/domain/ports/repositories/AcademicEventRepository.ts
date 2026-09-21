@@ -12,6 +12,7 @@ export interface AcademicEventData {
   closeDate: Date | null;
   status: string;
   linkedResourceId: string | null;
+  entranceExamSessionId?: string | null;
   triggeredById: string | null;
   triggeredAt: Date | null;
   reminderSentAt: Date | null;
@@ -38,6 +39,7 @@ export interface AcademicEventRepository {
     closeDate?: Date;
     status: string;
     linkedResourceId?: string | null;
+    entranceExamSessionId?: string | null;
   }): Promise<{ id: string }>;
 
   trouverParId(id: string, schoolId: string): Promise<AcademicEventData | null>;
@@ -49,6 +51,7 @@ export interface AcademicEventRepository {
     triggeredById?: string;
     triggeredAt?: Date;
     linkedResourceId?: string | null;
+    entranceExamSessionId?: string | null;
     reminderSentAt?: null;
   }): Promise<void>;
 

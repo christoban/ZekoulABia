@@ -17,6 +17,7 @@ export class PrismaAcademicEventRepository implements AcademicEventRepository {
     closeDate?: Date;
     status: string;
     linkedResourceId?: string | null;
+    entranceExamSessionId?: string | null;
   }): Promise<{ id: string }> {
     const event = await this.prisma.academicEvent.create({
       data: {
@@ -32,6 +33,7 @@ export class PrismaAcademicEventRepository implements AcademicEventRepository {
         closeDate: data.closeDate ?? null,
         status: data.status as any,
         linkedResourceId: data.linkedResourceId ?? null,
+        entranceExamSessionId: data.entranceExamSessionId ?? null,
       },
       select: { id: true },
     });

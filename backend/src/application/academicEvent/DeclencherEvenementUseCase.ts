@@ -7,6 +7,7 @@
 import type { AcademicEventRepository } from '@domain/ports/repositories/AcademicEventRepository';
 import type { Lv2ChoiceRepository } from '@domain/ports/repositories/Lv2ChoiceRepository';
 import type { AnneeAcademiqueRepository } from '@domain/ports/repositories/AnneeAcademiqueRepository';
+import type { EntranceExamRepository } from '@domain/ports/repositories/EntranceExamRepository';
 import type { SmsNotificationPort } from '@domain/ports/services/SmsNotificationPort';
 import { activerRessourceLieeSiApplicable } from './activerRessourceLiee';
 
@@ -29,6 +30,7 @@ export class DeclencherEvenementUseCase {
     private readonly anneeRepository: AnneeAcademiqueRepository,
     private readonly notifier: NotifierEvenementFn,
     private readonly smsNotification: SmsNotificationPort,
+    private readonly entranceExamRepository?: EntranceExamRepository,
   ) {}
 
   async execute(cmd: DeclencherEvenementCommande): Promise<{ id: string }> {
@@ -46,10 +48,20 @@ export class DeclencherEvenementUseCase {
 
     // Ouvre la ressource réelle AVANT de faire passer l'événement à ACTIVE — si ça échoue,
     // l'événement reste UPCOMING plutôt que de mentir sur son propre statut.
-    const linkedResourceId = await activerRessourceLieeSiApplicable(this.lv2ChoiceRepository, this.anneeRepository, {
+    let linkedResourceId = await activerRessourceLieeSiApplicable(this.lv2ChoiceRepository, this.anneeRepository, {
       id: evenement.id, schoolId: cmd.schoolId, type: evenement.type,
       level: evenement.level, openDate: maintenant, closeDate,
     }, this.smsNotification);
+
+    if (evenement.type === 'CONCOURS_ENTREE') {
+      const sessionId = evenement.entranceExamSessionId || evenement.linkedResourceId;
+      if (sessionId && this.entranceExamRepository) {
+        await this.entranceExamRepository.mettreAJourStatutSession(sessionId, 'REGISTRATION_OPEN').catch((err: unknown) => {
+          console.error(`[AcademicEvent] Erreur ouverture session concours ${sessionId}:`, err);
+        });
+        linkedResourceId = sessionId;
+      }
+    }
 
     await this.academicEventRepository.mettreAJour(cmd.eventId, {
       status: 'ACTIVE',
@@ -57,7 +69,7 @@ export class DeclencherEvenementUseCase {
       closeDate,
       triggeredById: cmd.declencheParId,
       triggeredAt: maintenant,
-      linkedResourceId,
+      linkedResourceId: linkedResourceId ?? evenement.linkedResourceId,
     });
 
     await this.notifier(

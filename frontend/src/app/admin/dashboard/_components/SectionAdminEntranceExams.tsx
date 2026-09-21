@@ -52,15 +52,6 @@ export default function SectionAdminEntranceExams({ onToast }: Props) {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [activeTab, setActiveTab] = useState<TabMode>('CANDIDATS');
   const [showCepModal, setShowCepModal] = useState(false);
-
-  // Formulaire de création session
-  const [formName, setFormName] = useState('');
-  const [formDate, setFormDate] = useState('');
-  const [formYear, setFormYear] = useState('');
-  const [formThreshold, setFormThreshold] = useState('');
-  const [formSeats, setFormSeats] = useState('');
-  const [years, setYears] = useState<{ id: string; label: string; isCurrent: boolean }[]>([]);
-  const [creating, setCreating] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const loadSessions = useCallback(async () => {
@@ -73,15 +64,6 @@ export default function SectionAdminEntranceExams({ onToast }: Props) {
   }, []);
 
   useEffect(() => { loadSessions(); }, [loadSessions]);
-
-  useEffect(() => {
-    fetchApi('/api/v2/academic-years', { credentials: 'include' }).then(r => r.json()).then(d => {
-      const list = d.data ?? [];
-      setYears(list);
-      const cur = list.find((y: { isCurrent: boolean }) => y.isCurrent);
-      if (cur) setFormYear(cur.id);
-    }).catch(() => {});
-  }, []);
 
   const openSessionDetails = async (sessionId: string) => {
     try {
@@ -101,27 +83,6 @@ export default function SectionAdminEntranceExams({ onToast }: Props) {
     } catch {
       onToast('Erreur lors du chargement des détails du concours', 'error');
     }
-  };
-
-  const handleCreate = async () => {
-    if (!formName || !formDate || !formYear) { onToast(t('lv2_choice.fill_all'), 'error'); return; }
-    try {
-      setCreating(true);
-      const res = await fetchApi('/api/v2/entrance-exams', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({
-          name: formName, examDate: formDate, academicYearId: formYear,
-          admissionThreshold: formThreshold ? Number(formThreshold) : undefined,
-          availableSeats: formSeats ? Number(formSeats) : undefined,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        onToast(t('entrance_exams.session_created'), 'success');
-        setFormName(''); setFormDate(''); setFormThreshold(''); setFormSeats('');
-        loadSessions();
-      } else onToast(data.message || t('common.error'), 'error');
-    } catch { onToast(t('common.error'), 'error'); } finally { setCreating(false); }
   };
 
   const handleImport = async () => {
@@ -147,7 +108,7 @@ export default function SectionAdminEntranceExams({ onToast }: Props) {
       {/* En-tête principal */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <h2 className="text-[15px] md:text-[17px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <ClipboardList size={22} color="var(--accent, #2563eb)" /> {t('entrance_exams.title')} — Gestion complète v2
+          <ClipboardList size={22} color="var(--accent, #2563eb)" /> {t('entrance_exams.title')}
         </h2>
         {selectedSessionId && (
           <button
@@ -159,47 +120,31 @@ export default function SectionAdminEntranceExams({ onToast }: Props) {
         )}
       </div>
 
-      {/* Vue 1 : Liste & Création des sessions */}
+      {/* Vue 1 : Liste des sessions */}
       {!selectedSessionId && (
         <>
-          <div className="rounded-[16px] md:rounded-[12px] p-[16px] md:p-[20px] mb-[20px] md:mb-[24px] border border-[var(--border)]" style={{ background: 'var(--surface)' }}>
-            <h3 className="text-[14.5px] md:text-[16px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 14 }}>
-              {t('entrance_exams.create_session')}
-            </h3>
-            <div className="grid grid-cols-2 sm:flex" style={{ gap: 12, flexWrap: 'wrap', alignItems: 'end' }}>
-              <div className="col-span-2 sm:flex-[2] sm:min-w-[200px]">
-                <label className="text-[12px] md:text-[13px]" style={{ fontWeight: 600, color: 'var(--text2)', display: 'block', marginBottom: 4 }}>{t('entrance_exams.session_name')}</label>
-                <input value={formName} onChange={e => setFormName(e.target.value)} placeholder="Ex: Concours d'entrée en 6e - Session Juin 2026" style={{ ...inputStyle, width: '100%' }} />
-              </div>
-              <div>
-                <label className="text-[12px] md:text-[13px]" style={{ fontWeight: 600, color: 'var(--text2)', display: 'block', marginBottom: 4 }}>{t('entrance_exams.exam_date')}</label>
-                <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} className="w-full sm:w-auto" style={inputStyle} />
-              </div>
-              <div>
-                <label className="text-[12px] md:text-[13px]" style={{ fontWeight: 600, color: 'var(--text2)', display: 'block', marginBottom: 4 }}>{t('lv2_choice.academic_year')}</label>
-                <select value={formYear} onChange={e => setFormYear(e.target.value)} className="w-full sm:w-auto" style={{ ...inputStyle, minWidth: 140 }}>
-                  <option value="">—</option>
-                  {years.map(y => <option key={y.id} value={y.id}>{y.label}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-[12px] md:text-[13px]" style={{ fontWeight: 600, color: 'var(--text2)', display: 'block', marginBottom: 4 }}>Seuil min (/20)</label>
-                <input type="number" value={formThreshold} onChange={e => setFormThreshold(e.target.value)} placeholder="10.0" className="w-full sm:w-[80px]" style={inputStyle} />
-              </div>
-              <div>
-                <label className="text-[12px] md:text-[13px]" style={{ fontWeight: 600, color: 'var(--text2)', display: 'block', marginBottom: 4 }}>Places disp.</label>
-                <input type="number" value={formSeats} onChange={e => setFormSeats(e.target.value)} placeholder="120" className="w-full sm:w-[80px]" style={inputStyle} />
-              </div>
-              <button onClick={handleCreate} disabled={creating} className="col-span-2 sm:col-span-1" style={{ ...btnPri, borderRadius: 8 }}>
-                {creating ? '...' : t('lv2_choice.create')}
-              </button>
+          <div className="mb-4 p-3.5 rounded-xl border border-blue-500/20 bg-blue-500/5 text-xs text-[var(--text)] flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-blue-500/15 text-blue-600 flex-shrink-0">
+              <ClipboardList size={18} />
+            </div>
+            <div>
+              <p className="font-bold text-xs">Sessions de Concours d'Entrée</p>
+              <p className="text-[11px] text-[var(--text2)]">
+                Les concours sont planifiés et lancés via les <strong>Événements académiques</strong>. Chaque session active permet la gestion des candidatures, des convocations et salles, des notes et des délibérations.
+              </p>
             </div>
           </div>
 
           {loading ? (
             <p style={{ color: 'var(--text2)' }}>{t('common.loading')}</p>
           ) : sessions.length === 0 ? (
-            <p style={{ color: 'var(--text3)', fontStyle: 'italic' }}>{t('entrance_exams.no_sessions')}</p>
+            <div className="p-8 rounded-xl border border-[var(--border)] text-center" style={{ background: 'var(--surface)' }}>
+              <ClipboardList size={32} className="mx-auto text-[var(--text3)] mb-2" />
+              <p className="font-bold text-sm text-[var(--text)] mb-1">Aucune session de concours enregistrée</p>
+              <p className="text-xs text-[var(--text3)]">
+                Planifiez un événement de type « Concours d'entrée » dans les Événements académiques pour ouvrir une session.
+              </p>
+            </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {sessions.map(s => (

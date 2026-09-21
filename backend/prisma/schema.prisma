@@ -420,7 +420,7 @@ enum AcademicEventStatus {
 model AcademicEvent {
   id               String                @id @default(cuid())
   schoolId         String
-  type             String // 'RENTREE_6E_5E' | 'MIGRATION_BILINGUE' | 'CHOIX_LV2' | 'CLOTURE_ANNEE' | 'AUTRE'
+  type             String // 'RENTREE_6E_5E' | 'MIGRATION_BILINGUE' | 'CHOIX_LV2' | 'CLOTURE_ANNEE' | 'CONCOURS_ENTREE' | 'AUTRE'
   category         AcademicEventCategory
   title            String
   description      String?
@@ -433,9 +433,10 @@ model AcademicEvent {
   closeDate        DateTime?
   status           AcademicEventStatus   @default(UPCOMING)
   // Id de la ressource métier réelle ouverte par cet événement (ex. Lv2ChoiceWindow.id pour
-  // CHOIX_LV2) — l'événement académique déclenche la fonctionnalité réelle, il n'est jamais un
-  // simple rappel décoratif à côté d'elle. Null pour les types d'événement sans ressource liée.
+  // CHOIX_LV2, EntranceExamSession.id pour CONCOURS_ENTREE) — l'événement académique déclenche la fonctionnalité réelle.
   linkedResourceId String?
+  entranceExamSessionId String?               @unique
+  entranceExamSession   EntranceExamSession?  @relation(fields: [entranceExamSessionId], references: [id], onDelete: SetNull)
   triggeredById    String?
   triggeredAt      DateTime?
   // Empêche l'envoi répété du rappel de clôture à chaque passage du job quotidien.
@@ -3507,6 +3508,7 @@ model EntranceExamSession {
   candidates EntranceExamCandidate[]
   subjects   EntranceExamSubject[]
   rooms      EntranceExamRoom[]
+  academicEvent AcademicEvent?
 
   @@index([schoolId])
   @@index([academicYearId])

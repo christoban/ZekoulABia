@@ -25,6 +25,7 @@ import { PrismaEmailLogQueryRepository } from '@infrastructure/persistence/prism
 import { PrismaStudentFollowUpRepository } from '@infrastructure/persistence/prisma/PrismaStudentFollowUpRepository';
 import { PrismaSuiviRBACRepository } from '@infrastructure/persistence/prisma/PrismaSuiviRBACRepository';
 import { PrismaAcademicEventRepository } from '@infrastructure/persistence/prisma/PrismaAcademicEventRepository';
+import { PrismaEntranceExamRepository } from '@infrastructure/persistence/prisma/PrismaEntranceExamRepository';
 import { PrismaCoreDomainQueryRepository } from '@infrastructure/persistence/prisma/PrismaCoreDomainQueryRepository';
 import { PrismaLv2ChoiceRepository } from '@infrastructure/persistence/prisma/PrismaLv2ChoiceRepository';
 import { PrismaAnneeAcademiqueRepository } from '@infrastructure/persistence/prisma/PrismaAnneeAcademiqueRepository';
@@ -37,7 +38,7 @@ import { PrismaApeeRepository } from '@infrastructure/persistence/prisma/PrismaA
 import { PrismaAssistantContextQueryRepository } from '@infrastructure/persistence/prisma/PrismaAssistantContextQueryRepository';
 import { AIActionAuditAdapter } from '@infrastructure/services/ai/AIActionAuditAdapter';
 import { traiterDemandeConge } from '@infrastructure/services/hr/TraiterCongeService';
-import { CreerEvenementAcademiqueUseCase, DeclencherEvenementUseCase, AjusterFenetreEvenementUseCase, ListerEvenementsUseCase, ObtenirEvenementsActifsUseCase } from '@application/academicEvent';
+import { CreerEvenementAcademiqueUseCase, DeclencherEvenementUseCase, AjusterFenetreEvenementUseCase, ListerEvenementsUseCase, ObtenirEvenementsActifsUseCase, CloturerEvenementAcademiqueUseCase } from '@application/academicEvent';
 import { CreerActionSuiviEleveUseCase } from '@application/suivi/CreerActionSuiviEleveUseCase';
 import { ClorreActionSuiviUseCase } from '@application/suivi/ClorreActionSuiviUseCase';
 import { ListerActionsEnCoursUseCase } from '@application/suivi/ListerActionsEnCoursUseCase';
@@ -110,15 +111,17 @@ export function registerCoreRoutes(app: Application, prismaParam: typeof prisma 
   const anneeRepository = new PrismaAnneeAcademiqueRepository(p);
   const studentAffectationRepository = new PrismaStudentAffectationRepository(p);
   const academicEventRepository = new PrismaAcademicEventRepository(p);
+  const entranceExamRepository = new PrismaEntranceExamRepository(p);
   const notifierEvenement = (schoolId: string, roles: string[], titre: string, corps: string) =>
     notifierEvenementAcademique(p, schoolId, roles, titre, corps);
   const smsNotificationAdapter = new SmsNotificationAdapter();
   const academicEventController = new AcademicEventController(
-    new CreerEvenementAcademiqueUseCase(academicEventRepository, lv2ChoiceRepository, anneeRepository, smsNotificationAdapter),
-    new DeclencherEvenementUseCase(academicEventRepository, lv2ChoiceRepository, anneeRepository, notifierEvenement, smsNotificationAdapter),
+    new CreerEvenementAcademiqueUseCase(academicEventRepository, lv2ChoiceRepository, anneeRepository, smsNotificationAdapter, entranceExamRepository, notifierEvenement),
+    new DeclencherEvenementUseCase(academicEventRepository, lv2ChoiceRepository, anneeRepository, notifierEvenement, smsNotificationAdapter, entranceExamRepository),
     new AjusterFenetreEvenementUseCase(academicEventRepository, lv2ChoiceRepository),
     new ListerEvenementsUseCase(academicEventRepository),
     new ObtenirEvenementsActifsUseCase(academicEventRepository),
+    new CloturerEvenementAcademiqueUseCase(academicEventRepository, lv2ChoiceRepository, entranceExamRepository),
   );
   const coreDomainController = new CoreDomainController(new PrismaCoreDomainQueryRepository(p));
   const publicController     = new PublicController(c.school.schoolRepository);

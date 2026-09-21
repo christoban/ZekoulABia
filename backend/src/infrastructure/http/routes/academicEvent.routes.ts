@@ -10,5 +10,6 @@ export function creerAcademicEventRoutes(controller: AcademicEventController): R
   router.post('/', requireRole('ADMIN'), controller.creer);
   router.post('/:id/trigger', requireRole('ADMIN'), controller.declencher);
   router.patch('/:id/window', requireRole('ADMIN'), controller.ajusterCloture);
+  router.post('/:id/close', requireRole('ADMIN'), controller.cloturer);
   return router;
 }
