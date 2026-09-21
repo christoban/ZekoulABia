@@ -27,9 +27,11 @@ let baseUrl: string;
 let schoolId: string;
 let adminToken: string;
 let teacherToken: string;
+let staffToken: string;
 
 const adminHeaders = () => ({ Cookie: `access_token=${adminToken}`, 'Content-Type': 'application/json' });
 const teacherHeaders = () => ({ Cookie: `access_token=${teacherToken}` });
+const staffHeaders = () => ({ Cookie: `access_token=${staffToken}`, 'Content-Type': 'application/json' });
 
 function buildXlsxBuffer(headers: string[], rows: string[][]): ArrayBuffer {
   const wb = XLSX.utils.book_new();
@@ -60,6 +62,12 @@ beforeAll(async () => {
   const teacher = await creerUtilisateurTest(prismaTest, schoolId, { role: 'TEACHER', suffix: 'import-teacher' });
   teacherToken = jwt.sign(
     { userId: teacher.id, schoolId, role: 'TEACHER', permissions: [], tokenType: 'access' },
+    process.env.JWT_SECRET!,
+  );
+
+  const staff = await creerUtilisateurTest(prismaTest, schoolId, { role: 'STAFF', suffix: 'import-staff' });
+  staffToken = jwt.sign(
+    { userId: staff.id, schoolId, role: 'STAFF', permissions: ['MANAGE_ENROLLMENT'], tokenType: 'access' },
     process.env.JWT_SECRET!,
   );
 
@@ -327,7 +335,7 @@ describe('Bout en bout preview → validate → confirm (STUDENT)', () => {
     // Vérification en base
     const user = await prismaTest.user.findFirst({ where: { schoolId, email: studentEmail.toLowerCase(), role: 'STUDENT' } });
     expect(user).not.toBeNull();
-  });
+  }, 15000);
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -357,3 +365,61 @@ describe('POST /api/v2/users/import (rétrocompatibilité)', () => {
     expect(user).not.toBeNull();
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RBAC : Restriction de l'import par le Secrétariat (STAFF)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('RBAC — Import Excel par le Secrétaire (STAFF)', () => {
+  it('autorise le secrétaire à valider des élèves (STUDENT)', async () => {
+    const res = await fetch(`${baseUrl}/users/import/validate`, {
+      method: 'POST',
+      headers: staffHeaders(),
+      body: JSON.stringify({
+        targetType: 'STUDENT',
+        rows: [{ nom: 'FOKOU', prenom: 'Paul', email: `fokou-${Date.now()}@test.cm`, classe: '6e A' }],
+      }),
+    });
+    expect(res.status).toBe(200);
+  });
+
+  it('interdit au secrétaire d’importer des enseignants (TEACHER) avec HTTP 403', async () => {
+    const res = await fetch(`${baseUrl}/users/import/validate`, {
+      method: 'POST',
+      headers: staffHeaders(),
+      body: JSON.stringify({
+        targetType: 'TEACHER',
+        rows: [{ nom: 'PROF', prenom: 'Jean', email: `prof-${Date.now()}@test.cm`, matieres: 'Maths' }],
+      }),
+    });
+    expect(res.status).toBe(403);
+    const body = await res.json() as { success: boolean; message: string };
+    expect(body.success).toBe(false);
+    expect(body.message).toContain("autorisation");
+  });
+
+  it('interdit au secrétaire d’importer des membres du personnel (STAFF) avec HTTP 403', async () => {
+    const res = await fetch(`${baseUrl}/users/import/validate`, {
+      method: 'POST',
+      headers: staffHeaders(),
+      body: JSON.stringify({
+        targetType: 'STAFF',
+        rows: [{ nom: 'COLLÈGUE', prenom: 'Anne', email: `staff-${Date.now()}@test.cm` }],
+      }),
+    });
+    expect(res.status).toBe(403);
+  });
+
+  it('interdit au secrétaire d’importer des classes (CLASSE) avec HTTP 403', async () => {
+    const res = await fetch(`${baseUrl}/users/import/validate`, {
+      method: 'POST',
+      headers: staffHeaders(),
+      body: JSON.stringify({
+        targetType: 'CLASSE',
+        rows: [{ nom: '4e C', niveau: '4e', capacite: '40' }],
+      }),
+    });
+    expect(res.status).toBe(403);
+  });
+});
+

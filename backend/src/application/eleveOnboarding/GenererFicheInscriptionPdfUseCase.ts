@@ -35,12 +35,47 @@ export class GenererFicheInscriptionPdfUseCase {
   ) {}
 
   async execute(cmd: GenererFicheInscriptionCommande): Promise<FicheInscriptionResultat> {
-    const onboarding = await this.onboardingRepo.findOnboardingById(cmd.onboardingId, cmd.schoolId);
-    if (!onboarding) throw new Error('Dossier d\'onboarding introuvable');
-
     const school = await this.schoolRepo.findById(cmd.schoolId);
     const schoolName = school?.name || 'Établissement Scolaire';
     const schoolCode = school?.subdomain || 'SCH';
+
+    if (cmd.onboardingId === 'vierge') {
+      const requirements = await this.onboardingRepo.listDocumentRequirements(cmd.schoolId);
+      const pieces: PieceDossierFichePdf[] = requirements.map(r => ({
+        code: r.code,
+        libelle: r.libelle,
+        obligatoire: r.obligatoire,
+        received: false,
+      }));
+      const buffer = await this.pdfService.generer({
+        schoolName,
+        schoolCode,
+        onboardingId: 'VIERGE',
+        token: '',
+        formUrl: '',
+        status: 'DRAFT',
+        nom: '___________________________',
+        prenom: '___________________________',
+        dateNaissance: '____/____/________',
+        gender: 'M / F',
+        classeNom: '___________________________',
+        numeroInterne: null,
+        contactTelephone: null,
+        contactEmail: null,
+        parentContactTelephone: null,
+        parentContactEmail: null,
+        completenessScore: null,
+        validableSousReserve: false,
+        pieces,
+      });
+      return {
+        buffer,
+        filename: `Fiche_Inscription_Vierge_${schoolCode}.pdf`,
+      };
+    }
+
+    const onboarding = await this.onboardingRepo.findOnboardingById(cmd.onboardingId, cmd.schoolId);
+    if (!onboarding) throw new Error('Dossier d\'onboarding introuvable');
 
     let classeNom: string | null = null;
     if (onboarding.classId) {

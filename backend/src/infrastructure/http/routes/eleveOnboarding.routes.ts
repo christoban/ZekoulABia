@@ -41,6 +41,10 @@ export function creerEleveOnboardingRoutes(
     router.patch('/:id/pieces/:code', requireAuth, requireRole('ADMIN', 'STAFF'), dossierController.marquerPiece);
     router.post('/:id/pieces/:code/upload', requireAuth, requireRole('ADMIN', 'STAFF'), upload.single('file'), dossierController.uploadPiece);
     router.get('/:id/pieces/:code/file', requireAuth, requireRole('ADMIN', 'STAFF'), dossierController.telechargerPiece);
+    router.get('/fiche-vierge-pdf', requireAuth, requireRole('ADMIN', 'STAFF'), (req, res, next) => {
+      req.params['id'] = 'vierge';
+      return dossierController.exporterFichePdf(req, res, next);
+    });
     router.get('/:id/fiche-pdf', requireAuth, requireRole('ADMIN', 'STAFF'), dossierController.exporterFichePdf);
   }
 

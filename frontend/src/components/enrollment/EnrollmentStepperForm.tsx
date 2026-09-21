@@ -1,88 +1,130 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Check, ChevronRight, ChevronLeft, Save, Send, AlertTriangle, Users, BookOpen, Smartphone, FileText, Loader2, WifiOff } from 'lucide-react'
+import {
+  Users,
+  BookOpen,
+  Home,
+  Smartphone,
+  FileText,
+  FileCheck,
+  ChevronRight,
+  ChevronLeft,
+  Loader2,
+  CheckCircle2,
+  PlusCircle,
+  ArrowLeft,
+} from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
-import EnrollmentPieceChecklist, { type PieceItem } from './EnrollmentPieceChecklist'
-
-interface ClasseSuggestion {
-  id: string
-  name: string
-  level: string | null
-  capacity: number
-  effectifActuel: number
-  placesRestantes: number
-  estPleine: boolean
-  tauxRemplissage: number
-}
-
-interface FormState {
-  nom: string
-  prenom: string
-  dateNaissance: string
-  gender: 'M' | 'F' | ''
-  classId: string
-  level: string
-  sourceType: string
-  recipientType: 'ELEVE' | 'PARENT' | 'LES_DEUX'
-  contactEmail: string
-  contactTelephone: string
-  parentContactEmail: string
-  parentContactTelephone: string
-  eleveADispositif: boolean
-  eleveDispositifOS: string
-  parentADispositif: boolean
-  parentDispositifOS: string
-  derogationCapacite: boolean
-  motifDerogation: string
-}
+import {
+  type StepperFormState,
+  type ClasseSuggestion,
+  resoudreCycle,
+} from './stepper/types'
+import EnrollmentSidebarSummary from './stepper/EnrollmentSidebarSummary'
+import Step1Eleve from './stepper/Step1Eleve'
+import Step2Scolarite from './stepper/Step2Scolarite'
+import Step3Famille from './stepper/Step3Famille'
+import Step4AccesNumerique from './stepper/Step4AccesNumerique'
+import Step5Pieces from './stepper/Step5Pieces'
+import Step6Recapitulatif from './stepper/Step6Recapitulatif'
 
 interface Props {
   onSuccess: (onboardingId: string) => void
   onCancel?: () => void
-  initialData?: Partial<FormState>
+  initialData?: Partial<StepperFormState>
 }
 
 const ETAPES = [
   { id: 1, label: 'Élève', icon: Users },
-  { id: 2, label: 'Classe & Capacité', icon: BookOpen },
-  { id: 3, label: 'Contacts & Accès', icon: Smartphone },
-  { id: 4, label: 'Pièces & Finalisation', icon: FileText },
+  { id: 2, label: 'Scolarité', icon: BookOpen },
+  { id: 3, label: 'Famille', icon: Home },
+  { id: 4, label: 'Accès numérique', icon: Smartphone },
+  { id: 5, label: 'Pièces', icon: FileText },
+  { id: 6, label: 'Récapitulatif', icon: FileCheck },
 ]
 
 export default function EnrollmentStepperForm({ onSuccess, onCancel, initialData }: Props) {
   const isOnline = useOnlineStatus()
   const { addToQueue } = useSyncQueue()
+
   const [etapeActive, setEtapeActive] = useState(1)
+  const [etapesValidees, setEtapesValidees] = useState<number[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [successDossierId, setSuccessDossierId] = useState<string | null>(null)
+
+  // Suggestions de classes
   const [suggestions, setSuggestions] = useState<ClasseSuggestion[]>([])
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
+  const [doublonsDetectes, setDoublonsDetectes] = useState<Array<{ id: string; nomComplet: string; dateNaissance?: string }>>([])
 
-  const [form, setForm] = useState<FormState>({
+  // Pièces requises
+  const [piecesState, setPiecesState] = useState([
+    { code: 'ACTE_NAISSANCE', libelle: 'Copie certifiée de l’acte de naissance', obligatoire: true, received: true },
+    { code: 'BULLETINS_PRECEDENTS', libelle: 'Bulletins de l’année précédente', obligatoire: true, received: false },
+    { code: 'CERTIFICAT_MEDICAL', libelle: 'Certificat médical récent', obligatoire: true, received: false },
+    { code: 'PHOTOS_IDENTITE', libelle: '4 photos d’identité 4x4', obligatoire: false, received: false },
+    { code: 'CERTIFICAT_TRANSFERT', libelle: 'Certificat de transfert / radiation', obligatoire: false, received: false },
+  ])
+
+  const [form, setForm] = useState<StepperFormState>({
+    origine: initialData?.origine || 'HORS_CONCOURS',
+    candidatConcoursId: initialData?.candidatConcoursId,
     nom: initialData?.nom || '',
     prenom: initialData?.prenom || '',
+    sexe: initialData?.sexe || '',
     dateNaissance: initialData?.dateNaissance || '',
-    gender: initialData?.gender || '',
-    classId: initialData?.classId || '',
+    lieuNaissance: initialData?.lieuNaissance || '',
+    nationalite: initialData?.nationalite || 'Camerounaise',
+    photoUrl: initialData?.photoUrl,
+    sousSysteme: initialData?.sousSysteme || 'FRANCOPHONE',
+    matriculeNational: initialData?.matriculeNational,
+
     level: initialData?.level || '',
-    sourceType: initialData?.sourceType || 'AUTOSERVICE',
-    recipientType: initialData?.recipientType || 'ELEVE',
-    contactEmail: initialData?.contactEmail || '',
-    contactTelephone: initialData?.contactTelephone || '',
-    parentContactEmail: initialData?.parentContactEmail || '',
-    parentContactTelephone: initialData?.parentContactTelephone || '',
-    eleveADispositif: initialData?.eleveADispositif ?? false,
-    eleveDispositifOS: initialData?.eleveDispositifOS || 'ANDROID',
-    parentADispositif: initialData?.parentADispositif ?? true,
-    parentDispositifOS: initialData?.parentDispositifOS || 'ANDROID',
-    derogationCapacite: false,
-    motifDerogation: '',
+    serie: initialData?.serie,
+    classId: initialData?.classId || '',
+    etablissementOrigine: initialData?.etablissementOrigine || '',
+    derniereClasseSuivie: initialData?.derniereClasseSuivie || '',
+    anneePrecedente: initialData?.anneePrecedente || '',
+    redoublant: initialData?.redoublant || false,
+    lv2: initialData?.lv2,
+    pebs: initialData?.pebs,
+    motifHorsConcours: initialData?.motifHorsConcours,
+    derogationCapacite: initialData?.derogationCapacite || false,
+    motifDerogation: initialData?.motifDerogation,
+
+    responsables: initialData?.responsables || [
+      {
+        nom: '',
+        prenom: '',
+        lien: 'PERE',
+        telephone: '',
+        email: '',
+        profession: '',
+        adresse: '',
+        estPrincipal: true,
+        estFinancier: true,
+        contactUrgence: false,
+      },
+    ],
+    aucunTelephoneDisponible: initialData?.aucunTelephoneDisponible || false,
+
+    dispositifEleve: initialData?.dispositifEleve || 'AUCUN',
+    dispositifParent: initialData?.dispositifParent || 'SMARTPHONE_ANDROID',
+    profilAccesManuel: false,
+    compteEleveType: 'READ_ONLY',
+    gestionnaireProfil: 'PARENT',
+    canalNotification: 'APPLI_PARENT',
+
+    validableSousReserve: false,
   })
 
-  // Chargement des suggestions de classe
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Charger les classes selon le niveau
   useEffect(() => {
     async function loadSuggestions() {
       setLoadingSuggestions(true)
@@ -104,628 +146,464 @@ export default function EnrollmentStepperForm({ onSuccess, onCancel, initialData
     loadSuggestions()
   }, [form.level])
 
-  const classeSelectionnee = suggestions.find((s) => s.id === form.classId)
+  const updateForm = (updates: Partial<StepperFormState>) => {
+    setForm((prev) => ({ ...prev, ...updates }))
+    setErrors({})
+  }
 
-  const handleCreerDossier = async (soumettreDirectement: boolean) => {
-    if (!form.nom.trim()) {
-      setError('Le nom de l\'élève est requis.')
-      setEtapeActive(1)
-      return
-    }
+  const togglePiece = (code: string) => {
+    setPiecesState((prev) =>
+      prev.map((p) => (p.code === code ? { ...p, received: !p.received } : p)),
+    )
+  }
 
-    if (classeSelectionnee?.estPleine && !form.derogationCapacite) {
-      setError('Cette classe a atteint sa capacité maximale. Une dérogation avec motif est requise.')
-      setEtapeActive(2)
-      return
-    }
+  // Calcul du score de complétude
+  const totalObligatoires = piecesState.filter((p) => p.obligatoire).length
+  const recuesObligatoires = piecesState.filter((p) => p.obligatoire && p.received).length
+  const scoreCompletude = totalObligatoires > 0 ? Math.round((recuesObligatoires / totalObligatoires) * 100) : 100
+  const piecesManquantesCount = totalObligatoires - recuesObligatoires
 
-    if (classeSelectionnee?.estPleine && form.derogationCapacite && !form.motifDerogation.trim()) {
-      setError('Le motif de dérogation de capacité est obligatoire.')
-      setEtapeActive(2)
-      return
-    }
+  // Validation de l'étape active avant de continuer
+  const validerEtape = (step: number): boolean => {
+    const errs: Record<string, string> = {}
 
-    if (soumettreDirectement && !isOnline) {
-      setError('La soumission pour validation nécessite une connexion Internet active. Vous pouvez enregistrer le dossier en brouillon hors-ligne.')
-      return
-    }
-
-    setLoading(true)
-    setError(null)
-
-    const payload = {
-      nomProvisoire: `${form.nom} ${form.prenom}`.trim(),
-      classId: form.classId || null,
-      contactEmail: form.contactEmail.trim() || null,
-      contactTelephone: form.contactTelephone.trim() || null,
-      parentContactEmail: form.parentContactEmail.trim() || null,
-      parentContactTelephone: form.parentContactTelephone.trim() || null,
-      recipientType: form.recipientType,
-      sourceType: form.sourceType,
-      eleveADispositif: form.eleveADispositif,
-      eleveDispositifOS: form.eleveADispositif ? form.eleveDispositifOS : null,
-      parentADispositif: form.parentADispositif,
-      parentDispositifOS: form.parentADispositif ? form.parentDispositifOS : null,
-      aucunContactDisponible: !form.contactTelephone && !form.parentContactTelephone,
-    }
-
-    if (!isOnline && !soumettreDirectement) {
-      try {
-        await addToQueue({
-          type: 'ENROLLMENT_DRAFT',
-          endpoint: '/api/v2/eleve-onboarding',
-          method: 'POST',
-          payload,
-        })
-        setLoading(false)
-        onSuccess('offline-draft')
-        return
-      } catch (err: unknown) {
-        setLoading(false)
-        setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde hors ligne')
-        return
+    if (step === 1) {
+      if (!form.nom.trim()) errs.nom = 'Le nom de famille est obligatoire.'
+      if (!form.prenom.trim()) errs.prenom = 'Le prénom est obligatoire.'
+      if (!form.sexe) errs.sexe = 'Le sexe est obligatoire.'
+      if (!form.dateNaissance) errs.dateNaissance = 'La date de naissance est obligatoire.'
+    } else if (step === 2) {
+      if (!form.level) errs.level = 'Le niveau demandé est obligatoire.'
+      if (!form.classId) errs.classId = 'Une classe doit être sélectionnée.'
+      const isNiveauConcours = form.level === '6e' || form.level === 'Form 1'
+      if (isNiveauConcours && form.origine === 'HORS_CONCOURS' && !form.motifHorsConcours?.trim()) {
+        errs.motifHorsConcours = 'Le motif de candidature hors concours est obligatoire pour ce niveau.'
+      }
+      const classe = suggestions.find((s) => s.id === form.classId)
+      if (classe?.estPleine && !form.derogationCapacite) {
+        errs.classId = 'Cette classe est pleine. Une demande de dérogation est obligatoire pour continuer.'
+      }
+      if (classe?.estPleine && form.derogationCapacite && !form.motifDerogation?.trim()) {
+        errs.motifDerogation = 'Le motif de dérogation de capacité est obligatoire.'
+      }
+    } else if (step === 3) {
+      if (form.responsables.length === 0) {
+        errs.responsables = 'Au moins un responsable légal est requis.'
+      } else {
+        const principal = form.responsables[0]
+        if (!principal.nom.trim() || !principal.prenom.trim()) {
+          errs.responsables = 'Le nom et prénom du responsable principal sont obligatoires.'
+        }
+        if (!form.aucunTelephoneDisponible && !principal.telephone.trim()) {
+          errs.responsables = 'Le numéro de téléphone du responsable est requis (ou cochez la case "Aucun téléphone disponible").'
+        }
       }
     }
 
+    setErrors(errs)
+    return Object.keys(errs).length === 0
+  }
+
+  const handleNext = () => {
+    if (!validerEtape(etapeActive)) return
+    setEtapesValidees((prev) => Array.from(new Set([...prev, etapeActive])))
+    setEtapeActive((prev) => Math.min(6, prev + 1))
+  }
+
+  const handlePrev = () => {
+    setErrors({})
+    setEtapeActive((prev) => Math.max(1, prev - 1))
+  }
+
+  const construirePayload = () => {
+    const resp = form.responsables[0] || {}
+    return {
+      nomProvisoire: `${form.nom} ${form.prenom}`.trim(),
+      classId: form.classId || null,
+      contactEmail: resp.email?.trim() || null,
+      contactTelephone: resp.telephone?.trim() || null,
+      parentContactEmail: resp.email?.trim() || null,
+      parentContactTelephone: resp.telephone?.trim() || null,
+      recipientType: 'PARENT',
+      sourceType: form.origine === 'CONCOURS' ? 'CONCOURS' : 'AUTOSERVICE',
+      examCandidateId: form.candidatConcoursId || null,
+      eleveADispositif: form.dispositifEleve !== 'AUCUN',
+      eleveDispositifOS: form.dispositifEleve === 'IPHONE' ? 'IOS' : 'ANDROID',
+      parentADispositif: form.dispositifParent !== 'AUCUN',
+      parentDispositifOS: form.dispositifParent === 'IPHONE' ? 'IOS' : 'ANDROID',
+      aucunContactDisponible: form.aucunTelephoneDisponible,
+      submittedData: {
+        nom: form.nom,
+        prenom: form.prenom,
+        sexe: form.sexe,
+        dateNaissance: form.dateNaissance,
+        lieuNaissance: form.lieuNaissance,
+        nationalite: form.nationalite,
+        matriculeNational: form.matriculeNational,
+        level: form.level,
+        serie: form.serie,
+        etablissementOrigine: form.etablissementOrigine,
+        derniereClasseSuivie: form.derniereClasseSuivie,
+        redoublant: form.redoublant,
+        motifHorsConcours: form.motifHorsConcours,
+        derogationCapacite: form.derogationCapacite,
+        motifDerogation: form.motifDerogation,
+        responsables: form.responsables,
+        validableSousReserve: form.validableSousReserve,
+      },
+    }
+  }
+
+  const handleSave = async (soumettreDirectement: boolean) => {
+    setLoading(true)
+    setError(null)
+    const payload = construirePayload()
+
     try {
-      // 1. Créer le squelette
+      // 1. Créer le dossier
       const res = await fetchApi('/api/v2/eleve-onboarding', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
-
       const data = await res.json()
       if (!data.success) {
-        setError(data.message || 'Erreur lors de la création du dossier')
-        setLoading(false)
-        return
+        throw new Error(data.message || 'Erreur lors de la création du dossier')
       }
-
       const onboardingId = data.data.onboardingId
 
-      // 2. Initialiser les pièces justificatives
+      // 2. Initialiser les pièces
       await fetchApi(`/api/v2/eleve-onboarding/${onboardingId}/pieces/init`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sourceType: form.sourceType }),
+        body: JSON.stringify({ sourceType: payload.sourceType }),
       })
 
-      // 3. Si demandé, soumettre pour validation
+      // 3. Si demandé, soumettre à la direction
       if (soumettreDirectement) {
         await fetchApi(`/api/v2/eleve-onboarding/${onboardingId}/submit`, {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            classId: form.classId,
+            nomProvisoire: payload.nomProvisoire,
+            submittedData: payload.submittedData,
+          }),
         })
       }
 
-      onSuccess(onboardingId)
-    } catch {
-      if (!soumettreDirectement) {
-        try {
-          await addToQueue({
-            type: 'ENROLLMENT_DRAFT',
-            endpoint: '/api/v2/eleve-onboarding',
-            method: 'POST',
-            payload,
-          })
-          setLoading(false)
-          onSuccess('offline-draft')
-          return
-        } catch {
-          // ignore
-        }
-      }
-      setError('Erreur de communication avec le serveur')
+      setSuccessDossierId(onboardingId)
+    } catch (err: any) {
+      setError(err.message || 'Erreur lors de l’enregistrement')
     } finally {
       setLoading(false)
     }
   }
 
-  const inputStyle = {
-    padding: '8px 12px',
-    borderRadius: 8,
-    border: '1px solid var(--border, #e5e7eb)',
-    background: 'var(--surface, #fff)',
-    color: 'var(--text, #111827)',
-    fontSize: 13,
-    width: '100%',
-    boxSizing: 'border-box' as const,
+  // Écran de succès post-soumission
+  if (successDossierId) {
+    return (
+      <div
+        style={{
+          maxWidth: 640,
+          margin: '40px auto',
+          background: 'var(--surface, #fff)',
+          borderRadius: 14,
+          padding: 32,
+          border: '1px solid var(--border, #e5e7eb)',
+          textAlign: 'center',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+        }}
+      >
+        <CheckCircle2 size={56} style={{ color: 'var(--green, #16a34a)', margin: '0 auto 16px' }} />
+        <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text, #111827)', margin: 0 }}>
+          Dossier enregistré avec succès !
+        </h2>
+        <p style={{ fontSize: 14, color: 'var(--text2, #4b5563)', margin: '10px 0 24px', lineHeight: 1.5 }}>
+          Le dossier de <strong>{form.nom} {form.prenom}</strong> a été {form.origine === 'CONCOURS' ? 'finalisé' : 'soumis à la direction pour validation'}.
+        </p>
+
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+          <button
+            type="button"
+            onClick={() => {
+              setSuccessDossierId(null)
+              setEtapeActive(1)
+              setEtapesValidees([])
+              setForm((prev) => ({ ...prev, nom: '', prenom: '', dateNaissance: '', classId: '' }))
+            }}
+            style={{
+              padding: '10px 18px',
+              borderRadius: 8,
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
+              color: 'var(--text)',
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <PlusCircle size={15} /> Nouveau dossier
+          </button>
+          <button
+            type="button"
+            onClick={() => onSuccess(successDossierId)}
+            style={{
+              padding: '10px 20px',
+              borderRadius: 8,
+              border: 'none',
+              background: 'var(--green, #16a34a)',
+              color: '#fff',
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            Retour aux dossiers
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div
-      style={{
-        background: 'var(--surface, #fff)',
-        borderRadius: 14,
-        border: '1px solid var(--border, #e5e7eb)',
-        boxShadow: '0 4px 14px rgba(0,0,0,0.05)',
-        overflow: 'hidden',
-        maxWidth: 700,
-        margin: '0 auto',
-      }}
-    >
-      {/* Stepper Header */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          background: 'var(--surface2, #f9fafb)',
-          borderBottom: '1px solid var(--border, #e5e7eb)',
-        }}
-      >
-        {ETAPES.map((step) => {
-          const Icon = step.icon
-          const isActive = etapeActive === step.id
-          const isDone = etapeActive > step.id
-          return (
-            <button
-              key={step.id}
-              type="button"
-              onClick={() => setEtapeActive(step.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                padding: '12px 6px',
-                background: isActive ? 'var(--surface, #fff)' : 'transparent',
-                border: 'none',
-                borderBottom: isActive ? '2px solid var(--green, #16a34a)' : '2px solid transparent',
-                cursor: 'pointer',
-                color: isActive ? 'var(--green, #16a34a)' : isDone ? 'var(--text, #111827)' : 'var(--text3, #9ca3af)',
-                fontWeight: isActive ? 700 : 500,
-                fontSize: 12,
-              }}
-            >
-              <div
-                style={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: '50%',
-                  background: isDone ? 'var(--green, #16a34a)' : isActive ? 'rgba(22,163,74,0.15)' : 'var(--border, #e5e7eb)',
-                  color: isDone ? '#fff' : isActive ? 'var(--green, #16a34a)' : 'var(--text3, #9ca3af)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 11,
-                  fontWeight: 700,
-                }}
-              >
-                {isDone ? <Check size={12} strokeWidth={3} /> : step.id}
-              </div>
-              <span className="hide-mobile">{step.label}</span>
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Erreur */}
-      {error && (
+    <div style={{ maxWidth: 1140, margin: '0 auto', display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+      {/* Colonne principale (formulaire max 760px) */}
+      <div style={{ flex: 1, minWidth: 0, maxWidth: 760, display: 'flex', flexDirection: 'column', gap: 20 }}>
+        {/* Barre d'étapes cliquables pour celles déjà validées */}
         <div
           style={{
-            margin: 16,
-            padding: '10px 14px',
-            borderRadius: 8,
-            background: 'rgba(239,68,68,0.1)',
-            color: 'var(--red, #ef4444)',
-            fontSize: 13,
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'space-between',
+            background: 'var(--surface, #fff)',
+            padding: '12px 16px',
+            borderRadius: 12,
+            border: '1px solid var(--border, #e5e7eb)',
+            overflowX: 'auto',
             gap: 8,
           }}
         >
-          <AlertTriangle size={16} />
-          {error}
-        </div>
-      )}
-
-      {/* Corps du formulaire */}
-      <div style={{ padding: 20 }}>
-        {/* ÉTAPE 1 : Identité de l'élève */}
-        {etapeActive === 1 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <h3 style={{ margin: '0 0 4px 0', fontSize: 15, fontWeight: 700 }}>1. Identité de l&apos;élève</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>Nom de famille *</label>
-                <input
-                  type="text"
-                  placeholder="ex: Mbappe"
-                  value={form.nom}
-                  onChange={(e) => setForm({ ...form, nom: e.target.value })}
-                  style={inputStyle}
-                  required
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>Prénom(s)</label>
-                <input
-                  type="text"
-                  placeholder="ex: Kylian"
-                  value={form.prenom}
-                  onChange={(e) => setForm({ ...form, prenom: e.target.value })}
-                  style={inputStyle}
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>Date de naissance</label>
-                <input
-                  type="text"
-                  placeholder="JJ/MM/AAAA"
-                  value={form.dateNaissance}
-                  onChange={(e) => setForm({ ...form, dateNaissance: e.target.value })}
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>Sexe</label>
-                <select
-                  value={form.gender}
-                  onChange={(e) => setForm({ ...form, gender: e.target.value as any })}
-                  style={inputStyle}
-                >
-                  <option value="">Sélectionner...</option>
-                  <option value="M">Masculin</option>
-                  <option value="F">Féminin</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>Origine du dossier</label>
-              <select
-                value={form.sourceType}
-                onChange={(e) => setForm({ ...form, sourceType: e.target.value })}
-                style={inputStyle}
-              >
-                <option value="AUTOSERVICE">Inscription directe / Secrétariat</option>
-                <option value="CONCOURS">Lauréat Concours d&apos;entrée</option>
-                <option value="TRANSFERT">Transfert d&apos;un autre établissement</option>
-                <option value="IMPORT_MASSE">Import de masse</option>
-              </select>
-            </div>
-          </div>
-        )}
-
-        {/* ÉTAPE 2 : Classe & Capacité */}
-        {etapeActive === 2 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <h3 style={{ margin: '0 0 4px 0', fontSize: 15, fontWeight: 700 }}>2. Choix de la classe & Capacité</h3>
-
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>Niveau recherché (optionnel)</label>
-              <input
-                type="text"
-                placeholder="ex: 6e, 2nde, Form 1..."
-                value={form.level}
-                onChange={(e) => setForm({ ...form, level: e.target.value })}
-                style={inputStyle}
-              />
-            </div>
-
-            {loadingSuggestions ? (
-              <div style={{ padding: 20, textAlign: 'center', color: 'var(--text3)' }}>
-                <Loader2 className="animate-spin" style={{ margin: '0 auto 8px auto' }} />
-                Calcul des places disponibles...
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 220, overflowY: 'auto' }}>
-                {suggestions.map((c) => {
-                  const isSelected = form.classId === c.id
-                  return (
-                    <div
-                      key={c.id}
-                      onClick={() => setForm({ ...form, classId: c.id })}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '10px 14px',
-                        borderRadius: 8,
-                        border: `1.5px solid ${isSelected ? 'var(--green, #16a34a)' : 'var(--border, #e5e7eb)'}`,
-                        background: isSelected ? 'rgba(22,163,74,0.06)' : 'var(--surface, #fff)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 700 }}>{c.name}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text3)' }}>
-                          Effectif : {c.effectifActuel} / {c.capacity > 0 ? c.capacity : 'Illimité'} ({c.tauxRemplissage}%)
-                        </div>
-                      </div>
-
-                      <div>
-                        {c.estPleine ? (
-                          <span
-                            style={{
-                              fontSize: 11,
-                              fontWeight: 700,
-                              color: 'var(--red, #ef4444)',
-                              background: 'rgba(239,68,68,0.1)',
-                              padding: '3px 8px',
-                              borderRadius: 6,
-                            }}
-                          >
-                            Classe pleine
-                          </span>
-                        ) : (
-                          <span
-                            style={{
-                              fontSize: 11,
-                              fontWeight: 700,
-                              color: 'var(--green, #16a34a)',
-                              background: 'rgba(22,163,74,0.1)',
-                              padding: '3px 8px',
-                              borderRadius: 6,
-                            }}
-                          >
-                            {c.placesRestantes} place(s) dispo
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-
-            {classeSelectionnee?.estPleine && (
-              <div
+          {ETAPES.map((step) => {
+            const isActif = etapeActive === step.id
+            const isValide = etapesValidees.includes(step.id)
+            const StepIcon = step.icon
+            return (
+              <button
+                key={step.id}
+                type="button"
+                disabled={!isValide && !isActif}
+                onClick={() => isValide && setEtapeActive(step.id)}
                 style={{
-                  padding: 12,
-                  borderRadius: 8,
-                  background: 'rgba(245,158,11,0.12)',
-                  border: '1px solid #d97706',
                   display: 'flex',
-                  flexDirection: 'column',
-                  gap: 8,
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#b45309', fontWeight: 700, fontSize: 13 }}>
-                  <AlertTriangle size={16} />
-                  Capacité maximale atteinte — Dérogation requise
-                </div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={form.derogationCapacite}
-                    onChange={(e) => setForm({ ...form, derogationCapacite: e.target.checked })}
-                  />
-                  Accorder une dérogation exceptionnelle de surcapacité
-                </label>
-                {form.derogationCapacite && (
-                  <input
-                    type="text"
-                    placeholder="Motif de la dérogation (obligatoire, tracé dans l'audit)..."
-                    value={form.motifDerogation}
-                    onChange={(e) => setForm({ ...form, motifDerogation: e.target.value })}
-                    style={inputStyle}
-                  />
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ÉTAPE 3 : Contacts & Profil d'accès */}
-        {etapeActive === 3 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <h3 style={{ margin: '0 0 4px 0', fontSize: 15, fontWeight: 700 }}>3. Contacts & Profil d&apos;accès</h3>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>Téléphone Parent (SMS / WhatsApp) *</label>
-                <input
-                  type="text"
-                  placeholder="ex: +237699000000"
-                  value={form.parentContactTelephone}
-                  onChange={(e) => setForm({ ...form, parentContactTelephone: e.target.value })}
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>Email Parent</label>
-                <input
-                  type="email"
-                  placeholder="ex: parent@famille.cm"
-                  value={form.parentContactEmail}
-                  onChange={(e) => setForm({ ...form, parentContactEmail: e.target.value })}
-                  style={inputStyle}
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>Téléphone Élève (si distinct)</label>
-                <input
-                  type="text"
-                  placeholder="ex: +237677000000"
-                  value={form.contactTelephone}
-                  onChange={(e) => setForm({ ...form, contactTelephone: e.target.value })}
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>Email Élève</label>
-                <input
-                  type="email"
-                  placeholder="ex: eleve@gmail.com"
-                  value={form.contactEmail}
-                  onChange={(e) => setForm({ ...form, contactEmail: e.target.value })}
-                  style={inputStyle}
-                />
-              </div>
-            </div>
-
-            <div style={{ padding: 12, borderRadius: 8, background: 'var(--bg2)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Dispositifs numériques disponibles :</div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={form.parentADispositif}
-                  onChange={(e) => setForm({ ...form, parentADispositif: e.target.checked })}
-                />
-                Le parent dispose d&apos;un smartphone / tablette (accès application mobile)
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={form.eleveADispositif}
-                  onChange={(e) => setForm({ ...form, eleveADispositif: e.target.checked })}
-                />
-                L&apos;élève dispose d&apos;un smartphone personnel (Second cycle / Form 4+)
-              </label>
-            </div>
-          </div>
-        )}
-
-        {/* ÉTAPE 4 : Récapitulatif & Finalisation */}
-        {etapeActive === 4 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <h3 style={{ margin: '0 0 4px 0', fontSize: 15, fontWeight: 700 }}>4. Récapitulatif & Validation</h3>
-
-            <div style={{ padding: 14, borderRadius: 10, background: 'var(--bg2)', display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13 }}>
-              <div><strong>Élève :</strong> {form.nom} {form.prenom} ({form.gender || 'Sexe non précisé'})</div>
-              <div><strong>Classe :</strong> {classeSelectionnee?.name || 'Non affectée'}</div>
-              <div><strong>Contact parent :</strong> {form.parentContactTelephone || 'Non renseigné'}</div>
-              <div><strong>Origine :</strong> {form.sourceType}</div>
-            </div>
-
-            <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.5 }}>
-              En validant, la liste des pièces justificatives de l&apos;établissement sera automatiquement associée à ce dossier.
-              Vous pourrez soit conserver le dossier comme <strong>brouillon</strong>, soit le <strong>soumettre directement</strong> pour validation par la direction.
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Barre de navigation bas */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '14px 20px',
-          background: 'var(--surface2, #f9fafb)',
-          borderTop: '1px solid var(--border, #e5e7eb)',
-        }}
-      >
-        <div>
-          {etapeActive > 1 ? (
-            <button
-              type="button"
-              onClick={() => setEtapeActive(etapeActive - 1)}
-              style={{
-                padding: '8px 14px',
-                borderRadius: 8,
-                border: '1px solid var(--border, #e5e7eb)',
-                background: 'var(--surface, #fff)',
-                color: 'var(--text, #111827)',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-              }}
-            >
-              <ChevronLeft size={15} />
-              Précédent
-            </button>
-          ) : onCancel ? (
-            <button
-              type="button"
-              onClick={onCancel}
-              style={{
-                padding: '8px 14px',
-                borderRadius: 8,
-                border: 'none',
-                background: 'transparent',
-                color: 'var(--text3, #9ca3af)',
-                fontSize: 13,
-                cursor: 'pointer',
-              }}
-            >
-              Annuler
-            </button>
-          ) : null}
-        </div>
-
-        <div style={{ display: 'flex', gap: 10 }}>
-          {etapeActive < 4 ? (
-            <button
-              type="button"
-              onClick={() => setEtapeActive(etapeActive + 1)}
-              style={{
-                padding: '8px 16px',
-                borderRadius: 8,
-                border: 'none',
-                background: 'var(--green, #16a34a)',
-                color: '#fff',
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-              }}
-            >
-              Continuer
-              <ChevronRight size={15} />
-            </button>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => handleCreerDossier(false)}
-                disabled={loading}
-                style={{
-                  padding: '8px 14px',
-                  borderRadius: 8,
-                  border: '1px solid var(--border, #e5e7eb)',
-                  background: 'var(--surface, #fff)',
-                  color: 'var(--text, #111827)',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 6,
-                }}
-              >
-                <Save size={15} />
-                Enregistrer brouillon
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleCreerDossier(true)}
-                disabled={loading}
-                style={{
-                  padding: '8px 16px',
+                  gap: 8,
+                  padding: '6px 10px',
                   borderRadius: 8,
                   border: 'none',
-                  background: 'var(--green, #16a34a)',
+                  background: isActif ? 'rgba(37,99,235,0.08)' : 'transparent',
+                  color: isActif ? 'var(--blue, #2563eb)' : isValide ? 'var(--green, #16a34a)' : 'var(--text3, #9ca3af)',
+                  fontWeight: isActif ? 800 : 600,
+                  fontSize: 12,
+                  cursor: isValide ? 'pointer' : 'default',
+                  flexShrink: 0,
+                }}
+              >
+                <span
+                  style={{
+                    width: 22,
+                    height: 22,
+                    borderRadius: '50%',
+                    background: isActif ? 'var(--blue, #2563eb)' : isValide ? 'var(--green, #16a34a)' : 'var(--border)',
+                    color: isActif || isValide ? '#fff' : 'var(--text3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 11,
+                    fontWeight: 800,
+                  }}
+                >
+                  {isValide ? '✓' : step.id}
+                </span>
+                <span className="hidden sm:inline">{step.label}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Message d'erreur global */}
+        {error && (
+          <div
+            style={{
+              padding: 12,
+              borderRadius: 8,
+              background: 'rgba(239,68,68,0.1)',
+              border: '1px solid rgba(239,68,68,0.25)',
+              color: 'var(--red, #ef4444)',
+              fontSize: 13,
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        {/* Formulaire de l'étape active */}
+        <div
+          style={{
+            background: 'var(--surface, #fff)',
+            borderRadius: 14,
+            padding: 24,
+            border: '1px solid var(--border, #e5e7eb)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+          }}
+        >
+          {etapeActive === 1 && (
+            <Step1Eleve
+              form={form}
+              onChange={updateForm}
+              errors={errors}
+              onDoublonDetecte={setDoublonsDetectes}
+            />
+          )}
+
+          {etapeActive === 2 && (
+            <Step2Scolarite
+              form={form}
+              onChange={updateForm}
+              errors={errors}
+              suggestions={suggestions}
+              loadingSuggestions={loadingSuggestions}
+            />
+          )}
+
+          {etapeActive === 3 && (
+            <Step3Famille
+              form={form}
+              onChange={updateForm}
+              errors={errors}
+            />
+          )}
+
+          {etapeActive === 4 && (
+            <Step4AccesNumerique
+              form={form}
+              onChange={updateForm}
+            />
+          )}
+
+          {etapeActive === 5 && (
+            <Step5Pieces
+              form={form}
+              onChange={updateForm}
+              scoreCompletude={scoreCompletude}
+              piecesState={piecesState}
+              onTogglePiece={togglePiece}
+            />
+          )}
+
+          {etapeActive === 6 && (
+            <Step6Recapitulatif
+              form={form}
+              suggestions={suggestions}
+              doublonsDetectes={doublonsDetectes}
+              scoreCompletude={scoreCompletude}
+              piecesManquantesCount={piecesManquantesCount}
+              onGoToStep={setEtapeActive}
+              onSaveDraft={() => handleSave(false)}
+              onSubmitToDirection={() => handleSave(true)}
+              onFinalizeDirect={() => handleSave(false)}
+              loading={loading}
+            />
+          )}
+
+          {/* Boutons de navigation bas de formulaire */}
+          {etapeActive < 6 && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginTop: 24,
+                paddingTop: 16,
+                borderTop: '1px solid var(--border, #e5e7eb)',
+              }}
+            >
+              {etapeActive > 1 ? (
+                <button
+                  type="button"
+                  onClick={handlePrev}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 8,
+                    border: '1px solid var(--border, #e5e7eb)',
+                    background: 'var(--surface, #fff)',
+                    color: 'var(--text, #111827)',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <ChevronLeft size={16} /> Précédent
+                </button>
+              ) : (
+                onCancel && (
+                  <button
+                    type="button"
+                    onClick={onCancel}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: 'transparent',
+                      color: 'var(--text3)',
+                      fontSize: 13,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Annuler
+                  </button>
+                )
+              )}
+
+              <button
+                type="button"
+                onClick={handleNext}
+                style={{
+                  padding: '9px 20px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: 'var(--blue, #2563eb)',
                   color: '#fff',
                   fontSize: 13,
-                  fontWeight: 700,
-                  cursor: loading ? 'not-allowed' : 'pointer',
+                  fontWeight: 800,
+                  cursor: 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 6,
+                  marginLeft: 'auto',
                 }}
               >
-                {loading ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
-                Soumettre pour validation
+                Continuer <ChevronRight size={16} />
               </button>
-            </>
+            </div>
           )}
         </div>
       </div>
+
+      {/* Panneau latéral fixe 320px sur desktop */}
+      <EnrollmentSidebarSummary
+        form={form}
+        suggestions={suggestions}
+        doublonsDetectes={doublonsDetectes}
+        scoreCompletude={scoreCompletude}
+        piecesManquantesCount={piecesManquantesCount}
+      />
     </div>
   )
 }

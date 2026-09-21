@@ -17,6 +17,7 @@ interface Props {
   onClose: () => void
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
   onSuccess: () => void
+  isSecretary?: boolean
 }
 
 const TARGETS = [
@@ -41,7 +42,7 @@ function readRows(file: File): Promise<ImportRow[]> {
   })
 }
 
-export default function ImportUsersWizardModal({ onClose, onToast, onSuccess }: Props) {
+export default function ImportUsersWizardModal({ onClose, onToast, onSuccess, isSecretary = false }: Props) {
   const t = useT('admin')
   const [step, setStep] = useState(0)
   const [targetType, setTargetType] = useState<TargetType | null>(null)
@@ -51,6 +52,10 @@ export default function ImportUsersWizardModal({ onClose, onToast, onSuccess }: 
   const [validation, setValidation] = useState<Validation | null>(null)
   const [summary, setSummary] = useState<Summary | null>(null)
   const [loading, setLoading] = useState(false)
+
+  const visibleTargets = isSecretary
+    ? TARGETS.filter(t => t.type === 'STUDENT' || t.type === 'PARENT')
+    : TARGETS
 
   const selectedTarget = TARGETS.find(target => target.type === targetType)
   const reset = () => { setStep(0); setTargetType(null); setPreview(null); setRows([]); setMapping({}); setValidation(null); setSummary(null); setLoading(false) }
@@ -132,7 +137,7 @@ export default function ImportUsersWizardModal({ onClose, onToast, onSuccess }: 
         <div style={{ height: 1, background: 'var(--border)', margin: '16px 0' }} />
         <div className="flex items-center justify-center gap-2 sm:gap-4 mb-4 sm:mb-6 max-w-full overflow-x-auto no-scrollbar py-1">{(t('users.import_modal.steps') as unknown as string[]).map((label, index) => <div key={label} className="flex items-center gap-1.5 flex-shrink-0"><span style={{ width: 24, height: 24, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, background: index <= step ? 'var(--green)' : 'var(--border)', color: index <= step ? 'white' : 'var(--text3)' }}>{index + 1}</span><span className="hidden sm:inline" style={{ color: index === step ? 'var(--green)' : 'var(--text3)', fontSize: 12, fontWeight: 700 }}>{label}</span></div>)}</div>
 
-        {step === 0 && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>{TARGETS.map(target => { const Icon = target.icon; return <button key={target.type} type="button" onClick={() => { setTargetType(target.type); setStep(1) }} style={{ display: 'flex', gap: 14, textAlign: 'left', width: '100%', padding: '14px 16px', border: '2px solid var(--border)', borderRadius: 14, background: 'var(--surface)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit' }}><Icon size={26} strokeWidth={1.5} className="flex-shrink-0" /><span><strong style={{ display: 'block', fontSize: 15 }}>{t(`users.import_modal.choose_${target.label}`)}</strong><small style={{ display: 'block', color: 'var(--text3)', marginTop: 3, fontSize: 11.5 }}>{t(`users.import_modal.choose_${target.description}`)}</small></span></button> })}</div>}
+        {step === 0 && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>{visibleTargets.map(target => { const Icon = target.icon; return <button key={target.type} type="button" onClick={() => { setTargetType(target.type); setStep(1) }} style={{ display: 'flex', gap: 14, textAlign: 'left', width: '100%', padding: '14px 16px', border: '2px solid var(--border)', borderRadius: 14, background: 'var(--surface)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit' }}><Icon size={26} strokeWidth={1.5} className="flex-shrink-0" /><span><strong style={{ display: 'block', fontSize: 15 }}>{t(`users.import_modal.choose_${target.label}`)}</strong><small style={{ display: 'block', color: 'var(--text3)', marginTop: 3, fontSize: 11.5 }}>{t(`users.import_modal.choose_${target.description}`)}</small></span></button> })}</div>}
 
         {step === 1 && <div style={{ textAlign: 'center', padding: 18 }}><Download size={42} color="var(--green)" strokeWidth={1.5} /><p style={{ color: 'var(--text2)', lineHeight: 1.6, fontSize: 13 }}>{t('users.import_modal.step1_desc')}</p><button type="button" onClick={downloadTemplate} className="w-full sm:w-auto" style={primaryButton}>{t('users.import_modal.download', { type: selectedTarget ? t(`users.import_modal.download_type_${selectedTarget.label}`) : '' })}</button><br /><button type="button" onClick={() => setStep(2)} style={linkButton}>{t('users.import_modal.already_have_file')}</button></div>}
 

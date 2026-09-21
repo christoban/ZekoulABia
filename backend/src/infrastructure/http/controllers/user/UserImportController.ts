@@ -23,6 +23,14 @@ export class UserImportController {
     private readonly activityLog?: ActivityLogPort,
   ) {}
 
+  private checkImportAuthorization(user: { role: string }, targetType: string): boolean {
+    if (user.role === 'ADMIN') return true;
+    if (user.role === 'STAFF') {
+      return targetType === 'STUDENT' || targetType === 'PARENT';
+    }
+    return false;
+  }
+
   // POST /api/v2/users/import
   importUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -36,6 +44,10 @@ export class UserImportController {
       }
       if (role !== 'STUDENT' && role !== 'TEACHER' && role !== 'STAFF' && role !== 'PARENT' && role !== 'CLASSE') {
         res.status(400).json({ success: false, message: "role doit être 'STUDENT', 'TEACHER', 'STAFF', 'PARENT' ou 'CLASSE'" });
+        return;
+      }
+      if (!this.checkImportAuthorization(user, role)) {
+        res.status(403).json({ success: false, message: "Vous n'avez pas l'autorisation d'importer ce type de données." });
         return;
       }
 
@@ -90,6 +102,10 @@ export class UserImportController {
         res.status(400).json({ success: false, message: "targetType doit être 'STUDENT', 'TEACHER', 'STAFF', 'PARENT' ou 'CLASSE'" });
         return;
       }
+      if (!this.checkImportAuthorization(user, targetType)) {
+        res.status(403).json({ success: false, message: "Vous n'avez pas l'autorisation d'importer ce type de données." });
+        return;
+      }
 
       const wb = XLSX.read(file.buffer, { type: 'buffer' });
       const ws = wb.Sheets[wb.SheetNames[0]];
@@ -125,6 +141,10 @@ export class UserImportController {
         res.status(400).json({ success: false, message: "targetType doit être 'STUDENT', 'TEACHER', 'STAFF', 'PARENT' ou 'CLASSE'" });
         return;
       }
+      if (!this.checkImportAuthorization(user, targetType)) {
+        res.status(403).json({ success: false, message: "Vous n'avez pas l'autorisation d'importer ce type de données." });
+        return;
+      }
       if (!rows || !Array.isArray(rows) || rows.length === 0) {
         res.status(400).json({ success: false, message: 'Aucune ligne à valider' });
         return;
@@ -157,6 +177,10 @@ export class UserImportController {
 
       if (!targetType || !['STUDENT', 'TEACHER', 'STAFF', 'PARENT', 'CLASSE'].includes(targetType)) {
         res.status(400).json({ success: false, message: "targetType doit être 'STUDENT', 'TEACHER', 'STAFF', 'PARENT' ou 'CLASSE'" });
+        return;
+      }
+      if (!this.checkImportAuthorization(user, targetType)) {
+        res.status(403).json({ success: false, message: "Vous n'avez pas l'autorisation d'importer ce type de données." });
         return;
       }
       if (!confirmedRows || !Array.isArray(confirmedRows) || confirmedRows.length === 0) {

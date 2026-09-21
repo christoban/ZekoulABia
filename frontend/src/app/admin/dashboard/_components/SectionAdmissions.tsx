@@ -7,23 +7,19 @@ import {
   GraduationCap,
   CheckCircle2,
   AlertTriangle,
-  Sliders,
   Shield,
   Clock,
   Save,
-  RotateCcw,
+  Info,
+  Smartphone,
 } from 'lucide-react'
 
 interface OnboardingSettingsData {
   schoolId: string
   selfServiceEnabled: boolean
-  defaultRecipient: 'ELEVE' | 'PARENT' | 'LES_DEUX'
-  ageThresholdForParent: number
   tokenExpiryDays: number
-  directAdmissionWithoutExam: boolean
   capacityBufferPercent: number
   adminGereInscriptions: boolean
-  adminGereFinances: boolean
 }
 
 export default function SectionAdmissions({ schoolInfo }: { schoolInfo: any }) {
@@ -35,13 +31,9 @@ export default function SectionAdmissions({ schoolInfo }: { schoolInfo: any }) {
   const [formData, setFormData] = useState<OnboardingSettingsData>({
     schoolId: schoolInfo?.id || '',
     selfServiceEnabled: false,
-    defaultRecipient: 'ELEVE',
-    ageThresholdForParent: 15,
     tokenExpiryDays: 14,
-    directAdmissionWithoutExam: false,
     capacityBufferPercent: 0,
     adminGereInscriptions: false,
-    adminGereFinances: true,
   })
 
   useEffect(() => {
@@ -55,13 +47,9 @@ export default function SectionAdmissions({ schoolInfo }: { schoolInfo: any }) {
           setFormData({
             schoolId: data.data.schoolId || schoolInfo?.id || '',
             selfServiceEnabled: !!data.data.selfServiceEnabled,
-            defaultRecipient: data.data.defaultRecipient || 'ELEVE',
-            ageThresholdForParent: data.data.ageThresholdForParent ?? 15,
             tokenExpiryDays: data.data.tokenExpiryDays ?? 14,
-            directAdmissionWithoutExam: !!data.data.directAdmissionWithoutExam,
             capacityBufferPercent: data.data.capacityBufferPercent ?? 0,
             adminGereInscriptions: !!data.data.adminGereInscriptions,
-            adminGereFinances: data.data.adminGereFinances ?? true,
           })
         }
       } catch (err) {
@@ -110,7 +98,7 @@ export default function SectionAdmissions({ schoolInfo }: { schoolInfo: any }) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 80 }}>
       {toast && (
         <div
           style={{
@@ -167,55 +155,15 @@ export default function SectionAdmissions({ schoolInfo }: { schoolInfo: any }) {
         </div>
 
         <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Direct admission switch */}
+
+          {/* Lien d'inscription pour les familles (sur invitation) */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
             <div>
               <p className="text-xs md:text-sm font-bold" style={{ color: 'var(--text)' }}>
-                {t('settings.admissions.direct_admission_label') || 'Admission directe sans concours'}
+                {t('settings.admissions.self_service_label') || "Lien d'inscription pour les familles (sur invitation)"}
               </p>
               <p className="text-[11px] md:text-xs" style={{ color: 'var(--text3)' }}>
-                {t('settings.admissions.direct_admission_desc') || "Permet l'inscription directe sans passage préalable par un concours d'entrée"}
-              </p>
-            </div>
-            <div
-              onClick={() => setFormData(d => ({ ...d, directAdmissionWithoutExam: !d.directAdmissionWithoutExam }))}
-              style={{
-                width: 44,
-                height: 24,
-                borderRadius: 12,
-                background: formData.directAdmissionWithoutExam ? 'var(--green)' : 'var(--border2)',
-                cursor: 'pointer',
-                position: 'relative',
-                transition: 'background 0.2s',
-                flexShrink: 0,
-              }}
-            >
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 2,
-                  left: formData.directAdmissionWithoutExam ? 22 : 2,
-                  width: 20,
-                  height: 20,
-                  borderRadius: '50%',
-                  background: 'white',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                  transition: 'left 0.2s',
-                }}
-              />
-            </div>
-          </div>
-
-          <div style={{ height: 1, background: 'var(--border)' }} />
-
-          {/* Self service switch */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-            <div>
-              <p className="text-xs md:text-sm font-bold" style={{ color: 'var(--text)' }}>
-                {t('settings.admissions.self_service_label') || 'Portail public d’auto-inscription'}
-              </p>
-              <p className="text-[11px] md:text-xs" style={{ color: 'var(--text3)' }}>
-                {t('settings.admissions.self_service_desc') || 'Permet aux familles et candidats de soumettre leur dossier en ligne en autonomie'}
+                {t('settings.admissions.self_service_desc') || "Permet de générer des liens sécurisés pour que les familles complètent leur dossier en ligne"}
               </p>
             </div>
             <div
@@ -249,14 +197,14 @@ export default function SectionAdmissions({ schoolInfo }: { schoolInfo: any }) {
 
           <div style={{ height: 1, background: 'var(--border)' }} />
 
-          {/* Capacity Buffer */}
+          {/* Marge de capacité */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
             <div>
               <p className="text-xs md:text-sm font-bold" style={{ color: 'var(--text)' }}>
                 {t('settings.admissions.capacity_buffer_label') || 'Marge de dépassement de capacité tolérée'}
               </p>
               <p className="text-[11px] md:text-xs" style={{ color: 'var(--text3)' }}>
-                {t('settings.admissions.capacity_buffer_desc') || 'Pourcentage temporaire toléré au-dessus de la capacité maximale des classes'}
+                {t('settings.admissions.capacity_buffer_desc') || 'Pourcentage temporaire toléré au-dessus de la capacité maximale des classes (au-delà, dérogation obligatoire)'}
               </p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -310,14 +258,32 @@ export default function SectionAdmissions({ schoolInfo }: { schoolInfo: any }) {
         </div>
 
         <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Validation obligatoire par l'admin */}
+          {/* Règle fixe non désactivable */}
+          <div
+            style={{
+              padding: 12,
+              borderRadius: 8,
+              background: 'rgba(230,126,34,0.08)',
+              border: '1px solid rgba(230,126,34,0.25)',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 10,
+            }}
+          >
+            <Shield size={16} style={{ color: '#d35400', flexShrink: 0, marginTop: 2 }} />
+            <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.5 }}>
+              <strong>Règle fixe de gouvernance (non désactivable) :</strong> Tout dossier de la <em>voie dossier (hors concours)</em> est obligatoirement validé par l'administrateur. Les admis au concours sont quant à eux inscrits sans validation supplémentaire une fois leurs résultats confirmés.
+            </div>
+          </div>
+
+          {/* L'administrateur peut aussi inscrire lui-même */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
             <div>
               <p className="text-xs md:text-sm font-bold" style={{ color: 'var(--text)' }}>
-                {t('settings.admissions.admin_inscriptions_label') || 'Validation obligatoire par l’Administrateur (Proviseur)'}
+                {t('settings.admissions.admin_direct_inscriptions_label') || "L'administrateur peut aussi inscrire directement des élèves"}
               </p>
               <p className="text-[11px] md:text-xs" style={{ color: 'var(--text3)' }}>
-                {t('settings.admissions.admin_inscriptions_desc') || 'Les dossiers finalisés par le secrétariat restent en attente de l’approbation de la direction'}
+                {t('settings.admissions.admin_direct_inscriptions_desc') || "Permet à la direction de créer et valider immédiatement un dossier sans passer par le secrétariat"}
               </p>
             </div>
             <div
@@ -348,51 +314,10 @@ export default function SectionAdmissions({ schoolInfo }: { schoolInfo: any }) {
               />
             </div>
           </div>
-
-          <div style={{ height: 1, background: 'var(--border)' }} />
-
-          {/* Gestion directe des finances par l'admin */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-            <div>
-              <p className="text-xs md:text-sm font-bold" style={{ color: 'var(--text)' }}>
-                {t('settings.admissions.admin_finances_label') || 'Gestion directe des finances par l’Administrateur'}
-              </p>
-              <p className="text-[11px] md:text-xs" style={{ color: 'var(--text3)' }}>
-                {t('settings.admissions.admin_finances_desc') || 'Permet à la direction d’autoriser et percevoir directement les frais de scolarité'}
-              </p>
-            </div>
-            <div
-              onClick={() => setFormData(d => ({ ...d, adminGereFinances: !d.adminGereFinances }))}
-              style={{
-                width: 44,
-                height: 24,
-                borderRadius: 12,
-                background: formData.adminGereFinances ? '#e67e22' : 'var(--border2)',
-                cursor: 'pointer',
-                position: 'relative',
-                transition: 'background 0.2s',
-                flexShrink: 0,
-              }}
-            >
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 2,
-                  left: formData.adminGereFinances ? 22 : 2,
-                  width: 20,
-                  height: 20,
-                  borderRadius: '50%',
-                  background: 'white',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                  transition: 'left 0.2s',
-                }}
-              />
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Section 3 : Délais & Destinataires */}
+      {/* Section 3 : Délais & Règles d'accès numériques */}
       <div
         style={{
           background: 'var(--surface)',
@@ -413,72 +338,42 @@ export default function SectionAdmissions({ schoolInfo }: { schoolInfo: any }) {
         >
           <Clock size={18} style={{ color: 'var(--blue, #3498db)' }} />
           <span className="text-xs md:text-sm font-bold" style={{ color: 'var(--text)' }}>
-            {t('settings.admissions.delays_section') || 'Délais et destinataires des accès'}
+            {t('settings.admissions.delays_section') || 'Délais et règles d’accès numériques'}
           </span>
         </div>
 
         <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Destinataire par défaut */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-            <div>
-              <p className="text-xs md:text-sm font-bold" style={{ color: 'var(--text)' }}>
-                {t('settings.admissions.default_recipient_label') || 'Destinataire par défaut des accès'}
-              </p>
+          {/* Information CycleResolver */}
+          <div
+            style={{
+              padding: 12,
+              borderRadius: 8,
+              background: 'var(--bg2)',
+              border: '1px solid var(--border)',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 10,
+            }}
+          >
+            <Smartphone size={16} style={{ color: 'var(--blue)', flexShrink: 0, marginTop: 2 }} />
+            <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.5 }}>
+              <strong>Attribution automatique des profils d'accès :</strong>
+              <ul style={{ margin: '4px 0 0 0', paddingLeft: 16 }}>
+                <li><strong>1er cycle :</strong> Le parent gère le profil. L'élève n'a pas de compte distinct.</li>
+                <li><strong>2nd cycle avec smartphone :</strong> L'élève gère son propre profil.</li>
+                <li><strong>Sans smartphone :</strong> Tout passe par le parent (notifications SMS si tél standard, ou fiches papier).</li>
+              </ul>
             </div>
-            <select
-              value={formData.defaultRecipient}
-              onChange={e => setFormData(d => ({ ...d, defaultRecipient: e.target.value as any }))}
-              style={{
-                padding: '6px 12px',
-                borderRadius: 8,
-                border: '1.5px solid var(--border2)',
-                background: 'var(--bg2)',
-                color: 'var(--text)',
-                fontWeight: 600,
-                fontSize: 13,
-              }}
-            >
-              <option value="ELEVE">Élève uniquement</option>
-              <option value="PARENT">Parent uniquement</option>
-              <option value="LES_DEUX">Élève et Parent</option>
-            </select>
           </div>
-
-          <div style={{ height: 1, background: 'var(--border)' }} />
-
-          {/* Seuil d'âge pour accès Parent */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-            <div>
-              <p className="text-xs md:text-sm font-bold" style={{ color: 'var(--text)' }}>
-                {t('settings.admissions.age_threshold_label') || 'Seuil d’âge pour accès Parent obligatoire (années)'}
-              </p>
-            </div>
-            <input
-              type="number"
-              min="5"
-              max="25"
-              value={formData.ageThresholdForParent}
-              onChange={e => setFormData(d => ({ ...d, ageThresholdForParent: parseInt(e.target.value) || 15 }))}
-              style={{
-                width: 70,
-                padding: '6px 10px',
-                borderRadius: 8,
-                border: '1.5px solid var(--border2)',
-                background: 'var(--bg2)',
-                color: 'var(--text)',
-                fontWeight: 700,
-                textAlign: 'center',
-              }}
-            />
-          </div>
-
-          <div style={{ height: 1, background: 'var(--border)' }} />
 
           {/* Validité du lien d'inscription */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
             <div>
               <p className="text-xs md:text-sm font-bold" style={{ color: 'var(--text)' }}>
-                {t('settings.admissions.token_expiry_label') || 'Validité du lien d’inscription (jours)'}
+                {t('settings.admissions.token_expiry_label') || 'Validité du lien d’invitation (jours)'}
+              </p>
+              <p className="text-[11px] md:text-xs" style={{ color: 'var(--text3)' }}>
+                Délai accordé aux familles pour compléter leur dossier en ligne avant expiration du lien
               </p>
             </div>
             <input
@@ -502,7 +397,7 @@ export default function SectionAdmissions({ schoolInfo }: { schoolInfo: any }) {
         </div>
       </div>
 
-      {/* Action Enregistrer */}
+      {/* Action Enregistrer avec marge de sécurité */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 8 }}>
         <button
           onClick={handleSave}

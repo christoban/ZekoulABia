@@ -52,6 +52,7 @@ export default function SectionImportElevesStaff({ onToast }: Props) {
         <ImportUsersWizardModal
           onClose={() => setWizardOpen(false)}
           onToast={onToast}
+          isSecretary={true}
           onSuccess={() => {
             onToast('Import des élèves effectué avec succès !', 'success')
             setWizardOpen(false)

@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-
 import {
   Users,
   PlusCircle,
@@ -9,20 +8,18 @@ import {
   Printer,
   FileCheck,
   RefreshCw,
-  Download,
-  AlertCircle,
   CloudOff,
-  Search,
-  X,
-  Loader2,
+  AlertCircle,
+  Kanban,
+  List,
+  AlertTriangle,
   FileText,
-  CreditCard,
-  Send,
 } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
 import EnrollmentKanbanBoard, { type KanbanDossier } from '@/components/enrollment/EnrollmentKanbanBoard'
+import EnrollmentListView from '@/components/enrollment/EnrollmentListView'
 import EnrollmentStepperForm from '@/components/enrollment/EnrollmentStepperForm'
 import ValidationDrawer from '@/components/enrollment/ValidationDrawer'
 import ImportUsersWizardModal from '@/app/admin/dashboard/_components/ImportUsersWizardModal'
@@ -31,37 +28,17 @@ interface Props {
   onToast?: (msg: string, type?: 'success' | 'error' | 'info') => void
 }
 
-interface StudentSearchResult {
-  id: string
-  firstName: string
-  lastName: string
-  matricule?: string | null
-  studentProfile?: {
-    matricule?: string | null
-    class?: { name: string } | null
-  } | null
-  studentStatus?: string | null
-}
-
 export default function SectionInscriptionsStaff({ onToast }: Props) {
   const isOnline = useOnlineStatus()
   const { pendingCount, syncQueue, syncing } = useSyncQueue()
-  const [onglet, setOnglet] = useState<'KANBAN' | 'NOUVEAU'>('KANBAN')
+  const [onglet, setOnglet] = useState<'BOARD' | 'NOUVEAU'>('BOARD')
+  const [vue, setVue] = useState<'KANBAN' | 'LISTE'>('KANBAN')
   const [dossiers, setDossiers] = useState<KanbanDossier[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedDossier, setSelectedDossier] = useState<KanbanDossier | null>(null)
-
-  // Modals : Import & Documents scolaires
   const [importWizardOpen, setImportWizardOpen] = useState(false)
-  const [docModalOpen, setDocModalOpen] = useState(false)
-  const [docStudentSearch, setDocStudentSearch] = useState('')
-  const [docSearchResults, setDocSearchResults] = useState<StudentSearchResult[]>([])
-  const [docSearching, setDocSearching] = useState(false)
-  const [selectedStudent, setSelectedStudent] = useState<StudentSearchResult | null>(null)
-  const [motifTransfert, setMotifTransfert] = useState('Demande des parents')
-  const [docGenerating, setDocGenerating] = useState(false)
-  const [docError, setDocError] = useState<string | null>(null)
+  const [menuImprimerOpen, setMenuImprimerOpen] = useState(false)
 
   const chargerDossiers = useCallback(async () => {
     setLoading(true)
@@ -85,58 +62,20 @@ export default function SectionInscriptionsStaff({ onToast }: Props) {
     chargerDossiers()
   }, [chargerDossiers])
 
-  // Recherche d'élèves pour les documents scolaires
-  useEffect(() => {
-    if (!docStudentSearch || docStudentSearch.trim().length < 2) {
-      setDocSearchResults([])
-      return
-    }
-    const timer = setTimeout(async () => {
-      setDocSearching(true)
-      try {
-        const res = await fetchApi(`/api/v2/users?role=STUDENT&search=${encodeURIComponent(docStudentSearch.trim())}&limit=8`, { credentials: 'include' })
-        const data = await res.json()
-        const list = Array.isArray(data.data) ? data.data : (Array.isArray(data.users) ? data.users : [])
-        setDocSearchResults(list)
-      } catch {
-        // ignore
-      } finally {
-        setDocSearching(false)
-      }
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [docStudentSearch])
-
   const handleDownloadPdf = (id: string) => {
     window.open(`/api/v2/eleve-onboarding/${id}/fiche-pdf`, '_blank')
   }
 
-  const generateStudentDoc = async (userId: string, type: 'certificat' | 'carte' | 'lettre-transfert') => {
-    setDocGenerating(true)
-    setDocError(null)
-    try {
-      const url = type === 'lettre-transfert'
-        ? `/api/v2/students/${userId}/${type}?motif=${encodeURIComponent(motifTransfert || 'Demande de transfert')}`
-        : `/api/v2/students/${userId}/${type}`
-      const res = await fetchApi(url, { credentials: 'include' })
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}))
-        throw new Error(d.message || 'Impossible de générer le document')
-      }
-      const blob = await res.blob()
-      const objUrl = URL.createObjectURL(blob)
-      window.open(objUrl, '_blank')
-      onToast?.('Document généré avec succès', 'success')
-    } catch (err: any) {
-      setDocError(err.message || 'Erreur lors de la génération du document')
-    } finally {
-      setDocGenerating(false)
-    }
+  const handleDownloadFicheVierge = () => {
+    window.open('/api/v2/eleve-onboarding/fiche-vierge-pdf', '_blank')
+    setMenuImprimerOpen(false)
   }
 
+  const dossiersRenvoyes = dossiers.filter((d) => d.status === 'RETURNED')
+
   return (
-    <div style={{ padding: 24, maxWidth: 1280, margin: '0 auto' }}>
-      {/* En-tête */}
+    <div style={{ padding: 24, maxWidth: 1280, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* En-tête officiel selon blueprint §3.3 */}
       <div
         style={{
           display: 'flex',
@@ -144,7 +83,6 @@ export default function SectionInscriptionsStaff({ onToast }: Props) {
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: 16,
-          marginBottom: 20,
         }}
       >
         <div>
@@ -160,10 +98,10 @@ export default function SectionInscriptionsStaff({ onToast }: Props) {
             }}
           >
             <Users size={24} style={{ color: 'var(--green, #16a34a)' }} />
-            Gestion des Inscriptions & Admissions
+            Inscriptions
           </h1>
           <p style={{ margin: '4px 0 0 0', fontSize: 13, color: 'var(--text2, #4b5563)' }}>
-            Suivi des dossiers élèves, contrôle des pièces justificatives et capacités de classe.
+            Dossiers hors concours et dossiers des admis
           </p>
         </div>
 
@@ -172,7 +110,7 @@ export default function SectionInscriptionsStaff({ onToast }: Props) {
           {onglet === 'NOUVEAU' ? (
             <button
               type="button"
-              onClick={() => setOnglet('KANBAN')}
+              onClick={() => setOnglet('BOARD')}
               style={{
                 padding: '8px 14px',
                 borderRadius: 8,
@@ -187,31 +125,132 @@ export default function SectionInscriptionsStaff({ onToast }: Props) {
                 gap: 6,
               }}
             >
-              ← Retour au tableau
+              ← Retour aux dossiers
             </button>
           ) : (
             <>
-              <button
-                type="button"
-                onClick={() => setDocModalOpen(true)}
+              {/* Sélecteur de vue Kanban | Liste */}
+              <div
                 style={{
-                  padding: '8px 14px',
+                  display: 'flex',
+                  background: 'var(--bg2, #f3f4f6)',
                   borderRadius: 8,
-                  border: '1.5px solid var(--border, #e5e7eb)',
-                  background: 'var(--surface, #fff)',
-                  color: 'var(--text, #111827)',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
+                  padding: 2,
+                  border: '1px solid var(--border, #e5e7eb)',
                 }}
               >
-                <Printer size={15} />
-                Documents scolaires
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setVue('KANBAN')}
+                  title="Vue Kanban"
+                  style={{
+                    padding: '6px 10px',
+                    borderRadius: 6,
+                    border: 'none',
+                    background: vue === 'KANBAN' ? 'var(--surface, #fff)' : 'transparent',
+                    color: vue === 'KANBAN' ? 'var(--text, #111827)' : 'var(--text3, #9ca3af)',
+                    cursor: 'pointer',
+                    boxShadow: vue === 'KANBAN' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    fontSize: 12,
+                    fontWeight: 700,
+                  }}
+                >
+                  <Kanban size={14} /> Kanban
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVue('LISTE')}
+                  title="Vue Liste"
+                  style={{
+                    padding: '6px 10px',
+                    borderRadius: 6,
+                    border: 'none',
+                    background: vue === 'LISTE' ? 'var(--surface, #fff)' : 'transparent',
+                    color: vue === 'LISTE' ? 'var(--text, #111827)' : 'var(--text3, #9ca3af)',
+                    cursor: 'pointer',
+                    boxShadow: vue === 'LISTE' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    fontSize: 12,
+                    fontWeight: 700,
+                  }}
+                >
+                  <List size={14} /> Liste
+                </button>
+              </div>
 
+              {/* Bouton Menu Imprimer la fiche */}
+              <div style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  onClick={() => setMenuImprimerOpen(!menuImprimerOpen)}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: 8,
+                    border: '1.5px solid var(--border, #e5e7eb)',
+                    background: 'var(--surface, #fff)',
+                    color: 'var(--text, #111827)',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <Printer size={15} />
+                  Imprimer la fiche
+                </button>
+
+                {menuImprimerOpen && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      right: 0,
+                      top: '110%',
+                      zIndex: 50,
+                      background: 'var(--surface, #fff)',
+                      border: '1px solid var(--border, #e5e7eb)',
+                      borderRadius: 10,
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                      padding: 6,
+                      minWidth: 220,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 4,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={handleDownloadFicheVierge}
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: 6,
+                        border: 'none',
+                        background: 'transparent',
+                        color: 'var(--text, #111827)',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                      }}
+                      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = 'var(--bg2)')}
+                      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = 'transparent')}
+                    >
+                      <FileText size={14} style={{ color: 'var(--blue)' }} /> Fiche d'inscription vierge
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Bouton Importer une liste */}
               <button
                 type="button"
                 onClick={() => setImportWizardOpen(true)}
@@ -230,9 +269,10 @@ export default function SectionInscriptionsStaff({ onToast }: Props) {
                 }}
               >
                 <Upload size={15} />
-                Importer Excel
+                Importer une liste
               </button>
 
+              {/* Bouton principal Nouveau dossier */}
               <button
                 type="button"
                 onClick={() => setOnglet('NOUVEAU')}
@@ -248,6 +288,7 @@ export default function SectionInscriptionsStaff({ onToast }: Props) {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 6,
+                  boxShadow: '0 2px 6px rgba(22,163,74,0.3)',
                 }}
               >
                 <PlusCircle size={15} />
@@ -258,6 +299,32 @@ export default function SectionInscriptionsStaff({ onToast }: Props) {
         </div>
       </div>
 
+      {/* Bandeau d'alerte si des dossiers sont "À compléter" (renvoyés par la direction) */}
+      {dossiersRenvoyes.length > 0 && onglet === 'BOARD' && (
+        <div
+          style={{
+            padding: '12px 16px',
+            borderRadius: 10,
+            background: 'rgba(245,158,11,0.12)',
+            border: '1px solid rgba(245,158,11,0.35)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <AlertTriangle size={18} style={{ color: '#d97706', flexShrink: 0 }} />
+            <span style={{ fontSize: 13, color: '#b45309', fontWeight: 700 }}>
+              {dossiersRenvoyes.length} dossier(s) renvoyé(s) par la direction.
+              Veuillez compléter les informations ou pièces demandées.
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* État hors-ligne / synchronisation */}
       {(!isOnline || pendingCount > 0) && (
         <div
           style={{
@@ -267,7 +334,6 @@ export default function SectionInscriptionsStaff({ onToast }: Props) {
             border: `1px solid ${!isOnline ? 'rgba(234,88,12,0.3)' : 'rgba(37,99,235,0.2)'}`,
             color: !isOnline ? '#c2410c' : '#1d4ed8',
             fontSize: 13,
-            marginBottom: 16,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -312,7 +378,6 @@ export default function SectionInscriptionsStaff({ onToast }: Props) {
             background: 'rgba(239,68,68,0.1)',
             color: 'var(--red, #ef4444)',
             fontSize: 13,
-            marginBottom: 16,
             display: 'flex',
             alignItems: 'center',
             gap: 8,
@@ -323,341 +388,60 @@ export default function SectionInscriptionsStaff({ onToast }: Props) {
         </div>
       )}
 
-      {/* Contenu selon onglet */}
-      {onglet === 'KANBAN' && (
+      {/* Contenu selon onglet et vue */}
+      {onglet === 'BOARD' && vue === 'KANBAN' && (
         <EnrollmentKanbanBoard
           dossiers={dossiers}
           onSelectDossier={(d) => setSelectedDossier(d)}
           onDownloadPdf={handleDownloadPdf}
+          onNouveauDossier={() => setOnglet('NOUVEAU')}
+        />
+      )}
+
+      {onglet === 'BOARD' && vue === 'LISTE' && (
+        <EnrollmentListView
+          dossiers={dossiers}
+          onSelectDossier={(d) => setSelectedDossier(d)}
+          onDownloadPdf={handleDownloadPdf}
+          onNouveauDossier={() => setOnglet('NOUVEAU')}
         />
       )}
 
       {onglet === 'NOUVEAU' && (
         <EnrollmentStepperForm
-          onSuccess={(newId) => {
-            onToast?.('Dossier créé avec succès !', 'success')
+          onSuccess={() => {
+            onToast?.('Dossier enregistré avec succès !', 'success')
             chargerDossiers()
-            setOnglet('KANBAN')
+            setOnglet('BOARD')
           }}
-          onCancel={() => setOnglet('KANBAN')}
+          onCancel={() => setOnglet('BOARD')}
         />
       )}
 
-      {/* Tiroir de revue */}
+      {/* Tiroir de revue d'un dossier */}
       <ValidationDrawer
         dossier={selectedDossier}
         isOpen={!!selectedDossier}
         onClose={() => setSelectedDossier(null)}
         onActionComplete={() => {
           chargerDossiers()
-          onToast?.('Dossier mis à jour', 'info')
+          onToast?.('Dossier mis à jour avec succès', 'info')
         }}
         isAdmin={false}
       />
 
-      {/* Modal d'import Excel */}
+      {/* Modal d'import Excel restreint pour le secrétaire */}
       {importWizardOpen && (
         <ImportUsersWizardModal
           onClose={() => setImportWizardOpen(false)}
           onToast={onToast ?? (() => {})}
+          isSecretary={true}
           onSuccess={() => {
             chargerDossiers()
             onToast?.('Import des élèves effectué avec succès !', 'success')
             setImportWizardOpen(false)
           }}
         />
-      )}
-
-      {/* Modal Documents Scolaires Officiels */}
-      {docModalOpen && (
-        <div
-          onClick={() => {
-            setDocModalOpen(false)
-            setSelectedStudent(null)
-            setDocStudentSearch('')
-            setDocError(null)
-          }}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.5)',
-            zIndex: 999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 16,
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: 'var(--surface, #fff)',
-              borderRadius: 14,
-              width: 500,
-              maxWidth: '96vw',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
-              padding: 20,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 16,
-            }}
-          >
-            {/* Header modal */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border, #e5e7eb)', paddingBottom: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Printer size={18} style={{ color: 'var(--green, #16a34a)' }} />
-                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text, #111827)' }}>
-                  Documents scolaires officiels
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setDocModalOpen(false)
-                  setSelectedStudent(null)
-                  setDocStudentSearch('')
-                  setDocError(null)
-                }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3, #9ca3af)' }}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Recherche élève */}
-            {!selectedStudent ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2, #4b5563)' }}>
-                  Rechercher un élève (nom, prénom ou matricule) :
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <Search size={15} style={{ position: 'absolute', left: 10, top: 10, color: 'var(--text3, #9ca3af)' }} />
-                  <input
-                    type="text"
-                    value={docStudentSearch}
-                    onChange={(e) => setDocStudentSearch(e.target.value)}
-                    placeholder="Ex: Mbarga, Amina, 2025-001..."
-                    autoFocus
-                    style={{
-                      width: '100%',
-                      padding: '8px 10px 8px 32px',
-                      borderRadius: 8,
-                      border: '1px solid var(--border, #e5e7eb)',
-                      fontSize: 13,
-                    }}
-                  />
-                  {docSearching && (
-                    <Loader2 size={14} className="animate-spin" style={{ position: 'absolute', right: 10, top: 10, color: 'var(--green, #16a34a)' }} />
-                  )}
-                </div>
-
-                {docSearchResults.length > 0 && (
-                  <div style={{ border: '1px solid var(--border, #e5e7eb)', borderRadius: 8, maxHeight: 200, overflowY: 'auto' }}>
-                    {docSearchResults.map((st) => (
-                      <div
-                        key={st.id}
-                        onClick={() => {
-                          setSelectedStudent(st)
-                          setDocError(null)
-                        }}
-                        style={{
-                          padding: '8px 12px',
-                          borderBottom: '1px solid var(--border, #f3f4f6)',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          fontSize: 13,
-                        }}
-                        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = 'var(--bg2, rgba(0,0,0,0.03))')}
-                        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = 'transparent')}
-                      >
-                        <span style={{ fontWeight: 600, color: 'var(--text, #111827)' }}>
-                          {st.lastName} {st.firstName}
-                        </span>
-                        <span style={{ fontSize: 11, color: 'var(--text3, #9ca3af)' }}>
-                          {st.studentProfile?.class?.name || st.matricule || 'Élève'}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {docStudentSearch.length >= 2 && !docSearching && docSearchResults.length === 0 && (
-                  <div style={{ fontSize: 12, color: 'var(--text3, #9ca3af)', textAlign: 'center', padding: 12 }}>
-                    Aucun élève trouvé pour cette recherche.
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* Choix et génération des documents pour l'élève sélectionné */
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg2, rgba(0,0,0,0.03))', padding: '8px 12px', borderRadius: 8 }}>
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text, #111827)' }}>
-                      {selectedStudent.lastName} {selectedStudent.firstName}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--text3, #6b7280)' }}>
-                      {selectedStudent.studentProfile?.class?.name ? `Classe : ${selectedStudent.studentProfile.class.name}` : ''}
-                      {selectedStudent.matricule ? ` • Matricule : ${selectedStudent.matricule}` : ''}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedStudent(null)}
-                    style={{ fontSize: 11, color: 'var(--blue, #2563eb)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
-                  >
-                    Changer d'élève
-                  </button>
-                </div>
-
-                {docError && (
-                  <div style={{ padding: '8px 12px', borderRadius: 6, background: 'rgba(239,68,68,0.1)', color: 'var(--red, #ef4444)', fontSize: 12 }}>
-                    {docError}
-                  </div>
-                )}
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {/* Certificat de scolarité */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: 12,
-                      borderRadius: 8,
-                      border: '1px solid var(--border, #e5e7eb)',
-                      gap: 10,
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text, #111827)' }}>Certificat de scolarité</div>
-                      <div style={{ fontSize: 11, color: 'var(--text3, #6b7280)' }}>Attestation d'inscription officielle pour l'année courante</div>
-                    </div>
-                    <button
-                      type="button"
-                      disabled={docGenerating}
-                      onClick={() => generateStudentDoc(selectedStudent.id, 'certificat')}
-                      style={{
-                        padding: '6px 12px',
-                        borderRadius: 6,
-                        border: 'none',
-                        background: 'var(--green, #16a34a)',
-                        color: '#fff',
-                        fontSize: 12,
-                        fontWeight: 600,
-                        cursor: docGenerating ? 'not-allowed' : 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 5,
-                      }}
-                    >
-                      <Download size={13} />
-                      Télécharger
-                    </button>
-                  </div>
-
-                  {/* Carte d'identité scolaire */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: 12,
-                      borderRadius: 8,
-                      border: '1px solid var(--border, #e5e7eb)',
-                      gap: 10,
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text, #111827)' }}>Carte d'identité scolaire</div>
-                      <div style={{ fontSize: 11, color: 'var(--text3, #6b7280)' }}>Badge avec QR code de vérification public</div>
-                    </div>
-                    <button
-                      type="button"
-                      disabled={docGenerating}
-                      onClick={() => generateStudentDoc(selectedStudent.id, 'carte')}
-                      style={{
-                        padding: '6px 12px',
-                        borderRadius: 6,
-                        border: 'none',
-                        background: 'var(--blue, #2563eb)',
-                        color: '#fff',
-                        fontSize: 12,
-                        fontWeight: 600,
-                        cursor: docGenerating ? 'not-allowed' : 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 5,
-                      }}
-                    >
-                      <Download size={13} />
-                      Télécharger
-                    </button>
-                  </div>
-
-                  {/* Lettre de transfert */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 8,
-                      padding: 12,
-                      borderRadius: 8,
-                      border: '1px solid var(--border, #e5e7eb)',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text, #111827)' }}>Lettre de transfert</div>
-                        <div style={{ fontSize: 11, color: 'var(--text3, #6b7280)' }}>Certificat de radiation / changement d'établissement</div>
-                      </div>
-                      <button
-                        type="button"
-                        disabled={docGenerating}
-                        onClick={() => generateStudentDoc(selectedStudent.id, 'lettre-transfert')}
-                        style={{
-                          padding: '6px 12px',
-                          borderRadius: 6,
-                          border: 'none',
-                          background: '#7c3aed',
-                          color: '#fff',
-                          fontSize: 12,
-                          fontWeight: 600,
-                          cursor: docGenerating ? 'not-allowed' : 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 5,
-                        }}
-                      >
-                        <Download size={13} />
-                        Télécharger
-                      </button>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 11, color: 'var(--text3, #6b7280)', whiteSpace: 'nowrap' }}>Motif :</span>
-                      <input
-                        type="text"
-                        value={motifTransfert}
-                        onChange={(e) => setMotifTransfert(e.target.value)}
-                        placeholder="Ex: Déménagement familial, affectation..."
-                        style={{
-                          flex: 1,
-                          padding: '4px 8px',
-                          borderRadius: 4,
-                          border: '1px solid var(--border, #e5e7eb)',
-                          fontSize: 11,
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
       )}
     </div>
   )
