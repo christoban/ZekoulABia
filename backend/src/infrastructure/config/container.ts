@@ -110,10 +110,17 @@ import { CarteScolaireScrapingAdapter } from '@infrastructure/services/scraping/
 // --- Use Cases : Onboarding Auto-Service Élèves ---
 import { CreerSqueletteOnboardingUseCase } from '@application/eleveOnboarding/CreerSqueletteOnboardingUseCase';
 import { SoumettreFormulaireOnboardingUseCase } from '@application/eleveOnboarding/SoumettreFormulaireOnboardingUseCase';
+import { SoumettreOnboardingUseCase } from '@application/eleveOnboarding/SoumettreOnboardingUseCase';
+import { RenvoyerOnboardingUseCase } from '@application/eleveOnboarding/RenvoyerOnboardingUseCase';
 import { ValiderOnboardingUseCase } from '@application/eleveOnboarding/ValiderOnboardingUseCase';
 import { InscrireEleveUseCase } from '@application/eleveOnboarding/InscrireEleveUseCase';
 import { RejeterOnboardingUseCase } from '@application/eleveOnboarding/RejeterOnboardingUseCase';
 import { ChangerGestionInscriptionsAdminUseCase } from '@application/eleveOnboarding/ChangerGestionInscriptionsAdminUseCase';
+import { GererPiecesDossierUseCase } from '@application/eleveOnboarding/GererPiecesDossierUseCase';
+import { SuggererClassesDossierUseCase } from '@application/eleveOnboarding/SuggererClassesDossierUseCase';
+import { GenererFicheInscriptionPdfUseCase } from '@application/eleveOnboarding/GenererFicheInscriptionPdfUseCase';
+import { ValiderLotOnboardingUseCase } from '@application/eleveOnboarding/ValiderLotOnboardingUseCase';
+import { PdfKitFicheInscriptionAdapter } from '@infrastructure/pdf/onboarding/FicheInscriptionPdfRenderer';
 import { VerifierCompletudeSupplementUseCase } from '@application/statisticalCampaign/VerifierCompletudeSupplementUseCase';
 import { GenererDeclarationStatistiqueMinesecUseCase } from '@application/statisticalCampaign/GenererDeclarationStatistiqueMinesecUseCase';
 import { GenererRapportSyntheseMinedubUseCase } from '@application/statisticalCampaignMinedub/GenererRapportSyntheseMinedubUseCase';
@@ -145,6 +152,14 @@ import { EnregistrerResultatCepUseCase } from '@application/entranceExam/Enregis
 import { ResumeSessionConcoursUseCase } from '@application/entranceExam/ResumeSessionConcoursUseCase';
 import { ScannerListeCandidatsUseCase } from '@application/entranceExam/ScannerListeCandidatsUseCase';
 import { DetecterAnomaliesConcoursUseCase } from '@application/entranceExam/DetecterAnomaliesConcoursUseCase';
+import { InscrireCandidatConcoursUseCase } from '@application/entranceExam/InscrireCandidatConcoursUseCase';
+import { RepartirCandidatsSallesUseCase } from '@application/entranceExam/RepartirCandidatsSallesUseCase';
+import { SaisirNotesConcoursUseCase } from '@application/entranceExam/SaisirNotesConcoursUseCase';
+import { SimulerDeliberationConcoursUseCase } from '@application/entranceExam/SimulerDeliberationConcoursUseCase';
+import { PublierResultatsConcoursUseCase } from '@application/entranceExam/PublierResultatsConcoursUseCase';
+import { ConsulterResultatPublicUseCase } from '@application/entranceExam/ConsulterResultatPublicUseCase';
+import { FinaliserAdmissionsConcoursUseCase } from '@application/entranceExam/FinaliserAdmissionsConcoursUseCase';
+import { PdfKitEntranceExamAdapter } from '@infrastructure/pdf/entranceExam/PdfKitEntranceExamAdapter';
 
 // --- Use Cases : Push Notification ---
 import { SouscrirePushUseCase } from '@application/pushNotification/SouscrirePushUseCase';
@@ -1180,10 +1195,21 @@ export function creerContainer() {
     eleveOnboarding: {
       creerSquelette: creerSqueletteOnboarding,
       soumettreFormulaire: new SoumettreFormulaireOnboardingUseCase(eleveOnboardingRepository),
+      soumettre: new SoumettreOnboardingUseCase(eleveOnboardingRepository),
+      renvoyer: new RenvoyerOnboardingUseCase(eleveOnboardingRepository),
       valider: new ValiderOnboardingUseCase(eleveOnboardingRepository, activityLog),
-      inscrire: new InscrireEleveUseCase(eleveOnboardingRepository, schoolRepository, activityLog),
+      inscrire: new InscrireEleveUseCase(eleveOnboardingRepository, schoolRepository, activityLog, eventPublisher),
       rejeter: new RejeterOnboardingUseCase(eleveOnboardingRepository, schoolRepository, activityLog),
       changerGestionAdmin: new ChangerGestionInscriptionsAdminUseCase(schoolRepository, activityLog),
+      gererPieces: new GererPiecesDossierUseCase(eleveOnboardingRepository),
+      suggererClasses: new SuggererClassesDossierUseCase(classeRepository),
+      genererFichePdf: new GenererFicheInscriptionPdfUseCase(
+        eleveOnboardingRepository,
+        schoolRepository,
+        classeRepository,
+        new PdfKitFicheInscriptionAdapter(),
+      ),
+      validerLot: new ValiderLotOnboardingUseCase(new InscrireEleveUseCase(eleveOnboardingRepository, schoolRepository, activityLog, eventPublisher)),
       repository: eleveOnboardingRepository,
     },
     credentialsNotificationService,
@@ -1229,6 +1255,14 @@ export function creerContainer() {
       resumeSession: new ResumeSessionConcoursUseCase(entranceExamRepository),
       scannerListe: new ScannerListeCandidatsUseCase(entranceExamRepository, documentAiAdapter),
       detecterAnomalies: new DetecterAnomaliesConcoursUseCase(entranceExamRepository),
+      inscrireCandidat: new InscrireCandidatConcoursUseCase(entranceExamRepository),
+      repartirSalles: new RepartirCandidatsSallesUseCase(entranceExamRepository),
+      saisirNotes: new SaisirNotesConcoursUseCase(entranceExamRepository),
+      simulerDeliberation: new SimulerDeliberationConcoursUseCase(entranceExamRepository),
+      publierResultats: new PublierResultatsConcoursUseCase(entranceExamRepository),
+      consulterResultatPublic: new ConsulterResultatPublicUseCase(entranceExamRepository),
+      finaliserAdmissions: new FinaliserAdmissionsConcoursUseCase(entranceExamRepository, creerSqueletteOnboarding),
+      pdfPort: new PdfKitEntranceExamAdapter(),
     },
     pebsExam: {
       creerSession: new CreerSessionPebsUseCase(pebsExamRepository, notifierEvenement),

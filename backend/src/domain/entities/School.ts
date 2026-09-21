@@ -26,6 +26,7 @@ export interface SchoolProps {
   onboardingConfig?: JsonValue | null;
   saturdaySchedule: boolean;
   adminGereInscriptions?: boolean;
+  adminGereFinances?: boolean;
   contractEnd?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -89,6 +90,7 @@ export class School {
   get templateCode(): string | undefined { return this.props.templateCode; }
   get onboardingConfig(): JsonValue | null | undefined { return this.props.onboardingConfig; }
   get adminGereInscriptions(): boolean { return this.props.adminGereInscriptions ?? false; }
+  get adminGereFinances(): boolean { return this.props.adminGereFinances ?? true; }
 
   // --- Méthodes métier ---
 

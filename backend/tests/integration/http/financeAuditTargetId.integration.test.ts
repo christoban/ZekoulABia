@@ -67,7 +67,9 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await new Promise<void>((resolve) => server.close(() => resolve()));
-  await prismaTest.aIActionAuditLog.deleteMany({ where: { schoolId } });
+  const usersTest = await prismaTest.user.findMany({ where: { schoolId }, select: { id: true } });
+  const userIdsTest = usersTest.map((u) => u.id);
+  await prismaTest.notification.deleteMany({ where: { userId: { in: userIdsTest } } });
   await prismaTest.notification.deleteMany({ where: { schoolId } });
   await prismaTest.payment.deleteMany({ where: { schoolId } });
   await prismaTest.invoice.deleteMany({ where: { schoolId } });

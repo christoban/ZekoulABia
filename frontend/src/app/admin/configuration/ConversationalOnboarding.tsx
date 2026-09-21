@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
-import { Baby, BookOpen, Book, GraduationCap, Wrench, Check, XCircle, HelpCircle, BarChart3, Languages, Landmark, Calendar, Wallet, Users } from 'lucide-react'
+import { Baby, BookOpen, Book, GraduationCap, Wrench, Check, XCircle, HelpCircle, BarChart3, Languages, Landmark, Calendar, Wallet, Users, UserPlus } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT, useChangeLanguage, useLanguage } from '@/lib/i18n'
@@ -73,6 +73,13 @@ export interface OnboardingState {
   hasTransport?: boolean
   hasLibrary?: boolean
   hasBoarding?: boolean
+
+  // Politique d'admissions & inscriptions
+  directAdmissionWithoutExam?: boolean
+  capacityBufferPercent?: number
+  selfServiceEnabled?: boolean
+  adminGereInscriptions?: boolean
+  defaultRecipient?: 'ELEVE' | 'PARENT' | 'LES_DEUX'
 }
 
 interface Props {
@@ -320,6 +327,11 @@ const INITIAL = (p: Props): OnboardingState => ({
   lv2Languages: [], lv2Organisation: [], directionRoles: {}, feesTypes: [],
   periodsCount: 3, sequencesPerPeriod: 2, paymentTranches: 3,
   academicYearStart: `${new Date().getFullYear()}-09-05`,
+  directAdmissionWithoutExam: true,
+  capacityBufferPercent: 0,
+  selfServiceEnabled: true,
+  adminGereInscriptions: true,
+  defaultRecipient: 'ELEVE',
   // Pré-remplissage depuis la Phase 1 (écrase les valeurs vides ci-dessus).
   ...mapPhase1ToState(p.phase1Config),
 })
@@ -411,7 +423,7 @@ export default function ConversationalOnboarding(props: Props) {
     if (hasSecondary && (state.hasPEBSFrancophone || state.hasPEBSAnglophone)) {
       list.push('pebsOrg')
     }
-    list.push('calYear', 'periods', 'sequences', 'fees', 'tranches', 'services', 'direction', 'recap')
+    list.push('calYear', 'periods', 'sequences', 'fees', 'tranches', 'services', 'direction', 'admissions', 'recap')
     return list
   }, [reconciled, state.subSystem, state.cycles, state.lv2Active, state.lv2Organisation, state.anglophoneStreams, state.hasPEBSFrancophone, state.hasPEBSAnglophone])
 
@@ -943,6 +955,69 @@ export default function ConversationalOnboarding(props: Props) {
             <input style={S.input} value={state.directionRoles.surveillantGeneral ?? ''} onChange={e => patch({ directionRoles: { ...state.directionRoles, surveillantGeneral: e.target.value } })} placeholder={t('phase2.direction.placeholder')} />
             <div style={S.label}>{t('phase2.direction.intendant')}</div>
             <input style={S.input} value={state.directionRoles.intendant ?? ''} onChange={e => patch({ directionRoles: { ...state.directionRoles, intendant: e.target.value } })} placeholder={t('phase2.direction.placeholder')} />
+            <Nav />
+          </>
+        )
+
+      case 'admissions':
+        return (
+          <>
+            <Bubble>{t('phase2.admissions.title')}</Bubble>
+            <div style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 14 }}>{t('phase2.admissions.subtitle')}</div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '10px 12px', borderRadius: 8, background: 'var(--bg2)', border: '1px solid var(--border)' }}>
+                <input
+                  type="checkbox"
+                  checked={state.directAdmissionWithoutExam !== false}
+                  onChange={e => patch({ directAdmissionWithoutExam: e.target.checked })}
+                  style={{ marginTop: 3 }}
+                />
+                <div>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>{t('phase2.admissions.directAdmission')}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{t('phase2.admissions.directAdmissionDesc')}</div>
+                </div>
+              </label>
+
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '10px 12px', borderRadius: 8, background: 'var(--bg2)', border: '1px solid var(--border)' }}>
+                <input
+                  type="checkbox"
+                  checked={state.selfServiceEnabled !== false}
+                  onChange={e => patch({ selfServiceEnabled: e.target.checked })}
+                  style={{ marginTop: 3 }}
+                />
+                <div>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>{t('phase2.admissions.selfService')}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{t('phase2.admissions.selfServiceDesc')}</div>
+                </div>
+              </label>
+
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '10px 12px', borderRadius: 8, background: 'var(--bg2)', border: '1px solid var(--border)' }}>
+                <input
+                  type="checkbox"
+                  checked={state.adminGereInscriptions !== false}
+                  onChange={e => patch({ adminGereInscriptions: e.target.checked })}
+                  style={{ marginTop: 3 }}
+                />
+                <div>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>{t('phase2.admissions.adminValidation')}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{t('phase2.admissions.adminValidationDesc')}</div>
+                </div>
+              </label>
+            </div>
+
+            <div style={S.label}>{t('phase2.admissions.capacityBuffer')}</div>
+            <select
+              style={{ ...S.input, marginBottom: 14 }}
+              value={state.capacityBufferPercent ?? 0}
+              onChange={e => patch({ capacityBufferPercent: Number(e.target.value) })}
+            >
+              <option value={0}>0% (Capacité stricte)</option>
+              <option value={5}>+5% de surcapacité tolérée</option>
+              <option value={10}>+10% de surcapacité tolérée</option>
+              <option value={15}>+15% de surcapacité tolérée</option>
+            </select>
+
             <Nav nextLabel={t('phase2.nav.recap')} />
           </>
         )
@@ -1090,6 +1165,12 @@ function Recap({ state, template, onConfirm, onBack }: { state: OnboardingState;
       </Block>
 
       <Block icon={Users} title={t('phase2.recap.direction')}>{roles}</Block>
+
+      <Block icon={UserPlus} title={t('phase2.recap.admissions')}>
+        {state.directAdmissionWithoutExam ? t('phase2.recap.directAdmissionYes') : t('phase2.recap.directAdmissionNo')}<br />
+        {state.adminGereInscriptions ? t('phase2.recap.adminValidationYes') : t('phase2.recap.adminValidationNo')}<br />
+        {t('phase2.admissions.capacityBuffer')}&nbsp;: +{state.capacityBufferPercent ?? 0}%
+      </Block>
 
       <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
         <button style={S.secondary} onClick={onBack}>{t('phase2.recap.modify')}</button>

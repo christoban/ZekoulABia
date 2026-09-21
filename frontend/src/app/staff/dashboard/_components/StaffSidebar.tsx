@@ -8,6 +8,7 @@ import {
   Compass, IdCard, ShieldAlert,
   Megaphone, MessageCircle,
   ScanSearch, Users, Settings, ChevronDown, ChevronRight,
+  BarChart3,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -61,6 +62,7 @@ export default function StaffSidebar({ current, onChange, allowedSections, sessi
   if (can('suivi-eleves'))     vieScolaireItems.push({ id: 'suivi-eleves', icon: ShieldAlert, label: tnav('sidebar.suiviEleves') })
   if (can('timetable'))        vieScolaireItems.push({ id: 'timetable',    icon: Calendar, label: tnav('sidebar.timetable') })
   if (can('finance'))          vieScolaireItems.push({ id: 'finance',      icon: Banknote, label: tnav('sidebar.finance'), badge: badges.finance, badgeColor: 'red' })
+  if (can('rapports'))        vieScolaireItems.push({ id: 'rapports',      icon: BarChart3, label: tnav('sidebar.rapports') ?? 'Rapports & Stats' })
 
   // Évaluations & Examens
   const evalItems: NavItem[] = []

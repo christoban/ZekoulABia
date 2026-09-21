@@ -25,13 +25,14 @@ export class PrismaDashboardQueryRepository implements DashboardQueryRepository 
   }
 
   async countAdminBadges(schoolId: string): Promise<AdminBadges> {
-    const [users, classes, pendingGrades, pendingInvoices] = await Promise.all([
+    const [users, classes, pendingGrades, pendingInvoices, pendingOnboardings] = await Promise.all([
       this.prisma.user.count({ where: { schoolId } }),
       this.prisma.class.count({ where: { schoolId } }),
       this.prisma.grade.count({ where: { schoolId, validationStatus: 'DRAFT' } }),
       this.prisma.invoice.count({ where: { schoolId, status: { in: ['PENDING', 'OVERDUE'] } } }),
+      this.prisma.studentOnboarding.count({ where: { schoolId, status: 'SUBMITTED' } }),
     ]);
-    return { users, classes, pendingGrades, pendingInvoices };
+    return { users, classes, pendingGrades, pendingInvoices, pendingOnboardings };
   }
 
   async findTeacherDashboard(schoolId: string, teacherId: string): Promise<TeacherSlots> {

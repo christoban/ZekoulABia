@@ -8,7 +8,7 @@ import type { PebsFiliere } from '@domain/types/enums';
 export interface ImportContexte {
   schoolName: string;
   hasPEBS: boolean;
-  classes: { id: string; name: string }[];
+  classes: { id: string; name: string; capacity?: number; currentEnrollments?: number }[];
   lv2Subjects: { id: string; name: string }[];
 }
 

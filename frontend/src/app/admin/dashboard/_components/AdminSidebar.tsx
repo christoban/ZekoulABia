@@ -103,6 +103,7 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
       label: 'Administration & Comptes',
       items: [
         { id: 'users', icon: Users, label: tnav('sidebar.users'), badge: badges.users, badgeColor: 'green' },
+        { id: 'eleve-onboarding', icon: UserPlus, label: tnav('sidebar.eleveOnboarding') ?? 'Inscriptions', badge: badges['eleve-onboarding'], badgeColor: 'amber' },
       ],
     },
     {

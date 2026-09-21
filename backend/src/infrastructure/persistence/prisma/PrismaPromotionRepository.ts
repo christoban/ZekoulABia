@@ -7,6 +7,7 @@ import type {
 } from '@domain/ports/repositories/PromotionRepository';
 import type { EnrollmentRepository } from '@domain/ports/repositories/EnrollmentRepository';
 import { changerClasseEleve } from '@application/shared/studentEnrollment';
+import { CycleResolver } from '@domain/services/CycleResolver';
 
 export class PrismaPromotionRepository implements PromotionRepository {
   constructor(private readonly prisma: PrismaClient, private readonly enrollmentRepository: EnrollmentRepository) {}
@@ -106,16 +107,36 @@ export class PrismaPromotionRepository implements PromotionRepository {
     const [profile, classe] = await Promise.all([
       this.prisma.studentProfile.findUnique({
         where: { userId: studentId },
-        select: { id: true },
+        select: { id: true, studentAccessScope: true, profileManagedBy: true },
       }),
       this.prisma.class.findUnique({
         where: { id: newClassId },
-        select: { schoolId: true, academicYearId: true },
+        select: { schoolId: true, academicYearId: true, level: true },
       }),
     ]);
 
     if (!profile) throw new Error(`StudentProfile introuvable pour userId=${studentId}`);
     if (!classe) throw new Error(`Classe introuvable: ${newClassId}`);
+
+    // Recalcul du profil d'accès numérique lors du passage de cycle
+    const cycle = CycleResolver.resolveCycle(classe.level);
+    if (cycle === 'SECOND_CYCLE') {
+      await this.prisma.studentProfile.update({
+        where: { id: profile.id },
+        data: {
+          studentAccessScope: 'FULL',
+          profileManagedBy: 'STUDENT',
+        },
+      });
+    } else if (cycle === 'PREMIER_CYCLE') {
+      await this.prisma.studentProfile.update({
+        where: { id: profile.id },
+        data: {
+          studentAccessScope: 'READ_ONLY',
+          profileManagedBy: profile.profileManagedBy === 'SECRETARIAT' ? 'SECRETARIAT' : 'PARENT',
+        },
+      });
+    }
 
     await changerClasseEleve(this.enrollmentRepository, {
       studentId: profile.id,

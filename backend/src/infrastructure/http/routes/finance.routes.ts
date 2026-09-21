@@ -1,8 +1,12 @@
 import { Router } from 'express';
 import type { FinanceController } from '@infrastructure/http/controllers/FinanceController';
+import type { StudentFeesStatusController } from '@infrastructure/http/controllers/StudentFeesStatusController';
 import { requireAuth, requireRole } from '../middlewares/auth.ts';
 
-export function creerFinanceRoutes(controller: FinanceController): Router {
+export function creerFinanceRoutes(
+  controller: FinanceController,
+  studentFeesStatusController?: StudentFeesStatusController,
+): Router {
   const router = Router();
 
   // Plans de frais
@@ -31,6 +35,11 @@ export function creerFinanceRoutes(controller: FinanceController): Router {
 
   // Dépenses
   router.post('/expenses', requireAuth, requireRole('ADMIN', 'STAFF'), controller.creerDepense);
+
+  // Consultation état des frais pour secrétariat / admin / élève
+  if (studentFeesStatusController) {
+    router.get('/students/:id/fees-status', requireAuth, studentFeesStatusController.consulterStatutFrais);
+  }
 
   return router;
 }

@@ -145,5 +145,12 @@
     "payment_in_progress": "Un paiement est déjà en cours pour cet élève.",
     "legal_threshold_exceeded": "La contribution légale camerounaise serait dépassée pour cet élève. Vérifiez le montant du plan de frais.",
     "separation_ordinator": "Violation de la règle ordonnateur/comptable. L'ordonnateur ne peut pas être le comptable."
+  },
+  "delegation_banner": {
+    "admin_in_charge_title": "Gestion financière directe",
+    "admin_in_charge_desc": "La gestion des frais est à votre charge. Si un comptable ou intendant gère ces opérations, vous pouvez déléguer la gestion financière dans les paramètres.",
+    "delegate_action": "Configurer la délégation",
+    "delegated_title": "Supervision Financière (Délégation active)",
+    "delegated_desc": "La gestion financière quotidienne (tarifs, factures) est déléguée au comptable / intendant. Vous conservez la supervision globale et la consultation."
   }
 }

@@ -131,6 +131,26 @@ describe('LoginEmailOtpUseCase', () => {
     await expect(uc.envoyer('u1')).rejects.toThrow('Compte introuvable');
   });
 
+  it('envoyer : refuse compte dont accessMode est SMS_ONLY', async () => {
+    const { repo } = makeRepo(authUser({ accessMode: 'SMS_ONLY' }));
+    const uc = new LoginEmailOtpUseCase(repo, async () => {});
+    await expect(uc.envoyer('u1')).rejects.toThrow("Ce compte ne dispose pas d'un accès de connexion direct.");
+  });
+
+  it('verifier : refuse compte dont accessMode est SMS_ONLY', async () => {
+    const otp = '123456';
+    const hash = await bcrypt.hash(otp, 4);
+    const user = authUser({
+      accessMode: 'SMS_ONLY',
+      loginEmailOtpHash: hash,
+      loginEmailOtpExpiresAt: new Date(Date.now() + 60000),
+      loginEmailOtpAttempts: 0,
+    });
+    const { repo } = makeRepo(user);
+    const uc = new LoginEmailOtpUseCase(repo, async () => {});
+    await expect(uc.verifier('u1', otp)).rejects.toThrow("Ce compte ne dispose pas d'un accès de connexion direct.");
+  });
+
   it('verifier : accepte OTP correct et clear', async () => {
     const otp = '123456';
     const hash = await bcrypt.hash(otp, 4);

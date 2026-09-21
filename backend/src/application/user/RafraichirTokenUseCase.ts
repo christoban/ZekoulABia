@@ -28,6 +28,10 @@ export class RafraichirTokenUseCase {
       throw new Error('Utilisateur introuvable ou inactif');
     }
 
+    if (result.user.accessMode && result.user.accessMode !== 'FULL_ACCESS') {
+      throw new Error("Ce compte ne dispose pas d'un accès de connexion direct.");
+    }
+
     // 2. Vérifier que la version du token correspond (mécanisme de révocation de session)
     if (result.refreshTokenVersion !== refreshTokenPayload.refreshTokenVersion) {
       throw new Error('Session expirée — veuillez vous reconnecter');

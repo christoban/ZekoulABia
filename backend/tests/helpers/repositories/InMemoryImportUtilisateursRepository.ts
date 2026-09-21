@@ -15,6 +15,8 @@ type ClasseMemoire = {
   serie: string | null;
   filiere: string | null;
   academicYearId: string;
+  capacity?: number;
+  currentEnrollments?: number;
 };
 
 type MatiereMemoire = { id: string; schoolId: string; name: string; isLV2: boolean };
@@ -73,7 +75,7 @@ export class InMemoryImportUtilisateursRepository implements ImportUtilisateursR
     return {
       schoolName: this.schoolNames.get(schoolId) ?? 'ZekoulABia',
       hasPEBS: this.pebsBySchool.get(schoolId) ?? false,
-      classes: [...this.classes.values()].filter(c => c.schoolId === schoolId).map(c => ({ id: c.id, name: c.name })),
+      classes: [...this.classes.values()].filter(c => c.schoolId === schoolId).map(c => ({ id: c.id, name: c.name, capacity: c.capacity, currentEnrollments: c.currentEnrollments })),
       lv2Subjects: [...this.subjects.values()].filter(s => s.schoolId === schoolId && s.isLV2).map(s => ({ id: s.id, name: s.name })),
     };
   }

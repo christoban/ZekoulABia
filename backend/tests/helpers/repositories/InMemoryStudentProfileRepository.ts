@@ -28,7 +28,7 @@ export class InMemoryStudentProfileRepository
     return null;
   }
 
-  async findByIdAndSchool(_profileId: string, _schoolId: string): Promise<{ id: string } | null> {
+  async findByIdAndSchool(_profileId: string, _schoolId: string): Promise<{ id: string; userId: string } | null> {
     return null;
   }
 }

@@ -22,6 +22,10 @@ import { PrismaStaffProfileRepository } from '@infrastructure/persistence/prisma
 import { PrismaStatisticsQueryRepository } from '@infrastructure/persistence/prisma/PrismaStatisticsQueryRepository';
 import { PrismaRattachementEnseignantRepository } from '@infrastructure/persistence/prisma/PrismaRattachementEnseignantRepository';
 import { PrismaTimetableRepository } from '@infrastructure/persistence/prisma/PrismaTimetableRepository';
+import { PrismaStudentProfileRepository } from '@infrastructure/persistence/prisma/PrismaStudentProfileRepository';
+import { PrismaFactureRepository } from '@infrastructure/persistence/prisma/PrismaFactureRepository';
+import { ConsulterStatutFraisEleveUseCase } from '@application/finance/ConsulterStatutFraisEleveUseCase';
+import { StudentFeesStatusController } from '@infrastructure/http/controllers/StudentFeesStatusController';
 import { AIActionAuditAdapter } from '@infrastructure/services/ai/AIActionAuditAdapter';
 import { SocketNotificationService } from '@infrastructure/services/notification/SocketNotificationService';
 
@@ -38,6 +42,7 @@ export function registerFinanceRoutes(app: Application, prismaParam: typeof pris
   const paiementRepositoryForFinance = new PrismaPaiementRepository(p as any);
   const schoolRepositoryForFinance = new PrismaSchoolRepository(p as any);
   const userRepositoryForFinance = new PrismaUserRepository(p as any);
+  const factureRepositoryForFinance = new PrismaFactureRepository(p as any);
   const auditForFinance = new AIActionAuditAdapter(p as any);
   const notifForFinance = new SocketNotificationService();
 
@@ -59,7 +64,15 @@ export function registerFinanceRoutes(app: Application, prismaParam: typeof pris
     notifForFinance,
   );
 
-  app.use('/api/v2/finance', creerFinanceRoutes(financeController));
+  const studentProfileRepositoryForFinance = new PrismaStudentProfileRepository(p as any);
+  const consulterStatutFraisUseCase = new ConsulterStatutFraisEleveUseCase(
+    factureRepositoryForFinance,
+    userRepositoryForFinance,
+    studentProfileRepositoryForFinance,
+  );
+  const studentFeesStatusController = new StudentFeesStatusController(consulterStatutFraisUseCase);
+
+  app.use('/api/v2/finance', creerFinanceRoutes(financeController, studentFeesStatusController));
 
   const departmentController = new DepartmentController(
     new PrismaDepartmentRepository(p as any),

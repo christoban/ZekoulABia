@@ -1,5 +1,7 @@
 export { CreerSqueletteOnboardingUseCase } from './CreerSqueletteOnboardingUseCase';
 export { SoumettreFormulaireOnboardingUseCase } from './SoumettreFormulaireOnboardingUseCase';
+export { SoumettreOnboardingUseCase } from './SoumettreOnboardingUseCase';
+export { RenvoyerOnboardingUseCase } from './RenvoyerOnboardingUseCase';
 export { ValiderOnboardingUseCase } from './ValiderOnboardingUseCase';
 export { InscrireEleveUseCase } from './InscrireEleveUseCase';
 export { RejeterOnboardingUseCase } from './RejeterOnboardingUseCase';

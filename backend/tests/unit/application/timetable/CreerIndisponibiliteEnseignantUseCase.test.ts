@@ -66,6 +66,7 @@ function userRepositoryStub(user: User | null): UserRepository {
     verifierMotDePasse: async () => false,
     mettreAJourMotDePasse: async () => {},
     definirMotDePasseInvitation: async () => {},
+    definirMotDePasseTemporaire: async () => {},
   };
 }
 

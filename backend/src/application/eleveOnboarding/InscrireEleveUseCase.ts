@@ -8,6 +8,7 @@
 import type { EleveOnboardingRepository } from '@domain/ports/repositories/EleveOnboardingRepository';
 import type { SchoolRepository } from '@domain/ports/repositories/SchoolRepository';
 import type { ActivityLogPort } from '@domain/ports/services/ActivityLogPort';
+import type { EventPublisher } from '@domain/ports/services/EventPublisher';
 import { canGererInscriptions } from '@domain/rules/EnrollmentRules';
 import { parseDateFR } from '../../shared/date/parseDateFR';
 import type { OnboardingStatus } from '@domain/types/enums';
@@ -20,6 +21,8 @@ export interface InscrireEleveCommande {
   validatorRole: string;
   staffPermissions?: readonly string[];
   classId?: string;
+  derogationCapacite?: boolean;
+  motifDerogation?: string;
 }
 
 export interface InscrireEleveResultat {
@@ -34,20 +37,31 @@ export class InscrireEleveUseCase {
     private readonly eleveOnboardingRepository: EleveOnboardingRepository,
     private readonly schoolRepository: SchoolRepository,
     private readonly activityLog: ActivityLogPort,
+    private readonly eventPublisher?: EventPublisher,
   ) {}
 
   async execute(cmd: InscrireEleveCommande): Promise<InscrireEleveResultat> {
+    if (cmd.validatorRole !== 'ADMIN') {
+      throw new Error('Seul l’administrateur peut valider et inscrire un dossier.');
+    }
+
     const school = await this.schoolRepository.findById(cmd.schoolId);
     const adminGere = school?.adminGereInscriptions ?? false;
 
-    if (!canGererInscriptions({ role: cmd.validatorRole, staffPermissions: cmd.staffPermissions, adminGereInscriptions: adminGere })) {
-      throw new Error('Vous n’avez pas les droits nécessaires pour inscrire des élèves.');
+    if (cmd.derogationCapacite) {
+      if (!cmd.motifDerogation?.trim()) {
+        throw new Error('Le motif de dérogation de capacité est obligatoire.');
+      }
     }
 
     const onboarding = await this.eleveOnboardingRepository.findOnboardingById(cmd.onboardingId, cmd.schoolId);
     if (!onboarding) throw new Error('Dossier introuvable');
 
-    const statusValides: OnboardingStatus[] = ['SUBMITTED', 'DRAFT', 'LINK_SENT'];
+    if (!adminGere && onboarding.status !== 'SUBMITTED' && onboarding.status !== 'VALIDATED') {
+      throw new Error(`Ce dossier ne peut pas être inscrit depuis son statut actuel (${onboarding.status}) — il doit d’abord être soumis pour validation (statut SUBMITTED).`);
+    }
+
+    const statusValides: OnboardingStatus[] = ['SUBMITTED', 'DRAFT', 'LINK_SENT', 'VALIDATED'];
     if (!statusValides.includes(onboarding.status)) {
       throw new Error(`Ce dossier ne peut pas être inscrit depuis son statut actuel (${onboarding.status})`);
     }
@@ -95,14 +109,23 @@ export class InscrireEleveUseCase {
       eleveDispositifOS: onboarding.eleveDispositifOS,
       parentDispositifOS: onboarding.parentDispositifOS,
       examCandidateId: onboarding.examCandidateId,
+      derogationCapacite: cmd.derogationCapacite ?? false,
+      motifDerogation: cmd.motifDerogation?.trim(),
+      roleActeur: cmd.validatorRole,
     });
 
-    await this.activityLog.log({
-      userId: cmd.validatedById,
-      schoolId: cmd.schoolId,
-      action: 'ONBOARDING_VALIDATED',
-      details: `Élève ${nom} ${prenom} inscrit avec succès (dossier ${onboarding.id}, ${comptesCrees.length} compte(s) créé(s))`,
-    });
+    const studentCompte = comptesCrees.find((c) => c.role === 'STUDENT');
+
+    if (this.eventPublisher) {
+      void this.eventPublisher.emit('enrollment.activated', {
+        schoolId: cmd.schoolId,
+        onboardingId: onboarding.id,
+        studentProfileId,
+        studentUserId: studentCompte?.userId,
+        classId,
+        validatedById: cmd.validatedById,
+      }).catch((err) => console.warn('[InscrireEleveUseCase] Échec émission enrollment.activated:', err?.message || err));
+    }
 
     return {
       onboardingId: onboarding.id,

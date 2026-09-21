@@ -193,16 +193,24 @@ export class FinanceController {
     private readonly notificationService: NotificationService,
   ) {}
 
-  // Même pattern que OrientationController.checkPermission — ADMIN passe toujours,
-  // STAFF doit avoir MANAGE_FINANCE (ex. Intendant/Économe/Bursar).
-  private checkFinancePermission(user: any, res: Response): boolean {
-    if (user.role === 'ADMIN') return true;
+  // STAFF doit avoir MANAGE_FINANCE.
+  // ADMIN passe uniquement si adminGereFinances est activé sur l'établissement (délégation comptable/intendant par défaut).
+  private async checkFinancePermission(user: any, res: Response): Promise<boolean> {
     const perms: string[] = user.permissions ?? [];
-    if (!perms.includes('MANAGE_FINANCE')) {
-      res.status(403).json({ success: false, message: 'Permission MANAGE_FINANCE requise' });
+    if (perms.includes('MANAGE_FINANCE')) return true;
+
+    if (user.role === 'ADMIN') {
+      const school = await this.schoolRepository.findById(user.schoolId);
+      if (school?.adminGereFinances) return true;
+      res.status(403).json({
+        success: false,
+        message: 'La gestion financière est déléguée au comptable/intendant',
+      });
       return false;
     }
-    return true;
+
+    res.status(403).json({ success: false, message: 'Permission MANAGE_FINANCE requise' });
+    return false;
   }
 
   // Notifie les Admin de l'établissement quand un plan de frais est créé par un non-Admin
@@ -283,7 +291,7 @@ export class FinanceController {
   creerPlan = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const user = req.user;
-      if (!this.checkFinancePermission(user, res)) return;
+      if (!(await this.checkFinancePermission(user, res))) return;
       const resultat = await this.creerPlanFrais.execute({
         schoolId: user.schoolId,
         demandeurRole: user.role,
@@ -317,7 +325,7 @@ export class FinanceController {
   copierPlansAnneePrecedente = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const user = req.user;
-      if (!this.checkFinancePermission(user, res)) return;
+      if (!(await this.checkFinancePermission(user, res))) return;
       const { targetAcademicYearId, plans } = req.body as { targetAcademicYearId?: string; plans?: any[] };
 
       if (!targetAcademicYearId) {
@@ -358,7 +366,7 @@ export class FinanceController {
   changerStatutPlan = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const user = req.user;
-      if (!this.checkFinancePermission(user, res)) return;
+      if (!(await this.checkFinancePermission(user, res))) return;
       const { id } = req.params as { id: string };
       const { statutCible } = req.body as { statutCible?: FeePlanStatus };
 
@@ -395,6 +403,7 @@ export class FinanceController {
   creerFacture = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const user = req.user;
+      if (!(await this.checkFinancePermission(user, res))) return;
       const { studentId, feePlanId, description } = req.body;
 
       if (!studentId || !feePlanId) {
@@ -418,6 +427,7 @@ export class FinanceController {
   creerFacturesEnMasse = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const user = req.user;
+      if (!(await this.checkFinancePermission(user, res))) return;
       const { feePlanId, classId, studentIds } = req.body;
 
       if (!feePlanId) {

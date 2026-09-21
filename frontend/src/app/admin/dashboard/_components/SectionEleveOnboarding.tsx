@@ -1,9 +1,26 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+
+import React, { useState, useEffect, useCallback } from 'react'
+import {
+  Users,
+  Search,
+  CheckCircle2,
+  AlertTriangle,
+  RotateCcw,
+  XCircle,
+  Download,
+  PlusCircle,
+  Eye,
+  Send,
+  Loader2,
+  FileCheck,
+} from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import DelegationSupervisionBanner from './DelegationSupervisionBanner'
-
+import EnrollmentCompletenessRing from '@/components/enrollment/EnrollmentCompletenessRing'
+import ValidationDrawer, { type DrawerDossier } from '@/components/enrollment/ValidationDrawer'
+import BulkValidationBar from '@/components/enrollment/BulkValidationBar'
 import type { AdminSection } from '../_types'
 
 interface Props {
@@ -11,639 +28,381 @@ interface Props {
   onNav?: (section: AdminSection) => void
 }
 
-interface ClasseItem { id: string; name: string }
-
-interface Settings {
-  selfServiceEnabled: boolean
-  responsableRole: 'ADMIN' | 'STAFF'
-  adminGereInscriptions?: boolean
-}
-
-interface Dossier {
-  id: string
-  nomProvisoire: string
-  status: string
-  sourceType: string
-  recipientType: string
-  classId: string | null
-  classe: { name: string } | null
-  matchScore: number | null
-  contactEmail: string | null
-  contactTelephone: string | null
+interface Dossier extends DrawerDossier {
   createdAt: string
+  matchScore: number | null
 }
 
-type DispositifReponse = '' | 'true' | 'false'
-
-const STATUT_COLORS: Record<string, { bg: string; color: string }> = {
-  DRAFT: { bg: 'var(--bg2)', color: 'var(--text2)' },
-  LINK_SENT: { bg: 'var(--blue-light)', color: 'var(--blue)' },
-  SUBMITTED: { bg: 'rgba(234,179,8,0.12)', color: '#b45309' },
-  VALIDATED: { bg: 'rgba(22,163,74,0.12)', color: 'var(--green)' },
-  ACTIVATED: { bg: 'rgba(22,163,74,0.12)', color: 'var(--green)' },
-  REJECTED: { bg: 'rgba(239,68,68,0.12)', color: 'var(--red)' },
-  EXPIRED: { bg: 'var(--bg2)', color: 'var(--text3)' },
+const STATUT_STYLES: Record<string, { bg: string; color: string; label: string }> = {
+  DRAFT: { bg: 'var(--bg2, #f3f4f6)', color: 'var(--text2, #4b5563)', label: 'Brouillon' },
+  LINK_SENT: { bg: 'rgba(59,130,246,0.1)', color: 'var(--blue, #2563eb)', label: 'Lien envoyé' },
+  SUBMITTED: { bg: 'rgba(234,179,8,0.15)', color: '#b45309', label: 'En attente' },
+  RETURNED: { bg: 'rgba(245,158,11,0.15)', color: '#d97706', label: 'À compléter' },
+  VALIDATED: { bg: 'rgba(22,163,74,0.12)', color: 'var(--green, #16a34a)', label: 'Validé' },
+  ACTIVATED: { bg: 'rgba(22,163,74,0.12)', color: 'var(--green, #16a34a)', label: 'Inscrit' },
+  REJECTED: { bg: 'rgba(239,68,68,0.12)', color: 'var(--red, #ef4444)', label: 'Rejeté' },
+  EXPIRED: { bg: 'var(--bg2, #f3f4f6)', color: 'var(--text3, #9ca3af)', label: 'Expiré' },
 }
-
-const btnPri = { padding: '8px 15px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 800, fontSize: 13, cursor: 'pointer' as const }
-const btnSec = { padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 700, fontSize: 13, cursor: 'pointer' as const }
-const btnDanger = { padding: '6px 12px', borderRadius: 8, border: '1px solid var(--red)', background: 'var(--surface)', color: 'var(--red)', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
-const btnSmall = { padding: '6px 12px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' as const }
-const inputStyle = { padding: '7.5px 11px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 13, width: '100%', boxSizing: 'border-box' as const }
 
 export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
   const t = useT('admin')
-  const [settings, setSettings] = useState<Settings | null>(null)
-  const [classes, setClasses] = useState<ClasseItem[]>([])
   const [dossiers, setDossiers] = useState<Dossier[]>([])
-  const [statusFilter, setStatusFilter] = useState('')
   const [loading, setLoading] = useState(true)
+  const [statusFilter, setStatusFilter] = useState('')
+  const [search, setSearch] = useState('')
 
-  const [createOpen, setCreateOpen] = useState(false)
-  const [createForm, setCreateForm] = useState({
-    nomProvisoire: '', classId: '', contactEmail: '', contactTelephone: '',
-    parentContactEmail: '', parentContactTelephone: '',
-    recipientType: 'ELEVE' as 'ELEVE' | 'PARENT' | 'LES_DEUX',
-    eleveADispositif: '' as DispositifReponse, parentADispositif: '' as DispositifReponse,
-    aucunContactDisponible: false,
-  })
-  const [createError, setCreateError] = useState('')
-  const [creating, setCreating] = useState(false)
+  // Sélection multiple pour validation par lot
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
 
-  const [inscrireTarget, setInscrireTarget] = useState<Dossier | null>(null)
-  const [inscrireClassId, setInscrireClassId] = useState('')
-  const [inscrireError, setInscrireError] = useState('')
-  const [inscribing, setInscribing] = useState(false)
+  // Tiroir de validation
+  const [drawerDossier, setDrawerDossier] = useState<Dossier | null>(null)
 
-  const [rejectTarget, setRejectTarget] = useState<Dossier | null>(null)
-  const [rejectReason, setRejectReason] = useState('')
-  const [rejecting, setRejecting] = useState(false)
-
-  const fetchAll = useCallback(async () => {
+  const chargerDossiers = useCallback(async () => {
     setLoading(true)
     try {
-      const [sRes, cRes, dRes] = await Promise.all([
-        fetchApi('/api/v2/eleve-onboarding/settings', { credentials: 'include' }),
-        fetchApi('/api/v2/classes', { credentials: 'include' }),
-        fetchApi(`/api/v2/eleve-onboarding${statusFilter ? `?status=${statusFilter}` : ''}`, { credentials: 'include' }),
-      ])
-      const sData = await sRes.json()
-      const cData = await cRes.json()
-      const dData = await dRes.json()
-      if (sData.success) setSettings(sData.data)
-      if (cData.success !== false) setClasses(cData.data || [])
-      if (dData.success) setDossiers(dData.data || [])
-    } catch { onToast(t('eleveOnboarding.errorGeneric'), 'error') } finally { setLoading(false) }
-  }, [statusFilter])
-
-  useEffect(() => { fetchAll() }, [fetchAll])
-
-  const toggleSelfService = async () => {
-    if (!settings) return
-    const next = !settings.selfServiceEnabled
-    setSettings(s => s ? { ...s, selfServiceEnabled: next } : s)
-    try {
-      const res = await fetchApi('/api/v2/eleve-onboarding/settings', {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ selfServiceEnabled: next }),
-      })
+      const url = statusFilter
+        ? `/api/v2/eleve-onboarding?status=${statusFilter}`
+        : '/api/v2/eleve-onboarding'
+      const res = await fetchApi(url, { credentials: 'include' })
       const data = await res.json()
-      if (data.success) onToast(t('eleveOnboarding.settingsSaved'), 'success')
-      else onToast(data.message || t('eleveOnboarding.errorGeneric'), 'error')
-    } catch { onToast(t('eleveOnboarding.errorGeneric'), 'error') }
-  }
-
-  const toggleAdminGestion = async () => {
-    if (!settings) return
-    const next = !settings.adminGereInscriptions
-    setSettings(s => s ? { ...s, adminGereInscriptions: next } : s)
-    try {
-      const res = await fetchApi('/api/v2/eleve-onboarding/admin-gestion', {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ enabled: next }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        onToast(t('eleveOnboarding.settingsSaved'), 'success')
-      } else {
-        setSettings(s => s ? { ...s, adminGereInscriptions: !next } : s)
-        onToast(data.message || t('eleveOnboarding.errorGeneric'), 'error')
+      if (data.success && Array.isArray(data.data)) {
+        setDossiers(data.data)
       }
     } catch {
-      setSettings(s => s ? { ...s, adminGereInscriptions: !next } : s)
-      onToast(t('eleveOnboarding.errorGeneric'), 'error')
+      onToast('Erreur lors du chargement des dossiers', 'error')
+    } finally {
+      setLoading(false)
     }
+  }, [statusFilter, onToast])
+
+  useEffect(() => {
+    chargerDossiers()
+  }, [chargerDossiers])
+
+  // Filtrage local par terme de recherche
+  const dossiersFiltres = dossiers.filter((d) => {
+    if (!search.trim()) return true
+    const term = search.toLowerCase()
+    return (
+      d.nomProvisoire.toLowerCase().includes(term) ||
+      (d.numeroInterne && d.numeroInterne.toLowerCase().includes(term)) ||
+      (d.classe?.name && d.classe.name.toLowerCase().includes(term))
+    )
+  })
+
+  // Gestion de la sélection par lot
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+    )
   }
 
-  const changeResponsableRole = async (role: 'ADMIN' | 'STAFF') => {
-    setSettings(s => s ? { ...s, responsableRole: role } : s)
-    try {
-      await fetchApi('/api/v2/eleve-onboarding/settings', {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ responsableRole: role }),
-      })
-      onToast(t('eleveOnboarding.settingsSaved'), 'success')
-    } catch { onToast(t('eleveOnboarding.errorGeneric'), 'error') }
+  const handleSelectAllSubmitted = () => {
+    const submittedIds = dossiersFiltres
+      .filter((d) => d.status === 'SUBMITTED')
+      .map((d) => d.id)
+    setSelectedIds(submittedIds)
   }
 
-  const submitCreate = async () => {
-    if (!createForm.nomProvisoire.trim()) { setCreateError(t('eleveOnboarding.createErrorNom')); return }
-    const aucunContact = !createForm.contactEmail.trim() && !createForm.contactTelephone.trim()
-      && !createForm.parentContactEmail.trim() && !createForm.parentContactTelephone.trim()
-    if (aucunContact && !createForm.aucunContactDisponible) { setCreateError(t('eleveOnboarding.createErrorContact')); return }
-    setCreating(true); setCreateError('')
-    try {
-      const res = await fetchApi('/api/v2/eleve-onboarding', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({
-          nomProvisoire: createForm.nomProvisoire,
-          classId: createForm.classId || undefined,
-          contactEmail: createForm.contactEmail || undefined,
-          contactTelephone: createForm.contactTelephone || undefined,
-          parentContactEmail: createForm.parentContactEmail || undefined,
-          parentContactTelephone: createForm.parentContactTelephone || undefined,
-          recipientType: createForm.recipientType,
-          sourceType: 'AUTOSERVICE',
-          eleveADispositif: createForm.eleveADispositif ? createForm.eleveADispositif === 'true' : undefined,
-          parentADispositif: createForm.parentADispositif ? createForm.parentADispositif === 'true' : undefined,
-          aucunContactDisponible: createForm.aucunContactDisponible || undefined,
-        }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        onToast(t('eleveOnboarding.createSuccess'), 'success')
-        setCreateOpen(false)
-        setCreateForm({
-          nomProvisoire: '', classId: '', contactEmail: '', contactTelephone: '',
-          parentContactEmail: '', parentContactTelephone: '', recipientType: 'ELEVE',
-          eleveADispositif: '', parentADispositif: '', aucunContactDisponible: false,
-        })
-        fetchAll()
-      } else setCreateError(data.message || t('eleveOnboarding.errorGeneric'))
-    } catch { setCreateError(t('eleveOnboarding.errorGeneric')) } finally { setCreating(false) }
-  }
-
-  const exportPdf = async (d: Dossier) => {
-    try {
-      const res = await fetchApi(`/api/v2/eleve-onboarding/${d.id}/pdf`, { credentials: 'include' })
-      if (!res.ok) { onToast(t('eleveOnboarding.pdfError'), 'error'); return }
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `onboarding-${d.id}.pdf`
-      a.click()
-      URL.revokeObjectURL(url)
-    } catch { onToast(t('eleveOnboarding.pdfError'), 'error') }
-  }
-
-  const openInscrire = (d: Dossier) => {
-    if (!settings?.adminGereInscriptions) {
-      onToast("Activez l'option « Gérer moi-même les inscriptions » ci-dessus pour inscrire directement.", 'info')
-      return
-    }
-    setInscrireTarget(d)
-    setInscrireClassId(d.classId ?? '')
-    setInscrireError('')
-  }
-
-  const submitInscrire = async () => {
-    if (!inscrireTarget) return
-    if (!inscrireClassId) { setInscrireError(t('eleveOnboarding.validateErrorClasse')); return }
-    setInscribing(true); setInscrireError('')
-    try {
-      const res = await fetchApi(`/api/v2/eleve-onboarding/${inscrireTarget.id}/inscrire`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ classId: inscrireClassId }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        onToast(t('eleveOnboarding.inscrireSuccess'), 'success')
-        setInscrireTarget(null)
-        fetchAll()
-      } else setInscrireError(data.message || t('eleveOnboarding.errorGeneric'))
-    } catch { setInscrireError(t('eleveOnboarding.errorGeneric')) } finally { setInscribing(false) }
-  }
-
-  const openReject = (d: Dossier) => {
-    if (!settings?.adminGereInscriptions) {
-      onToast("Activez l'option « Gérer moi-même les inscriptions » ci-dessus pour rejeter un dossier.", 'info')
-      return
-    }
-    setRejectTarget(d)
-    setRejectReason('')
-  }
-
-  const submitReject = async () => {
-    if (!rejectTarget) return
-    if (!rejectReason.trim()) return
-    setRejecting(true)
-    try {
-      const res = await fetchApi(`/api/v2/eleve-onboarding/${rejectTarget.id}/reject`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ rejectionReason: rejectReason }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        onToast(t('eleveOnboarding.rejectSuccess'), 'success')
-        setRejectTarget(null); setRejectReason('')
-        fetchAll()
-      } else onToast(data.message || t('eleveOnboarding.errorGeneric'), 'error')
-    } catch { onToast(t('eleveOnboarding.errorGeneric'), 'error') } finally { setRejecting(false) }
-  }
-
-  const resendLink = async (d: Dossier) => {
-    try {
-      const res = await fetchApi(`/api/v2/eleve-onboarding/${d.id}/resend-link`, { method: 'POST', credentials: 'include' })
-      const data = await res.json()
-      if (data.success) { onToast(t('eleveOnboarding.resendSuccess'), 'success'); fetchAll() }
-      else onToast(data.message || t('eleveOnboarding.errorGeneric'), 'error')
-    } catch { onToast(t('eleveOnboarding.errorGeneric'), 'error') }
+  // Téléchargement PDF
+  const handleDownloadPdf = (id: string) => {
+    window.open(`/api/v2/eleve-onboarding/${id}/fiche-pdf`, '_blank')
   }
 
   return (
-    <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto' }}>
-      <div className="pb-1.5 border-b border-[var(--border)]" style={{ marginBottom: 16 }}>
-        <h1 className="text-[15px] md:text-[17px] font-bold font-spectral" style={{ color: 'var(--text)' }}>{t('eleveOnboarding.title')}</h1>
-        <p className="text-[11px] md:text-[12px] font-medium mt-0.5" style={{ color: 'var(--text3)' }}>{t('eleveOnboarding.subtitle')}</p>
-      </div>
+    <div style={{ padding: 24, maxWidth: 1280, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Bannière de supervision */}
+      <DelegationSupervisionBanner domainLabel="Inscriptions & Admissions" onNav={onNav} />
 
-      <div style={{ marginBottom: 14 }}>
-        <DelegationSupervisionBanner actorTitle="Secrétaire / Service Inscriptions" domainLabel="Inscriptions & Admissions Élèves" onNav={onNav} />
-      </div>
-
-      {/* Option Admin : Gérer moi-même les inscriptions */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl mb-4 border border-[var(--border)] bg-[var(--surface)] shadow-xs">
-        <div className="flex items-start gap-2.5">
-          <div style={{
-            width: 9, height: 9, borderRadius: '50%', marginTop: 4,
-            background: settings?.adminGereInscriptions ? 'var(--green)' : 'var(--amber)'
-          }} />
-          <div>
-            <div className="text-xs md:text-sm font-bold text-[var(--text)] flex items-center gap-2 flex-wrap">
-              {t('eleveOnboarding.adminGestionToggle')}
-              <span className="text-[10.5px] font-extrabold px-2 py-0.5 rounded-full" style={{
-                background: settings?.adminGereInscriptions ? 'rgba(22,163,74,0.12)' : 'rgba(245,158,11,0.12)',
-                color: settings?.adminGereInscriptions ? 'var(--green)' : '#b45309'
-              }}>
-                {settings?.adminGereInscriptions ? t('eleveOnboarding.adminGestionActiveBadge') : t('eleveOnboarding.adminGestionInactiveBadge')}
-              </span>
-            </div>
-            <div className="text-[11.5px] text-[var(--text3)] mt-0.5">
-              {settings?.adminGereInscriptions ? t('eleveOnboarding.adminGestionActiveDesc') : t('eleveOnboarding.adminGestionInactiveDesc')}
-            </div>
-          </div>
+      {/* En-tête */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+        }}
+      >
+        <div>
+          <h1
+            style={{
+              margin: 0,
+              fontSize: 22,
+              fontWeight: 800,
+              color: 'var(--text, #111827)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+            }}
+          >
+            <FileCheck size={24} style={{ color: 'var(--green, #16a34a)' }} />
+            File de Validation des Inscriptions (Dossier v2)
+          </h1>
+          <p style={{ margin: '4px 0 0 0', fontSize: 13, color: 'var(--text2, #4b5563)' }}>
+            Examinez les dossiers d&apos;inscription soumis, contrôlez les pièces et accordez les admissions.
+          </p>
         </div>
-        <div onClick={toggleAdminGestion} className="flex items-center gap-2 cursor-pointer select-none self-end sm:self-center">
-          <div style={{
-            width: 42, height: 24, borderRadius: 12,
-            background: settings?.adminGereInscriptions ? 'var(--green)' : 'var(--border2)',
-            position: 'relative', flexShrink: 0, transition: 'background 0.2s'
-          }}>
-            <div style={{
-              width: 18, height: 18, borderRadius: 9, background: '#fff',
-              position: 'absolute', top: 3,
-              left: settings?.adminGereInscriptions ? 21 : 3,
-              transition: 'left 0.2s',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-            }} />
-          </div>
+
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            type="button"
+            onClick={chargerDossiers}
+            style={{
+              padding: '8px 14px',
+              borderRadius: 8,
+              border: '1px solid var(--border, #e5e7eb)',
+              background: 'var(--surface, #fff)',
+              color: 'var(--text, #111827)',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            Actualiser
+          </button>
         </div>
       </div>
 
-      {/* Jauge d'avancement / Pipeline de supervision des dossiers */}
-      {(() => {
-        const total = dossiers.length
-        const pendingCount = dossiers.filter(d => ['DRAFT', 'LINK_SENT', 'SUBMITTED'].includes(d.status)).length
-        const registeredCount = dossiers.filter(d => ['VALIDATED', 'ACTIVATED'].includes(d.status)).length
-        const rejectedCount = dossiers.filter(d => ['REJECTED', 'EXPIRED'].includes(d.status)).length
-        const pendingPct = total > 0 ? Math.round((pendingCount / total) * 100) : 0
-        const registeredPct = total > 0 ? Math.round((registeredCount / total) * 100) : 0
-        const rejectedPct = total > 0 ? Math.round((rejectedCount / total) * 100) : 0
-
-        return (
-          <div className="mb-4 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-xs">
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-bold text-xs md:text-sm text-[var(--text)]">Jauge d'avancement des Inscriptions</span>
-              <span className="text-xs font-bold text-[var(--text3)]">{total} dossier(s) au total</span>
-            </div>
-
-            {/* Visual Bar */}
-            <div className="w-full h-2.5 rounded-full bg-[var(--bg2)] overflow-hidden flex mb-3 border border-[var(--border)]">
-              <div style={{ width: `${registeredPct}%`, background: 'var(--green)' }} title={`Inscrits: ${registeredCount} (${registeredPct}%)`} />
-              <div style={{ width: `${pendingPct}%`, background: '#f59e0b' }} title={`À traiter: ${pendingCount} (${pendingPct}%)`} />
-              <div style={{ width: `${rejectedPct}%`, background: 'var(--red)' }} title={`Rejetés: ${rejectedCount} (${rejectedPct}%)`} />
-            </div>
-
-            {/* Badges de comptage */}
-            <div className="grid grid-cols-3 gap-2.5 text-center text-xs">
-              <div className="p-2 rounded-lg bg-[rgba(22,163,74,0.08)] border border-[rgba(22,163,74,0.2)]">
-                <span className="font-extrabold text-sm text-[var(--green)] block">{registeredCount}</span>
-                <span className="text-[11px] text-[var(--text2)] font-semibold">{t('eleveOnboarding.gaugeInscrits')}</span>
-              </div>
-              <div className="p-2 rounded-lg bg-[rgba(245,158,11,0.08)] border border-[rgba(245,158,11,0.2)]">
-                <span className="font-extrabold text-sm text-amber-600 block">{pendingCount}</span>
-                <span className="text-[11px] text-[var(--text2)] font-semibold">{t('eleveOnboarding.gaugeATraiter')}</span>
-              </div>
-              <div className="p-2 rounded-lg bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.2)]">
-                <span className="font-extrabold text-sm text-[var(--red)] block">{rejectedCount}</span>
-                <span className="text-[11px] text-[var(--text2)] font-semibold">{t('eleveOnboarding.gaugeRejetes')}</span>
-              </div>
-            </div>
+      {/* Barre de filtre et recherche */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          flexWrap: 'wrap',
+          background: 'var(--surface, #fff)',
+          padding: 12,
+          borderRadius: 10,
+          border: '1px solid var(--border, #e5e7eb)',
+        }}
+      >
+        <div style={{ display: 'flex', gap: 10, flex: 1, minWidth: 260 }}>
+          <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+            <Search size={15} style={{ position: 'absolute', left: 10, color: 'var(--text3, #9ca3af)' }} />
+            <input
+              type="text"
+              placeholder="Rechercher élève, N° interne, classe..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '7px 10px 7px 32px',
+                borderRadius: 8,
+                border: '1px solid var(--border, #e5e7eb)',
+                fontSize: 13,
+              }}
+            />
           </div>
-        )
-      })()}
 
-      {/* Réglages généraux de l'auto-service */}
-      {settings && (
-        <div className="flex flex-col md:flex-row gap-3 md:gap-6 rounded-xl p-3.5 md:px-5 md:py-3.5 mb-4 border border-[var(--border)] bg-[var(--surface)] items-stretch">
-          <div onClick={toggleSelfService} className="flex items-center justify-between gap-2.5 cursor-pointer">
-            <span className="text-xs md:text-sm font-bold text-[var(--text)]">{t('eleveOnboarding.settingsToggle')}</span>
-            <div style={{ width: 38, height: 22, borderRadius: 11, background: settings.selfServiceEnabled ? 'var(--green)' : 'var(--border2)', position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
-              <div style={{ width: 16, height: 16, borderRadius: 8, background: '#fff', position: 'absolute', top: 3, left: settings.selfServiceEnabled ? 19 : 3, transition: 'left 0.2s' }} />
-            </div>
-          </div>
-          <label className="text-xs md:text-sm font-medium flex items-center gap-2 text-[var(--text2)]">
-            {t('eleveOnboarding.settingsResponsable')}
-            <select value={settings.responsableRole} onChange={e => changeResponsableRole(e.target.value as 'ADMIN' | 'STAFF')}
-              className="text-xs md:text-sm px-2.5 py-1 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] font-bold">
-              <option value="ADMIN">ADMIN</option>
-              <option value="STAFF">STAFF</option>
-            </select>
-          </label>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            style={{
+              padding: '7px 12px',
+              borderRadius: 8,
+              border: '1px solid var(--border, #e5e7eb)',
+              fontSize: 13,
+              background: 'var(--surface, #fff)',
+            }}
+          >
+            <option value="">Tous les statuts</option>
+            <option value="SUBMITTED">Soumis (en attente)</option>
+            <option value="RETURNED">À compléter (renvoyé)</option>
+            <option value="ACTIVATED">Inscrit</option>
+            <option value="DRAFT">Brouillon</option>
+            <option value="REJECTED">Rejeté</option>
+          </select>
         </div>
-      )}
 
-      {/* Barre de contrôle des dossiers */}
-      <div className="flex items-center justify-between flex-wrap gap-2.5 mb-4">
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-          className="w-full sm:w-auto rounded-lg px-3.5 py-2 text-xs md:text-sm font-bold border border-[var(--border2)] bg-[var(--surface)] text-[var(--text)]">
-          <option value="">{t('eleveOnboarding.filterAll')}</option>
-          {['DRAFT', 'LINK_SENT', 'SUBMITTED', 'VALIDATED', 'ACTIVATED', 'REJECTED', 'EXPIRED'].map(s => (
-            <option key={s} value={s}>{t(`eleveOnboarding.status_${s}`)}</option>
-          ))}
-        </select>
-
-        <button onClick={() => {
-          if (!settings?.adminGereInscriptions) {
-            onToast("Activez l'option « Gérer moi-même les inscriptions » pour créer un dossier.", 'info')
-            return
-          }
-          setCreateOpen(true)
-        }} className="w-full sm:w-auto px-3.5 py-2 text-xs md:text-sm font-bold rounded-lg border border-[var(--green)] text-[var(--green)] bg-[var(--surface)] cursor-pointer hover:bg-[rgba(22,163,74,0.06)]">
-          + Nouveau dossier
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button
+            type="button"
+            onClick={handleSelectAllSubmitted}
+            style={{
+              padding: '6px 12px',
+              borderRadius: 6,
+              border: '1px solid var(--border, #e5e7eb)',
+              background: 'transparent',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            Sélectionner les dossiers soumis
+          </button>
+          <span style={{ fontSize: 12, color: 'var(--text3, #9ca3af)' }}>
+            {dossiersFiltres.length} résultat(s)
+          </span>
+        </div>
       </div>
 
-      {/* Liste */}
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
+      {/* Table des dossiers */}
+      <div
+        style={{
+          background: 'var(--surface, #fff)',
+          borderRadius: 12,
+          border: '1px solid var(--border, #e5e7eb)',
+          overflow: 'hidden',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+        }}
+      >
         {loading ? (
-          <div className="text-xs md:text-sm py-8 text-center text-[var(--text3)]">{t('common.loading') || '...'}</div>
-        ) : dossiers.length === 0 ? (
-          <div className="text-xs md:text-sm py-8 text-center text-[var(--text3)]">{t('eleveOnboarding.listEmpty')}</div>
-        ) : (
-          <>
-          {/* ── Cartes empilées — mobile ── */}
-          <div className="md:hidden flex flex-col gap-2.5 p-3">
-            {dossiers.map(d => (
-              <div key={d.id} className="rounded-xl p-3.5 border border-[var(--border)] bg-[var(--surface)] shadow-xs">
-                <div className="text-xs md:text-sm font-bold text-[var(--text)]">{d.nomProvisoire}</div>
-                {d.matchScore !== null && (
-                  <div className="text-[11px] text-amber-700 mt-1">{t('eleveOnboarding.matchWarning', { score: String(d.matchScore) })}</div>
-                )}
-                <div className="flex gap-1.5 flex-wrap mt-2">
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold" style={STATUT_COLORS[d.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }}>
-                    {t(`eleveOnboarding.status_${d.status}`)}
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--bg2)] text-[var(--text2)]">
-                    {t(`eleveOnboarding.source_${d.sourceType}`)}
-                  </span>
-                  {d.classe?.name && (
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--bg2)] text-[var(--text2)]">{d.classe.name}</span>
-                  )}
-                </div>
-                <div className="text-[11px] text-[var(--text3)] mt-2">{new Date(d.createdAt).toLocaleDateString()}</div>
-                <div className="flex gap-2 flex-wrap mt-3 pt-2.5 border-t border-[var(--border)]">
-                  {['SUBMITTED', 'DRAFT', 'LINK_SENT'].includes(d.status) && (
-                    <>
-                      <button onClick={() => openInscrire(d)} style={btnSmall}>{t('eleveOnboarding.inscrireBtn')}</button>
-                      <button onClick={() => openReject(d)} style={btnDanger}>{t('eleveOnboarding.rejectBtn')}</button>
-                    </>
-                  )}
-                  {(d.status === 'LINK_SENT' || d.status === 'EXPIRED') && (
-                    <button onClick={() => resendLink(d)} style={{ ...btnSec, padding: '6px 12px', fontSize: 12, fontWeight: 700 }}>{t('eleveOnboarding.resendBtn')}</button>
-                  )}
-                  <button onClick={() => exportPdf(d)} style={{ ...btnSec, padding: '6px 12px', fontSize: 12, fontWeight: 700 }}>{t('eleveOnboarding.pdfBtn')}</button>
-                </div>
-              </div>
-            ))}
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>
+            <Loader2 size={24} className="animate-spin" style={{ margin: '0 auto 10px auto' }} />
+            Chargement de la file de validation...
           </div>
-
-          {/* ── Tableau — desktop ── */}
-          <div className="hidden md:block overflow-x-auto">
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
-              <thead>
-                <tr>{[t('eleveOnboarding.colName'), t('eleveOnboarding.colStatus'), t('eleveOnboarding.colSource'), t('eleveOnboarding.colClasse'), t('eleveOnboarding.colCreated'), t('eleveOnboarding.colActions')].map(h => (
-                  <th key={h} style={{ padding: '9px 16px', textAlign: 'left', fontSize: 12, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>{h}</th>
-                ))}</tr>
-              </thead>
-              <tbody>
-                {dossiers.map(d => (
-                  <tr key={d.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '10px 16px', fontSize: 13, color: 'var(--text)', fontWeight: 600 }}>
-                      {d.nomProvisoire}
-                      {d.matchScore !== null && (
-                        <div style={{ fontSize: 11, color: '#b45309', marginTop: 2 }}>{t('eleveOnboarding.matchWarning', { score: String(d.matchScore) })}</div>
+        ) : dossiersFiltres.length === 0 ? (
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
+            Aucun dossier ne correspond à votre recherche.
+          </div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: 'var(--surface2, #f9fafb)', borderBottom: '1px solid var(--border, #e5e7eb)' }}>
+                <th style={{ padding: '10px 14px', width: 36 }}>
+                  <input
+                    type="checkbox"
+                    checked={
+                      selectedIds.length > 0 &&
+                      selectedIds.length === dossiersFiltres.filter((d) => d.status === 'SUBMITTED').length
+                    }
+                    onChange={(e) => {
+                      if (e.target.checked) handleSelectAllSubmitted()
+                      else setSelectedIds([])
+                    }}
+                  />
+                </th>
+                <th style={{ padding: '10px 14px', fontWeight: 700, color: 'var(--text2)' }}>Élève</th>
+                <th style={{ padding: '10px 14px', fontWeight: 700, color: 'var(--text2)' }}>Classe</th>
+                <th style={{ padding: '10px 14px', fontWeight: 700, color: 'var(--text2)' }}>Complétude</th>
+                <th style={{ padding: '10px 14px', fontWeight: 700, color: 'var(--text2)' }}>Statut</th>
+                <th style={{ padding: '10px 14px', fontWeight: 700, color: 'var(--text2)', textAlign: 'right' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dossiersFiltres.map((d) => {
+                const isSelected = selectedIds.includes(d.id)
+                const statutInfo = STATUT_STYLES[d.status] || { bg: 'var(--bg2)', color: 'var(--text)', label: d.status }
+                return (
+                  <tr
+                    key={d.id}
+                    style={{
+                      borderBottom: '1px solid var(--border, #f3f4f6)',
+                      background: isSelected ? 'rgba(59,130,246,0.04)' : 'transparent',
+                    }}
+                  >
+                    <td style={{ padding: '10px 14px' }}>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleToggleSelect(d.id)}
+                      />
+                    </td>
+                    <td style={{ padding: '10px 14px' }}>
+                      <div style={{ fontWeight: 700, color: 'var(--text)' }}>{d.nomProvisoire}</div>
+                      {d.numeroInterne && (
+                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--blue, #2563eb)' }}>
+                          {d.numeroInterne}
+                        </div>
                       )}
                     </td>
-                    <td style={{ padding: '10px 16px' }}>
-                      <span style={{ padding: '3px 10px', borderRadius: 16, fontSize: 11.5, fontWeight: 700, ...(STATUT_COLORS[d.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }) }}>
-                        {t(`eleveOnboarding.status_${d.status}`)}
+                    <td style={{ padding: '10px 14px', color: 'var(--text2)' }}>
+                      {d.classe?.name || <span style={{ color: 'var(--text3)' }}>Non affectée</span>}
+                    </td>
+                    <td style={{ padding: '10px 14px' }}>
+                      <EnrollmentCompletenessRing
+                        score={d.completenessScore ?? 0}
+                        validableSousReserve={d.validableSousReserve}
+                        size="sm"
+                      />
+                    </td>
+                    <td style={{ padding: '10px 14px' }}>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          padding: '3px 8px',
+                          borderRadius: 6,
+                          background: statutInfo.bg,
+                          color: statutInfo.color,
+                        }}
+                      >
+                        {statutInfo.label}
                       </span>
                     </td>
-                    <td style={{ padding: '10px 16px', fontSize: 12.5, color: 'var(--text2)' }}>{t(`eleveOnboarding.source_${d.sourceType}`)}</td>
-                    <td style={{ padding: '10px 16px', fontSize: 12.5, color: 'var(--text2)' }}>{d.classe?.name ?? '—'}</td>
-                    <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text3)' }}>{new Date(d.createdAt).toLocaleDateString()}</td>
-                    <td style={{ padding: '10px 16px', display: 'flex', gap: 6 }}>
-                      {['SUBMITTED', 'DRAFT', 'LINK_SENT'].includes(d.status) && (
-                        <>
-                          <button onClick={() => openInscrire(d)} style={btnSmall}>{t('eleveOnboarding.inscrireBtn')}</button>
-                          <button onClick={() => openReject(d)} style={btnDanger}>{t('eleveOnboarding.rejectBtn')}</button>
-                        </>
-                      )}
-                      {(d.status === 'LINK_SENT' || d.status === 'EXPIRED') && (
-                        <button onClick={() => resendLink(d)} style={btnSec}>{t('eleveOnboarding.resendBtn')}</button>
-                      )}
-                      <button onClick={() => exportPdf(d)} style={btnSec}>{t('eleveOnboarding.pdfBtn')}</button>
+                    <td style={{ padding: '10px 14px', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadPdf(d.id)}
+                          title="Télécharger la fiche d'inscription PDF"
+                          style={{
+                            padding: '5px 8px',
+                            borderRadius: 6,
+                            border: '1px solid var(--border, #e5e7eb)',
+                            background: 'var(--surface)',
+                            color: 'var(--text2)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <Download size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDrawerDossier(d)}
+                          style={{
+                            padding: '5px 10px',
+                            borderRadius: 6,
+                            border: 'none',
+                            background: 'var(--green, #16a34a)',
+                            color: '#fff',
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                          }}
+                        >
+                          <Eye size={12} />
+                          Examiner
+                        </button>
+                      </div>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          </>
+                )
+              })}
+            </tbody>
+          </table>
         )}
       </div>
 
-      {/* Modal création */}
-      {createOpen && (
-        <div onClick={() => !creating && setCreateOpen(false)} className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-[1000]">
-          <div onClick={e => e.stopPropagation()} className="p-5 md:p-6 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl w-[560px] max-w-[95vw] max-h-[88vh] flex flex-col">
-            <div className="flex items-center justify-between pb-3 border-b border-[var(--border)] mb-4 flex-shrink-0">
-              <h3 className="text-base md:text-lg font-bold text-[var(--text)]">{t('eleveOnboarding.createModalTitle')}</h3>
-              <button onClick={() => !creating && setCreateOpen(false)} className="text-[var(--text3)] hover:text-[var(--text)] text-lg font-bold border-none bg-transparent cursor-pointer">×</button>
-            </div>
+      {/* Barre de validation groupée flottante */}
+      <BulkValidationBar
+        selectedIds={selectedIds}
+        onClearSelection={() => setSelectedIds([])}
+        onSuccess={(valides, echecs) => {
+          onToast(`${valides} dossier(s) validé(s)${echecs > 0 ? `, ${echecs} échec(s)` : ''}`, 'success')
+          chargerDossiers()
+        }}
+      />
 
-            <div className="overflow-y-auto flex-1 pr-1 space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <FieldLabel>{t('eleveOnboarding.fieldNomProvisoire')}</FieldLabel>
-                  <input style={inputStyle} value={createForm.nomProvisoire} onChange={e => setCreateForm(f => ({ ...f, nomProvisoire: e.target.value }))} placeholder="Ex: Jean Dupont" />
-                </div>
-                <div>
-                  <FieldLabel>{t('eleveOnboarding.fieldClasse')}</FieldLabel>
-                  <select style={inputStyle} value={createForm.classId} onChange={e => setCreateForm(f => ({ ...f, classId: e.target.value }))}>
-                    <option value="">{t('eleveOnboarding.fieldClasseNone')}</option>
-                    {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <FieldLabel>{t('eleveOnboarding.fieldRecipient')}</FieldLabel>
-                  <select style={inputStyle} value={createForm.recipientType} onChange={e => setCreateForm(f => ({ ...f, recipientType: e.target.value as any }))}>
-                    <option value="ELEVE">{t('eleveOnboarding.recipientEleve')}</option>
-                    <option value="PARENT">{t('eleveOnboarding.recipientParent')}</option>
-                    <option value="LES_DEUX">{t('eleveOnboarding.recipientBoth')}</option>
-                  </select>
-                </div>
-                <div>
-                  <FieldLabel>{t('eleveOnboarding.fieldContactEmail')}</FieldLabel>
-                  <input style={inputStyle} type="email" value={createForm.contactEmail} onChange={e => setCreateForm(f => ({ ...f, contactEmail: e.target.value }))} disabled={createForm.aucunContactDisponible} placeholder="email@exemple.com" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
-                <div>
-                  <FieldLabel>{t('eleveOnboarding.fieldContactTelephone')}</FieldLabel>
-                  <input style={inputStyle} value={createForm.contactTelephone} onChange={e => setCreateForm(f => ({ ...f, contactTelephone: e.target.value }))} disabled={createForm.aucunContactDisponible} placeholder="+237 6..." />
-                </div>
-                <div className="pb-1">
-                  <label className="flex items-center gap-2 text-xs font-semibold text-[var(--text2)] cursor-pointer">
-                    <input type="checkbox" checked={createForm.aucunContactDisponible} onChange={e => setCreateForm(f => ({ ...f, aucunContactDisponible: e.target.checked }))} className="rounded" />
-                    {t('eleveOnboarding.aucunContactDisponibleLabel')}
-                  </label>
-                </div>
-              </div>
-
-              {createForm.recipientType === 'LES_DEUX' && (
-                <div className="p-3 bg-[var(--bg)] rounded-xl border border-[var(--border)] space-y-2">
-                  <div className="text-xs font-semibold text-[var(--text3)]">{t('eleveOnboarding.parentContactHint')}</div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <FieldLabel>{t('eleveOnboarding.fieldParentContactEmail')}</FieldLabel>
-                      <input style={inputStyle} type="email" value={createForm.parentContactEmail} onChange={e => setCreateForm(f => ({ ...f, parentContactEmail: e.target.value }))} disabled={createForm.aucunContactDisponible} placeholder="parent@exemple.com" />
-                    </div>
-                    <div>
-                      <FieldLabel>{t('eleveOnboarding.fieldParentContactTelephone')}</FieldLabel>
-                      <input style={inputStyle} value={createForm.parentContactTelephone} onChange={e => setCreateForm(f => ({ ...f, parentContactTelephone: e.target.value }))} disabled={createForm.aucunContactDisponible} placeholder="+237 6..." />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Section Équipement Numérique */}
-              <div className="p-3.5 bg-[var(--bg)] rounded-xl border border-[var(--border)]">
-                <div className="text-xs md:text-sm font-bold text-[var(--text)]">{t('eleveOnboarding.digitalCapacityTitle')}</div>
-                <div className="text-[11px] text-[var(--text3)] mb-2.5">{t('eleveOnboarding.digitalCapacityHint')}</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <FieldLabel>{t('eleveOnboarding.fieldEleveADispositif')}</FieldLabel>
-                    <select style={inputStyle} value={createForm.eleveADispositif} onChange={e => setCreateForm(f => ({ ...f, eleveADispositif: e.target.value as DispositifReponse }))}>
-                      <option value="">{t('eleveOnboarding.deviceUnknown')}</option>
-                      <option value="true">{t('eleveOnboarding.deviceYes')}</option>
-                      <option value="false">{t('eleveOnboarding.deviceNo')}</option>
-                    </select>
-                  </div>
-                  <div>
-                    <FieldLabel>{t('eleveOnboarding.fieldParentADispositif')}</FieldLabel>
-                    <select style={inputStyle} value={createForm.parentADispositif} onChange={e => setCreateForm(f => ({ ...f, parentADispositif: e.target.value as DispositifReponse }))}>
-                      <option value="">{t('eleveOnboarding.deviceUnknown')}</option>
-                      <option value="true">{t('eleveOnboarding.deviceYes')}</option>
-                      <option value="false">{t('eleveOnboarding.deviceNo')}</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {createError && <div className="bg-[var(--red-light)] text-[var(--red)] border border-[var(--red-light)] rounded-lg p-2.5 text-xs font-bold">{createError}</div>}
-            </div>
-
-            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2.5 pt-3 border-t border-[var(--border)] mt-4 flex-shrink-0">
-              <button onClick={() => setCreateOpen(false)} disabled={creating} className="w-full sm:w-auto px-4 py-2.5 rounded-lg text-xs md:text-sm font-bold bg-[var(--bg2)] text-[var(--text2)] border-none cursor-pointer">
-                {t('eleveOnboarding.cancel')}
-              </button>
-              <button onClick={submitCreate} disabled={creating} className="w-full sm:w-auto px-5 py-2.5 rounded-lg text-xs md:text-sm font-bold text-white bg-[var(--sidebar)] border-none cursor-pointer disabled:opacity-50">
-                {creating ? '...' : t('eleveOnboarding.createSubmit')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal inscription directe en 1 étape */}
-      {inscrireTarget && (
-        <div onClick={() => !inscribing && setInscrireTarget(null)} className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-[1000]">
-          <div onClick={e => e.stopPropagation()} className="p-5 md:p-6 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl w-[420px] max-w-[95vw]">
-            <h3 className="text-base md:text-lg font-bold text-[var(--text)] mb-1">{t('eleveOnboarding.inscrireModalTitle')}</h3>
-            <p className="text-xs text-[var(--text3)] mb-3">{inscrireTarget.nomProvisoire}</p>
-
-            <FieldLabel>{t('eleveOnboarding.inscrireClasseLabel')}</FieldLabel>
-            <select style={inputStyle} value={inscrireClassId} onChange={e => setInscrireClassId(e.target.value)}>
-              <option value="">{t('eleveOnboarding.fieldClasseNone')}</option>
-              {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-
-            {inscrireError && <div className="bg-[var(--red-light)] text-[var(--red)] border border-[var(--red-light)] rounded-lg p-2.5 text-xs font-bold mt-3">{inscrireError}</div>}
-
-            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2.5 pt-3 border-t border-[var(--border)] mt-4">
-              <button onClick={() => setInscrireTarget(null)} disabled={inscribing} className="w-full sm:w-auto px-4 py-2.5 rounded-lg text-xs md:text-sm font-bold bg-[var(--bg2)] text-[var(--text2)] border-none cursor-pointer">
-                {t('eleveOnboarding.cancel')}
-              </button>
-              <button onClick={submitInscrire} disabled={inscribing} className="w-full sm:w-auto px-5 py-2.5 rounded-lg text-xs md:text-sm font-bold text-white bg-[var(--green)] border-none cursor-pointer disabled:opacity-50">
-                {inscribing ? '...' : t('eleveOnboarding.inscrireSubmit')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal rejet */}
-      {rejectTarget && (
-        <div onClick={() => !rejecting && setRejectTarget(null)} className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-[1000]">
-          <div onClick={e => e.stopPropagation()} className="p-5 md:p-6 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl w-[420px] max-w-[95vw]">
-            <h3 className="text-base md:text-lg font-bold text-[var(--text)] mb-1">{t('eleveOnboarding.rejectModalTitle')}</h3>
-            <p className="text-xs text-[var(--text3)] mb-3">{rejectTarget.nomProvisoire}</p>
-
-            <FieldLabel>{t('eleveOnboarding.rejectReasonLabel')}</FieldLabel>
-            <textarea style={{ ...inputStyle, minHeight: 70 }} value={rejectReason} onChange={e => setRejectReason(e.target.value)} />
-
-            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2.5 pt-3 border-t border-[var(--border)] mt-4">
-              <button onClick={() => setRejectTarget(null)} disabled={rejecting} className="w-full sm:w-auto px-4 py-2.5 rounded-lg text-xs md:text-sm font-bold bg-[var(--bg2)] text-[var(--text2)] border-none cursor-pointer">
-                {t('eleveOnboarding.cancel')}
-              </button>
-              <button onClick={submitReject} disabled={rejecting || !rejectReason.trim()} className="w-full sm:w-auto px-5 py-2.5 rounded-lg text-xs md:text-sm font-bold text-white bg-[var(--red)] border-none cursor-pointer disabled:opacity-50">
-                {rejecting ? '...' : t('eleveOnboarding.rejectSubmit')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Tiroir d'examen et validation */}
+      <ValidationDrawer
+        dossier={drawerDossier}
+        isOpen={!!drawerDossier}
+        onClose={() => setDrawerDossier(null)}
+        onActionComplete={() => {
+          chargerDossiers()
+          onToast('Dossier mis à jour avec succès', 'success')
+        }}
+        isAdmin={true}
+      />
     </div>
   )
-}
-
-function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <div className="text-xs font-bold text-[var(--text3)] uppercase tracking-wider mb-1 mt-1.5 block">{children}</div>
 }

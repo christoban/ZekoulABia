@@ -16,3 +16,7 @@ export { SupprimerUtilisateurUseCase } from './SupprimerUtilisateurUseCase';
 
 export { TransfererEleveUseCase } from './TransfererEleveUseCase';
 export type { TransfererEleveCommande } from './TransfererEleveUseCase';
+
+export { AutoriserConnexionUseCase } from './AutoriserConnexionUseCase';
+export type { AutoriserConnexionCommande, AutoriserConnexionResultat } from './AutoriserConnexionUseCase';
+

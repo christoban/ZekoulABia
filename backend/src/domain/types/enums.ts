@@ -5,6 +5,12 @@
 
 export type UserRole = 'ADMIN' | 'STAFF' | 'TEACHER' | 'PARENT' | 'STUDENT';
 export type MasterUserRole = 'SUPER_ADMIN' | 'PLATFORM_ADMIN' | 'SCHOOL_MANAGER' | 'SUPPORT';
+export type UserAccessMode = 'FULL_ACCESS' | 'SMS_ONLY' | 'NO_LOGIN';
+
+export type ParentStudentRelation = 'PERE' | 'MERE' | 'TUTEUR_LEGAL' | 'AUTRE';
+export type StudentAccessScope = 'FULL' | 'READ_ONLY';
+export type ProfileManagedBy = 'PARENT' | 'STUDENT' | 'SECRETARIAT';
+export type NotificationDeliveryChannel = 'APPLI_ELEVE' | 'APPLI_PARENT' | 'SMS' | 'PAPIER';
 
 export type SchoolStatus = 'DRAFT' | 'PENDING' | 'APPROVED' | 'ACTIVE' | 'REJECTED' | 'SUSPENDED';
 export type PlanType = 'DISCOVERY' | 'STANDARD' | 'PREMIUM' | 'ETABLISSEMENT_PLUS';
@@ -119,7 +125,7 @@ export type TypeFraisMinesec = 'SCOLARITE_PREMIER_CYCLE' | 'SCOLARITE_SECOND_CYC
 export type OnboardingRecipient = 'ELEVE' | 'PARENT' | 'LES_DEUX';
 export type OnboardingSource = 'IMPORT_MASSE' | 'AUTOSERVICE' | 'CONCOURS' | 'GROUPE_TRANSFERT';
 export type OnboardingStatus =
-  | 'DRAFT' | 'LINK_SENT' | 'SUBMITTED'
+  | 'DRAFT' | 'LINK_SENT' | 'SUBMITTED' | 'RETURNED'
   | 'VALIDATED' | 'ACTIVATED' | 'REJECTED' | 'EXPIRED';
 
 export type TemplateMeta = {

@@ -732,6 +732,21 @@
       "intendant": "Bursar / Accountant",
       "placeholder": "Full name"
     },
+    "admissions": {
+      "title": "Admissions & Enrollment Policy",
+      "directAdmission": "Direct admission on file (without mandatory entrance exam)",
+      "directAdmissionDesc": "Enables direct student admission without requiring entrance exam scores.",
+      "selfService": "Online self-service portal for families",
+      "selfServiceDesc": "Parents or students complete their file online using a secure link.",
+      "adminValidation": "Administrator personally validates enrollments",
+      "adminValidationDesc": "All files entered by the secretariat go through the principal's validation queue before activation.",
+      "capacityBuffer": "Allowed capacity buffer (%)",
+      "capacityBufferDesc": "Allowed margin over maximum class capacity before derogation is strictly required.",
+      "defaultRecipient": "Default recipient for enrollment links",
+      "recipientEleve": "Student",
+      "recipientParent": "Parent",
+      "recipientBoth": "Both"
+    },
     "recap": {
       "bubble": "Perfect! Here's what we'll configure for <strong>{schoolName}</strong>. Review before confirming.",
       "structure": "Academic Structure",
@@ -739,6 +754,11 @@
       "calendrier": "Calendar",
       "finances": "Finances",
       "direction": "Leadership",
+      "admissions": "Admissions & Enrollment",
+      "directAdmissionYes": "Direct admission allowed",
+      "directAdmissionNo": "Entrance exam required",
+      "adminValidationYes": "Principal validation required",
+      "adminValidationNo": "Secretariat delegation",
       "template": "Template",
       "cycles": "Cycles",
       "seriesFr": "Series (FR)",
@@ -817,5 +837,17 @@
     "successMessage": "Thank you! The school will review the file and contact you after validation.",
     "errorRequired": "Last name and first name are required",
     "errorGeneric": "An error occurred"
+  },
+  "dossierV2": {
+    "kanbanTitle": "Kanban board",
+    "nouveauDossier": "New enrollment file",
+    "completude": "File completeness",
+    "validableSousReserve": "Conditionally validatable",
+    "piecesJustificatives": "Supporting documents",
+    "numeroInterne": "Internal ID",
+    "ficheInscriptionPdf": "Official enrollment form",
+    "validationLot": "Batch validation",
+    "classePleine": "Maximum capacity reached",
+    "derogationCapacite": "Capacity override required"
   }
 }

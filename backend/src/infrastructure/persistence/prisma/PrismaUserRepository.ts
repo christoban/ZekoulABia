@@ -87,7 +87,19 @@ export class PrismaUserRepository implements UserRepository {
 
   async update(user: User): Promise<void> {
     const d = user.toObject();
-    await this.patchUser(d.id, { email: d.email, phone: d.phone, firstName: d.firstName, lastName: d.lastName, avatarUrl: d.avatarUrl, isActive: d.isActive, refreshTokenVersion: d.refreshTokenVersion, lastLogin: d.lastLogin, updatedAt: new Date() });
+    await this.patchUser(d.id, {
+      email: d.email,
+      phone: d.phone,
+      firstName: d.firstName,
+      lastName: d.lastName,
+      avatarUrl: d.avatarUrl,
+      isActive: d.isActive,
+      mustChangePassword: d.mustChangePassword,
+      accessMode: d.accessMode,
+      refreshTokenVersion: d.refreshTokenVersion,
+      lastLogin: d.lastLogin,
+      updatedAt: new Date(),
+    });
   }
 
   async delete(id: string): Promise<void> { await this.prisma.user.delete({ where: { id } }); }
@@ -186,7 +198,7 @@ export class PrismaUserRepository implements UserRepository {
     schoolSubdomain: string;
   }>> {
     const users = await this.prisma.user.findMany({
-      where: { email, isActive: true, deletedAt: null },
+      where: { email, isActive: true, deletedAt: null, accessMode: 'FULL_ACCESS' },
       include: {
         school: { select: { id: true, name: true, subdomain: true, status: true } },
       },
@@ -310,7 +322,24 @@ export class PrismaUserRepository implements UserRepository {
   }
 
   async findAuthDataById(id: string): Promise<AuthUserData | null> {
-    return this.prisma.user.findUnique({ where: { id }, select: { id: true, email: true, isActive: true, mustChangePassword: true, loginEmailOtpHash: true, loginEmailOtpExpiresAt: true, loginEmailOtpAttempts: true, mfaEnabled: true, mfaSecret: true, mfaTempSecret: true, mfaRecoveryCodeHashes: true } });
+    const row = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        isActive: true,
+        mustChangePassword: true,
+        loginEmailOtpHash: true,
+        loginEmailOtpExpiresAt: true,
+        loginEmailOtpAttempts: true,
+        mfaEnabled: true,
+        mfaSecret: true,
+        mfaTempSecret: true,
+        mfaRecoveryCodeHashes: true,
+        accessMode: true,
+      },
+    });
+    return row ? (row as AuthUserData) : null;
   }
 
   async saveLoginEmailOtp(id: string, data: { hash: string; expiresAt: Date }): Promise<void> { await this.patchUser(id, { loginEmailOtpHash: data.hash, loginEmailOtpExpiresAt: data.expiresAt, loginEmailOtpAttempts: 0, loginEmailOtpSentAt: new Date() }); }
@@ -332,8 +361,14 @@ export class PrismaUserRepository implements UserRepository {
     return data ? this.toDomain(data) : null;
   }
   async reinitialiserMotDePasse(tokenHash: string, passwordHash: string): Promise<void> {
-    const user = await this.prisma.user.findFirst({ where: { resetPasswordToken: tokenHash, resetPasswordTokenExpiry: { gt: new Date() } }, select: { id: true } });
+    const user = await this.prisma.user.findFirst({
+      where: { resetPasswordToken: tokenHash, resetPasswordTokenExpiry: { gt: new Date() } },
+      select: { id: true, accessMode: true },
+    });
     if (!user) throw new Error('Lien invalide ou expiré. Demandez un nouveau lien.');
+    if (user.accessMode && user.accessMode !== 'FULL_ACCESS') {
+      throw new Error("Ce compte ne dispose pas d'un accès de connexion direct.");
+    }
     await this.patchUser(user.id, { passwordHash, mustChangePassword: false, resetPasswordToken: null, resetPasswordTokenExpiry: null, refreshTokenVersion: { increment: 1 } });
   }
   async verifierMotDePasse(userId: string, plainPassword: string): Promise<boolean> {
@@ -343,9 +378,20 @@ export class PrismaUserRepository implements UserRepository {
   }
   async mettreAJourMotDePasse(userId: string, passwordHash: string): Promise<void> { await this.patchUser(userId, { passwordHash, mustChangePassword: false, resetPasswordToken: null, resetPasswordTokenExpiry: null, refreshTokenVersion: { increment: 1 } }); }
   async definirMotDePasseInvitation(userId: string, passwordHash: string): Promise<void> { await this.patchUser(userId, { passwordHash, mustChangePassword: false }); }
+  async definirMotDePasseTemporaire(userId: string, passwordHash: string): Promise<void> {
+    await this.patchUser(userId, {
+      passwordHash,
+      mustChangePassword: true,
+      accessMode: 'FULL_ACCESS',
+      resetPasswordToken: null,
+      resetPasswordTokenExpiry: null,
+      refreshTokenVersion: { increment: 1 },
+      updatedAt: new Date(),
+    });
+  }
 
   private toDomain(data: any): User {
     const permissions: StaffPermissionType[] = data.staffProfile?.permissions?.map((p: { permission: StaffPermissionType }) => p.permission) ?? [];
-    return User.reconstituer({ id: data.id, schoolId: data.schoolId, role: data.role as UserRole, email: data.email ?? undefined, phone: data.phone ?? undefined, firstName: data.firstName, lastName: data.lastName, avatarUrl: data.avatarUrl ?? undefined, isActive: data.isActive, mustChangePassword: data.mustChangePassword ?? false, refreshTokenVersion: data.refreshTokenVersion, lastLogin: data.lastLogin ?? undefined, createdAt: data.createdAt, updatedAt: data.updatedAt, staffPermissions: permissions, staffSectionId: data.staffProfile?.sectionId ?? undefined });
+    return User.reconstituer({ id: data.id, schoolId: data.schoolId, role: data.role as UserRole, email: data.email ?? undefined, phone: data.phone ?? undefined, firstName: data.firstName, lastName: data.lastName, avatarUrl: data.avatarUrl ?? undefined, isActive: data.isActive, mustChangePassword: data.mustChangePassword ?? false, refreshTokenVersion: data.refreshTokenVersion, lastLogin: data.lastLogin ?? undefined, createdAt: data.createdAt, updatedAt: data.updatedAt, accessMode: data.accessMode ?? 'FULL_ACCESS', staffPermissions: permissions, staffSectionId: data.staffProfile?.sectionId ?? undefined });
   }
 }

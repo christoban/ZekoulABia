@@ -5,6 +5,8 @@ import type { SchoolRepository } from '@domain/ports/repositories/SchoolReposito
 import type { CredentialsNotificationPort } from '@domain/ports/services/CredentialsNotificationPort';
 import { CreerSqueletteOnboardingUseCase } from '@application/eleveOnboarding/CreerSqueletteOnboardingUseCase';
 import { SoumettreFormulaireOnboardingUseCase } from '@application/eleveOnboarding/SoumettreFormulaireOnboardingUseCase';
+import { SoumettreOnboardingUseCase } from '@application/eleveOnboarding/SoumettreOnboardingUseCase';
+import { RenvoyerOnboardingUseCase } from '@application/eleveOnboarding/RenvoyerOnboardingUseCase';
 import { ValiderOnboardingUseCase } from '@application/eleveOnboarding/ValiderOnboardingUseCase';
 import { RejeterOnboardingUseCase } from '@application/eleveOnboarding/RejeterOnboardingUseCase';
 import { notifierOnboardingLienCreeAvecEcole, notifierOnboardingValidationAvecEcole } from '@infrastructure/services/notification/OnboardingNotificationService';
@@ -21,6 +23,8 @@ export class EleveOnboardingController {
   constructor(
     private readonly _creerSquelette: CreerSqueletteOnboardingUseCase,
     private readonly _soumettreFormulaire: SoumettreFormulaireOnboardingUseCase,
+    private readonly _soumettreOnboarding: SoumettreOnboardingUseCase,
+    private readonly _renvoyerOnboarding: RenvoyerOnboardingUseCase,
     private readonly _valider: ValiderOnboardingUseCase,
     private readonly _rejeter: RejeterOnboardingUseCase,
     private readonly onboardingRepository: EleveOnboardingRepository,
@@ -155,17 +159,32 @@ export class EleveOnboardingController {
     } catch (err) { next(err); }
   };
 
-  // POST /api/v2/eleve-onboarding/:id/inscrire — Inscription directe en 1 étape
+  // POST /api/v2/eleve-onboarding/:id/inscrire — Inscription directe en 1 étape (Admin seulement)
   inscrire = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!await this.checkEnrollmentPermission(req, res)) return;
+      if (req.user!.role !== 'ADMIN') {
+        res.status(403).json({ success: false, message: 'Seul un administrateur peut valider et inscrire un dossier.' });
+        return;
+      }
       const schoolId = req.user!.schoolId;
       const validatedById = req.user!.userId;
       const validatorRole = req.user!.role;
       const onboardingId = String(req.params['id']);
-      const { classId } = req.body as { classId?: string };
+      const { classId, derogationCapacite, motifDerogation } = req.body as {
+        classId?: string;
+        derogationCapacite?: boolean;
+        motifDerogation?: string;
+      };
 
-      const result = await this._inscrire.execute({ schoolId, onboardingId, validatedById, validatorRole, classId });
+      const result = await this._inscrire.execute({
+        schoolId,
+        onboardingId,
+        validatedById,
+        validatorRole,
+        classId,
+        derogationCapacite: derogationCapacite === true,
+        motifDerogation,
+      });
       const data = {
         ...result,
         comptesCrees: result.comptesCrees.map(({ temporaryPassword: _temporaryPassword, dispositifOS: _dispositifOS, ...compte }) => compte),
@@ -181,13 +200,73 @@ export class EleveOnboardingController {
     return this.inscrire(req, res, next);
   };
 
-  // POST /api/v2/eleve-onboarding/:id/reject
-  rejeter = async (req: Request, res: Response, next: NextFunction) => {
+  // POST /api/v2/eleve-onboarding/:id/submit — Secrétariat ou Admin soumet le dossier pour validation
+  soumettreDossier = async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!await this.checkEnrollmentPermission(req, res)) return;
       const schoolId = req.user!.schoolId;
-      const rejectedById = req.user!.userId;
-      const validatorRole = req.user!.role;
+      const submittedById = req.user!.userId;
+      const submitterRole = req.user!.role;
+      const onboardingId = String(req.params['id']);
+      const { classId, nomProvisoire, submittedData } = req.body as {
+        classId?: string;
+        nomProvisoire?: string;
+        submittedData?: Record<string, unknown>;
+      };
+
+      const result = await this._soumettreOnboarding.execute({
+        schoolId,
+        onboardingId,
+        submittedById,
+        submitterRole,
+        classId,
+        nomProvisoire,
+        submittedData,
+      });
+      res.json({ success: true, data: result });
+    } catch (err) { next(err); }
+  };
+
+  // POST /api/v2/eleve-onboarding/:id/return — Admin renvoie le dossier au secrétariat avec commentaire
+  renvoyerDossier = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (req.user!.role !== 'ADMIN') {
+        res.status(403).json({ success: false, message: 'Seul l’administrateur peut renvoyer un dossier au secrétariat.' });
+        return;
+      }
+      const schoolId = req.user!.schoolId;
+      const adminId = req.user!.userId;
+      const adminRole = req.user!.role;
+      const onboardingId = String(req.params['id']);
+      const { commentaire } = req.body as { commentaire?: string };
+
+      if (!commentaire?.trim()) {
+        res.status(400).json({ success: false, message: 'Un commentaire expliquant le motif du renvoi est obligatoire.' });
+        return;
+      }
+
+      const result = await this._renvoyerOnboarding.execute({
+        schoolId,
+        onboardingId,
+        adminId,
+        adminRole,
+        commentaire: commentaire.trim(),
+      });
+      res.json({ success: true, data: result });
+    } catch (err) { next(err); }
+  };
+
+  // POST /api/v2/eleve-onboarding/:id/reject
+  rejeter = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user!;
+      if (user.role !== 'ADMIN') {
+        if (!await this.checkEnrollmentPermission(req, res)) return;
+      }
+      const schoolId = user.schoolId;
+      const rejectedById = user.userId;
+      const validatorRole = user.role;
+      const staffPermissions = user.permissions;
       const onboardingId = String(req.params['id']);
       const { rejectionReason } = req.body as { rejectionReason?: string };
       if (!rejectionReason?.trim()) {
@@ -195,7 +274,7 @@ export class EleveOnboardingController {
         return;
       }
 
-      const result = await this._rejeter.execute({ schoolId, onboardingId, rejectedById, validatorRole, rejectionReason });
+      const result = await this._rejeter.execute({ schoolId, onboardingId, rejectedById, validatorRole, staffPermissions, rejectionReason });
       res.json({ success: true, data: result });
     } catch (err) { next(err); }
   };
@@ -203,7 +282,7 @@ export class EleveOnboardingController {
   // PATCH /api/v2/eleve-onboarding/admin-gestion
   toggleAdminGestion = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (req.user!.role !== 'ADMIN' && req.user!.role !== 'DIRECTEUR') {
+      if (req.user!.role !== 'ADMIN') {
         res.status(403).json({ success: false, message: 'Seul un Administrateur peut modifier cette option' });
         return;
       }
@@ -236,8 +315,10 @@ export class EleveOnboardingController {
           ...(settings ?? {
             schoolId, selfServiceEnabled: false, defaultRecipient: 'ELEVE', ageThresholdForParent: 15,
             tokenExpiryDays: 14, reminderDelayDays: [3, 7], escalationDelayDays: 10, responsableRole: 'ADMIN',
+            directAdmissionWithoutExam: false, capacityBufferPercent: 0,
           }),
           adminGereInscriptions: school?.adminGereInscriptions ?? false,
+          adminGereFinances: school?.adminGereFinances ?? true,
         },
       });
     } catch (err) { next(err); }
@@ -247,9 +328,16 @@ export class EleveOnboardingController {
   updateSettings = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const schoolId = req.user!.schoolId;
-      const { selfServiceEnabled, defaultRecipient, ageThresholdForParent, tokenExpiryDays, reminderDelayDays, escalationDelayDays, responsableRole } = req.body as {
+      const {
+        selfServiceEnabled, defaultRecipient, ageThresholdForParent, tokenExpiryDays,
+        reminderDelayDays, escalationDelayDays, responsableRole,
+        directAdmissionWithoutExam, capacityBufferPercent,
+        adminGereInscriptions, adminGereFinances,
+      } = req.body as {
         selfServiceEnabled?: boolean; defaultRecipient?: 'ELEVE' | 'PARENT' | 'LES_DEUX'; ageThresholdForParent?: number;
         tokenExpiryDays?: number; reminderDelayDays?: number[]; escalationDelayDays?: number; responsableRole?: 'ADMIN' | 'STAFF';
+        directAdmissionWithoutExam?: boolean; capacityBufferPercent?: number;
+        adminGereInscriptions?: boolean; adminGereFinances?: boolean;
       };
 
       const data = {
@@ -260,17 +348,43 @@ export class EleveOnboardingController {
         ...(reminderDelayDays !== undefined && { reminderDelayDays }),
         ...(escalationDelayDays !== undefined && { escalationDelayDays }),
         ...(responsableRole !== undefined && { responsableRole }),
+        ...(directAdmissionWithoutExam !== undefined && { directAdmissionWithoutExam }),
+        ...(capacityBufferPercent !== undefined && { capacityBufferPercent }),
       };
 
       const settings = await this.onboardingRepository.upsertSettings(schoolId, data);
-      res.json({ success: true, data: settings });
+
+      if (adminGereInscriptions !== undefined && req.user!.role === 'ADMIN') {
+        await this._changerGestionAdmin.execute({
+          schoolId,
+          adminUserId: req.user!.userId,
+          actif: adminGereInscriptions,
+        });
+      }
+
+      if (adminGereFinances !== undefined && req.user!.role === 'ADMIN') {
+        await this.schoolRepository.updateAdminGereFinances(schoolId, adminGereFinances);
+      }
+
+      const school = await this.schoolRepository.findById(schoolId);
+      res.json({
+        success: true,
+        data: {
+          ...settings,
+          adminGereInscriptions: school?.adminGereInscriptions ?? false,
+          adminGereFinances: school?.adminGereFinances ?? true,
+        },
+      });
     } catch (err) { next(err); }
   };
 
   // POST /api/v2/eleve-onboarding/:id/resend-link
   renvoyerLien = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!await this.checkEnrollmentPermission(req, res)) return;
+      const user = req.user!;
+      if (user.role !== 'ADMIN') {
+        if (!await this.checkEnrollmentPermission(req, res)) return;
+      }
       const schoolId = req.user!.schoolId;
       const createdById = req.user!.userId;
       const onboardingId = String(req.params['id']);
@@ -312,8 +426,11 @@ export class EleveOnboardingController {
   // GET /api/v2/eleve-onboarding/:id/pdf
   exporterPdf = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!await this.checkEnrollmentPermission(req, res)) return;
-      const schoolId = req.user!.schoolId;
+      const user = req.user!;
+      if (user.role !== 'ADMIN') {
+        if (!await this.checkEnrollmentPermission(req, res)) return;
+      }
+      const schoolId = user.schoolId;
       const onboardingId = String(req.params['id']);
 
       const onboarding = await this.onboardingRepository.findOnboardingForPdf(onboardingId, schoolId);

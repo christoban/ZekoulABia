@@ -57,6 +57,8 @@ export class Facture {
   get studentId(): string { return this.props.studentId; }
   get feePlanId(): string | undefined { return this.props.feePlanId; }
   get amount(): number { return this.props.amount; }
+  get currency(): string { return this.props.currency; }
+  get description(): string | undefined { return this.props.description; }
   get status(): InvoiceStatus { return this.props.status; }
   get dueDate(): Date | undefined { return this.props.dueDate; }
   get createdAt(): Date { return this.props.createdAt; }

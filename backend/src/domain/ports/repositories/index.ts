@@ -77,3 +77,9 @@ export type {
   BulletinProfil,
   LigneMatiereProfil,
 } from './AcademicProfileQueryPort';
+export type {
+  RapportsScolariteRepository,
+  EffectifClasseRow,
+  DossierIncompletRow,
+  StatConcoursRow,
+} from './RapportsScolariteRepository';

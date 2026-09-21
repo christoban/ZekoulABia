@@ -159,4 +159,40 @@ describe('ConnecterUtilisateurUseCase', () => {
     const userApres = await userRepo.findById('user-1');
     expect(userApres?.toObject().lastLogin).toBeDefined();
   });
+
+  it('devrait refuser la connexion pour un utilisateur en mode SMS_ONLY ou NO_LOGIN', async () => {
+    const parentSms = User.reconstituer({
+      ...enseignant.toObject(),
+      id: 'parent-sms-1',
+      email: 'parent.sms@test.cm',
+      role: 'PARENT',
+      accessMode: 'SMS_ONLY',
+    });
+    userRepo.ajouter(parentSms);
+
+    expect(
+      useCase.execute({
+        email: 'parent.sms@test.cm',
+        plainPassword: 'motdepasse',
+        schoolId: 'school-1',
+      }),
+    ).rejects.toThrow("Ce compte ne dispose pas d'un accès de connexion direct.");
+
+    const parentNoLogin = User.reconstituer({
+      ...enseignant.toObject(),
+      id: 'parent-no-login-1',
+      email: 'parent.nologin@test.cm',
+      role: 'PARENT',
+      accessMode: 'NO_LOGIN',
+    });
+    userRepo.ajouter(parentNoLogin);
+
+    expect(
+      useCase.execute({
+        email: 'parent.nologin@test.cm',
+        plainPassword: 'motdepasse',
+        schoolId: 'school-1',
+      }),
+    ).rejects.toThrow("Ce compte ne dispose pas d'un accès de connexion direct.");
+  });
 });

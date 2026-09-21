@@ -6,6 +6,7 @@ import { useT } from '@/lib/i18n'
 import { Smartphone, Mail, School, Search, Save, CheckCircle2, Info, ClipboardList } from 'lucide-react'
 import PushNotificationToggle from '@/components/PushNotificationToggle'
 import MfaSettings from '@/components/MfaSettings'
+import SectionAdmissions from './SectionAdmissions'
 
 interface SchoolInfo { id?: string; name: string; logoUrl: string | null; subdomain?: string; city?: string; phone?: string; email?: string; minesecSchoolCode?: string | null }
 interface Props {
@@ -32,7 +33,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
   const TABS = [
     t('settings.tabs.0'), t('settings.tabs.1'), t('settings.tabs.2'),
     t('settings.tabs.3'), t('settings.tabs.4'), t('settings.tabs.5'),
-    t('settings.tabs.6'), t('settings.tabs.7'),
+    t('settings.tabs.6'), t('settings.tabs.7'), t('settings.tabs.8'),
   ]
 
   const NOTIF_ROWS: Array<{ key: keyof NotifSettings; icon: React.ReactNode; label: string; sub: string }> = [
@@ -1394,6 +1395,11 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
             </button>
           )}
         </div>
+      )}
+
+      {/* ── ONGLET 8 : Admissions & Inscriptions ── */}
+      {activeTab === 8 && (
+        <SectionAdmissions schoolInfo={schoolInfo} />
       )}
 
       {/* ── MODAL: Politique de sécurité ── */}

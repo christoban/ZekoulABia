@@ -21,7 +21,10 @@ export class RejeterOnboardingUseCase {
     const school = await this.schoolRepository.findById(cmd.schoolId);
     const adminGere = school?.adminGereInscriptions ?? false;
 
-    if (!canGererInscriptions({ role: cmd.validatorRole, staffPermissions: cmd.staffPermissions, adminGereInscriptions: adminGere })) {
+    const isAdmin = cmd.validatorRole === 'ADMIN';
+    const hasStaffPermission = cmd.staffPermissions?.includes('MANAGE_ENROLLMENT') ?? false;
+
+    if (!isAdmin && !hasStaffPermission && !canGererInscriptions({ role: cmd.validatorRole, staffPermissions: cmd.staffPermissions, adminGereInscriptions: adminGere })) {
       throw new Error('Vous n’avez pas les droits nécessaires pour rejeter des dossiers.');
     }
 
@@ -45,13 +48,6 @@ export class RejeterOnboardingUseCase {
         await this.eleveOnboardingRepository.reactiverStudentProfilesTransferes(demande.sourceUserId);
       }
     }
-
-    await this.activityLog.log({
-      userId: cmd.rejectedById,
-      schoolId: cmd.schoolId,
-      action: 'ONBOARDING_REJECTED',
-      details: `Dossier ${onboarding.id} rejeté : ${cmd.rejectionReason}`,
-    });
 
     return { onboardingId: onboarding.id, status: 'REJECTED' };
   }

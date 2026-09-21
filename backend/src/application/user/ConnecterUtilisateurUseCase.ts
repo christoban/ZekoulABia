@@ -155,6 +155,10 @@ export class ConnecterUtilisateurUseCase {
       throw new Error('Email ou mot de passe incorrect');
     }
 
+    if (user.accessMode && user.accessMode !== 'FULL_ACCESS') {
+      throw new Error("Ce compte ne dispose pas d'un accès de connexion direct.");
+    }
+
     // 3. Vérifier le statut de l'école SEULEMENT après validation des credentials
     if (school.estSuspendue()) {
       const err = new Error('SCHOOL_SUSPENDED') as SchoolSuspendedError;

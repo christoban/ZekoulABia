@@ -13,15 +13,7 @@
  * - Form 5 : + EXAMEN_GCE_OL (anglophone)
  */
 import type { PaiementMinesecRepository, TypeFraisMinesec } from '@domain/ports/repositories/PaiementMinesecRepository';
-
-// Niveaux par cycle
-const PREMIER_CYCLE = ['6ème', '5ème', '4ème', '3ème', '6e', '5e', '4e', '3e', 'Form1', 'Form2', 'Form3', 'Form4', 'Form5'];
-const DEUXIEME_CYCLE = ['2nde', '1ère', 'Terminale', 'UpperSixth', 'LowerSixth'];
-const NIVEAUX_EXAMEN_BEPC = ['3ème', '3e', 'Form5'];
-const NIVEAUX_EXAMEN_PROBATOIRE = ['1ère'];
-const NIVEAUX_EXAMEN_BAC = ['Terminale'];
-const NIVEAUX_GCE_OL = ['Form5'];
-const NIVEAUX_GCE_AL = ['UpperSixth'];
+import { CycleResolver } from '@domain/services/CycleResolver';
 
 export class GenererPaiementsMinesecUseCase {
   constructor(private readonly paiementRepository: PaiementMinesecRepository) {}
@@ -94,26 +86,24 @@ export class GenererPaiementsMinesecUseCase {
     const types: TypeFraisMinesec[] = [];
 
     // Scolarité selon le cycle
-    if (PREMIER_CYCLE.some(n => niveau.includes(n))) {
+    if (CycleResolver.isPremierCycle(niveau)) {
       types.push('SCOLARITE_PREMIER_CYCLE');
-    } else if (DEUXIEME_CYCLE.some(n => niveau.includes(n))) {
+    } else if (CycleResolver.isSecondCycle(niveau)) {
       types.push('SCOLARITE_SECOND_CYCLE');
     }
 
-    // Examens selon le niveau
-    if (NIVEAUX_EXAMEN_BEPC.some(n => niveau.includes(n))) {
+    // Examens selon le niveau normalisé
+    const normalized = CycleResolver.normalizeLevel(niveau);
+    if (normalized === '3e' || normalized === 'Form5') {
       types.push(isAnglophone ? 'EXAMEN_GCE_OL' : 'EXAMEN_BEPC');
     }
-    if (NIVEAUX_EXAMEN_PROBATOIRE.some(n => niveau.includes(n)) && !isAnglophone) {
+    if (normalized === '1ere' && !isAnglophone) {
       types.push('EXAMEN_PROBATOIRE');
     }
-    if (NIVEAUX_EXAMEN_BAC.some(n => niveau.includes(n)) && !isAnglophone) {
+    if (normalized === 'Tle' && !isAnglophone) {
       types.push('EXAMEN_BAC');
     }
-    if (NIVEAUX_GCE_OL.some(n => niveau.includes(n)) && isAnglophone) {
-      types.push('EXAMEN_GCE_OL');
-    }
-    if (NIVEAUX_GCE_AL.some(n => niveau.includes(n)) && isAnglophone) {
+    if (normalized === 'UpperSixth' && isAnglophone) {
       types.push('EXAMEN_GCE_AL');
     }
 
@@ -121,8 +111,7 @@ export class GenererPaiementsMinesecUseCase {
   }
 
   private getNiveauCategory(niveau: string): string {
-    if (PREMIER_CYCLE.some(n => niveau.includes(n))) return '1er_cycle';
-    if (DEUXIEME_CYCLE.some(n => niveau.includes(n))) return '2nd_cycle';
+    if (CycleResolver.isSecondCycle(niveau)) return '2nd_cycle';
     return '1er_cycle';
   }
 

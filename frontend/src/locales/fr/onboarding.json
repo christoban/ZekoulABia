@@ -732,13 +732,33 @@
       "intendant": "Intendant",
       "placeholder": "Nom complet"
     },
+    "admissions": {
+      "title": "Politique d'admission et d'inscription",
+      "directAdmission": "Admission directe sur dossier (sans concours obligatoire)",
+      "directAdmissionDesc": "Permet d'inscrire directement un élève sur dossier sans exiger de notes de concours.",
+      "selfService": "Portail d'auto-inscription en ligne pour les familles",
+      "selfServiceDesc": "Les parents ou élèves complètent la fiche via un lien sécurisé.",
+      "adminValidation": "L'administrateur valide lui-même les inscriptions",
+      "adminValidationDesc": "Tous les dossiers saisis passent par la validation de la direction avant activation.",
+      "capacityBuffer": "Marge de surcapacité tolérée (%)",
+      "capacityBufferDesc": "Tolérance de dépassement de l'effectif maximal avant dérogation obligatoire.",
+      "defaultRecipient": "Destinataire du lien d'inscription",
+      "recipientEleve": "Élève",
+      "recipientParent": "Parent",
+      "recipientBoth": "Les deux"
+    },
     "recap": {
-      "bubble": "Parfait ! Voici ce que nous allons configurer pour <strong>{schoolName}</strong>. Vérifiez avant de confirmer.",
+      "bubble": "Parfait ! Voici ce que nous allons configurer pour <strong>{schoolName}</strong>. Vérifiez avant de confirmer.",
       "structure": "Structure pédagogique",
       "langues": "Langues vivantes",
       "calendrier": "Calendrier",
       "finances": "Finances",
       "direction": "Direction",
+      "admissions": "Admissions & Inscriptions",
+      "directAdmissionYes": "Admission directe sans concours",
+      "directAdmissionNo": "Concours obligatoire",
+      "adminValidationYes": "Validation direction requise",
+      "adminValidationNo": "Délégation secrétariat",
       "template": "Template",
       "cycles": "Cycles",
       "seriesFr": "Séries (FR)",
@@ -817,5 +837,17 @@
     "successMessage": "Merci ! L'établissement va examiner le dossier et vous recontactera après validation.",
     "errorRequired": "Nom et prénom sont obligatoires",
     "errorGeneric": "Une erreur est survenue"
+  },
+  "dossierV2": {
+    "kanbanTitle": "Tableau Kanban",
+    "nouveauDossier": "Nouveau dossier",
+    "completude": "Complétude du dossier",
+    "validableSousReserve": "Validable sous réserve",
+    "piecesJustificatives": "Pièces justificatives",
+    "numeroInterne": "Numéro interne",
+    "ficheInscriptionPdf": "Fiche officielle d'inscription",
+    "validationLot": "Validation par lot",
+    "classePleine": "Capacité maximale atteinte",
+    "derogationCapacite": "Dérogation de capacité requise"
   }
 }

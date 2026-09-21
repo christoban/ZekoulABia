@@ -3,7 +3,7 @@
  * Représente tout utilisateur de la plateforme ZekoulABia au sein d'un établissement.
  * Rôles : ADMIN, STAFF, TEACHER, PARENT, STUDENT
  */
-import type { UserRole, StaffPermissionType } from '@domain/types/enums';
+import type { UserRole, StaffPermissionType, UserAccessMode } from '@domain/types/enums';
 
 export interface UserProps {
   id: string;
@@ -20,6 +20,7 @@ export interface UserProps {
   lastLogin?: Date;
   createdAt: Date;
   updatedAt: Date;
+  accessMode?: UserAccessMode;
   // Permissions STAFF (chargées si role === 'STAFF' ou enseignant AP)
   staffPermissions?: StaffPermissionType[];
   // Section STAFF (FR ou EN dans un établissement bilingue)
@@ -37,6 +38,7 @@ export interface CreerUserProps {
   lastName: string;
   avatarUrl?: string;
   mustChangePassword?: boolean;
+  accessMode?: UserAccessMode;
   staffPermissions?: StaffPermissionType[];
   staffSectionId?: string;
   professorPrincipalClassIds?: string[];
@@ -79,6 +81,7 @@ export class User {
   get lastName(): string { return this.props.lastName; }
   get isActive(): boolean { return this.props.isActive; }
   get mustChangePassword(): boolean { return this.props.mustChangePassword ?? false; }
+  get accessMode(): UserAccessMode { return this.props.accessMode ?? 'FULL_ACCESS'; }
   get staffPermissions(): StaffPermissionType[] { return this.props.staffPermissions ?? []; }
   get nomComplet(): string { return `${this.props.firstName} ${this.props.lastName}`; }
 
@@ -122,6 +125,16 @@ export class User {
 
   enregistrerConnexion(): void {
     this.props.lastLogin = new Date();
+    this.props.updatedAt = new Date();
+  }
+
+  autoriserAccesComplet(): void {
+    if (this.props.role !== 'STUDENT' && this.props.role !== 'PARENT') {
+      throw new Error('Seuls les comptes élèves et parents peuvent être basculés en accès complet via cette action.');
+    }
+    this.props.accessMode = 'FULL_ACCESS';
+    this.props.mustChangePassword = true;
+    this.props.refreshTokenVersion += 1;
     this.props.updatedAt = new Date();
   }
 

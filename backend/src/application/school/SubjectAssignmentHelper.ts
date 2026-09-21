@@ -4,6 +4,7 @@
  * la route POST /api/v2/schools/:id/sync-subjects (rattrapage).
  */
 import type { SubjectAssignmentRepository } from '@domain/ports/repositories/SubjectAssignmentRepository';
+import { CycleResolver } from '@domain/services/CycleResolver';
 
 export const CYCLE1_ORDER: ReadonlyArray<string> = ['6e', '5e', '4e', '3e'];
 export const CYCLE2_LEVELS: ReadonlyArray<string> = ['2nde', '1ere', '1ère', 'Tle'];
@@ -20,7 +21,7 @@ export const NIVEAU_MAP: Readonly<Record<string, string>> = {
  * "1ère A4-Arabe" → "A4" ; "Tle C A" → "C" ; "6e A" → null
  */
 export function parseSerie(className: string, level: string): string | null {
-  if (!(CYCLE2_LEVELS as string[]).includes(level)) return null;
+  if (!CycleResolver.isSecondCycle(level) && !(CYCLE2_LEVELS as string[]).includes(level)) return null;
   const parts = className.split(' ');
   const raw = parts[1];
   if (!raw) return null;

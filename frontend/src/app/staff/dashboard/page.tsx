@@ -41,6 +41,7 @@ import SectionClassesStaff from './_components/SectionClassesStaff'
 import SectionElevesAffectationsStaff from './_components/SectionElevesAffectationsStaff'
 import SectionImportElevesStaff from './_components/SectionImportElevesStaff'
 import SectionConfigurationStaff from './_components/SectionConfigurationStaff'
+import SectionRapportsStaff from './_components/SectionRapportsStaff'
 import { useRouter } from 'next/navigation'
 import { useT } from '@/lib/i18n'
 
@@ -221,6 +222,10 @@ export default function StaffDashboard() {
               allowedSections={allowedSections}
               initialTab={['import-eleves', 'classes', 'grille-horaire', 'affectations', 'cautions'].includes(section) ? section : undefined}
             />
+          )}
+
+          {section === 'rapports' && can('rapports') && (
+            <SectionRapportsStaff />
           )}
 
           {section === 'mon-profil-rh' && <SectionMonProfilRH onToast={showToast} />}

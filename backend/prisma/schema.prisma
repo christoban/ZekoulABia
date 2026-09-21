@@ -147,6 +147,7 @@ model School {
   hasPEBSFrancophone           Boolean                       @default(false)
   hasPEBSAnglophone            Boolean                       @default(false)
   adminGereInscriptions        Boolean                       @default(false)
+  adminGereFinances            Boolean                       @default(true)
   createdAt                    DateTime                      @default(now())
   updatedAt                    DateTime                      @updatedAt
   templateCode                 String?
@@ -235,6 +236,7 @@ model School {
   anonymatTeamMembers          AnonymatTeamMember[]
   correctionAssignments        CorrectionAssignment[]
   tasks                        Task[]
+  documentRequirements         EnrollmentDocumentRequirement[]
 }
 
 model SchoolInvite {
@@ -698,6 +700,9 @@ model StudentProfile {
   pebsFiliere         PebsFiliere?
   photoUrl            String?
   lv2SubjectId        String?
+  numeroInterne       String?
+  studentAccessScope  StudentAccessScope          @default(FULL)
+  profileManagedBy    ProfileManagedBy            @default(STUDENT)
   parents             ParentStudent[]
   lv2Subject          Subject?                    @relation("StudentLV2", fields: [lv2SubjectId], references: [id])
   user                User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -755,10 +760,13 @@ model ParentProfile {
 }
 
 model ParentStudent {
-  parentProfileId  String
-  studentProfileId String
-  parentProfile    ParentProfile  @relation(fields: [parentProfileId], references: [id])
-  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  parentProfileId      String
+  studentProfileId     String
+  relation             ParentStudentRelation @default(AUTRE)
+  contactPrincipal     Boolean               @default(false)
+  responsableFinancier Boolean               @default(false)
+  parentProfile        ParentProfile         @relation(fields: [parentProfileId], references: [id])
+  studentProfile       StudentProfile        @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
 
   @@id([parentProfileId, studentProfileId])
 }
@@ -2552,6 +2560,25 @@ enum UserRole {
 enum UserAccessMode {
   FULL_ACCESS // défaut : lien d'activation, notifications push/email envoyés normalement
   SMS_ONLY // dossier + contact existent mais aucun lien d'activation n'est jamais envoyé
+  NO_LOGIN // aucun identifiant ni accès connexion (hors ligne absolu)
+}
+
+enum ParentStudentRelation {
+  PERE
+  MERE
+  TUTEUR_LEGAL
+  AUTRE
+}
+
+enum StudentAccessScope {
+  FULL
+  READ_ONLY
+}
+
+enum ProfileManagedBy {
+  PARENT
+  STUDENT
+  SECRETARIAT
 }
 
 enum SectionLanguage {
@@ -3456,58 +3483,141 @@ enum SubmissionMethod {
 // ─── Module Examens & Admissions : Sous-module A — Concours d'entrée 6e ───
 
 model EntranceExamSession {
-  id                 String             @id @default(cuid())
-  schoolId           String
-  name               String
-  examDate           DateTime
-  academicYearId     String
-  admissionThreshold Float?
-  availableSeats     Int?
-  status             EntranceExamStatus @default(DRAFT)
-  createdAt          DateTime           @default(now())
+  id                     String             @id @default(cuid())
+  schoolId               String
+  name                   String
+  examDate               DateTime
+  academicYearId         String
+  admissionThreshold     Float?
+  availableSeats         Int?
+  status                 EntranceExamStatus @default(DRAFT)
+  registrationDeadline   DateTime?
+  requireCepForAdmission Boolean            @default(false)
+  seatReservationDays    Int                @default(14)
+  deliberatedAt          DateTime?
+  publishedAt            DateTime?
+  createdAt              DateTime           @default(now())
   // Suggestion de classe 6e cible pour l'onboarding post-CEP — miroir exact de
   // PebsExamSession.targetClassId (référence légère, pas de relation Prisma stricte).
   // Optionnel : si absent, on retombe sur la recherche par Class.level.contains('6').
-  targetClassId      String?
+  targetClassId          String?
 
   candidates EntranceExamCandidate[]
+  subjects   EntranceExamSubject[]
+  rooms      EntranceExamRoom[]
 
   @@index([schoolId])
   @@index([academicYearId])
 }
 
-model EntranceExamCandidate {
-  id               String          @id @default(cuid())
+model EntranceExamSubject {
+  id               String   @id @default(cuid())
   sessionId        String
-  firstName        String
-  lastName         String
-  dateOfBirth      DateTime?
-  originSchool     String?
-  examScore        Float?
-  admissionStatus  AdmissionStatus @default(PENDING)
-  cepResult        CepResult?      @default(NON_PASSE)
-  cepResultDate    DateTime?
-  studentProfileId String?
-  parentPhone      String?
+  name             String
+  coefficient      Float    @default(1.0)
+  maxScore         Float    @default(20.0)
+  eliminatoryScore Float?
+  orderIndex       Int      @default(0)
+  createdAt        DateTime @default(now())
 
-  session            EntranceExamSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  studentOnboardings StudentOnboarding[]
+  session         EntranceExamSession          @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  candidateGrades EntranceExamCandidateGrade[]
 
   @@index([sessionId])
+}
+
+model EntranceExamRoom {
+  id        String   @id @default(cuid())
+  sessionId String
+  name      String
+  capacity  Int
+  createdAt DateTime @default(now())
+
+  session    EntranceExamSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  candidates EntranceExamCandidate[]
+
+  @@index([sessionId])
+}
+
+model EntranceExamCandidate {
+  id                   String             @id @default(cuid())
+  sessionId            String
+  candidateNumber      String?
+  firstName            String
+  lastName             String
+  dateOfBirth          DateTime?
+  originSchool         String?
+  examScore            Float?
+  totalAverage         Float?
+  rank                 Int?
+  presenceStatus       CandidatePresence  @default(PRESENT)
+  admissionStatus      AdmissionStatus    @default(PENDING)
+  cepResult            CepResult?         @default(NON_PASSE)
+  cepResultDate        DateTime?
+  studentProfileId     String?
+  parentPhone          String?
+  roomId               String?
+  deskNumber           Int?
+  reservationExpiresAt DateTime?
+
+  session            EntranceExamSession          @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  room               EntranceExamRoom?            @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  grades             EntranceExamCandidateGrade[]
+  studentOnboardings StudentOnboarding[]
+
+  @@unique([sessionId, candidateNumber])
+  @@index([sessionId])
+  @@index([candidateNumber])
   @@index([admissionStatus])
+  @@index([roomId])
+}
+
+model EntranceExamCandidateGrade {
+  id          String   @id @default(cuid())
+  candidateId String
+  subjectId   String
+  score       Float?
+  isAbsent    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  candidate EntranceExamCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  subject   EntranceExamSubject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateId, subjectId])
+  @@index([candidateId])
+  @@index([subjectId])
 }
 
 enum EntranceExamStatus {
   DRAFT
-  RESULTS_PENDING
+  REGISTRATION_OPEN
+  SEATS_ASSIGNED
+  IN_PROGRESS
+  GRADING
+  DELIBERATION
+  PUBLISHED
   CLOSED
+  RESULTS_PENDING // rétro-compatibilité
 }
 
 enum AdmissionStatus {
   PENDING
   ADMIS_PROVISOIRE
+  ADMIS
+  LISTE_ATTENTE
+  REFUSE
+  REPECHE
   CONFIRME
+  INSCRIT
+  FORFAIT
   ANNULE
+}
+
+enum CandidatePresence {
+  PRESENT
+  ABSENT
+  ABANDON
 }
 
 enum CepResult {
@@ -3824,6 +3934,7 @@ enum OnboardingStatus {
   DRAFT // squelette créé par l'établissement, lien pas encore envoyé
   LINK_SENT // lien envoyé, en attente de saisie
   SUBMITTED // formulaire rempli, prêt pour inscription directe
+  RETURNED // renvoyé par l'administrateur au secrétariat avec un commentaire
   VALIDATED // validé/inscrit, compte en cours de création
   ACTIVATED // compte créé, email de config mot de passe envoyé
   REJECTED // rejeté par le responsable (doublon, erreur, etc.)
@@ -3890,11 +4001,21 @@ model StudentOnboarding {
   matchedStudentId String? // doublon potentiel détecté
 
   // Statut et validation
-  status          OnboardingStatus @default(DRAFT)
-  validatedById   String?
-  validatedBy     User?            @relation(fields: [validatedById], references: [id])
-  validatedAt     DateTime?
-  rejectionReason String?
+  status                 OnboardingStatus     @default(DRAFT)
+  submittedById          String?
+  returnedComment        String?
+  completenessScore      Int                  @default(0)
+  validableSousReserve   Boolean              @default(false)
+  accessProfile          Json?
+  numeroInterne          String?
+  overrideCapacityReason String?
+  validatedById          String?
+  validatedBy            User?                @relation(fields: [validatedById], references: [id])
+  validatedAt            DateTime?
+  rejectionReason        String?
+
+  // Pièces justificatives
+  documents EnrollmentDocument[]
 
   // Référence légère vers le compte créé — pas de relation Prisma stricte, même pattern que
   // EntranceExamCandidate.studentProfileId (évite d'alourdir davantage StudentProfile).
@@ -3912,6 +4033,41 @@ model StudentOnboarding {
   @@index([token])
 }
 
+model EnrollmentDocumentRequirement {
+  id             String               @id @default(cuid())
+  schoolId       String
+  school         School               @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  code           String
+  libelle        String
+  obligatoire    Boolean              @default(true)
+  applicableCase String               @default("TOUS") // "NOUVEAU" | "TRANSFERT" | "REDOUBLANT" | "TOUS"
+  createdAt      DateTime             @default(now())
+  documents      EnrollmentDocument[]
+
+  @@unique([schoolId, code])
+  @@index([schoolId])
+}
+
+model EnrollmentDocument {
+  id            String                         @id @default(cuid())
+  onboardingId  String
+  requirementId String?
+  code          String
+  libelle       String
+  received      Boolean                        @default(false)
+  receivedAt    DateTime?
+  receivedById  String?
+  note          String?
+  fileKey       String?
+  createdAt     DateTime                       @default(now())
+  updatedAt     DateTime                       @updatedAt
+  onboarding    StudentOnboarding              @relation(fields: [onboardingId], references: [id], onDelete: Cascade)
+  requirement   EnrollmentDocumentRequirement? @relation(fields: [requirementId], references: [id], onDelete: SetNull)
+
+  @@unique([onboardingId, code])
+  @@index([onboardingId])
+}
+
 model SchoolOnboardingSettings {
   schoolId              String              @id
   school                School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
@@ -3922,6 +4078,8 @@ model SchoolOnboardingSettings {
   reminderDelayDays     Int[]               @default([3, 7]) // jours après envoi pour chaque relance
   escalationDelayDays   Int                 @default(10)
   responsableRole       UserRole            @default(ADMIN) // UserRole existant : ADMIN ou STAFF
+  requireEntranceExam   Boolean             @default(false)
+  admissionPolicy       String? // ex: SELECTIF, OUVERT, CONCOURS_OBLIGATOIRE
 }
 
 // ─────────────────────────────────────────────────────────────────────────

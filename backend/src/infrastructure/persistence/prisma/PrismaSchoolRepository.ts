@@ -100,6 +100,13 @@ export class PrismaSchoolRepository implements SchoolRepository {
     });
   }
 
+  async updateAdminGereFinances(schoolId: string, adminGereFinances: boolean): Promise<void> {
+    await this.prisma.school.update({
+      where: { id: schoolId },
+      data: { adminGereFinances },
+    });
+  }
+
   async delete(id: string): Promise<void> {
     await this.prisma.school.delete({ where: { id } });
   }
@@ -139,6 +146,7 @@ export class PrismaSchoolRepository implements SchoolRepository {
       onboardingConfig: data.onboardingConfig ?? undefined,
       saturdaySchedule: data.saturdaySchedule,
       adminGereInscriptions: data.adminGereInscriptions ?? false,
+      adminGereFinances: data.adminGereFinances ?? true,
       contractEnd: data.contractEnd ?? undefined,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,

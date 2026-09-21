@@ -43,4 +43,15 @@ export class InMemorySchoolRepository implements SchoolRepository {
       this.store.set(s.id, updated);
     }
   }
+  async updateAdminGereFinances(schoolId: string, adminGereFinances: boolean) {
+    const s = this.store.get(schoolId);
+    if (s) {
+      const updated = School.reconstituer({
+        ...s.toObject(),
+        adminGereFinances,
+        updatedAt: new Date(),
+      });
+      this.store.set(s.id, updated);
+    }
+  }
 }

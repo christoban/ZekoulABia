@@ -15,6 +15,8 @@ import { PaiementMinesecController } from '@infrastructure/http/controllers/Paie
 import { ExamenController } from '@infrastructure/http/controllers/ExamenController';
 import { Lv2ChoiceController } from '@infrastructure/http/controllers/Lv2ChoiceController';
 import { EntranceExamController } from '@infrastructure/http/controllers/EntranceExamController';
+import { EntranceExamPublicController } from '@infrastructure/http/controllers/EntranceExamPublicController';
+import { PdfKitEntranceExamAdapter } from '@infrastructure/pdf/entranceExam/PdfKitEntranceExamAdapter';
 import { PebsExamController } from '@infrastructure/http/controllers/PebsExamController';
 import { PushNotificationController } from '@infrastructure/http/controllers/PushNotificationController';
 import { NotificationController } from '@infrastructure/http/controllers/NotificationController';
@@ -58,6 +60,10 @@ import { PrismaApeeRepository } from '@infrastructure/persistence/prisma/PrismaA
 import { PrismaLv2ChoiceRepository } from '@infrastructure/persistence/prisma/PrismaLv2ChoiceRepository';
 import { PrismaEntranceExamRepository } from '@infrastructure/persistence/prisma/PrismaEntranceExamRepository';
 import { PrismaPebsExamRepository } from '@infrastructure/persistence/prisma/PrismaPebsExamRepository';
+import { PrismaRapportsScolariteRepository } from '@infrastructure/persistence/prisma/PrismaRapportsScolariteRepository';
+import { GenererRapportsScolariteUseCase } from '@application/rapports/GenererRapportsScolariteUseCase';
+import { RapportsStaffController } from '@infrastructure/http/controllers/RapportsStaffController';
+import { creerRapportsStaffRoutes } from '@infrastructure/http/routes/rapportsStaff.routes';
 import { CreerAnnonceUseCase } from '@application/announcement/CreerAnnonceUseCase';
 import { ListerAnnoncesUseCase } from '@application/announcement/ListerAnnoncesUseCase';
 import { ModifierAnnonceUseCase } from '@application/announcement/ModifierAnnonceUseCase';
@@ -181,6 +187,7 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
   app.use('/api/v2/students/me', creerLv2ChoiceStudentRoutes(lv2ChoiceController));
 
   // ── Entrance Exams (Sous-module A) ─────────────────────────────────────
+  const entranceExamPdfAdapter = new PdfKitEntranceExamAdapter();
   const entranceExamController = new EntranceExamController(
     c.entranceExam.creerSession,
     c.entranceExam.ajouterCandidats,
@@ -189,11 +196,21 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
     c.entranceExam.resumeSession,
     c.entranceExam.scannerListe,
     c.entranceExam.detecterAnomalies,
+    c.entranceExam.inscrireCandidat,
+    c.entranceExam.repartirSalles,
+    c.entranceExam.saisirNotes,
+    c.entranceExam.simulerDeliberation,
+    c.entranceExam.publierResultats,
+    c.entranceExam.finaliserAdmissions,
     new PrismaEntranceExamRepository(p),
     c.school.schoolRepository,
+    entranceExamPdfAdapter,
     new AIActionAuditAdapter(p),
   );
-  app.use('/api/v2/entrance-exams', creerEntranceExamRoutes(entranceExamController));
+  const entranceExamPublicController = new EntranceExamPublicController(
+    c.entranceExam.consulterResultatPublic
+  );
+  app.use('/api/v2/entrance-exams', creerEntranceExamRoutes(entranceExamController, entranceExamPublicController));
 
   // ── PEBS Exams (Sous-module B) ─────────────────────────────────────────
   const pebsExamController = new PebsExamController(
@@ -289,8 +306,11 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
   const apeeController = new APEEController(new PrismaApeeRepository(p), c.school.schoolRepository, new AIActionAuditAdapter(p));
   app.use('/api/v2/apee', creerApeeRoutes(apeeController));
 
-  // ── Conseil de Discipline (Art. 30) ──────────────────────────────────────────
-  const disciplineCouncilController = new DisciplineCouncilController(new PrismaDisciplineRepository(p), c.school.schoolRepository);
-  app.use('/api/v2/discipline-council', creerDisciplineCouncilRoutes(disciplineCouncilController));
+  // ── Rapports & Statistiques Scolarité (Secrétariat & Direction) ───────────
+  const rapportsRepository = new PrismaRapportsScolariteRepository(p);
+  const genererRapportsUseCase = new GenererRapportsScolariteUseCase(rapportsRepository);
+  const rapportsStaffController = new RapportsStaffController(genererRapportsUseCase);
+  app.use('/api/v2/rapports', creerRapportsStaffRoutes(rapportsStaffController));
+
   registerModulesRoutes(app, p, c);
 }

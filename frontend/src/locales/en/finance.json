@@ -145,5 +145,12 @@
     "payment_in_progress": "A payment is already in progress for this student.",
     "legal_threshold_exceeded": "The Cameroonian legal contribution limit would be exceeded for this student. Check the fee plan amount.",
     "separation_ordinator": "Separation of duties violation. The authorizing officer cannot be the accounting officer."
+  },
+  "delegation_banner": {
+    "admin_in_charge_title": "Direct Financial Management",
+    "admin_in_charge_desc": "Fee management is assigned to you. If an accountant or bursar handles these operations, you can delegate financial management in Settings.",
+    "delegate_action": "Configure Delegation",
+    "delegated_title": "Financial Supervision (Delegated)",
+    "delegated_desc": "Daily financial operations (tariffs, invoicing) are delegated to the bursar/accountant. You retain global supervision and read-only access."
   }
 }

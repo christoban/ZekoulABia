@@ -412,6 +412,15 @@
     }
   },
   "finance": {
+    "tabInvoices": "Factures & Paiements",
+    "tabPlans": "Plans de frais",
+    "plansTitle": "Plans de frais",
+    "plansSubtitle": "Créez, gérez et facturez les tarifs de l'établissement",
+    "createPlan": "Nouveau plan",
+    "noPlansTitle": "Aucun plan de frais",
+    "noPlansDesc": "Créez votre premier plan de frais pour commencer la facturation.",
+    "generateInvoices": "Facturer en masse",
+    "singleInvoice": "Facture individuelle",
     "title": "Finances — Factures & Paiements",
     "subtitle": "Plans de frais · Factures · Paiements & Dépenses",
     "recordExpense": "Enregistrer une dépense",

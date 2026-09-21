@@ -25,6 +25,11 @@ export const OPERATION_RISK_LEVEL: Record<PendingActionType, RiskLevel> = {
   PEDAGOGY_PROGRAM: 'MOYEN',
   ORIENTATION_RECORD: 'MOYEN',
   MESSAGE_SEND: 'MOYEN',
+  ENROLLMENT_DRAFT: 'MOYEN',
+  EXAM_ATTENDANCE: 'MOYEN',
+  ENROLLMENT_VALIDATE: 'FORT',
+  ENROLLMENT_ACTIVATE: 'FORT',
+  EXAM_PUBLISH: 'FORT',
 }
 
 export class OfflineActionRefusedError extends Error {

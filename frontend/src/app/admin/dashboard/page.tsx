@@ -65,7 +65,7 @@ const ADMIN_SECTIONS: AdminSection[] = [
 const PLACEHOLDERS: Partial<Record<AdminSection, { icon: string; desc: string }>> = {}
 
 interface SchoolInfo { id?: string; name: string; logoUrl: string | null; subdomain?: string; city?: string; phone?: string; email?: string; isPrimaire?: boolean | null }
-interface AdminBadges { users?: string; classes?: string; grades?: string; finance?: string }
+interface AdminBadges { users?: string; classes?: string; grades?: string; finance?: string; 'eleve-onboarding'?: string }
 interface SessionUser { id?: string; userId?: string; nomComplet?: string; firstName?: string; role?: string }
 
 export default function AdminDashboard() {
@@ -150,12 +150,13 @@ export default function AdminDashboard() {
       .then(r => r.json())
       .then(d => {
         if (!d.success) return
-        const { users, classes, pendingGrades, pendingInvoices } = d.data as { users: number; classes: number; pendingGrades: number; pendingInvoices: number }
+        const { users, classes, pendingGrades, pendingInvoices, pendingOnboardings } = d.data as { users: number; classes: number; pendingGrades: number; pendingInvoices: number; pendingOnboardings?: number }
         setBadges({
           users:   users > 0         ? String(users)         : undefined,
           classes: classes > 0       ? String(classes)       : undefined,
           grades:  pendingGrades > 0 ? String(pendingGrades) : undefined,
           finance: pendingInvoices > 0 ? String(pendingInvoices) : undefined,
+          'eleve-onboarding': (pendingOnboardings && pendingOnboardings > 0) ? String(pendingOnboardings) : undefined,
         })
       })
       .catch(() => { /* badges not critical */ })

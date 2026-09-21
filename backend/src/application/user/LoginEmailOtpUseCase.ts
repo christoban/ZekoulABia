@@ -25,6 +25,10 @@ export class LoginEmailOtpUseCase {
       throw new Error('Compte introuvable');
     }
 
+    if (user.accessMode && user.accessMode !== 'FULL_ACCESS') {
+      throw new Error("Ce compte ne dispose pas d'un accès de connexion direct.");
+    }
+
     const otp = crypto.randomInt(100000, 999999).toString();
     const otpHashed = await bcrypt.hash(otp, 10);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
@@ -39,6 +43,10 @@ export class LoginEmailOtpUseCase {
   async verifier(userId: string, otp: string): Promise<void> {
     const user = await this.userRepository.findAuthDataById(userId);
     if (!user) throw new Error('Code de vérification invalide');
+
+    if (user.accessMode && user.accessMode !== 'FULL_ACCESS') {
+      throw new Error("Ce compte ne dispose pas d'un accès de connexion direct.");
+    }
 
     if (!user.loginEmailOtpHash || !user.loginEmailOtpExpiresAt) {
       throw new Error('Aucun code de vérification demandé. Veuillez vous reconnecter.');

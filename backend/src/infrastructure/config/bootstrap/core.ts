@@ -13,6 +13,7 @@ import { SMSController } from '@infrastructure/http/controllers/SMSController';
 import { OrientationController } from '@infrastructure/http/controllers/OrientationController';
 import { MatriculeController } from '@infrastructure/http/controllers/MatriculeController';
 import { EleveOnboardingController } from '@infrastructure/http/controllers/EleveOnboardingController';
+import { EleveOnboardingDossierController } from '@infrastructure/http/controllers/EleveOnboardingDossierController';
 import { StudentFollowUpController } from '@infrastructure/http/controllers/StudentFollowUpController';
 import { AssistantController } from '@infrastructure/http/controllers/AssistantController';
 import { PrismaSearchQueryRepository } from '@infrastructure/persistence/prisma/PrismaSearchQueryRepository';
@@ -167,6 +168,8 @@ export function registerCoreRoutes(app: Application, prismaParam: typeof prisma 
   const eleveOnboardingController = new EleveOnboardingController(
     c.eleveOnboarding.creerSquelette,
     c.eleveOnboarding.soumettreFormulaire,
+    c.eleveOnboarding.soumettre,
+    c.eleveOnboarding.renvoyer,
     c.eleveOnboarding.valider,
     c.eleveOnboarding.rejeter,
     c.eleveOnboarding.repository,
@@ -175,7 +178,13 @@ export function registerCoreRoutes(app: Application, prismaParam: typeof prisma 
     c.eleveOnboarding.inscrire,
     c.eleveOnboarding.changerGestionAdmin,
   );
-  app.use('/api/v2/eleve-onboarding', creerEleveOnboardingRoutes(eleveOnboardingController));
+  const eleveOnboardingDossierController = new EleveOnboardingDossierController(
+    c.eleveOnboarding.gererPieces,
+    c.eleveOnboarding.suggererClasses,
+    c.eleveOnboarding.genererFichePdf,
+    c.eleveOnboarding.validerLot,
+  );
+  app.use('/api/v2/eleve-onboarding', creerEleveOnboardingRoutes(eleveOnboardingController, eleveOnboardingDossierController));
 
   app.use('/api/v2/activities',    creerActivitiesRoutes(activitiesController));
   app.use('/api/v2/dashboard',     creerDashboardRoutes(dashboardController));

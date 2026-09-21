@@ -126,7 +126,7 @@ export class UserMfaPasswordController {
         }
 
         const user = await this.userRepository.findByEmail(normalizedEmail, school.id);
-        if (user?.email) {
+        if (user?.email && user.accessMode === 'FULL_ACCESS') {
           await sendResetEmail(user, school);
         }
 

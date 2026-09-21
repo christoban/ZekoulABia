@@ -53,6 +53,7 @@ function userRepoMock(user: AuthUserData | null): UserRepository {
     verifierMotDePasse: async () => false,
     mettreAJourMotDePasse: async () => {},
     definirMotDePasseInvitation: async () => {},
+    definirMotDePasseTemporaire: async () => {},
   };
 }
 

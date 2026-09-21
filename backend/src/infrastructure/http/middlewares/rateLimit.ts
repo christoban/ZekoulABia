@@ -109,3 +109,14 @@ export const sensitiveWriteLimiter = rateLimit({
     message: "Too many requests on sensitive operations. Please retry shortly.",
   },
 });
+
+export const resultatsConcoursLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    message: "Trop de tentatives de consultation. Veuillez réessayer dans 15 minutes.",
+  },
+});
+

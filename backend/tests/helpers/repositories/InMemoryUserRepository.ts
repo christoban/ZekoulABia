@@ -406,6 +406,13 @@ export class InMemoryUserRepository implements UserRepository {
   async definirMotDePasseInvitation(userId: string, passwordHash: string): Promise<void> {
     this.passwordHashes.set(userId, passwordHash);
   }
+  async definirMotDePasseTemporaire(userId: string, passwordHash: string): Promise<void> {
+    this.passwordHashes.set(userId, passwordHash);
+    const user = this.store.get(userId);
+    if (user) {
+      user.autoriserAccesComplet();
+    }
+  }
   // helpers de test
   definirMotDePasse(userId: string, plainOrHash: string): void {
     this.passwordHashes.set(userId, plainOrHash);

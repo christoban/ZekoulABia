@@ -125,12 +125,30 @@ export class ImporterUtilisateursUseCase {
       creerClasseUseCase: this.creerClasseUseCase,
     };
 
+    const classeImportCounts = new Map<string, number>();
+
     for (let i = 0; i < rows.length; i++) {
       const ligne = i + 1;
       const rawRow = rows[i];
       try {
         switch (targetType) {
           case 'STUDENT': {
+            const classeNom = rawRow['classe']?.trim();
+            if (classeNom) {
+              const cInfo = contexte.classes.find(
+                (c) => c.name.toLowerCase() === classeNom.toLowerCase() || c.name === classeNom,
+              );
+              if (cInfo && typeof cInfo.capacity === 'number' && cInfo.capacity > 0) {
+                const currentCount = (cInfo.currentEnrollments ?? 0) + (classeImportCounts.get(cInfo.id) ?? 0);
+                if (currentCount >= cInfo.capacity) {
+                  warnings.push({
+                    ligne,
+                    avertissement: `La classe "${cInfo.name}" a atteint ou dépassé sa capacité maximale (${cInfo.capacity} élèves).`,
+                  });
+                }
+                classeImportCounts.set(cInfo.id, (classeImportCounts.get(cInfo.id) ?? 0) + 1);
+              }
+            }
             await import('./handlers/StudentImportHandler').then((m) =>
               m.traiterLigneStudent(
                 {

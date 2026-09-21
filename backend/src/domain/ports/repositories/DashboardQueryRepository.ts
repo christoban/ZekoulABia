@@ -25,6 +25,7 @@ export interface AdminBadges {
   classes: number;
   pendingGrades: number;
   pendingInvoices: number;
+  pendingOnboardings?: number;
 }
 
 export interface DashboardQueryRepository {

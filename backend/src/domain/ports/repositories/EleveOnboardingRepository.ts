@@ -12,6 +12,8 @@ export interface OnboardingSettings {
   reminderDelayDays?: number[];
   escalationDelayDays?: number;
   responsableRole: string;
+  directAdmissionWithoutExam?: boolean;
+  capacityBufferPercent?: number;
 }
 
 export interface OnboardingRecord {
@@ -37,6 +39,12 @@ export interface OnboardingRecord {
   matchScore: number | null;
   matchedStudentId: string | null;
   status: OnboardingStatus;
+  completenessScore?: number | null;
+  validableSousReserve?: boolean;
+  numeroInterne?: string | null;
+  returnedComment?: string | null;
+  submittedById?: string | null;
+  createdStudentId?: string | null;
 }
 
 export interface OnboardingProfileMatch {
@@ -72,9 +80,34 @@ export interface ValiderOnboardingInput {
   parentRecoitContact: boolean;
   eleveAccessMode: 'FULL_ACCESS' | 'SMS_ONLY';
   parentAccessMode: 'FULL_ACCESS' | 'SMS_ONLY';
-  eleveDispositifOS: string | null;
-  parentDispositifOS: string | null;
-  examCandidateId: string | null;
+  eleveDispositifOS?: string | null;
+  parentDispositifOS?: string | null;
+  examCandidateId?: string | null;
+  derogationCapacite?: boolean;
+  motifDerogation?: string;
+  roleActeur?: string;
+}
+
+export interface DocumentRequirementRecord {
+  id: string;
+  schoolId: string;
+  code: string;
+  libelle: string;
+  obligatoire: boolean;
+  applicableCase: string; // 'TOUS' | 'NOUVEAU' | 'TRANSFERT' | 'REDOUBLANT'
+}
+
+export interface DocumentRecord {
+  id: string;
+  onboardingId: string;
+  requirementId: string | null;
+  code: string;
+  libelle: string;
+  received: boolean;
+  receivedAt: Date | null;
+  receivedById: string | null;
+  note: string | null;
+  fileKey: string | null;
 }
 
 export interface EleveOnboardingRepository {
@@ -121,7 +154,41 @@ export interface EleveOnboardingRepository {
   }): Promise<void>;
   rejeterOnboarding(id: string, data: { rejectionReason: string; rejectedById: string; rejectedAt: Date }): Promise<void>;
   reactiverStudentProfilesTransferes(sourceUserId: string): Promise<void>;
+  soumettreOnboarding(id: string, data: {
+    submittedData?: Record<string, unknown>;
+    classId?: string;
+    nomProvisoire?: string;
+    submittedById: string;
+    submitterRole: string;
+  }): Promise<void>;
+  renvoyerOnboarding(id: string, data: {
+    commentaire: string;
+    adminId: string;
+  }): Promise<void>;
 
   // Écriture atomique — ValiderOnboarding (tx multi-tables unique)
   validerOnboarding(input: ValiderOnboardingInput): Promise<{ studentProfileId: string; comptesCrees: ValiderOnboardingCompteResultat[] }>;
+
+  // ── Pièces justificatives ────────────────────────────────────────────────
+  // Exigences (configuration par établissement)
+  listDocumentRequirements(schoolId: string): Promise<DocumentRequirementRecord[]>;
+  upsertDocumentRequirement(schoolId: string, data: {
+    code: string;
+    libelle: string;
+    obligatoire?: boolean;
+    applicableCase?: string;
+  }): Promise<DocumentRequirementRecord>;
+  deleteDocumentRequirement(schoolId: string, code: string): Promise<void>;
+
+  // Documents par dossier
+  listDocuments(onboardingId: string): Promise<DocumentRecord[]>;
+  initialiserDocuments(onboardingId: string, requirements: DocumentRequirementRecord[]): Promise<DocumentRecord[]>;
+  marquerDocumentRecu(onboardingId: string, code: string, data: {
+    received: boolean;
+    receivedById: string;
+    note?: string | null;
+    fileKey?: string | null;
+  }): Promise<DocumentRecord>;
+  updateCompletenessScore(onboardingId: string, score: number, validableSousReserve: boolean): Promise<void>;
 }
+

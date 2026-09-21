@@ -3,7 +3,7 @@
  * Contrat que toute implémentation (Prisma, mémoire...) doit respecter.
  */
 import type { User } from '@domain/entities/User';
-import type { UserRole } from '@domain/types/enums';
+import type { UserRole, UserAccessMode } from '@domain/types/enums';
 
 export interface EmployeeDetail {
   id: string;
@@ -32,6 +32,7 @@ export interface AuthUserData {
   mfaSecret: string | null;
   mfaTempSecret: string | null;
   mfaRecoveryCodeHashes: string[];
+  accessMode?: UserAccessMode;
 }
 
 export interface UserRepository {
@@ -181,4 +182,5 @@ export interface UserRepository {
   verifierMotDePasse(userId: string, plainPassword: string): Promise<boolean>;
   mettreAJourMotDePasse(userId: string, passwordHash: string): Promise<void>;
   definirMotDePasseInvitation(userId: string, passwordHash: string): Promise<void>;
+  definirMotDePasseTemporaire(userId: string, passwordHash: string): Promise<void>;
 }

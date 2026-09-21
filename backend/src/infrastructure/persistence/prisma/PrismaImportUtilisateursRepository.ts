@@ -15,7 +15,27 @@ export class PrismaImportUtilisateursRepository implements ImportUtilisateursRep
       where: { id: schoolId },
       select: { name: true, subdomain: true, hasPEBSFrancophone: true, hasPEBSAnglophone: true },
     });
-    const classes = await this.prisma.class.findMany({ where: { schoolId }, select: { id: true, name: true } });
+    const classesRaw = await this.prisma.class.findMany({
+      where: { schoolId },
+      select: {
+        id: true,
+        name: true,
+        capacity: true,
+        _count: {
+          select: {
+            enrollments: {
+              where: { status: 'ACTIVE' },
+            },
+          },
+        },
+      },
+    });
+    const classes = classesRaw.map((c) => ({
+      id: c.id,
+      name: c.name,
+      capacity: c.capacity,
+      currentEnrollments: c._count.enrollments,
+    }));
     const lv2Subjects = await this.prisma.subject.findMany({
       where: { schoolId, isLV2: true },
       select: { id: true, name: true },

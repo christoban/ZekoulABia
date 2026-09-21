@@ -93,4 +93,24 @@ describe('ImporterUtilisateursUseCase — dispatcher', () => {
     expect(result.parentsCrees).toBe(0);
     expect(result.classesCrees).toBe(0);
   });
+
+  it('émet un avertissement lorsque la capacité de la classe est atteinte ou dépassée', async () => {
+    const { useCase, importRepo } = creerUseCase();
+    importRepo.ajouterClasse({
+      id: 'classe-pleine',
+      schoolId: SCHOOL_ID,
+      name: '6e B',
+      capacity: 2,
+      currentEnrollments: 1,
+    });
+
+    result = await useCase.execute(SCHOOL_ID, 'STUDENT', [
+      { nom: 'E1', prenom: 'A', email: 'e1@test.cm', telephone: '+237690000001', classe: '6e B' },
+      { nom: 'E2', prenom: 'B', email: 'e2@test.cm', telephone: '+237690000002', classe: '6e B' },
+    ]);
+
+    expect(result.success).toBe(2);
+    expect(result.warnings.length).toBeGreaterThanOrEqual(1);
+    expect(result.warnings.some(w => w.avertissement.includes('capacité maximale'))).toBe(true);
+  });
 });

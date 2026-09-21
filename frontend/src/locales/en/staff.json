@@ -412,6 +412,15 @@
     }
   },
   "finance": {
+    "tabInvoices": "Invoices & Payments",
+    "tabPlans": "Fee Plans",
+    "plansTitle": "Fee Plans",
+    "plansSubtitle": "Create, manage and bill school fee schedules",
+    "createPlan": "New Fee Plan",
+    "noPlansTitle": "No fee plans found",
+    "noPlansDesc": "Create your first fee plan to start billing.",
+    "generateInvoices": "Bulk Invoice",
+    "singleInvoice": "Single Invoice",
     "title": "Finance — Invoices & Payments",
     "subtitle": "Fee plans · Invoices · Payments & Expenses",
     "recordExpense": "Record an Expense",
