@@ -4,7 +4,8 @@ import { Hand, RefreshCw, FileText, GraduationCap, Smartphone, Banknote, CheckCi
 import type { StaffSection, SessionUser } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
-import { useT } from '@/lib/i18n'
+import { useT, useLanguage } from '@/lib/i18n'
+import { getStaffDisplayTitle } from '../_types'
 
 interface Props {
   sessionUser: SessionUser | null
@@ -22,6 +23,8 @@ interface KpiData {
 
 export default function SectionStaffDashboard({ sessionUser, allowedSections, onNav, onToast }: Props) {
   const t = useT('staff')
+  const { lang } = useLanguage()
+  const displayRoleTitle = getStaffDisplayTitle(sessionUser, lang)
   const can = (s: StaffSection) => allowedSections.has(s)
 
   const fetchKpis = useCallback(async (): Promise<KpiData> => {
@@ -63,7 +66,7 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
           <div className="flex items-center gap-2 text-base md:text-lg font-extrabold text-[var(--text)]">
             {t('dashboard.greeting')}, {nomAffiche} <Hand size={18} strokeWidth={2} />
           </div>
-          <div className="text-xs md:text-[13px] text-[var(--text3)] mt-0.5">{t('dashboard.subtitle')}</div>
+          <div className="text-xs md:text-[13px] text-[var(--text3)] mt-0.5">2025–2026 · {displayRoleTitle}</div>
           {fromCache && cachedAt && (
             <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
               <Package size={13} strokeWidth={2} /> {t('dashboard.cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}

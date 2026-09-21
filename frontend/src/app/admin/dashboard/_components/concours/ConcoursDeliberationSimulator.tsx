@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Sliders, CheckCircle, AlertTriangle, Send, UserCheck, BarChart3 } from 'lucide-react';
 import { fetchApi } from '@/lib/fetchApi';
+import ConcoursSmsCampaignModal from './ConcoursSmsCampaignModal';
 
 interface SimulationOutcome {
   admisIds: string[];
@@ -43,6 +44,7 @@ export default function ConcoursDeliberationSimulator({
   const [applying, setApplying] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
+  const [showSmsModal, setShowSmsModal] = useState(false);
 
   const runSimulation = async (apply = false) => {
     try {
@@ -83,19 +85,27 @@ export default function ConcoursDeliberationSimulator({
     runSimulation(false);
   }, [threshold, seats, waitingSeats, sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handlePublish = async () => {
-    if (!confirm('Êtes-vous sûr de vouloir publier officiellement les résultats du concours ? Ils deviendront consultables par les familles.')) {
-      return;
-    }
+  const handlePublishClick = () => {
+    setShowSmsModal(true);
+  };
+
+  const handleConfirmPublish = async (confirmSms: boolean, campaignId?: string) => {
     try {
       setPublishing(true);
       const res = await fetchApi(`/api/v2/entrance-exams/${sessionId}/publish`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
+        body: JSON.stringify({ confirmSmsCampaign: confirmSms, campaignId }),
       });
       const data = await res.json();
       if (data.success) {
-        onToast('Résultats publiés officiellement !', 'success');
+        onToast(
+          confirmSms
+            ? `Résultats publiés officiellement ! Campagne lancée (${data.data?.smsSent ?? 0} SMS envoyés).`
+            : 'Résultats publiés officiellement !',
+          'success'
+        );
         onRefresh();
       } else {
         onToast(data.message || 'Erreur lors de la publication', 'error');
@@ -169,7 +179,7 @@ export default function ConcoursDeliberationSimulator({
           </button>
 
           <button
-            onClick={handlePublish}
+            onClick={handlePublishClick}
             disabled={publishing || status === 'PUBLISHED' || status === 'CLOSED'}
             style={{
               padding: '8px 16px',
@@ -331,6 +341,14 @@ export default function ConcoursDeliberationSimulator({
           </div>
         </>
       )}
+
+      <ConcoursSmsCampaignModal
+        isOpen={showSmsModal}
+        onClose={() => setShowSmsModal(false)}
+        sessionId={sessionId}
+        sessionName={`Concours`}
+        onConfirm={handleConfirmPublish}
+      />
     </div>
   );
 }

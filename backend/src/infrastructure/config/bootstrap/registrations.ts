@@ -206,6 +206,10 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
     c.school.schoolRepository,
     entranceExamPdfAdapter,
     new AIActionAuditAdapter(p),
+    undefined,
+    c.entranceExam.estimerCampagneSms,
+    c.entranceExam.proposerSaisieLotCep,
+    c.entranceExam.appliquerSaisieLotCep,
   );
   const entranceExamPublicController = new EntranceExamPublicController(
     c.entranceExam.consulterResultatPublic

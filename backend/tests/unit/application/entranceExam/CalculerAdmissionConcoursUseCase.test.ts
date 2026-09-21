@@ -107,7 +107,7 @@ describe('CalculerAdmissionConcoursUseCase', () => {
       expect(r.admisCandidats.map(c => c.id)).toEqual(expect.arrayContaining(['c1', 'c3']));
       expect(updates).toEqual([
         { id: 'c1', status: 'ADMIS_PROVISOIRE' },
-        { id: 'c2', status: 'PENDING' },
+        { id: 'c2', status: 'NON_ADMIS' },
         { id: 'c3', status: 'ADMIS_PROVISOIRE' },
       ]);
     });

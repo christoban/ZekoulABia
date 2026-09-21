@@ -40,6 +40,8 @@ import SectionModerationMessagerie from './_components/SectionModerationMessager
 import SectionClassesStaff from './_components/SectionClassesStaff'
 import SectionElevesAffectationsStaff from './_components/SectionElevesAffectationsStaff'
 import SectionImportElevesStaff from './_components/SectionImportElevesStaff'
+import SectionInscriptionsStaff from './_components/SectionInscriptionsStaff'
+import SectionAdminEntranceExams from '../../admin/dashboard/_components/SectionAdminEntranceExams'
 import SectionConfigurationStaff from './_components/SectionConfigurationStaff'
 import SectionRapportsStaff from './_components/SectionRapportsStaff'
 import { useRouter } from 'next/navigation'
@@ -166,6 +168,14 @@ export default function StaffDashboard() {
               onNav={navTo}
               onToast={showToast}
             />
+          )}
+
+          {section === 'inscriptions' && can('inscriptions') && (
+            <SectionInscriptionsStaff onToast={showToast} />
+          )}
+
+          {section === 'concours' && can('concours') && (
+            <SectionAdminEntranceExams onToast={showToast} />
           )}
 
           {section === 'council' && can('council') && (

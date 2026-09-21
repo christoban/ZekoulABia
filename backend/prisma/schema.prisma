@@ -3500,6 +3500,8 @@ model EntranceExamSession {
   // Suggestion de classe 6e cible pour l'onboarding post-CEP — miroir exact de
   // PebsExamSession.targetClassId (référence légère, pas de relation Prisma stricte).
   // Optionnel : si absent, on retombe sur la recherche par Class.level.contains('6').
+  // Date attendue des résultats de l'examen officiel (CEP / FSLC) pour rappel admin et expiration
+  officialExamExpectedDate DateTime?
   targetClassId          String?
 
   candidates EntranceExamCandidate[]
@@ -3606,11 +3608,14 @@ enum AdmissionStatus {
   ADMIS_PROVISOIRE
   ADMIS
   LISTE_ATTENTE
+  NON_ADMIS
   REFUSE
   REPECHE
   CONFIRME
   INSCRIT
   FORFAIT
+  DESISTE
+  ABSENT
   ANNULE
 }
 

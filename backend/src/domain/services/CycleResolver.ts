@@ -28,7 +28,7 @@ export class CycleResolver {
     const clean = raw.trim().replace(/\s+/g, ' ');
 
     // Francophone secondaire - 1er cycle
-    if (/^6\s*(e|ème|eme)?(\b|[^a-z0-9]|$)/i.test(clean)) return '6e';
+    if (/^(6\s*(e|ème|eme)?|sixi[èe]me)(\b|[^a-z0-9]|$)/i.test(clean)) return '6e';
     if (/^5\s*(e|ème|eme)?(\b|[^a-z0-9]|$)/i.test(clean)) return '5e';
     if (/^4\s*(e|ème|eme)?(\b|[^a-z0-9]|$)/i.test(clean)) return '4e';
     if (/^3\s*(e|ème|eme)?(\b|[^a-z0-9]|$)/i.test(clean)) return '3e';

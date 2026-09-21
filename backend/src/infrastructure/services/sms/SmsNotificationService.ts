@@ -51,8 +51,28 @@ const smsTemplates = {
     en: (name: string, period: string) => `ZekoulABia: ${name}'s report card (${period}) is available. Log in to view it.`,
   },
   admissionProvisoire: {
-    fr: (name: string) => `ZekoulABia: ${name} est admis(e) provisoirement au concours d'entrée. L'admission sera confirmée après résultat du CEP.`,
-    en: (name: string) => `ZekoulABia: ${name} has been provisionally admitted to the entrance exam. Admission will be confirmed after the CEP result.`,
+    fr: (name: string, schoolName = 'Établissement', level = '6e', examName = 'CEP', nextStep?: string) =>
+      `${schoolName}: ${name} est admis(e) provisoirement en ${level} au concours d'entrée, sous réserve de la réussite au ${examName}.${nextStep ? ' ' + nextStep : ' Merci de vous présenter au secrétariat pour la suite des démarches.'}`,
+    en: (name: string, schoolName = 'School', level = 'Form 1', examName = 'FSLC', nextStep?: string) =>
+      `${schoolName}: ${name} has been provisionally admitted into ${level} on the entrance exam, subject to passing ${examName}.${nextStep ? ' ' + nextStep : ' Please contact the school administration for the next steps.'}`,
+  },
+  concoursNonAdmis: {
+    fr: (name: string, schoolName = 'Établissement', level = '6e') =>
+      `${schoolName}: Nous vous informons que ${name} n'a pas été retenu(e) au concours d'entrée en ${level}. Nous vous remercions pour votre confiance et lui souhaitons plein succès.`,
+    en: (name: string, schoolName = 'School', level = 'Form 1') =>
+      `${schoolName}: We regret to inform you that ${name} was not admitted into ${level} through the entrance exam. We thank you for your application and wish them great success.`,
+  },
+  concoursListeAttente: {
+    fr: (name: string, schoolName = 'Établissement', level = '6e', rank?: number) =>
+      `${schoolName}: ${name} est placé(e) sur la liste complémentaire du concours d'entrée en ${level}${rank ? ' (rang ' + rank + ')' : ''}. Vous serez contacté(e) en cas de libération d'une place.`,
+    en: (name: string, schoolName = 'School', level = 'Form 1', rank?: number) =>
+      `${schoolName}: ${name} is on the waiting list for entrance exam into ${level}${rank ? ' (rank ' + rank + ')' : ''}. You will be contacted should a place become available.`,
+  },
+  concoursPromotionListeAttente: {
+    fr: (name: string, schoolName = 'Établissement', level = '6e', examName = 'CEP') =>
+      `${schoolName}: Excellente nouvelle ! Une place s'est libérée et ${name} est désormais admis(e) provisoirement en ${level}, sous réserve de réussite au ${examName}. Merci de vous présenter au secrétariat.`,
+    en: (name: string, schoolName = 'School', level = 'Form 1', examName = 'FSLC') =>
+      `${schoolName}: Great news! A seat has become available and ${name} is now provisionally admitted into ${level}, subject to passing ${examName}. Please contact the school administration.`,
   },
   cepConfirme: {
     fr: (name: string) => `ZekoulABia: Félicitations ! ${name} a réussi le CEP, son admission en 6e est confirmée.`,
@@ -435,14 +455,75 @@ export async function notifyAdmissionProvisoireSms(opts: {
   schoolId: string
   candidateName: string
   parentPhone: string | null
+  schoolName?: string
+  level?: string
+  examName?: string
+  nextStep?: string
 }): Promise<void> {
   try {
     if (!opts.parentPhone) return
     const lang = await resolveSchoolBaseLanguage(opts.schoolId)
-    const message = smsTemplates.admissionProvisoire[lang](opts.candidateName)
+    const schoolName = opts.schoolName || (await prisma.school.findUnique({ where: { id: opts.schoolId }, select: { name: true } }))?.name || 'Établissement'
+    const message = smsTemplates.admissionProvisoire[lang](opts.candidateName, schoolName, opts.level, opts.examName, opts.nextStep)
     await dispatchSms(opts.schoolId, opts.parentPhone, message, 'ADMISSION')
   } catch (err) {
     console.error('[SMS Admission Provisoire] Erreur inattendue:', err)
+  }
+}
+
+export async function notifyConcoursNonAdmisSms(opts: {
+  schoolId: string
+  candidateName: string
+  parentPhone: string | null
+  schoolName?: string
+  level?: string
+}): Promise<void> {
+  try {
+    if (!opts.parentPhone) return
+    const lang = await resolveSchoolBaseLanguage(opts.schoolId)
+    const schoolName = opts.schoolName || (await prisma.school.findUnique({ where: { id: opts.schoolId }, select: { name: true } }))?.name || 'Établissement'
+    const message = smsTemplates.concoursNonAdmis[lang](opts.candidateName, schoolName, opts.level)
+    await dispatchSms(opts.schoolId, opts.parentPhone, message, 'ADMISSION')
+  } catch (err) {
+    console.error('[SMS Concours Non Admis] Erreur inattendue:', err)
+  }
+}
+
+export async function notifyConcoursListeAttenteSms(opts: {
+  schoolId: string
+  candidateName: string
+  parentPhone: string | null
+  schoolName?: string
+  level?: string
+  rank?: number
+}): Promise<void> {
+  try {
+    if (!opts.parentPhone) return
+    const lang = await resolveSchoolBaseLanguage(opts.schoolId)
+    const schoolName = opts.schoolName || (await prisma.school.findUnique({ where: { id: opts.schoolId }, select: { name: true } }))?.name || 'Établissement'
+    const message = smsTemplates.concoursListeAttente[lang](opts.candidateName, schoolName, opts.level, opts.rank)
+    await dispatchSms(opts.schoolId, opts.parentPhone, message, 'ADMISSION')
+  } catch (err) {
+    console.error('[SMS Concours Liste Attente] Erreur inattendue:', err)
+  }
+}
+
+export async function notifyConcoursPromotionSms(opts: {
+  schoolId: string
+  candidateName: string
+  parentPhone: string | null
+  schoolName?: string
+  level?: string
+  examName?: string
+}): Promise<void> {
+  try {
+    if (!opts.parentPhone) return
+    const lang = await resolveSchoolBaseLanguage(opts.schoolId)
+    const schoolName = opts.schoolName || (await prisma.school.findUnique({ where: { id: opts.schoolId }, select: { name: true } }))?.name || 'Établissement'
+    const message = smsTemplates.concoursPromotionListeAttente[lang](opts.candidateName, schoolName, opts.level, opts.examName)
+    await dispatchSms(opts.schoolId, opts.parentPhone, message, 'ADMISSION')
+  } catch (err) {
+    console.error('[SMS Concours Promotion] Erreur inattendue:', err)
   }
 }
 

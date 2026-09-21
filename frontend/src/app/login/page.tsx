@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Eye, EyeOff, Loader2, ChevronRight, Search, School, Presentation, Users, GraduationCap, User, Ban, Hand, AlertTriangle, Check, Mail, Clock, ArrowLeft, KeyRound, Shield, Copy } from 'lucide-react'
+import { Eye, EyeOff, Loader2, ChevronRight, Search, School, Presentation, Users, GraduationCap, User, Ban, Hand, AlertTriangle, Check, Mail, Clock, ArrowLeft, KeyRound, Shield, Copy, Award } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import AnimatedBackground from '@/components/AnimatedBackground'
 import LanguageSwitch from '@/components/LanguageSwitch'
 import { useT } from '@/lib/i18n'
@@ -625,6 +626,27 @@ export default function LoginPage() {
             {loading ? <Loader2 size={16} className="animate-spin" /> : null}
             {loading ? t('login.signing_in') : t('auth.signIn')}
           </button>
+
+          <div style={{ marginTop: 18, textAlign: 'center' }}>
+            <Link
+              href="/concours/resultats"
+              style={{
+                fontSize: 12,
+                color: 'var(--text3)',
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                fontWeight: 500,
+                transition: 'color 0.15s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--green, #16a34a)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--text3)')}
+            >
+              <Award size={13} />
+              Résultats du concours d'entrée
+            </Link>
+          </div>
 
         </>
         ) : step === 'choose_account' ? (

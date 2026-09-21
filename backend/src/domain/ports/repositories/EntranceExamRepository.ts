@@ -14,11 +14,14 @@ export type EntranceAdmissionStatus =
   | 'ADMIS_PROVISOIRE'
   | 'ADMIS'
   | 'LISTE_ATTENTE'
+  | 'NON_ADMIS'
   | 'REFUSE'
   | 'REPECHE'
   | 'CONFIRME'
   | 'INSCRIT'
   | 'FORFAIT'
+  | 'DESISTE'
+  | 'ABSENT'
   | 'ANNULE';
 
 export type EntranceCepResult = 'NON_PASSE' | 'REUSSI' | 'ECHOUE';
@@ -66,6 +69,7 @@ export interface EntranceSessionData {
   seatReservationDays?: number;
   deliberatedAt?: Date | null;
   publishedAt?: Date | null;
+  officialExamExpectedDate?: Date | null;
   subjects?: EntranceSubjectData[];
   rooms?: EntranceRoomData[];
 }
@@ -105,6 +109,7 @@ export interface CreerSessionConcoursInput {
   registrationDeadline?: Date | null;
   requireCepForAdmission?: boolean;
   seatReservationDays?: number;
+  officialExamExpectedDate?: Date | null;
   targetClassId?: string | null;
 }
 

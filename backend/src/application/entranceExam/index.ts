@@ -13,3 +13,6 @@ export { PublierResultatsConcoursUseCase } from './PublierResultatsConcoursUseCa
 export { ConsulterResultatPublicUseCase } from './ConsulterResultatPublicUseCase';
 export { FinaliserAdmissionsConcoursUseCase } from './FinaliserAdmissionsConcoursUseCase';
 export { EnregistrerPresenceCandidatUseCase } from './EnregistrerPresenceCandidatUseCase';
+export { EstimerCampagneSmsPublicationUseCase } from './EstimerCampagneSmsPublicationUseCase';
+export { ProposerSaisieLotCepUseCase } from './ProposerSaisieLotCepUseCase';
+export { AppliquerSaisieLotCepUseCase } from './AppliquerSaisieLotCepUseCase';

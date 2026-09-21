@@ -46,10 +46,19 @@ interface Props {
 const COLONNES = [
   {
     id: 'DRAFT',
-    titre: 'Brouillons',
-    statuts: ['DRAFT', 'LINK_SENT'],
+    titre: 'Brouillons internes',
+    statuts: ['DRAFT'],
     couleur: 'var(--text2, #4b5563)',
     bg: 'var(--bg2, rgba(0,0,0,0.03))',
+    icon: FileText,
+  },
+  {
+    id: 'LINK_SENT',
+    titre: 'Lien envoyé (famille)',
+    statuts: ['LINK_SENT'],
+    couleur: '#2563eb',
+    bg: 'rgba(37,99,235,0.08)',
+    icon: ExternalLink,
   },
   {
     id: 'SUBMITTED',
@@ -57,6 +66,7 @@ const COLONNES = [
     statuts: ['SUBMITTED'],
     couleur: '#b45309',
     bg: 'rgba(245,158,11,0.06)',
+    icon: Clock,
   },
   {
     id: 'RETURNED',
@@ -64,6 +74,7 @@ const COLONNES = [
     statuts: ['RETURNED'],
     couleur: '#d97706',
     bg: 'rgba(217,119,6,0.08)',
+    icon: RotateCcw,
   },
   {
     id: 'ACTIVATED',
@@ -71,6 +82,15 @@ const COLONNES = [
     statuts: ['ACTIVATED', 'VALIDATED'],
     couleur: 'var(--green, #16a34a)',
     bg: 'rgba(22,163,74,0.06)',
+    icon: CheckCircle2,
+  },
+  {
+    id: 'REJECTED',
+    titre: 'Rejetés & Expirés',
+    statuts: ['REJECTED', 'EXPIRED'],
+    couleur: '#dc2626',
+    bg: 'rgba(220,38,38,0.08)',
+    icon: AlertTriangle,
   },
 ]
 
@@ -203,6 +223,7 @@ export default function EnrollmentKanbanBoard({
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <col.icon size={14} style={{ color: col.couleur }} />
                   <span style={{ fontSize: 13, fontWeight: 700, color: col.couleur }}>
                     {col.titre}
                   </span>
@@ -226,13 +247,22 @@ export default function EnrollmentKanbanBoard({
                 {items.length === 0 ? (
                   <div
                     style={{
-                      padding: 24,
+                      padding: '28px 12px',
                       textAlign: 'center',
                       fontSize: 12,
                       color: 'var(--text3, #9ca3af)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      borderRadius: 8,
+                      border: '1px dashed var(--border, #e5e7eb)',
+                      background: 'rgba(0,0,0,0.01)',
                     }}
                   >
-                    Aucun dossier
+                    <col.icon size={18} style={{ opacity: 0.4 }} />
+                    <span>Aucun dossier {col.titre.toLowerCase()}</span>
                   </div>
                 ) : (
                   items.map((dossier) => (

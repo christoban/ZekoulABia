@@ -14,6 +14,7 @@ import {
   Clock,
   ChevronRight,
   TrendingUp,
+  School,
 } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 
@@ -273,14 +274,14 @@ export default function SectionRapportsStaff() {
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text3)' }}>DOSSIERS INCOMPLETS</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text3)' }}>DOSSIERS EN ATTENTE / INCOMPLETS</span>
               <AlertCircle size={18} style={{ color: 'var(--amber, #d97706)' }} />
             </div>
             <div style={{ fontSize: 26, fontWeight: 800, color: '#d97706' }}>
               {data.dossiersIncomplets.length}
             </div>
             <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 4 }}>
-              Pièces justificatives ou validation en attente
+              Formulaires en cours de saisie ou validation en attente
             </div>
           </div>
 
@@ -306,52 +307,66 @@ export default function SectionRapportsStaff() {
         </div>
       )}
 
-      {/* Onglets de navigation */}
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--border, #e5e7eb)', marginBottom: 20 }}>
+      {/* Barre d'onglets */}
+      <div
+        style={{
+          display: 'flex',
+          gap: 8,
+          borderBottom: '1px solid var(--border, #e5e7eb)',
+          paddingBottom: 0,
+        }}
+      >
         <button
           type="button"
           onClick={() => setOnglet('EFFECTIFS')}
           style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
             padding: '10px 18px',
+            fontSize: 13.5,
+            fontWeight: 700,
             border: 'none',
-            borderBottom: `2px solid ${onglet === 'EFFECTIFS' ? 'var(--amber, #d97706)' : 'transparent'}`,
-            background: 'transparent',
-            color: onglet === 'EFFECTIFS' ? 'var(--amber, #d97706)' : 'var(--text2)',
-            fontWeight: onglet === 'EFFECTIFS' ? 700 : 500,
-            fontSize: 14,
+            background: 'none',
             cursor: 'pointer',
+            color: onglet === 'EFFECTIFS' ? 'var(--blue, #2563eb)' : 'var(--text2, #4b5563)',
+            borderBottom: `2.5px solid ${onglet === 'EFFECTIFS' ? 'var(--blue, #2563eb)' : 'transparent'}`,
+            marginBottom: -1,
           }}
         >
-          Effectifs & Capacités par classe
+          <School size={16} />
+          Effectifs & Capacités
         </button>
 
         <button
           type="button"
           onClick={() => setOnglet('DOSSIERS')}
           style={{
-            padding: '10px 18px',
-            border: 'none',
-            borderBottom: `2px solid ${onglet === 'DOSSIERS' ? 'var(--amber, #d97706)' : 'transparent'}`,
-            background: 'transparent',
-            color: onglet === 'DOSSIERS' ? 'var(--amber, #d97706)' : 'var(--text2)',
-            fontWeight: onglet === 'DOSSIERS' ? 700 : 500,
-            fontSize: 14,
-            cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: 6,
+            gap: 8,
+            padding: '10px 18px',
+            fontSize: 13.5,
+            fontWeight: 700,
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            color: onglet === 'DOSSIERS' ? 'var(--blue, #2563eb)' : 'var(--text2, #4b5563)',
+            borderBottom: `2.5px solid ${onglet === 'DOSSIERS' ? 'var(--blue, #2563eb)' : 'transparent'}`,
+            marginBottom: -1,
           }}
         >
+          <AlertCircle size={16} />
           Dossiers Incomplets
           {data && data.dossiersIncomplets.length > 0 && (
             <span
               style={{
                 fontSize: 11,
-                fontWeight: 800,
-                padding: '1px 6px',
+                padding: '2px 7px',
                 borderRadius: 10,
                 background: 'rgba(217, 119, 6, 0.15)',
                 color: '#d97706',
+                fontWeight: 800,
               }}
             >
               {data.dossiersIncomplets.length}
@@ -363,17 +378,22 @@ export default function SectionRapportsStaff() {
           type="button"
           onClick={() => setOnglet('CONCOURS')}
           style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
             padding: '10px 18px',
+            fontSize: 13.5,
+            fontWeight: 700,
             border: 'none',
-            borderBottom: `2px solid ${onglet === 'CONCOURS' ? 'var(--amber, #d97706)' : 'transparent'}`,
-            background: 'transparent',
-            color: onglet === 'CONCOURS' ? 'var(--amber, #d97706)' : 'var(--text2)',
-            fontWeight: onglet === 'CONCOURS' ? 700 : 500,
-            fontSize: 14,
+            background: 'none',
             cursor: 'pointer',
+            color: onglet === 'CONCOURS' ? 'var(--blue, #2563eb)' : 'var(--text2, #4b5563)',
+            borderBottom: `2.5px solid ${onglet === 'CONCOURS' ? 'var(--blue, #2563eb)' : 'transparent'}`,
+            marginBottom: -1,
           }}
         >
-          Résultats Concours
+          <Award size={16} />
+          Sessions de Concours
         </button>
       </div>
 
@@ -391,7 +411,7 @@ export default function SectionRapportsStaff() {
               }}
             >
               <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--blue, #2563eb)', marginBottom: 4 }}>
-                Premier Cycle (6e - 3e / Form 1 - 4)
+                Premier Cycle (6e - 3e / Form 1 - 5)
               </div>
               <div style={{ fontSize: 13, color: 'var(--text)' }}>
                 Inscrits : <strong>{data.effectifs.parCycle.premierCycle.inscrits}</strong> / {data.effectifs.parCycle.premierCycle.capacite} places
@@ -411,7 +431,7 @@ export default function SectionRapportsStaff() {
               }}
             >
               <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--purple, #9333ea)', marginBottom: 4 }}>
-                Second Cycle (2nde - Tle / Form 5 - Sixth)
+                Second Cycle (2nde - Tle / Lower - Upper Sixth)
               </div>
               <div style={{ fontSize: 13, color: 'var(--text)' }}>
                 Inscrits : <strong>{data.effectifs.parCycle.secondCycle.inscrits}</strong> / {data.effectifs.parCycle.secondCycle.capacite} places
@@ -446,13 +466,24 @@ export default function SectionRapportsStaff() {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.effectifs.parClasse.map((c) => (
-                    <tr key={c.classId} style={{ borderBottom: '1px solid var(--border, #f3f4f6)' }}>
-                      <td style={{ padding: '10px 16px', fontWeight: 600 }}>{c.className}</td>
-                      <td style={{ padding: '10px 16px', color: 'var(--text2)' }}>{c.level || '—'}</td>
-                      <td style={{ padding: '10px 16px', color: 'var(--text2)' }}>{c.serie || c.filiere || '—'}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'right' }}>{c.capacity}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 700 }}>{c.totalInscrits}</td>
+                  {data.effectifs.parClasse.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--text3)' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                          <School size={28} style={{ color: 'var(--text3)' }} />
+                          <div style={{ fontWeight: 600 }}>Aucune classe configurée pour cette année scolaire</div>
+                          <div style={{ fontSize: 12 }}>Les effectifs et capacités apparaîtront dès que les classes seront créées.</div>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    data.effectifs.parClasse.map((c) => (
+                      <tr key={c.classId} style={{ borderBottom: '1px solid var(--border, #f3f4f6)' }}>
+                        <td style={{ padding: '10px 16px', fontWeight: 600 }}>{c.className}</td>
+                        <td style={{ padding: '10px 16px', color: 'var(--text2)' }}>{c.level || '—'}</td>
+                        <td style={{ padding: '10px 16px', color: 'var(--text2)' }}>{c.serie || c.filiere || '—'}</td>
+                        <td style={{ padding: '10px 16px', textAlign: 'right' }}>{c.capacity}</td>
+                        <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 700 }}>{c.totalInscrits}</td>
                       <td style={{ padding: '10px 16px', textAlign: 'right', color: 'var(--text2)', fontSize: 12 }}>
                         {c.garcons} G / {c.filles} F
                       </td>
@@ -499,7 +530,7 @@ export default function SectionRapportsStaff() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )))}
                 </tbody>
               </table>
             </div>

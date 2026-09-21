@@ -17,6 +17,7 @@ import type {
   CreerSessionConcoursInput,
   CandidatePresence,
 } from '@domain/ports/repositories/EntranceExamRepository';
+import { CycleResolver } from '@domain/services/CycleResolver';
 
 export class PrismaEntranceExamRepository implements EntranceExamRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -80,6 +81,7 @@ export class PrismaEntranceExamRepository implements EntranceExamRepository {
         registrationDeadline: data.registrationDeadline ?? null,
         requireCepForAdmission: data.requireCepForAdmission ?? false,
         seatReservationDays: data.seatReservationDays ?? 14,
+        officialExamExpectedDate: data.officialExamExpectedDate ?? null,
         targetClassId: data.targetClassId ?? null,
         status: 'DRAFT',
       },
@@ -398,10 +400,37 @@ export class PrismaEntranceExamRepository implements EntranceExamRepository {
 
   async trouverClasseNiveau(schoolId: string, niveau: string): Promise<{ id: string } | null> {
     const classes = await this.prisma.class.findMany({
-      where: { schoolId, level: { contains: niveau } },
+      where: { schoolId },
+      select: { id: true, name: true, level: true },
       orderBy: { name: 'asc' },
-      take: 1,
     });
-    return classes[0] ? { id: classes[0].id } : null;
+    if (classes.length === 0) return null;
+
+    const normalizedTarget = CycleResolver.normalizeLevel(niveau);
+
+    // 1. Recherche par normalisation exacte du niveau ou du nom
+    const directMatch = classes.find(
+      (c) =>
+        CycleResolver.normalizeLevel(c.level) === normalizedTarget ||
+        CycleResolver.normalizeLevel(c.name) === normalizedTarget
+    );
+    if (directMatch) return { id: directMatch.id };
+
+    // 2. Si niveau est '6' ou ciblant l'entrée du 1er cycle secondaire, chercher '6e' ou 'Form1'
+    if (niveau === '6' || normalizedTarget === '6e' || normalizedTarget === 'Form1') {
+      const entryMatch = classes.find((c) => {
+        const norm = CycleResolver.normalizeLevel(c.level) || CycleResolver.normalizeLevel(c.name);
+        return norm === '6e' || norm === 'Form1';
+      });
+      if (entryMatch) return { id: entryMatch.id };
+    }
+
+    // 3. Repli contains insensible à la casse
+    const fallback = classes.find(
+      (c) =>
+        c.level?.toLowerCase().includes(niveau.toLowerCase()) ||
+        c.name?.toLowerCase().includes(niveau.toLowerCase())
+    );
+    return fallback ? { id: fallback.id } : null;
   }
 }

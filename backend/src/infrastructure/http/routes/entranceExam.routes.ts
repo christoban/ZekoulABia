@@ -56,13 +56,16 @@ export function creerEntranceExamRoutes(
   // Délibération & Simulation (ADMIN)
   router.post('/:id/deliberation/simulate', requireAuth, requireRole('ADMIN'), controller.simulerDeliberation);
   router.post('/:id/compute-admission', requireAuth, requireRole('ADMIN'), controller.calculer);
+  router.get('/:id/publish/estimate-sms', requireAuth, requireRole('ADMIN'), controller.estimerCampagneSms);
   router.post('/:id/publish', requireAuth, requireRole('ADMIN'), controller.publierResultats);
 
   // Finalisation admissions vers Onboarding & délai de réservation (ADMIN)
   router.post('/:id/finalize-admissions', requireAuth, requireRole('ADMIN'), controller.finaliserAdmissions);
 
-  // CEP
+  // CEP (Unitaire & En Lot avec workflow Secrétaire -> Admin)
   router.patch('/candidates/:id/cep-result', requireAuth, requireRole('ADMIN'), controller.enregistrerCep);
+  router.post('/:id/cep-batch/propose', requireAuth, requireRole('ADMIN', 'STAFF'), controller.proposerLotCep);
+  router.post('/:id/cep-batch/apply', requireAuth, requireRole('ADMIN'), controller.appliquerLotCep);
 
   return router;
 }

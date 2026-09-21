@@ -7,6 +7,9 @@ describe('CycleResolver', () => {
       expect(CycleResolver.normalizeLevel('6e')).toBe('6e');
       expect(CycleResolver.normalizeLevel('6ème')).toBe('6e');
       expect(CycleResolver.normalizeLevel('6eme')).toBe('6e');
+      expect(CycleResolver.normalizeLevel('Sixième')).toBe('6e');
+      expect(CycleResolver.normalizeLevel('sixième')).toBe('6e');
+      expect(CycleResolver.normalizeLevel('Sixième Verte')).toBe('6e');
       expect(CycleResolver.normalizeLevel('6ème A')).toBe('6e');
       expect(CycleResolver.normalizeLevel('5e B')).toBe('5e');
       expect(CycleResolver.normalizeLevel('4ème Espagnol')).toBe('4e');

@@ -8,6 +8,7 @@ import {
   Banknote,
   MessageCircle,
   Menu,
+  UserPlus,
 } from 'lucide-react'
 import type { StaffSection } from '../_types'
 import { useT } from '@/lib/i18n'
@@ -48,6 +49,19 @@ export default function StaffBottomNav({ current, onChange, allowedSections, onO
       icon: LayoutDashboard,
     },
   ]
+
+  // 1b. Admissions & Concours (Secrétaire / Bursar / Intendant)
+  const admissionsAllowed: StaffSection[] = (['inscriptions', 'concours'] as StaffSection[]).filter(can)
+  if (admissionsAllowed.length > 0) {
+    items.push({
+      id: admissionsAllowed[0]!,
+      targetSection: admissionsAllowed[0]!,
+      matchSections: ['inscriptions', 'concours'],
+      labelKey: 'sidebar.inscriptions',
+      fallbackLabel: 'Admissions',
+      icon: UserPlus,
+    })
+  }
 
   // 2. Vie scolaire (présences, discipline, suivi, emploi du temps)
   const vieScolaireAllowed: StaffSection[] = (['attendance', 'discipline', 'suivi-eleves', 'timetable'] as StaffSection[]).filter(can)

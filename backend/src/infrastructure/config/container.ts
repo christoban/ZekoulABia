@@ -159,6 +159,9 @@ import { SimulerDeliberationConcoursUseCase } from '@application/entranceExam/Si
 import { PublierResultatsConcoursUseCase } from '@application/entranceExam/PublierResultatsConcoursUseCase';
 import { ConsulterResultatPublicUseCase } from '@application/entranceExam/ConsulterResultatPublicUseCase';
 import { FinaliserAdmissionsConcoursUseCase } from '@application/entranceExam/FinaliserAdmissionsConcoursUseCase';
+import { EstimerCampagneSmsPublicationUseCase } from '@application/entranceExam/EstimerCampagneSmsPublicationUseCase';
+import { ProposerSaisieLotCepUseCase } from '@application/entranceExam/ProposerSaisieLotCepUseCase';
+import { AppliquerSaisieLotCepUseCase } from '@application/entranceExam/AppliquerSaisieLotCepUseCase';
 import { PdfKitEntranceExamAdapter } from '@infrastructure/pdf/entranceExam/PdfKitEntranceExamAdapter';
 
 // --- Use Cases : Push Notification ---
@@ -1259,7 +1262,10 @@ export function creerContainer() {
       repartirSalles: new RepartirCandidatsSallesUseCase(entranceExamRepository),
       saisirNotes: new SaisirNotesConcoursUseCase(entranceExamRepository),
       simulerDeliberation: new SimulerDeliberationConcoursUseCase(entranceExamRepository),
-      publierResultats: new PublierResultatsConcoursUseCase(entranceExamRepository),
+      publierResultats: new PublierResultatsConcoursUseCase(entranceExamRepository, schoolRepository),
+      estimerCampagneSms: new EstimerCampagneSmsPublicationUseCase(entranceExamRepository, schoolRepository),
+      proposerSaisieLotCep: new ProposerSaisieLotCepUseCase(entranceExamRepository),
+      appliquerSaisieLotCep: new AppliquerSaisieLotCepUseCase(entranceExamRepository, creerSqueletteOnboarding, schoolRepository),
       consulterResultatPublic: new ConsulterResultatPublicUseCase(entranceExamRepository),
       finaliserAdmissions: new FinaliserAdmissionsConcoursUseCase(entranceExamRepository, creerSqueletteOnboarding),
       pdfPort: new PdfKitEntranceExamAdapter(),

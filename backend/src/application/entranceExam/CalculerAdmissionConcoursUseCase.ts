@@ -39,7 +39,7 @@ export class CalculerAdmissionConcoursUseCase {
         qualifies = seatsUsed < seats;
       }
 
-      const newStatus = qualifies ? 'ADMIS_PROVISOIRE' : 'PENDING';
+      const newStatus = qualifies ? 'ADMIS_PROVISOIRE' : 'NON_ADMIS';
 
       await this.entranceRepository.mettreAJourStatutAdmission(c.id, newStatus);
 

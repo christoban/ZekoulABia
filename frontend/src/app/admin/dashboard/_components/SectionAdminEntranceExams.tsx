@@ -1,12 +1,13 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { ClipboardList, Users, Building2, Award, Sliders, ArrowLeft, Plus } from 'lucide-react';
+import { ClipboardList, Users, Building2, Award, Sliders, ArrowLeft, Plus, FileCheck } from 'lucide-react';
 import { fetchApi } from '@/lib/fetchApi';
 import { useT } from '@/lib/i18n';
 import ConcoursLifecycleStepper from './concours/ConcoursLifecycleStepper';
 import ConcoursRoomsManager from './concours/ConcoursRoomsManager';
 import ConcoursGradesSheet from './concours/ConcoursGradesSheet';
 import ConcoursDeliberationSimulator from './concours/ConcoursDeliberationSimulator';
+import ConcoursCepBatchModal from './concours/ConcoursCepBatchModal';
 
 interface Props { onToast: (msg: string, type?: 'success' | 'error' | 'info') => void }
 
@@ -39,7 +40,7 @@ const btnPri = { padding: '8px 18px', borderRadius: 8, border: 'none', backgroun
 const btnSec = { padding: '8px 18px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 14, cursor: 'pointer' as const };
 const inputStyle = { padding: '7px 12px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 14 };
 
-type TabMode = 'CANDIDATS' | 'SALLES' | 'NOTES' | 'DELIBERATION';
+type TabMode = 'CANDIDATS' | 'SALLES' | 'NOTES' | 'DELIBERATION' | 'CEP';
 
 export default function SectionAdminEntranceExams({ onToast }: Props) {
   const t = useT('admin');
@@ -50,6 +51,7 @@ export default function SectionAdminEntranceExams({ onToast }: Props) {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [activeTab, setActiveTab] = useState<TabMode>('CANDIDATS');
+  const [showCepModal, setShowCepModal] = useState(false);
 
   // Formulaire de création session
   const [formName, setFormName] = useState('');
@@ -245,6 +247,7 @@ export default function SectionAdminEntranceExams({ onToast }: Props) {
               { id: 'SALLES' as const, label: 'Salles & Convocations', icon: Building2 },
               { id: 'NOTES' as const, label: 'Notation & Épreuves', icon: Award },
               { id: 'DELIBERATION' as const, label: 'Délibération & Publication', icon: Sliders },
+              { id: 'CEP' as const, label: 'Résultats CEP (Admissions)', icon: FileCheck },
             ].map(tab => {
               const active = activeTab === tab.id;
               const Icon = tab.icon;
@@ -357,7 +360,110 @@ export default function SectionAdminEntranceExams({ onToast }: Props) {
               onToast={onToast}
             />
           )}
+
+          {activeTab === 'CEP' && (
+            <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 20, border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+                <div>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <FileCheck size={18} style={{ color: 'var(--blue, #2563eb)' }} /> Résultats du CEP & Confirmation des Admissions
+                  </h3>
+                  <p style={{ fontSize: 13, color: 'var(--text2)', margin: '4px 0 0 0' }}>
+                    Saisie en lot (à cocher ou import) avec promotion de liste d'attente à la libération de places.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowCepModal(true)}
+                  style={{
+                    padding: '8px 18px',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: 'var(--blue, #2563eb)',
+                    color: '#fff',
+                    fontWeight: 700,
+                    fontSize: 13,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                  }}
+                >
+                  <FileCheck size={16} /> Saisie / Import en lot du CEP
+                </button>
+              </div>
+
+              {/* Indicateurs de progression CEP */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 20 }}>
+                <div style={{ padding: 12, background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)', textAlign: 'center' }}>
+                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>Admis Provisoires en attente</div>
+                  <div style={{ fontSize: 20, fontWeight: 800, marginTop: 4 }}>{summary.admisProvisoire}</div>
+                </div>
+                <div style={{ padding: 12, background: 'rgba(34, 197, 94, 0.08)', borderRadius: 8, border: '1px solid var(--green)', textAlign: 'center' }}>
+                  <div style={{ fontSize: 11, color: 'var(--green)' }}>Confirmés définitifs</div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--green)', marginTop: 4 }}>{summary.confirms}</div>
+                </div>
+                <div style={{ padding: 12, background: 'rgba(239, 68, 68, 0.08)', borderRadius: 8, border: '1px solid var(--red)', textAlign: 'center' }}>
+                  <div style={{ fontSize: 11, color: 'var(--red)' }}>Échoués (Places libérées)</div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--red)', marginTop: 4 }}>{summary.annules}</div>
+                </div>
+              </div>
+
+              {/* Tableau des candidats concernés */}
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)' }}>
+                      <th style={{ padding: '8px 12px', textAlign: 'left' }}>Code</th>
+                      <th style={{ padding: '8px 12px', textAlign: 'left' }}>Nom & Prénom</th>
+                      <th style={{ padding: '8px 12px', textAlign: 'center' }}>Statut Admission</th>
+                      <th style={{ padding: '8px 12px', textAlign: 'center' }}>Résultat CEP</th>
+                      <th style={{ padding: '8px 12px', textAlign: 'center' }}>Dossier</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {summary.candidates
+                      .filter(c => ['ADMIS_PROVISOIRE', 'CONFIRME', 'ANNULE', 'LISTE_ATTENTE'].includes(c.admissionStatus))
+                      .map(c => (
+                        <tr key={c.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                          <td style={{ padding: '8px 12px', fontWeight: 700, color: 'var(--accent, #2563eb)' }}>
+                            {c.candidateNumber || c.id.slice(0, 6)}
+                          </td>
+                          <td style={{ padding: '8px 12px', fontWeight: 600 }}>{c.firstName} {c.lastName}</td>
+                          <td style={{ padding: '8px 12px', textAlign: 'center' }}>
+                            <span style={{
+                              padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700,
+                              background: c.admissionStatus === 'CONFIRME' ? 'var(--green-light)' : c.admissionStatus === 'ADMIS_PROVISOIRE' ? 'rgba(37,99,235,0.1)' : 'var(--bg)',
+                              color: c.admissionStatus === 'CONFIRME' ? 'var(--green)' : c.admissionStatus === 'ADMIS_PROVISOIRE' ? 'var(--accent)' : 'var(--text2)',
+                            }}>
+                              {c.admissionStatus}
+                            </span>
+                          </td>
+                          <td style={{ padding: '8px 12px', textAlign: 'center' }}>
+                            {c.cepResult === 'REUSSI' ? '✓ Réussi' : c.cepResult === 'ECHOUE' ? '✕ Échoué' : 'En attente'}
+                          </td>
+                          <td style={{ padding: '8px 12px', textAlign: 'center' }}>
+                            {c.studentProfileId ? 'Créé' : c.admissionStatus === 'CONFIRME' ? 'Brouillon prêt' : '-'}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
+      )}
+
+      {selectedSessionId && summary && (
+        <ConcoursCepBatchModal
+          isOpen={showCepModal}
+          onClose={() => setShowCepModal(false)}
+          sessionId={selectedSessionId}
+          sessionName={summary.session.name}
+          isAdmin={true}
+          onRefresh={() => openSessionDetails(selectedSessionId)}
+          onToast={onToast}
+        />
       )}
     </div>
   );

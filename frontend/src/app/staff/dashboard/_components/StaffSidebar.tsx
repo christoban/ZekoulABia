@@ -8,14 +8,15 @@ import {
   Compass, IdCard, ShieldAlert,
   Megaphone, MessageCircle,
   ScanSearch, Users, Settings, ChevronDown, ChevronRight,
-  BarChart3,
+  BarChart3, UserPlus, Award, RefreshCw,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useT } from '@/lib/i18n'
+import { useT, useLanguage } from '@/lib/i18n'
 import { logoutUser } from '@/lib/userAuth'
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount'
 import type { StaffSection, SessionUser } from '../_types'
+import { getStaffDisplayTitle } from '../_types'
 
 interface NavItem {
   id: StaffSection
@@ -52,8 +53,29 @@ const BADGE_STYLES = {
 export default function StaffSidebar({ current, onChange, allowedSections, sessionUser, schoolName, logoUrl, badges = {}, mobileOpen = false, onMobileClose }: Props) {
   const tnav = useT('navigation')
   const tcommon = useT('common')
+  const { lang } = useLanguage()
+  const displayRoleTitle = getStaffDisplayTitle(sessionUser, lang)
   const messagesNonLus = useUnreadMessagesCount()
   const can = (s: StaffSection) => allowedSections.has(s)
+
+  // Admissions & Concours (Secrétaire / Bursar / Intendant)
+  const admissionsItems: NavItem[] = []
+  if (can('inscriptions')) {
+    admissionsItems.push({
+      id: 'inscriptions',
+      icon: UserPlus,
+      label: tnav('sidebar.inscriptions') ?? 'Inscriptions',
+      badge: badges.inscriptions,
+    })
+  }
+  if (can('concours')) {
+    admissionsItems.push({
+      id: 'concours',
+      icon: Award,
+      label: tnav('sidebar.concours') ?? "Concours d'entrée",
+      badge: badges.concours,
+    })
+  }
 
   // Items quotidiens (Vie Scolaire & Services actifs)
   const vieScolaireItems: NavItem[] = []
@@ -81,10 +103,11 @@ export default function StaffSidebar({ current, onChange, allowedSections, sessi
   if (can('messagerie'))       commItems.push({ id: 'messagerie', icon: MessageCircle, label: tnav('sidebar.messagerie'), ...(messagesNonLus > 0 ? { badge: String(messagesNonLus), badgeColor: 'red' as const } : {}) })
   if (can('babillard'))        commItems.push({ id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard') })
 
-  // Vérifier si une section de configuration est autorisée
-  const hasConfigAccess = ['import-eleves', 'classes', 'grille-horaire', 'affectations', 'cautions', 'configuration'].some(s => can(s as StaffSection))
+  // Configuration technique (uniquement si permission de structure d'établissement)
+  const hasConfigAccess = can('configuration')
 
   const accordionGroups: NavAccordionGroup[] = [
+    ...(admissionsItems.length > 0 ? [{ id: 'admissions', label: 'Admissions & Concours', items: admissionsItems }] : []),
     ...(evalItems.length > 0 ? [{ id: 'evaluations', label: 'Évaluations & Conseils', items: evalItems }] : []),
     ...(pedagItems.length > 0 ? [{ id: 'pedagogie', label: 'Pédagogie & Structure', items: pedagItems }] : []),
     ...(commItems.length > 0 ? [{ id: 'communication', label: 'Communication', items: commItems }] : []),
@@ -120,7 +143,7 @@ export default function StaffSidebar({ current, onChange, allowedSections, sessi
         <div className="w-7.5 h-7.5 rounded-[8px] flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: "linear-gradient(135deg,var(--amber),var(--green))" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "70%", height: "70%", objectFit: "contain" }} /></div>
         <div>
           <div className="font-spectral text-[16px] font-bold text-white leading-tight">ZekoulABia</div>
-          <div className="text-[11px] text-white/35 font-semibold">{tcommon('brand.roleStaff')}</div>
+          <div className="text-[11px] text-white/50 font-semibold truncate">{displayRoleTitle}</div>
         </div>
       </div>
 
@@ -286,6 +309,22 @@ export default function StaffSidebar({ current, onChange, allowedSections, sessi
               <span className="truncate flex-1">{tnav('sidebar.monProfilRH')}</span>
             </button>
           )}
+          {can('sync-offline') && (
+            <button onClick={() => handleChange('sync-offline')}
+              className={cn(
+                'w-full flex items-center gap-2.5 rounded-r-md mb-[2px]',
+                'text-[12px] font-semibold transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
+                current === 'sync-offline'
+                  ? 'bg-gradient-to-r from-amber-500/25 to-amber-500/10 text-amber-300 font-bold border-l-3 border-amber-400 shadow-sm shadow-amber-500/10'
+                  : 'bg-transparent text-white/50 hover:bg-[var(--sidebar2)] hover:text-white/80 border-l-3 border-transparent'
+              )}
+              style={{ padding: '6px 8px' }}>
+              <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <RefreshCw size={15} strokeWidth={2} className={current === 'sync-offline' ? 'text-amber-400' : ''} />
+              </span>
+              <span className="truncate flex-1">{tnav('sidebar.syncOffline') ?? 'Synchronisation hors-ligne'}</span>
+            </button>
+          )}
         </div>
         </nav>
         <div className="md:hidden" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 16, background: 'linear-gradient(0deg,var(--sidebar),transparent)', pointerEvents: 'none' }} />
@@ -299,7 +338,7 @@ export default function StaffSidebar({ current, onChange, allowedSections, sessi
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-[12px] font-bold text-white truncate">{userFallback}</div>
-            <div className="text-[10px] text-white/35">{tcommon('brand.roleStaff')}</div>
+            <div className="text-[10px] text-white/35">{displayRoleTitle}</div>
           </div>
           <button onClick={logoutUser} title={tcommon('user.logoutTitle')}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', flexShrink: 0, padding: 3, borderRadius: 4 }}

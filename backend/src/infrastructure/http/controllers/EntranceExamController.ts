@@ -17,8 +17,9 @@ import { SimulerDeliberationConcoursUseCase } from '@application/entranceExam/Si
 import { PublierResultatsConcoursUseCase } from '@application/entranceExam/PublierResultatsConcoursUseCase';
 import { FinaliserAdmissionsConcoursUseCase } from '@application/entranceExam/FinaliserAdmissionsConcoursUseCase';
 import { EnregistrerPresenceCandidatUseCase } from '@application/entranceExam/EnregistrerPresenceCandidatUseCase';
-import { notifyAdmissionProvisoireSms, notifyCepResultSms } from '@infrastructure/services/sms/SmsNotificationService';
-import { notifierOnboardingLienCreeAvecEcole } from '@infrastructure/services/notification/OnboardingNotificationService';
+import { EstimerCampagneSmsPublicationUseCase } from '@application/entranceExam/EstimerCampagneSmsPublicationUseCase';
+import { ProposerSaisieLotCepUseCase, type ItemSaisieLotCep } from '@application/entranceExam/ProposerSaisieLotCepUseCase';
+import { AppliquerSaisieLotCepUseCase } from '@application/entranceExam/AppliquerSaisieLotCepUseCase';
 import { parseDateFR } from '../../../shared/date/parseDateFR';
 import XLSX from 'xlsx';
 
@@ -42,6 +43,9 @@ export class EntranceExamController {
     private readonly entranceExamPdfPort: EntranceExamPdfPort,
     private readonly audit: AIActionAuditPort,
     private readonly _enregistrerPresence?: EnregistrerPresenceCandidatUseCase,
+    private readonly _estimerCampagneSms?: EstimerCampagneSmsPublicationUseCase,
+    private readonly _proposerSaisieLotCep?: ProposerSaisieLotCepUseCase,
+    private readonly _appliquerSaisieLotCep?: AppliquerSaisieLotCepUseCase,
   ) {}
 
   // GET /api/v2/entrance-exams
@@ -57,18 +61,34 @@ export class EntranceExamController {
   creer = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const schoolId = req.user!.schoolId;
-      const { name, examDate, academicYearId, admissionThreshold, availableSeats, registrationDeadline, requireCepForAdmission, seatReservationDays } = req.body;
+      const {
+        name,
+        examDate,
+        academicYearId,
+        admissionThreshold,
+        availableSeats,
+        registrationDeadline,
+        requireCepForAdmission,
+        seatReservationDays,
+        officialExamExpectedDate,
+        targetClassId,
+      } = req.body;
       if (!name || !examDate || !academicYearId) {
         res.status(400).json({ success: false, message: 'name, examDate, academicYearId requis' });
         return;
       }
       const session = await this.entranceExamRepository.creerSession({
-        schoolId, name, examDate: new Date(examDate), academicYearId,
-        admissionThreshold: admissionThreshold ?? null,
-        availableSeats: availableSeats ?? null,
+        schoolId,
+        name,
+        examDate: new Date(examDate),
+        academicYearId,
+        admissionThreshold: admissionThreshold != null ? Number(admissionThreshold) : null,
+        availableSeats: availableSeats != null ? Number(availableSeats) : null,
         registrationDeadline: registrationDeadline ? new Date(registrationDeadline) : null,
         requireCepForAdmission: Boolean(requireCepForAdmission),
         seatReservationDays: seatReservationDays ? Number(seatReservationDays) : 14,
+        officialExamExpectedDate: officialExamExpectedDate ? new Date(officialExamExpectedDate) : null,
+        targetClassId: targetClassId ?? null,
       });
 
       this.audit.journaliser({
@@ -304,12 +324,77 @@ export class EntranceExamController {
     } catch (err) { next(err); }
   };
 
+  // GET /api/v2/entrance-exams/:id/publish/estimate-sms
+  estimerCampagneSms = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const schoolId = req.user!.schoolId;
+      const sessionId = String(req.params['id']);
+      if (!this._estimerCampagneSms) {
+        res.status(501).json({ success: false, message: 'Service non disponible' });
+        return;
+      }
+      const resultat = await this._estimerCampagneSms.execute({ schoolId, sessionId });
+      res.json({ success: true, data: resultat });
+    } catch (err) { next(err); }
+  };
+
   // POST /api/v2/entrance-exams/:id/publish
   publierResultats = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const schoolId = req.user!.schoolId;
       const sessionId = String(req.params['id']);
-      const resultat = await this._publierResultats.execute({ schoolId, sessionId });
+      const { confirmSmsCampaign, campaignId } = req.body || {};
+      const resultat = await this._publierResultats.execute({
+        schoolId,
+        sessionId,
+        confirmSmsCampaign: confirmSmsCampaign !== undefined ? Boolean(confirmSmsCampaign) : true,
+        campaignId: campaignId ? String(campaignId) : undefined,
+      });
+      res.json({ success: true, data: resultat });
+    } catch (err) { next(err); }
+  };
+
+  // POST /api/v2/entrance-exams/:id/cep-batch/propose
+  proposerLotCep = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const schoolId = req.user!.schoolId;
+      const sessionId = String(req.params['id']);
+      const { items } = req.body as { items: ItemSaisieLotCep[] };
+      if (!items || !Array.isArray(items)) {
+        res.status(400).json({ success: false, message: 'items requis (tableau de résultats CEP)' });
+        return;
+      }
+      if (!this._proposerSaisieLotCep) {
+        res.status(501).json({ success: false, message: 'Service non disponible' });
+        return;
+      }
+      const resultat = await this._proposerSaisieLotCep.execute({ schoolId, sessionId, items });
+      res.json({ success: true, data: resultat });
+    } catch (err) { next(err); }
+  };
+
+  // POST /api/v2/entrance-exams/:id/cep-batch/apply
+  appliquerLotCep = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const schoolId = req.user!.schoolId;
+      const sessionId = String(req.params['id']);
+      const { decisions, promotionsIds } = req.body;
+      if (!decisions || !Array.isArray(decisions)) {
+        res.status(400).json({ success: false, message: 'decisions requises' });
+        return;
+      }
+      if (!this._appliquerSaisieLotCep) {
+        res.status(501).json({ success: false, message: 'Service non disponible' });
+        return;
+      }
+      const adminUserId = req.user!.userId;
+      const resultat = await this._appliquerSaisieLotCep.execute({
+        schoolId,
+        sessionId,
+        adminUserId,
+        decisions,
+        promotionsIds: Array.isArray(promotionsIds) ? promotionsIds : undefined,
+      });
       res.json({ success: true, data: resultat });
     } catch (err) { next(err); }
   };
@@ -424,13 +509,6 @@ export class EntranceExamController {
       const enregistreParId = req.user!.userId;
       const result = await this._enregistrerCep.execute({ schoolId, candidateId, cepResult, enregistreParId });
       res.json({ success: true, data: result });
-      void notifyCepResultSms({
-        schoolId, candidateName: result.candidateName, parentPhone: result.parentPhone, result: cepResult,
-      });
-      if (result.onboarding) {
-        const school = await this.schoolRepository.findById(schoolId);
-        void notifierOnboardingLienCreeAvecEcole(schoolId, school?.name ?? null, result.candidateName, result.onboarding);
-      }
     } catch (err) { next(err); }
   };
 

@@ -125,7 +125,7 @@ export class SimulerDeliberationConcoursUseCase {
       for (const refId of outcome.refusesIds) {
         admissions.push({
           candidateId: refId,
-          status: 'REFUSE',
+          status: 'NON_ADMIS',
           reservationExpiresAt: null,
         });
       }
