@@ -42,6 +42,7 @@ interface Props {
   badges?: Partial<Record<StaffSection, string>>
   mobileOpen?: boolean
   onMobileClose?: () => void
+  hasActiveEntranceExam?: boolean
 }
 
 const BADGE_STYLES = {
@@ -50,7 +51,18 @@ const BADGE_STYLES = {
   amber: 'bg-amber-500/20 text-amber-300',
 }
 
-export default function StaffSidebar({ current, onChange, allowedSections, sessionUser, schoolName, logoUrl, badges = {}, mobileOpen = false, onMobileClose }: Props) {
+export default function StaffSidebar({
+  current,
+  onChange,
+  allowedSections,
+  sessionUser,
+  schoolName,
+  logoUrl,
+  badges = {},
+  mobileOpen = false,
+  onMobileClose,
+  hasActiveEntranceExam = false,
+}: Props) {
   const tnav = useT('navigation')
   const tcommon = useT('common')
   const { lang } = useLanguage()
@@ -68,12 +80,20 @@ export default function StaffSidebar({ current, onChange, allowedSections, sessi
       badge: badges.inscriptions,
     })
   }
-  if (can('concours')) {
+  if (can('concours') && hasActiveEntranceExam) {
     admissionsItems.push({
       id: 'concours',
       icon: Award,
       label: tnav('sidebar.concours') ?? "Concours d'entrée",
       badge: badges.concours,
+    })
+  }
+  if (can('eleves-familles')) {
+    admissionsItems.push({
+      id: 'eleves-familles',
+      icon: IdCard,
+      label: tnav('sidebar.elevesFamilles') ?? 'Élèves & familles',
+      badge: badges['eleves-familles'],
     })
   }
 

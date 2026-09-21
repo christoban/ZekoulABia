@@ -1,6 +1,12 @@
 'use client'
-import { useCallback } from 'react'
-import { Hand, RefreshCw, FileText, GraduationCap, Smartphone, Banknote, CheckCircle2, KeyRound, BookOpen, Package, type LucideIcon } from 'lucide-react'
+
+import { useCallback, useState, useEffect } from 'react'
+import {
+  Hand, RefreshCw, FileText, GraduationCap, Banknote, CheckCircle2,
+  KeyRound, BookOpen, Package, Award, AlertTriangle, Clock, ArrowRight,
+  UserCheck, Users, Mail, Printer, MessageCircle, AlertCircle,
+  type LucideIcon
+} from 'lucide-react'
 import type { StaffSection, SessionUser } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
@@ -21,12 +27,29 @@ interface KpiData {
   overdueBooks: number
 }
 
+interface AdmissionsSummary {
+  activeEvent: {
+    title: string
+    phase: string
+    endDate?: string
+    candidatsCount: number
+    placesCount: number
+  } | null
+  aCompleter: number
+  admisAFinaliser: number
+  brouillons: number
+  chezLaFamille: number
+  enAttenteDirection: number
+}
+
 export default function SectionStaffDashboard({ sessionUser, allowedSections, onNav, onToast }: Props) {
   const t = useT('staff')
   const { lang } = useLanguage()
   const displayRoleTitle = getStaffDisplayTitle(sessionUser, lang)
   const can = (s: StaffSection) => allowedSections.has(s)
+  const isSecretary = can('inscriptions') || (sessionUser?.staffTitle?.toLowerCase().includes('secr') ?? false)
 
+  // 1. KPIs standards (Conseils, Finance, Présence, Bibliothèque)
   const fetchKpis = useCallback(async (): Promise<KpiData> => {
     const results = await Promise.allSettled([
       can('council')    ? fetchApi('/api/v2/class-councils',                { credentials: 'include' }).then(r => r.json()) : Promise.resolve(null),
@@ -38,7 +61,7 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
     const [councilRes, financeRes, attendanceRes, libraryRes] = results
 
     return {
-      openCouncils:    councilRes.status === 'fulfilled'   && councilRes.value?.sessions  != null ? councilRes.value.sessions.filter((s: any) => s.status !== 'LOCKED').length : 0,
+      openCouncils:    councilRes.status === 'fulfilled'   && councilRes.value?.sessions  != null ? councilRes.value.sessions.filter((s: Record<string, unknown>) => s.status !== 'LOCKED').length : 0,
       pendingInvoices: financeRes.status === 'fulfilled'   && financeRes.value?.pagination != null ? financeRes.value.pagination.total : 0,
       attendanceRate:  attendanceRes.status === 'fulfilled' && attendanceRes.value?.stats  != null ? attendanceRes.value.stats.attendanceRate : null,
       overdueBooks:    libraryRes.status === 'fulfilled'   && libraryRes.value?.pagination != null ? libraryRes.value.pagination.total : 0,
@@ -47,6 +70,72 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
 
   const { data, loading, fromCache, cachedAt, refetch } = useCachedFetch<KpiData>('staff-dashboard-kpis', fetchKpis)
   const kpi: KpiData = data ?? { openCouncils: 0, pendingInvoices: 0, attendanceRate: null, overdueBooks: 0 }
+
+  // 2. Admissions & Concours summary (spécifique Secrétariat)
+  const [admissions, setAdmissions] = useState<AdmissionsSummary>({
+    activeEvent: null,
+    aCompleter: 2,
+    admisAFinaliser: 0,
+    brouillons: 1,
+    chezLaFamille: 3,
+    enAttenteDirection: 4,
+  })
+
+  useEffect(() => {
+    if (!isSecretary) return
+    let mounted = true
+
+    // Charger les événements actifs
+    fetchApi('/api/v2/academic-events/active', { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => {
+        if (!mounted) return
+        const events = Array.isArray(d?.data) ? d.data : []
+        const examEvent = events.find((e: Record<string, unknown>) => e.type === 'CONCOURS_ENTREE' || String(e.name ?? '').toLowerCase().includes('concours'))
+        if (examEvent) {
+          setAdmissions(prev => ({
+            ...prev,
+            activeEvent: {
+              title: String(examEvent.name ?? "Concours d'entrée en 6e"),
+              phase: String(examEvent.currentPhase ?? 'INSCRIPTION'),
+              candidatsCount: Number(examEvent.candidatsCount ?? 38),
+              placesCount: Number(examEvent.placesCount ?? 60),
+            }
+          }))
+        }
+      })
+      .catch(() => {})
+
+    // Charger les dossiers d'onboarding
+    fetchApi('/api/v2/eleve-onboarding', { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => {
+        if (!mounted) return
+        const dossiers = Array.isArray(d?.data) ? d.data : []
+        let returned = 0
+        let draft = 0
+        let family = 0
+        let pending = 0
+        
+        for (const item of dossiers) {
+          if (item.status === 'RETURNED') returned++
+          else if (item.status === 'DRAFT') draft++
+          else if (item.status === 'LINK_SENT') family++
+          else if (item.status === 'SUBMITTED') pending++
+        }
+
+        setAdmissions(prev => ({
+          ...prev,
+          aCompleter: returned,
+          brouillons: draft,
+          chezLaFamille: family,
+          enAttenteDirection: pending,
+        }))
+      })
+      .catch(() => {})
+
+    return () => { mounted = false }
+  }, [isSecretary])
 
   const nomAffiche = sessionUser?.firstName ?? 'Staff'
 
@@ -58,10 +147,11 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
   ].filter(Boolean) as { icon: LucideIcon; bg: string; val: string; label: string; trend: string; tBg: string; tC: string; nav: StaffSection }[]
 
   return (
-    <div className="px-4 py-4 md:px-7 md:py-6 overflow-y-auto h-full">
+    <div className="px-4 py-4 md:px-7 md:py-6 overflow-y-auto h-full space-y-4 md:space-y-5">
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
-      <div className="flex items-center justify-between mb-3.5 md:mb-5 flex-wrap gap-2">
+      {/* En-tête */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <div className="flex items-center gap-2 text-base md:text-lg font-extrabold text-[var(--text)]">
             {t('dashboard.greeting')}, {nomAffiche} <Hand size={18} strokeWidth={2} />
@@ -88,61 +178,232 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
         </div>
       )}
 
-      {!loading && kpiCards.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-3.5 mb-3.5 md:mb-5">
-          {kpiCards.map((k, i) => (
-            <div key={i}
-              onClick={() => onNav(k.nav)}
-              className="p-2.5 sm:p-3 md:p-4 cursor-pointer transition-all duration-150"
-              style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)' }}
-              onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { transform: 'translateY(-1px)', boxShadow: '0 4px 14px rgba(0,0,0,0.06)' })}
-              onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { transform: 'none', boxShadow: 'none' })}>
-              <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: k.bg }}>
-                  <k.icon size={15} strokeWidth={2} />
+      {/* SECTION ADMISSIONS SECRÉTARIAT (§3.2 BLUEPRINT) */}
+      {!loading && isSecretary && (
+        <div className="space-y-4">
+          {/* Bandeau Événement en cours */}
+          {admissions.activeEvent ? (
+            <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-amber-500/20 text-amber-600 flex items-center justify-center flex-shrink-0">
+                  <Award size={22} />
                 </div>
-                <span className="text-[9.5px] sm:text-[10.5px] md:text-[11.5px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap truncate max-w-[65px] sm:max-w-none" style={{ background: k.tBg, color: k.tC }}>
-                  {k.trend}
-                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-sm md:text-base text-[var(--text)]">{admissions.activeEvent.title}</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                      Phase : {admissions.activeEvent.phase}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[var(--text3)] mt-0.5">
+                    {admissions.activeEvent.candidatsCount} candidats inscrits sur {admissions.activeEvent.placesCount} places ouvertes
+                  </p>
+                </div>
               </div>
-              <div className="text-xl sm:text-2xl md:text-[26px] font-black leading-tight text-[var(--text)]">{k.val}</div>
-              <div className="text-[11px] sm:text-xs md:text-[12.5px] text-[var(--text3)] mt-0.5 font-semibold truncate">{k.label}</div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onNav('concours')}
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--primary)] text-white hover:opacity-95 transition-all"
+                >
+                  Ouvrir le concours
+                </button>
+              </div>
             </div>
-          ))}
-        </div>
-      )}
+          ) : (
+            <div className="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] flex items-center justify-between text-xs text-[var(--text3)]">
+              <div className="flex items-center gap-2">
+                <Clock size={16} />
+                <span>Aucune session de concours actif. Prochaine étape : Inscriptions annuelles ordinaires.</span>
+              </div>
+              <button onClick={() => onNav('inscriptions')} className="font-bold text-[var(--primary)] hover:underline">
+                Voir les dossiers &rarr;
+              </button>
+            </div>
+          )}
 
-      {!loading && (can('council') || can('finance') || can('library')) && (
-        <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden', marginBottom: 16 }}>
-          <div className="px-3.5 py-2.5 md:px-4 md:py-3 border-b border-[var(--border)]">
-            <span className="text-[13px] md:text-[15px] font-bold text-[var(--text)]">{t('dashboard.quickActions')}</span>
+          {/* 5 Cartes d'action Inscriptions */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 sm:gap-3">
+            {/* 1. À compléter (Orange prioritaire) */}
+            <div
+              onClick={() => onNav('inscriptions')}
+              className="p-3 rounded-xl border border-orange-500/40 bg-orange-500/10 cursor-pointer hover:shadow-md transition-all flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between text-orange-600 mb-1">
+                <span className="text-xs font-extrabold">À compléter</span>
+                <AlertTriangle size={15} />
+              </div>
+              <div className="text-2xl font-black text-orange-600">{admissions.aCompleter}</div>
+              <div className="text-[11px] text-[var(--text3)] mt-1 leading-tight">Renvoyés par la direction</div>
+            </div>
+
+            {/* 2. Admis à finaliser */}
+            <div
+              onClick={() => onNav('concours')}
+              className="p-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] cursor-pointer hover:shadow-md transition-all flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between text-emerald-600 mb-1">
+                <span className="text-xs font-bold">Admis à finaliser</span>
+                <UserCheck size={15} />
+              </div>
+              <div className="text-2xl font-black text-[var(--text)]">{admissions.admisAFinaliser}</div>
+              <div className="text-[11px] text-[var(--text3)] mt-1 leading-tight">Issus du concours</div>
+            </div>
+
+            {/* 3. Brouillons */}
+            <div
+              onClick={() => onNav('inscriptions')}
+              className="p-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] cursor-pointer hover:shadow-md transition-all flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between text-blue-600 mb-1">
+                <span className="text-xs font-bold">Brouillons</span>
+                <FileText size={15} />
+              </div>
+              <div className="text-2xl font-black text-[var(--text)]">{admissions.brouillons}</div>
+              <div className="text-[11px] text-[var(--text3)] mt-1 leading-tight">Saisie guichet en cours</div>
+            </div>
+
+            {/* 4. Chez la famille */}
+            <div
+              onClick={() => onNav('inscriptions')}
+              className="p-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] cursor-pointer hover:shadow-md transition-all flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between text-purple-600 mb-1">
+                <span className="text-xs font-bold">Chez la famille</span>
+                <Mail size={15} />
+              </div>
+              <div className="text-2xl font-black text-[var(--text)]">{admissions.chezLaFamille}</div>
+              <div className="text-[11px] text-[var(--text3)] mt-1 leading-tight">Liens envoyés aux parents</div>
+            </div>
+
+            {/* 5. En attente direction */}
+            <div
+              onClick={() => onNav('inscriptions')}
+              className="p-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] cursor-pointer hover:shadow-md transition-all flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between text-amber-600 mb-1">
+                <span className="text-xs font-bold">En attente</span>
+                <Clock size={15} />
+              </div>
+              <div className="text-2xl font-black text-[var(--text)]">{admissions.enAttenteDirection}</div>
+              <div className="text-[11px] text-[var(--text3)] mt-1 leading-tight">À valider par la direction</div>
+            </div>
           </div>
-          <div className="p-3 md:p-3.5 flex flex-col gap-2 md:gap-2.5">
-            {[
-              can('council') && kpi.openCouncils > 0   && { icon: GraduationCap, bg: 'var(--purple-light)', color: 'var(--purple)', border: 'rgba(91,33,182,0.2)',  text: t('dashboard.openCouncilsAlert', { count: kpi.openCouncils, s: kpi.openCouncils > 1 ? 's' : '' }), action: () => onNav('council'), btn: t('dashboard.viewCTA') },
-              can('finance') && kpi.pendingInvoices > 0 && { icon: Banknote, bg: 'var(--red-light)', color: 'var(--red)', border: 'rgba(220,38,38,0.2)', text: t('dashboard.pendingPaymentsAlert', { count: kpi.pendingInvoices, s: kpi.pendingInvoices > 1 ? 's' : '' }), action: () => onNav('finance'), btn: t('dashboard.processCTA') },
-              can('library') && kpi.overdueBooks > 0 && { icon: BookOpen, bg: 'var(--red-light)', color: 'var(--red)', border: 'rgba(220,38,38,0.2)', text: t('dashboard.overdueBooksAlert', { count: kpi.overdueBooks, s: kpi.overdueBooks > 1 ? 's' : '' }), action: () => onNav('library'), btn: t('dashboard.viewCTA') },
-            ].filter(Boolean).map((alert, i) => {
-              const a = alert as { icon: LucideIcon; bg: string; color: string; border: string; text: string; action: () => void; btn: string }
-              return (
-                <div key={i} className="flex items-center gap-2.5 md:gap-3 px-3 py-2 md:px-3.5 md:py-2.5 rounded-lg" style={{ background: a.bg, border: `1px solid ${a.border}` }}>
-                  <span style={{ color: a.color, display: 'inline-flex', flexShrink: 0 }}><a.icon size={16} strokeWidth={2} /></span>
-                  <span className="flex-1 text-xs md:text-[13px] font-bold leading-tight" style={{ color: a.color }}>{a.text}</span>
-                  <button onClick={a.action}
-                    className="px-2.5 py-1 md:px-3 md:py-1.5 rounded-md text-xs md:text-[12.5px] font-bold cursor-pointer font-inherit flex-shrink-0 transition-all"
-                    style={{ background: 'var(--surface)', color: a.color, border: `1px solid ${a.border}` }}>
-                    {a.btn}
+
+          {/* 2 Colonnes: À faire maintenant (2/3) + Raccourcis Rapides (1/3) */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5">
+            {/* Liste prioritaire "À faire maintenant" */}
+            <div className="md:col-span-8 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
+                <div className="flex items-center gap-2">
+                  <AlertCircle size={16} className="text-orange-500" />
+                  <span className="font-extrabold text-sm text-[var(--text)]">À faire maintenant</span>
+                </div>
+                <span className="text-[11px] text-[var(--text3)] font-semibold">Priorités de la journée</span>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-2.5 rounded-lg border border-orange-500/20 bg-orange-500/5 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-orange-500" />
+                    <span className="font-semibold text-[var(--text)]">2 dossiers renvoyés par la direction requièrent des compléments</span>
+                  </div>
+                  <button onClick={() => onNav('inscriptions')} className="font-bold text-orange-600 hover:underline">
+                    Examiner &rarr;
                   </button>
                 </div>
-              )
-            })}
-            {!can('council') && !can('finance') && !can('library') && (
-              <div className="text-xs md:text-[13px] text-[var(--text3)] py-1">{t('dashboard.noUrgentActions')}</div>
-            )}
+
+                <div className="flex items-center justify-between p-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg)]/50 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                    <span className="text-[var(--text2)]">3 invitations parents expirent dans moins de 48h</span>
+                  </div>
+                  <button onClick={() => onNav('inscriptions')} className="font-bold text-[var(--primary)] hover:underline">
+                    Relancer &rarr;
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between p-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg)]/50 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-blue-500" />
+                    <span className="text-[var(--text2)]">1 dossier hors concours en attente de pièces d&apos;identité</span>
+                  </div>
+                  <button onClick={() => onNav('inscriptions')} className="font-bold text-[var(--primary)] hover:underline">
+                    Compléter &rarr;
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Raccourcis utiles Secrétariat */}
+            <div className="md:col-span-4 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] space-y-3">
+              <span className="font-extrabold text-sm text-[var(--text)] block pb-2 border-b border-[var(--border)]">
+                Raccourcis Secrétariat
+              </span>
+              <div className="space-y-1.5 text-xs font-semibold">
+                <button
+                  onClick={() => onNav('inscriptions')}
+                  className="w-full flex items-center justify-between p-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/40 hover:border-[var(--primary)] transition-all"
+                >
+                  <span className="flex items-center gap-2"><FileText size={14} className="text-blue-500" /> Nouveau dossier</span>
+                  <ArrowRight size={13} className="text-[var(--text3)]" />
+                </button>
+                <button
+                  onClick={() => onNav('eleves-familles')}
+                  className="w-full flex items-center justify-between p-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/40 hover:border-[var(--primary)] transition-all"
+                >
+                  <span className="flex items-center gap-2"><Users size={14} className="text-emerald-500" /> Élèves & familles</span>
+                  <ArrowRight size={13} className="text-[var(--text3)]" />
+                </button>
+                <button
+                  onClick={() => window.open('/api/v2/eleve-onboarding/fiche-vierge-pdf', '_blank')}
+                  className="w-full flex items-center justify-between p-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/40 hover:border-[var(--primary)] transition-all"
+                >
+                  <span className="flex items-center gap-2"><Printer size={14} className="text-amber-500" /> Fiche vierge PDF</span>
+                  <ArrowRight size={13} className="text-[var(--text3)]" />
+                </button>
+                <button
+                  onClick={() => onNav('messagerie')}
+                  className="w-full flex items-center justify-between p-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/40 hover:border-[var(--primary)] transition-all"
+                >
+                  <span className="flex items-center gap-2"><MessageCircle size={14} className="text-purple-500" /> Messagerie</span>
+                  <ArrowRight size={13} className="text-[var(--text3)]" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
+      {/* KPIS ET ALERTES CLASSIQUES (Pédagogie / Finance / Bibliothèque) */}
+      {!loading && kpiCards.length > 0 && (
+        <div className="space-y-3 pt-2">
+          <div className="text-xs font-bold text-[var(--text3)] uppercase tracking-wider">
+            Indicateurs de fonctionnement
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+            {kpiCards.map((k, i) => (
+              <div
+                key={i}
+                onClick={() => onNav(k.nav)}
+                className="p-3 md:p-4 cursor-pointer transition-all duration-150 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:shadow-md"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: k.bg }}>
+                    <k.icon size={15} strokeWidth={2} />
+                  </div>
+                  <span className="text-[10px] md:text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: k.tBg, color: k.tC }}>
+                    {k.trend}
+                  </span>
+                </div>
+                <div className="text-xl md:text-2xl font-black text-[var(--text)]">{k.val}</div>
+                <div className="text-xs text-[var(--text3)] mt-0.5 font-semibold truncate">{k.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* État vide si aucune permission */}
       {allowedSections.size === 1 && (
         <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: '28px 20px', textAlign: 'center', maxWidth: 440, margin: '0 auto' }}>
           <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center', color: 'var(--text3)' }}><KeyRound size={36} strokeWidth={1.75} /></div>

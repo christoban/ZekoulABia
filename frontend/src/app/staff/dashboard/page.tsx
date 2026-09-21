@@ -41,9 +41,10 @@ import SectionClassesStaff from './_components/SectionClassesStaff'
 import SectionElevesAffectationsStaff from './_components/SectionElevesAffectationsStaff'
 import SectionImportElevesStaff from './_components/SectionImportElevesStaff'
 import SectionInscriptionsStaff from './_components/SectionInscriptionsStaff'
-import SectionAdminEntranceExams from '../../admin/dashboard/_components/SectionAdminEntranceExams'
+import SectionConcoursStaff from './_components/SectionConcoursStaff'
 import SectionConfigurationStaff from './_components/SectionConfigurationStaff'
 import SectionRapportsStaff from './_components/SectionRapportsStaff'
+import SectionElevesFamillesStaff from './_components/SectionElevesFamillesStaff'
 import { useRouter } from 'next/navigation'
 import { useT } from '@/lib/i18n'
 
@@ -66,6 +67,42 @@ export default function StaffDashboard() {
   const [schoolName, setSchoolName]     = useState<string | undefined>(undefined)
   const [logoUrl,    setLogoUrl]        = useState<string | null>(null)
   const [changePwdOpen, setChangePwdOpen] = useState(false)
+  const [hasActiveEntranceExam, setHasActiveEntranceExam] = useState(false)
+
+  // Vérification de la présence d'un concours d'entrée actif (événement ou session)
+  const checkActiveConcours = useCallback(() => {
+    fetchApi('/api/v2/academic-events/active', { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success && Array.isArray(d.data)) {
+          const hasEvent = d.data.some((e: { type: string; status?: string }) => e.type === 'CONCOURS_ENTREE')
+          if (hasEvent) {
+            setHasActiveEntranceExam(true)
+            return
+          }
+        }
+        return fetchApi('/api/v2/entrance-exams', { credentials: 'include' })
+          .then(r2 => r2.json())
+          .then(d2 => {
+            if (d2.success && Array.isArray(d2.data)) {
+              setHasActiveEntranceExam(d2.data.some((s: { status: string }) => s.status !== 'CLOSED'))
+            }
+          })
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    checkActiveConcours()
+  }, [checkActiveConcours])
+
+  useEffect(() => {
+    const handleNotification = () => {
+      checkActiveConcours()
+    }
+    window.addEventListener('zekoulabia:notification', handleNotification)
+    return () => window.removeEventListener('zekoulabia:notification', handleNotification)
+  }, [checkActiveConcours])
 
   // Lecture session depuis localStorage (stockée au login)
   useEffect(() => {
@@ -145,6 +182,7 @@ export default function StaffDashboard() {
         logoUrl={logoUrl}
         mobileOpen={mobileNavOpen}
         onMobileClose={() => setMobileNavOpen(false)}
+        hasActiveEntranceExam={hasActiveEntranceExam}
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
@@ -175,7 +213,11 @@ export default function StaffDashboard() {
           )}
 
           {section === 'concours' && can('concours') && (
-            <SectionAdminEntranceExams onToast={showToast} />
+            <SectionConcoursStaff onToast={showToast} />
+          )}
+
+          {section === 'eleves-familles' && can('eleves-familles') && (
+            <SectionElevesFamillesStaff onToast={showToast} />
           )}
 
           {section === 'council' && can('council') && (
@@ -252,7 +294,7 @@ export default function StaffDashboard() {
       <OfflineIndicator />
       {changePwdOpen && <ChangePasswordModal onClose={() => setChangePwdOpen(false)} onToast={showToast} />}
       <AssistantWidget section={section} rolePrefix="staff" suggestions={STAFF_ASSISTANT_SUGGESTIONS} />
-      <StaffBottomNav current={section} onChange={navTo} allowedSections={allowedSections} onOpenMenu={() => setMobileNavOpen(true)} />
+      <StaffBottomNav current={section} onChange={navTo} allowedSections={allowedSections} onOpenMenu={() => setMobileNavOpen(true)} hasActiveEntranceExam={hasActiveEntranceExam} />
     </div>
   )
 }

@@ -44,7 +44,8 @@
     "entranceExams": "Concours d'entrée",
     "concours": "Concours d'entrée",
     "inscriptions": "Inscriptions",
-    "eleveOnboarding": "Inscriptions en cours d'année",
+    "elevesFamilles": "Élèves & familles",
+    "eleveOnboarding": "Validation des inscriptions",
     "rapports": "Rapports & Statistiques",
     "minesecStats": "Statistiques MINESEC",
     "minedubStats": "Statistiques MINEDUB",
@@ -73,6 +74,8 @@
     "studentAssignments": "Affectations élèves"
   },
   "group": {
+    "admin": "Administration & Comptes",
+    "admissions": "Admissions & Concours",
     "academic": "Académique",
     "services": "Services",
     "direction": "Direction",

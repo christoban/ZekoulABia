@@ -19,6 +19,7 @@ interface Props {
   onChange: (section: StaffSection) => void
   allowedSections: Set<StaffSection>
   onOpenMenu: () => void
+  hasActiveEntranceExam?: boolean
 }
 
 interface BottomNavItem {
@@ -32,7 +33,7 @@ interface BottomNavItem {
   isMenuTrigger?: boolean
 }
 
-export default function StaffBottomNav({ current, onChange, allowedSections, onOpenMenu }: Props) {
+export default function StaffBottomNav({ current, onChange, allowedSections, onOpenMenu, hasActiveEntranceExam = false }: Props) {
   const tnav = useT('navigation')
   const unreadMessages = useUnreadMessagesCount()
 
@@ -51,12 +52,15 @@ export default function StaffBottomNav({ current, onChange, allowedSections, onO
   ]
 
   // 1b. Admissions & Concours (Secrétaire / Bursar / Intendant)
-  const admissionsAllowed: StaffSection[] = (['inscriptions', 'concours'] as StaffSection[]).filter(can)
+  const candidateAdmissions: StaffSection[] = hasActiveEntranceExam
+    ? ['inscriptions', 'concours']
+    : ['inscriptions']
+  const admissionsAllowed: StaffSection[] = candidateAdmissions.filter(can)
   if (admissionsAllowed.length > 0) {
     items.push({
       id: admissionsAllowed[0]!,
       targetSection: admissionsAllowed[0]!,
-      matchSections: ['inscriptions', 'concours'],
+      matchSections: candidateAdmissions,
       labelKey: 'sidebar.inscriptions',
       fallbackLabel: 'Admissions',
       icon: UserPlus,

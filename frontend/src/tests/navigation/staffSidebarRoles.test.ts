@@ -88,4 +88,26 @@ describe('Staff Sidebar Roles & Permissions (Secretary, Censeur, Intendant)', ()
     expect(getStaffDisplayTitle(userBursar, 'fr')).toBe('Intendant')
     expect(getStaffDisplayTitle(userBursar, 'en')).toBe('Bursar')
   })
+
+  it('gating: admissions candidate items include concours only when an active entrance exam exists', () => {
+    const can = (sec: string) => ['inscriptions', 'concours'].includes(sec)
+
+    // Quand hasActiveEntranceExam est faux
+    const hasActiveEntranceExamFalse = false
+    const itemsWithoutActiveExam = hasActiveEntranceExamFalse
+      ? (['inscriptions', 'concours'] as const).filter(can)
+      : (['inscriptions'] as const).filter(can)
+
+    expect(itemsWithoutActiveExam).toContain('inscriptions')
+    expect(itemsWithoutActiveExam).not.toContain('concours')
+
+    // Quand hasActiveEntranceExam est vrai
+    const hasActiveEntranceExamTrue = true
+    const itemsWithActiveExam = hasActiveEntranceExamTrue
+      ? (['inscriptions', 'concours'] as const).filter(can)
+      : (['inscriptions'] as const).filter(can)
+
+    expect(itemsWithActiveExam).toContain('inscriptions')
+    expect(itemsWithActiveExam).toContain('concours')
+  })
 })

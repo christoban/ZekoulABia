@@ -36,6 +36,7 @@ const BADGE_STYLES = {
 
 const DEFAULT_OPEN_GROUPS: Record<string, boolean> = {
   admin: true,
+  admissions: true,
   pedagogy: false,
   pilotage: false,
   communication: false,
@@ -75,7 +76,22 @@ interface Props {
   onMobileClose?: () => void
 }
 
-export default function AdminSidebar({ current, onChange, schoolName, logoUrl, badges = {}, sessionUser, onLogout, activeEventTypes = [], hasActiveEntranceExam = false, hasActivePebs = false, hasPendingGroupTransfers = false, isPrimaire, mobileOpen = false, onMobileClose }: Props) {
+export default function AdminSidebar({
+  current,
+  onChange,
+  schoolName,
+  logoUrl,
+  badges = {},
+  sessionUser,
+  onLogout,
+  activeEventTypes = [],
+  hasActiveEntranceExam = false,
+  hasActivePebs = false,
+  hasPendingGroupTransfers = false,
+  isPrimaire,
+  mobileOpen = false,
+  onMobileClose,
+}: Props) {
   const tnav = useT('navigation')
   const tcommon = useT('common')
   const messagesNonLus = useUnreadMessagesCount()
@@ -100,10 +116,17 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
   const NAV: NavSection[] = [
     {
       id: 'admin',
-      label: 'Administration & Comptes',
+      label: tnav('group.admin') ?? 'Administration & Comptes',
       items: [
         { id: 'users', icon: Users, label: tnav('sidebar.users'), badge: badges.users, badgeColor: 'green' },
-        { id: 'eleve-onboarding', icon: UserPlus, label: tnav('sidebar.eleveOnboarding') ?? 'Inscriptions', badge: badges['eleve-onboarding'], badgeColor: 'amber' },
+      ],
+    },
+    {
+      id: 'admissions',
+      label: tnav('group.admissions') ?? 'Admissions & Concours',
+      items: [
+        { id: 'eleve-onboarding', icon: UserPlus, label: tnav('sidebar.eleveOnboarding') ?? 'Validation des inscriptions', badge: badges['eleve-onboarding'], badgeColor: 'amber' },
+        ...(hasActiveEntranceExam ? [{ id: 'entrance-exams' as const, icon: ClipboardEdit, label: tnav('sidebar.entranceExams') ?? 'Concours' }] : []),
       ],
     },
     {
@@ -132,7 +155,6 @@ export default function AdminSidebar({ current, onChange, schoolName, logoUrl, b
       items: [
         { id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard') },
         { id: 'academic-events', icon: CalendarClock, label: tnav('sidebar.academicEvents') },
-        ...(hasActiveEntranceExam ? [{ id: 'entrance-exams' as const, icon: ClipboardEdit, label: tnav('sidebar.entranceExams') }] : []),
         ...(hasActivePebs ? [{ id: 'pebs-exams' as const, icon: Globe, label: tnav('sidebar.pebsExams') }] : []),
         ...(hasPendingGroupTransfers ? [{ id: 'group-transfers' as const, icon: ArrowRightLeft, label: tnav('sidebar.groupTransfers') }] : []),
         ...(activeEventTypes.includes('CHOIX_LV2') ? [{ id: 'lv2-choice' as const, icon: Languages, label: tnav('sidebar.lv2Choice') }] : []),

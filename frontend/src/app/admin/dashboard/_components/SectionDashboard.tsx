@@ -6,7 +6,7 @@ import { useCachedFetch } from '@/hooks/useCachedFetch'
 import {
   GraduationCap, Presentation, CheckCircle2, FileText, RefreshCw, AlertTriangle,
   Users, User, ScrollText, Package, Clock, ShieldAlert, ArrowRight, UserPlus,
-  Filter, CheckSquare, TrendingUp, AlertCircle
+  Filter, CheckSquare, TrendingUp, AlertCircle, Award
 } from 'lucide-react'
 
 interface Props {
@@ -166,7 +166,7 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
               <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600">Supervision Directoriale</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div
                 onClick={() => onNav('bulletin-validation')}
                 className="p-3 rounded-lg border border-[var(--border)] bg-[var(--bg)] hover:border-amber-500/50 cursor-pointer transition-all flex items-center justify-between"
@@ -192,8 +192,24 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
                     <UserPlus size={16} />
                   </div>
                   <div>
-                    <div className="text-[13px] font-bold text-[var(--text)]">Dossiers Inscription</div>
-                    <div className="text-[11px] text-[var(--text3)]">Suivi admissions Secrétariat</div>
+                    <div className="text-[13px] font-bold text-[var(--text)]">Validation Inscriptions</div>
+                    <div className="text-[11px] text-[var(--text3)]">Dossiers hors concours</div>
+                  </div>
+                </div>
+                <ArrowRight size={14} className="text-[var(--text3)]" />
+              </div>
+
+              <div
+                onClick={() => onNav('entrance-exams')}
+                className="p-3 rounded-lg border border-[var(--border)] bg-[var(--bg)] hover:border-amber-500/50 cursor-pointer transition-all flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-md bg-purple-500/10 text-purple-600">
+                    <Award size={16} />
+                  </div>
+                  <div>
+                    <div className="text-[13px] font-bold text-[var(--text)]">Concours d&apos;Entrée</div>
+                    <div className="text-[11px] text-[var(--text3)]">Sessions & seuils d&apos;admissibilité</div>
                   </div>
                 </div>
                 <ArrowRight size={14} className="text-[var(--text3)]" />
@@ -208,8 +224,8 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
                     <TrendingUp size={16} />
                   </div>
                   <div>
-                    <div className="text-[13px] font-bold text-[var(--text)]">Contrôle Financier</div>
-                    <div className="text-[11px] text-[var(--text3)]">Rapports & Recouvrements</div>
+                    <div className="text-[13px] font-bold text-[var(--text)]">Supervision Financière</div>
+                    <div className="text-[11px] text-[var(--text3)]">Lecture seule & audits</div>
                   </div>
                 </div>
                 <ArrowRight size={14} className="text-[var(--text3)]" />

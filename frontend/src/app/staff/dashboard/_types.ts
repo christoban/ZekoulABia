@@ -7,7 +7,7 @@ export type StaffSection =
   | 'sync-offline'
   | 'mon-profil-rh' | 'apee' | 'notifications' | 'babillard' | 'messagerie' | 'moderation-messagerie'
   | 'classes' | 'eleves-affectations' | 'import-eleves'
-  | 'inscriptions' | 'concours'
+  | 'inscriptions' | 'concours' | 'eleves-familles'
   | 'configuration' | 'rapports'
 
 export interface SessionUser {
@@ -15,6 +15,8 @@ export interface SessionUser {
   role: string
   nomComplet: string
   firstName: string
+  lastName?: string
+  schoolId?: string
   staffTitle?: string
   permissions: string[]
 }
@@ -34,7 +36,7 @@ export const ALL_STAFF_SECTIONS: StaffSection[] = [
   'sync-offline',
   'mon-profil-rh', 'apee', 'notifications', 'babillard', 'messagerie', 'moderation-messagerie',
   'classes', 'eleves-affectations', 'import-eleves',
-  'inscriptions', 'concours',
+  'inscriptions', 'concours', 'eleves-familles',
   'configuration', 'rapports',
 ]
 
@@ -43,6 +45,7 @@ export const PERM_TO_SECTION: { perm: string; section: StaffSection }[] = [
   { perm: 'MANAGE_ENROLLMENT',          section: 'rapports'         },
   { perm: 'MANAGE_ENROLLMENT',          section: 'inscriptions'     },
   { perm: 'MANAGE_ENROLLMENT',          section: 'concours'         },
+  { perm: 'MANAGE_ENROLLMENT',          section: 'eleves-familles'  },
   { perm: 'MANAGE_ENROLLMENT',          section: 'import-eleves'    },
   { perm: 'MANAGE_CLASSES',             section: 'classes'          },
   { perm: 'MANAGE_STUDENT_ASSIGNMENTS', section: 'eleves-affectations' },
