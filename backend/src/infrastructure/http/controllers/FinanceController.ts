@@ -194,17 +194,15 @@ export class FinanceController {
   ) {}
 
   // STAFF doit avoir MANAGE_FINANCE.
-  // ADMIN passe uniquement si adminGereFinances est activé sur l'établissement (délégation comptable/intendant par défaut).
+  // ADMIN est en supervision et lecture seule : toute mutation directe est rejetée avec HTTP 403.
   private async checkFinancePermission(user: any, res: Response): Promise<boolean> {
     const perms: string[] = user.permissions ?? [];
     if (perms.includes('MANAGE_FINANCE')) return true;
 
     if (user.role === 'ADMIN') {
-      const school = await this.schoolRepository.findById(user.schoolId);
-      if (school?.adminGereFinances) return true;
       res.status(403).json({
         success: false,
-        message: 'La gestion financière est déléguée au comptable/intendant',
+        message: 'La gestion financière directe est réservée à l\'Intendant / Économe. La Direction assure la supervision en lecture seule.',
       });
       return false;
     }

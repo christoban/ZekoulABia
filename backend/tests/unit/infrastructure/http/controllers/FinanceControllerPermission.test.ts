@@ -131,30 +131,8 @@ describe('FinanceController — Contrôle des permissions financières', () => {
     expect(creerPlanAppele).toBe(false)
   })
 
-  it('autorise un ADMIN quand adminGereFinances est activé', async () => {
-    const school = creerEcole('school-3', true)
-    schoolRepo.ajouter(school)
-
-    const req: any = {
-      user: {
-        userId: 'admin-1',
-        schoolId: school.id,
-        role: 'ADMIN',
-        permissions: [],
-      },
-      body: { name: 'Frais', amount: 5000, feeType: 'TUITION' },
-    }
-    const res = mockRes()
-    const next = (err: any) => { throw err }
-
-    await controller.creerPlan(req, res, next)
-
-    expect(res.getStatusCode()).toBe(201)
-    expect(creerPlanAppele).toBe(true)
-  })
-
-  it('bloque avec 403 un ADMIN quand adminGereFinances est désactivé (délégation comptable)', async () => {
-    const school = creerEcole('school-4', false)
+  it('bloque avec 403 un ADMIN sur la création de plan de frais (supervision lecture seule)', async () => {
+    const school = creerEcole('school-3')
     schoolRepo.ajouter(school)
 
     const req: any = {
@@ -172,12 +150,12 @@ describe('FinanceController — Contrôle des permissions financières', () => {
     await controller.creerPlan(req, res, next)
 
     expect(res.getStatusCode()).toBe(403)
-    expect(res.getJson()?.message).toContain('déléguée au comptable/intendant')
+    expect(res.getJson()?.message).toContain('réservée à l\'Intendant / Économe')
     expect(creerPlanAppele).toBe(false)
   })
 
-  it('bloque avec 403 un ADMIN sur la création de facture si adminGereFinances est désactivé', async () => {
-    const school = creerEcole('school-5', false)
+  it('bloque avec 403 un ADMIN sur la création de facture (supervision lecture seule)', async () => {
+    const school = creerEcole('school-5')
     schoolRepo.ajouter(school)
 
     const req: any = {
@@ -195,7 +173,7 @@ describe('FinanceController — Contrôle des permissions financières', () => {
     await controller.creerFacture(req, res, next)
 
     expect(res.getStatusCode()).toBe(403)
-    expect(res.getJson()?.message).toContain('déléguée au comptable/intendant')
+    expect(res.getJson()?.message).toContain('réservée à l\'Intendant / Économe')
     expect(genererFactureAppele).toBe(false)
   })
 })
