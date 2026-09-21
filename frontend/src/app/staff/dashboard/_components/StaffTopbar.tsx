@@ -21,6 +21,7 @@ const SECTION_KEY: Record<string, string> = {
   'sync-offline': 'syncOffline',
   'bulletin-validation': 'bulletinValidation',
   'configuration': 'configuration',
+  'eleves-familles': 'elevesFamilles',
 }
 
 interface Props {
