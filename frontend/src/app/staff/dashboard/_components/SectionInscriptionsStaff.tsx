@@ -74,7 +74,8 @@ export default function SectionInscriptionsStaff({ onToast }: Props) {
   const dossiersRenvoyes = dossiers.filter((d) => d.status === 'RETURNED')
 
   return (
-    <div style={{ padding: 24, maxWidth: 1280, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ height: '100%', overflowY: 'auto', width: '100%' }}>
+      <div style={{ padding: 24, maxWidth: 1280, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 80 }}>
       {/* En-tête officiel selon blueprint §3.3 */}
       <div
         style={{
@@ -443,6 +444,7 @@ export default function SectionInscriptionsStaff({ onToast }: Props) {
           }}
         />
       )}
+      </div>
     </div>
   )
 }

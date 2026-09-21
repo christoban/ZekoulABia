@@ -178,7 +178,8 @@ export default function SectionConcoursStaff({ onToast }: Props) {
   }
 
   return (
-    <div style={{ padding: '24px 28px', maxWidth: 1380, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ height: '100%', overflowY: 'auto', width: '100%' }}>
+      <div style={{ padding: '24px 28px', maxWidth: 1380, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 80 }}>
       {/* Sélecteur de concours s'il y a plusieurs sessions */}
       {sessions.length > 1 && (
         <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
@@ -508,6 +509,7 @@ export default function SectionConcoursStaff({ onToast }: Props) {
           onToast={onToast}
         />
       )}
+      </div>
     </div>
   );
 }

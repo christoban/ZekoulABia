@@ -169,7 +169,8 @@ export default function SectionElevesFamillesStaff({ onToast }: Props) {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-4 max-w-7xl mx-auto">
+    <div className="h-full overflow-y-auto w-full">
+      <div className="p-4 md:p-6 space-y-4 max-w-7xl mx-auto pb-20">
       {/* En-tête */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border)]">
         <div>
@@ -436,6 +437,7 @@ export default function SectionElevesFamillesStaff({ onToast }: Props) {
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }

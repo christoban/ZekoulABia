@@ -370,7 +370,7 @@ export default function EnrollmentStepperForm({ onSuccess, onCancel, initialData
   }
 
   return (
-    <div style={{ maxWidth: 1140, margin: '0 auto', display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+    <div style={{ maxWidth: 1140, margin: '0 auto', display: 'flex', gap: 24, alignItems: 'flex-start', paddingBottom: 60 }}>
       {/* Colonne principale (formulaire max 760px) */}
       <div style={{ flex: 1, minWidth: 0, maxWidth: 760, display: 'flex', flexDirection: 'column', gap: 20 }}>
         {/* Barre d'étapes cliquables pour celles déjà validées */}
@@ -529,6 +529,11 @@ export default function EnrollmentStepperForm({ onSuccess, onCancel, initialData
                 marginTop: 24,
                 paddingTop: 16,
                 borderTop: '1px solid var(--border, #e5e7eb)',
+                position: 'sticky',
+                bottom: 0,
+                background: 'var(--surface, #fff)',
+                zIndex: 20,
+                paddingBottom: 12,
               }}
             >
               {etapeActive > 1 ? (
