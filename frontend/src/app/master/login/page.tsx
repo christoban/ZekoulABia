@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { AlertTriangle, CheckCircle2, ArrowLeft, KeyRound, School, BarChart3, Shield, Check, EyeOff, Eye, Clock } from 'lucide-react'
+import PasswordStrengthBar, { getPasswordStrength } from '@/components/PasswordStrengthBar'
 
 // URL relative → proxy Next.js (next.config.ts)
 const API_BASE = ''
@@ -111,6 +112,18 @@ export default function SuperAdminLogin() {
   const [loading3, setLoading3] = useState(false)
   const [alert3, setAlert3] = useState<AlertState | null>(null)
   const totpRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Récupération MDP (miroir user login — OTP email, même flux que /api/v2/users/auth/forgot-password)
+  const [forgotOpen, setForgotOpen] = useState(false)
+  const [forgotStep, setForgotStep] = useState<1 | 2>(1)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotOtp, setForgotOtp] = useState('')
+  const [forgotPwd, setForgotPwd] = useState('')
+  const [forgotConfirm, setForgotConfirm] = useState('')
+  const [showForgotPwd, setShowForgotPwd] = useState(false)
+  const [forgotLoading, setForgotLoading] = useState(false)
+  const [forgotAlert, setForgotAlert] = useState<AlertState | null>(null)
+  const [forgotDone, setForgotDone] = useState(false)
 
   // Stable refs for Enter key handler
   const stepRef = useRef<1 | 2 | 3>(1)
@@ -297,6 +310,42 @@ export default function SuperAdminLogin() {
     }
   }
 
+  const handleForgotSend = async () => {
+    setForgotAlert(null)
+    if (!forgotEmail.trim() || !forgotEmail.includes('@')) { setForgotAlert({ msg: 'Email invalide', type: 'error' }); return }
+    setForgotLoading(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/v2/master/auth/forgot-password`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: forgotEmail.trim().toLowerCase() }),
+      })
+      const data = await res.json()
+      if (!data.success) throw new Error(data.message || 'Erreur')
+      setForgotStep(2)
+      setForgotAlert({ msg: 'Code envoyé à ' + maskEmail(forgotEmail), type: 'success' })
+    } catch (err: any) { setForgotAlert({ msg: err.message, type: 'error' }) }
+    finally { setForgotLoading(false) }
+  }
+
+  const handleForgotConfirm = async () => {
+    setForgotAlert(null)
+    if (!forgotOtp.trim() || forgotOtp.trim().length < 6) { setForgotAlert({ msg: 'Code OTP requis (6 chiffres)', type: 'error' }); return }
+    if (getPasswordStrength(forgotPwd) < 5) { setForgotAlert({ msg: 'Le mot de passe ne respecte pas toutes les règles de sécurité (12c + maj + min + chiffre + spécial)', type: 'error' }); return }
+    if (forgotPwd !== forgotConfirm) { setForgotAlert({ msg: 'Les mots de passe ne correspondent pas', type: 'error' }); return }
+    setForgotLoading(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/v2/master/auth/forgot-password/confirm`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail.trim().toLowerCase(), otp: forgotOtp.trim(), newPassword: forgotPwd }),
+      })
+      const data = await res.json()
+      if (!data.success) throw new Error(data.message || 'Erreur')
+      setForgotDone(true)
+      setForgotAlert({ msg: 'Mot de passe réinitialisé — vous pouvez vous connecter', type: 'success' })
+      setTimeout(() => { setForgotOpen(false); setEmail(forgotEmail.trim().toLowerCase()); setPassword('') }, 1800)
+    } catch (err: any) { setForgotAlert({ msg: err.message, type: 'error' }) }
+    finally { setForgotLoading(false) }
+  }
+
   // Update handler refs each render (after functions are defined)
   handlersRef.current.s1 = handleStep1
   handlersRef.current.s2 = handleStep2
@@ -464,6 +513,13 @@ export default function SuperAdminLogin() {
                     </button>
                   </div>
                 </Field>
+                <button
+                  type="button"
+                  onClick={() => { setForgotOpen(true); setForgotStep(1); setForgotAlert(null); setForgotDone(false); setForgotEmail(email); setForgotOtp(''); setForgotPwd(''); setForgotConfirm('') }}
+                  style={{ fontSize: 12, fontWeight: 700, color: '#059669', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', marginTop: 6, padding: 0 }}
+                >
+                  Mot de passe oublié ?
+                </button>
                 <SubmitBtn loading={loading1} onClick={handleStep1}>Se connecter →</SubmitBtn>
               </div>
             )}
@@ -564,6 +620,59 @@ export default function SuperAdminLogin() {
         </div>
 
       </div>
+
+      {/* ── MODAL RÉCUPÉRATION MDP MASTER (miroir user login) ── */}
+      {forgotOpen && (
+        <div onClick={() => !forgotLoading && setForgotOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: 14, width: 420, maxWidth: '90vw', padding: 24, boxShadow: '0 12px 36px rgba(0,0,0,0.14)' }}>
+            {forgotDone ? (
+              <div style={{ textAlign: 'center', padding: '8px 0' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', color: '#059669', marginBottom: 10 }}><CheckCircle2 size={36} /></div>
+                <div style={{ fontSize: 17, fontWeight: 800, color: '#1a1209', marginBottom: 6 }}>Mot de passe réinitialisé !</div>
+                <div style={{ fontSize: 13, color: '#6b5c45', marginBottom: 16 }}>Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.</div>
+                <button onClick={() => setForgotOpen(false)} style={{ width: '100%', padding: '10px', background: 'linear-gradient(135deg,#059669,#047857)', color: 'white', fontWeight: 800, border: 'none', borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit' }}>Fermer</button>
+              </div>
+            ) : forgotStep === 1 ? (
+              <>
+                <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 800, color: '#1a1209', marginBottom: 6 }}>Mot de passe oublié ?</div>
+                <div style={{ fontSize: 12, color: '#6b5c45', fontWeight: 500, lineHeight: 1.4, marginBottom: 14 }}>Entrez votre email. Un code de vérification vous sera envoyé (valide 15 min).</div>
+                {forgotAlert && <Alert a={forgotAlert} />}
+                <Field label="Email Master">
+                  <input type="email" value={forgotEmail} onChange={e => { setForgotEmail(e.target.value); setForgotAlert(null) }} placeholder="admin@zekoulabia.cm" className="edu-field" style={fieldInputStyle} />
+                </Field>
+                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                  <button onClick={() => setForgotOpen(false)} style={{ flex: 1, padding: '10px', background: 'white', border: '1.5px solid #d4c8b8', borderRadius: 9, fontWeight: 800, color: '#6b5c45', cursor: 'pointer', fontFamily: 'inherit' }}>Annuler</button>
+                  <button onClick={handleForgotSend} disabled={forgotLoading} style={{ flex: 1, padding: '10px', background: 'linear-gradient(135deg,#059669,#047857)', color: 'white', fontWeight: 800, border: 'none', borderRadius: 9, cursor: forgotLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: forgotLoading ? 0.7 : 1 }}>{forgotLoading ? 'Envoi…' : 'Envoyer le code →'}</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <button onClick={() => setForgotStep(1)} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, color: '#a89478', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', marginBottom: 10 }}><ArrowLeft size={13} /> Retour</button>
+                <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 800, color: '#1a1209', marginBottom: 6 }}>Réinitialiser le mot de passe</div>
+                <div style={{ fontSize: 12, color: '#6b5c45', marginBottom: 14 }}>Code envoyé à <span style={{ color: '#059669', fontWeight: 700 }}>{maskEmail(forgotEmail)}</span></div>
+                {forgotAlert && <Alert a={forgotAlert} />}
+                <Field label="Code OTP (6 chiffres)">
+                  <input type="tel" maxLength={6} value={forgotOtp} onChange={e => { setForgotOtp(e.target.value.replace(/\D/g, '')); setForgotAlert(null) }} placeholder="123456" className="edu-field" style={{ ...fieldInputStyle, textAlign: 'center', letterSpacing: 4, fontSize: 18, fontWeight: 900 }} />
+                </Field>
+                <Field label="Nouveau mot de passe (12c + maj + min + chiffre + spécial)">
+                  <div style={{ position: 'relative' }}>
+                    <input type={showForgotPwd ? 'text' : 'password'} value={forgotPwd} onChange={e => { setForgotPwd(e.target.value); setForgotAlert(null) }} placeholder="••••••••••••" className="edu-field" style={fieldInputStyle} />
+                    <button type="button" onClick={() => setShowForgotPwd(s => !s)} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#a89478', cursor: 'pointer', padding: 2 }}>{showForgotPwd ? <EyeOff size={15} /> : <Eye size={15} />}</button>
+                  </div>
+                  {forgotPwd && <PasswordStrengthBar password={forgotPwd} />}
+                </Field>
+                <Field label="Confirmer le mot de passe">
+                  <input type={showForgotPwd ? 'text' : 'password'} value={forgotConfirm} onChange={e => { setForgotConfirm(e.target.value); setForgotAlert(null) }} placeholder="••••••••••••" className="edu-field" style={fieldInputStyle} />
+                </Field>
+                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                  <button onClick={() => setForgotOpen(false)} style={{ flex: 1, padding: '10px', background: 'white', border: '1.5px solid #d4c8b8', borderRadius: 9, fontWeight: 800, color: '#6b5c45', cursor: 'pointer', fontFamily: 'inherit' }}>Annuler</button>
+                  <button onClick={handleForgotConfirm} disabled={forgotLoading} style={{ flex: 1, padding: '10px', background: 'linear-gradient(135deg,#059669,#047857)', color: 'white', fontWeight: 800, border: 'none', borderRadius: 9, cursor: forgotLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: forgotLoading ? 0.7 : 1 }}>{forgotLoading ? '…' : 'Réinitialiser →'}</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </>
   )
 }

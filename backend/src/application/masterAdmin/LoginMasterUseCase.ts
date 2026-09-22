@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import type { MasterUserAuthRepository } from '@domain/ports/repositories/MasterUserAuthRepository';
+import { passwordError } from '../../domain/security/PasswordPolicy';
 
 export interface SendEmailOTP {
   (params: { recipientEmail: string; otp: string }): Promise<void>;
@@ -145,9 +146,8 @@ export class LoginMasterUseCase {
   // Partagé par change-password (authentifié) et forgot-password (publique) :
   // vérifie l'OTP email stocké et applique le nouveau mot de passe.
   private async appliquerNouveauMotDePasse(masterUserId: string, newPassword: string, otp: string): Promise<void> {
-    if (newPassword.length < 12) {
-      throw new Error('Le mot de passe doit contenir au moins 12 caractères');
-    }
+    const pwdErr = passwordError(newPassword);
+    if (pwdErr) throw new Error(pwdErr);
 
     const masterUser = await this.masterUserAuthRepository.findById(masterUserId);
     if (!masterUser) throw new Error('Utilisateur introuvable');

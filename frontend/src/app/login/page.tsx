@@ -527,7 +527,7 @@ export default function LoginPage() {
                 </div>
                 <div style={{ background: 'var(--surface)', border: '1px solid rgba(220,38,38,0.12)', borderRadius: 7, padding: '9px 12px', marginBottom: 12, fontSize: 11, color: 'var(--text2)', lineHeight: 1.4 }}>
                   {t('login.suspended_support')}{' '}
-                  <a href="mailto: support@zekoulabia.cm" style={{ color: 'var(--green)', fontWeight: 700 }}>support@zekoulabia.cm</a>
+                  <a href="mailto: zekoulabia.noreply@gmail.com" style={{ color: 'var(--green)', fontWeight: 700 }}>zekoulabia.noreply@gmail.com</a>
                 </div>
                 <button
                   onClick={() => setSuspended(null)}

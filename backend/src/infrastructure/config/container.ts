@@ -40,6 +40,7 @@ import { PrismaHarmonizedAssessmentSessionRepository } from '@infrastructure/per
 import { PrismaAssessmentParticipationRepository } from '@infrastructure/persistence/prisma/PrismaAssessmentParticipationRepository';
 import { PrismaAnonymatRepository } from '@infrastructure/persistence/prisma/PrismaAnonymatRepository';
 import { PrismaTaskRepository } from '@infrastructure/persistence/prisma/PrismaTaskRepository';
+import { PrismaSchoolActivationRepository } from '@infrastructure/persistence/prisma/PrismaSchoolActivationRepository';
 
 // --- Adapters Audit ---
 import { ActivityLogAdapter } from '@infrastructure/services/audit/ActivityLogAdapter';
@@ -73,6 +74,7 @@ import { TraiterSmsPresenceUseCase } from '@application/attendance/TraiterSmsPre
 // --- Use Cases : School ---
 import { OnboarderEcoleUseCase } from '@application/school/OnboarderEcoleUseCase';
 import { ApprouverEcoleUseCase } from '@application/school/ApprouverEcoleUseCase';
+import { ActiverEtablissementUseCase } from '@application/school/ActiverEtablissementUseCase';
 
 // --- Use Case : Import ---
 import { ImporterUtilisateursUseCase } from '@application/user/ImporterUtilisateursUseCase';
@@ -548,6 +550,8 @@ export function creerContainer() {
   );
 
   // 6. Use Cases — School
+  const schoolActivationRepository = new PrismaSchoolActivationRepository(prisma);
+  const activerEtablissementUseCase = new ActiverEtablissementUseCase(schoolActivationRepository);
   const onboarderEcoleUseCase = new OnboarderEcoleUseCase(
     schoolRepository, userRepository, emailService
   );
@@ -982,6 +986,8 @@ export function creerContainer() {
     school: {
       onboarder: onboarderEcoleUseCase,
       approuver: approuverEcoleUseCase,
+      activer: activerEtablissementUseCase,
+      schoolActivationRepository,
       schoolRepository,
       invitationRepository,
       anneeRepository,

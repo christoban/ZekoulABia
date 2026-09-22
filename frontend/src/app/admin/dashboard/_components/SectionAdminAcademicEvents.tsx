@@ -61,6 +61,19 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
   const [adjustDate, setAdjustDate] = useState('')
   const [closingId, setClosingId] = useState<string | null>(null)
 
+  // Garde préventive : vérifie si une année scolaire courante est configurée
+  const [hasCurrentYear, setHasCurrentYear] = useState<boolean>(true)
+  useEffect(() => {
+    fetchApi('/api/v2/academic-years', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && Array.isArray(d.data)) {
+          setHasCurrentYear(d.data.some((y: any) => y.isCurrent === true))
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   const fetchEvents = useCallback(async () => {
     try {
       setLoading(true)
@@ -181,6 +194,19 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
           <Plus size={14} strokeWidth={2.5} /> {t('academicEvents.newEvent')}
         </button>
       </div>
+
+      {/* Avertissement : aucune année scolaire courante */}
+      {!hasCurrentYear && (
+        <div className="mb-3 p-2.5 md:p-3 rounded-lg border border-amber-500/40 bg-amber-500/8 text-xs flex items-start gap-2.5" style={{ color: 'var(--amber, #d97706)' }}>
+          <AlertTriangle size={15} className="flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-bold text-[11.5px] md:text-xs">Aucune année scolaire courante configurée</p>
+            <p className="text-[10.5px] md:text-[11px] mt-0.5" style={{ color: 'var(--text2)' }}>
+              La création d'un concours d'entrée requiert une année scolaire active. Configurez-en une depuis la section <strong>Année scolaire</strong> du tableau de bord.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Explicative Banner */}
       <div className="mb-3.5 p-2.5 md:p-3 rounded-lg border border-purple-500/20 bg-purple-500/5 text-xs text-[var(--text)] flex items-center justify-between gap-2.5 shadow-xs">

@@ -317,6 +317,7 @@ export default function OnboardingPage() {
   const [errorMsg, setErrorMsg]     = useState('')
   const [step, setStep]             = useState<Step>(1)
   const [done, setDone]             = useState(false)
+  const [createdStats, setCreatedStats] = useState<{ classCount?: number; subjectCount?: number; academicYear?: string } | null>(null)
   const [submitLoading, setSubmitLoading] = useState(false)
   const [submitError, setSubmitError]     = useState('')
   const [stepError, setStepError]         = useState('')
@@ -745,6 +746,10 @@ export default function OnboardingPage() {
       }
       const responseMessage = 'message' in data && typeof data.message === 'string' ? data.message : 'Erreur lors de la soumission.'
       if (data.success !== true) throw new Error(responseMessage)
+      if ('data' in data && typeof data.data === 'object' && data.data !== null) {
+        const d = data.data as { classCount?: number; subjectCount?: number; academicYear?: string }
+        setCreatedStats({ classCount: d.classCount, subjectCount: d.subjectCount, academicYear: d.academicYear })
+      }
       setDone(true)
     } catch (e: unknown) {
       clearTimeout(timeout)
@@ -906,13 +911,56 @@ export default function OnboardingPage() {
         <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 30, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>
           {t('phase1.done.title')}
         </div>
-        <div style={{ padding: '16px 20px', background: 'var(--green-light)', border: '1.5px solid rgba(5,150,105,0.2)', borderRadius: 12, marginBottom: 24, fontSize: 15, fontWeight: 600, color: 'var(--green)', lineHeight: 1.8, display: 'flex', alignItems: 'flex-start', gap: 6, textAlign: 'left' }}>
+        <div style={{ padding: '16px 20px', background: 'var(--green-light)', border: '1.5px solid rgba(5,150,105,0.2)', borderRadius: 12, marginBottom: 20, fontSize: 15, fontWeight: 600, color: 'var(--green)', lineHeight: 1.8, display: 'flex', alignItems: 'flex-start', gap: 6, textAlign: 'left' }}>
           <CheckCircle2 size={17} strokeWidth={2} style={{ flexShrink: 0, marginTop: 2 }} /><span><strong>{form.nom}</strong> {t('phase1.done.pendingMsg')}<br />
           {t('phase1.done.emailNotice')} <strong>{form.adminEmail}</strong> {t('phase1.done.emailDelay')}</span>
         </div>
-        <p style={{ fontSize: 15, color: 'var(--text2)', lineHeight: 1.7 }}>
+
+        {createdStats && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 10, marginBottom: 20 }}>
+            {createdStats.academicYear && (
+              <div style={{ padding: '8px 14px', borderRadius: 8, background: 'var(--card-bg, #f3f4f6)', border: '1px solid var(--border)', fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+                📅 {t('phase1.done.statsYear')} : <strong>{createdStats.academicYear}</strong>
+              </div>
+            )}
+            {typeof createdStats.classCount === 'number' && (
+              <div style={{ padding: '8px 14px', borderRadius: 8, background: 'var(--card-bg, #f3f4f6)', border: '1px solid var(--border)', fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+                🏫 <strong>{createdStats.classCount}</strong> {t('phase1.done.statsClasses')}
+              </div>
+            )}
+            {typeof createdStats.subjectCount === 'number' && (
+              <div style={{ padding: '8px 14px', borderRadius: 8, background: 'var(--card-bg, #f3f4f6)', border: '1px solid var(--border)', fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+                📚 <strong>{createdStats.subjectCount}</strong> {t('phase1.done.statsSubjects')}
+              </div>
+            )}
+          </div>
+        )}
+
+        <p style={{ fontSize: 15, color: 'var(--text2)', lineHeight: 1.7, marginBottom: 28 }}>
           {t('phase1.done.loginHint')}
         </p>
+
+        <div>
+          <a
+            href="/login"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              padding: '14px 32px',
+              background: 'linear-gradient(135deg, var(--green), #047857)',
+              color: 'white',
+              borderRadius: 10,
+              fontWeight: 700,
+              fontSize: 16,
+              textDecoration: 'none',
+              boxShadow: '0 4px 12px rgba(5,150,105,0.25)',
+            }}
+          >
+            {t('phase1.done.loginCta')} →
+          </a>
+        </div>
       </div>
     )
   } else {
@@ -1050,7 +1098,7 @@ export default function OnboardingPage() {
                 <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--green2)' }}>
                   {templateDisplayName(template, currentLang === 'en' ? 'en' : 'fr')}
                 </div>
-
+                
                 {/* Discriminating question: CES_FR vs LYCEE_FR */}
                 {form.subsystem === 'FRANCOPHONE' && form.educationType === 'GENERAL' && form.ownership === 'PUBLIC' && (
                   <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(5,150,105,0.15)' }}>

@@ -38,8 +38,32 @@ async function bootstrapMaster() {
     process.exit(1);
   }
 
-  // Mot de passe : variable d'env, sinon génération aléatoire affichée une seule fois.
-  const password = process.env.MASTER_BOOTSTRAP_PASSWORD?.trim() || crypto.randomBytes(18).toString("base64url");
+  // Mot de passe : même rigueur que les users (PasswordPolicy: 12 chars + maj + min + chiffre + spécial)
+  const rawEnvPwd = process.env.MASTER_BOOTSTRAP_PASSWORD?.trim();
+  if (rawEnvPwd) {
+    const err = (() => {
+      const rules = [
+        { test: (p: string) => p.length >= 12, msg: 'Au moins 12 caractères' },
+        { test: (p: string) => /[A-Z]/.test(p), msg: 'Au moins une lettre majuscule' },
+        { test: (p: string) => /[a-z]/.test(p), msg: 'Au moins une lettre minuscule' },
+        { test: (p: string) => /[0-9]/.test(p), msg: 'Au moins un chiffre' },
+        { test: (p: string) => /[@$!%*?&#^()_+=.\-]/.test(p), msg: 'Au moins un caractère spécial (@$!%*?&#^()_+=.-)' },
+      ];
+      const errs = rules.filter(r => !r.test(rawEnvPwd)).map(r => r.msg);
+      return errs.length ? errs.join(' · ') : null;
+    })();
+    if (err) throw new Error(`MASTER_BOOTSTRAP_PASSWORD invalide: ${err}`);
+  }
+  function genererMotDePasseConforme(): string {
+    const up = 'ABCDEFGHJKLMNPQRSTUVWXYZ', low = 'abcdefghijkmnpqrstuvwxyz', nums = '23456789', specs = '@$!%*?&#';
+    const all = up + low + nums + specs;
+    const pick = (s: string) => s[crypto.randomInt(s.length)];
+    const arr = [pick(up), pick(low), pick(nums), pick(specs)];
+    for (let i = 4; i < 16; i++) arr.push(pick(all));
+    for (let i = arr.length - 1; i > 0; i--) { const j = crypto.randomInt(i + 1); [arr[i], arr[j]] = [arr[j], arr[i]]; }
+    return arr.join('');
+  }
+  const password = rawEnvPwd || genererMotDePasseConforme();
   const passwordHash = await bcrypt.hash(password, 12);
 
   const master = await prisma.masterUser.create({
