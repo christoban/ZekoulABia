@@ -1,4 +1,4 @@
-export type CredentialsChannel = 'EMAIL' | 'SMS' | 'PHYSICAL';
+export type CredentialsChannel = 'EMAIL' | 'SMS' | 'PHYSICAL' | 'TERMINAL';
 
 export interface CredentialsNotificationPort {
   sendCredentials(params: {

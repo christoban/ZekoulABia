@@ -10,8 +10,19 @@ function choisir(caracteres: string): string {
   return caracteres[randomInt(caracteres.length)] ?? caracteres[0];
 }
 
-/** Génère un mot de passe temporaire lisible et composé de quatre catégories de caractères. */
+const DEV_DEFAULT_PASSWORD = 'Menedona@2005';
+
+function isDevMode(): boolean {
+  return process.env.NODE_ENV === 'development';
+}
+
+/** Génère un mot de passe temporaire lisible et composé de quatre catégories de caractères.
+ *  En mode développement, retourne un mot de passe par défaut connu pour faciliter les tests. */
 export function generateTemporaryPassword(length = 10): string {
+  if (isDevMode()) {
+    return DEV_DEFAULT_PASSWORD;
+  }
+
   if (!Number.isInteger(length) || length < 4) {
     throw new Error('La longueur du mot de passe temporaire doit être au moins de 4 caractères');
   }
