@@ -57,7 +57,7 @@ export interface ConnecterUtilisateurResultat {
   refreshToken: string;
   mustChangePassword: boolean;
   roleMismatch?: boolean;
-  redirectTo?: string; // présent si l'école était APPROVED → '/admin/configuration'
+  redirectTo?: string; // présent si ADMIN sur une école APPROVED → '/admin/configuration'
 }
 
 export class ConnecterUtilisateurUseCase {
@@ -169,14 +169,10 @@ export class ConnecterUtilisateurUseCase {
       throw new Error("Cet établissement n'est pas encore actif.");
     }
 
-    // 3bis. Premier login Admin sur une école APPROVED → auto-activation (décrit dans le
-    // commentaire de classe mais jamais réellement persisté jusqu'ici : School.activer() existe
-    // sur l'entité, mais rien n'appelait schoolRepository.update() pour le faire).
-    const ecoleVientDetreActivee = user.estAdmin() && school.status === 'APPROVED';
-    if (ecoleVientDetreActivee) {
-      school.activer();
-      await this.schoolRepository.update(school);
-    }
+    // 3bis. Admin sur une école APPROVED → on garde la redirection vers la configuration,
+    // mais on ne fait PAS le passage à ACTIVE (celui-ci est réservé à ConfigurerEtablissementUseCase
+    // → ActiverEtablissementUseCase après la Phase 2 d'onboarding).
+    const adminSurEcoleApprouvee = user.estAdmin() && school.status === 'APPROVED';
 
     // 4. Enregistrer le dernier login
     user.enregistrerConnexion();
@@ -201,9 +197,8 @@ export class ConnecterUtilisateurUseCase {
       refreshToken: tokens.refreshToken,
       mustChangePassword: user.mustChangePassword,
       roleMismatch,
-      // Indique au frontend où rediriger : ADMIN sur école qui vient d'être auto-activée →
-      // configuration (school.status vaut déjà 'ACTIVE' à ce stade, d'où le flag capturé plus haut).
-      redirectTo: ecoleVientDetreActivee ? '/admin/configuration' : undefined,
+      // Indique au frontend où rediriger : ADMIN sur école APPROVED → configuration.
+      redirectTo: adminSurEcoleApprouvee ? '/admin/configuration' : undefined,
     };
   }
 }

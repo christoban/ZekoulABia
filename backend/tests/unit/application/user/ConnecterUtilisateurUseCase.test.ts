@@ -122,7 +122,7 @@ describe('ConnecterUtilisateurUseCase', () => {
     })).rejects.toThrow('incorrect');
   });
 
-  it('devrait auto-activer une école APPROVED lors du premier login Admin', async () => {
+  it('ne doit PAS activer une école APPROVED au login Admin (redirection vers configuration uniquement)', async () => {
     const ecoleApproved = School.reconstituer({
       ...ecoleActive.toObject(),
       id: 'school-approved',
@@ -139,14 +139,37 @@ describe('ConnecterUtilisateurUseCase', () => {
     });
     userRepo.ajouter(admin);
 
-    await useCase.execute({
+    const resultat = await useCase.execute({
       email: 'admin@test.cm',
       plainPassword: 'motdepasse',
       schoolId: 'school-approved',
     });
 
     const ecoleApresLogin = await schoolRepo.findById('school-approved');
+    expect(ecoleApresLogin?.status).toBe('APPROVED');
+    expect(resultat.redirectTo).toBe('/admin/configuration');
+  });
+
+  it('devrait connecter un Admin sur une école ACTIVE sans changer le statut', async () => {
+    const admin = User.reconstituer({
+      ...enseignant.toObject(),
+      id: 'admin-active',
+      email: 'admin.active@test.cm',
+      role: 'ADMIN',
+      schoolId: 'school-1',
+    });
+    userRepo.ajouter(admin);
+
+    const resultat = await useCase.execute({
+      email: 'admin.active@test.cm',
+      plainPassword: 'motdepasse',
+      schoolId: 'school-1',
+    });
+
+    const ecoleApresLogin = await schoolRepo.findById('school-1');
     expect(ecoleApresLogin?.status).toBe('ACTIVE');
+    expect(resultat.userId).toBe('admin-active');
+    expect(resultat.redirectTo).toBeUndefined();
   });
 
   it('devrait enregistrer le lastLogin', async () => {
