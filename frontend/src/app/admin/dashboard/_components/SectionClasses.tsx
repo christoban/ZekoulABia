@@ -26,7 +26,18 @@ interface SchoolInfo {
   hasPEBSAnglophone: boolean
 }
 
-interface Teacher { id: string; firstName: string; lastName: string }
+interface Teacher { id: string; name: string }
+interface TeachingAssignmentRow { currentTeacherId?: string | null; currentTeacherName?: string | null }
+
+export function extractAssignedTeachers(rows: TeachingAssignmentRow[]): Teacher[] {
+  const teachers = new Map<string, Teacher>()
+  for (const row of rows) {
+    if (row.currentTeacherId && row.currentTeacherName) {
+      teachers.set(row.currentTeacherId, { id: row.currentTeacherId, name: row.currentTeacherName })
+    }
+  }
+  return [...teachers.values()]
+}
 interface SubGroup { id: string; name: string }
 interface StudentItem { id: string; firstName: string; lastName: string; studentProfile?: { id: string } | null }
 interface SubjectItem { id: string; name: string }
@@ -216,12 +227,15 @@ export default function SectionClasses({ onToast, onNav }: Props) {
 
   // ── Assigner PP ───────────────────────────────────────────────────────────
   const openPP = async (cls: ClassItem) => {
-    setPPForm({ open: true, classId: cls.id, className: cls.name, teacherSearch: '', teachers: [], selected: null, loading: false, error: '' })
+    setPPForm({ open: true, classId: cls.id, className: cls.name, teacherSearch: '', teachers: [], selected: null, loading: true, error: '' })
     try {
-      const res = await fetchApi('/api/v2/users?role=TEACHER&limit=100', { credentials: 'include' })
+      const res = await fetchApi(`/api/v2/teaching-assignments?classId=${encodeURIComponent(cls.id)}`, { credentials: 'include' })
       const data = await res.json()
-      if (res.ok) setPPForm(f => ({ ...f, teachers: data.data || [] }))
-    } catch { /* silencieux */ }
+      if (!res.ok) throw new Error(data.message || t('classes.error.load'))
+      setPPForm(f => ({ ...f, teachers: extractAssignedTeachers(data.data || []), loading: false }))
+    } catch (err) {
+      setPPForm(f => ({ ...f, loading: false, error: err instanceof Error ? err.message : t('classes.error.load') }))
+    }
   }
 
   const submitPP = async () => {
@@ -235,7 +249,7 @@ export default function SectionClasses({ onToast, onNav }: Props) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || t('classes.error.load'))
-      onToast(t('classes.toast.pp_assigned').replace('{name}', `${ppForm.selected.firstName} ${ppForm.selected.lastName}`), 'success')
+      onToast(t('classes.toast.pp_assigned').replace('{name}', ppForm.selected.name), 'success')
       setPPForm(EMPTY_PP); fetchClasses()
     } catch (err) {
       setPPForm(f => ({ ...f, error: err instanceof Error ? err.message : t('classes.error.load'), loading: false }))
@@ -254,7 +268,7 @@ export default function SectionClasses({ onToast, onNav }: Props) {
   }
 
   const filteredTeachers = ppForm.teacherSearch
-    ? ppForm.teachers.filter(t => `${t.firstName} ${t.lastName}`.toLowerCase().includes(ppForm.teacherSearch.toLowerCase()))
+    ? ppForm.teachers.filter(t => t.name.toLowerCase().includes(ppForm.teacherSearch.toLowerCase()))
     : ppForm.teachers
 
   // ── ACTION 1 — Supprimer une classe ───────────────────────────────────────
@@ -887,35 +901,45 @@ export default function SectionClasses({ onToast, onNav }: Props) {
         <ModalOverlay onClose={() => setPPForm(EMPTY_PP)}>
           <div className={sModalTitleCls} style={sModalTitle}>{t('classes.pp_modal.title')}</div>
           <div style={{ fontSize: 15, color: 'var(--text3)', marginBottom: 18 }}>{t('classes.pp_modal.class_name').replace('{name}', ppForm.className)}</div>
-          <div className={sLabelCls} style={sLabel}>{t('classes.pp_modal.search_label')}</div>
-          <input className={sInputCls} style={sInput} placeholder={t('classes.pp_modal.search_placeholder')} value={ppForm.teacherSearch}
-            onChange={e => setPPForm(f => ({ ...f, teacherSearch: e.target.value, selected: null }))} />
-          {ppForm.selected && (
-            <div style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '8px 14px', borderRadius: 8, marginBottom: 12, fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Check size={14} /> {ppForm.selected.firstName} {ppForm.selected.lastName}
-            </div>
-          )}
-          {!ppForm.selected && (
-            <div style={{ border: '1.5px solid var(--border)', borderRadius: 10, maxHeight: 200, overflowY: 'auto', marginBottom: 12 }}>
-              {filteredTeachers.length === 0 ? (
-                <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text3)', fontSize: 14 }}>{t('classes.pp_modal.no_teacher')}</div>
-              ) : filteredTeachers.map(t => (
-                <div key={t.id}
-                  onClick={() => setPPForm(f => ({ ...f, selected: t, teacherSearch: `${t.firstName} ${t.lastName}` }))}
-                  style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 14, borderBottom: '1px solid var(--bg2)', color: 'var(--text)' }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
-                  {t.firstName} {t.lastName}
-                </div>
-              ))}
-            </div>
-          )}
-          {ppForm.error && <div style={sError}>{ppForm.error}</div>}
+           {ppForm.loading ? (
+             <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text3)', fontSize: 14 }}>{t('classes.pp_modal.loading')}</div>
+           ) : ppForm.teachers.length === 0 ? (
+             <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text3)', fontSize: 14 }}>{ppForm.error || t('classes.pp_modal.no_assignment')}</div>
+           ) : (
+             <>
+               <div className={sLabelCls} style={sLabel}>{t('classes.pp_modal.search_label')}</div>
+               <input className={sInputCls} style={sInput} placeholder={t('classes.pp_modal.search_placeholder')} value={ppForm.teacherSearch}
+                 onChange={e => setPPForm(f => ({ ...f, teacherSearch: e.target.value, selected: null }))} />
+               {ppForm.selected && (
+                 <div style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '8px 14px', borderRadius: 8, marginBottom: 12, fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                   <Check size={14} /> {ppForm.selected.name}
+                 </div>
+               )}
+               {!ppForm.selected && (
+                 <div style={{ border: '1.5px solid var(--border)', borderRadius: 10, maxHeight: 200, overflowY: 'auto', marginBottom: 12 }}>
+                   {filteredTeachers.length === 0 ? (
+                     <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text3)', fontSize: 14 }}>{t('classes.pp_modal.no_teacher')}</div>
+                   ) : filteredTeachers.map(t => (
+                     <div key={t.id}
+                       onClick={() => setPPForm(f => ({ ...f, selected: t, teacherSearch: t.name }))}
+                       style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 14, borderBottom: '1px solid var(--bg2)', color: 'var(--text)' }}
+                       onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
+                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
+                       {t.name}
+                     </div>
+                   ))}
+                 </div>
+               )}
+               {ppForm.error && <div style={sError}>{ppForm.error}</div>}
+             </>
+           )}
           <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
             <button style={{ ...btnSec2, flex: 1 }} onClick={() => setPPForm(EMPTY_PP)}>{t('classes.pp_modal.btn_cancel')}</button>
-            <button style={{ ...btnPrim, flex: 1, opacity: ppForm.loading ? 0.7 : 1 }} onClick={submitPP} disabled={ppForm.loading}>
-              {ppForm.loading ? t('classes.pp_modal.assigning') : t('classes.pp_modal.btn_assign')}
-            </button>
+            {ppForm.teachers.length > 0 && (
+              <button style={{ ...btnPrim, flex: 1, opacity: ppForm.loading ? 0.7 : 1 }} onClick={submitPP} disabled={ppForm.loading}>
+                {ppForm.loading ? t('classes.pp_modal.assigning') : t('classes.pp_modal.btn_assign')}
+              </button>
+            )}
           </div>
         </ModalOverlay>
       )}
