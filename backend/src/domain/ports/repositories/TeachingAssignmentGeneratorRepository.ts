@@ -50,4 +50,10 @@ export interface TeachingAssignmentGeneratorRepository {
   ): Promise<DonneesGenerationAffectations>;
 
   createAssignmentsInTransaction(assignments: AssignmentACreerPayload[]): Promise<number>;
+
+  /**
+   * Synchronise le StudentGroupSet "LV2" et les groupes/memberships à partir des choix
+   * d'LV2 des élèves inscrits. Idempotent.
+   */
+  syncLv2Groups(schoolId: string, academicYearId: string): Promise<void>;
 }

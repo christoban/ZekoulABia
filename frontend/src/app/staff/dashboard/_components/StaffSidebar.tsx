@@ -47,7 +47,7 @@ interface Props {
 
 const BADGE_STYLES = {
   red:   'bg-red-500/25 text-red-300',
-  green: 'bg-green-500/20 text-green-300',
+  green: 'bg-success/20 text-success',
   amber: 'bg-amber-500/20 text-amber-300',
 }
 
@@ -353,7 +353,7 @@ export default function StaffSidebar({
       {/* User — desktop uniquement (comme AdminSidebar) */}
       <div className="hidden md:block border-t border-white/[0.07]" style={{ padding: '9px 12px', flexShrink: 0 }}>
         <div className="flex items-center gap-2.5 rounded-[8px] hover:bg-white/[0.06]" style={{ padding: '6px 8px' }}>
-          <div className="w-7 h-7 rounded-[6px] bg-gradient-to-br from-[var(--teal)] to-[var(--green)] flex items-center justify-center text-white font-black text-[11px] flex-shrink-0">
+          <div className="w-7 h-7 rounded-[6px] bg-gradient-to-br from-[var(--primary)] to-[var(--green)] flex items-center justify-center text-white font-black text-[11px] flex-shrink-0">
             {initials}
           </div>
           <div className="min-w-0 flex-1">

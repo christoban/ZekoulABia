@@ -11,6 +11,9 @@ import type {
   MatiereCandidateGeneration,
 } from '@domain/ports/repositories/TeachingAssignmentGeneratorRepository';
 
+const LV2_GROUPSET_CODE = 'LV2';
+const LV2_GENERIC_SUBJECT_NAME = 'LV2';
+
 const AP_PERMISSIONS = new Set(['SUPERVISE_TEACHERS', 'SUPERVISE_DEPARTMENT_TEACHERS']);
 
 function resoudreSerie(cls: ClassePourGeneration): string | null {
@@ -89,6 +92,77 @@ export class PrismaTeachingAssignmentGeneratorRepository implements TeachingAssi
       }
     }
 
+    // ── Candidats LV2 : un couple (classe, langue) dès qu'au moins un élève inscrit l'a choisi ──
+    const [school, lv2Subjects] = await Promise.all([
+      this.prisma.school.findUnique({ where: { id: schoolId }, select: { templateCode: true } }),
+      this.prisma.subject.findMany({
+        where: { schoolId, isLV2: true, deletedAt: null },
+        select: { id: true, name: true, hoursPerWeek: true },
+      }),
+    ]);
+
+    if (lv2Subjects.length > 0 && classes.length > 0) {
+      const lv2SubjectById = new Map(lv2Subjects.map((s) => [s.id, s]));
+      const classIds = classes.map((c) => c.id);
+      const lv2Enrollments = await this.prisma.enrollment.findMany({
+        where: {
+          schoolId,
+          academicYearId,
+          classId: { in: classIds },
+          status: 'ACTIVE',
+          student: { lv2SubjectId: { not: null } },
+        },
+        select: {
+          classId: true,
+          student: { select: { lv2SubjectId: true } },
+        },
+      });
+
+      const lv2ChoicesByClass = new Map<string, Map<string, number>>();
+      for (const e of lv2Enrollments) {
+        const subjectId = e.student.lv2SubjectId!;
+        const bySubject = lv2ChoicesByClass.get(e.classId) ?? new Map<string, number>();
+        bySubject.set(subjectId, (bySubject.get(subjectId) ?? 0) + 1);
+        lv2ChoicesByClass.set(e.classId, bySubject);
+      }
+
+      const lv2HoursByClass = new Map<string, number | null>();
+      for (const cls of classes) {
+        const serie = resoudreSerie(cls) ?? cls.filiere ?? 'FR_GENERAL';
+        const cc = school?.templateCode
+          ? await this.prisma.cycleCoefficient.findFirst({
+              where: {
+                templateCode: school.templateCode,
+                classLevel: cls.level,
+                filiere: serie,
+                subjectName: LV2_GENERIC_SUBJECT_NAME,
+              },
+              select: { weeklyPeriods: true },
+            })
+          : null;
+        lv2HoursByClass.set(cls.id, cc?.weeklyPeriods ?? null);
+      }
+
+      for (const cls of classes) {
+        const bySubject = lv2ChoicesByClass.get(cls.id);
+        if (!bySubject) continue;
+        const genericHours = lv2HoursByClass.get(cls.id);
+        for (const [subjectId, count] of bySubject.entries()) {
+          if (count === 0) continue;
+          const subject = lv2SubjectById.get(subjectId);
+          if (!subject) continue;
+          matieres.push({
+            classId: cls.id,
+            className: cls.name,
+            subjectId,
+            subjectName: subject.name,
+            weeklyPeriods: genericHours ?? subject.hoursPerWeek ?? 2,
+          });
+          candidateSubjectIds.add(subjectId);
+        }
+      }
+    }
+
     const enseignants: DonneesGenerationAffectations['enseignants'] = [];
     if (candidateSubjectIds.size > 0) {
       const teacherSubjects = await this.prisma.teacherSubject.findMany({
@@ -142,5 +216,72 @@ export class PrismaTeachingAssignmentGeneratorRepository implements TeachingAssi
       tx.teachingAssignment.createMany({ data: assignments }),
     );
     return result.count;
+  }
+
+  async syncLv2Groups(schoolId: string, academicYearId: string): Promise<void> {
+    const lv2Subjects = await this.prisma.subject.findMany({
+      where: { schoolId, isLV2: true, deletedAt: null },
+      select: { id: true, name: true },
+    });
+    if (lv2Subjects.length === 0) return;
+
+    await this.prisma.$transaction(async (tx) => {
+      const groupSet = await tx.studentGroupSet.upsert({
+        where: { schoolId_code: { schoolId, code: LV2_GROUPSET_CODE } },
+        create: { schoolId, code: LV2_GROUPSET_CODE, name: 'Langues vivantes 2' },
+        update: {},
+      });
+
+      const existingGroups = await tx.studentGroup.findMany({
+        where: { groupSetId: groupSet.id },
+        select: { id: true, subjectId: true },
+      });
+      const groupIdBySubjectId = new Map<string, string>();
+      for (const g of existingGroups) {
+        if (g.subjectId) groupIdBySubjectId.set(g.subjectId, g.id);
+      }
+
+      for (const subject of lv2Subjects) {
+        if (!groupIdBySubjectId.has(subject.id)) {
+          const created = await tx.studentGroup.create({
+            data: { groupSetId: groupSet.id, name: subject.name, subjectId: subject.id },
+          });
+          groupIdBySubjectId.set(subject.id, created.id);
+        }
+      }
+
+      const enrollments = await tx.enrollment.findMany({
+        where: {
+          schoolId,
+          academicYearId,
+          status: 'ACTIVE',
+          student: { lv2SubjectId: { not: null } },
+        },
+        select: { studentId: true, student: { select: { lv2SubjectId: true } } },
+      });
+
+      await tx.studentGroupMembership.deleteMany({
+        where: { groupSetId: groupSet.id, academicYearId },
+      });
+
+      const memberships = enrollments
+        .map((e) => {
+          const groupId = e.student.lv2SubjectId
+            ? groupIdBySubjectId.get(e.student.lv2SubjectId)
+            : undefined;
+          if (!groupId) return null;
+          return {
+            studentProfileId: e.studentId,
+            groupId,
+            groupSetId: groupSet.id,
+            academicYearId,
+          };
+        })
+        .filter((m): m is NonNullable<typeof m> => m !== null);
+
+      if (memberships.length > 0) {
+        await tx.studentGroupMembership.createMany({ data: memberships });
+      }
+    });
   }
 }

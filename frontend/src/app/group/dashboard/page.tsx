@@ -59,8 +59,8 @@ export default function GroupDashboardPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f7f3ee', fontFamily: 'var(--font-nunito),Nunito,sans-serif' }}>
-        <div style={{ width: 32, height: 32, border: '3px solid #d4c8b8', borderTopColor: '#059669', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', fontFamily: 'var(--font-nunito),Nunito,sans-serif' }}>
+        <div style={{ width: 32, height: 32, border: '3px solid #d4c8b8', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     )
@@ -69,7 +69,7 @@ export default function GroupDashboardPage() {
   if (!owner) return null
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f7f3ee', fontFamily: 'var(--font-nunito),Nunito,sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-nunito),Nunito,sans-serif' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 32px', background: 'white', borderBottom: '1px solid #e5decf' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg,#f59e0b,#22c55e)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -92,7 +92,7 @@ export default function GroupDashboardPage() {
               style={{
                 padding: '10px 18px', border: 'none', borderRadius: '10px 10px 0 0', cursor: 'pointer', fontFamily: 'inherit',
                 fontWeight: 700, fontSize: 14, background: tab === t ? 'white' : 'transparent',
-                color: tab === t ? '#059669' : '#6b5c45',
+                color: tab === t ? 'var(--primary)' : '#6b5c45',
               }}>
               {t === 'overview' ? "Vue d'ensemble" : 'Transferts'}
             </button>

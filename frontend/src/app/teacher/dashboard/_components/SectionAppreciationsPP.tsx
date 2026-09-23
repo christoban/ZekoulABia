@@ -315,7 +315,7 @@ export default function SectionAppreciationsPP({ user: _user, classeId }: Props)
               onClick={handleSubmit}
               disabled={submitting || !isOnline}
               style={{ padding: '6px 14px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, cursor: submitting || !isOnline ? 'not-allowed' : 'pointer', border: 'none', fontFamily: 'inherit',
-                background: submitting ? 'var(--border)' : 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', display: 'inline-flex', alignItems: 'center', gap: 6, opacity: !isOnline ? 0.5 : 1 }}>
+                background: submitting ? 'var(--border)' : 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', display: 'inline-flex', alignItems: 'center', gap: 6, opacity: !isOnline ? 0.5 : 1 }}>
               {submitting ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : <Send size={13} strokeWidth={2} />}
               {submitting ? 'Envoi…' : 'Soumettre au censeur'}
             </button>

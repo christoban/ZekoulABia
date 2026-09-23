@@ -45,7 +45,7 @@ const STATUS_COLOR: Record<string, { bg: string; color: string }> = {
 const CATEGORY_COLOR: Record<string, { bg: string; color: string }> = {
   FIXED_DATE: { bg: 'var(--purple-light)', color: 'var(--purple)' },
   MANUAL_TRIGGER: { bg: 'var(--amber-light)', color: 'var(--amber)' },
-  SLIDING_WINDOW: { bg: 'var(--teal-light)', color: 'var(--teal)' },
+  SLIDING_WINDOW: { bg: 'var(--primary-light)', color: 'var(--primary)' },
 }
 
 export default function SectionAdminAcademicEvents({ onToast }: Props) {
@@ -346,10 +346,10 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
               </div>
 
               {/* Suggestion 3: Rentrée */}
-              <div className="p-3.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 flex flex-col justify-between gap-3">
+              <div className="p-3.5 rounded-xl border border-success/20 bg-success/5 flex flex-col justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2 mb-1.5">
-                    <div className="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-600">
+                    <div className="p-1.5 rounded-lg bg-success/15 text-success">
                       <School size={16} />
                     </div>
                     <span className="font-bold text-xs text-[var(--text)]">
@@ -362,7 +362,7 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
                 </div>
                 <button
                   onClick={() => openNewEventModal('RENTREE_6E_5E')}
-                  className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                  className="px-3 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
                 >
                   {t('academicEvents.planAction')} <ArrowRight size={13} />
                 </button>
@@ -515,7 +515,7 @@ const btnPrim: React.CSSProperties = {
   borderRadius: 8,
   fontSize: 12.5,
   fontWeight: 700,
-  background: 'linear-gradient(135deg,var(--green),var(--green2))',
+  background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))',
   color: 'white',
   border: 'none',
   cursor: 'pointer',

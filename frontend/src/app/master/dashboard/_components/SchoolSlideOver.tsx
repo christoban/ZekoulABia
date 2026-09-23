@@ -51,7 +51,7 @@ export default function SchoolSlideOver({ open, schoolDetail, loading, onClose, 
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                 <div style={{
                   width: 38, height: 38, borderRadius: 10,
-                  background: 'linear-gradient(135deg,#059669,#1d4ed8)',
+                  background: 'linear-gradient(135deg,var(--primary),var(--blue))',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: 'white', fontWeight: 800, fontSize: 15, flexShrink: 0
                 }}>{initials(schoolDetail.name)}</div>
@@ -73,7 +73,7 @@ export default function SchoolSlideOver({ open, schoolDetail, loading, onClose, 
             </div>
 
             {/* Stats */}
-            <div style={{ padding: '12px 20px', background: '#f7f3ee', borderBottom: '1px solid #e8e0d4', display: 'flex', gap: 10, flexShrink: 0 }}>
+            <div style={{ padding: '12px 20px', background: 'var(--bg)', borderBottom: '1px solid #e8e0d4', display: 'flex', gap: 10, flexShrink: 0 }}>
               {([
                 { icon: Users, val: String(schoolDetail._count?.users ?? 0), label: 'Utilisateurs' },
                 { icon: BookOpen, val: String(schoolDetail._count?.classes ?? 0), label: 'Classes' },
@@ -81,7 +81,7 @@ export default function SchoolSlideOver({ open, schoolDetail, loading, onClose, 
                 { icon: Wallet, val: String(schoolDetail._count?.feePlans ?? 0), label: 'Frais' },
               ] as { icon: LucideIcon; val: string; label: string }[]).map((s, i) => (
                 <div key={i} style={{ flex: 1, background: 'white', borderRadius: 8, padding: '10px 8px', textAlign: 'center', border: '1px solid #e8e0d4' }}>
-                  <div style={{ display: 'flex', justifyContent: 'center' }}><s.icon size={15} color="#059669" /></div>
+                  <div style={{ display: 'flex', justifyContent: 'center' }}><s.icon size={15} color="var(--primary)" /></div>
                   <div style={{ fontSize: 17, fontWeight: 800, color: '#1a1209', lineHeight: 1, marginTop: 4 }}>{s.val}</div>
                   <div style={{ fontSize: 11, color: '#a89478', fontWeight: 700, marginTop: 3 }}>{s.label}</div>
                 </div>
@@ -94,7 +94,7 @@ export default function SchoolSlideOver({ open, schoolDetail, loading, onClose, 
                 <div style={{ fontSize: 11, fontWeight: 800, color: '#a89478', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 10 }}>
                   Informations générales
                 </div>
-                <div style={{ background: '#f7f3ee', borderRadius: 10, overflow: 'hidden', border: '1px solid #e8e0d4' }}>
+                <div style={{ background: 'var(--bg)', borderRadius: 10, overflow: 'hidden', border: '1px solid #e8e0d4' }}>
                   {[
                     { key: 'Nom', val: schoolDetail.name },
                     { key: 'Sous-domaine', val: schoolDetail.subdomain },
@@ -125,7 +125,7 @@ export default function SchoolSlideOver({ open, schoolDetail, loading, onClose, 
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {schoolDetail.invites.slice(0, 3).map(inv => (
-                      <div key={inv.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 12px', background: '#f7f3ee', borderRadius: 8 }}>
+                      <div key={inv.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 12px', background: 'var(--bg)', borderRadius: 8 }}>
                         <div>
                           <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1209' }}>{inv.email}</div>
                           <div style={{ fontSize: 11, color: '#a89478', marginTop: 2 }}>{inv.status} · Expire {new Date(inv.expiresAt).toLocaleDateString('fr-CM')}</div>

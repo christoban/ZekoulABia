@@ -30,7 +30,7 @@ interface NavSection {
 
 const BADGE_STYLES = {
   red:   'bg-red-500/25 text-red-300',
-  green: 'bg-green-500/20 text-green-300',
+  green: 'bg-success/20 text-success',
   amber: 'bg-amber-500/20 text-amber-300',
 }
 
@@ -195,7 +195,7 @@ export default function AdminSidebar({
 
       {/* Brand */}
       <div className="flex items-center gap-2.5 px-3.5 pt-3.5 pb-3 border-b border-white/[0.07]" style={{ flexShrink: 0 }}>
-        <div className="w-7.5 h-7.5 rounded-[8px] flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: "linear-gradient(135deg,var(--amber),var(--green))" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "70%", height: "70%", objectFit: "contain" }} /></div>
+        <div className="w-7.5 h-7.5 rounded-[8px] flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: "linear-gradient(135deg,var(--amber),var(--accent))" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "70%", height: "70%", objectFit: "contain" }} /></div>
         <div className="flex-1 min-w-0">
           <div className="font-spectral text-[16px] font-bold text-white leading-tight truncate">ZekoulABia</div>
           <div className="text-[11px] text-white/35 font-semibold truncate">{tcommon('brand.roleAdmin')}</div>
@@ -208,7 +208,7 @@ export default function AdminSidebar({
           <div className="flex items-center gap-2.5">
             {logoUrl
               ? <img src={logoUrl} alt={displayName} className="w-6.5 h-6.5 rounded-[6px] flex-shrink-0" style={{ objectFit: 'cover' }} />
-              : <div className="w-6.5 h-6.5 rounded-[6px] bg-gradient-to-br from-[var(--green)] to-[var(--blue)] flex items-center justify-center text-[11px] font-black text-white flex-shrink-0">{initials}</div>
+              : <div className="w-6.5 h-6.5 rounded-[6px] bg-gradient-to-br from-[var(--primary)] to-[var(--blue)] flex items-center justify-center text-[11px] font-black text-white flex-shrink-0">{initials}</div>
             }
             <div className="min-w-0">
               <div className="text-[12.5px] font-bold text-white truncate">{displayName}</div>
@@ -242,11 +242,11 @@ export default function AdminSidebar({
               className={cn(
                 'w-full flex items-center gap-2.5 rounded-xl my-2.5 p-2.5 transition-all text-left border cursor-pointer font-nunito',
                 current === 'org-pedagogy'
-                  ? 'bg-gradient-to-r from-amber-500/30 via-emerald-500/25 to-teal-500/20 text-amber-300 border-amber-400/80 shadow-md shadow-amber-500/20 ring-1 ring-amber-400/30'
+                  ? 'bg-gradient-to-r from-amber-500/30 via-primary/25 to-primary/20 text-amber-300 border-amber-400/80 shadow-md shadow-amber-500/20 ring-1 ring-amber-400/30'
                   : 'bg-white/[0.06] hover:bg-white/[0.1] text-white/90 border-white/15'
               )}
             >
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500/35 to-emerald-500/35 text-amber-300 flex items-center justify-center flex-shrink-0 border border-amber-500/40 shadow-sm">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500/35 to-primary/35 text-amber-300 flex items-center justify-center flex-shrink-0 border border-amber-500/40 shadow-sm">
                 <School size={16} />
               </div>
               <div className="min-w-0 flex-1">

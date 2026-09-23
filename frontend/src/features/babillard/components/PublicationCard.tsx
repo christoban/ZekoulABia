@@ -184,7 +184,7 @@ export default function PublicationCard({
           {!publication.isRead && (
             <span
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider text-white"
-              style={{ background: 'var(--green, #059669)' }}
+              style={{ background: 'var(--green, var(--primary))' }}
             >
               Nouveau
             </span>
@@ -246,7 +246,7 @@ export default function PublicationCard({
                     <button
                       type="button"
                       onClick={() => { setMenuOpen(false); togglePinAction(); }}
-                      className="w-full px-3 py-2 text-left flex items-center gap-2 hover:bg-[#f7f3ee]"
+                      className="w-full px-3 py-2 text-left flex items-center gap-2 hover:bg-[var(--bg)]"
                     >
                       {isPinned ? <PinOff size={13} /> : <Pin size={13} />}
                       {isPinned ? 'Désépingler' : 'Épingler à la une'}
@@ -256,7 +256,7 @@ export default function PublicationCard({
                     <button
                       type="button"
                       onClick={() => { setMenuOpen(false); onEdit(); }}
-                      className="w-full px-3 py-2 text-left flex items-center gap-2 hover:bg-[#f7f3ee]"
+                      className="w-full px-3 py-2 text-left flex items-center gap-2 hover:bg-[var(--bg)]"
                     >
                       <Edit2 size={13} />
                       Modifier

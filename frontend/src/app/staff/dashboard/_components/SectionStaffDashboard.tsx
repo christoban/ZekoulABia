@@ -241,7 +241,7 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
               onClick={() => onNav('concours')}
               className="p-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] cursor-pointer hover:shadow-md transition-all flex flex-col justify-between"
             >
-              <div className="flex items-center justify-between text-emerald-600 mb-1">
+              <div className="flex items-center justify-between text-success mb-1">
                 <span className="text-xs font-bold">Admis à finaliser</span>
                 <UserCheck size={15} />
               </div>
@@ -351,7 +351,7 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
                   onClick={() => onNav('eleves-familles')}
                   className="w-full flex items-center justify-between p-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/40 hover:border-[var(--primary)] transition-all"
                 >
-                  <span className="flex items-center gap-2"><Users size={14} className="text-emerald-500" /> Élèves & familles</span>
+                  <span className="flex items-center gap-2"><Users size={14} className="text-primary" /> Élèves & familles</span>
                   <ArrowRight size={13} className="text-[var(--text3)]" />
                 </button>
                 <button

@@ -67,7 +67,7 @@ export default function ResultatsConcoursPublicPage() {
     switch (status) {
       case 'ADMIS':
         return (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 20, background: '#dcfce7', color: '#15803d', fontWeight: 700, fontSize: 14 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 20, background: 'var(--green-light)', color: '#15803d', fontWeight: 700, fontSize: 14 }}>
             <CheckCircle2 size={18} /> Admis(e)
           </span>
         );

@@ -146,7 +146,7 @@ export default function AdminTopbar({ title, onNavigate, onChangePassword, onMen
             )}
             {onNavigate && (
               <button onClick={() => { setNotifOpen(false); onNavigate('notifications') }}
-                className="w-full mt-1.5 py-2 px-3 rounded-xl bg-[var(--bg2)] text-[var(--green)] hover:text-green-700 text-xs font-bold border border-[var(--border)] cursor-pointer text-center transition-colors">
+                className="w-full mt-1.5 py-2 px-3 rounded-xl bg-[var(--bg2)] text-[var(--green)] hover:text-success text-xs font-bold border border-[var(--border)] cursor-pointer text-center transition-colors">
                 {t('topbar.view_all_notifications')}
               </button>
             )}

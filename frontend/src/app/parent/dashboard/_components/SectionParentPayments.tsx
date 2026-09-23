@@ -320,7 +320,7 @@ export default function SectionParentPayments({ onToast }: Props) {
                 {tc('actions.cancel')}
               </button>
               <button onClick={submitPayment} disabled={modal.loading}
-                style={{ flex: 2, padding: '7px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: modal.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: modal.loading ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                style={{ flex: 2, padding: '7px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: modal.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: modal.loading ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 {modal.loading ? t('payments.initiating') : <><Smartphone size={13} strokeWidth={2} /> {t('payments.confirmPayment')}</>}
               </button>
             </div>
@@ -336,4 +336,4 @@ const sSub: React.CSSProperties = { fontSize: 12, color: 'var(--text3)', marginT
 const sSelect: React.CSSProperties = { padding: '5px 10px', borderRadius: 8, fontSize: 12, border: '1.5px solid var(--border)', background: 'var(--surface)', color: 'var(--text2)', fontFamily: 'inherit', cursor: 'pointer' }
 const thSt: React.CSSProperties = { padding: '7px 11px', textAlign: 'left', fontSize: 10.5, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }
 const tdSt: React.CSSProperties = { padding: '8px 11px', fontSize: 12.5, color: 'var(--text2)', borderBottom: '1px solid var(--bg)', verticalAlign: 'middle' }
-const btnPay: React.CSSProperties = { padding: '4px 10px', borderRadius: 7, fontSize: 11.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+const btnPay: React.CSSProperties = { padding: '4px 10px', borderRadius: 7, fontSize: 11.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }

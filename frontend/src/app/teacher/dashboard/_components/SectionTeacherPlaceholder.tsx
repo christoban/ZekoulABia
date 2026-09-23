@@ -25,7 +25,7 @@ export default function SectionTeacherPlaceholder({ title, icon, description, on
         </div>
         <button
           onClick={() => onToast(t('placeholder.toast_coming').replace('{title}', title), 'info')}
-          style={{ padding: '10px 24px', borderRadius: 11, fontSize: 16, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+          style={{ padding: '10px 24px', borderRadius: 11, fontSize: 16, fontWeight: 800, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
           {t('placeholder.access').replace('{title}', title)}
         </button>
       </div>

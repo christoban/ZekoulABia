@@ -59,7 +59,7 @@ const SUBJECT_PALETTES = [
   { bg: 'rgba(217,119,6,0.09)', border: 'var(--amber)', text: 'var(--amber)' },
   { bg: 'rgba(139,92,246,0.09)', border: 'var(--purple)', text: '#6d28d9' },
   { bg: 'rgba(236,72,153,0.09)', border: '#db2777', text: '#be185d' },
-  { bg: 'rgba(20,184,166,0.09)', border: 'var(--teal)', text: 'var(--teal)' },
+  { bg: 'rgba(142,42,58,0.09)', border: 'var(--primary)', text: 'var(--primary)' },
   { bg: 'rgba(239,68,68,0.09)', border: 'var(--red)', text: 'var(--red)' },
   { bg: 'rgba(251,146,60,0.09)', border: 'var(--orange)', text: 'var(--orange)' },
 ]
@@ -541,7 +541,7 @@ function Spinner() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const sTitle:   React.CSSProperties = { fontFamily: 'var(--font-spectral,Spectral,serif)', fontSize: 20, fontWeight: 700, color: 'var(--text)' }
 const sSub:     React.CSSProperties = { fontSize: 12.5, color: 'var(--text3)', marginTop: 2 }
-const btnPrim:  React.CSSProperties = { padding: '7px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center' }
+const btnPrim:  React.CSSProperties = { padding: '7px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center' }
 const btnSec:   React.CSSProperties = { padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }
 const selectSt: React.CSSProperties = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 10px', fontSize: 12.5, fontWeight: 600, color: 'var(--text2)', cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }
 const thSt:     React.CSSProperties = { padding: '7px 8px', textAlign: 'center', fontSize: 11, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', border: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.4px' }

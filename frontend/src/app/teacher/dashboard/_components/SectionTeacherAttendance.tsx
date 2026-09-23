@@ -274,7 +274,7 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
           <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1.5px solid var(--border)', overflow: 'hidden' }}>
             <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--border)' }}>
               <button
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 800, color: 'var(--green)', border: '1.5px solid rgba(5,150,105,0.3)', background: 'var(--green-light)', cursor: 'pointer', padding: '5px 11px', borderRadius: 7, fontFamily: 'inherit' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 800, color: 'var(--green)', border: '1.5px solid rgba(142,42,58,0.3)', background: 'var(--green-light)', cursor: 'pointer', padding: '5px 11px', borderRadius: 7, fontFamily: 'inherit' }}
                 onClick={() => {
                   const all: Record<string, AttStatus> = {}
                   students.forEach(s => { all[s.id] = 'PRESENT' })
@@ -360,7 +360,7 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
 
 const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)' }
 const sSub: React.CSSProperties = { fontSize: 12, color: 'var(--text3)', marginTop: 2 }
-const btnPrim: React.CSSProperties = { padding: '6px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+const btnPrim: React.CSSProperties = { padding: '6px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
 const filterSt: React.CSSProperties = { background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '6px 10px', fontSize: 12.5, fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }
 const thSt: React.CSSProperties = { padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }
 const tdSt: React.CSSProperties = { padding: '8.5px 12px', fontSize: 12.5, color: 'var(--text2)', borderBottom: '1px solid var(--bg)', verticalAlign: 'middle' }

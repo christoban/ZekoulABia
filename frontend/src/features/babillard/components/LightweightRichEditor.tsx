@@ -226,7 +226,7 @@ export default function LightweightRichEditor({
 
   return (
     <div
-      className="border rounded-lg bg-[var(--surface)] overflow-hidden transition-colors focus-within:border-emerald-600 focus-within:ring-1 focus-within:ring-emerald-600"
+      className="border rounded-lg bg-[var(--surface)] overflow-hidden transition-colors focus-within:border-primary focus-within:ring-1 focus-within:ring-primary"
       style={{
         borderColor: 'var(--border, #d8cfbe)',
       }}
@@ -309,7 +309,7 @@ export default function LightweightRichEditor({
           title={activeFormats.link ? 'Retirer le lien' : 'Insérer un lien web'}
           className={`p-1.5 rounded transition-colors text-xs flex items-center justify-center ${
             activeFormats.link
-              ? 'bg-emerald-700 text-white shadow-xs'
+              ? 'bg-success text-white shadow-xs'
               : 'text-neutral-700 hover:bg-neutral-200/70 dark:text-neutral-300 dark:hover:bg-neutral-800'
           }`}
         >

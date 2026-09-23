@@ -5,7 +5,7 @@ import type { Toast } from '../_types'
 
 const ICONS = { success: CheckCircle2, error: XCircle, info: Info, warning: AlertTriangle }
 const STYLES: Record<string, string> = {
-  success: 'bg-[var(--green-light)] border-[rgba(5,150,105,0.3)] text-[var(--green)]',
+  success: 'bg-[var(--green-light)] border-[rgba(142,42,58,0.3)] text-[var(--green)]',
   error:   'bg-[var(--red-light)] border-[rgba(220,38,38,0.3)] text-[var(--red)]',
   info:    'bg-[var(--blue-light)] border-[rgba(29,78,216,0.2)] text-[var(--blue)]',
   warning: 'bg-[var(--amber-light)] border-[rgba(217,119,6,0.3)] text-[var(--amber)]',

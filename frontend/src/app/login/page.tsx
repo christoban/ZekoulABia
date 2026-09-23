@@ -15,19 +15,19 @@ import { resetNotificationSocket } from '@/lib/notificationSocket'
 type SuccessInfo = { icon: LucideIcon; badge: string; color: string; bg: string; dest: string; firstName: string }
 
 const ROLE_CONFIG: Record<string, Omit<SuccessInfo, 'firstName'>> = {
-  ADMIN:   { icon: School,       badge: 'Administrateur', color: 'var(--green)', bg: 'var(--green-light)', dest: '/admin/dashboard' },
+  ADMIN:   { icon: School,       badge: 'Administrateur', color: 'var(--primary)', bg: 'var(--primary-light)', dest: '/admin/dashboard' },
   TEACHER: { icon: Presentation, badge: 'Enseignant',      color: 'var(--blue)', bg: 'var(--blue-light)', dest: '/teacher/dashboard' },
   PARENT:  { icon: Users,        badge: 'Parent',          color: 'var(--amber)', bg: 'var(--amber-light)', dest: '/parent/dashboard' },
   STUDENT: { icon: GraduationCap,badge: 'Élève',           color: 'var(--purple)', bg: 'var(--purple-light)', dest: '/student/dashboard' },
-  STAFF:   { icon: Search,       badge: 'Staff',           color: 'var(--teal)', bg: 'var(--teal-light)', dest: '/staff/dashboard' },
+  STAFF:   { icon: Search,       badge: 'Staff',           color: 'var(--primary)', bg: 'var(--primary-light)', dest: '/staff/dashboard' },
 }
 
 const ROLE_SELECTOR = [
-  { role: 'ADMIN',   icon: School,       label: 'login.role_admin', shortLabel: 'login.role_admin_short', color: 'var(--green)', bg: 'var(--green-light)', border: 'rgba(5,150,105,0.3)' },
+  { role: 'ADMIN',   icon: School,       label: 'login.role_admin', shortLabel: 'login.role_admin_short', color: 'var(--primary)', bg: 'var(--primary-light)', border: 'rgba(142,42,58,0.3)' },
   { role: 'TEACHER', icon: Presentation, label: 'login.role_teacher', shortLabel: 'login.role_teacher_short', color: 'var(--blue)', bg: 'var(--blue-light)', border: 'rgba(29,78,216,0.3)'  },
   { role: 'PARENT',  icon: Users,        label: 'login.role_parent', shortLabel: 'login.role_parent_short', color: 'var(--amber)', bg: 'var(--amber-light)', border: 'rgba(180,83,9,0.3)'   },
   { role: 'STUDENT', icon: GraduationCap,label: 'login.role_student', shortLabel: 'login.role_student_short', color: 'var(--purple)', bg: 'var(--purple-light)', border: 'rgba(124,58,237,0.3)' },
-  { role: 'STAFF',   icon: Search,       label: 'login.role_staff', shortLabel: 'login.role_staff_short', color: 'var(--teal)', bg: 'var(--teal-light)', border: 'rgba(13,148,136,0.3)' },
+  { role: 'STAFF',   icon: Search,       label: 'login.role_staff', shortLabel: 'login.role_staff_short', color: 'var(--primary)', bg: 'var(--primary-light)', border: 'rgba(142,42,58,0.3)' },
 ]
 
 const ROLES = [
@@ -615,11 +615,11 @@ export default function LoginPage() {
             className="text-[14px] md:text-[15px] py-2.5 md:py-3.5"
             style={{
               width: '100%',
-              background: 'linear-gradient(135deg,var(--green),var(--green2))',
+              background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))',
               color: 'white', fontWeight: 800,
               border: 'none', borderRadius: 9, cursor: loading ? 'not-allowed' : 'pointer',
               fontFamily: 'inherit', transition: 'all 0.12s',
-              boxShadow: '0 2px 10px rgba(5,150,105,0.22)',
+              boxShadow: '0 2px 10px rgba(142,42,58,0.22)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               opacity: loading ? 0.8 : 1
             }}>
@@ -724,7 +724,7 @@ export default function LoginPage() {
             </div>
             <button onClick={() => submitOtp()} disabled={otpLoading}
               className="text-[14px] md:text-[16px] py-2.5 md:py-3.5 mt-3.5 md:mt-4"
-              style={{ width: '100%', background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', fontWeight: 800, border: 'none', borderRadius: 9, cursor: otpLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, opacity: otpLoading ? 0.8 : 1 }}>
+              style={{ width: '100%', background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', fontWeight: 800, border: 'none', borderRadius: 9, cursor: otpLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, opacity: otpLoading ? 0.8 : 1 }}>
               {otpLoading ? <Loader2 size={16} className="animate-spin" /> : null}
               {t('login.otp_verify')}
             </button>
@@ -771,7 +771,7 @@ export default function LoginPage() {
             </div>
             <button onClick={submitTotp} disabled={totpLoading}
               className="text-[14px] md:text-[15px] py-2.5 md:py-3.5"
-              style={{ width: '100%', background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', fontWeight: 800, border: 'none', borderRadius: 9, cursor: totpLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: totpLoading ? 0.8 : 1 }}>
+              style={{ width: '100%', background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', fontWeight: 800, border: 'none', borderRadius: 9, cursor: totpLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: totpLoading ? 0.8 : 1 }}>
               {totpLoading ? <Loader2 size={16} className="animate-spin" /> : null}
               {t('login.totp_verify')}
             </button>
@@ -816,7 +816,7 @@ export default function LoginPage() {
                   style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontFamily: 'inherit', fontWeight: 900, textAlign: 'center', outline: 'none', marginBottom: 16 }} />
                 <button onClick={submitMfaSetup} disabled={setupLoading || !qrDataUri}
                   className="text-[14px] md:text-[15px] py-2.5 md:py-3.5"
-                  style={{ width: '100%', background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', fontWeight: 800, border: 'none', borderRadius: 9, cursor: setupLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: setupLoading ? 0.8 : 1 }}>
+                  style={{ width: '100%', background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', fontWeight: 800, border: 'none', borderRadius: 9, cursor: setupLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: setupLoading ? 0.8 : 1 }}>
                   {setupLoading ? <Loader2 size={16} className="animate-spin" /> : null}
                   {t('login.mfa_setup_confirm')}
                 </button>
@@ -846,7 +846,7 @@ export default function LoginPage() {
                 </label>
                 <button onClick={() => pendingLoginData && completeLogin(pendingLoginData)} disabled={!recoveryAck}
                   className="text-[14px] md:text-[15px] py-2.5 md:py-3.5"
-                  style={{ width: '100%', background: recoveryAck ? 'linear-gradient(135deg,var(--green),var(--green2))' : 'var(--text3)', color: 'white', fontWeight: 800, border: 'none', borderRadius: 9, cursor: recoveryAck ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
+                  style={{ width: '100%', background: recoveryAck ? 'linear-gradient(135deg,var(--primary),var(--primary-hover))' : 'var(--text3)', color: 'white', fontWeight: 800, border: 'none', borderRadius: 9, cursor: recoveryAck ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
                   {t('login.mfa_setup_continue')}
                 </button>
               </>
@@ -924,7 +924,7 @@ export default function LoginPage() {
                   {t('login.forgot_success_msg')}
                 </div>
                 <button onClick={() => setForgotOpen(false)}
-                  style={{ padding: '10px 22px', borderRadius: 9, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', fontSize: 13, fontWeight: 800, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  style={{ padding: '10px 22px', borderRadius: 9, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', fontSize: 13, fontWeight: 800, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
                   {t('login.forgot_back')}
                 </button>
               </div>
@@ -964,7 +964,7 @@ export default function LoginPage() {
                     {t('login.forgot_cancel')}
                   </button>
                   <button onClick={handleForgotSubmit} disabled={forgotLoading}
-                    style={{ flex: 1, padding: '10px', borderRadius: 9, fontSize: 13, fontWeight: 800, background: forgotLoading ? 'var(--text3)' : 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: forgotLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+                    style={{ flex: 1, padding: '10px', borderRadius: 9, fontSize: 13, fontWeight: 800, background: forgotLoading ? 'var(--text3)' : 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: forgotLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
                     {forgotLoading ? t('login.forgot_sending') : t('login.forgot_send')}
                   </button>
                 </div>

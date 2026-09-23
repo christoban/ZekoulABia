@@ -43,11 +43,11 @@ function avatarColor(id: string): string {
   const colors = [
     'linear-gradient(135deg, #6366f1, #8b5cf6)',
     'linear-gradient(135deg, #3b82f6, #06b6d4)',
-    'linear-gradient(135deg, #10b981, #34d399)',
+    'linear-gradient(135deg,var(--primary),var(--primary-hover))',
     'linear-gradient(135deg, #f59e0b, #f97316)',
     'linear-gradient(135deg, #ec4899, #f43f5e)',
     'linear-gradient(135deg, #8b5cf6, #ec4899)',
-    'linear-gradient(135deg, #14b8a6, #3b82f6)',
+    'linear-gradient(135deg,var(--primary),var(--blue))',
     'linear-gradient(135deg, #f97316, #ef4444)',
   ]
   let hash = 0
@@ -265,19 +265,19 @@ export default function FilConversation({ conversationId, conversation, currentU
   }
 
   const statutIcone = (message: DisplayMessage) => {
-    if (message.status === 'PENDING') return <Clock size={13} color="#047857" />
+    if (message.status === 'PENDING') return <Clock size={13} color="var(--primary-hover)" />
     if (message.status === 'FAILED') return <AlertCircle size={13} color="#dc2626" />
     const isRead = message.isRead || (Array.isArray(message.readStatuses) && message.readStatuses.some((r) => r.userId !== currentUser.id))
     if (isRead) {
       return (
         <span title="Lu" style={{ display: 'inline-flex', alignItems: 'center' }}>
-          <CheckCheck size={15} color="#059669" />
+          <CheckCheck size={15} color="var(--primary)" />
         </span>
       )
     }
     return (
       <span title="Envoyé" style={{ display: 'inline-flex', alignItems: 'center' }}>
-        <Check size={13} color="#047857" />
+        <Check size={13} color="var(--primary-hover)" />
       </span>
     )
   }
@@ -380,7 +380,7 @@ export default function FilConversation({ conversationId, conversation, currentU
                     maxWidth: 'min(85%, 420px)', padding: '8px 12px 6px',
                     borderRadius: estMoi ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
                     background: estMoi
-                      ? 'linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%)'
+                      ? 'linear-gradient(135deg, var(--green-light) 0%, var(--green-light) 100%)'
                       : 'var(--surface)',
                     border: estMoi ? '1px solid rgba(16,185,129,0.2)' : '1px solid var(--border)',
                     color: estMoi ? '#0f172a' : 'var(--text)', fontSize: 13.5, lineHeight: 1.45,
@@ -404,7 +404,7 @@ export default function FilConversation({ conversationId, conversation, currentU
                       display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
                       gap: 4, marginTop: 2,
                     }}>
-                      <span style={{ fontSize: 10, color: estMoi ? '#047857' : 'var(--text3)' }}>
+                      <span style={{ fontSize: 10, color: estMoi ? 'var(--primary-hover)' : 'var(--text3)' }}>
                         {formatHeureMessage(message.createdAt)}
                       </span>
                       {estMoi && statutIcone(message)}
@@ -447,7 +447,7 @@ export default function FilConversation({ conversationId, conversation, currentU
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: 40, height: 40, borderRadius: '50%', border: 'none', flexShrink: 0,
             background: draft.trim() && !sending
-              ? 'linear-gradient(135deg, #10b981, #059669)'
+              ? 'linear-gradient(135deg,var(--primary),var(--primary-hover))'
               : 'var(--bg2)',
             color: draft.trim() && !sending ? 'white' : 'var(--text3)',
             cursor: draft.trim() && !sending ? 'pointer' : 'default',

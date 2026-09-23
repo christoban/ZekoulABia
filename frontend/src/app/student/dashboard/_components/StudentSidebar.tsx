@@ -23,7 +23,7 @@ interface NavGroup {
 
 const BADGE_STYLES = {
   red:   'bg-red-500/25 text-red-300',
-  green: 'bg-green-500/20 text-green-300',
+  green: 'bg-success/20 text-success',
   amber: 'bg-amber-500/20 text-amber-300',
 }
 
@@ -122,13 +122,13 @@ export default function StudentSidebar({ current, onChange, schoolName, logoUrl,
                     'relative w-full flex items-center gap-2.5 rounded-lg mb-[2px]',
                     'text-[12px] font-semibold text-left border-none cursor-pointer font-nunito',
                     current === item.id
-                      ? 'text-white'
+                      ? 'text-accent'
                       : 'text-white/55 hover:bg-[var(--sidebar2)] hover:text-white/85'
                   )}
                   style={{ padding: '6px 8px' }}>
                   {current === item.id && (
                     <motion.div layoutId="student-nav-active"
-                      className="absolute inset-0 rounded-lg" style={{ background: 'var(--sidebar-active)' }}
+                      className="absolute inset-0 rounded-lg bg-accent/15"
                       transition={{ type: 'spring', stiffness: 380, damping: 30 }} />
                   )}
                   <span className="relative z-10 w-[18px] flex items-center justify-center flex-shrink-0">

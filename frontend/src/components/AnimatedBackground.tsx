@@ -27,7 +27,7 @@ function paintGradient(ctx: CanvasRenderingContext2D, variant: Variant, w: numbe
     g.addColorStop(1, '#0c1f15')    // vert forêt profond
   } else {
     g = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, Math.max(w, h) * 0.72)
-    g.addColorStop(0, '#1a2e1e')
+    g.addColorStop(0, 'var(--sidebar-bg)')
     g.addColorStop(1, '#0d1a12')
   }
   ctx.fillStyle = g

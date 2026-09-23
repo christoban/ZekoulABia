@@ -90,7 +90,7 @@ export default function VerifyDocumentPage() {
               width: 38,
               height: 38,
               borderRadius: 10,
-              background: 'linear-gradient(135deg, #f59e0b, #10b981)',
+              background: 'linear-gradient(135deg, #f59e0b, var(--green))',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -102,7 +102,7 @@ export default function VerifyDocumentPage() {
             Z
           </div>
           <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.5 }}>
-            Zekoul<span style={{ color: '#10b981' }}>ABia</span>
+            Zekoul<span style={{ color: 'var(--green)' }}>ABia</span>
           </span>
           <span
             style={{
@@ -122,7 +122,7 @@ export default function VerifyDocumentPage() {
 
         {loading && (
           <div style={{ padding: '48px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-            <Loader2 size={36} className="animate-spin" style={{ color: '#10b981' }} />
+            <Loader2 size={36} className="animate-spin" style={{ color: 'var(--green)' }} />
             <span style={{ fontSize: 14, color: '#94a3b8' }}>Vérification de l'authenticité en cours...</span>
           </div>
         )}
@@ -175,7 +175,7 @@ export default function VerifyDocumentPage() {
                 height: 64,
                 borderRadius: '50%',
                 background: 'rgba(16, 185, 129, 0.15)',
-                color: '#10b981',
+                color: 'var(--green)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -194,7 +194,7 @@ export default function VerifyDocumentPage() {
                 borderRadius: 20,
                 background: 'rgba(16, 185, 129, 0.15)',
                 border: '1px solid rgba(16, 185, 129, 0.3)',
-                color: '#34d399',
+                color: 'var(--green)',
                 fontSize: 12,
                 fontWeight: 700,
                 marginBottom: 12,
@@ -226,7 +226,7 @@ export default function VerifyDocumentPage() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <Building2 size={16} style={{ color: '#10b981', marginTop: 2, flexShrink: 0 }} />
+                <Building2 size={16} style={{ color: 'var(--green)', marginTop: 2, flexShrink: 0 }} />
                 <div>
                   <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>Établissement émetteur</div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#f8fafc' }}>{doc.school}</div>

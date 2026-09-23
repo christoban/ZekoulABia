@@ -115,8 +115,8 @@ export const CATEGORIE_CONFIG: Record<PublicationCategorie | 'GENERAL', Categori
   COMMUNIQUE: { label: 'Communiqué', badgeBg: 'rgba(59, 130, 246, 0.12)', badgeColor: '#2563eb' },
   CIRCULAIRE: { label: 'Circulaire', badgeBg: 'rgba(147, 51, 234, 0.12)', badgeColor: '#9333ea' },
   EXAMENS: { label: 'Examens', badgeBg: 'rgba(245, 158, 11, 0.12)', badgeColor: '#d97706' },
-  EVENEMENT: { label: 'Événement', badgeBg: 'rgba(16, 185, 129, 0.12)', badgeColor: '#059669' },
-  VIE_SCOLAIRE: { label: 'Vie scolaire', badgeBg: 'rgba(20, 184, 166, 0.12)', badgeColor: '#0d9488' },
+  EVENEMENT: { label: 'Événement', badgeBg: 'rgba(47,143,91,0.12)', badgeColor: 'var(--primary)' },
+  VIE_SCOLAIRE: { label: 'Vie scolaire', badgeBg: 'rgba(47,143,91,0.12)', badgeColor: 'var(--primary)' },
   ADMINISTRATIF: { label: 'Administratif', badgeBg: 'rgba(107, 114, 128, 0.12)', badgeColor: '#4b5563' },
   GENERAL: { label: 'Général', badgeBg: 'rgba(107, 114, 128, 0.12)', badgeColor: '#4b5563' },
 };

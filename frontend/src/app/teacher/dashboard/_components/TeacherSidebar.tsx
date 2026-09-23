@@ -94,7 +94,7 @@ function buildNav(user: UserInfo | null | undefined, pendingGrades: number | und
 
 const BADGE_STYLES = {
   red:   'bg-red-500/25 text-red-300',
-  green: 'bg-green-500/20 text-green-300',
+  green: 'bg-success/20 text-success',
   amber: 'bg-amber-500/20 text-amber-300',
 }
 
@@ -166,13 +166,13 @@ export default function TeacherSidebar({
                     'relative w-full flex items-center gap-2.5 rounded-md mb-[2px]',
                     'text-[12px] font-semibold text-left border-none cursor-pointer font-nunito',
                     current === item.id
-                      ? 'text-white'
+                      ? 'text-accent'
                       : 'text-white/55 hover:bg-[var(--sidebar2)] hover:text-white/85'
                   )}
                   style={{ padding: '6px 8px' }}>
                   {current === item.id && (
                     <motion.div layoutId="teacher-nav-active"
-                      className="absolute inset-0 rounded-md" style={{ background: 'var(--sidebar-active)' }}
+                      className="absolute inset-0 rounded-md bg-accent/15"
                       transition={{ type: 'spring', stiffness: 380, damping: 30 }} />
                   )}
                   <span className="relative z-10 w-[18px] flex items-center justify-center flex-shrink-0">
@@ -199,12 +199,12 @@ export default function TeacherSidebar({
                 className={cn(
                   'relative w-full flex items-center gap-2.5 rounded-md mb-[2px]',
                   'text-[12px] font-semibold text-left border-none cursor-pointer font-nunito',
-                  current === 'sync' ? 'text-white' : 'text-white/55 hover:bg-[var(--sidebar2)] hover:text-white/85'
+                  current === 'sync' ? 'text-accent' : 'text-white/55 hover:bg-[var(--sidebar2)] hover:text-white/85'
                 )}
                 style={{ padding: '6px 8px' }}>
                 {current === 'sync' && (
                   <motion.div layoutId="teacher-nav-active"
-                    className="absolute inset-0 rounded-md" style={{ background: 'var(--sidebar-active)' }}
+                    className="absolute inset-0 rounded-md bg-accent/15"
                     transition={{ type: 'spring', stiffness: 380, damping: 30 }} />
                 )}
                 <span className="relative z-10 w-[18px] flex items-center justify-center flex-shrink-0">

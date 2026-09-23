@@ -125,7 +125,7 @@ function ResetPasswordForm() {
             <button
               type="submit"
               disabled={loading || !token || strength < 5 || mismatch}
-              style={{ width: '100%', padding: '14px', borderRadius: 12, fontSize: 16, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: (loading || !token || strength < 5 || mismatch) ? 'var(--text3)' : 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: (loading || !token || strength < 5 || mismatch) ? 'not-allowed' : 'pointer', fontFamily: 'inherit', marginBottom: 16 }}>
+              style={{ width: '100%', padding: '14px', borderRadius: 12, fontSize: 16, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: (loading || !token || strength < 5 || mismatch) ? 'var(--text3)' : 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: (loading || !token || strength < 5 || mismatch) ? 'not-allowed' : 'pointer', fontFamily: 'inherit', marginBottom: 16 }}>
               {loading ? <><Loader2 size={16} className="animate-spin" /> Réinitialisation…</> : <><KeyRound size={16} strokeWidth={2} /> Réinitialiser mon mot de passe</>}
             </button>
 

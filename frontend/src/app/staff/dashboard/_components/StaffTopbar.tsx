@@ -182,7 +182,7 @@ export default function StaffTopbar({
             )}
             {onNav && (
               <button onClick={() => { setNotifOpen(false); onNav('notifications') }}
-                className="w-full mt-1.5 py-2 px-3 rounded-xl bg-[var(--bg2)] text-[var(--green)] hover:text-green-700 text-xs font-bold border border-[var(--border)] cursor-pointer text-center transition-colors">
+                className="w-full mt-1.5 py-2 px-3 rounded-xl bg-[var(--bg2)] text-[var(--green)] hover:text-success text-xs font-bold border border-[var(--border)] cursor-pointer text-center transition-colors">
                 {tnav('topbar.view_all_notifications') ?? 'Voir toutes les notifications'}
               </button>
             )}
@@ -231,7 +231,7 @@ export default function StaffTopbar({
       {sessionUser && (
         <div ref={profileRef} className="relative flex-shrink-0 md:hidden" style={{ marginLeft: 2 }}>
           <button onClick={toggleProfile} aria-label={userDisplayName}
-            style={{ width: 34, height: 34, borderRadius: 17, border: 'none', background: 'linear-gradient(135deg,var(--teal,#0d9488),var(--blue,#2563eb))', color: '#fff', fontSize: 12.5, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            style={{ width: 34, height: 34, borderRadius: 17, border: 'none', background: 'linear-gradient(135deg,var(--primary),var(--blue,#2563eb))', color: '#fff', fontSize: 12.5, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             {userInitials}
           </button>
           {profileOpen && (

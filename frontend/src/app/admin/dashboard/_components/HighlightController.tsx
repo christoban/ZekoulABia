@@ -38,11 +38,11 @@ export default function HighlightController() {
   return (
     <style>{`
       @keyframes zekoulabia-pulse-halo {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(5,150,105,0.55); }
-        50% { box-shadow: 0 0 0 8px rgba(5,150,105,0); }
+        0%, 100% { box-shadow: 0 0 0 0 rgba(142,42,58,0.55); }
+        50% { box-shadow: 0 0 0 8px rgba(142,42,58,0); }
       }
       .${HIGHLIGHT_CLASS} {
-        outline: 2.5px solid var(--green) !important;
+        outline: 2.5px solid var(--primary) !important;
         outline-offset: 2px;
         border-radius: 8px;
         animation: zekoulabia-pulse-halo 0.9s ease-in-out 3;

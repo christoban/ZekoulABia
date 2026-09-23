@@ -76,9 +76,9 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
             <button key={tab.id} onClick={() => onTabChange(tab.id)}
               style={{
                 padding: '8px 14px', fontSize: 13, fontWeight: 700,
-                color: activeTab === tab.id ? '#059669' : '#a89478',
+                color: activeTab === tab.id ? 'var(--primary)' : '#a89478',
                 background: 'none', border: 'none',
-                borderBottom: activeTab === tab.id ? '2px solid #059669' : '2px solid transparent',
+                borderBottom: activeTab === tab.id ? '2px solid var(--primary)' : '2px solid transparent',
                 marginBottom: -2, cursor: 'pointer', whiteSpace: 'nowrap',
                 display: 'flex', alignItems: 'center', gap: 6,
                 fontFamily: 'inherit', transition: 'all 0.12s'
@@ -86,15 +86,15 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
               {tab.label}
               <span style={{
                 fontSize: 11, fontWeight: 800, padding: '2px 7px', borderRadius: 6,
-                background: activeTab === tab.id ? '#d1fae5' : '#f0ebe3',
-                color: activeTab === tab.id ? '#047857' : tab.urgent && countsByTab[tab.id] > 0 ? '#92400e' : '#a89478'
+                background: activeTab === tab.id ? 'var(--green-light)' : 'var(--bg2)',
+                color: activeTab === tab.id ? 'var(--primary-hover)' : tab.urgent && countsByTab[tab.id] > 0 ? '#92400e' : '#a89478'
               }}>{countsByTab[tab.id]}</span>
             </button>
           ))}
         </div>
 
         <div style={{ padding: '10px 14px', borderBottom: '1px solid #e8e0d4', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f0ebe3', border: '1px solid #e8e0d4', borderRadius: 8, padding: '7px 12px', flex: 1, minWidth: 200 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg2)', border: '1px solid #e8e0d4', borderRadius: 8, padding: '7px 12px', flex: 1, minWidth: 200 }}>
             <Search size={15} color="#a89478" />
             <input type="text" value={searchTerm} onChange={e => onSearchChange(e.target.value)} placeholder="Rechercher par nom, sous-domaine, email..."
               style={{ background: 'none', border: 'none', outline: 'none', fontSize: 13, color: '#1a1209', fontFamily: 'inherit', fontWeight: 600, width: '100%' }} />
@@ -106,7 +106,7 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
             <thead>
               <tr>
                 {['École', 'Type', 'Plan', 'Statut', 'Admin', 'Invitation', 'Créée le', 'Actions'].map(h => (
-                  <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: '#a89478', background: '#f0ebe3', borderBottom: '1px solid #e8e0d4', textTransform: 'uppercase', letterSpacing: '0.4px', whiteSpace: 'nowrap', position: 'sticky', top: 0, zIndex: 1 }}>
+                  <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: '#a89478', background: 'var(--bg2)', borderBottom: '1px solid #e8e0d4', textTransform: 'uppercase', letterSpacing: '0.4px', whiteSpace: 'nowrap', position: 'sticky', top: 0, zIndex: 1 }}>
                     {h}
                   </th>
                 ))}
@@ -193,7 +193,7 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
                                       onRefresh()
                                     },
                                   })
-                                }} color="#059669"><CheckCircle2 size={13} /> Réactiver</DropdownItem>
+                                }} color="var(--primary)"><CheckCircle2 size={13} /> Réactiver</DropdownItem>
                                 <div style={{ height: 1, background: '#e8e0d4', margin: '4px 0' }} />
                                 <DropdownItem onClick={() => { onDelete(school.id, school.name); setOpenDropdown(null) }} danger><Trash2 size={13} /> Supprimer définitivement</DropdownItem>
                               </>
@@ -238,7 +238,7 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
                                       await resendInvite(school.id, auth)
                                     },
                                   })
-                                }} color="#059669"><Mail size={13} /> Renvoyer l'invitation</DropdownItem>
+                                }} color="var(--primary)"><Mail size={13} /> Renvoyer l'invitation</DropdownItem>
                                 <div style={{ height: 1, background: '#e8e0d4', margin: '4px 0' }} />
                                 <DropdownItem onClick={() => { onDelete(school.id, school.name); setOpenDropdown(null) }} danger><Trash2 size={13} /> Supprimer définitivement</DropdownItem>
                               </>
@@ -297,7 +297,7 @@ function DropdownItem({ children, onClick, danger, color }: { children: React.Re
       cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
       transition: 'background 0.1s'
     }}
-      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = danger ? '#fee2e2' : '#f0ebe3'}
+      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = danger ? '#fee2e2' : 'var(--bg2)'}
       onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'white'}>
       {children}
     </div>
@@ -306,8 +306,8 @@ function DropdownItem({ children, onClick, danger, color }: { children: React.Re
 
 const btnPrimary: React.CSSProperties = {
   padding: '8px 16px', borderRadius: 9, fontSize: 13, fontWeight: 800,
-  background: 'linear-gradient(135deg,#059669,#047857)', color: 'white',
+  background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white',
   border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-  boxShadow: '0 2px 8px rgba(5,150,105,0.18)', display: 'inline-flex', alignItems: 'center', gap: 6
+  boxShadow: '0 2px 8px rgba(142,42,58,0.18)', display: 'inline-flex', alignItems: 'center', gap: 6
 }
 const tdStyle: React.CSSProperties = { padding: '8px 12px', fontSize: 12, color: '#6b5c45', verticalAlign: 'middle' }

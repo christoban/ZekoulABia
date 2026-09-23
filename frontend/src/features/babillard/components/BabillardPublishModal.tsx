@@ -268,7 +268,7 @@ export default function BabillardPublishModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-xs overflow-y-auto">
       <div className="relative w-full max-w-[1240px] bg-[#fcfbf9] text-[#1a1209] rounded-xl shadow-2xl border border-[#e2dacb] flex flex-col max-h-[94vh] overflow-hidden">
         {/* En-tête du modal */}
-        <div className="px-5 py-3.5 border-b border-[#e2dacb] bg-[#f7f3ee] flex items-center justify-between gap-3">
+        <div className="px-5 py-3.5 border-b border-[#e2dacb] bg-[var(--bg)] flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <h2 className="font-spectral font-bold text-lg sm:text-xl text-[#1a1209]">
               {initialData?.id ? 'Modifier le communiqué' : 'Publier un communiqué officiel'}
@@ -335,7 +335,7 @@ export default function BabillardPublishModal({
                 }}
                 placeholder="Ex : Rentrée scolaire 2026/2027"
                 className={`w-full px-3 py-2 rounded-lg border bg-white text-sm text-[#1a1209] focus:outline-none transition-colors ${
-                  titreError ? 'border-red-500 ring-1 ring-red-500' : 'border-[#d8cfbe] focus:border-emerald-600'
+                  titreError ? 'border-red-500 ring-1 ring-red-500' : 'border-[#d8cfbe] focus:border-primary'
                 }`}
               />
               {titreError && (
@@ -352,7 +352,7 @@ export default function BabillardPublishModal({
                 <select
                   value={categorie}
                   onChange={(e) => setCategorie(e.target.value as PublicationCategorie)}
-                  className="w-full px-3 py-2 rounded-lg border border-[#d8cfbe] bg-white text-xs text-[#1a1209] focus:outline-none focus:border-emerald-600"
+                  className="w-full px-3 py-2 rounded-lg border border-[#d8cfbe] bg-white text-xs text-[#1a1209] focus:outline-none focus:border-primary"
                 >
                   {Object.entries(CATEGORIE_CONFIG).map(([k, v]) => (
                     <option key={k} value={k}>
@@ -376,7 +376,7 @@ export default function BabillardPublishModal({
                             ? 'bg-red-600 text-white font-bold shadow-xs'
                             : p === 'IMPORTANTE'
                             ? 'bg-orange-500 text-white font-bold shadow-xs'
-                            : 'bg-emerald-600 text-white font-bold shadow-xs'
+                            : 'bg-primary text-white font-bold shadow-xs'
                           : 'text-[#6b5d4b] hover:text-[#1a1209]'
                       }`}
                     >
@@ -411,7 +411,7 @@ export default function BabillardPublishModal({
                 <span className="text-[11px] text-[#8a7c6a]">{piecesJointes.length}/5 documents</span>
               </div>
 
-              <div className="border-2 border-dashed border-[#d8cfbe] rounded-lg p-3.5 bg-[#f7f3ee] text-center">
+              <div className="border-2 border-dashed border-[#d8cfbe] rounded-lg p-3.5 bg-[var(--bg)] text-center">
                 <input
                   type="file"
                   id="pub-file"
@@ -468,7 +468,7 @@ export default function BabillardPublishModal({
                 <button
                   type="button"
                   onClick={selectAllRoles}
-                  className="text-xs font-semibold text-emerald-800 hover:underline"
+                  className="text-xs font-semibold text-success hover:underline"
                 >
                   Tous les rôles
                 </button>
@@ -484,7 +484,7 @@ export default function BabillardPublishModal({
                       onClick={() => toggleRole(r)}
                       className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${
                         isSel
-                          ? 'bg-emerald-700 text-white border-emerald-700 shadow-xs'
+                          ? 'bg-success text-white border-success shadow-xs'
                           : 'bg-white text-[#5a4d3d] border-[#d8cfbe] hover:bg-[#ede6da]'
                       }`}
                     >
@@ -551,7 +551,7 @@ export default function BabillardPublishModal({
             </div>
 
             {/* 7. Options de visibilité & Programmation future */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-lg bg-[#f7f3ee] border border-[#e6dfd3] text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-lg bg-[var(--bg)] border border-[#e6dfd3] text-xs">
               <div>
                 <label className="block font-bold text-[#5a4d3d] mb-1">Durée d'affichage</label>
                 <select
@@ -634,14 +634,14 @@ export default function BabillardPublishModal({
             - Desktop : Annuler gauche, Brouillon + Diffuser droite
             - Mobile : Diffuser pleine largeur en haut, Brouillon dessous (Annuler masqué)
            ======================================================== */}
-        <div className="px-5 py-3.5 border-t border-[#e2dacb] bg-[#f7f3ee]">
+        <div className="px-5 py-3.5 border-t border-[#e2dacb] bg-[var(--bg)]">
           {/* Mobile layout (sm:hidden) */}
           <div className="flex sm:hidden flex-col gap-2 w-full">
             <button
               type="button"
               disabled={submitting || uploading}
               onClick={() => handleFormSubmit(false)}
-              className="w-full py-2.5 rounded-lg bg-emerald-700 text-white text-sm font-bold hover:bg-emerald-800 disabled:opacity-50 transition-colors shadow-sm text-center"
+              className="w-full py-2.5 rounded-lg bg-success text-white text-sm font-bold hover:bg-success disabled:opacity-50 transition-colors shadow-sm text-center"
             >
               {submitting ? 'Diffusion...' : 'Diffuser le communiqué'}
             </button>
@@ -678,7 +678,7 @@ export default function BabillardPublishModal({
                 type="button"
                 disabled={submitting || uploading}
                 onClick={() => handleFormSubmit(false)}
-                className="px-4 py-1.5 rounded-lg bg-emerald-700 text-white text-xs font-bold hover:bg-emerald-800 disabled:opacity-50 transition-colors shadow-sm"
+                className="px-4 py-1.5 rounded-lg bg-success text-white text-xs font-bold hover:bg-success disabled:opacity-50 transition-colors shadow-sm"
               >
                 {submitting ? 'Diffusion...' : 'Diffuser le communiqué'}
               </button>
@@ -714,7 +714,7 @@ export default function BabillardPublishModal({
                 type="button"
                 disabled={submitting}
                 onClick={() => executeSave(false)}
-                className="px-4 py-1.5 rounded-lg bg-emerald-700 text-white text-xs font-bold hover:bg-emerald-800 shadow-sm"
+                className="px-4 py-1.5 rounded-lg bg-success text-white text-xs font-bold hover:bg-success shadow-sm"
               >
                 {submitting ? 'Validation...' : 'Confirmer et diffuser'}
               </button>

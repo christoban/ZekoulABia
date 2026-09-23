@@ -10,7 +10,7 @@ interface Props {
 
 const ICONS = { success: CheckCircle2, error: XCircle, info: Info, warning: AlertTriangle }
 const STYLES = {
-  success: 'bg-[#f0fdf4] border-[rgba(5,150,105,0.2)] text-[#065f46]',
+  success: 'bg-[var(--green-light)] border-[rgba(142,42,58,0.2)] text-[var(--green2)]',
   error:   'bg-[#fef2f2] border-[rgba(220,38,38,0.2)] text-[#991b1b]',
   info:    'bg-white border-[#e8e0d4] text-[#1a1209]',
   warning: 'bg-[#fef3c7] border-[rgba(217,119,6,0.2)] text-[#92400e]',

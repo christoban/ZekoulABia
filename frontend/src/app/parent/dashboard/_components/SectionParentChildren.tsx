@@ -136,7 +136,7 @@ export default function SectionParentChildren({ onNav, onToast, userId }: Props)
               onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { transform: 'none', boxShadow: 'none' })}>
 
               <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 38, height: 38, borderRadius: 10, background: `linear-gradient(135deg,${i === 0 ? 'var(--blue),var(--purple)' : 'var(--green),var(--teal)'})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: `linear-gradient(135deg,${i === 0 ? 'var(--blue),var(--purple)' : 'var(--primary),var(--accent)'})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
                   {child.prenom[0]}{child.nom[0]}
                 </div>
                 <div style={{ flex: 1 }}>
@@ -192,7 +192,7 @@ export default function SectionParentChildren({ onNav, onToast, userId }: Props)
                     { label: t('children.actionPayments'),  icon: Smartphone,  action: () => onNav('payments'),  prim: false },
                   ].map((btn, j) => (
                     <button key={j} onClick={btn.action}
-                      style={{ flex: 1, padding: '6px 10px', borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: btn.prim ? 'none' : '1px solid var(--border2)', background: btn.prim ? 'linear-gradient(135deg,var(--green),var(--green2))' : 'white', color: btn.prim ? 'white' : 'var(--text2)', transition: 'all 0.12s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}
+                      style={{ flex: 1, padding: '6px 10px', borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: btn.prim ? 'none' : '1px solid var(--border2)', background: btn.prim ? 'linear-gradient(135deg,var(--primary),var(--primary-hover))' : 'white', color: btn.prim ? 'white' : 'var(--text2)', transition: 'all 0.12s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}
                       onMouseEnter={e => { if (!btn.prim) Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--green)', color: 'var(--green)' }) }}
                       onMouseLeave={e => { if (!btn.prim) Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--border2)', color: 'var(--text2)' }) }}>
                       <btn.icon size={13} strokeWidth={2} /> {btn.label}

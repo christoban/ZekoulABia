@@ -35,11 +35,11 @@ function avatarColor(id: string): string {
   const colors = [
     'linear-gradient(135deg, #6366f1, #8b5cf6)',
     'linear-gradient(135deg, #3b82f6, #06b6d4)',
-    'linear-gradient(135deg, #10b981, #34d399)',
+    'linear-gradient(135deg,var(--primary),var(--primary-hover))',
     'linear-gradient(135deg, #f59e0b, #f97316)',
     'linear-gradient(135deg, #ec4899, #f43f5e)',
     'linear-gradient(135deg, #8b5cf6, #ec4899)',
-    'linear-gradient(135deg, #14b8a6, #3b82f6)',
+    'linear-gradient(135deg,var(--primary),var(--blue))',
     'linear-gradient(135deg, #f97316, #ef4444)',
   ]
   let hash = 0
@@ -88,7 +88,7 @@ export default function ListeConversations({ conversations, loading, selectedId,
           style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: 34, height: 34, borderRadius: 12, border: 'none',
-            background: 'linear-gradient(135deg, #10b981, #059669)',
+            background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))',
             color: 'white', cursor: 'pointer', transition: 'transform 0.15s',
           }}
           onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08)' }}
@@ -170,7 +170,7 @@ export default function ListeConversations({ conversations, loading, selectedId,
                     {nomAffiche(conversation, currentUser.id)}
                   </span>
                   {conversation.lastMessage?.createdAt && (
-                    <span style={{ fontSize: 11, color: hasUnread ? 'var(--green, #10b981)' : 'var(--text3)', fontWeight: hasUnread ? 700 : 500, flexShrink: 0 }}>
+                    <span style={{ fontSize: 11, color: hasUnread ? 'var(--green, var(--green))' : 'var(--text3)', fontWeight: hasUnread ? 700 : 500, flexShrink: 0 }}>
                       {formatHeure(conversation.lastMessage.createdAt)}
                     </span>
                   )}
@@ -186,7 +186,7 @@ export default function ListeConversations({ conversations, loading, selectedId,
                   {hasUnread && (
                     <span style={{
                       minWidth: 20, height: 20, borderRadius: 999,
-                      background: 'linear-gradient(135deg, #10b981, #059669)',
+                      background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))',
                       color: 'white', fontSize: 10.5, fontWeight: 800,
                       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                       padding: '0 6px', flexShrink: 0,

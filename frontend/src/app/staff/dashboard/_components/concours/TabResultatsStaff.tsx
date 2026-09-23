@@ -116,7 +116,7 @@ export default function TabResultatsStaff({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <CheckCircle2 size={22} style={{ color: 'var(--green, #10b981)' }} />
+            <CheckCircle2 size={22} style={{ color: 'var(--green, var(--green))' }} />
             <div>
               <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)' }}>
                 Résultats Officiels Publiés
@@ -158,10 +158,10 @@ export default function TabResultatsStaff({
         </div>
 
         <div style={{ padding: 14, borderRadius: 10, background: 'var(--bg)', border: '1px solid var(--border)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--green, #10b981)', fontSize: 12, marginBottom: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--green, var(--green))', fontSize: 12, marginBottom: 4 }}>
             <Award size={14} /> Admis (ou Provisoires)
           </div>
-          <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--green, #10b981)' }}>
+          <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--green, var(--green))' }}>
             {admis.length} {availableSeats ? `/ ${availableSeats} places` : ''}
           </div>
         </div>
@@ -277,7 +277,7 @@ export default function TabResultatsStaff({
                       fontWeight: 700,
                       background:
                         c.admissionStatus === 'ADMIS' || c.admissionStatus === 'CONFIRME' || c.admissionStatus === 'INSCRIT'
-                          ? 'rgba(16, 185, 129, 0.12)'
+                          ? 'rgba(47,143,91,0.12)'
                           : c.admissionStatus === 'ADMIS_PROVISOIRE'
                           ? 'rgba(59, 130, 246, 0.12)'
                           : c.admissionStatus === 'LISTE_ATTENTE'
@@ -285,7 +285,7 @@ export default function TabResultatsStaff({
                           : 'rgba(239, 68, 68, 0.12)',
                       color:
                         c.admissionStatus === 'ADMIS' || c.admissionStatus === 'CONFIRME' || c.admissionStatus === 'INSCRIT'
-                          ? 'var(--green, #10b981)'
+                          ? 'var(--green, var(--green))'
                           : c.admissionStatus === 'ADMIS_PROVISOIRE'
                           ? 'var(--accent, #2563eb)'
                           : c.admissionStatus === 'LISTE_ATTENTE'
@@ -298,7 +298,7 @@ export default function TabResultatsStaff({
                 </td>
                 <td style={{ padding: '10px 14px', textAlign: 'center', fontSize: 12, color: 'var(--text2)' }}>
                   {c.admissionStatus === 'CONFIRME' || c.admissionStatus === 'INSCRIT' ? (
-                    <span style={{ color: 'var(--green, #10b981)', fontWeight: 600 }}>✓ CEP Confirmé</span>
+                    <span style={{ color: 'var(--green, var(--green))', fontWeight: 600 }}>✓ CEP Confirmé</span>
                   ) : (
                     <span style={{ color: 'var(--text3)' }}>Non renseigné</span>
                   )}

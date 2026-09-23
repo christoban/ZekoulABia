@@ -282,7 +282,7 @@ function InviteModal({ onClose, onSuccess, staffTitles }: { onClose: () => void;
                         const isChecked = mergedPerms.includes(perm)
                         return (
                           <label key={perm}
-                            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px', borderRadius: 6, background: isInherited ? 'var(--green-light)' : 'white', border: `1px solid ${isInherited ? 'rgba(5,150,105,0.2)' : 'var(--border)'}`, cursor: isInherited ? 'default' : 'pointer', opacity: 1 }}>
+                            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px', borderRadius: 6, background: isInherited ? 'var(--green-light)' : 'white', border: `1px solid ${isInherited ? 'rgba(142,42,58,0.2)' : 'var(--border)'}`, cursor: isInherited ? 'default' : 'pointer', opacity: 1 }}>
                             <input type="checkbox" checked={isChecked} disabled={isInherited}
                               onChange={() => !isInherited && toggleCustomPerm(perm)}
                               style={{ accentColor: 'var(--green)', width: 13, height: 13, flexShrink: 0 }} />
@@ -299,7 +299,7 @@ function InviteModal({ onClose, onSuccess, staffTitles }: { onClose: () => void;
 
                 {/* Résumé des permissions fusionnées */}
                 {mergedPerms.length > 0 && (
-                  <div style={{ marginTop: 10, padding: '8px 12px', background: 'var(--green-light)', borderRadius: 8, border: '1px solid rgba(5,150,105,0.2)', fontSize: 11.5, color: 'var(--green)', fontWeight: 600 }}>
+                  <div style={{ marginTop: 10, padding: '8px 12px', background: 'var(--green-light)', borderRadius: 8, border: '1px solid rgba(142,42,58,0.2)', fontSize: 11.5, color: 'var(--green)', fontWeight: 600 }}>
                     {t('users.invite_modal.merged_count').replace('{count}', String(mergedPerms.length))} :&nbsp;
                     {mergedPerms.slice(0, 5).map(p => t(`users.permissions.${p}`)).join(', ')}
                     {mergedPerms.length > 5 ? t('users.invite_modal.merged_plus').replace('{count}', String(mergedPerms.length - 5)) : ''}
@@ -318,7 +318,7 @@ function InviteModal({ onClose, onSuccess, staffTitles }: { onClose: () => void;
             {/* Submit */}
             <button onClick={submit} disabled={form.loading}
               className="text-[13px] md:text-[14px] py-[10px] px-[18px]"
-              style={{ width: '100%', background: form.loading ? 'var(--border)' : 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', fontWeight: 800, borderRadius: 9, border: 'none', cursor: form.loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              style={{ width: '100%', background: form.loading ? 'var(--border)' : 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', fontWeight: 800, borderRadius: 9, border: 'none', cursor: form.loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               {form.loading ? t('users.invite_modal.sending') : t('users.invite_modal.send')}
             </button>
           </div>
@@ -523,7 +523,7 @@ function ImportModal({ onClose, onToast, onSuccess }: Omit<ImportStepProps, 'imp
               </div>
               <button onClick={handleDownloadTemplate}
                 className="text-[14px] md:text-[16px] py-[13px] px-[22px] md:py-[16px] md:px-[28px]"
-                style={{ borderRadius: 11, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                style={{ borderRadius: 11, fontWeight: 800, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 10 }}>
                 {t('users.import_modal.download').replace('{type}', importType === 'STUDENT' ? t('users.import_modal.download_type_student') : t('users.import_modal.download_type_teacher'))}
               </button>
               <div style={{ marginTop: 16 }}>
@@ -610,7 +610,7 @@ function ImportModal({ onClose, onToast, onSuccess }: Omit<ImportStepProps, 'imp
               <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
                 <button onClick={() => setStep(1)} style={{ flex: 1, padding: '14px', borderRadius: 11, fontSize: 15, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }}>{t('users.import_modal.btn_back')}</button>
                 <button onClick={handleImport} disabled={!file || loading}
-                  style={{ flex: 1, padding: '14px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: !file ? 'var(--border)' : 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: !file ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: loading ? 0.7 : 1 }}>
+                  style={{ flex: 1, padding: '14px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: !file ? 'var(--border)' : 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: !file ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: loading ? 0.7 : 1 }}>
                   {loading ? t('users.import_modal.status_processing') : t('users.import_modal.btn_confirm')}
                 </button>
               </div>
@@ -676,7 +676,7 @@ function ImportModal({ onClose, onToast, onSuccess }: Omit<ImportStepProps, 'imp
                 <button onClick={() => { handleReset(); setStep(0) }} style={{ flex: 1, padding: '14px', borderRadius: 11, fontSize: 15, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }}>
                   {t('users.import_modal.btn_import_another')}
                 </button>
-                <button onClick={handleClose} style={{ flex: 1, padding: '14px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                <button onClick={handleClose} style={{ flex: 1, padding: '14px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
                   {t('users.import_modal.btn_close')}
                 </button>
               </div>
@@ -744,7 +744,7 @@ export default function SectionUsers({ onToast, onNav }: Props) {
   const ROLE_LABEL: Record<string, { label: string; bg: string; color: string }> = {
     ADMIN:   { label: t('users.role_labels.ADMIN'),      bg: 'var(--green-light)', color: 'var(--green)' },
     TEACHER: { label: t('users.role_labels.TEACHER'), bg: 'var(--blue-light)', color: 'var(--blue)' },
-    STUDENT: { label: t('users.role_labels.STUDENT'),      bg: 'var(--teal-light)', color: 'var(--teal)' },
+    STUDENT: { label: t('users.role_labels.STUDENT'),      bg: 'var(--primary-light)', color: 'var(--primary)' },
     PARENT:  { label: t('users.role_labels.PARENT'),     bg: 'var(--amber-light)', color: 'var(--amber)' },
     STAFF:   { label: t('users.role_labels.STAFF'),  bg: 'var(--orange-light)', color: 'var(--orange)' },
   }
@@ -1084,7 +1084,7 @@ export default function SectionUsers({ onToast, onNav }: Props) {
         <div className="flex md:hidden items-center gap-[6px] flex-shrink-0">
           <button onClick={openCreateUser}
             className="inline-flex items-center gap-[4px] rounded-full px-[11px] py-[6px] text-[11.5px] whitespace-nowrap border-0"
-            style={{ background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800 }}>
+            style={{ background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800 }}>
             {t('users.btn_create')}
           </button>
           <div ref={userActionsRef} className="relative flex-shrink-0">
@@ -1115,7 +1115,7 @@ export default function SectionUsers({ onToast, onNav }: Props) {
         style={{
           background: (ROLE_TABS[activeTab]?.role === 'STUDENT' || ROLE_TABS[activeTab]?.role === 'PARENT')
             ? 'linear-gradient(135deg, rgba(59,130,246,0.08), rgba(30,58,138,0.04))'
-            : 'linear-gradient(135deg, rgba(16,185,129,0.08), rgba(6,78,59,0.04))',
+            : 'linear-gradient(135deg, rgba(16,185,129,0.08), rgba(47,143,91,0.04))',
           borderColor: (ROLE_TABS[activeTab]?.role === 'STUDENT' || ROLE_TABS[activeTab]?.role === 'PARENT')
             ? 'rgba(59,130,246,0.25)'
             : 'rgba(16,185,129,0.25)',
@@ -1130,7 +1130,7 @@ export default function SectionUsers({ onToast, onNav }: Props) {
                 : 'rgba(16,185,129,0.15)',
               color: (ROLE_TABS[activeTab]?.role === 'STUDENT' || ROLE_TABS[activeTab]?.role === 'PARENT')
                 ? '#2563eb'
-                : '#059669',
+                : 'var(--primary)',
             }}
           >
             {(ROLE_TABS[activeTab]?.role === 'STUDENT' || ROLE_TABS[activeTab]?.role === 'PARENT') ? <Eye size={16} /> : <UserCheck size={16} />}
@@ -1439,7 +1439,7 @@ export default function SectionUsers({ onToast, onNav }: Props) {
             {modUser.error && <div style={sErr}>{modUser.error}</div>}
             <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
               <button style={{ flex: 1, padding: '7.5px 12px', borderRadius: 9, fontSize: 13, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => setModUser(EMPTY_MOD_USER)}>{t('users.i18n_ext.actions.cancel')}</button>
-              <button style={{ flex: 1, padding: '7.5px 12px', borderRadius: 9, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: modUser.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: modUser.loading ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} onClick={submitModUser} disabled={modUser.loading}>
+              <button style={{ flex: 1, padding: '7.5px 12px', borderRadius: 9, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: modUser.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: modUser.loading ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} onClick={submitModUser} disabled={modUser.loading}>
                 {modUser.loading ? <Loader2 size={14} strokeWidth={2} className="animate-spin" /> : t('users.edit_modal.btn_save')}
               </button>
             </div>
@@ -1461,7 +1461,7 @@ export default function SectionUsers({ onToast, onNav }: Props) {
             {transfer.error && <div style={sErr}>{transfer.error}</div>}
             <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
               <button style={{ flex: 1, padding: '7px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => setTransfer(EMPTY_TRANSFER)}>{t('users.i18n_ext.actions.cancel')}</button>
-              <button style={{ flex: 1, padding: '7px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: transfer.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: transfer.loading ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} onClick={submitTransfer} disabled={transfer.loading}>
+              <button style={{ flex: 1, padding: '7px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 800, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: transfer.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: transfer.loading ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} onClick={submitTransfer} disabled={transfer.loading}>
                 {transfer.loading ? <Loader2 size={14} strokeWidth={2} className="animate-spin" /> : t('users.transfer_modal.btn_transfer')}
               </button>
             </div>
@@ -1610,7 +1610,7 @@ export default function SectionUsers({ onToast, onNav }: Props) {
             {createForm.error && <div style={sErr}>{createForm.error}</div>}
             <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
               <button style={{ flex: 1, padding: '7.5px 12px', borderRadius: 9, fontSize: 13, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => { setCreateOpen(false); setCreateForm(EMPTY_CREATE_USER) }}>{t('users.i18n_ext.actions.cancel')}</button>
-              <button style={{ flex: 1, padding: '7.5px 12px', borderRadius: 9, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: createForm.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: createForm.loading ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} onClick={submitCreateUser} disabled={createForm.loading}>
+              <button style={{ flex: 1, padding: '7.5px 12px', borderRadius: 9, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: createForm.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: createForm.loading ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} onClick={submitCreateUser} disabled={createForm.loading}>
                 {createForm.loading ? <Loader2 size={14} strokeWidth={2} className="animate-spin" /> : t('users.create_modal.btn_create')}
               </button>
             </div>
@@ -1660,7 +1660,7 @@ export default function SectionUsers({ onToast, onNav }: Props) {
 // Pas de variante responsive ici (fonction utilitaire, pas de className injectable au call
 // site) — taille fixe resserree vers la cible mobile de la maquette (11-13px).
 // Couleur d'avatar déterministe (palette de l'app, pas celle de la maquette) — mobile uniquement.
-const AVATAR_COLORS = ['var(--green)', 'var(--blue)', 'var(--amber)', 'var(--teal)', 'var(--purple)', 'var(--orange)']
+const AVATAR_COLORS = ['var(--green)', 'var(--blue)', 'var(--amber)', 'var(--primary)', 'var(--purple)', 'var(--orange)']
 function avatarColorFor(id: string): string {
   let hash = 0
   for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0
@@ -1674,7 +1674,7 @@ const badge = (bg: string, color: string): React.CSSProperties => ({
 
 const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }
 const sSub: React.CSSProperties = { color: 'var(--text3)', marginTop: 2 }
-const btnPrim: React.CSSProperties = { padding: '6px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+const btnPrim: React.CSSProperties = { padding: '6px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
 const btnSecSm: React.CSSProperties = { padding: '6px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
 
 const thStyle: React.CSSProperties = { padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }

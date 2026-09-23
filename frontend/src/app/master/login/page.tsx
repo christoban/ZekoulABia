@@ -22,9 +22,9 @@ function Alert({ a }: { a: AlertState }) {
     <div style={{
       padding: '10px 14px', borderRadius: 10, fontSize: 11, fontWeight: 700,
       marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8,
-      background: a.type === 'error' ? '#fee2e2' : '#d1fae5',
-      border: a.type === 'error' ? '1px solid rgba(220,38,38,0.2)' : '1px solid rgba(5,150,105,0.2)',
-      color: a.type === 'error' ? '#b91c1c' : '#065f46'
+      background: a.type === 'error' ? '#fee2e2' : 'var(--green-light)',
+      border: a.type === 'error' ? '1px solid rgba(220,38,38,0.2)' : '1px solid rgba(142,42,58,0.2)',
+      color: a.type === 'error' ? '#b91c1c' : 'var(--green2)'
     }}>
       <span style={{ display: 'flex', alignItems: 'center' }}>{a.type === 'error' ? <AlertTriangle size={14} /> : <CheckCircle2 size={14} />}</span><span>{a.msg}</span>
     </div>
@@ -62,10 +62,10 @@ function FormHeader({ title, sub }: { title: string; sub: React.ReactNode }) {
 function SubmitBtn({ loading, onClick, children }: { loading: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button onClick={onClick} disabled={loading} className="edu-submit-btn text-[13px] md:text-[13px] py-2 md:py-3" style={{
-      width: '100%', background: 'linear-gradient(135deg,#059669,#047857)',
+      width: '100%', background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))',
       color: 'white', fontWeight: 800, border: 'none', borderRadius: 10,
       cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'all 0.12s',
-      boxShadow: '0 2px 8px rgba(5,150,105,0.18)', marginTop: 10,
+      boxShadow: '0 2px 8px rgba(142,42,58,0.18)', marginTop: 10,
       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, opacity: loading ? 0.85 : 1
     }}>
       {loading
@@ -355,7 +355,7 @@ export default function SuperAdminLogin() {
   const timerSecDisp = timerSecs % 60
   const totpCircumference = 144
   const totpOffset = totpCircumference - (totpSecs / 30) * totpCircumference
-  const totpColor = totpSecs > 10 ? '#059669' : '#dc2626'
+  const totpColor = totpSecs > 10 ? 'var(--primary)' : '#dc2626'
 
   return (
     <>
@@ -371,7 +371,7 @@ export default function SuperAdminLogin() {
           transition: background 0.4s;
         }
         .edu-step.s-done:not(:last-child)::after,
-        .edu-step.s-active:not(:last-child)::after { background: #047857; }
+        .edu-step.s-active:not(:last-child)::after { background: var(--primary-hover); }
         .edu-feature:hover {
           background: rgba(255,255,255,0.09) !important;
           border-color: rgba(255,255,255,0.14) !important;
@@ -379,19 +379,19 @@ export default function SuperAdminLogin() {
         }
         .edu-submit-btn:hover:not(:disabled) {
           transform: translateY(-1px);
-          box-shadow: 0 6px 24px rgba(5,150,105,0.35) !important;
+          box-shadow: 0 6px 24px rgba(142,42,58,0.35) !important;
           filter: brightness(1.05);
         }
         .edu-submit-btn:active:not(:disabled) { transform: translateY(0); }
         .edu-field:focus {
-          border-color: #059669 !important;
+          border-color: var(--primary) !important;
           background: #f0ece6 !important;
-          box-shadow: 0 0 0 3px rgba(5,150,105,0.08);
+          box-shadow: 0 0 0 3px rgba(142,42,58,0.08);
         }
         .edu-otp:focus {
-          border-color: #059669 !important;
-          background: #f0fdf4 !important;
-          box-shadow: 0 0 0 3px rgba(5,150,105,0.08);
+          border-color: var(--primary) !important;
+          background: var(--green-light) !important;
+          box-shadow: 0 0 0 3px rgba(142,42,58,0.08);
         }
         @keyframes edu-spin { to { transform: rotate(360deg); } }
         @keyframes edu-fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
@@ -401,7 +401,7 @@ export default function SuperAdminLogin() {
       <div className="overflow-y-auto md:overflow-hidden" style={{ display: 'flex', minHeight: '100vh', fontFamily: 'var(--font-nunito),Nunito,sans-serif' }}>
 
         {/* ══ LEFT PANEL — vitrine, cachée sous md : la priorité mobile est le formulaire ══ */}
-        <div className="hidden md:flex md:w-[50vw]" style={{ minWidth: 0, background: '#1a2e1e', flexDirection: 'column', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+        <div className="hidden md:flex md:w-[50vw]" style={{ minWidth: 0, background: 'var(--sidebar-bg)', flexDirection: 'column', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
           {/* Bande africaine */}
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 6, zIndex: 2, background: 'repeating-linear-gradient(90deg,#f59e0b 0,#f59e0b 16px,#22c55e 16px,#22c55e 32px,#ef4444 32px,#ef4444 48px,#60a5fa 48px,#60a5fa 64px,#d4a843 64px,#d4a843 80px)' }} />
           {/* Cercle déco */}
@@ -452,7 +452,7 @@ export default function SuperAdminLogin() {
         </div>
 
         {/* ══ RIGHT PANEL ══ */}
-        <div className="w-full md:w-[50vw] px-5 md:px-0 py-6 md:py-0" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f7f3ee', position: 'relative', overflow: 'hidden' }}>
+        <div className="w-full md:w-[50vw] px-5 md:px-0 py-6 md:py-0" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: -100, right: -100, width: 350, height: 350, borderRadius: '50%', background: 'radial-gradient(circle,rgba(34,197,94,0.05) 0%,transparent 70%)', pointerEvents: 'none' }} />
 
           <div className="w-full md:w-[500px]" style={{ maxWidth: 500, margin: '0 auto', position: 'relative', zIndex: 1, animation: 'edu-fadeUp 0.5s ease both' }}>
@@ -460,11 +460,11 @@ export default function SuperAdminLogin() {
             {/* STEPPER — version compacte mobile : texte + barre de progression */}
             <div className="md:hidden" style={{ marginBottom: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: 13, fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Étape {step} sur 3</span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Étape {step} sur 3</span>
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#a89478' }}>{['Identifiants', 'Vérif. email', 'Double auth.'][step - 1]}</span>
               </div>
               <div style={{ height: 4, borderRadius: 2, background: '#e5decf', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${(step / 3) * 100}%`, background: 'linear-gradient(90deg,#059669,#047857)', borderRadius: 2, transition: 'width 0.3s ease' }} />
+                <div style={{ height: '100%', width: `${(step / 3) * 100}%`, background: 'linear-gradient(90deg,var(--primary),var(--primary-hover))', borderRadius: 2, transition: 'width 0.3s ease' }} />
               </div>
             </div>
 
@@ -477,10 +477,10 @@ export default function SuperAdminLogin() {
                     <div key={n}
                       className={`edu-step${active ? ' s-active' : ''}${done ? ' s-done' : ''}`}
                       style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flex: 1, position: 'relative' }}>
-                      <div style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, zIndex: 1, border: `3px solid ${done ? '#047857' : active ? '#059669' : '#d4c8b8'}`, color: done ? 'white' : active ? '#059669' : '#a89478', background: done ? '#047857' : active ? 'rgba(5,150,105,0.08)' : 'white', transition: 'all 0.3s' }}>
+                      <div style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, zIndex: 1, border: `3px solid ${done ? 'var(--primary-hover)' : active ? 'var(--primary)' : '#d4c8b8'}`, color: done ? 'white' : active ? 'var(--primary)' : '#a89478', background: done ? 'var(--primary-hover)' : active ? 'rgba(142,42,58,0.08)' : 'white', transition: 'all 0.3s' }}>
                         {done ? <Check size={13} /> : n}
                       </div>
-                      <div style={{ fontSize: 11, fontWeight: 700, textAlign: 'center', color: done ? '#047857' : active ? '#059669' : '#a89478' }}>{label}</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, textAlign: 'center', color: done ? 'var(--primary-hover)' : active ? 'var(--primary)' : '#a89478' }}>{label}</div>
                     </div>
                   )
                 })}
@@ -516,7 +516,7 @@ export default function SuperAdminLogin() {
                 <button
                   type="button"
                   onClick={() => { setForgotOpen(true); setForgotStep(1); setForgotAlert(null); setForgotDone(false); setForgotEmail(email); setForgotOtp(''); setForgotPwd(''); setForgotConfirm('') }}
-                  style={{ fontSize: 12, fontWeight: 700, color: '#059669', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', marginTop: 6, padding: 0 }}
+                  style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', marginTop: 6, padding: 0 }}
                 >
                   Mot de passe oublié ?
                 </button>
@@ -530,7 +530,7 @@ export default function SuperAdminLogin() {
                 <BackBtn onClick={() => { setStep(1); if (timerRef.current) clearInterval(timerRef.current) }} />
                 <FormHeader
                   title="Vérification par email"
-                  sub={<>Entrez le code à 6 chiffres envoyé à{' '}<span style={{ color: '#059669', fontWeight: 700 }}>{maskEmail(email)}</span><br />Validité : 10 minutes</>}
+                  sub={<>Entrez le code à 6 chiffres envoyé à{' '}<span style={{ color: 'var(--primary)', fontWeight: 700 }}>{maskEmail(email)}</span><br />Validité : 10 minutes</>}
                 />
                 {alert2 && <Alert a={alert2} />}
                 <div style={{ display: 'flex', gap: 8, width: '100%' }}>
@@ -541,7 +541,7 @@ export default function SuperAdminLogin() {
                       className="edu-otp"
                       onChange={e => handleOtpInput(i, e.target.value)}
                       onKeyDown={e => handleOtpKey(i, e)}
-                      style={{ flex: 1, height: 48, textAlign: 'center', fontSize: 20, fontWeight: 900, background: v ? '#f0fdf4' : 'white', border: `1.5px solid ${v ? '#047857' : '#d4c8b8'}`, borderRadius: 10, outline: 'none', color: v ? '#059669' : '#1a1209', fontFamily: 'inherit', transition: 'all 0.2s', caretColor: '#059669', minWidth: 0, maxWidth: 100 }}
+                      style={{ flex: 1, height: 48, textAlign: 'center', fontSize: 20, fontWeight: 900, background: v ? 'var(--green-light)' : 'white', border: `1.5px solid ${v ? 'var(--primary-hover)' : '#d4c8b8'}`, borderRadius: 10, outline: 'none', color: v ? 'var(--primary)' : '#1a1209', fontFamily: 'inherit', transition: 'all 0.2s', caretColor: 'var(--primary)', minWidth: 0, maxWidth: 100 }}
                     />
                   ))}
                 </div>
@@ -550,7 +550,7 @@ export default function SuperAdminLogin() {
                     <Clock size={13} /> {timerMin}:{String(timerSecDisp).padStart(2, '0')}
                   </div>
                   <button onClick={resendOtp} disabled={!resendEnabled}
-                    style={{ fontSize: 12, fontWeight: 700, color: resendEnabled ? '#059669' : '#a89478', cursor: resendEnabled ? 'pointer' : 'default', background: 'none', border: 'none', fontFamily: 'inherit' }}>
+                    style={{ fontSize: 12, fontWeight: 700, color: resendEnabled ? 'var(--primary)' : '#a89478', cursor: resendEnabled ? 'pointer' : 'default', background: 'none', border: 'none', fontFamily: 'inherit' }}>
                     Renvoyer le code
                   </button>
                 </div>
@@ -607,7 +607,7 @@ export default function SuperAdminLogin() {
 
                 <div style={{ textAlign: 'center', marginBottom: 12 }}>
                   <button onClick={() => setIsRecovery(r => !r)}
-                    style={{ fontSize: 12, fontWeight: 700, color: '#059669', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                    style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                     {isRecovery ? <><ArrowLeft size={13} /> Utiliser le code TOTP</> : <><KeyRound size={13} /> Utiliser un code de récupération</>}
                   </button>
                 </div>
@@ -627,10 +627,10 @@ export default function SuperAdminLogin() {
           <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: 14, width: 420, maxWidth: '90vw', padding: 24, boxShadow: '0 12px 36px rgba(0,0,0,0.14)' }}>
             {forgotDone ? (
               <div style={{ textAlign: 'center', padding: '8px 0' }}>
-                <div style={{ display: 'flex', justifyContent: 'center', color: '#059669', marginBottom: 10 }}><CheckCircle2 size={36} /></div>
+                <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--primary)', marginBottom: 10 }}><CheckCircle2 size={36} /></div>
                 <div style={{ fontSize: 17, fontWeight: 800, color: '#1a1209', marginBottom: 6 }}>Mot de passe réinitialisé !</div>
                 <div style={{ fontSize: 13, color: '#6b5c45', marginBottom: 16 }}>Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.</div>
-                <button onClick={() => setForgotOpen(false)} style={{ width: '100%', padding: '10px', background: 'linear-gradient(135deg,#059669,#047857)', color: 'white', fontWeight: 800, border: 'none', borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit' }}>Fermer</button>
+                <button onClick={() => setForgotOpen(false)} style={{ width: '100%', padding: '10px', background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', fontWeight: 800, border: 'none', borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit' }}>Fermer</button>
               </div>
             ) : forgotStep === 1 ? (
               <>
@@ -642,14 +642,14 @@ export default function SuperAdminLogin() {
                 </Field>
                 <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                   <button onClick={() => setForgotOpen(false)} style={{ flex: 1, padding: '10px', background: 'white', border: '1.5px solid #d4c8b8', borderRadius: 9, fontWeight: 800, color: '#6b5c45', cursor: 'pointer', fontFamily: 'inherit' }}>Annuler</button>
-                  <button onClick={handleForgotSend} disabled={forgotLoading} style={{ flex: 1, padding: '10px', background: 'linear-gradient(135deg,#059669,#047857)', color: 'white', fontWeight: 800, border: 'none', borderRadius: 9, cursor: forgotLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: forgotLoading ? 0.7 : 1 }}>{forgotLoading ? 'Envoi…' : 'Envoyer le code →'}</button>
+                  <button onClick={handleForgotSend} disabled={forgotLoading} style={{ flex: 1, padding: '10px', background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', fontWeight: 800, border: 'none', borderRadius: 9, cursor: forgotLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: forgotLoading ? 0.7 : 1 }}>{forgotLoading ? 'Envoi…' : 'Envoyer le code →'}</button>
                 </div>
               </>
             ) : (
               <>
                 <button onClick={() => setForgotStep(1)} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, color: '#a89478', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', marginBottom: 10 }}><ArrowLeft size={13} /> Retour</button>
                 <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 800, color: '#1a1209', marginBottom: 6 }}>Réinitialiser le mot de passe</div>
-                <div style={{ fontSize: 12, color: '#6b5c45', marginBottom: 14 }}>Code envoyé à <span style={{ color: '#059669', fontWeight: 700 }}>{maskEmail(forgotEmail)}</span></div>
+                <div style={{ fontSize: 12, color: '#6b5c45', marginBottom: 14 }}>Code envoyé à <span style={{ color: 'var(--primary)', fontWeight: 700 }}>{maskEmail(forgotEmail)}</span></div>
                 {forgotAlert && <Alert a={forgotAlert} />}
                 <Field label="Code OTP (6 chiffres)">
                   <input type="tel" maxLength={6} value={forgotOtp} onChange={e => { setForgotOtp(e.target.value.replace(/\D/g, '')); setForgotAlert(null) }} placeholder="123456" className="edu-field" style={{ ...fieldInputStyle, textAlign: 'center', letterSpacing: 4, fontSize: 18, fontWeight: 900 }} />
@@ -666,7 +666,7 @@ export default function SuperAdminLogin() {
                 </Field>
                 <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                   <button onClick={() => setForgotOpen(false)} style={{ flex: 1, padding: '10px', background: 'white', border: '1.5px solid #d4c8b8', borderRadius: 9, fontWeight: 800, color: '#6b5c45', cursor: 'pointer', fontFamily: 'inherit' }}>Annuler</button>
-                  <button onClick={handleForgotConfirm} disabled={forgotLoading} style={{ flex: 1, padding: '10px', background: 'linear-gradient(135deg,#059669,#047857)', color: 'white', fontWeight: 800, border: 'none', borderRadius: 9, cursor: forgotLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: forgotLoading ? 0.7 : 1 }}>{forgotLoading ? '…' : 'Réinitialiser →'}</button>
+                  <button onClick={handleForgotConfirm} disabled={forgotLoading} style={{ flex: 1, padding: '10px', background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', fontWeight: 800, border: 'none', borderRadius: 9, cursor: forgotLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: forgotLoading ? 0.7 : 1 }}>{forgotLoading ? '…' : 'Réinitialiser →'}</button>
                 </div>
               </>
             )}

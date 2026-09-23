@@ -45,7 +45,7 @@ export default function SectionStudentTimetable({ onToast, user }: Props) {
     if (!res.success) throw new Error(t('timetable.load_error'))
 
     const slotMap: Record<string, SlotType> = {}
-    const colors = ['var(--green)', 'var(--blue)', 'var(--purple)', 'var(--amber)', 'var(--teal)', 'var(--red)', 'var(--orange)']
+    const colors = ['var(--green)', 'var(--blue)', 'var(--purple)', 'var(--amber)', 'var(--primary)', 'var(--red)', 'var(--orange)']
     let colorIdx = 0
     const subjectColors: Record<string, string> = {}
 

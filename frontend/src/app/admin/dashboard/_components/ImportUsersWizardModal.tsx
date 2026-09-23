@@ -152,7 +152,7 @@ export default function ImportUsersWizardModal({ onClose, onToast, onSuccess, is
   )
 }
 
-const primaryButton = { flex: 1, padding: '8px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 800, fontFamily: 'inherit', background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white' }
+const primaryButton = { flex: 1, padding: '8px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 800, fontFamily: 'inherit', background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white' }
 const secondaryButton = { flex: 1, padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border)', cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', background: 'var(--surface)', color: 'var(--text2)' }
 const linkButton = { marginTop: 18, border: 'none', background: 'transparent', color: 'var(--green)', cursor: 'pointer', fontWeight: 700, fontFamily: 'inherit' }
 const sectionTitle = { color: 'var(--text)', fontSize: 15, margin: '22px 0 10px' }

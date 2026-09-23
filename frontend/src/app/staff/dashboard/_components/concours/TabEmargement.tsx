@@ -114,10 +114,10 @@ export default function TabEmargement({
         </div>
 
         <div style={{ padding: 14, borderRadius: 10, background: 'var(--bg)', border: '1px solid var(--border)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--green, #10b981)', fontSize: 12, marginBottom: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--green, var(--green))', fontSize: 12, marginBottom: 4 }}>
             <CheckCircle2 size={14} /> Présents
           </div>
-          <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--green, #10b981)' }}>{presents}</div>
+          <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--green, var(--green))' }}>{presents}</div>
         </div>
 
         <div style={{ padding: 14, borderRadius: 10, background: 'var(--bg)', border: '1px solid var(--border)' }}>
@@ -264,8 +264,8 @@ export default function TabEmargement({
                           borderRadius: 12,
                           fontSize: 11,
                           fontWeight: 700,
-                          background: isAbsent ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.12)',
-                          color: isAbsent ? 'var(--red, #ef4444)' : 'var(--green, #10b981)',
+                          background: isAbsent ? 'rgba(239, 68, 68, 0.12)' : 'rgba(47,143,91,0.12)',
+                          color: isAbsent ? 'var(--red, #ef4444)' : 'var(--green, var(--green))',
                         }}
                       >
                         {isAbsent ? 'ABSENT' : 'PRÉSENT'}
@@ -280,7 +280,7 @@ export default function TabEmargement({
                           padding: '6px 14px',
                           borderRadius: 8,
                           border: 'none',
-                          background: isAbsent ? 'var(--green, #10b981)' : 'var(--red, #ef4444)',
+                          background: isAbsent ? 'var(--green, var(--green))' : 'var(--red, #ef4444)',
                           color: '#fff',
                           fontWeight: 600,
                           fontSize: 12,

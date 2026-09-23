@@ -223,7 +223,7 @@ export default function AssistantWidget({ section, rolePrefix = 'admin', suggest
             animation: 'edu-nudge-in 0.3s ease both',
           }}>
           <style>{`@keyframes edu-nudge-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }`}</style>
-          <Bot size={16} style={{ flexShrink: 0, color: 'var(--green)' }} /> {t('assistant.idle_nudge')}
+          <Bot size={16} style={{ flexShrink: 0, color: 'var(--accent)' }} /> {t('assistant.idle_nudge')}
         </button>
       )}
 
@@ -233,9 +233,9 @@ export default function AssistantWidget({ section, rolePrefix = 'admin', suggest
           onClick={() => setOpen(o => !o)}
           className={`fixed z-[1200] ${isMessagerieSection ? 'bottom-[calc(130px+env(safe-area-inset-bottom,0px))] md:bottom-[72px]' : 'bottom-[calc(70px+env(safe-area-inset-bottom,0px))] md:bottom-6'} right-4 md:right-6 w-[52px] h-[52px] md:w-auto md:h-[58px] rounded-[16px] md:rounded-[30px] md:px-[18px] border-none cursor-pointer flex items-center justify-center gap-2 md:gap-2.5 font-extrabold text-[14px] md:text-[15px]`}
           style={{
-            background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white',
+            background: 'var(--accent)', color: 'var(--sidebar-bg)',
             fontFamily: 'inherit',
-            boxShadow: '0 8px 24px rgba(5,150,105,0.4)',
+            boxShadow: '0 8px 24px rgba(217,164,65,0.4)',
           }}>
           <span style={{ display: 'flex', alignItems: 'center' }}><Bot size={22} /></span>
           <span className="hidden md:inline">{t('assistant.title')}</span>
@@ -258,7 +258,7 @@ export default function AssistantWidget({ section, rolePrefix = 'admin', suggest
           <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
           {/* Header — bouton fermer dedie dans le panneau (maquette) ; le FAB garde une icone
               fixe (ne bascule plus en X) puisque cette croix suffit desormais a fermer. */}
-          <div className="gap-[10px] px-[16px] py-[13px] md:px-[18px] md:py-[16px]" style={{ background: 'linear-gradient(135deg,var(--sidebar),var(--green))', color: 'white', display: 'flex', alignItems: 'center' }}>
+          <div className="gap-[10px] px-[16px] py-[13px] md:px-[18px] md:py-[16px]" style={{ background: 'var(--accent)', color: 'var(--sidebar-bg)', display: 'flex', alignItems: 'center' }}>
             <div className="w-[32px] h-[32px] md:w-9 md:h-9" style={{ borderRadius: 10, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Bot size={20} /></div>
             <div style={{ flex: 1 }}>
               <div className="text-[14.5px] md:text-[15.5px]" style={{ fontWeight: 800 }}>{t('assistant.title')}</div>
@@ -298,7 +298,7 @@ export default function AssistantWidget({ section, rolePrefix = 'admin', suggest
                   <div key={it.id} style={{ display: 'flex', justifyContent: it.kind === 'user' ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
                     <div className="max-w-[80%] md:max-w-[82%] rounded-[14px] md:rounded-[13px] px-[13px] py-[10px] text-[14px]" style={{
                       lineHeight: 1.5, whiteSpace: 'pre-wrap',
-                      background: it.kind === 'user' ? 'linear-gradient(135deg,var(--green),var(--green2))' : 'white',
+                      background: it.kind === 'user' ? 'linear-gradient(135deg,var(--primary),var(--primary-hover))' : 'white',
                       color: it.kind === 'user' ? 'white' : 'var(--text)',
                       border: it.kind === 'user' ? 'none' : '1.5px solid var(--border)',
                     }}>{it.text}</div>
@@ -394,7 +394,7 @@ export default function AssistantWidget({ section, rolePrefix = 'admin', suggest
             <button onClick={() => send(input)} disabled={loading || !input.trim()}
               className="w-[42px] h-[42px] rounded-[12px] md:w-auto md:h-auto md:rounded-[10px] md:px-[16px]"
               style={{
-                background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none',
+                background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none',
                 cursor: loading || !input.trim() ? 'default' : 'pointer',
                 opacity: loading || !input.trim() ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}><Send size={17} /></button>

@@ -155,7 +155,7 @@ export default function SectionTeacherDashboard({ onNav, onToast, user }: Props)
 
           {user?.classesProfessorPrincipal?.map(cls => (
             <div key={cls.id} style={{ flex: '1 1 280px', background: 'linear-gradient(135deg,var(--green-light),var(--green-light))', borderRadius: 12, border: '1.5px solid rgba(5,150,105,0.35)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(5,150,105,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Award size={20} strokeWidth={2} /></div>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(142,42,58,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Award size={20} strokeWidth={2} /></div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 9.5, fontWeight: 800, color: 'var(--green)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 1 }}>{t('dashboard.pp_badge')}</div>
                 <div style={{ fontSize: 17, fontWeight: 900, color: 'var(--green)', lineHeight: 1.1 }}>{cls.name}</div>
@@ -165,11 +165,11 @@ export default function SectionTeacherDashboard({ onNav, onToast, user }: Props)
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 <button onClick={() => onNav('pp-appreciations')}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, fontSize: 11.5, fontWeight: 800, background: 'rgba(5,150,105,0.15)', color: 'var(--green)', border: '1px solid rgba(5,150,105,0.3)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, fontSize: 11.5, fontWeight: 800, background: 'rgba(5,150,105,0.15)', color: 'var(--green)', border: '1px solid rgba(142,42,58,0.3)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                   <PenLine size={12} strokeWidth={2} />{t('dashboard.pp_appreciations_btn')}
                 </button>
                 <button onClick={() => onNav('pp-classe')}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, fontSize: 11.5, fontWeight: 800, background: 'var(--surface)', color: 'var(--green)', border: '1px solid rgba(5,150,105,0.3)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, fontSize: 11.5, fontWeight: 800, background: 'var(--surface)', color: 'var(--green)', border: '1px solid rgba(142,42,58,0.3)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                   <ClipboardList size={12} strokeWidth={2} />{t('dashboard.pp_class_btn')}
                 </button>
               </div>

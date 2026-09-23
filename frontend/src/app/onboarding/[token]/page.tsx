@@ -187,7 +187,7 @@ function Field({ label, required, children }: { label: string; required?: boolea
 function Alert({ msg, type }: { msg: string; type: 'error' | 'success' | 'info' }) {
   const styles = {
     error:   { bg: 'var(--red-light)', border: 'rgba(220,38,38,0.25)',  color: 'var(--red)', icon: AlertTriangle },
-    success: { bg: 'var(--green-light)', border: 'rgba(5,150,105,0.25)',  color: 'var(--green)', icon: CheckCircle2 },
+    success: { bg: 'var(--green-light)', border: 'rgba(142,42,58,0.25)',  color: 'var(--green)', icon: CheckCircle2 },
     info:    { bg: 'var(--blue-light)', border: 'rgba(37,99,235,0.25)',  color: 'var(--blue)', icon: Info },
   }[type]
   const Icon = styles.icon
@@ -228,10 +228,10 @@ function SubmitBtn({ loading, disabled, onClick, children, loadingText }: { load
   return (
     <button type="button" onClick={onClick} disabled={loading || disabled}
       style={{
-        width: '100%', padding: '14px', background: loading || disabled ? '#a8d5c2' : 'linear-gradient(135deg,var(--green),var(--green2))',
+        width: '100%', padding: '14px', background: loading || disabled ? '#a8d5c2' : 'linear-gradient(135deg,var(--primary),var(--primary-hover))',
         color: 'white', fontSize: 18, fontWeight: 800, border: 'none', borderRadius: 10,
         cursor: loading || disabled ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-        boxShadow: loading || disabled ? 'none' : '0 4px 16px rgba(5,150,105,0.25)',
+        boxShadow: loading || disabled ? 'none' : '0 4px 16px rgba(142,42,58,0.25)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 8, transition: 'all 0.2s',
       }}>
       {loading
@@ -889,7 +889,7 @@ export default function OnboardingPage() {
     const info = {
       invalid:  { icon: Lock,        title: t('phase1.invite.invalid.title'),          color: 'var(--red)', bg: 'var(--red-light)', border: 'rgba(220,38,38,0.2)' },
       expired:  { icon: AlarmClock,  title: t('phase1.invite.expired.title'),     color: 'var(--amber)', bg: 'var(--amber-light)', border: 'rgba(217,119,6,0.2)' },
-      used:     { icon: CheckCircle2, title: t('phase1.invite.used.title'), color: 'var(--green)', bg: 'var(--green-light)', border: 'rgba(5,150,105,0.2)' },
+      used:     { icon: CheckCircle2, title: t('phase1.invite.used.title'), color: 'var(--green)', bg: 'var(--green-light)', border: 'rgba(142,42,58,0.2)' },
     }[loadState]
     const InfoIcon = info.icon
     content = (
@@ -911,7 +911,7 @@ export default function OnboardingPage() {
         <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 30, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>
           {t('phase1.done.title')}
         </div>
-        <div style={{ padding: '16px 20px', background: 'var(--green-light)', border: '1.5px solid rgba(5,150,105,0.2)', borderRadius: 12, marginBottom: 20, fontSize: 15, fontWeight: 600, color: 'var(--green)', lineHeight: 1.8, display: 'flex', alignItems: 'flex-start', gap: 6, textAlign: 'left' }}>
+        <div style={{ padding: '16px 20px', background: 'var(--green-light)', border: '1.5px solid rgba(142,42,58,0.2)', borderRadius: 12, marginBottom: 20, fontSize: 15, fontWeight: 600, color: 'var(--green)', lineHeight: 1.8, display: 'flex', alignItems: 'flex-start', gap: 6, textAlign: 'left' }}>
           <CheckCircle2 size={17} strokeWidth={2} style={{ flexShrink: 0, marginTop: 2 }} /><span><strong>{form.nom}</strong> {t('phase1.done.pendingMsg')}<br />
           {t('phase1.done.emailNotice')} <strong>{form.adminEmail}</strong> {t('phase1.done.emailDelay')}</span>
         </div>
@@ -949,13 +949,13 @@ export default function OnboardingPage() {
               justifyContent: 'center',
               gap: 8,
               padding: '14px 32px',
-              background: 'linear-gradient(135deg, var(--green), #047857)',
+              background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))',
               color: 'white',
               borderRadius: 10,
               fontWeight: 700,
               fontSize: 16,
               textDecoration: 'none',
-              boxShadow: '0 4px 12px rgba(5,150,105,0.25)',
+              boxShadow: '0 4px 12px rgba(142,42,58,0.25)',
             }}
           >
             {t('phase1.done.loginCta')} →
@@ -1090,7 +1090,7 @@ export default function OnboardingPage() {
             {template && (
               <div style={{
                 padding: '12px 14px', background: 'rgba(5,150,105,0.06)',
-                border: '1.5px solid rgba(5,150,105,0.2)', borderRadius: 12, marginBottom: 12,
+                border: '1.5px solid rgba(142,42,58,0.2)', borderRadius: 12, marginBottom: 12,
               }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)', marginBottom: 4 }}>
                   {t('phase1.step1.templateDetected.title')}
@@ -1317,7 +1317,7 @@ export default function OnboardingPage() {
             {template && !template.isComplexe && (
               <div style={{
                 padding: '14px 16px', background: 'rgba(5,150,105,0.06)',
-                border: '1.5px solid rgba(5,150,105,0.2)', borderRadius: 12, marginBottom: 16,
+                border: '1.5px solid rgba(142,42,58,0.2)', borderRadius: 12, marginBottom: 16,
               }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)', marginBottom: 4 }}>
                   {t('phase1.step3.templateDetected.title')}
@@ -2709,7 +2709,7 @@ export default function OnboardingPage() {
         }
         .edu-step.s-done:not(:last-child)::after,
         .edu-step.s-active:not(:last-child)::after { background: var(--green2); }
-        .edu-field:focus { border-color: var(--green) !important; background: #f0ece6 !important; box-shadow: 0 0 0 3px rgba(5,150,105,0.08); }
+        .edu-field:focus { border-color: var(--green) !important; background: #f0ece6 !important; box-shadow: 0 0 0 3px rgba(142,42,58,0.08); }
         @keyframes edu-spin { to { transform: rotate(360deg); } }
         @keyframes edu-fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
         @keyframes edu-fadeDown { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }

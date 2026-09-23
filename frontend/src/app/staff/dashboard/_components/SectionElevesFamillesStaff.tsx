@@ -158,7 +158,7 @@ export default function SectionElevesFamillesStaff({ onToast }: Props) {
   const getProfileBadge = (profile?: string) => {
     switch (profile) {
       case 'AUTONOME':
-        return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-green-500/15 text-green-600 dark:text-green-400"><Smartphone size={11} /> Autonome (App)</span>
+        return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-success/15 text-success dark:text-success"><Smartphone size={11} /> Autonome (App)</span>
       case 'ASSISTE':
         return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-500/15 text-blue-600 dark:text-blue-400"><UserCheck size={11} /> Guichet assisté</span>
       case 'SMS_SEUL':
@@ -350,7 +350,7 @@ export default function SectionElevesFamillesStaff({ onToast }: Props) {
               {/* Responsable légal & Contacts */}
               <div className="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] space-y-2.5">
                 <div className="font-bold text-[var(--text)] flex items-center gap-1.5">
-                  <ShieldCheck size={16} className="text-emerald-500" /> Responsable Légal
+                  <ShieldCheck size={16} className="text-primary" /> Responsable Légal
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
@@ -395,7 +395,7 @@ export default function SectionElevesFamillesStaff({ onToast }: Props) {
                     className="w-full flex items-center justify-between p-2.5 rounded-lg border border-[var(--border)] hover:border-[var(--primary)] bg-[var(--bg)] text-left transition-all"
                   >
                     <div className="flex items-center gap-2">
-                      <IdCard size={16} className="text-emerald-500" />
+                      <IdCard size={16} className="text-primary" />
                       <div>
                         <div className="font-bold text-xs text-[var(--text)]">Carte scolaire</div>
                         <div className="text-[11px] text-[var(--text3)]">Format badge avec matricule & classe</div>

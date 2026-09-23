@@ -749,7 +749,7 @@ export default function SectionAcademicYear({ onToast }: Props) {
 
             <div style={{ display: 'flex', gap: 10 }}>
               <button style={{ flex: 1, padding: '11px', borderRadius: 11, fontSize: 15, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => setCalForm(EMPTY_CAL)}>{t('academic_year.cancel')}</button>
-              <button style={{ flex: 1, padding: '11px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: calForm.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: calForm.loading ? 0.7 : 1 }} onClick={submitCalendar} disabled={calForm.loading}>
+              <button style={{ flex: 1, padding: '11px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: calForm.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: calForm.loading ? 0.7 : 1 }} onClick={submitCalendar} disabled={calForm.loading}>
                 {calForm.loading ? t('academic_year.saving') : t('academic_year.save')}
               </button>
             </div>
@@ -847,7 +847,7 @@ export default function SectionAcademicYear({ onToast }: Props) {
             <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
               <button style={{ flex: 1, padding: '11px', borderRadius: 11, fontSize: 15, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }}
                 onClick={closeReconduction}>Ignorer</button>
-              <button style={{ flex: 1, padding: '11px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: reconduction.submitting ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: reconduction.submitting ? 0.7 : 1 }}
+              <button style={{ flex: 1, padding: '11px', borderRadius: 11, fontSize: 15, fontWeight: 800, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: reconduction.submitting ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: reconduction.submitting ? 0.7 : 1 }}
                 onClick={confirmReconduction} disabled={reconduction.submitting || reconduction.loading || reconduction.rows.length === 0}>
                 {reconduction.submitting ? 'Reconduction…' : `Reconduire (${reconduction.rows.filter(r => r.include).length})`}
               </button>
@@ -861,7 +861,7 @@ export default function SectionAcademicYear({ onToast }: Props) {
 
 const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }
 const sSub: React.CSSProperties = { color: 'var(--text3)', marginTop: 3 }
-const btnPrim: React.CSSProperties = { padding: '10px 20px', borderRadius: 11, fontSize: 16, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+const btnPrim: React.CSSProperties = { padding: '10px 20px', borderRadius: 11, fontSize: 16, fontWeight: 800, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
 const btnSecSm: React.CSSProperties = { padding: '7px 14px', borderRadius: 9, fontSize: 15, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
 const thStyle: React.CSSProperties = { padding: '11px 20px', textAlign: 'left', fontSize: 13, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.7px', whiteSpace: 'nowrap' }
 const tdStyle: React.CSSProperties = { padding: '15px 20px', fontSize: 17, color: 'var(--text2)', borderBottom: '1px solid var(--border)', verticalAlign: 'middle' }

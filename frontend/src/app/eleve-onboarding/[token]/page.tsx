@@ -115,8 +115,8 @@ export default function EleveOnboardingPage() {
 
           {state === 'submitted' && (
             <div style={{ textAlign: 'center' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14, color: '#065f46' }}><CheckCircle2 size={40} strokeWidth={2} /></div>
-              <div style={{ fontSize: 17, fontWeight: 800, color: '#065f46', marginBottom: 8 }}>{t('eleveAutoservice.successTitle')}</div>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14, color: 'var(--green2)' }}><CheckCircle2 size={40} strokeWidth={2} /></div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--green2)', marginBottom: 8 }}>{t('eleveAutoservice.successTitle')}</div>
               <p style={{ color: '#374151', fontSize: 15 }}>{t('eleveAutoservice.successMessage')}</p>
             </div>
           )}

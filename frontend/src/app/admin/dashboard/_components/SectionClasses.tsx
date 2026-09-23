@@ -596,7 +596,7 @@ export default function SectionClasses({ onToast, onNav }: Props) {
         <button className="hidden md:inline-block" style={btnPrim} onClick={() => setCreateOpen(true)}>{t('classes.btn_create')}</button>
         <button
           className="md:hidden inline-flex items-center gap-[6px] rounded-lg px-[13px] py-[8px] text-[13px] border-0 flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800 }}
+          style={{ background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800 }}
           onClick={() => setCreateOpen(true)}>{t('classes.btn_create')}</button>
       </div>
 
@@ -1440,7 +1440,7 @@ const sLabel: React.CSSProperties = { fontWeight: 700, color: 'var(--text3)' }
 const sInputCls = 'rounded-lg px-3 py-2 mb-3 text-xs md:text-sm font-nunito'
 const sInput: React.CSSProperties = { width: '100%', border: '1.5px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none' }
 const sError: React.CSSProperties = { background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8, padding: '7px 14px', fontSize: 13, fontWeight: 600, marginBottom: 10 }
-const btnPrim: React.CSSProperties = { padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+const btnPrim: React.CSSProperties = { padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
 const btnSec2: React.CSSProperties = { padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }
 const btnSecSm: React.CSSProperties = { padding: '5.5px 11px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
 const btnRetry: React.CSSProperties = { padding: '6px 14px', borderRadius: 8, background: 'var(--surface)', color: 'var(--red)', border: '1.5px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 13 }

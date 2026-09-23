@@ -9,7 +9,7 @@ export default function BabillardPin({ color = 'green', size = 26 }: Props) {
   const colorMap = {
     red: { fill: '#dc2626', stroke: '#991b1b', light: '#f87171' },
     orange: { fill: '#ea580c', stroke: '#9a3412', light: '#fb923c' },
-    green: { fill: '#059669', stroke: '#065f46', light: '#34d399' },
+    green: { fill: 'var(--primary)', stroke: 'var(--green2)', light: 'var(--green)' },
   };
 
   const { fill, stroke, light } = colorMap[color];

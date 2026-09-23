@@ -328,7 +328,7 @@ function HeroMockup() {
     <div style={{ ...CARD, padding: 24, width: '100%', maxWidth: 460, boxShadow: '0 24px 72px rgba(0,0,0,0.14)', borderRadius: 20 }}>
       {/* Top bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-        <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg,var(--green),var(--green2))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0 }}><GraduationCap size={16} strokeWidth={2} /></div>
+        <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0 }}><GraduationCap size={16} strokeWidth={2} /></div>
         <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)' }}>Tableau de bord — Trimestre 2</div>
         <div style={{ marginLeft: 'auto', background: 'var(--green-light)', color: 'var(--green)', fontSize: 10, fontWeight: 900, borderRadius: 20, padding: '3px 10px', whiteSpace: 'nowrap' }}>LIVE</div>
       </div>
@@ -435,7 +435,7 @@ export default function LandingPage() {
 
   // shared button styles — taille ultra-dense landing page
   const btnPrimary: CSSProperties = {
-    background: 'linear-gradient(135deg,var(--green),var(--green2))',
+    background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))',
     color: 'white',
     fontWeight: 800,
     fontSize: 13,
@@ -443,7 +443,7 @@ export default function LandingPage() {
     borderRadius: 8,
     border: 'none',
     cursor: 'pointer',
-    boxShadow: '0 2px 8px rgba(5,150,105,0.18)',
+    boxShadow: '0 2px 8px rgba(142,42,58,0.18)',
     fontFamily: 'inherit',
     transition: 'all 150ms',
     display: 'inline-block',
@@ -558,7 +558,7 @@ export default function LandingPage() {
               style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 24 }}>
               <motion.button onClick={openDemo}
                 style={{ ...btnPrimary, fontSize: 13, padding: '9px 20px', display: 'inline-flex', alignItems: 'center', gap: 6 }}
-                whileHover={{ scale: 1.03, boxShadow: '0 4px 14px rgba(5,150,105,0.3)' }}
+                whileHover={{ scale: 1.03, boxShadow: '0 4px 14px rgba(142,42,58,0.3)' }}
                 whileTap={{ scale: 0.98 }}
                 transition={{ type: 'spring', stiffness: 350, damping: 20 }}
               ><GraduationCap size={14} strokeWidth={2} />{tx.hero.cta1}</motion.button>
@@ -793,7 +793,7 @@ export default function LandingPage() {
                 onMouseEnter={e => {
                   const el = e.currentTarget as HTMLElement
                   el.style.transform = 'translateY(-4px)'
-                  el.style.boxShadow = plan.recommended ? '0 14px 32px rgba(5,150,105,0.18)' : '0 6px 20px rgba(0,0,0,0.07)'
+                  el.style.boxShadow = plan.recommended ? '0 14px 32px rgba(142,42,58,0.18)' : '0 6px 20px rgba(0,0,0,0.07)'
                 }}
                 onMouseLeave={e => {
                   const el = e.currentTarget as HTMLElement
@@ -876,7 +876,7 @@ export default function LandingPage() {
         {/* Content */}
         <div className="px-4 md:px-10 py-10 md:py-16" style={{ position: 'relative', zIndex: 1, textAlign: 'center', overflow: 'hidden' }}>
           {/* Decorative circles */}
-          <div style={{ position: 'absolute', top: 24, left: '7%', width: 160, height: 160, borderRadius: '50%', background: 'rgba(5,150,105,0.1)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: 24, left: '7%', width: 160, height: 160, borderRadius: '50%', background: 'rgba(142,42,58,0.1)', pointerEvents: 'none' }} />
           <div style={{ position: 'absolute', bottom: 24, right: '6%', width: 200, height: 200, borderRadius: '50%', background: 'rgba(5,150,105,0.07)', pointerEvents: 'none' }} />
           <div style={{ position: 'absolute', top: '35%', right: '18%', width: 90, height: 90, borderRadius: '50%', background: 'rgba(74,222,128,0.06)', pointerEvents: 'none' }} />
 

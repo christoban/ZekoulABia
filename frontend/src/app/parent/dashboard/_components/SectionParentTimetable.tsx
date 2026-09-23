@@ -34,7 +34,7 @@ function CacheBadge({ cachedAt, label }: { cachedAt: number | null; label: strin
 
 function buildSlots(data: any[]): Record<string, SlotType> {
   const slotMap: Record<string, SlotType> = {}
-  const colors = ['var(--green)', 'var(--blue)', 'var(--purple)', 'var(--amber)', 'var(--teal)', 'var(--red)', 'var(--orange)']
+  const colors = ['var(--green)', 'var(--blue)', 'var(--purple)', 'var(--amber)', 'var(--primary)', 'var(--red)', 'var(--orange)']
   let colorIdx = 0
   const subjectColors: Record<string, string> = {}
   data.forEach((tt: any) => {

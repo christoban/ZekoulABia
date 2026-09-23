@@ -347,12 +347,12 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
         <div
           className={`fixed top-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md border text-sm font-medium animate-in fade-in slide-in-from-top-4 duration-200 ${
             toastMessage.type === 'success'
-              ? 'bg-emerald-950/90 text-emerald-100 border-emerald-500/30'
+              ? 'bg-success/90 text-success border-success/30'
               : 'bg-rose-950/90 text-rose-100 border-rose-500/30'
           }`}
         >
           {toastMessage.type === 'success' ? (
-            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-5 h-5 text-success shrink-0" />
           ) : (
             <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
           )}
@@ -383,7 +383,7 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
               setEditingPublication(null);
               setIsPublishModalOpen(true);
             }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-sm transition"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-success active:scale-95 text-white font-bold text-xs shadow-sm transition"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Publier</span>
@@ -394,7 +394,7 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
       {/* Desktop Header Banner (hidden on mobile < 640px) */}
       <header className="hidden sm:flex w-full max-w-7xl mb-6 items-center justify-between gap-4 p-5 rounded-2xl bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border border-amber-900/15 dark:border-white/10 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-emerald-800 text-emerald-50 dark:bg-emerald-700 shadow-md">
+          <div className="p-2.5 rounded-xl bg-success text-success dark:bg-success shadow-md">
             <Megaphone className="w-6 h-6" />
           </div>
           <div>
@@ -414,7 +414,7 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
               setEditingPublication(null);
               setIsPublishModalOpen(true);
             }}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white font-bold text-sm shadow-md transition duration-150"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-success hover:bg-success active:scale-95 text-white font-bold text-sm shadow-md transition duration-150"
           >
             <Plus className="w-4 h-4" />
             <span>Publier un communiqué</span>
@@ -445,7 +445,7 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
             onClick={() => handleTabChange('all')}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${
               activeTab === 'all'
-                ? 'bg-emerald-700 text-white shadow-xs'
+                ? 'bg-success text-white shadow-xs'
                 : 'text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800'
             }`}
           >
@@ -455,7 +455,7 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
             onClick={() => handleTabChange('pinned')}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${
               activeTab === 'pinned'
-                ? 'bg-emerald-700 text-white shadow-xs'
+                ? 'bg-success text-white shadow-xs'
                 : 'text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800'
             }`}
           >
@@ -466,7 +466,7 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
             onClick={() => handleTabChange('unread')}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${
               activeTab === 'unread'
-                ? 'bg-emerald-700 text-white shadow-xs'
+                ? 'bg-success text-white shadow-xs'
                 : 'text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800'
             }`}
           >
@@ -477,7 +477,7 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
             onClick={() => handleTabChange('for_me')}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${
               activeTab === 'for_me'
-                ? 'bg-emerald-700 text-white shadow-xs'
+                ? 'bg-success text-white shadow-xs'
                 : 'text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800'
             }`}
           >
@@ -488,7 +488,7 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
             onClick={() => handleTabChange('archives')}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${
               activeTab === 'archives'
-                ? 'bg-emerald-700 text-white shadow-xs'
+                ? 'bg-success text-white shadow-xs'
                 : 'text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800'
             }`}
           >
@@ -503,7 +503,7 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="w-36 sm:w-48 px-3 py-2 bg-white dark:bg-neutral-800 rounded-xl border-2 border-neutral-300 dark:border-neutral-600 text-xs font-bold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-emerald-700 cursor-pointer shadow-xs truncate"
+            className="w-36 sm:w-48 px-3 py-2 bg-white dark:bg-neutral-800 rounded-xl border-2 border-neutral-300 dark:border-neutral-600 text-xs font-bold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer shadow-xs truncate"
           >
             <option value="ALL">Toutes catégories</option>
             {(Object.entries(BABILLARD_CATEGORIES) as [string, CategorieDetails][]).map(([key, cat]) => (
@@ -520,7 +520,7 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
               placeholder="Rechercher un communiqué..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 bg-white dark:bg-neutral-800 rounded-xl border-2 border-neutral-300 dark:border-neutral-600 text-xs font-semibold text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-emerald-700 shadow-xs"
+              className="w-full pl-9 pr-8 py-2 bg-white dark:bg-neutral-800 rounded-xl border-2 border-neutral-300 dark:border-neutral-600 text-xs font-semibold text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary shadow-xs"
             />
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-600 dark:text-neutral-300 pointer-events-none z-10" />
             {searchQuery && (
@@ -550,7 +550,7 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
       >
         {loading ? (
           <div className="flex flex-col items-center justify-center p-16">
-            <Loader2 className="w-8 h-8 animate-spin text-emerald-800 mb-3" />
+            <Loader2 className="w-8 h-8 animate-spin text-success mb-3" />
             <p className="text-xs sm:text-sm font-semibold text-[#2b2118]">
               Synchronisation du babillard officiel...
             </p>
@@ -583,7 +583,7 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
               {peutPublier && activeTab === 'all' && (
                 <button
                   onClick={() => setIsPublishModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold shadow-sm transition"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-success hover:bg-success text-white rounded-lg text-xs font-bold shadow-sm transition"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Rédiger une publication

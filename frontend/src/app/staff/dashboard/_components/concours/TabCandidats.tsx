@@ -307,14 +307,14 @@ export default function TabCandidats({
                   </td>
                   <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                     {c.documentsComplete ? (
-                      <CheckCircle2 size={16} style={{ color: 'var(--green, #10b981)', margin: '0 auto' }} />
+                      <CheckCircle2 size={16} style={{ color: 'var(--green, var(--green))', margin: '0 auto' }} />
                     ) : (
                       <span style={{ fontSize: 11, color: 'var(--amber, #f59e0b)', fontWeight: 600 }}>Incomplet</span>
                     )}
                   </td>
                   <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                     {c.registrationFeePaid ? (
-                      <CheckCircle2 size={16} style={{ color: 'var(--green, #10b981)', margin: '0 auto' }} />
+                      <CheckCircle2 size={16} style={{ color: 'var(--green, var(--green))', margin: '0 auto' }} />
                     ) : (
                       <span style={{ fontSize: 11, color: 'var(--amber, #f59e0b)', fontWeight: 600 }}>À régler</span>
                     )}
@@ -328,7 +328,7 @@ export default function TabCandidats({
                         fontWeight: 700,
                         background:
                           c.admissionStatus === 'ADMIS' || c.admissionStatus === 'CONFIRME' || c.admissionStatus === 'INSCRIT'
-                            ? 'rgba(16, 185, 129, 0.12)'
+                            ? 'rgba(47,143,91,0.12)'
                             : c.admissionStatus === 'ADMIS_PROVISOIRE'
                             ? 'rgba(59, 130, 246, 0.12)'
                             : c.admissionStatus === 'LISTE_ATTENTE'
@@ -336,7 +336,7 @@ export default function TabCandidats({
                             : 'rgba(156, 163, 175, 0.12)',
                         color:
                           c.admissionStatus === 'ADMIS' || c.admissionStatus === 'CONFIRME' || c.admissionStatus === 'INSCRIT'
-                            ? 'var(--green, #10b981)'
+                            ? 'var(--green, var(--green))'
                             : c.admissionStatus === 'ADMIS_PROVISOIRE'
                             ? 'var(--accent, #2563eb)'
                             : c.admissionStatus === 'LISTE_ATTENTE'

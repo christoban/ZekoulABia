@@ -46,7 +46,7 @@ export default function SectionGroupOverview({ kpis }: { kpis: KpisGroupe }) {
     <div style={{ marginBottom: 32 }}>
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
         <KpiCard icon={Users} label="Effectifs totaux" value={String(kpis.totaux.effectifsTotal)} color="#3b82f6" />
-        <KpiCard icon={TrendingUp} label="Taux de réussite (moy.)" value={`${kpis.totaux.tauxReussiteGlobal}%`} color="#059669" />
+        <KpiCard icon={TrendingUp} label="Taux de réussite (moy.)" value={`${kpis.totaux.tauxReussiteGlobal}%`} color="var(--primary)" />
         <KpiCard icon={Wallet} label="Revenus cumulés" value={formatXAF(kpis.totaux.revenusCumules)} color="#f59e0b" />
         <KpiCard icon={CalendarX} label="Absentéisme (moy.)" value={`${kpis.totaux.tauxAbsenteismeGlobal}%`} color="#ef4444" />
       </div>

@@ -1449,7 +1449,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
                 {t('settings.security.modal.btn_cancel')}
               </button>
               <button className="text-xs md:text-[13px]" onClick={handleSecSave} disabled={secSaving}
-                style={{ flex: 2, padding: '8px 14px', borderRadius: 8, fontWeight: 700, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: secSaving ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: secSaving ? 0.7 : 1 }}>
+                style={{ flex: 2, padding: '8px 14px', borderRadius: 8, fontWeight: 700, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: secSaving ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: secSaving ? 0.7 : 1 }}>
                 {secSaving ? t('settings.security.modal.saving') : t('settings.security.modal.btn_save')}
               </button>
             </div>
@@ -1463,7 +1463,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
 const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }
 const sSub: React.CSSProperties = { color: 'var(--text3)', marginTop: 2 }
 const btnPrimCls = 'text-xs md:text-[13px] px-3.5 py-2 md:px-4 md:py-2'
-const btnPrim: React.CSSProperties = { borderRadius: 8, fontWeight: 700, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+const btnPrim: React.CSSProperties = { borderRadius: 8, fontWeight: 700, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
 const btnSecCls = 'text-xs md:text-[13px] px-3 py-1.5 md:px-3.5 md:py-2'
 const btnSec: React.CSSProperties = { borderRadius: 8, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
 const cardHeaderCls = 'px-3.5 py-2.5 md:px-4 md:py-3 flex-wrap gap-2'

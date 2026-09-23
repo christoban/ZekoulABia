@@ -139,7 +139,7 @@ export default function ModalVoirConfigurationConcours({
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text3)', fontSize: 12, marginBottom: 4 }}>
                 <Award size={14} /> Seuil d&apos;admission
               </div>
-              <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--green, #10b981)' }}>
+              <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--green, var(--green))' }}>
                 {session.admissionThreshold != null ? `${session.admissionThreshold} / 20` : 'À déterminer'}
               </div>
             </div>

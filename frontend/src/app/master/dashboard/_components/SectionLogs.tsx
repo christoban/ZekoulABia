@@ -174,14 +174,14 @@ function SecurityTab({ mfaEnabled, onChangePwd, onMfaChange }: {
   const [showDisablePwd, setShowDisablePwd] = useState(false)
 
   const inp: React.CSSProperties = {
-    width: '100%', padding: '10px 14px', background: '#f0ebe3', border: '1px solid #d4c8b8',
+    width: '100%', padding: '10px 14px', background: 'var(--bg2)', border: '1px solid #d4c8b8',
     borderRadius: 8, color: '#1a1209', fontSize: 13, fontFamily: 'inherit', fontWeight: 600,
     outline: 'none', boxSizing: 'border-box',
   }
   const btnGreen: React.CSSProperties = {
-    padding: '9px 16px', background: 'linear-gradient(135deg,#059669,#047857)', color: 'white',
+    padding: '9px 16px', background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white',
     border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 800, cursor: 'pointer',
-    fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(5,150,105,0.18)',
+    fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(142,42,58,0.18)',
   }
   const btnGray: React.CSSProperties = {
     padding: '9px 14px', background: 'white', color: '#6b5c45', border: '1px solid #d4c8b8',
@@ -272,7 +272,7 @@ function SecurityTab({ mfaEnabled, onChangePwd, onMfaChange }: {
             <Smartphone size={17} />
             <span style={{ fontSize: 14, fontWeight: 800, color: '#1a1209' }}>Authentification à deux facteurs (MFA)</span>
           </div>
-          <span style={{ padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 800, background: mfaEnabled ? 'rgba(5,150,105,0.1)' : 'rgba(220,38,38,0.08)', color: mfaEnabled ? '#059669' : '#dc2626', border: `1px solid ${mfaEnabled ? 'rgba(5,150,105,0.25)' : 'rgba(220,38,38,0.2)'}`, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 800, background: mfaEnabled ? 'rgba(142,42,58,0.1)' : 'rgba(220,38,38,0.08)', color: mfaEnabled ? 'var(--primary)' : '#dc2626', border: `1px solid ${mfaEnabled ? 'rgba(142,42,58,0.25)' : 'rgba(220,38,38,0.2)'}`, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
             {mfaEnabled ? <><CheckCircle2 size={14} /> Actif</> : <><XCircle size={14} /> Inactif</>}
           </span>
         </div>
@@ -315,7 +315,7 @@ function SecurityTab({ mfaEnabled, onChangePwd, onMfaChange }: {
               <div style={{ textAlign: 'center', marginBottom: 16 }}>
                 {qrDataUri && <img src={qrDataUri} alt="QR Code MFA" style={{ width: 140, height: 140, borderRadius: 8, border: '1px solid #e8e0d4' }} />}
               </div>
-              <div style={{ background: '#f0ebe3', borderRadius: 10, padding: '12px 16px', marginBottom: 20 }}>
+              <div style={{ background: 'var(--bg2)', borderRadius: 10, padding: '12px 16px', marginBottom: 20 }}>
                 <div style={{ fontSize: 12, fontWeight: 800, color: '#a89478', textTransform: 'uppercase', marginBottom: 6 }}>Clé manuelle</div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1209', wordBreak: 'break-all', fontFamily: 'monospace', letterSpacing: 1.5 }}>{manualKey}</div>
               </div>
@@ -371,7 +371,7 @@ function SecurityTab({ mfaEnabled, onChangePwd, onMfaChange }: {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 18 }}>
                 {recoveryCodes.map((code, i) => (
-                  <div key={i} style={{ background: '#f0ebe3', borderRadius: 6, padding: '7px 10px', fontFamily: 'monospace', fontSize: 12, fontWeight: 700, color: '#1a1209', textAlign: 'center', letterSpacing: 1 }}>
+                  <div key={i} style={{ background: 'var(--bg2)', borderRadius: 6, padding: '7px 10px', fontFamily: 'monospace', fontSize: 12, fontWeight: 700, color: '#1a1209', textAlign: 'center', letterSpacing: 1 }}>
                     {code}
                   </div>
                 ))}
@@ -462,7 +462,7 @@ function SecurityTab({ mfaEnabled, onChangePwd, onMfaChange }: {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 18 }}>
                 {recoveryCodes.map((code, i) => (
-                  <div key={i} style={{ background: '#f0ebe3', borderRadius: 6, padding: '7px 10px', fontFamily: 'monospace', fontSize: 12, fontWeight: 700, color: '#1a1209', textAlign: 'center', letterSpacing: 1 }}>
+                  <div key={i} style={{ background: 'var(--bg2)', borderRadius: 6, padding: '7px 10px', fontFamily: 'monospace', fontSize: 12, fontWeight: 700, color: '#1a1209', textAlign: 'center', letterSpacing: 1 }}>
                     {code}
                   </div>
                 ))}
@@ -507,7 +507,7 @@ function AccountMfaResetPanel() {
   const [done, setDone] = useState(false)
 
   const inp: React.CSSProperties = {
-    width: '100%', padding: '11px 14px', background: '#f0ebe3', border: '1.5px solid #d4c8b8',
+    width: '100%', padding: '11px 14px', background: 'var(--bg2)', border: '1.5px solid #d4c8b8',
     borderRadius: 10, color: '#1a1209', fontSize: 13, fontFamily: 'inherit', fontWeight: 600,
     outline: 'none', boxSizing: 'border-box',
   }
@@ -550,7 +550,7 @@ function AccountMfaResetPanel() {
           </div>
         )}
         {done && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: '#f0fdf4', border: '1px solid rgba(5,150,105,0.2)', borderRadius: 8, fontSize: 12, color: '#059669', fontWeight: 600, marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: 'var(--green-light)', border: '1px solid rgba(142,42,58,0.2)', borderRadius: 8, fontSize: 12, color: 'var(--primary)', fontWeight: 600, marginBottom: 12 }}>
             <CheckCircle2 size={16} /> MFA réinitialisé — le compte devra le reconfigurer à sa prochaine connexion.
           </div>
         )}
@@ -646,7 +646,7 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, background: '#f0ebe3', padding: 4, borderRadius: 10, marginBottom: 16, width: 'fit-content' }}>
+      <div style={{ display: 'flex', gap: 4, background: 'var(--bg2)', padding: 4, borderRadius: 10, marginBottom: 16, width: 'fit-content' }}>
         {([
           { id: 'auth'        as const, label: 'Authentification', icon: KeyRound },
           { id: 'actions'     as const, label: 'Actions admin', icon: Zap },
@@ -677,7 +677,7 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
               <thead>
                 <tr>
                   {['Date / Heure', 'Événement', 'Compte', 'IP'].map(h => (
-                    <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: '#a89478', background: '#f0ebe3', borderBottom: '1px solid #e8e0d4', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
+                    <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: '#a89478', background: 'var(--bg2)', borderBottom: '1px solid #e8e0d4', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -716,7 +716,7 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
               <thead>
                 <tr>
                   {['Date / Heure', 'Action', 'Détail', 'IP'].map(h => (
-                    <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: '#a89478', background: '#f0ebe3', borderBottom: '1px solid #e8e0d4', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
+                    <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: '#a89478', background: 'var(--bg2)', borderBottom: '1px solid #e8e0d4', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -764,7 +764,7 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
               />
             </div>
             <button onClick={() => loadEmailLogs(emailSearch)}
-              style={{ padding: '8px 16px', background: 'linear-gradient(135deg,#059669,#047857)', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+              style={{ padding: '8px 16px', background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
               Rechercher
             </button>
           </div>
@@ -778,7 +778,7 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
                 <thead>
                   <tr>
                     {['Date', 'Destinataire', 'Sujet', 'École', 'Statut', 'Provider'].map(h => (
-                      <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: '#a89478', background: '#f0ebe3', borderBottom: '1px solid #e8e0d4', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
+                      <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: '#a89478', background: 'var(--bg2)', borderBottom: '1px solid #e8e0d4', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -846,7 +846,7 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
                 <thead>
                   <tr>
                     {['Date / Heure', 'Action', 'Origine', 'Résultat', 'Rôle', 'École', 'Motif'].map(h => (
-                      <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: '#a89478', background: '#f0ebe3', borderBottom: '1px solid #e8e0d4', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
+                      <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: '#a89478', background: 'var(--bg2)', borderBottom: '1px solid #e8e0d4', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>

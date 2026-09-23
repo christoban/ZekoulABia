@@ -25,6 +25,7 @@ export class GenererAffectationsUseCase {
   async execute(commande: GenererAffectationsCommande): Promise<ResumeGenerationAffectations> {
     const { schoolId, academicYearId, classId } = commande;
 
+    await this.generatorRepository.syncLv2Groups(schoolId, academicYearId);
     const data = await this.generatorRepository.loadGenerationData(schoolId, academicYearId, classId);
 
     const weeklyPeriodsByKey = new Map<string, number | null>();

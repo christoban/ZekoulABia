@@ -92,7 +92,7 @@ export default function SectionStaffAttendanceAVerifier({ onToast }: { onToast: 
           </div>
           <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
             <button onClick={() => requalifier(item.id, 'PRESENT')} disabled={busyId === item.id}
-              style={{ padding: '4px 8px', borderRadius: 6, fontSize: 11.5, fontWeight: 700, background: 'var(--green-light)', color: 'var(--green)', border: '1px solid rgba(5,150,105,0.3)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              style={{ padding: '4px 8px', borderRadius: 6, fontSize: 11.5, fontWeight: 700, background: 'var(--green-light)', color: 'var(--green)', border: '1px solid rgba(142,42,58,0.3)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
               <CheckCircle2 size={11} /> {t('rh.requalifyPresent')}
             </button>
             <button onClick={() => requalifier(item.id, 'ABSENT')} disabled={busyId === item.id}

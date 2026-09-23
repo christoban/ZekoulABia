@@ -152,7 +152,7 @@ export default function SectionBulletinValidation({ onToast }: Props) {
                 <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
                   {s.status === 'SUBMITTED' && (
                     <button
-                      style={{ padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'var(--green-light)', color: 'var(--green)', border: '1px solid rgba(5,150,105,0.25)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                      style={{ padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'var(--green-light)', color: 'var(--green)', border: '1px solid rgba(142,42,58,0.25)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}
                       onClick={() => handleValidate(s.id)}
                       disabled={isLoading}>
                       {isLoading ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
@@ -161,7 +161,7 @@ export default function SectionBulletinValidation({ onToast }: Props) {
                   )}
                   {s.status === 'VALIDATED' && (
                     <button
-                      style={{ padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                      style={{ padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}
                       onClick={() => handlePublish(s.id)}
                       disabled={isLoading}>
                       {isLoading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}

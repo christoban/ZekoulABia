@@ -24,7 +24,7 @@ function initials(name: string): string {
 export default function MasterTopbar({ user, currentSection, mfaEnabled, onNav, onLogout }: Props) {
   return (
     <header style={{
-      height: 54, background: '#1a2e1e', display: 'flex', alignItems: 'center',
+      height: 54, background: 'var(--sidebar-bg)', display: 'flex', alignItems: 'center',
       padding: '0 20px', gap: 12, flexShrink: 0, position: 'relative', zIndex: 50
     }}>
       <div style={{

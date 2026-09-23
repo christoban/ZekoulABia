@@ -20,7 +20,7 @@ type Demande = {
 
 const STATUS_LABEL: Record<Demande['status'], { label: string; color: string }> = {
   PENDING_TARGET_ADMIN: { label: 'En attente', color: '#d97706' },
-  ACCEPTED: { label: 'Acceptée', color: '#059669' },
+  ACCEPTED: { label: 'Acceptée', color: 'var(--primary)' },
   REJECTED: { label: 'Rejetée', color: '#dc2626' },
 }
 
@@ -140,13 +140,13 @@ export default function SectionGroupTransfers({ schools }: { schools: EcoleMembr
         )}
 
         {message && (
-          <div style={{ padding: '10px 14px', borderRadius: 10, marginBottom: 12, fontSize: 14, fontWeight: 600, background: message.type === 'error' ? '#fee2e2' : '#d1fae5', color: message.type === 'error' ? '#b91c1c' : '#065f46' }}>
+          <div style={{ padding: '10px 14px', borderRadius: 10, marginBottom: 12, fontSize: 14, fontWeight: 600, background: message.type === 'error' ? '#fee2e2' : 'var(--green-light)', color: message.type === 'error' ? '#b91c1c' : 'var(--green2)' }}>
             {message.text}
           </div>
         )}
 
         <button onClick={handleSubmit} disabled={!sourceSchoolId || !targetSchoolId || !selected || submitting}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: 'linear-gradient(135deg,#059669,#047857)', color: 'white', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: (!sourceSchoolId || !targetSchoolId || !selected || submitting) ? 0.5 : 1 }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: (!sourceSchoolId || !targetSchoolId || !selected || submitting) ? 0.5 : 1 }}>
           <ArrowRightLeft size={16} /> Initier le transfert
         </button>
       </div>

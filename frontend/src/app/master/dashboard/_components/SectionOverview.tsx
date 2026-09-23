@@ -27,10 +27,10 @@ export default function SectionOverview({ kpi, activity, onInvite, onGoToSchools
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 18 }}>
-        <KpiCard icon={School} bg="#d1fae5" val={String(kpi.activeSchools)} label="Écoles actives" sub={`dont ${kpi.suspendedCount} suspendue${kpi.suspendedCount > 1 ? 's' : ''}`} trend={kpi.activeSchools > 0 ? `+${kpi.activeSchools}` : '0'} trendBg="#d1fae5" trendColor="#065f46" onClick={() => onGoToSchools('active')} />
+        <KpiCard icon={School} bg="var(--green-light)" val={String(kpi.activeSchools)} label="Écoles actives" sub={`dont ${kpi.suspendedCount} suspendue${kpi.suspendedCount > 1 ? 's' : ''}`} trend={kpi.activeSchools > 0 ? `+${kpi.activeSchools}` : '0'} trendBg="var(--green-light)" trendColor="var(--green2)" onClick={() => onGoToSchools('active')} />
         <KpiCard icon={Loader2} bg="#fef3c7" val={String(kpi.pendingSchools)} label="En attente d'approbation" trend="Urgent" trendBg="#fef3c7" trendColor="#92400e" onClick={() => onGoToSchools('pending')} />
-        <KpiCard icon={Mail} bg="#dbeafe" val={String(kpi.pendingInvites)} label="Invitations en cours" sub="statut PENDING" trend={kpi.pendingInvites > 0 ? `${kpi.pendingInvites} en attente` : '0'} trendBg={kpi.pendingInvites > 0 ? '#fef3c7' : '#d1fae5'} trendColor={kpi.pendingInvites > 0 ? '#92400e' : '#065f46'} />
-        <KpiCard icon={Sparkles} bg="#ede9fe" val={String(kpi.newThisMonth)} label="Nouveaux ce mois" sub="30 derniers jours" trend={kpi.newThisMonth > 0 ? `+${kpi.newThisMonth}` : '0'} trendBg="#d1fae5" trendColor="#065f46" />
+        <KpiCard icon={Mail} bg="#dbeafe" val={String(kpi.pendingInvites)} label="Invitations en cours" sub="statut PENDING" trend={kpi.pendingInvites > 0 ? `${kpi.pendingInvites} en attente` : '0'} trendBg={kpi.pendingInvites > 0 ? '#fef3c7' : 'var(--green-light)'} trendColor={kpi.pendingInvites > 0 ? '#92400e' : 'var(--green2)'} />
+        <KpiCard icon={Sparkles} bg="#ede9fe" val={String(kpi.newThisMonth)} label="Nouveaux ce mois" sub="30 derniers jours" trend={kpi.newThisMonth > 0 ? `+${kpi.newThisMonth}` : '0'} trendBg="var(--green-light)" trendColor="var(--green2)" />
       </div>
 
       <div style={{ background: 'white', borderRadius: 10, border: '1px solid #e8e0d4', overflow: 'hidden', marginBottom: 14 }}>
@@ -43,7 +43,7 @@ export default function SectionOverview({ kpi, activity, onInvite, onGoToSchools
             <thead>
               <tr>
                 {['Date / Heure', 'Action', 'École concernée', 'Opérateur'].map(h => (
-                  <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: '#a89478', background: '#f0ebe3', borderBottom: '1px solid #e8e0d4', textTransform: 'uppercase', letterSpacing: '0.4px', whiteSpace: 'nowrap' }}>
+                  <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: '#a89478', background: 'var(--bg2)', borderBottom: '1px solid #e8e0d4', textTransform: 'uppercase', letterSpacing: '0.4px', whiteSpace: 'nowrap' }}>
                     {h}
                   </th>
                 ))}
@@ -98,9 +98,9 @@ function KpiCard({ icon: Icon, bg, val, label, sub, trend, trendBg, trendColor, 
 
 const btnPrimary: React.CSSProperties = {
   padding: '8px 16px', borderRadius: 9, fontSize: 13, fontWeight: 800,
-  background: 'linear-gradient(135deg,#059669,#047857)', color: 'white',
+  background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white',
   border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-  boxShadow: '0 2px 8px rgba(5,150,105,0.18)', display: 'inline-flex', alignItems: 'center', gap: 6
+  boxShadow: '0 2px 8px rgba(142,42,58,0.18)', display: 'inline-flex', alignItems: 'center', gap: 6
 }
 const btnSecondarySmall: React.CSSProperties = {
   padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 800,

@@ -688,7 +688,7 @@ export default function ModalNouvelEvenement({
                       className="px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)]/50 text-xs flex items-center justify-between"
                     >
                       <span>{doc}</span>
-                      <CheckCircle2 size={14} className="text-emerald-500" />
+                      <CheckCircle2 size={14} className="text-success" />
                     </div>
                   ))}
                 </div>
@@ -806,7 +806,7 @@ export default function ModalNouvelEvenement({
               type="button"
               onClick={submitCreate}
               disabled={submitting}
-              className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors disabled:opacity-50"
+              className="px-4 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors disabled:opacity-50"
             >
               {submitting ? (
                 <>

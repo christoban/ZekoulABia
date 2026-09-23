@@ -16,11 +16,11 @@ function avatarColor(id: string): string {
   const colors = [
     'linear-gradient(135deg, #6366f1, #8b5cf6)',
     'linear-gradient(135deg, #3b82f6, #06b6d4)',
-    'linear-gradient(135deg, #10b981, #34d399)',
+    'linear-gradient(135deg,var(--primary),var(--primary-hover))',
     'linear-gradient(135deg, #f59e0b, #f97316)',
     'linear-gradient(135deg, #ec4899, #f43f5e)',
     'linear-gradient(135deg, #8b5cf6, #ec4899)',
-    'linear-gradient(135deg, #14b8a6, #3b82f6)',
+    'linear-gradient(135deg,var(--primary),var(--blue))',
     'linear-gradient(135deg, #f97316, #ef4444)',
   ]
   let hash = 0
@@ -89,7 +89,7 @@ export default function NouveauMessagePrive({ onCreated, onCancel }: Props) {
         </button>
         <div style={{
           width: 38, height: 38, borderRadius: 12, flexShrink: 0,
-          background: 'linear-gradient(135deg, #10b981, #059669)',
+          background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: 'white',
         }}>
@@ -210,7 +210,7 @@ export default function NouveauMessagePrive({ onCreated, onCancel }: Props) {
               </div>
               <button type="button" onClick={() => setDestinataire(null)} style={{
                 border: 'none', background: 'rgba(16,185,129,0.15)',
-                color: '#059669', fontWeight: 700, cursor: 'pointer',
+                color: 'var(--primary)', fontWeight: 700, cursor: 'pointer',
                 padding: '5px 12px', borderRadius: 8, fontSize: 12,
               }}>
                 {t('messagerie.change_contact') ?? 'Changer'}
@@ -262,7 +262,7 @@ export default function NouveauMessagePrive({ onCreated, onCancel }: Props) {
                 display: 'inline-flex', alignItems: 'center', gap: 8,
                 padding: '10px 20px', borderRadius: 14, border: 'none',
                 background: contenu.trim() && !envoi
-                  ? 'linear-gradient(135deg, #10b981, #059669)'
+                  ? 'linear-gradient(135deg,var(--primary),var(--primary-hover))'
                   : 'var(--bg2)',
                 color: contenu.trim() && !envoi ? 'white' : 'var(--text3)',
                 fontWeight: 700, fontSize: 13.5,

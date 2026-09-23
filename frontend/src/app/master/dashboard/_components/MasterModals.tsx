@@ -80,7 +80,7 @@ function Field({ label, hint, children }: { label: string; hint?: React.ReactNod
 
 function FieldInput({ placeholder, type = 'text', value, onChange, style, autoComplete = 'off', showToggle }: { placeholder?: string; type?: string; value?: string; onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void; style?: React.CSSProperties; autoComplete?: string; showToggle?: boolean }) {
   const [show, setShow] = useState(false)
-  const base: React.CSSProperties = { width: '100%', padding: '10px 14px', background: '#f0ebe3', border: '1px solid #d4c8b8', borderRadius: 8, color: '#1a1209', fontSize: 13, fontFamily: 'inherit', fontWeight: 600, outline: 'none', ...style }
+  const base: React.CSSProperties = { width: '100%', padding: '10px 14px', background: 'var(--bg2)', border: '1px solid #d4c8b8', borderRadius: 8, color: '#1a1209', fontSize: 13, fontFamily: 'inherit', fontWeight: 600, outline: 'none', ...style }
   if (showToggle && type === 'password') {
     return (
       <div style={{ position: 'relative' }}>
@@ -101,7 +101,7 @@ function FieldInput({ placeholder, type = 'text', value, onChange, style, autoCo
 
 function BtnPrimary({ onClick, children, disabled, type = 'button' }: { onClick?: () => void; children: React.ReactNode; disabled?: boolean; type?: 'button' | 'submit' }) {
   return (
-    <button type={type} onClick={onClick} disabled={disabled} style={{ padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 800, background: disabled ? '#6b7280' : 'linear-gradient(135deg,#059669,#047857)', color: 'white', border: 'none', cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: disabled ? 'none' : '0 2px 8px rgba(5,150,105,0.18)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+    <button type={type} onClick={onClick} disabled={disabled} style={{ padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 800, background: disabled ? '#6b7280' : 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: disabled ? 'none' : '0 2px 8px rgba(142,42,58,0.18)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
       {children}
     </button>
   )
@@ -117,8 +117,8 @@ function BtnSecondary({ onClick, children }: { onClick?: () => void; children: R
 
 function SchoolSummary({ initials: init, name, meta, danger }: { initials: string; name: string; meta: string; danger?: boolean }) {
   return (
-    <div style={{ background: '#f0ebe3', borderRadius: 10, padding: '14px 16px', marginBottom: 18, display: 'flex', gap: 12, alignItems: 'center' }}>
-      <div style={{ width: 36, height: 36, borderRadius: 8, background: danger ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : 'linear-gradient(135deg,#059669,#1d4ed8)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
+    <div style={{ background: 'var(--bg2)', borderRadius: 10, padding: '14px 16px', marginBottom: 18, display: 'flex', gap: 12, alignItems: 'center' }}>
+      <div style={{ width: 36, height: 36, borderRadius: 8, background: danger ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : 'linear-gradient(135deg,var(--primary),var(--blue))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
         {init}
       </div>
       <div>
@@ -291,7 +291,7 @@ export default function MasterModals({ open, schoolId, suspendTarget, deleteTarg
                   width: '100%', padding: '11px 14px', borderRadius: 10,
                   color: '#1a1209', fontSize: 12, fontFamily: 'inherit', fontWeight: 600,
                   outline: 'none', resize: 'none', minHeight: 80, maxHeight: 320, overflowY: 'auto',
-                  background: rejectFocused ? 'white' : '#f0ebe3',
+                  background: rejectFocused ? 'white' : 'var(--bg2)',
                   border: rejectFocused ? '1.5px solid #2AA05F' : '1.5px solid #d4c8b8',
                   boxShadow: rejectFocused ? '0 0 0 3px rgba(48,189,153,0.1)' : 'none',
                   transition: 'background 0.2s, border 0.2s, box-shadow 0.2s',
@@ -327,7 +327,7 @@ export default function MasterModals({ open, schoolId, suspendTarget, deleteTarg
             <Field label="Motif de la suspension" hint="Sera enregistré dans les logs d'audit">
               <textarea value={suspendReason} onChange={e => setSuspendReason(e.target.value)}
                 placeholder="Ex: Non-paiement, Violation des conditions..."
-                style={{ width: '100%', padding: '9px 12px', background: '#f0ebe3', border: '1px solid #d4c8b8', borderRadius: 8, color: '#1a1209', fontSize: 11, fontFamily: 'inherit', fontWeight: 600, outline: 'none', resize: 'vertical', minHeight: 72 }} />
+                style={{ width: '100%', padding: '9px 12px', background: 'var(--bg2)', border: '1px solid #d4c8b8', borderRadius: 8, color: '#1a1209', fontSize: 11, fontFamily: 'inherit', fontWeight: 600, outline: 'none', resize: 'vertical', minHeight: 72 }} />
             </Field>
             <SensitiveAuthFields mfaEnabled={mfaEnabled} password={authPwd} onPassword={setAuthPwd} mfaCode={authMfa} onMfaCode={setAuthMfa} />
             <ModalFooter>
@@ -360,7 +360,7 @@ export default function MasterModals({ open, schoolId, suspendTarget, deleteTarg
               <input type="text" autoComplete="name" aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} />
               <input type="text" value={deleteInput} onChange={e => setDeleteInput(e.target.value)} autoComplete="off"
                 placeholder={`Tapez exactement : ${deleteTarget.name}`}
-                style={{ width: '100%', padding: '9px 12px', background: '#f0ebe3', border: `1px solid ${deleteInput === deleteTarget.name ? '#dc2626' : '#d4c8b8'}`, borderRadius: 8, color: '#1a1209', fontSize: 11, fontFamily: 'inherit', fontWeight: 600, outline: 'none' }} />
+                style={{ width: '100%', padding: '9px 12px', background: 'var(--bg2)', border: `1px solid ${deleteInput === deleteTarget.name ? '#dc2626' : '#d4c8b8'}`, borderRadius: 8, color: '#1a1209', fontSize: 11, fontFamily: 'inherit', fontWeight: 600, outline: 'none' }} />
             </Field>
             <SensitiveAuthFields mfaEnabled={mfaEnabled} password={authPwd} onPassword={setAuthPwd} mfaCode={authMfa} onMfaCode={setAuthMfa} />
             <ModalFooter>
@@ -580,9 +580,9 @@ function InviteForm({ selectedPlan, onPlanChange, loading, onCancel, onDone, onE
               { id: 'prem' as const, name: 'Premium', desc: 'Illimité · IA + Mobile Money' },
             ].map(plan => (
               <div key={plan.id} onClick={() => onPlanChange(plan.id)} style={{
-                flex: 1, padding: 10, border: `1.5px solid ${selectedPlan === plan.id ? '#059669' : '#d4c8b8'}`,
+                flex: 1, padding: 10, border: `1.5px solid ${selectedPlan === plan.id ? 'var(--primary)' : '#d4c8b8'}`,
                 borderRadius: 10, textAlign: 'center', cursor: 'pointer',
-                background: selectedPlan === plan.id ? '#d1fae5' : 'white',
+                background: selectedPlan === plan.id ? 'var(--green-light)' : 'white',
                 transition: 'all 0.15s'
               }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: '#1a1209' }}>{plan.name}</div>
@@ -593,7 +593,7 @@ function InviteForm({ selectedPlan, onPlanChange, loading, onCancel, onDone, onE
         </Field>
         <ModalFooter>
           <button type="button" onClick={onCancel} style={{ padding: '9px 14px', borderRadius: 10, fontSize: 11, fontWeight: 800, background: 'white', color: '#6b5c45', border: '1px solid #d4c8b8', cursor: 'pointer', fontFamily: 'inherit' }}>Annuler</button>
-          <button type="submit" disabled={loading} style={{ padding: '9px 14px', borderRadius: 10, fontSize: 11, fontWeight: 800, background: loading ? '#6b7280' : 'linear-gradient(135deg,#059669,#047857)', color: 'white', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: loading ? 'none' : '0 2px 8px rgba(5,150,105,0.18)' }}>
+          <button type="submit" disabled={loading} style={{ padding: '9px 14px', borderRadius: 10, fontSize: 11, fontWeight: 800, background: loading ? '#6b7280' : 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: loading ? 'none' : '0 2px 8px rgba(142,42,58,0.18)' }}>
             Continuer →
           </button>
         </ModalFooter>
@@ -606,7 +606,7 @@ function InviteForm({ selectedPlan, onPlanChange, loading, onCancel, onDone, onE
       {/* Honeypot */}
       <input type="text" autoComplete="username" aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} />
       <input type="password" autoComplete="new-password" aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} />
-      <div style={{ background: '#f0ebe3', borderRadius: 14, padding: 16, marginBottom: 16 }}>
+      <div style={{ background: 'var(--bg2)', borderRadius: 14, padding: 16, marginBottom: 16 }}>
         <div style={{ fontSize: 12, color: '#a89478', marginBottom: 4 }}>Établissement</div>
         <div style={{ fontSize: 13, fontWeight: 800, color: '#1a1209' }}>{schoolName}</div>
         <div style={{ fontSize: 12, color: '#a89478', marginTop: 10, marginBottom: 4 }}>Email</div>
@@ -625,7 +625,7 @@ function InviteForm({ selectedPlan, onPlanChange, loading, onCancel, onDone, onE
 
       <ModalFooter>
         <button type="button" onClick={() => setStep('details')} style={{ padding: '9px 14px', borderRadius: 10, fontSize: 11, fontWeight: 800, background: 'white', color: '#6b5c45', border: '1px solid #d4c8b8', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}><ArrowLeft size={13} /> Retour</button>
-        <button type="submit" disabled={submitting || loading} style={{ padding: '9px 14px', borderRadius: 10, fontSize: 11, fontWeight: 800, background: submitting || loading ? '#6b7280' : 'linear-gradient(135deg,#059669,#047857)', color: 'white', border: 'none', cursor: submitting || loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: submitting || loading ? 'none' : '0 2px 8px rgba(5,150,105,0.18)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        <button type="submit" disabled={submitting || loading} style={{ padding: '9px 14px', borderRadius: 10, fontSize: 11, fontWeight: 800, background: submitting || loading ? '#6b7280' : 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: submitting || loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: submitting || loading ? 'none' : '0 2px 8px rgba(142,42,58,0.18)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           {submitting ? '...' : <><Mail size={16} /> Envoyer l'invitation</>}
         </button>
       </ModalFooter>

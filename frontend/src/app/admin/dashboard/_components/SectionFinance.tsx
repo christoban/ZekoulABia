@@ -177,9 +177,9 @@ export default function SectionFinance({ onToast, onNav }: Props) {
       <FinanceDelegationBanner onNav={onNav} />
 
       {/* Directorship Governance Notice */}
-      <div className="mb-3 p-2.5 md:p-3 rounded-lg md:rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-xs text-[var(--text)] flex items-center justify-between gap-2.5 shadow-xs">
+      <div className="mb-3 p-2.5 md:p-3 rounded-lg md:rounded-xl border border-success/20 bg-success/5 text-xs text-[var(--text)] flex items-center justify-between gap-2.5 shadow-xs">
         <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-md bg-emerald-500/15 text-emerald-600 flex-shrink-0">
+          <div className="p-1.5 rounded-md bg-success/15 text-success flex-shrink-0">
             <Wallet size={14} />
           </div>
           <div>
@@ -299,8 +299,8 @@ export default function SectionFinance({ onToast, onNav }: Props) {
               </div>
             </div>
             {overdueCount === 0 ? (
-              <div className="text-xs font-semibold text-emerald-700 bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2.5 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+              <div className="text-xs font-semibold text-success bg-success/10 border border-success/20 rounded-lg p-2.5 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-success flex-shrink-0" />
                 <span>{t('supervision_queue.all_clear')}</span>
               </div>
             ) : (

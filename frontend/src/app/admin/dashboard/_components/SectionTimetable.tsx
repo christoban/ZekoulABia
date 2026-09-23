@@ -53,7 +53,7 @@ const SUBJECT_PALETTES = [
   { bg: 'rgba(217,119,6,0.09)', border: 'var(--amber)', text: 'var(--amber)' },
   { bg: 'rgba(139,92,246,0.09)', border: 'var(--purple)', text: 'var(--purple)' },
   { bg: 'rgba(236,72,153,0.09)', border: '#db2777', text: '#be185d' },
-  { bg: 'rgba(20,184,166,0.09)', border: 'var(--teal)', text: 'var(--teal)' },
+  { bg: 'rgba(142,42,58,0.09)', border: 'var(--primary)', text: 'var(--primary)' },
 ]
 function subjectColor(id: string) {
   let hash = 0
@@ -552,7 +552,7 @@ export default function SectionTimetable({ onToast, onNav }: Props) {
 
 const sTitle:    React.CSSProperties = { fontFamily: 'var(--font-spectral,Spectral,serif)', fontWeight: 700, color: 'var(--text)' }
 const sSub:      React.CSSProperties = { color: 'var(--text3)', marginTop: 3 }
-const btnPrim:   React.CSSProperties = { padding: '9px 17px', borderRadius: 9, fontSize: 14, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }
+const btnPrim:   React.CSSProperties = { padding: '9px 17px', borderRadius: 9, fontSize: 14, fontWeight: 800, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }
 const btnAI:     React.CSSProperties = { padding: '9px 17px', borderRadius: 9, fontSize: 14, fontWeight: 800, background: 'linear-gradient(135deg,var(--purple),var(--purple))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }
 const btnSec:    React.CSSProperties = { padding: '9px 15px', borderRadius: 9, fontSize: 14, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
 const selectSt:  React.CSSProperties = { background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 9, padding: '8.5px 13px', fontSize: 14, fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }

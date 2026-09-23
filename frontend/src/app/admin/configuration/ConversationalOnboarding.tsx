@@ -309,13 +309,13 @@ function detectTemplate(state: OnboardingState): string {
 // ── Styles ───────────────────────────────────────────────────────────────────
 const S = {
   card: { background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 18, padding: '24px 22px', width: '100%', maxWidth: 560, maxHeight: 'calc(100vh - 160px)', overflowY: 'auto', boxShadow: '0 4px 24px rgba(26,46,30,0.07)' } as React.CSSProperties,
-  bubble: { background: 'var(--green-light)', border: '1.5px solid rgba(5,150,105,0.18)', borderRadius: 14, padding: '14px 16px', fontSize: 15, color: 'var(--text)', lineHeight: 1.55, marginBottom: 18 } as React.CSSProperties,
+  bubble: { background: 'var(--green-light)', border: '1.5px solid rgba(142,42,58,0.18)', borderRadius: 14, padding: '14px 16px', fontSize: 15, color: 'var(--text)', lineHeight: 1.55, marginBottom: 18 } as React.CSSProperties,
   opt: (active: boolean): React.CSSProperties => ({
     display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px', borderRadius: 12, cursor: 'pointer',
     border: `1.5px solid ${active ? 'var(--green)' : 'var(--border)'}`, background: active ? 'var(--green-light)' : 'var(--surface)',
     fontSize: 14.5, fontWeight: 600, color: 'var(--text)', marginBottom: 9, transition: 'all 0.12s', textAlign: 'left', width: '100%',
   }),
-  primary: { background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'var(--surface)', border: 'none', borderRadius: 11, padding: '13px 22px', fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' } as React.CSSProperties,
+  primary: { background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'var(--surface)', border: 'none', borderRadius: 11, padding: '13px 22px', fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' } as React.CSSProperties,
   secondary: { background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', borderRadius: 11, padding: '13px 20px', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' } as React.CSSProperties,
   input: { width: '100%', padding: '12px 14px', borderRadius: 10, fontSize: 14.5, border: '1.5px solid var(--border)', color: 'var(--text)', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none', marginBottom: 10 } as React.CSSProperties,
   label: { fontSize: 12.5, fontWeight: 700, color: 'var(--text3)', marginBottom: 5, marginTop: 4 } as React.CSSProperties,
@@ -1047,7 +1047,7 @@ export default function ConversationalOnboarding(props: Props) {
         </div>
         <div style={{ marginBottom: 18 }}>
           <div style={{ height: 6, borderRadius: 3, background: 'var(--border)', overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${progress}%`, background: 'linear-gradient(90deg,var(--green),var(--green2))', borderRadius: 3, transition: 'width 0.35s ease' }} />
+            <div style={{ height: '100%', width: `${progress}%`, background: 'linear-gradient(90deg,var(--primary),var(--primary-hover))', borderRadius: 3, transition: 'width 0.35s ease' }} />
           </div>
         </div>
         {renderStep()}

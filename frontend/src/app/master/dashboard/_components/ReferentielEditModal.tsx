@@ -710,7 +710,7 @@ export default function ReferentielEditModal({ open, module, item, onClose, onSa
               disabled={loading}
               style={{
                 padding: '8px 18px', borderRadius: 8, border: 'none',
-                background: '#1a2e1e', color: 'white', fontSize: 13, fontWeight: 700,
+                background: 'var(--sidebar-bg)', color: 'white', fontSize: 13, fontWeight: 700,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
               }}
             >

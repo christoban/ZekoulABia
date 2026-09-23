@@ -679,7 +679,7 @@ export default function ModalAjoutCandidats4Sources({
                       padding: '8px 18px',
                       borderRadius: 8,
                       border: 'none',
-                      background: 'var(--green, #10b981)',
+                      background: 'var(--green, var(--green))',
                       color: '#fff',
                       fontWeight: 700,
                       cursor: 'pointer',
@@ -699,7 +699,7 @@ export default function ModalAjoutCandidats4Sources({
               {/* Compteurs d'état */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ padding: '4px 12px', borderRadius: 20, background: 'rgba(16, 185, 129, 0.1)', color: 'var(--green, #10b981)', fontWeight: 700, fontSize: 13 }}>
+                  <div style={{ padding: '4px 12px', borderRadius: 20, background: 'rgba(16, 185, 129, 0.1)', color: 'var(--green, var(--green))', fontWeight: 700, fontSize: 13 }}>
                     ✓ {countValides} valides
                   </div>
                   {countErreurs > 0 && (
@@ -923,7 +923,7 @@ export default function ModalAjoutCandidats4Sources({
                   padding: '8px 22px',
                   borderRadius: 8,
                   border: 'none',
-                  background: countValides > 0 ? 'var(--green, #10b981)' : 'var(--border)',
+                  background: countValides > 0 ? 'var(--green, var(--green))' : 'var(--border)',
                   color: '#fff',
                   fontWeight: 700,
                   fontSize: 14,

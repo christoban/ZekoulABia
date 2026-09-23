@@ -94,14 +94,14 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
         </div>
 
         {/* Banner Proviseur / Direction */}
-        <div className="bg-gradient-to-r from-slate-900 via-amber-950/20 to-slate-900 border border-amber-500/30 rounded-xl p-3.5 text-xs text-amber-200/90 flex items-center justify-between gap-3 shadow-sm">
+        <div className="bg-[var(--sidebar-bg)] border border-[var(--sidebar-border)] rounded-xl p-3.5 text-xs text-[var(--sidebar-text-muted)] flex items-center justify-between gap-3 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 flex-shrink-0">
+            <div className="p-2 rounded-lg bg-accent/10 text-accent flex-shrink-0">
               <Clock size={16} />
             </div>
             <div>
-              <p className="font-bold text-white text-xs">Tour de Contrôle & Decision Hub</p>
-              <p className="text-slate-300 text-[11.5px]">Vue synthétique réservée à l'Administrateur / Chef d'Établissement. Les tâches métier directes sont portées par le Staff (Censeur, Intendant, Secrétariat).</p>
+              <p className="font-bold text-[var(--sidebar-text)] text-xs">Tour de Contrôle & Decision Hub</p>
+              <p className="text-[var(--sidebar-text-muted)] text-[11.5px]">Vue synthétique réservée à l'Administrateur / Chef d'Établissement. Les tâches métier directes sont portées par le Staff (Censeur, Intendant, Secrétariat).</p>
             </div>
           </div>
         </div>
@@ -220,7 +220,7 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
                 className="p-3 rounded-lg border border-[var(--border)] bg-[var(--bg)] hover:border-amber-500/50 cursor-pointer transition-all flex items-center justify-between"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-md bg-emerald-500/10 text-emerald-600">
+                  <div className="p-2 rounded-md bg-success/10 text-success">
                     <TrendingUp size={16} />
                   </div>
                   <div>

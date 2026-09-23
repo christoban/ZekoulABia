@@ -62,7 +62,7 @@ export default function SectionGroupSchools({ schools }: { schools: EcoleMembre[
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: '#f0ece6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <School size={18} color="#059669" />
+                <School size={18} color="var(--primary)" />
               </div>
               <div style={{ fontWeight: 800, color: '#1a1209', fontSize: 15 }}>{s.name}</div>
             </div>

@@ -21,7 +21,7 @@ const btn: React.CSSProperties = {
   fontFamily: 'inherit', border: '1.5px solid var(--border)', background: 'var(--bg2)', color: 'var(--text2)',
 }
 const btnPrimary: React.CSSProperties = {
-  ...btn, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none',
+  ...btn, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none',
 }
 const input: React.CSSProperties = {
   width: '100%', padding: '8px 12px', borderRadius: 8, border: '1.5px solid var(--border)',

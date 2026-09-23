@@ -149,7 +149,7 @@ export default function SectionStudentBulletins({ onToast, user }: Props) {
                 </div>
                 <button
                   title={!isOnline ? t('bulletins.toast_download_offline') : undefined}
-                  style={{ width: '100%', padding: '6px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: isOnline ? 'linear-gradient(135deg,var(--green),var(--green2))' : 'var(--border2)', color: 'white', border: 'none', cursor: isOnline ? 'pointer' : 'not-allowed', fontFamily: 'inherit', opacity: downloading === b.id ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}
+                  style={{ width: '100%', padding: '6px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: isOnline ? 'linear-gradient(135deg,var(--primary),var(--primary-hover))' : 'var(--border2)', color: 'white', border: 'none', cursor: isOnline ? 'pointer' : 'not-allowed', fontFamily: 'inherit', opacity: downloading === b.id ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}
                   onClick={() => downloadPdf(b.id, b.academicPeriod?.name || 'bulletin')}
                   disabled={downloading === b.id || !isOnline}>
                   {!isOnline ? <><WifiOff size={12} strokeWidth={2} /> {t('bulletins.offline_label')}</> : downloading === b.id ? <><Loader2 size={12} strokeWidth={2} className="animate-spin" /> {t('bulletins.downloading_label')}</> : <><Download size={12} strokeWidth={2} /> {t('bulletins.download_button')}</>}

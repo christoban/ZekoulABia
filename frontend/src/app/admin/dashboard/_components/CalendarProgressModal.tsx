@@ -141,7 +141,7 @@ export default function CalendarProgressModal({ isOpen, onClose }: Props) {
                 className="h-full rounded-full transition-all duration-500"
                 style={{
                   width: `${Math.max(5, progressPercent)}%`,
-                  background: 'linear-gradient(90deg, var(--green), #3b82f6)',
+                  background: 'linear-gradient(90deg,var(--primary),var(--blue))',
                 }}
               />
             </div>
@@ -176,7 +176,7 @@ export default function CalendarProgressModal({ isOpen, onClose }: Props) {
                   >
                     <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
                       {isPassed ? (
-                        <CheckCircle2 size={18} className="text-green-500 flex-shrink-0" />
+                        <CheckCircle2 size={18} className="text-success flex-shrink-0" />
                       ) : isActive ? (
                         <Sparkles size={18} className="text-blue-500 flex-shrink-0 animate-pulse" />
                       ) : (

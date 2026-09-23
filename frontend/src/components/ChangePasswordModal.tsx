@@ -152,7 +152,7 @@ export default function ChangePasswordModal({ onClose, onToast }: Props) {
               <button
                 type="submit"
                 disabled={loading || strength < 5 || mismatch}
-                style={{ flex: 1, padding: '8px 16px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'center', background: (loading || strength < 5 || mismatch) ? 'var(--text3)' : 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: (loading || strength < 5 || mismatch) ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'background 0.2s' }}>
+                style={{ flex: 1, padding: '8px 16px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'center', background: (loading || strength < 5 || mismatch) ? 'var(--text3)' : 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: (loading || strength < 5 || mismatch) ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'background 0.2s' }}>
                 {loading ? t('password.buttonSubmitting') : t('password.buttonSubmit')}
               </button>
             </div>

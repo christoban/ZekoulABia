@@ -48,7 +48,7 @@ interface Department {
 const COEFF_SERIES = ['A4', 'A', 'C', 'D', 'TI']
 const COEFF_LEVELS = ['2nde', '1ère', 'Tle']
 
-const AVATAR_PALETTE = ['var(--green)', 'var(--blue)', 'var(--amber)', 'var(--purple)', '#db2777', 'var(--teal)']
+const AVATAR_PALETTE = ['var(--green)', 'var(--blue)', 'var(--amber)', 'var(--purple)', '#db2777', 'var(--primary)']
 function avatarColor(id: string) {
   let hash = 0
   for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) & 0xffffffff
@@ -612,14 +612,14 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
           {view === 'catalogue' && (
             <button onClick={() => setCreateOpen(true)}
               className="inline-flex items-center gap-[6px] rounded-lg px-[13px] py-[8px] text-[13px] whitespace-nowrap border-0"
-              style={{ background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800 }}>
+              style={{ background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800 }}>
               {t('subjects.btn_create')}
             </button>
           )}
           {view === 'departements' && (
             <button onClick={() => setDeptCreateForm({ open: true, name: '', color: 'var(--text3)', loading: false, error: '' })}
               className="inline-flex items-center gap-[6px] rounded-lg px-[13px] py-[8px] text-[13px] whitespace-nowrap border-0"
-              style={{ background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800 }}>
+              style={{ background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800 }}>
               {t('subjects.btn_create_dept')}
             </button>
           )}
@@ -1751,7 +1751,7 @@ const sLabel: React.CSSProperties = { fontWeight: 700, color: 'var(--text3)' }
 const sInputCls = 'rounded-lg px-3 py-2 mb-3 text-xs md:text-sm font-nunito'
 const sInput: React.CSSProperties = { width: '100%', border: '1.5px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none' }
 const sError: React.CSSProperties = { background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8, padding: '7px 14px', fontSize: 13, fontWeight: 600, marginBottom: 10 }
-const btnPrim: React.CSSProperties = { padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+const btnPrim: React.CSSProperties = { padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
 const btnSec2: React.CSSProperties = { padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }
 const btnRetry: React.CSSProperties = { padding: '6px 14px', borderRadius: 8, background: 'var(--surface)', color: 'var(--red)', border: '1.5px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 13 }
 const thStyle: React.CSSProperties = { padding: '8px 12px', textAlign: 'left', fontSize: 12, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.4px', whiteSpace: 'nowrap' }

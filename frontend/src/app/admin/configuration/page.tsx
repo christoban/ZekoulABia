@@ -47,7 +47,7 @@ const CARD: React.CSSProperties = {
 }
 
 const BTN_PRIMARY: React.CSSProperties = {
-  background: 'linear-gradient(135deg,var(--green),var(--green2))',
+  background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))',
   color: 'white', border: 'none', borderRadius: 10,
   padding: '13px 28px', fontSize: 15, fontWeight: 700,
   cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -195,7 +195,7 @@ export default function ConfigurationPage() {
               const done = completedSteps > i
               const active = completedSteps === i
               return (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', background: done ? 'var(--green-light)' : active ? 'var(--bg)' : 'var(--bg)', borderRadius: 10, border: `1.5px solid ${done ? 'rgba(5,150,105,0.2)' : 'var(--border)'}`, transition: 'all 0.3s' }}>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', background: done ? 'var(--green-light)' : active ? 'var(--bg)' : 'var(--bg)', borderRadius: 10, border: `1.5px solid ${done ? 'rgba(142,42,58,0.2)' : 'var(--border)'}`, transition: 'all 0.3s' }}>
                   <div style={{ width: 28, height: 28, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {done ? (
                       <span style={{ display: 'flex', color: 'var(--green)', animation: 'edu-checkIn 0.3s ease both' }}><CheckCircle2 size={20} /></span>
@@ -238,7 +238,7 @@ export default function ConfigurationPage() {
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
             {activationStats.classCount > 0 && (
-              <div style={{ background: 'var(--green-light)', border: '1.5px solid rgba(5,150,105,0.2)', borderRadius: 12, padding: '12px 20px', minWidth: 110 }}>
+              <div style={{ background: 'var(--green-light)', border: '1.5px solid rgba(142,42,58,0.2)', borderRadius: 12, padding: '12px 20px', minWidth: 110 }}>
                 <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--green)' }}>{activationStats.classCount}</div>
                 <div style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 600 }}>classes</div>
               </div>
@@ -282,7 +282,7 @@ export default function ConfigurationPage() {
 
       {/* Brand header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 12, background: "linear-gradient(135deg,var(--sidebar),var(--green))", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "65%", height: "65%", objectFit: "contain" }} /></div>
+        <div style={{ width: 44, height: 44, borderRadius: 12, background: "linear-gradient(135deg,var(--sidebar),var(--accent))", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "65%", height: "65%", objectFit: "contain" }} /></div>
         <div>
           <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>ZekoulABia</div>
           <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 600 }}>Configuration de votre espace</div>

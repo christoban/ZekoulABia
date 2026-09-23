@@ -503,7 +503,7 @@ export default function AnnonceDetailRenderer({
                       <a
                         href={`/api/v2/babillard/${publication.id}/pieces-jointes/${pj.id}`}
                         download={pj.nomOriginal}
-                        className="inline-flex items-center gap-1 font-semibold text-emerald-800 hover:underline"
+                        className="inline-flex items-center gap-1 font-semibold text-success hover:underline"
                       >
                         <Download size={12} /> Télécharger
                       </a>
@@ -519,7 +519,7 @@ export default function AnnonceDetailRenderer({
                 .map((pj) => (
                   <div
                     key={pj.id}
-                    className="p-3.5 rounded-lg border border-[#d8cfbe] bg-[#f7f3ee] flex items-center justify-between gap-3 hover:bg-[#efe8dd] transition-colors"
+                    className="p-3.5 rounded-lg border border-[#d8cfbe] bg-[var(--bg)] flex items-center justify-between gap-3 hover:bg-[#efe8dd] transition-colors"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="w-9 h-9 rounded bg-red-100 text-red-700 flex items-center justify-center shrink-0">

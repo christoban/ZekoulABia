@@ -392,7 +392,7 @@ export default function SectionDiscipline({ onToast }: Props) {
                       <td style={tdSt}>
                         {r.status === 'ACTIVE' && (
                           <button
-                            style={{ padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 800, background: 'var(--green-light)', color: 'var(--green)', border: '1px solid rgba(5,150,105,0.25)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                            style={{ padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 800, background: 'var(--green-light)', color: 'var(--green)', border: '1px solid rgba(142,42,58,0.25)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4 }}
                             onClick={() => liftSanction(r.id, `${r.student.firstName} ${r.student.lastName}`)}
                             disabled={liftingId === r.id}>
                             {liftingId === r.id ? <Loader2 size={12} className="animate-spin" /> : t('actions.lift')}
@@ -484,7 +484,7 @@ export default function SectionDiscipline({ onToast }: Props) {
               <div>
                 <label style={labelSt}>{t('form_fields.student_label')}</label>
                 {form.selectedStudent ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--green-light)', borderRadius: 8, border: '1px solid rgba(5,150,105,0.3)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--green-light)', borderRadius: 8, border: '1px solid rgba(142,42,58,0.3)' }}>
                     <span style={{ fontWeight: 700, color: 'var(--green)', flex: 1, display: 'flex', alignItems: 'center', gap: 5, fontSize: 13 }}><Check size={14} strokeWidth={2} /> {form.selectedStudent.firstName} {form.selectedStudent.lastName}</span>
                     <button onClick={() => setForm(f => ({ ...f, selectedStudent: null, studentSearch: '', studentResults: [] }))}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--green)', fontSize: 14, display: 'inline-flex' }}><X size={14} strokeWidth={2} /></button>
@@ -578,7 +578,7 @@ export default function SectionDiscipline({ onToast }: Props) {
               <div>
                 <label style={labelSt}>{t('form_fields.student_label')}</label>
                 {convokeForm.selectedStudent ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--green-light)', borderRadius: 8, border: '1px solid rgba(5,150,105,0.3)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--green-light)', borderRadius: 8, border: '1px solid rgba(142,42,58,0.3)' }}>
                     <span style={{ fontWeight: 700, color: 'var(--green)', flex: 1, display: 'flex', alignItems: 'center', gap: 5, fontSize: 13 }}><Check size={14} strokeWidth={2} /> {convokeForm.selectedStudent.firstName} {convokeForm.selectedStudent.lastName}</span>
                     <button onClick={() => setConvokeForm(f => ({ ...f, selectedStudent: null, studentSearch: '', studentResults: [] }))}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--green)', display: 'inline-flex' }}><X size={14} strokeWidth={2} /></button>
@@ -682,7 +682,7 @@ export default function SectionDiscipline({ onToast }: Props) {
 
 const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }
 const sSub: React.CSSProperties = { fontSize: 12.5, color: 'var(--text3)', marginTop: 2 }
-const btnPrim: React.CSSProperties = { padding: '7px 15px', borderRadius: 8, fontSize: 13, fontWeight: 700, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+const btnPrim: React.CSSProperties = { padding: '7px 15px', borderRadius: 8, fontSize: 13, fontWeight: 700, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
 const btnSec: React.CSSProperties = { padding: '6px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }
 const btnRetry: React.CSSProperties = { padding: '5px 12px', borderRadius: 6, background: 'var(--surface)', color: 'var(--red)', border: '1px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 12 }
 const filterSt: React.CSSProperties = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 10px', fontSize: 12.5, fontWeight: 600, color: 'var(--text2)', outline: 'none', fontFamily: 'inherit' }

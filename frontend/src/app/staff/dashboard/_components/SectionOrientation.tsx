@@ -950,7 +950,7 @@ export default function SectionOrientation({ onToast }: Props) {
                       <td style={{ padding: '8px 12px' }}>
                         <button
                           onClick={() => openFiche(f.id)}
-                          style={{ padding: '4px 10px', borderRadius: 6, fontSize: 11.5, fontWeight: 600, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer' }}
+                          style={{ padding: '4px 10px', borderRadius: 6, fontSize: 11.5, fontWeight: 600, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer' }}
                         >
                           {t('orientation.viewFiche')}
                         </button>
@@ -1208,7 +1208,7 @@ export default function SectionOrientation({ onToast }: Props) {
                       }} />
                       {f.recommandation.status === 'PROPOSEE' && (
                         <button onClick={validerRecommandation} disabled={validatingReco}
-                          style={{ padding: '4px 10px', borderRadius: 6, fontSize: 11.5, fontWeight: 700, background: 'var(--green-light)', color: 'var(--green)', border: '1px solid rgba(5,150,105,0.3)', cursor: validatingReco ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
+                          style={{ padding: '4px 10px', borderRadius: 6, fontSize: 11.5, fontWeight: 700, background: 'var(--green-light)', color: 'var(--green)', border: '1px solid rgba(142,42,58,0.3)', cursor: validatingReco ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
                           {validatingReco ? <Loader2 size={12} strokeWidth={2} className="animate-spin" /> : t('orientation.validateReco')}
                         </button>
                       )}
@@ -1712,7 +1712,7 @@ const sTitle: React.CSSProperties = {
 const sSub: React.CSSProperties = { fontSize: 12.5, color: 'var(--text3)', marginTop: 2 }
 const btnPrim: React.CSSProperties = {
   padding: '6px 13px', borderRadius: 8, fontSize: 12.5, fontWeight: 600,
-  background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white',
+  background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white',
   border: 'none', cursor: 'pointer', fontFamily: 'inherit',
 }
 const btnSec: React.CSSProperties = {

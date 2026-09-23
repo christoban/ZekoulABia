@@ -11,26 +11,41 @@
 
 /* ── DESIGN TOKENS ZEKOULABIA ── */
 :root {
+  /* ── NOUVELLE PALETTE BORDEAUX + OR ── */
+
   /* Backgrounds */
-  --bg: #f7f3ee;
-  --bg2: #f0ebe3;
-  --surface: #ffffff;
+  --bg: #FBF7F2;
+  --bg2: #F4ECE3;
+  --surface: #FFFFFF;
+  --surface-2: #F4ECE3;
 
   /* Sidebar */
-  --sidebar: #1a2e1e;
-  --sidebar2: #243b29;
-  --sidebar3: #2d4f34;
-  --sidebar-active: #3a6b44;
+  --sidebar: #4A1A24;
+  --sidebar2: #5A2430;
+  --sidebar3: #6B3340;
+  --sidebar-active: #D9A441;
+  --sidebar-bg: var(--sidebar);
+  --sidebar-hover: var(--sidebar2);
+  --sidebar-border: #6B3340;
+  --sidebar-text: #F1E4DC;
+  --sidebar-text-muted: #C9AFA8;
   --sidebar-width: 200px;
 
   /* Borders */
-  --border: #e8e0d4;
-  --border2: #d4c8b8;
+  --border: #E9DFD4;
+  --border2: #DED3C8;
 
   /* Text */
-  --text: #1a1209;
-  --text2: #6b5c45;
-  --text3: #a89478;
+  --text: #2B1B1E;
+  --text2: #7A6A66;
+  --text3: #B5A19D;
+  --text-muted: var(--text2);
+
+  /* Action */
+  --primary: #8E2A3A;
+  --primary-hover: #74212F;
+  --primary-light: rgba(142, 42, 58, 0.12);
+  --accent: #D9A441;
 
   /* Density tokens - Ultra dense */
   --text-xs: 9px;
@@ -55,22 +70,21 @@
   --radius-card: 7px;
   --radius-btn: 6px;
 
-  /* Semantic colors */
-  --green: #059669;
-  --green2: #047857;
-  --green-light: #d1fae5;
+  /* Semantic colors — le vert reste réservé au succès/statut positif */
+  --success: #2F8F5B;
+  --green: var(--success);
+  --green2: #276749;
+  --green-light: #D1E7DD;
+
+  --danger: #D9481F;
+  --red: var(--danger);
+  --red-light: #FCE2D9;
 
   --blue: #1d4ed8;
   --blue-light: #dbeafe;
 
-  --teal: #0d9488;
-  --teal-light: #ccfbf1;
-
   --amber: #d97706;
   --amber-light: #fef3c7;
-
-  --red: #dc2626;
-  --red-light: #fee2e2;
 
   --purple: #7c3aed;
   --purple-light: #ede9fe;
@@ -90,7 +104,7 @@
   --paper-shadow-hover: 0 8px 24px rgba(45, 35, 20, 0.14), 0 2px 6px rgba(45, 35, 20, 0.08);
   --pin-red: #ef4444;
   --pin-orange: #f97316;
-  --pin-green: #10b981;
+  --pin-green: var(--green);
 
   /* Shadows */
   --shadow-sm: 0 1px 3px rgba(40,30,15,0.06);
@@ -100,46 +114,57 @@
 
 /* ── DARK THEME PALETTE (Warm African) ── */
 .dark {
-  /* Backgrounds — deep forest */
-  --bg: #0c1810;
-  --bg2: #142618;
-  --surface: #1a2e1e;
+  /* ── DARK THEME BORDEAUX + OR ── */
 
-  /* Sidebar — very dark for layer separation */
-  --sidebar: #070f0a;
-  --sidebar2: #0c1810;
-  --sidebar3: #142618;
-  --sidebar-active: #2d5c3a;
+  /* Backgrounds */
+  --bg: #171012;
+  --bg2: #2B1D22;
+  --surface: #21161A;
+  --surface-2: #2B1D22;
 
-  /* Borders — forest greens */
-  --border: #243b29;
-  --border2: #2d4f34;
+  /* Sidebar */
+  --sidebar: #120C0E;
+  --sidebar2: #21161A;
+  --sidebar3: #2B1D22;
+  --sidebar-active: #E3B356;
+  --sidebar-bg: var(--sidebar);
+  --sidebar-hover: var(--sidebar2);
+  --sidebar-border: #3E2B31;
+  --sidebar-text: #F3E9E3;
+  --sidebar-text-muted: #B5A19D;
 
-  /* Text — warm beige/cream */
-  --text: #f7f3ee;
-  --text2: #d4c8b8;
-  --text3: #a89478;
+  /* Borders */
+  --border: #3E2B31;
+  --border2: #4A343A;
 
-  /* Semantic greens */
-  --green: #10b981;
-  --green2: #059669;
-  --green-light: #064e3b;
+  /* Text */
+  --text: #F3E9E3;
+  --text2: #B5A19D;
+  --text3: #8A7A76;
+  --text-muted: var(--text2);
+
+  /* Action */
+  --primary: #C8586A;
+  --primary-hover: #D66C7D;
+  --primary-light: rgba(200, 88, 106, 0.16);
+  --accent: #E3B356;
+
+  /* Semantic colors */
+  --success: #4ADE80;
+  --green: var(--success);
+  --green2: #22c55e;
+  --green-light: #14532d;
+
+  --danger: #F87171;
+  --red: var(--danger);
+  --red-light: #450a0a;
 
   /* Blue */
   --blue: #3b82f6;
   --blue-light: #1e3a5f;
 
-  /* Teal */
-  --teal: #14b8a6;
-  --teal-light: #134e4a;
-
-  /* Amber */
   --amber: #f59e0b;
   --amber-light: #451a03;
-
-  /* Red */
-  --red: #ef4444;
-  --red-light: #450a0a;
 
   /* Purple */
   --purple: #8b5cf6;
@@ -331,7 +356,7 @@ body {
   margin-bottom: 0.25rem;
 }
 .babillard-prose a {
-  color: #047857;
+  color: var(--primary-hover);
   text-decoration: underline;
 }
 

@@ -147,7 +147,7 @@ export default function DemoModal({ isOpen, onClose, onSuccess, onError, lang }:
           {/* ── Header ──────────────────────────────────── */}
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 26 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 6, flexShrink: 0, background: "linear-gradient(135deg,var(--green),var(--green2))", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "65%", height: "65%", objectFit: "contain" }} /></div>
+              <div style={{ width: 32, height: 32, borderRadius: 6, flexShrink: 0, background: "linear-gradient(135deg,var(--primary),var(--primary-hover))", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "65%", height: "65%", objectFit: "contain" }} /></div>
               <div>
                 <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>
                   {isFr ? 'Demander une démo gratuite' : 'Request a free demo'}
@@ -269,11 +269,11 @@ export default function DemoModal({ isOpen, onClose, onSuccess, onError, lang }:
               disabled={loading}
               style={{
                 width: '100%',
-                background: loading ? '#6b9e8e' : 'linear-gradient(135deg,var(--green),var(--green2))',
+                background: loading ? '#6b9e8e' : 'linear-gradient(135deg,var(--primary),var(--primary-hover))',
                 color: 'var(--surface)', fontWeight: 800, fontSize: 13,
                 padding: '11px 20px', borderRadius: 6, border: 'none',
                 cursor: loading ? 'not-allowed' : 'pointer',
-                boxShadow: loading ? 'none' : '0 3px 10px rgba(5,150,105,0.2)',
+                boxShadow: loading ? 'none' : '0 3px 10px rgba(142,42,58,0.2)',
                 fontFamily: 'inherit', transition: 'all 100ms',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}

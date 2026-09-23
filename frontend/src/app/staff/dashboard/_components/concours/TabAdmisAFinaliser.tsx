@@ -103,7 +103,7 @@ export default function TabAdmisAFinaliser({
           gap: 12,
         }}
       >
-        <ShieldCheck size={22} style={{ color: 'var(--green, #10b981)', flexShrink: 0, marginTop: 2 }} />
+        <ShieldCheck size={22} style={{ color: 'var(--green, var(--green))', flexShrink: 0, marginTop: 2 }} />
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>
             Voie Concours : Inscription Directe Autorisée
@@ -122,7 +122,7 @@ export default function TabAdmisAFinaliser({
               padding: '8px 18px',
               borderRadius: 8,
               border: 'none',
-              background: 'var(--green, #10b981)',
+              background: 'var(--green, var(--green))',
               color: '#fff',
               fontSize: 13,
               fontWeight: 700,
@@ -155,7 +155,7 @@ export default function TabAdmisAFinaliser({
             style={{
               width: `${pctRemplissage}%`,
               height: '100%',
-              background: pctRemplissage >= 100 ? 'var(--amber, #f59e0b)' : 'var(--green, #10b981)',
+              background: pctRemplissage >= 100 ? 'var(--amber, #f59e0b)' : 'var(--green, var(--green))',
               transition: 'width 0.3s ease',
             }}
           />
@@ -170,7 +170,7 @@ export default function TabAdmisAFinaliser({
 
         {confirmes.length === 0 ? (
           <div style={{ padding: 32, textAlign: 'center', border: '1px dashed var(--border)', borderRadius: 10, background: 'var(--bg)' }}>
-            <CheckCircle2 size={28} style={{ color: 'var(--green, #10b981)', margin: '0 auto 6px' }} />
+            <CheckCircle2 size={28} style={{ color: 'var(--green, var(--green))', margin: '0 auto 6px' }} />
             <div style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 600 }}>
               Tous les admis confirmés ont déjà été finalisés et inscrits !
             </div>
@@ -212,7 +212,7 @@ export default function TabAdmisAFinaliser({
                     <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700 }}>
                       {c.examScore != null ? `${Number(c.examScore).toFixed(2)}/20` : '—'}
                     </td>
-                    <td style={{ padding: '10px 14px', textAlign: 'center', color: 'var(--green, #10b981)', fontWeight: 600 }}>
+                    <td style={{ padding: '10px 14px', textAlign: 'center', color: 'var(--green, var(--green))', fontWeight: 600 }}>
                       ✓ Reçu
                     </td>
                     <td style={{ padding: '10px 14px', textAlign: 'center' }}>
@@ -222,8 +222,8 @@ export default function TabAdmisAFinaliser({
                           borderRadius: 12,
                           fontSize: 11,
                           fontWeight: 700,
-                          background: 'rgba(16, 185, 129, 0.12)',
-                          color: 'var(--green, #10b981)',
+                          background: 'rgba(47,143,91,0.12)',
+                          color: 'var(--green, var(--green))',
                         }}
                       >
                         {c.admissionStatus}

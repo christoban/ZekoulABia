@@ -253,7 +253,7 @@ export default function SuperAdminDashboard() {
     <div style={{
       display: 'flex', flexDirection: 'column',
       height: '100vh', overflow: 'hidden',
-      background: '#f7f3ee',
+      background: 'var(--bg)',
       fontFamily: 'var(--font-nunito), Nunito, sans-serif'
     }}>
       <MasterTopbar

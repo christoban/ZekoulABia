@@ -486,7 +486,7 @@ export default function SectionLibrary({ onToast }: Props) {
                           {(l.status === 'ACTIVE' || l.status === 'OVERDUE') && (
                             <>
                               <button
-                                style={{ padding: '4px 9px', borderRadius: 6, fontSize: 11.5, fontWeight: 600, background: 'var(--green-light)', color: 'var(--green)', border: '1px solid rgba(5,150,105,0.25)', cursor: 'pointer', fontFamily: 'inherit', marginRight: 5 }}
+                                style={{ padding: '4px 9px', borderRadius: 6, fontSize: 11.5, fontWeight: 600, background: 'var(--green-light)', color: 'var(--green)', border: '1px solid rgba(142,42,58,0.25)', cursor: 'pointer', fontFamily: 'inherit', marginRight: 5 }}
                                 onClick={() => returnLoan(l.id, l.book.title)}
                                 disabled={returningId === l.id}>
                                 {returningId === l.id ? <Loader2 size={12} strokeWidth={2} className="animate-spin" /> : t('library.return')}
@@ -620,7 +620,7 @@ export default function SectionLibrary({ onToast }: Props) {
               <div>
                 <label style={labelSt}>{t('library.bookLabel')}</label>
                 {borrowForm.bookId ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--green-light)', borderRadius: 8, border: '1px solid rgba(5,150,105,0.3)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--green-light)', borderRadius: 8, border: '1px solid rgba(142,42,58,0.3)' }}>
                     <span style={{ fontWeight: 600, color: 'var(--green)', flex: 1, display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5 }}><BookOpen size={15} strokeWidth={2} /> {borrowForm.bookTitle}</span>
                     <button onClick={() => setBorrowForm(f => ({ ...f, bookId: '', bookTitle: '' }))}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--green)', fontSize: 15, display: 'inline-flex' }}><X size={15} strokeWidth={2} /></button>
@@ -640,7 +640,7 @@ export default function SectionLibrary({ onToast }: Props) {
               <div>
                 <label style={labelSt}>{t('library.studentLabel')}</label>
                 {borrowForm.selectedStudent ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--green-light)', borderRadius: 8, border: '1px solid rgba(5,150,105,0.3)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--green-light)', borderRadius: 8, border: '1px solid rgba(142,42,58,0.3)' }}>
                     <span style={{ fontWeight: 600, color: 'var(--green)', flex: 1, display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5 }}><Check size={15} strokeWidth={2} /> {borrowForm.selectedStudent.firstName} {borrowForm.selectedStudent.lastName}</span>
                     <button onClick={() => setBorrowForm(f => ({ ...f, selectedStudent: null, studentSearch: '', studentResults: [] }))}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--green)', fontSize: 15, display: 'inline-flex' }}><X size={15} strokeWidth={2} /></button>
@@ -695,7 +695,7 @@ export default function SectionLibrary({ onToast }: Props) {
 
 const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }
 const sSub: React.CSSProperties = { fontSize: 12.5, color: 'var(--text3)', marginTop: 2 }
-const btnPrim: React.CSSProperties = { padding: '6px 13px', borderRadius: 8, fontSize: 12.5, fontWeight: 600, background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+const btnPrim: React.CSSProperties = { padding: '6px 13px', borderRadius: 8, fontSize: 12.5, fontWeight: 600, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
 const btnSec: React.CSSProperties = { padding: '5px 11px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }
 const btnRetry: React.CSSProperties = { padding: '4px 10px', borderRadius: 6, fontSize: 12, background: 'var(--surface)', color: 'var(--red)', border: '1px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 }
 const filterSt: React.CSSProperties = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '5px 10px', fontSize: 12, fontWeight: 600, color: 'var(--text2)', outline: 'none', fontFamily: 'inherit' }

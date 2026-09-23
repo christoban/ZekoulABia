@@ -190,7 +190,7 @@ export default function SectionCautions({ onToast }: Props) {
                         {isHeld && (
                           <div style={{ display: 'flex', gap: 5 }}>
                             <button
-                              style={{ padding: '4px 9px', borderRadius: 6, fontSize: 11.5, fontWeight: 600, background: 'var(--green-light)', color: 'var(--green)', border: '1px solid rgba(5,150,105,0.25)', cursor: 'pointer', fontFamily: 'inherit' }}
+                              style={{ padding: '4px 9px', borderRadius: 6, fontSize: 11.5, fontWeight: 600, background: 'var(--green-light)', color: 'var(--green)', border: '1px solid rgba(142,42,58,0.25)', cursor: 'pointer', fontFamily: 'inherit' }}
                               onClick={() => handleRemboursement(c)}
                               disabled={actionId === c.id}>
                               {actionId === c.id ? <Loader2 size={12} strokeWidth={2} className="animate-spin" /> : t('cautions.refund')}

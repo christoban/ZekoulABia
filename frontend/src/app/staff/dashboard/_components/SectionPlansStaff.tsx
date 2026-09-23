@@ -318,7 +318,7 @@ const btnPrim: React.CSSProperties = {
   borderRadius: 8,
   fontSize: 12.5,
   fontWeight: 700,
-  background: 'linear-gradient(135deg,var(--green),var(--green2))',
+  background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))',
   color: 'white',
   border: 'none',
   cursor: 'pointer',

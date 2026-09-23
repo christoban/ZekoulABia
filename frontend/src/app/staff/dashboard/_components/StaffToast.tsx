@@ -8,7 +8,7 @@ const ICONS: Record<Toast['type'], React.ComponentType<{ size?: number; strokeWi
 }
 
 const STYLES: Record<Toast['type'], React.CSSProperties> = {
-  success: { background: 'var(--green-light)', border: '1.5px solid rgba(5,150,105,0.3)',  color: 'var(--green)' },
+  success: { background: 'var(--green-light)', border: '1.5px solid rgba(142,42,58,0.3)',  color: 'var(--green)' },
   error:   { background: 'var(--red-light)', border: '1.5px solid rgba(220,38,38,0.3)',  color: 'var(--red)' },
   info:    { background: 'var(--blue-light)', border: '1.5px solid rgba(29,78,216,0.2)',  color: 'var(--blue)' },
   warning: { background: 'var(--amber-light)', border: '1.5px solid rgba(217,119,6,0.3)', color: 'var(--amber)' },

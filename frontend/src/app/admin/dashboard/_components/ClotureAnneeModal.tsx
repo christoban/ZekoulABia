@@ -289,7 +289,7 @@ export default function ClotureAnneeModal({ isOpen, onClose, onSuccess, onToast 
                       <span className="text-xl font-bold font-spectral" style={{ color: 'var(--text)' }}>
                         {currentYear?.name || 'En cours'}
                       </span>
-                      <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/30">
+                      <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-success/15 text-success dark:text-success border border-success/30">
                         Statut : ACTIF
                       </span>
                     </div>
@@ -304,7 +304,7 @@ export default function ClotureAnneeModal({ isOpen, onClose, onSuccess, onToast 
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="p-3.5 rounded-xl border flex items-center gap-3" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-                        <CheckCircle2 size={20} className="text-green-500 flex-shrink-0" />
+                        <CheckCircle2 size={20} className="text-success flex-shrink-0" />
                         <div>
                           <p className="text-xs font-bold" style={{ color: 'var(--text)' }}>Bulletins & Notes</p>
                           <p className="text-[11px]" style={{ color: 'var(--text2)' }}>
@@ -314,7 +314,7 @@ export default function ClotureAnneeModal({ isOpen, onClose, onSuccess, onToast 
                       </div>
 
                       <div className="p-3.5 rounded-xl border flex items-center gap-3" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-                        <CheckCircle2 size={20} className="text-green-500 flex-shrink-0" />
+                        <CheckCircle2 size={20} className="text-success flex-shrink-0" />
                         <div>
                           <p className="text-xs font-bold" style={{ color: 'var(--text)' }}>Périodes & Séquences</p>
                           <p className="text-[11px]" style={{ color: 'var(--text2)' }}>
@@ -392,7 +392,7 @@ export default function ClotureAnneeModal({ isOpen, onClose, onSuccess, onToast 
                     </div>
                     <div className="flex items-center justify-between text-xs">
                       <span style={{ color: 'var(--text2)' }}>Reconduction Pédagogique :</span>
-                      <span className="font-bold text-green-600 dark:text-green-400">{proposedClassesCount} classes & grilles associées</span>
+                      <span className="font-bold text-success dark:text-success">{proposedClassesCount} classes & grilles associées</span>
                     </div>
                   </div>
                 </div>

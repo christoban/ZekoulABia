@@ -104,7 +104,7 @@ function SetPasswordContent() {
           </p>
           <button
             onClick={() => router.push('/login')}
-            style={{ background: 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', borderRadius: 10, padding: '12px 32px', fontSize: 15, fontWeight: 800, cursor: 'pointer', width: '100%' }}
+            style={{ background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', borderRadius: 10, padding: '12px 32px', fontSize: 15, fontWeight: 800, cursor: 'pointer', width: '100%' }}
           >
             Aller à la connexion →
           </button>
@@ -119,7 +119,7 @@ function SetPasswordContent() {
       <div style={{ background: 'var(--surface)', borderRadius: 16, padding: '40px', maxWidth: 440, width: '100%', border: '1.5px solid var(--border)', boxShadow: '0 8px 32px rgba(0,0,0,0.08)' }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ width: 56, height: 56, borderRadius: 14, background: "linear-gradient(135deg,var(--green),var(--green2))", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", overflow: "hidden" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "65%", height: "65%", objectFit: "contain" }} /></div>
+          <div style={{ width: 56, height: 56, borderRadius: 14, background: "linear-gradient(135deg,var(--primary),var(--primary-hover))", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", overflow: "hidden" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "65%", height: "65%", objectFit: "contain" }} /></div>
           <h1 style={{ color: 'var(--text)', fontWeight: 800, fontSize: 22, margin: '0 0 6px', fontFamily: 'Georgia, serif' }}>ZekoulABia</h1>
           <p style={{ color: 'var(--text3)', fontSize: 14, margin: 0 }}>{invite?.schoolName}</p>
         </div>
@@ -199,7 +199,7 @@ function SetPasswordContent() {
           <button
             type="submit"
             disabled={submitting}
-            style={{ width: '100%', padding: '12px', borderRadius: 10, fontSize: 15, fontWeight: 800, background: submitting ? 'var(--green-light)' : 'linear-gradient(135deg,var(--green),var(--green2))', color: 'white', border: 'none', cursor: submitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+            style={{ width: '100%', padding: '12px', borderRadius: 10, fontSize: 15, fontWeight: 800, background: submitting ? 'var(--green-light)' : 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: submitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
           >
             {submitting ? <><Loader2 size={16} style={{ animation: 'spin 0.8s linear infinite' }} /> Création...</> : <><KeyRound size={16} strokeWidth={2} /> Créer mon mot de passe</>}
           </button>

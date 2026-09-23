@@ -205,7 +205,7 @@ export default function SectionReferentielsHub({ onToast }: Props) {
   return (
     <div style={{
       height: '100%', overflowY: 'auto', padding: '24px 32px',
-      background: '#f7f3ee', color: '#1f2937',
+      background: 'var(--bg)', color: '#1f2937',
       fontFamily: 'var(--font-nunito), Nunito, sans-serif'
     }}>
       {/* ── Entête Hub ──────────────────────────────────────────────────────── */}
@@ -235,16 +235,16 @@ export default function SectionReferentielsHub({ onToast }: Props) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{
               background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: 8,
-              padding: '6px 12px', fontSize: 12, fontWeight: 700, color: '#065f46',
+              padding: '6px 12px', fontSize: 12, fontWeight: 700, color: 'var(--green2)',
               display: 'flex', alignItems: 'center', gap: 6
             }}>
-              <CheckCircle size={15} color="#059669" />
+              <CheckCircle size={15} color="var(--primary)" />
               <span>Garde-fou : Local toujours gagnant (zéro écrasement rétroactif)</span>
             </div>
             <button
               onClick={handleOpenCreate}
               style={{
-                background: '#1a2e1e', color: 'white', border: 'none', borderRadius: 8,
+                background: 'var(--sidebar-bg)', color: 'white', border: 'none', borderRadius: 8,
                 padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', gap: 6,
                 boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
@@ -310,7 +310,7 @@ export default function SectionReferentielsHub({ onToast }: Props) {
           <div style={{ fontSize: 22, fontWeight: 800, color: '#111827', marginTop: 6 }}>
             {summary?.counts.calendars ?? '—'}
           </div>
-          <div style={{ fontSize: 11, color: '#059669', fontWeight: 600, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <div style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 600, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
             <Clock size={12} />
             <span>En cours : {summary?.currentAcademicYear ?? '2026-2027'}</span>
           </div>
@@ -334,7 +334,7 @@ export default function SectionReferentielsHub({ onToast }: Props) {
         <div style={{ background: '#ffffff', borderRadius: 12, padding: '14px 18px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: '#6b7280' }}>VOLUMES PAR TEMPLATE</span>
-            <div style={{ width: 28, height: 28, borderRadius: 6, background: '#f0fdf4', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--green-light)', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Layers size={16} />
             </div>
           </div>
@@ -386,7 +386,7 @@ export default function SectionReferentielsHub({ onToast }: Props) {
               style={{
                 display: 'flex', alignItems: 'center', gap: 8,
                 padding: '8px 16px', borderRadius: 8, border: 'none',
-                background: isActive ? '#1a2e1e' : '#ffffff',
+                background: isActive ? 'var(--sidebar-bg)' : '#ffffff',
                 color: isActive ? 'white' : '#4b5563',
                 fontSize: 13, fontWeight: 700, cursor: 'pointer',
                 boxShadow: isActive ? '0 2px 6px rgba(0,0,0,0.12)' : '0 1px 2px rgba(0,0,0,0.04)',
@@ -538,7 +538,7 @@ export default function SectionReferentielsHub({ onToast }: Props) {
                       <td style={{ padding: '12px 16px', color: '#4b5563', maxWidth: 220 }}>
                         {cal.arreteReference || 'Arrêté conjoint MINESEC/MINEDUB'}
                       </td>
-                      <td style={{ padding: '12px 16px', fontWeight: 600, color: '#059669' }}>
+                      <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--primary)' }}>
                         {new Date(cal.dateRentreeOfficielle).toLocaleDateString('fr-CM', { day: 'numeric', month: 'long', year: 'numeric' })}
                       </td>
                       <td style={{ padding: '12px 16px', fontWeight: 600, color: '#b91c1c' }}>
@@ -550,7 +550,7 @@ export default function SectionReferentielsHub({ onToast }: Props) {
                       <td style={{ padding: '12px 16px' }}>
                         <span style={{
                           padding: '3px 8px', borderRadius: 12, fontSize: 11, fontWeight: 700,
-                          background: cal.active ? '#dcfce7' : '#fee2e2',
+                          background: cal.active ? 'var(--green-light)' : '#fee2e2',
                           color: cal.active ? '#15803d' : '#b91c1c'
                         }}>
                           {cal.active ? 'Actif' : 'Inactif'}
@@ -757,7 +757,7 @@ export default function SectionReferentielsHub({ onToast }: Props) {
                       <td style={{ padding: '12px 16px' }}>
                         <span style={{
                           padding: '2px 8px', borderRadius: 10, fontSize: 11, fontWeight: 700,
-                          background: p.active ? '#dcfce7' : '#fee2e2',
+                          background: p.active ? 'var(--green-light)' : '#fee2e2',
                           color: p.active ? '#15803d' : '#b91c1c'
                         }}>
                           {p.active ? 'Actif' : 'Inactif'}
@@ -818,7 +818,7 @@ export default function SectionReferentielsHub({ onToast }: Props) {
                       <td style={{ padding: '12px 16px', color: '#4b5563' }}>
                         {t.niveau || 'Tous'}
                       </td>
-                      <td style={{ padding: '12px 16px', fontWeight: 800, color: '#059669', fontSize: 14 }}>
+                      <td style={{ padding: '12px 16px', fontWeight: 800, color: 'var(--primary)', fontSize: 14 }}>
                         {t.montantFCFA.toLocaleString('fr-FR')} FCFA
                       </td>
                       <td style={{ padding: '12px 16px', fontSize: 12, color: '#6b7280', maxWidth: 220 }}>
@@ -827,7 +827,7 @@ export default function SectionReferentielsHub({ onToast }: Props) {
                       <td style={{ padding: '12px 16px' }}>
                         <span style={{
                           padding: '2px 8px', borderRadius: 10, fontSize: 11, fontWeight: 700,
-                          background: t.actif ? '#dcfce7' : '#fee2e2',
+                          background: t.actif ? 'var(--green-light)' : '#fee2e2',
                           color: t.actif ? '#15803d' : '#b91c1c'
                         }}>
                           {t.actif ? 'Actif' : 'Inactif'}

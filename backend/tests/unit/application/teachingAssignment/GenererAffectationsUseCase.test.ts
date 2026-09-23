@@ -23,6 +23,10 @@ class FakeGeneratorRepository implements TeachingAssignmentGeneratorRepository {
     this.created = assignments;
     return assignments.length;
   }
+
+  async syncLv2Groups(): Promise<void> {
+    // no-op dans les tests unitaires
+  }
 }
 
 describe('GenererAffectationsUseCase', () => {
