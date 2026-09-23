@@ -219,6 +219,10 @@
     "generatedOutOfScope": "{count} out of scope",
     "unresolvedTitle": "Unresolved (to handle manually)",
     "outOfScopeTitle": "Out of scope (no reliable weekly hours)",
+    "apCapExceeded": "AP 14h cap exceeded",
+    "apCapExceededDetail": "This assignment would bring this teacher to {current}h + {candidate}h, exceeding the 14h AP cap.",
+    "apCapSuggestions": "Suggested teachers",
+    "apCapNoSuggestion": "No other qualified teacher fits within the AP cap.",
     "reason": {
       "NO_QUALIFIED_TEACHER": "no qualified teacher",
       "AP_WEEKLY_CAP_EXCEEDED": "14h AP cap reached for all qualified teachers"

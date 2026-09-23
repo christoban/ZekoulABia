@@ -6,6 +6,7 @@ import type {
   OverrideAvecMatiere,
   AffectationAvecEnseignant,
   EnseignantEligible,
+  ValidationAffectationResultat,
 } from '@domain/ports/repositories/RattachementEnseignantRepository';
 
 export class InMemoryRattachementEnseignantRepository implements RattachementEnseignantRepository {
@@ -104,5 +105,10 @@ export class InMemoryRattachementEnseignantRepository implements RattachementEns
     return this.professeursPrincipaux.some(
       (p) => p.classId === classId && p.professorPrincipalId === teacherId,
     );
+  }
+
+  async validerAffectationPossible(): Promise<ValidationAffectationResultat> {
+    // Le in-memory ne simule pas la charge AP ; les tests dédiés utilisent l'adaptateur Prisma.
+    return { ok: true };
   }
 }

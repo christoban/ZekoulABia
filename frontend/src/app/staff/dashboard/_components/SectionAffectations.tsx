@@ -28,6 +28,7 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
   const [rows, setRows] = useState<AssignmentRow[]>([])
   const [meta, setMeta] = useState<{ total: number; assigned: number } | null>(null)
   const [generationResult, setGenerationResult] = useState<{ createdCount: number; nonResolus: { classId: string; className: string; subjectName: string; raison: string }[]; horsPerimetre: { classId: string; className: string; subjectName: string }[] } | null>(null)
+  const [assignmentError, setAssignmentError] = useState<{ subjectId: string; currentLoad: number; candidateLoad: number; suggestions: { teacherId: string; firstName: string; lastName: string; chargeHeures: number }[] } | null>(null)
   const [loadingClasses, setLoadingClasses] = useState(true)
   const [loadingRows, setLoadingRows] = useState(false)
   const [saving, setSaving] = useState<string | null>(null) // subjectId en cours de sauvegarde
@@ -85,6 +86,7 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
 
   const handleAssign = async (subjectId: string, teacherId: string | null) => {
     const payload = { classId, subjectId, teacherId }
+    setAssignmentError(null)
 
     if (!isOnline) {
       await addToQueue({ type: 'TEACHER_ASSIGNMENT', endpoint: '/api/v2/teaching-assignments', method: 'POST', payload })
@@ -102,6 +104,16 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
         body: JSON.stringify(payload),
       })
       const d = await res.json()
+      if (res.status === 409 && d.error?.code === 'AP_WEEKLY_CAP_EXCEEDED') {
+        setAssignmentError({
+          subjectId,
+          currentLoad: d.error.currentLoad,
+          candidateLoad: d.error.candidateLoad,
+          suggestions: d.error.suggestions ?? [],
+        })
+        onToast(t('affectations.apCapExceeded'), 'error')
+        return
+      }
       if (!res.ok) throw new Error(d.message || 'Erreur')
 
       applyAssignmentLocally(subjectId, teacherId)
@@ -204,20 +216,7 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
             <button
               onClick={handleGenerate}
               disabled={generating}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '8px 14px',
-                borderRadius: 8,
-                border: 'none',
-                background: 'var(--primary)',
-                color: '#fff',
-                fontSize: 12.5,
-                fontWeight: 700,
-                cursor: generating ? 'not-allowed' : 'pointer',
-                opacity: generating ? 0.65 : 1,
-              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity shadow-btn-primary"
             >
               {generating ? <Loader2 size={15} strokeWidth={2} className="animate-spin" /> : <Sparkles size={15} strokeWidth={2} />}
               {t('affectations.generateButton')}
@@ -340,6 +339,29 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
                           {row.eligibleTeachers.length === 0 && (
                             <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 3 }}>
                               Aucun enseignant n'a déclaré cette matière.
+                            </div>
+                          )}
+                          {assignmentError?.subjectId === row.subjectId && (
+                            <div style={{ marginTop: 8, padding: 8, borderRadius: 8, background: 'var(--red-light)', border: '1px solid var(--red-light)', fontSize: 11.5, color: 'var(--red)' }}>
+                              <div style={{ fontWeight: 700, marginBottom: 4 }}>{t('affectations.apCapExceeded', { current: assignmentError.currentLoad, candidate: assignmentError.candidateLoad })}</div>
+                              {assignmentError.suggestions.length > 0 && (
+                                <div>
+                                  <div style={{ marginBottom: 2 }}>{t('affectations.apCapSuggestions')} :</div>
+                                  {assignmentError.suggestions.map((s) => (
+                                    <button
+                                      key={s.teacherId}
+                                      type="button"
+                                      onClick={() => handleAssign(row.subjectId, s.teacherId)}
+                                      style={{ display: 'block', textAlign: 'left', background: 'transparent', border: 'none', padding: '2px 0', color: 'var(--red)', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}
+                                    >
+                                      {s.firstName} {s.lastName} ({s.chargeHeures}h)
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                              {assignmentError.suggestions.length === 0 && (
+                                <div>{t('affectations.apCapNoSuggestion')}</div>
+                              )}
                             </div>
                           )}
                         </td>

@@ -41,6 +41,17 @@ export type EnseignantEligible = {
   lastName: string;
 };
 
+export type SuggestionEnseignant = {
+  teacherId: string;
+  firstName: string;
+  lastName: string;
+  chargeHeures: number;
+};
+
+export type ValidationAffectationResultat =
+  | { ok: true }
+  | { ok: false; code: 'AP_WEEKLY_CAP_EXCEEDED'; currentLoad: number; candidateLoad: number; suggestions: SuggestionEnseignant[] };
+
 export interface RattachementEnseignantRepository {
   /**
    * Vérifie qu'un enseignant est réellement rattaché à une classe (et matière optionnelle).
@@ -78,4 +89,12 @@ export interface RattachementEnseignantRepository {
   }): Promise<void>;
 
   retirer(params: { classId: string; subjectId: string; schoolId: string }): Promise<void>;
+
+  validerAffectationPossible(params: {
+    classId: string;
+    subjectId: string;
+    teacherId: string;
+    schoolId: string;
+    academicYearId: string;
+  }): Promise<ValidationAffectationResultat>;
 }

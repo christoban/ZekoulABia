@@ -152,6 +152,19 @@ export class TeachingAssignmentController {
         return;
       }
 
+      // Vérifier la charge (plafond AP 14h) avant persistance
+      const validation = await this.rattachementRepository.validerAffectationPossible({
+        classId,
+        subjectId,
+        teacherId,
+        schoolId,
+        academicYearId: cls.academicYearId,
+      });
+      if (!validation.ok) {
+        res.status(409).json({ success: false, error: validation });
+        return;
+      }
+
       await this.rattachementRepository.assigner({
         classId,
         subjectId,

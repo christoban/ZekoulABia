@@ -219,6 +219,10 @@
     "generatedOutOfScope": "{count} hors périmètre",
     "unresolvedTitle": "Non résolues (à traiter manuellement)",
     "outOfScopeTitle": "Hors périmètre (pas de volume horaire fiable)",
+    "apCapExceeded": "Plafond AP 14h dépassé",
+    "apCapExceededDetail": "Cette affectation ferait passer cet enseignant à {current}h + {candidate}h = dépassement du plafond AP de 14h.",
+    "apCapSuggestions": "Enseignants suggérés",
+    "apCapNoSuggestion": "Aucun autre enseignant qualifié ne respecte le plafond AP.",
     "reason": {
       "NO_QUALIFIED_TEACHER": "aucun enseignant qualifié",
       "AP_WEEKLY_CAP_EXCEEDED": "plafond de 14h AP atteint pour tous les qualifiés"
