@@ -208,7 +208,21 @@
     "deleteSuccess": "Assignment removed",
     "emptyStateTitle": "",
     "emptyStateDesc": "Select a class to manage its assignments.",
-    "loadError": "Error loading assignments"
+    "loadError": "Error loading assignments",
+    "generateTitle": "Automatic generation",
+    "generateHint": "Quickly assigns unassigned subjects to the least loaded eligible teachers.",
+    "generateButton": "Generate assignments",
+    "generateSuccess": "{count} assignment(s) created",
+    "generateError": "Assignment generation failed",
+    "generatedCreated": "{count} created",
+    "generatedUnresolved": "{count} unresolved",
+    "generatedOutOfScope": "{count} out of scope",
+    "unresolvedTitle": "Unresolved (to handle manually)",
+    "outOfScopeTitle": "Out of scope (no reliable weekly hours)",
+    "reason": {
+      "NO_QUALIFIED_TEACHER": "no qualified teacher",
+      "AP_WEEKLY_CAP_EXCEEDED": "14h AP cap reached for all qualified teachers"
+    }
   },
   "departements": {
     "title": "Academic Departments",

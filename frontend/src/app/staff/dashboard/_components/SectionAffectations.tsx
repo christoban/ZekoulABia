@@ -4,9 +4,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
-import { CheckCircle2, AlertTriangle, ClipboardList, BookOpen, Loader2, Check, GraduationCap, WifiOff } from 'lucide-react'
+import { CheckCircle2, AlertTriangle, ClipboardList, BookOpen, Loader2, Check, GraduationCap, WifiOff, Sparkles, ChevronDown, ChevronUp } from 'lucide-react'
 
-interface ClassItem { id: string; name: string; level: string | null }
+interface ClassItem { id: string; name: string; level: string | null; academicYearId: string }
 interface AssignmentRow {
   subjectId: string
   subjectName: string
@@ -27,9 +27,11 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
   const [classId, setClassId] = useState('')
   const [rows, setRows] = useState<AssignmentRow[]>([])
   const [meta, setMeta] = useState<{ total: number; assigned: number } | null>(null)
+  const [generationResult, setGenerationResult] = useState<{ createdCount: number; nonResolus: { classId: string; className: string; subjectName: string; raison: string }[]; horsPerimetre: { classId: string; className: string; subjectName: string }[] } | null>(null)
   const [loadingClasses, setLoadingClasses] = useState(true)
   const [loadingRows, setLoadingRows] = useState(false)
   const [saving, setSaving] = useState<string | null>(null) // subjectId en cours de sauvegarde
+  const [generating, setGenerating] = useState(false)
   const { isOnline, addToQueue } = useSyncQueue()
 
   useEffect(() => {
@@ -37,7 +39,7 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
       .then(r => r.json())
       .then(d => {
         const list = Array.isArray(d?.data) ? d.data : Array.isArray(d) ? d : []
-        setClasses(list.map((c: any) => ({ id: c.id, name: c.name, level: c.level })))
+        setClasses(list.map((c: any) => ({ id: c.id, name: c.name, level: c.level, academicYearId: c.academicYearId })))
       })
       .catch(() => {})
       .finally(() => setLoadingClasses(false))
@@ -111,6 +113,29 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
     }
   }
 
+  const handleGenerate = async () => {
+    if (!classId || !selectedClass) return
+    setGenerating(true)
+    setGenerationResult(null)
+    try {
+      const res = await fetchApi('/api/v2/teaching-assignments/generate', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ classId, academicYearId: selectedClass.academicYearId }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.message || 'Erreur')
+      setGenerationResult(d.data)
+      loadAssignments(classId)
+      onToast(t('affectations.generateSuccess', { count: d.data.createdCount }), 'success')
+    } catch (err) {
+      onToast(err instanceof Error ? err.message : t('affectations.generateError'), 'error')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
   const selectedClass = classes.find(c => c.id === classId)
 
   return (
@@ -163,6 +188,89 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
               <div style={{ fontSize: 12.5, color: 'var(--orange)' }}>
                 <strong>{meta.total - meta.assigned}</strong> matière{meta.total - meta.assigned > 1 ? 's' : ''} sans enseignant
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Génération automatique */}
+      {classId && selectedClass && (
+        <div style={{ ...sCard, marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{t('affectations.generateTitle')}</div>
+              <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 2 }}>{t('affectations.generateHint')}</div>
+            </div>
+            <button
+              onClick={handleGenerate}
+              disabled={generating}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '8px 14px',
+                borderRadius: 8,
+                border: 'none',
+                background: 'var(--primary)',
+                color: '#fff',
+                fontSize: 12.5,
+                fontWeight: 700,
+                cursor: generating ? 'not-allowed' : 'pointer',
+                opacity: generating ? 0.65 : 1,
+              }}
+            >
+              {generating ? <Loader2 size={15} strokeWidth={2} className="animate-spin" /> : <Sparkles size={15} strokeWidth={2} />}
+              {t('affectations.generateButton')}
+            </button>
+          </div>
+
+          {generationResult && (
+            <div style={{ marginTop: 14, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 10 }}>
+                <div style={{ fontSize: 12.5, color: 'var(--green)', fontWeight: 700 }}>
+                  {t('affectations.generatedCreated', { count: generationResult.createdCount })}
+                </div>
+                {generationResult.nonResolus.length > 0 && (
+                  <div style={{ fontSize: 12.5, color: 'var(--orange)', fontWeight: 700 }}>
+                    {t('affectations.generatedUnresolved', { count: generationResult.nonResolus.length })}
+                  </div>
+                )}
+                {generationResult.horsPerimetre.length > 0 && (
+                  <div style={{ fontSize: 12.5, color: 'var(--text3)', fontWeight: 700 }}>
+                    {t('affectations.generatedOutOfScope', { count: generationResult.horsPerimetre.length })}
+                  </div>
+                )}
+              </div>
+
+              {generationResult.nonResolus.length > 0 && (
+                <details style={{ marginBottom: 8 }}>
+                  <summary style={{ fontSize: 12, fontWeight: 600, color: 'var(--orange)', cursor: 'pointer', listStyle: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <ChevronDown size={14} /> {t('affectations.unresolvedTitle')}
+                  </summary>
+                  <ul style={{ margin: '6px 0 0 18px', padding: 0, fontSize: 12, color: 'var(--text2)' }}>
+                    {generationResult.nonResolus.map((item, idx) => (
+                      <li key={idx} style={{ marginBottom: 3 }}>
+                        {item.className} — {item.subjectName} : {t(`affectations.reason.${item.raison}`)}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+
+              {generationResult.horsPerimetre.length > 0 && (
+                <details>
+                  <summary style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)', cursor: 'pointer', listStyle: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <ChevronDown size={14} /> {t('affectations.outOfScopeTitle')}
+                  </summary>
+                  <ul style={{ margin: '6px 0 0 18px', padding: 0, fontSize: 12, color: 'var(--text2)' }}>
+                    {generationResult.horsPerimetre.map((item, idx) => (
+                      <li key={idx} style={{ marginBottom: 3 }}>
+                        {item.className} — {item.subjectName}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
             </div>
           )}
         </div>

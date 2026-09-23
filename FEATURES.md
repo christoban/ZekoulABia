@@ -42,8 +42,9 @@
 ## 5. Classes, matières & affectations
 
 **Objectif** : structurer l'école (classes, sous-groupes TP, matières, coefficients, enseignants).
-- **Fichiers** : `app/class/*`, `app/subject/*`, `ClasseController`, `SubjectController`, `TeachingAssignmentController`, `fe/.../SectionClasses.tsx`, `SectionSubjects.tsx`, `SectionAffectations.tsx`.
+- **Fichiers** : `app/class/*`, `app/subject/*`, `app/teachingAssignment/*`, `ClasseController`, `SubjectController`, `TeachingAssignmentController`, `fe/.../SectionClasses.tsx`, `SectionSubjects.tsx`, `SectionAffectations.tsx`.
 - **Interactions** : prof principal, sous-groupes TP (`ClassSubGroup`), LV2/A-Level par élève (module `student`), coefficients par cycle/filière.
+- **Génération automatique des affectations** : algorithme glouton (moins chargé d'abord, plafond AP 14h), exclut LV2/groupes et le 2nd cycle FR sans volume horaire (`weeklyPeriods` null). Bouton côté `SectionAffectations`.
 
 ## 6. Notes (workflow MINESEC)
 

@@ -12,5 +12,8 @@ export function creerTeachingAssignmentRoutes(controller: TeachingAssignmentCont
   // (avant : tout STAFF sans perm précise → trop large)
   router.post('/', requireAuth, requirePermission('MANAGE_TEACHING_ASSIGNMENTS'), controller.assign);
 
+  // Génération automatique des affectations (algorithme glouton)
+  router.post('/generate', requireAuth, requirePermission('MANAGE_TEACHING_ASSIGNMENTS'), controller.genererAffectations);
+
   return router;
 }

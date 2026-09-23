@@ -21,6 +21,8 @@ import { PrismaDepartmentRepository } from '@infrastructure/persistence/prisma/P
 import { PrismaStaffProfileRepository } from '@infrastructure/persistence/prisma/PrismaStaffProfileRepository';
 import { PrismaStatisticsQueryRepository } from '@infrastructure/persistence/prisma/PrismaStatisticsQueryRepository';
 import { PrismaRattachementEnseignantRepository } from '@infrastructure/persistence/prisma/PrismaRattachementEnseignantRepository';
+import { PrismaTeachingAssignmentGeneratorRepository } from '@infrastructure/persistence/prisma/PrismaTeachingAssignmentGeneratorRepository';
+import { GenererAffectationsUseCase } from '@application/teachingAssignment/GenererAffectationsUseCase';
 import { PrismaTimetableRepository } from '@infrastructure/persistence/prisma/PrismaTimetableRepository';
 import { PrismaStudentProfileRepository } from '@infrastructure/persistence/prisma/PrismaStudentProfileRepository';
 import { PrismaFactureRepository } from '@infrastructure/persistence/prisma/PrismaFactureRepository';
@@ -92,8 +94,11 @@ export function registerFinanceRoutes(app: Application, prismaParam: typeof pris
   const communicationsController = new CommunicationsController(broadcastService, auditForFinance);
   app.use('/api/v2/communications', creerCommunicationsRoutes(communicationsController));
 
+  const teachingAssignmentGeneratorRepository = new PrismaTeachingAssignmentGeneratorRepository(p as any);
+  const genererAffectationsUseCase = new GenererAffectationsUseCase(teachingAssignmentGeneratorRepository);
   const teachingAssignmentController = new TeachingAssignmentController(
     new PrismaRattachementEnseignantRepository(p as any),
+    genererAffectationsUseCase,
     auditForFinance,
     c.activityLog,
   );

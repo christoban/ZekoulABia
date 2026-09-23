@@ -208,7 +208,21 @@
     "deleteSuccess": "Affectation supprimée",
     "emptyStateTitle": "",
     "emptyStateDesc": "Sélectionnez une classe pour gérer ses affectations.",
-    "loadError": "Erreur lors du chargement des affectations"
+    "loadError": "Erreur lors du chargement des affectations",
+    "generateTitle": "Génération automatique",
+    "generateHint": "Affecte rapidement les matières non assignées aux enseignants éligibles les moins chargés.",
+    "generateButton": "Générer les affectations",
+    "generateSuccess": "{count} affectation(s) créée(s)",
+    "generateError": "La génération des affectations a échoué",
+    "generatedCreated": "{count} créée(s)",
+    "generatedUnresolved": "{count} non résolue(s)",
+    "generatedOutOfScope": "{count} hors périmètre",
+    "unresolvedTitle": "Non résolues (à traiter manuellement)",
+    "outOfScopeTitle": "Hors périmètre (pas de volume horaire fiable)",
+    "reason": {
+      "NO_QUALIFIED_TEACHER": "aucun enseignant qualifié",
+      "AP_WEEKLY_CAP_EXCEEDED": "plafond de 14h AP atteint pour tous les qualifiés"
+    }
   },
   "departements": {
     "title": "Départements pédagogiques",

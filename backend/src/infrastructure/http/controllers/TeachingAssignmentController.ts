@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { CYCLE2_LEVELS, parseSerie } from '@application/school/SubjectAssignmentHelper';
+import type { GenererAffectationsUseCase } from '@application/teachingAssignment/GenererAffectationsUseCase';
 import type { RattachementEnseignantRepository } from '@domain/ports/repositories/RattachementEnseignantRepository';
 import type { AIActionAuditPort } from '@domain/ports/services/AIActionAuditPort';
 import type { ActivityLogPort } from '@domain/ports/services/ActivityLogPort';
@@ -7,6 +8,7 @@ import type { ActivityLogPort } from '@domain/ports/services/ActivityLogPort';
 export class TeachingAssignmentController {
   constructor(
     private readonly rattachementRepository: RattachementEnseignantRepository,
+    private readonly genererAffectationsUseCase: GenererAffectationsUseCase,
     private readonly audit: AIActionAuditPort,
     private readonly activityLog?: ActivityLogPort,
   ) {}
@@ -184,6 +186,47 @@ export class TeachingAssignmentController {
         actorRole: req.user?.role,
         schoolId: req.user?.schoolId,
         actionName: 'assigner_enseignant',
+        origin: 'UI_DIRECT',
+        outcome: 'ERREUR',
+        refusalReason: error instanceof Error ? error.message : undefined,
+        parametersSummary: req.body,
+      });
+      next(error);
+    }
+  };
+
+  // POST /api/v2/teaching-assignments/generate
+  genererAffectations = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const schoolId = req.user!.schoolId;
+      const { academicYearId, classId } = req.body as { academicYearId?: string; classId?: string };
+
+      if (!academicYearId) {
+        res.status(400).json({ success: false, message: 'academicYearId requis' });
+        return;
+      }
+
+      const result = await this.genererAffectationsUseCase.execute({ schoolId, academicYearId, classId });
+
+      this.audit.journaliser({
+        actorUserId: req.user!.userId,
+        actorRole: req.user!.role,
+        schoolId,
+        actionName: 'generer_affectations',
+        targetType: 'TeachingAssignment',
+        targetId: schoolId,
+        origin: 'UI_DIRECT',
+        outcome: 'SUCCES',
+        parametersSummary: { academicYearId, classId, createdCount: result.createdCount },
+      });
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      this.audit.journaliser({
+        actorUserId: req.user?.userId,
+        actorRole: req.user?.role,
+        schoolId: req.user?.schoolId,
+        actionName: 'generer_affectations',
         origin: 'UI_DIRECT',
         outcome: 'ERREUR',
         refusalReason: error instanceof Error ? error.message : undefined,
