@@ -38,10 +38,10 @@ Le hook `useT(namespace)` retourne une fonction qui prend un chemin dot-separate
 | `discipline` | Sanctions, retenues, conseil de discipline |
 | `errors` | Messages d'erreur, 404, fallbacks |
 
-## Langue non connecté
+## Pages publiques
 
-Navigateur détecté via `navigator.language.startsWith('en')` → en, sinon fr.
+Le choix FR/EN est stocké dans `zekoulabia_lang_override`. Sans choix explicite, le navigateur est utilisé.
 
-## Résolution connecté
+## Dashboard connecté
 
-`GET /api/v2/school/me` → `subsystem` → FRANCOPHONE=fr, ANGLOPHONE=en, BILINGUAL=fr (sauf section EN).
+Chaque compte possède sa propre préférence dans `zekoulabia_dashboard_lang_<userId>`. Un choix global ne peut donc pas être appliqué à un autre utilisateur du même navigateur. Cette préférence ne modifie pas la langue des bulletins, documents, SMS ou emails, qui reste résolue côté backend selon l'établissement et la section.

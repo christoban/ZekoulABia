@@ -10,7 +10,7 @@ import type { LucideIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import LanguageSwitch from '@/components/LanguageSwitch'
-import { useT } from '@/lib/i18n'
+import { getDashboardLanguageKey, isLanguage, useT } from '@/lib/i18n'
 import { resetNotificationSocket } from '@/lib/notificationSocket'
 
 // ── Configuration d'affichage par rôle (icônes, badges, redirections) ──
@@ -105,10 +105,10 @@ export default function LoginPage() {
   useEffect(() => {
     if (success) {
       const tm = setTimeout(() => setProgress(true), 100)
-      const r = setTimeout(() => router.push(success.dest), 2200)
+      const r = setTimeout(() => window.location.assign(success.dest), 2200)
       return () => { clearTimeout(tm); clearTimeout(r) }
     }
-  }, [success, router])
+  }, [success])
 
   const startOtpTimer = () => {
     if (otpTimerRef.current) clearInterval(otpTimerRef.current)
@@ -140,6 +140,10 @@ export default function LoginPage() {
       permissions: permissions ?? [],
       mustChangePassword: mustChangePassword ?? false,
     }))
+    const selectedLanguage = localStorage.getItem('zekoulabia_lang_override')
+    if (isLanguage(selectedLanguage)) {
+      localStorage.setItem(getDashboardLanguageKey(userId), selectedLanguage)
+    }
 
     setSuccess({ ...config, dest, firstName })
   }
@@ -857,7 +861,7 @@ export default function LoginPage() {
               {t('login.success_redirecting')}
             </div>
             <button
-              onClick={() => router.push(success.dest)}
+              onClick={() => window.location.assign(success.dest)}
               style={{ width: '100%', minHeight: 44, padding: 10, background: 'var(--success)', color: 'white', fontSize: 13, fontWeight: 800, border: 'none', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit' }}>
               {t('login.success_goto')}
             </button>

@@ -655,6 +655,8 @@
       "search_label": "Search for a teacher",
       "search_placeholder": "Teacher's name…",
       "no_teacher": "No teacher found",
+      "loading": "Loading assigned teachers…",
+      "no_assignment": "No teacher assigned to this class. Assign teachers to this class first.",
       "selected_prefix": "",
       "btn_cancel": "Cancel",
       "btn_assign": "Assign",
@@ -1143,8 +1145,7 @@
       "language_label": "Language",
       "language_options": [
         "Français",
-        "English",
-        "Français/English (Bilingual)"
+        "English"
       ],
       "timezone_label": "Timezone",
       "timezone_options": [
@@ -1165,7 +1166,7 @@
         "Letters A–F"
       ],
       "btn_save": "Save",
-      "toast_saved": "Preferences saved (preview — not yet connected to the server)"
+      "toast_saved": "Dashboard language saved"
     },
     "activities": {
       "search_placeholder": "Search by action or description…",

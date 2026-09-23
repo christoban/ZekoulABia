@@ -636,6 +636,8 @@
       "search_label": "Rechercher un enseignant",
       "search_placeholder": "Nom de l'enseignant…",
       "no_teacher": "Aucun enseignant trouvé",
+      "loading": "Chargement des enseignants affectés…",
+      "no_assignment": "Aucun professeur assigné à cette classe. Affectez d'abord des professeurs à cette classe.",
       "selected_prefix": "",
       "btn_cancel": "Annuler",
       "btn_assign": "Assigner",
@@ -1122,7 +1124,7 @@
     "preferences": {
       "title": "Préférences système",
       "language_label": "Langue",
-      "language_options": ["Français", "English", "Français/English (Bilingue)"],
+      "language_options": ["Français", "English"],
       "timezone_label": "Fuseau horaire",
       "timezone_options": ["Africa/Douala (UTC+1)", "Africa/Lagos (UTC+1)", "Europe/Paris (UTC+2)"],
       "date_format_label": "Format de date",
@@ -1130,7 +1132,7 @@
       "grading_system_label": "Système de notation",
       "grading_system_options": ["/20 (MINESEC)", "/100", "Lettres A–F"],
       "btn_save": "Enregistrer",
-      "toast_saved": "Préférences enregistrées (aperçu — pas encore connecté au serveur)"
+      "toast_saved": "Langue du dashboard enregistrée"
     },
     "activities": {
       "search_placeholder": "Rechercher par action ou description…",

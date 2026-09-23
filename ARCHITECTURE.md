@@ -102,7 +102,7 @@ frontend/src/
 
 - **Dashboards** : chaque rôle a un `dashboard/page.tsx` + `_components/Section*.tsx` (admin 32, teacher 12, staff 16, parent 8, student 7) + une sidebar + topbar + toasts. S'y ajoutent les espaces **master** (plateforme) et **group** (propriétaire d'un groupe d'écoles : `frontend/src/app/group/`), ainsi que l'onboarding élève dédié (`frontend/src/app/eleve-onboarding/`).
 - **Styles** : **inline styles** majoritaires + tokens CSS (`var(--bg)`, `var(--text)`…) définis dans `globals.css`, plus quelques utilitaires Tailwind. Thème clair/sombre via **next-themes** + `@custom-variant dark` (Tailwind v4).
-- **i18n** : système **maison** (`src/lib/i18n`), 13 namespaces × fr/en, dictionnaires importés **statiquement**. Langue dérivée de l'établissement/section (jamais de l'URL).
+- **i18n** : système **maison** (`src/lib/i18n`), 13 namespaces × fr/en, dictionnaires importés **statiquement**. La langue du dashboard est personnelle à chaque utilisateur ; les contenus générés restent dérivés de l'établissement/section (jamais de l'URL).
 - **Offline/PWA** : `@ducanh2912/next-pwa` + **Dexie** (IndexedDB) pour la file d'attente offline (`lib/offline`).
 - **Data fetching** : `fetchApi` (wrapper `fetch` avec cookies) vers `/api/v2/*`. Temps réel via `socket.io-client`.
 
@@ -156,8 +156,10 @@ Autres flux importants :
 
 1. **Hexagonal côté backend** : découple le métier des frameworks → testabilité (92 fichiers de tests, repos in-memory) et remplaçabilité des adapters.
 2. **Multi-tenant à base partagée** (`schoolId`) plutôt qu'une base par école : simplicité opérationnelle ; l'isolation est une **responsabilité applicative stricte**.
-3. **Source unique de langue** : `resolveLanguage(subsystem, sectionCode?)` (backend `utils/languageHelper`, miroir frontend `lib/i18n`). Ne jamais recréer de logique de langue. Langue dérivée des données, pas de l'URL.
-   - **Pages « universelles » (sans établissement précis)** — `login`, landing publique, onboarding (`/onboarding/[token]` et `/admin/configuration`) : elles servent **tous** les établissements (FR/EN/bilingue), donc la langue **n'est PAS dérivée d'une école**. Elles démarrent en **français par défaut** et exposent un **toggle FR/EN** (`components/LanguageSwitch`) dont le choix est **mémorisé** (`localStorage ZEKOULABIA_lang_override`, priorité maximale dans le provider). La langue officielle de l'établissement ne s'applique **qu'une fois connecté au dashboard** (école `ACTIVE`).
+3. **Langue de l'interface et langue métier sont séparées** :
+   - **Dashboard connecté** : chaque utilisateur choisit librement FR ou EN. Le choix est isolé par `userId` dans `localStorage` (`zekoulabia_dashboard_lang_<userId>`), afin qu'un choix ne soit jamais appliqué au compte suivant sur le même navigateur. Le choix effectué sur le login est repris dans cette préférence personnelle.
+   - **Pages universelles** — `login`, landing, onboarding : elles servent tous les établissements et utilisent la préférence publique `zekoulabia_lang_override`, indépendante des comptes.
+   - **Contenus générés** — bulletins, documents, SMS, emails : la langue reste dérivée de l'établissement et de la section via `resolveLanguage(subsystem, sectionCode?)` côté backend. Un dashboard bilingue ne change pas cette règle métier.
 4. **Onboarding en 2 phases** : Phase 1 wizard token (structure) → Phase 2 conversationnel (affinage + activation déterministe). La Phase 2 **se nourrit** de la Phase 1 (réconciliation).
 5. **Exécution déterministe de la configuration** (coefficients MINESEC exacts) plutôt que génération 100 % LLM.
 6. **PEBS orthogonal au template** : le « bilingue » établissement (2 sections) ≠ le Programme Spécial Bilingue (flag activable). Ne pas les fusionner.

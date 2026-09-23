@@ -81,8 +81,9 @@
 - **Tout texte affiché** passe par `useT('<namespace>')('clé')`. Aucune chaîne UTF en dur destinée à l'utilisateur.
 - **Parité stricte fr/en** : toute clé ajoutée dans `locales/fr/<ns>.json` doit exister dans `locales/en/<ns>.json` (et vice-versa). Vérifier la parité (mêmes clés, même nombre).
 - **Namespaces** : `common, navigation, admin, teacher, staff, parent, student, grades, finance, discipline, errors, onboarding, hrSelfService`.
-- **Résolution de langue** : **une seule** fonction `resolveLanguage(subsystem, sectionCode?)` (frontend `lib/i18n`, backend `utils/languageHelper`). **Ne jamais recréer** une autre logique. Langue dérivée des données (établissement/section), **pas de l'URL**.
-- **Pages « universelles » (login, landing publique, onboarding)** : elles ne concernent **aucun établissement précis** (elles servent FR **et** EN). Règle : **démarrage en français par défaut + toggle FR/EN** (`components/LanguageSwitch`), jamais de langue dérivée d'une école. Le choix utilisateur est **mémorisé** (`localStorage ZEKOULABIA_lang_override`) et prime partout ensuite. La langue de l'établissement ne s'applique qu'**après connexion** (dashboard, école `ACTIVE`). Toute nouvelle page publique/pré-connexion doit suivre cette règle (toggle + surcharge).
+- **Langue du dashboard** : préférence personnelle FR/EN, stockée par `userId` dans `localStorage` (`zekoulabia_dashboard_lang_<userId>`). Deux comptes utilisant le même navigateur ne doivent jamais partager cette préférence. Le choix fait sur le login est repris pour le compte qui vient de se connecter.
+- **Langue des contenus générés** : **une seule** fonction backend `resolveLanguage(subsystem, sectionCode?)` (`utils/languageHelper`). Elle reste limitée aux bulletins, documents, SMS et emails ; ne jamais la remplacer par la préférence d'interface d'un utilisateur.
+- **Pages « universelles » (login, landing publique, onboarding)** : elles ne concernent **aucun établissement précis** (elles servent FR **et** EN). Elles utilisent la préférence publique `localStorage.zekoulabia_lang_override`, sans la propager à un autre compte connecté.
 - **Prompts Groq / emails / SMS** : toujours injecter la langue via `resolveLanguage` (+ `instructionLangue` pour les prompts).
 
 ---

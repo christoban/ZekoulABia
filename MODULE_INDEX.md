@@ -88,7 +88,7 @@ Chemins raccourcis : `app/` = `backend/src/application`, `infra/` = `backend/src
 | **Onboarding Phase 2** | Conversationnel + activation | `fe/app/admin/configuration` | `page.tsx`, `ConversationalOnboarding.tsx` (réconcilié depuis Phase 1) |
 | **Onboarding élève** | Inscriptions en cours d'année (Secrétaire par défaut, Admin via option `adminGereInscriptions`), inscription directe en 1 étape | `fe/app/eleve-onboarding`, `SectionEleveOnboarding.tsx` | Traitement & inscription directe sans approbation tiers |
 | **Auth / public** | Login, reset, landing, invite | `fe/app/login`, `reset-password`, `invite`, `components/LandingPage` | |
-| **Socle i18n** | Traduction FR/EN | `fe/lib/i18n/`, `fe/locales/{fr,en}/*.json` (13 namespaces) | `useT`, `LanguageProvider`, `resolveLanguage`, `README.md` |
+| **Socle i18n** | Traduction FR/EN ; dashboard personnel par utilisateur ; contenus générés par école/section | `fe/lib/i18n/`, `fe/locales/{fr,en}/*.json` (13 namespaces) | `useT`, `LanguageProvider`, `resolveDashboardLanguage`, `README.md` |
 | **Thème** | Clair/sombre | `fe/app/providers.tsx` (next-themes), `fe/app/globals.css` (`.dark`), `components/ThemeToggle` | |
 | **Offline / PWA** | File d'attente hors-ligne | `fe/lib/offline/` (Dexie), `components/OfflineIndicator/EmptyState` | |
 | **Composants partagés** | UI transverse | `fe/components/` + `fe/components/ui/` (shadcn) | `AnimatedBackground`, `LanguageSwitch`, `PasswordStrengthBar` |

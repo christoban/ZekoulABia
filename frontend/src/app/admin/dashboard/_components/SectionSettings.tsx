@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { fetchApi } from '@/lib/fetchApi'
-import { useT } from '@/lib/i18n'
+import { type Language, useChangeLanguage, useLanguage, useT } from '@/lib/i18n'
 import { Smartphone, Mail, School, Search, Save, CheckCircle2, Info, ClipboardList } from 'lucide-react'
 import PushNotificationToggle from '@/components/PushNotificationToggle'
 import MfaSettings from '@/components/MfaSettings'
@@ -28,7 +28,11 @@ interface SecSettings   { passwordMinLength: number; passwordRequireUpper: boole
 
 export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: Props) {
   const t = useT('admin')
+  const { lang } = useLanguage()
+  const changeLanguage = useChangeLanguage()
   const [activeTab, setActiveTab] = useState(0)
+  const [dashboardLanguage, setDashboardLanguage] = useState<Language>(lang)
+  const [preferencesSaving, setPreferencesSaving] = useState(false)
 
   const TABS = [
     t('settings.tabs.0'), t('settings.tabs.1'), t('settings.tabs.2'),
@@ -496,7 +500,8 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
       {/* RACI Settings Governance Banner */}
       <div className="mb-3.5 p-2.5 md:p-3 rounded-lg border border-blue-500/20 bg-blue-500/5 text-xs text-[var(--text)] flex items-center justify-between gap-2.5 shadow-xs">
         <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-md bg-blue-500/15 text-blue-600 flex-shrink-0">
+           <div className="p-1.5 rounded-md bg-blue-500/15 text-blue-600 dark:text-blue-300 flex-shrink-0">
+
             <School size={15} />
           </div>
           <div>
@@ -532,7 +537,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
       <div className="hidden md:flex" style={{ gap: 2, background: 'var(--bg2)', padding: 3, borderRadius: 10, marginBottom: 16, width: 'fit-content', flexWrap: 'wrap' }}>
         {TABS.map((tab, i) => (
           <button key={i} onClick={() => setActiveTab(i)}
-            style={{ padding: '5px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: 'none', background: activeTab === i ? 'white' : 'transparent', color: activeTab === i ? 'var(--text)' : 'var(--text3)', boxShadow: activeTab === i ? '0 1px 3px rgba(0,0,0,0.06)' : 'none', transition: 'all 0.12s' }}>
+            style={{ padding: '5px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: 'none', background: activeTab === i ? 'var(--surface)' : 'transparent', color: activeTab === i ? 'var(--text)' : 'var(--text3)', boxShadow: activeTab === i ? '0 1px 3px rgba(0,0,0,0.06)' : 'none', transition: 'all 0.12s' }}>
             {tab}
           </button>
         ))}
@@ -673,7 +678,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
               </div>
               <div className="text-[10.5px] md:text-[11.5px]" style={{ color: 'var(--text3)' }}>{t('settings.profile.hint')}</div>
             </div>
-            <div className="px-3.5 py-2.5 md:px-5 md:py-3" style={{ borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
+            <div className="pl-3.5 py-2.5 pr-[84px] md:pl-5 md:py-3 md:pr-[150px]" style={{ borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
               <button className={`${btnPrimCls} w-full md:w-auto justify-center`} style={{ ...btnPrim, display: 'flex', opacity: subdomainSaving || !subdomainChanged || !subdomainValid || subdomainAvail === 'taken' || subdomainAvail === 'checking' ? 0.5 : 1 }}
                 disabled={subdomainSaving || !subdomainChanged || !subdomainValid || subdomainAvail === 'taken' || subdomainAvail === 'checking'}
                 onClick={handleSubdomainSave}>
@@ -1008,22 +1013,26 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
         <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
           <div className={cardHeaderCls} style={cardHeader}><span className="text-[13px] md:text-[15px]" style={cardTitle}>{t('settings.preferences.title')}</span></div>
           <div className="grid grid-cols-1 md:grid-cols-2 px-3.5 py-3 md:px-5 md:py-3.5 gap-2.5 md:gap-3.5">
-            {[
-              { label: t('settings.preferences.language_label'), optKey: 'language_options' },
-              { label: t('settings.preferences.timezone_label'), optKey: 'timezone_options' },
-              { label: t('settings.preferences.date_format_label'), optKey: 'date_format_options' },
-              { label: t('settings.preferences.grading_system_label'), optKey: 'grading_system_options' },
-            ].map((f, i) => (
-              <div key={i}>
-                <div className={fieldLabelCls} style={fieldLabel}>{f.label}</div>
-                <select className={fieldSelectCls} style={fieldSelect}>
-                  {[0, 1, 2].map(j => <option key={j}>{t(`settings.preferences.${f.optKey}.${j}`)}</option>)}
-                </select>
-              </div>
-            ))}
+            <div>
+              <div className={fieldLabelCls} style={fieldLabel}>{t('settings.preferences.language_label')}</div>
+              <select className={fieldSelectCls} style={fieldSelect} value={dashboardLanguage}
+                onChange={e => setDashboardLanguage(e.target.value as Language)}>
+                <option value="fr">{t('settings.preferences.language_options.0')}</option>
+                <option value="en">{t('settings.preferences.language_options.1')}</option>
+              </select>
+            </div>
           </div>
           <div className="px-3.5 py-2.5 md:px-5 md:py-3" style={{ borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
-            <button className={`${btnPrimCls} w-full md:w-auto justify-center`} style={{ ...btnPrim, display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => onToast(t('settings.preferences.toast_saved'), 'success')}><Save size={14} strokeWidth={2} /> {t('settings.preferences.btn_save')}</button>
+            <button className={`${btnPrimCls} w-full md:w-auto justify-center`} style={{ ...btnPrim, display: 'flex', alignItems: 'center', gap: 6, opacity: preferencesSaving ? 0.7 : 1 }} disabled={preferencesSaving}
+              onClick={async () => {
+                setPreferencesSaving(true)
+                try {
+                  await changeLanguage(dashboardLanguage)
+                  onToast(t('settings.preferences.toast_saved'), 'success')
+                } finally {
+                  setPreferencesSaving(false)
+                }
+              }}><Save size={14} strokeWidth={2} /> {t('settings.preferences.btn_save')}</button>
           </div>
         </div>
       )}
@@ -1080,7 +1089,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
                   </tr></thead>
                   <tbody>
                     {actData.logs.map((log, i) => (
-                      <tr key={log.id} style={{ background: i % 2 === 0 ? 'white' : 'var(--bg)' }}>
+                      <tr key={log.id} style={{ background: i % 2 === 0 ? 'var(--surface)' : 'var(--bg)' }}>
                         <td className={tdLogCls} style={{ ...tdLog, whiteSpace: 'nowrap' }}>{fmtDate(log.createdAt)}</td>
                         <td className={tdLogCls} style={tdLog}><span style={{ fontWeight: 700, color: 'var(--text)' }}>{log.action}</span></td>
                         <td className={tdLogCls} style={{ ...tdLog, maxWidth: 320, wordBreak: 'break-word' }}>{log.description}</td>
@@ -1132,7 +1141,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
                   </tr></thead>
                   <tbody>
                     {aiAuditData.entries.map((log, i) => (
-                      <tr key={log.id} style={{ background: i % 2 === 0 ? 'white' : 'var(--bg)' }}>
+                      <tr key={log.id} style={{ background: i % 2 === 0 ? 'var(--surface)' : 'var(--bg)' }}>
                         <td className={tdLogCls} style={{ ...tdLog, whiteSpace: 'nowrap' }}>{fmtDate(log.timestamp)}</td>
                         <td className={tdLogCls} style={tdLog}><span style={{ fontWeight: 700, color: 'var(--text)' }}>{log.actionName}</span></td>
                         <td className={tdLogCls} style={tdLog}>{log.origin === 'AI_ASSISTANT' ? 'Copilot IA' : 'Interface classique'}</td>
@@ -1225,7 +1234,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
                           : s.includes('pend') || s.includes('attente') ? { bg: 'rgba(217,119,6,0.12)', color: 'var(--amber)' }
                           : { bg: 'var(--bg2)', color: 'var(--text3)' }
                         return (
-                          <tr key={log.id} style={{ background: i % 2 === 0 ? 'white' : 'var(--bg)' }}>
+                          <tr key={log.id} style={{ background: i % 2 === 0 ? 'var(--surface)' : 'var(--bg)' }}>
                             <td className={tdLogCls} style={{ ...tdLog, whiteSpace: 'nowrap' }}>{fmtDate(log.createdAt)}</td>
                             <td className={tdLogCls} style={{ ...tdLog, maxWidth: 200, wordBreak: 'break-word' }}>{log.to}</td>
                             <td className={tdLogCls} style={{ ...tdLog, maxWidth: 280, wordBreak: 'break-word' }}>{log.subject}</td>

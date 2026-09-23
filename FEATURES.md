@@ -136,8 +136,9 @@
 
 ## 21. Internationalisation (i18n) & thème
 
-**Objectif** : afficher la bonne langue par sous-système/section, et un thème clair/sombre cohérent.
-- **i18n** : `fe/lib/i18n/`, `fe/locales/{fr,en}/*.json` (13 namespaces, parité stricte), `useT` ; backend `utils/languageHelper.ts` (`resolveLanguage`). Emails/SMS/bulletins/prompts Groq alignés sur cette source unique.
+**Objectif** : permettre à chaque utilisateur de choisir librement la langue de son dashboard, sans que ce choix ne contamine un autre compte, et conserver la langue métier des documents selon l'établissement/section.
+- **i18n interface** : `fe/lib/i18n/`, `fe/locales/{fr,en}/*.json` (13 namespaces, parité stricte), `useT` ; préférence dashboard isolée par `userId`.
+- **i18n métier** : backend `utils/languageHelper.ts` (`resolveLanguage`) pour emails/SMS/bulletins/documents/prompts selon l'établissement et la section.
 - **Thème** : `next-themes` (`providers.tsx`), tokens `.dark` (`globals.css`), `ThemeToggle`.
 
 ## 22. Mode hors-ligne (PWA)

@@ -1,7 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
-import { fetchApi } from '@/lib/fetchApi'
+import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 
 // Dictionnaire FR importé STATIQUEMENT (synchrone) → il est disponible dès le premier
 // rendu, donc aucune clé brute (ex. « sidebar.dashboard ») ne s'affiche pendant que la
@@ -39,7 +38,6 @@ import enOnboarding from '@/locales/en/onboarding.json'
 import enHrSelfService from '@/locales/en/hrSelfService.json'
 
 export type Language = 'fr' | 'en'
-type Subsystem = 'FRANCOPHONE' | 'ANGLOPHONE' | 'BILINGUAL'
 type Dictionary = Record<string, any>
 type Namespace =
   | 'common' | 'navigation' | 'admin' | 'teacher' | 'staff'
@@ -67,14 +65,35 @@ const EN_DICTS: Record<Namespace, Dictionary> = {
 }
 
 const DICTS_BY_LANG: Record<Language, Record<Namespace, Dictionary>> = { fr: FR_DICTS, en: EN_DICTS }
+const PUBLIC_LANGUAGE_KEY = 'zekoulabia_lang_override'
 
-export function resolveLanguage(
-  subsystem: Subsystem | string | null | undefined,
-  sectionCode?: string | null,
+export function isLanguage(value: string | null | undefined): value is Language {
+  return value === 'fr' || value === 'en'
+}
+
+export function getDashboardLanguageKey(userId: string): string {
+  return `zekoulabia_dashboard_lang_${userId}`
+}
+
+export function resolveDashboardLanguage(
+  userId: string | null,
+  dashboardLanguage: string | null,
+  publicLanguage: string | null,
+  browserLanguage: Language,
 ): Language {
-  if (subsystem === 'ANGLOPHONE') return 'en'
-  if (subsystem === 'BILINGUAL') return sectionCode === 'EN' ? 'en' : 'fr'
-  return 'fr'
+  if (userId) return isLanguage(dashboardLanguage) ? dashboardLanguage : browserLanguage
+  return isLanguage(publicLanguage) ? publicLanguage : browserLanguage
+}
+
+function getStoredUserId(): string | null {
+  try {
+    const raw = localStorage.getItem('zekoulabia_user')
+    if (!raw) return null
+    const userId = (JSON.parse(raw) as { userId?: unknown }).userId
+    return typeof userId === 'string' && userId ? userId : null
+  } catch {
+    return null
+  }
 }
 
 function getBrowserLanguage(): Language {
@@ -101,69 +120,22 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   // Démarre avec le dictionnaire FR synchrone (jamais null) → pas de flash de clés.
   const [dicts, setDicts] = useState<Record<Namespace, Dictionary>>(FR_DICTS)
   const [loading, setLoading] = useState(true)
-  const fetchedRef = useRef(false)
 
   useEffect(() => {
-    if (fetchedRef.current) return
-    fetchedRef.current = true
-
     let cancelled = false
+    const userId = getStoredUserId()
+    const resolved = resolveDashboardLanguage(
+      userId,
+      userId ? localStorage.getItem(getDashboardLanguageKey(userId)) : null,
+      localStorage.getItem(PUBLIC_LANGUAGE_KEY),
+      getBrowserLanguage(),
+    )
 
-    async function init() {
-      let subsystem: Subsystem | null = null
-      let status: string | null = null
-      let loggedIn = false
-
-      try {
-        const raw = localStorage.getItem('zekoulabia_user')
-        if (raw) {
-          loggedIn = true
-          const res = await fetchApi('/api/v2/school/me')
-          if (res.ok) {
-            const body = await res.json()
-            if (body?.success && body.data) {
-              subsystem = (body.data.subsystem ?? null) as Subsystem | null
-              status = (body.data.status ?? null) as string | null
-            }
-          }
-        }
-      } catch {
-        /* network error — will fall back below */
-      }
-
-      // Priorité 1 : surcharge manuelle explicite de l'utilisateur (toggle de langue).
-      // Utile notamment pendant l'onboarding : un anglophone peut basculer en EN, et son
-      // choix est mémorisé. Prime sur toute résolution automatique.
-      const override = localStorage.getItem('zekoulabia_lang_override')
-
-      // L'onboarding (page publique par lien d'invitation) doit démarrer en FRANÇAIS, pas selon
-      // le navigateur : c'est là que l'établissement DÉCLARE sa langue, et un flip surprise
-      // FR→EN en plein remplissage est déroutant. Le toggle FR/EN reste disponible pour basculer.
-      const onOnboarding = typeof window !== 'undefined' && window.location.pathname.startsWith('/onboarding')
-
-      // Priorité 2 : la langue officielle de l'établissement ne s'applique qu'une fois l'école
-      // ACTIVE (configuration terminée). Pendant l'onboarding (statut APPROVED / route publique)
-      // ou si le sous-système est indéterminé, on reste en FRANÇAIS (défaut sûr, majorité
-      // francophone au Cameroun) — JAMAIS la langue du navigateur pour un utilisateur connecté ou
-      // en onboarding. Les pages publiques restantes (landing, login) suivent le navigateur.
-      const resolved: Language =
-        override === 'fr' || override === 'en'
-          ? override
-          : status === 'ACTIVE' && subsystem
-            ? resolveLanguage(subsystem)
-            : loggedIn || onOnboarding
-              ? 'fr'
-              : getBrowserLanguage()
-
-      // FR est déjà en place (état initial). On ne bascule que si EN est requis.
-      if (resolved === 'en' && !cancelled) {
-        setLang('en')
-        setDicts(loadAllDictionaries('en'))
-      }
-      if (!cancelled) setLoading(false)
+    if (resolved === 'en' && !cancelled) {
+      setLang('en')
+      setDicts(loadAllDictionaries('en'))
     }
-
-    init()
+    if (!cancelled) setLoading(false)
     return () => { cancelled = true }
   }, [])
 
@@ -187,8 +159,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const changeLanguage = useCallback(async (newLang: Language) => {
     setLoading(true)
-    // Mémorise le choix explicite (persistant, prioritaire au prochain chargement).
-    try { localStorage.setItem('zekoulabia_lang_override', newLang) } catch { /* ignore */ }
+    try {
+      const userId = getStoredUserId()
+      localStorage.setItem(userId ? getDashboardLanguageKey(userId) : PUBLIC_LANGUAGE_KEY, newLang)
+    } catch { /* ignore */ }
     setLang(newLang)
     setDicts(loadAllDictionaries(newLang))
     setLoading(false)
@@ -204,7 +178,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 export function useT(namespace: Namespace): (key: string, params?: Record<string, string | number>) => string {
   const ctx = useContext(I18nContext)
   if (!ctx) throw new Error('useT must be used within a LanguageProvider')
-  return ctx.t(namespace)
+  return useCallback(
+    (key: string, params?: Record<string, string | number>) => ctx.t(namespace)(key, params),
+    [ctx.t, namespace],
+  )
 }
 
 export function useLanguage(): { lang: Language; loading: boolean } {
