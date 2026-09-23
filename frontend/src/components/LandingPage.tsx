@@ -504,7 +504,7 @@ export default function LandingPage() {
           ].map(link => (
             <a key={link.href} href={link.href} className="text-[15px] xl:text-[17px]"
               style={{ fontWeight: 600, color: 'var(--text2)', textDecoration: 'none', transition: 'color 150ms', whiteSpace: 'nowrap' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--green)' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--primary)' }}
               onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text2)' }}
             >{link.label}</a>
           ))}
@@ -535,7 +535,7 @@ export default function LandingPage() {
             <motion.div
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
-              style={{ display: 'inline-block', background: 'var(--green-light)', color: 'var(--green)', fontSize: 10, fontWeight: 900, borderRadius: 16, padding: '4px 12px', marginBottom: 18 }}>
+              style={{ display: 'inline-block', background: 'var(--primary-light)', color: 'var(--primary)', fontSize: 10, fontWeight: 900, borderRadius: 16, padding: '4px 12px', marginBottom: 18 }}>
               {tx.hero.badge}
             </motion.div>
             <motion.h1
@@ -606,7 +606,7 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.4 }}
                 transition={{ duration: 0.45, delay: i * 0.07, ease: 'easeOut' }}>
-                <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--green)', marginBottom: 5 }}><Icon size={28} strokeWidth={2} /></div>
+                <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--primary)', marginBottom: 5 }}><Icon size={28} strokeWidth={2} /></div>
                 <div className="text-[28px] md:text-[28px]" style={{ fontFamily: 'var(--font-nunito),Nunito,sans-serif', fontWeight: 900, color: 'var(--text)', lineHeight: 1 }}>
                   <CompteurAnime valeur={num} suffix={suffix} />
                 </div>
@@ -639,7 +639,7 @@ export default function LandingPage() {
                   transition={{ duration: 0.45, delay: i * 0.07, ease: 'easeOut' }}
                   whileHover={{ y: -3, boxShadow: '0 5px 16px rgba(0,0,0,0.07)', transition: { duration: 0.18 } }}
                 >
-                  <div style={{ color: 'var(--green)', marginBottom: 12 }}><Icon size={28} strokeWidth={2} /></div>
+                  <div style={{ color: 'var(--primary)', marginBottom: 12 }}><Icon size={28} strokeWidth={2} /></div>
                   <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 7 }}>{f.title}</div>
                   <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.55 }}>{f.desc}</div>
                 </motion.div>
@@ -671,7 +671,7 @@ export default function LandingPage() {
                   transition={{ duration: 0.45, delay: i * 0.07, ease: 'easeOut' }}
                   whileHover={{ y: -3, boxShadow: '0 5px 16px rgba(0,0,0,0.07)', transition: { duration: 0.18 } }}
                 >
-                  <div style={{ color: 'var(--green)', marginBottom: 12 }}><Icon size={28} strokeWidth={2} /></div>
+                  <div style={{ color: 'var(--primary)', marginBottom: 12 }}><Icon size={28} strokeWidth={2} /></div>
                   <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 7 }}>{s.title}</div>
                   <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.55 }}>{s.desc}</div>
                 </motion.div>
@@ -696,10 +696,10 @@ export default function LandingPage() {
               return (
                 <Fragment key={i}>
                   <div className="px-2 md:px-6" style={{ flex: 1, textAlign: 'center' }}>
-                    <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--green-light)', color: 'var(--green)', fontSize: 18, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                    <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--primary)', fontSize: 18, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
                       {i + 1}
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--green)', marginBottom: 11 }}><Icon size={32} strokeWidth={2} /></div>
+                    <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--primary)', marginBottom: 11 }}><Icon size={32} strokeWidth={2} /></div>
                     <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
                       Étape {i + 1} — {step.title}
                     </div>
@@ -732,9 +732,9 @@ export default function LandingPage() {
                     padding: '7px 16px', fontSize: 11, fontWeight: 700, borderRadius: 20, cursor: 'pointer',
                     fontFamily: 'inherit', transition: 'all 150ms',
                     display: 'inline-flex', alignItems: 'center', gap: 6,
-                    background: tabRole === i ? 'var(--green)' : 'white',
+                    background: tabRole === i ? 'var(--primary)' : 'white',
                     color: tabRole === i ? 'white' : 'var(--text2)',
-                    boxShadow: tabRole === i ? '0 3px 10px rgba(5,150,105,0.22)' : '0 1px 4px rgba(0,0,0,0.05)',
+                    boxShadow: tabRole === i ? '0 3px 10px rgba(180,83,42,0.25)' : '0 1px 4px rgba(0,0,0,0.05)',
                     border: tabRole !== i ? '1px solid var(--border)' : '1px solid transparent',
                   }}>
                   <Icon size={13} strokeWidth={2} /> {r.label}
@@ -752,7 +752,7 @@ export default function LandingPage() {
               style={{ ...CARD, padding: undefined }}>
               {(() => {
                 const Icon = ROLES_ICONS[tabRole]; return (
-                  <div style={{ display: 'flex', color: 'var(--green)', marginBottom: 10 }}><Icon size={36} strokeWidth={2} /></div>
+                  <div style={{ display: 'flex', color: 'var(--primary)', marginBottom: 10 }}><Icon size={36} strokeWidth={2} /></div>
                 )
               })()}
               <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 16 }}>
@@ -785,33 +785,33 @@ export default function LandingPage() {
             {tx.pricing.plans.map(plan => (
               <div key={plan.name} className="px-5 md:px-6 py-5 md:py-6" style={{
                 background: 'var(--surface)', borderRadius: 14,
-                border: plan.recommended ? '2px solid var(--green)' : '1px solid var(--border)',
-                boxShadow: plan.recommended ? '0 8px 24px rgba(5,150,105,0.12)' : '0 2px 6px rgba(0,0,0,0.04)',
+                border: plan.recommended ? '2px solid var(--primary)' : '1px solid var(--border)',
+                boxShadow: plan.recommended ? '0 8px 24px rgba(180,83,42,0.15)' : '0 2px 6px rgba(0,0,0,0.04)',
                 position: 'relative',
                 transition: 'transform 200ms,box-shadow 200ms',
               }}
                 onMouseEnter={e => {
                   const el = e.currentTarget as HTMLElement
                   el.style.transform = 'translateY(-4px)'
-                  el.style.boxShadow = plan.recommended ? '0 14px 32px rgba(142,42,58,0.18)' : '0 6px 20px rgba(0,0,0,0.07)'
+                  el.style.boxShadow = plan.recommended ? '0 14px 32px rgba(180,83,42,0.22)' : '0 6px 20px rgba(0,0,0,0.07)'
                 }}
                 onMouseLeave={e => {
                   const el = e.currentTarget as HTMLElement
                   el.style.transform = 'translateY(0)'
-                  el.style.boxShadow = plan.recommended ? '0 8px 24px rgba(5,150,105,0.12)' : '0 2px 6px rgba(0,0,0,0.04)'
+                  el.style.boxShadow = plan.recommended ? '0 8px 24px rgba(180,83,42,0.15)' : '0 2px 6px rgba(0,0,0,0.04)'
                 }}
               >
                 {plan.recommended && (
-                  <div style={{ position: 'absolute', top: -11, left: '50%', transform: 'translateX(-50%)', background: 'var(--green)', color: 'white', fontSize: 9, fontWeight: 900, borderRadius: 16, padding: '3px 12px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div style={{ position: 'absolute', top: -11, left: '50%', transform: 'translateX(-50%)', background: 'var(--primary)', color: 'white', fontSize: 9, fontWeight: 900, borderRadius: 16, padding: '3px 12px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}>
                     <Star size={10} strokeWidth={2} fill="currentColor" /> {tx.pricing.recommended}
                   </div>
                 )}
                 <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{plan.name}</div>
-                <div className="text-[24px] md:text-[28px]" style={{ fontWeight: 900, color: plan.recommended ? 'var(--green)' : 'var(--text)', marginBottom: 16, lineHeight: 1 }}>{plan.price}</div>
+                <div className="text-[24px] md:text-[28px]" style={{ fontWeight: 900, color: plan.recommended ? 'var(--primary)' : 'var(--text)', marginBottom: 16, lineHeight: 1 }}>{plan.price}</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
                   {plan.features.map(f => (
                     <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, color: 'var(--text2)' }}>
-                      <span style={{ display: 'flex', color: 'var(--green)' }}><Check size={13} strokeWidth={2.5} /></span>{f}
+                      <span style={{ display: 'flex', color: 'var(--primary)' }}><Check size={13} strokeWidth={2.5} /></span>{f}
                     </div>
                   ))}
                 </div>
@@ -837,15 +837,15 @@ export default function LandingPage() {
             {tx.faq.items.map((faq, i) => (
               <div key={i} style={{
                 borderRadius: 8, overflow: 'hidden', transition: 'all 150ms',
-                border: faqOpen === i ? '1px solid var(--green)' : '1px solid var(--border)',
-                borderLeft: faqOpen === i ? '3px solid var(--green)' : '1px solid var(--border)',
+                border: faqOpen === i ? '1px solid var(--primary)' : '1px solid var(--border)',
+                borderLeft: faqOpen === i ? '3px solid var(--primary)' : '1px solid var(--border)',
                 background: faqOpen === i ? 'var(--bg2)' : 'white',
               }}>
                 <button onClick={() => setFaqOpen(faqOpen === i ? null : i)}
                   className="px-3 md:px-4 py-3 md:py-3.5"
                   style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
                   <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{faq.q}</span>
-                  <span style={{ display: 'flex', color: 'var(--green)', transition: 'transform 150ms', transform: faqOpen === i ? 'rotate(180deg)' : 'rotate(0deg)', flexShrink: 0, marginLeft: 12 }}><ChevronDown size={16} strokeWidth={2.5} /></span>
+                  <span style={{ display: 'flex', color: 'var(--primary)', transition: 'transform 150ms', transform: faqOpen === i ? 'rotate(180deg)' : 'rotate(0deg)', flexShrink: 0, marginLeft: 12 }}><ChevronDown size={16} strokeWidth={2.5} /></span>
                 </button>
                 {faqOpen === i && (
                   <div className="px-3 md:px-4 pb-3 md:pb-3.5" style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.6, animation: 'fadeIn 0.15s ease' }}>
@@ -889,22 +889,22 @@ export default function LandingPage() {
           <button onClick={openDemo}
             className="px-5 md:px-8 py-2.5 md:py-3 text-[12px] md:text-[14px]"
             style={{
-              background: '#4ade80', color: 'var(--sidebar)',
+              background: 'var(--primary)', color: 'white',
               fontWeight: 900, borderRadius: 8,
               border: 'none', cursor: 'pointer', fontFamily: 'inherit',
               transition: 'all 150ms', display: 'inline-flex', alignItems: 'center', gap: 8,
-              boxShadow: '0 4px 16px rgba(74,222,128,0.32)',
+              boxShadow: '0 4px 16px rgba(180,83,42,0.32)',
             }}
             onMouseEnter={e => {
               const el = e.currentTarget as HTMLButtonElement
-              el.style.background = 'var(--green)'
-              el.style.boxShadow = '0 6px 24px rgba(74,222,128,0.48)'
+              el.style.background = 'var(--primary-hover)'
+              el.style.boxShadow = '0 6px 24px rgba(180,83,42,0.48)'
               el.style.transform = 'translateY(-2px)'
             }}
             onMouseLeave={e => {
               const el = e.currentTarget as HTMLButtonElement
-              el.style.background = '#4ade80'
-              el.style.boxShadow = '0 4px 16px rgba(74,222,128,0.32)'
+              el.style.background = 'var(--primary)'
+              el.style.boxShadow = '0 4px 16px rgba(180,83,42,0.32)'
               el.style.transform = 'translateY(0)'
             }}
           >

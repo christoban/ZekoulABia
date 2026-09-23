@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { CheckCircle2, XCircle, Shield, Building2, Calendar, User, FileText, Loader2 } from 'lucide-react'
 import Link from 'next/link'
+import LanguageSwitch from '@/components/LanguageSwitch'
 
 interface VerifiedDocument {
   id: string
@@ -54,88 +55,84 @@ export default function VerifyDocumentPage() {
   }, [documentId])
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+    <div style={{
+      minHeight: '100dvh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'var(--bg)',
+      position: 'relative',
+      overflowX: 'hidden',
+      paddingTop: 80,
+      paddingBottom: 40,
+      fontFamily: 'var(--font-nunito), Nunito, sans-serif'
+    }}>
+      {/* Motif géométrique discret */}
+      <div className="login-bg" />
+
+      {/* Bande multicolore camerounaise */}
+      <div className="deco-band" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, height: 5 }} />
+
+      {/* En-tête commun */}
+      <header style={{
+        position: 'absolute', top: 5, left: 0, right: 0, zIndex: 10,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '16px 24px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 38, height: 38, borderRadius: 10,
+            background: 'linear-gradient(135deg,var(--primary),var(--accent))',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 10px rgba(180,83,42,0.22)', overflow: 'hidden'
+          }}>
+            <img src="/logo.svg" alt="ZekoulABia" style={{ width: '65%', height: '65%', objectFit: 'contain' }} />
+          </div>
+          <div>
+            <span style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>
+              ZekoulABia
+            </span>
+            <span style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>
+              Vérification Officielle
+            </span>
+          </div>
+        </div>
+        <LanguageSwitch compact />
+      </header>
+
+      {/* Carte principale */}
+      <main style={{
+        position: 'relative',
+        zIndex: 1,
+        maxWidth: 520,
+        width: 'calc(100% - 32px)',
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: 16,
+        padding: '32px 28px',
+        boxShadow: '0 10px 40px rgba(58, 36, 25, 0.10)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
-        padding: '24px 16px',
-        fontFamily: 'var(--font-nunito), system-ui, -apple-system, sans-serif',
-        color: '#f8fafc',
-      }}
-    >
-      <div
-        style={{
-          width: '100%',
-          maxWidth: 520,
-          background: 'rgba(255, 255, 255, 0.05)',
-          backdropFilter: 'blur(16px)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          borderRadius: 20,
-          padding: '32px 24px',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          textAlign: 'center',
-        }}
-      >
-        {/* Logo / Marque */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
-          <div
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: 10,
-              background: 'linear-gradient(135deg, #f59e0b, var(--green))',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 900,
-              color: '#fff',
-              fontSize: 18,
-            }}
-          >
-            Z
-          </div>
-          <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.5 }}>
-            Zekoul<span style={{ color: 'var(--green)' }}>ABia</span>
-          </span>
-          <span
-            style={{
-              fontSize: 10,
-              fontWeight: 700,
-              padding: '2px 8px',
-              borderRadius: 12,
-              background: 'rgba(255,255,255,0.1)',
-              color: '#94a3b8',
-              textTransform: 'uppercase',
-              letterSpacing: 0.5,
-            }}
-          >
-            Vérification Officielle
-          </span>
-        </div>
-
+        textAlign: 'center',
+      }}>
         {loading && (
-          <div style={{ padding: '48px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-            <Loader2 size={36} className="animate-spin" style={{ color: 'var(--green)' }} />
-            <span style={{ fontSize: 14, color: '#94a3b8' }}>Vérification de l'authenticité en cours...</span>
+          <div style={{ padding: '36px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+            <Loader2 size={36} className="animate-spin" style={{ color: 'var(--primary)' }} />
+            <span style={{ fontSize: 14, color: 'var(--text2)', fontWeight: 600 }}>Vérification de l'authenticité en cours...</span>
           </div>
         )}
 
         {!loading && error && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, width: '100%' }}>
             <div
               style={{
                 width: 64,
                 height: 64,
                 borderRadius: '50%',
-                background: 'rgba(239, 68, 68, 0.15)',
-                color: '#ef4444',
+                background: 'var(--red-light)',
+                color: 'var(--red)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -144,10 +141,10 @@ export default function VerifyDocumentPage() {
               <XCircle size={36} />
             </div>
             <div>
-              <h1 style={{ margin: '0 0 6px 0', fontSize: 20, fontWeight: 800, color: '#f87171' }}>
+              <h1 style={{ margin: '0 0 6px 0', fontSize: 20, fontWeight: 800, color: 'var(--red)', fontFamily: 'var(--font-spectral),Spectral,serif' }}>
                 Document non authentifié
               </h1>
-              <p style={{ margin: 0, fontSize: 13, color: '#94a3b8', maxWidth: 360 }}>
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--text2)' }}>
                 {error}
               </p>
             </div>
@@ -155,11 +152,12 @@ export default function VerifyDocumentPage() {
               style={{
                 padding: '12px 16px',
                 borderRadius: 10,
-                background: 'rgba(239, 68, 68, 0.08)',
-                border: '1px solid rgba(239, 68, 68, 0.2)',
+                background: 'var(--red-light)',
+                border: '1px solid rgba(217,72,31,0.2)',
                 fontSize: 12,
-                color: '#fca5a5',
-                marginTop: 8,
+                color: 'var(--red)',
+                marginTop: 4,
+                width: '100%'
               }}
             >
               Ce document n'existe pas dans le registre sécurisé ou a été révoqué.
@@ -174,8 +172,8 @@ export default function VerifyDocumentPage() {
                 width: 64,
                 height: 64,
                 borderRadius: '50%',
-                background: 'rgba(16, 185, 129, 0.15)',
-                color: 'var(--green)',
+                background: 'var(--green-light)',
+                color: 'var(--success)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -190,33 +188,33 @@ export default function VerifyDocumentPage() {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
-                padding: '4px 12px',
+                padding: '6px 14px',
                 borderRadius: 20,
-                background: 'rgba(16, 185, 129, 0.15)',
-                border: '1px solid rgba(16, 185, 129, 0.3)',
-                color: 'var(--green)',
+                background: 'var(--green-light)',
+                border: '1px solid rgba(47, 143, 91, 0.25)',
+                color: 'var(--success)',
                 fontSize: 12,
-                fontWeight: 700,
-                marginBottom: 12,
+                fontWeight: 800,
+                marginBottom: 14,
               }}
             >
               <Shield size={14} /> DOCUMENT OFFICIEL AUTHENTIFIÉ
             </div>
 
-            <h1 style={{ margin: '0 0 4px 0', fontSize: 22, fontWeight: 800, color: '#fff' }}>
+            <h1 style={{ margin: '0 0 4px 0', fontSize: 22, fontWeight: 800, color: 'var(--text)', fontFamily: 'var(--font-spectral),Spectral,serif' }}>
               {doc.type}
             </h1>
-            <span style={{ fontSize: 12, color: '#94a3b8', marginBottom: 20 }}>
-              Référence : <strong style={{ color: '#f8fafc' }}>{doc.id}</strong>
+            <span style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 20 }}>
+              Référence : <strong style={{ color: 'var(--text)' }}>{doc.id}</strong>
             </span>
 
             {/* Fiche d'informations certifiées */}
             <div
               style={{
                 width: '100%',
-                background: 'rgba(15, 23, 42, 0.6)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: 14,
+                background: 'var(--bg2)',
+                border: '1px solid var(--border)',
+                borderRadius: 12,
                 padding: 16,
                 display: 'flex',
                 flexDirection: 'column',
@@ -226,21 +224,21 @@ export default function VerifyDocumentPage() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <Building2 size={16} style={{ color: 'var(--green)', marginTop: 2, flexShrink: 0 }} />
+                <Building2 size={16} style={{ color: 'var(--primary)', marginTop: 2, flexShrink: 0 }} />
                 <div>
-                  <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>Établissement émetteur</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#f8fafc' }}>{doc.school}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Établissement émetteur</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{doc.school}</div>
                 </div>
               </div>
 
               {doc.data?.studentName && (
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <User size={16} style={{ color: '#3b82f6', marginTop: 2, flexShrink: 0 }} />
+                  <User size={16} style={{ color: 'var(--blue)', marginTop: 2, flexShrink: 0 }} />
                   <div>
-                    <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>Élève concerné</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#f8fafc' }}>{doc.data.studentName}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Élève concerné</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{doc.data.studentName}</div>
                     {doc.data.matricule && (
-                      <div style={{ fontSize: 12, color: '#94a3b8' }}>Matricule : {doc.data.matricule}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 500 }}>Matricule : {doc.data.matricule}</div>
                     )}
                   </div>
                 </div>
@@ -248,10 +246,10 @@ export default function VerifyDocumentPage() {
 
               {doc.data?.className && (
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <FileText size={16} style={{ color: '#f59e0b', marginTop: 2, flexShrink: 0 }} />
+                  <FileText size={16} style={{ color: 'var(--amber)', marginTop: 2, flexShrink: 0 }} />
                   <div>
-                    <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>Classe & Année</div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0' }}>
+                    <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Classe & Année</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
                       {doc.data.className} {doc.data.yearName ? `• ${doc.data.yearName}` : ''}
                     </div>
                   </div>
@@ -259,10 +257,10 @@ export default function VerifyDocumentPage() {
               )}
 
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <Calendar size={16} style={{ color: '#94a3b8', marginTop: 2, flexShrink: 0 }} />
+                <Calendar size={16} style={{ color: 'var(--text3)', marginTop: 2, flexShrink: 0 }} />
                 <div>
-                  <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>Délivré le</div>
-                  <div style={{ fontSize: 12, color: '#cbd5e1' }}>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Délivré le</div>
+                  <div style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 500 }}>
                     {new Date(doc.generatedAt).toLocaleString('fr-FR', {
                       day: 'numeric',
                       month: 'long',
@@ -275,23 +273,21 @@ export default function VerifyDocumentPage() {
               </div>
             </div>
 
-            <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.4 }}>
+            <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.4 }}>
               Ce sceau numérique atteste que ce document a été généré via le système d'information ZekoulABia et que son intégrité est certifiée conforme par l'établissement.
             </div>
           </div>
         )}
 
-        <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.08)', width: '100%' }}>
+        <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--border)', width: '100%' }}>
           <Link
             href="/login"
-            style={{ fontSize: 12, color: '#94a3b8', textDecoration: 'none', transition: 'color 0.15s' }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = '#94a3b8')}
+            style={{ fontSize: 13, color: 'var(--primary)', textDecoration: 'none', fontWeight: 700, transition: 'color 0.15s' }}
           >
             ← Retour à l'accueil
           </Link>
         </div>
-      </div>
+      </main>
     </div>
   )
 }

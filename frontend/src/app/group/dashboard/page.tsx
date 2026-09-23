@@ -72,7 +72,7 @@ export default function GroupDashboardPage() {
     <div style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-nunito),Nunito,sans-serif' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 32px', background: 'white', borderBottom: '1px solid #e5decf' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg,#f59e0b,#22c55e)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg,var(--primary),var(--accent))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Building2 size={20} color="white" />
           </div>
           <div>

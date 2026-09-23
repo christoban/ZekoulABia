@@ -13,7 +13,7 @@ interface Demande {
   createdAt: string
 }
 
-const btnPri = { padding: '8px 18px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' as const, display: 'flex', alignItems: 'center', gap: 6 }
+const btnPri = { padding: '8px 18px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' as const, display: 'flex', alignItems: 'center', gap: 6 }
 const btnDanger = { padding: '8px 18px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--red)', fontWeight: 600, fontSize: 14, cursor: 'pointer' as const, display: 'flex', alignItems: 'center', gap: 6 }
 
 export default function SectionAdminGroupTransfers({ onToast }: Props) {

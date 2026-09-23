@@ -55,8 +55,8 @@ const config: Config = {
       boxShadow: {
         card: '0 1px 4px rgba(0,0,0,0.06)',
         'card-hover': '0 6px 20px rgba(0,0,0,0.07)',
-        'btn-primary': '0 3px 10px rgba(142,42,58,0.2)',
-        'btn-primary-hover': '0 5px 16px rgba(142,42,58,0.3)',
+        'btn-primary': '0 3px 10px rgba(180,83,42,0.2)',
+        'btn-primary-hover': '0 5px 16px rgba(180,83,42,0.3)',
       },
     },
   },

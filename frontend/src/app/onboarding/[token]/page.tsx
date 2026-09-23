@@ -210,8 +210,8 @@ function RadioCards({ options, value, onChange }: {
         return (
           <button key={o.value} type="button" onClick={() => onChange(o.value)}
             style={{
-              padding: '10px 8px', border: `2px solid ${active ? 'var(--green)' : 'var(--border2)'}`,
-              borderRadius: 10, background: active ? 'rgba(5,150,105,0.07)' : 'white',
+              padding: '10px 8px', border: `2px solid ${active ? 'var(--primary)' : 'var(--border2)'}`,
+              borderRadius: 10, background: active ? 'rgba(180,83,42,0.07)' : 'white',
               cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
             }}>
@@ -256,12 +256,12 @@ function CheckboxGroup({ options, values, onChange, note }: {
             <label key={o.value} onClick={() => onChange(checked ? values.filter(v => v !== o.value) : [...values, o.value])}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px',
-                border: `2px solid ${checked ? 'var(--green)' : 'var(--border2)'}`,
-                borderRadius: 8, background: checked ? 'rgba(5,150,105,0.07)' : 'white',
+                border: `2px solid ${checked ? 'var(--primary)' : 'var(--border2)'}`,
+                borderRadius: 8, background: checked ? 'rgba(180,83,42,0.07)' : 'white',
                 cursor: 'pointer', fontSize: 14, fontWeight: 700, color: checked ? 'var(--green2)' : 'var(--text2)',
                 transition: 'all 0.15s', userSelect: 'none',
               }}>
-              <span style={{ width: 18, height: 18, borderRadius: 4, border: `2px solid ${checked ? 'var(--green)' : 'var(--border2)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', background: checked ? 'var(--green)' : 'transparent', flexShrink: 0 }}>
+              <span style={{ width: 18, height: 18, borderRadius: 4, border: `2px solid ${checked ? 'var(--primary)' : 'var(--border2)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', background: checked ? 'var(--green)' : 'transparent', flexShrink: 0 }}>
                 {checked && <Check size={12} strokeWidth={3} style={{ color: 'white' }} />}
               </span>
               {o.label}
@@ -280,7 +280,7 @@ function StepperBtns({ value, onChange, max = MAX_STEPPER }: { value: number; on
       {Array.from({ length: max }, (_, i) => i + 1).map(n => (
         <button key={n} type="button" onClick={() => onChange(n)}
           style={{
-            width: 32, height: 32, borderRadius: 8, border: `2px solid ${value === n ? 'var(--green)' : 'var(--border2)'}`,
+            width: 32, height: 32, borderRadius: 8, border: `2px solid ${value === n ? 'var(--primary)' : 'var(--border2)'}`,
             background: value === n ? 'var(--green)' : 'white', color: value === n ? 'white' : 'var(--text2)',
             fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
             transition: 'all 0.12s',
@@ -773,81 +773,8 @@ export default function OnboardingPage() {
 
   // ── Left panel (constant) ──────────────────────────────────────────────
 
-  const LeftPanel = (
-    <div style={{ width: '42vw', minWidth: 0, background: 'var(--sidebar)', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', flexShrink: 0 }} className="edu-left-panel">
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 6, zIndex: 2, background: 'repeating-linear-gradient(90deg,var(--amber) 0,var(--amber) 16px,var(--green) 16px,var(--green) 32px,var(--red) 32px,var(--red) 48px,#60a5fa 48px,#60a5fa 64px,#d4a843 64px,#d4a843 80px)' }} />
-      <div style={{ position: 'absolute', bottom: -100, right: -100, width: 350, height: 350, borderRadius: '50%', background: 'radial-gradient(circle,rgba(34,197,94,0.06) 0%,transparent 70%)', pointerEvents: 'none' }} />
+  // Left panel removed for 1-column centered layout
 
-      <div style={{ padding: '36px 32px', display: 'flex', flexDirection: 'column', flex: 1, position: 'relative', zIndex: 1 }}>
-        {/* Brand */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 44, animation: 'edu-fadeDown 0.6s ease both' }}>
-          <div style={{ width: 60, height: 60, borderRadius: 16, background: 'linear-gradient(135deg,var(--amber),var(--green))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 4px 16px rgba(34,197,94,0.3)', flexShrink: 0 }}><GraduationCap size={28} strokeWidth={2} /></div>
-          <div>
-            <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 28, fontWeight: 700, color: 'white' }}>ZekoulABia</div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>{t('phase1.leftPanel.brandTagline')}</div>
-          </div>
-          {/* Bascule de langue — FR par défaut, un anglophone passe en EN ici (mémorisé) */}
-          <div role="group" aria-label="Language / Langue" style={{ marginLeft: 'auto', display: 'flex', gap: 3, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, padding: 3, flexShrink: 0 }}>
-            {(['fr', 'en'] as const).map((l) => {
-              const active = currentLang === l
-              return (
-                <button key={l} type="button" onClick={() => { if (!active) changeLanguage(l) }} aria-pressed={active}
-                  style={{ padding: '5px 12px', borderRadius: 8, border: 'none', cursor: active ? 'default' : 'pointer', fontFamily: 'inherit', fontWeight: 800, fontSize: 12.5, letterSpacing: '0.3px', background: active ? '#4ade80' : 'transparent', color: active ? 'var(--sidebar)' : 'rgba(255,255,255,0.7)', transition: 'background 0.15s, color 0.15s' }}>
-                  {l === 'fr' ? 'FR' : 'EN'}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Heading */}
-        <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 38, fontWeight: 700, lineHeight: 1.15, color: 'white', marginBottom: 12, animation: 'edu-fadeDown 0.6s 0.1s ease both' }}>
-          {step <= 2 ? <>{t('phase1.leftPanel.welcomeTitle')}<br /><span style={{ color: '#4ade80' }}>ZekoulABia</span></>
-            : step === 3 ? <>{t('phase1.leftPanel.configTitle')}<br /><span style={{ color: '#4ade80' }}>{t('phase1.leftPanel.structureSubtitle')}</span></>
-            : step === 4 ? <>{t('phase1.leftPanel.finalCheck')}<br /><span style={{ color: '#4ade80' }}>{t('phase1.leftPanel.finale')}</span></>
-            : <>{t('phase1.leftPanel.submitted')}<br /><span style={{ color: '#4ade80' }}>{t('phase1.leftPanel.submittedSuffix')}</span></>}
-        </div>
-        <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, fontWeight: 500, marginBottom: 36, animation: 'edu-fadeDown 0.6s 0.2s ease both' }}>
-          {step === 1 ? t('phase1.leftPanel.descStep1')
-            : step === 2 ? t('phase1.leftPanel.descStep2')
-            : step === 3 ? t('phase1.leftPanel.descStep3')
-            : step === 4 ? t('phase1.leftPanel.descStep4')
-            : t('phase1.leftPanel.descSubmitted')}
-        </p>
-
-        {/* Plan badge */}
-        {inviteData && (
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, marginBottom: 28, animation: 'edu-fadeDown 0.6s 0.25s ease both', alignSelf: 'flex-start' }}>
-            <Star size={18} strokeWidth={2} style={{ color: PLAN_COLOR[inviteData.plan] ?? 'var(--green)' }} />
-            <span style={{ fontSize: 14, fontWeight: 800, color: PLAN_COLOR[inviteData.plan] ?? 'var(--green)' }}>{t('phase1.step1.planBadge')} {t('phase1.planLabels.' + inviteData.plan) ?? inviteData.plan}</span>
-          </div>
-        )}
-
-        {/* Features */}
-        {step <= 2 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, animation: 'edu-fadeDown 0.6s 0.3s ease both' }}>
-            {[
-              { bg: 'rgba(34,197,94,0.1)',   icon: School,     title: t('phase1.leftPanel.features.multiLevel.title'),      desc: t('phase1.leftPanel.features.multiLevel.desc') },
-              { bg: 'rgba(96,165,250,0.1)',   icon: BarChart3,  title: t('phase1.leftPanel.features.grades.title'),          desc: t('phase1.leftPanel.features.grades.desc') },
-              { bg: 'rgba(245,158,11,0.1)',   icon: CreditCard, title: t('phase1.leftPanel.features.finance.title'),         desc: t('phase1.leftPanel.features.finance.desc') },
-              { bg: 'rgba(212,168,67,0.1)',   icon: Calendar,   title: t('phase1.leftPanel.features.timetable.title'),        desc: t('phase1.leftPanel.features.timetable.desc') },
-            ].map((f, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 12, background: f.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0 }}><f.icon size={20} strokeWidth={2} /></div>
-                <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>
-                  <strong style={{ color: 'white', fontWeight: 700 }}>{f.title}</strong> — {f.desc}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div style={{ marginTop: 'auto', paddingTop: 16, fontSize: 13, color: 'rgba(255,255,255,0.2)', fontWeight: 500 }}>
-          {t('phase1.leftPanel.copyright')}
-        </div>
-      </div>
-    </div>
-  )
 
   // ── Stepper ────────────────────────────────────────────────────────────
 
@@ -869,7 +796,7 @@ export default function OnboardingPage() {
         </span>
       </div>
       <div style={{ height: 6, borderRadius: 3, background: 'var(--border)', overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${(step / STEPPER_LABELS.length) * 100}%`, background: 'linear-gradient(90deg,var(--green),var(--green2))', borderRadius: 3, transition: 'width 0.4s ease' }} />
+        <div style={{ height: '100%', width: `${(step / STEPPER_LABELS.length) * 100}%`, background: 'linear-gradient(90deg,var(--primary),var(--primary-hover))', borderRadius: 3, transition: 'width 0.4s ease' }} />
       </div>
     </div>
   )
@@ -1074,7 +1001,7 @@ export default function OnboardingPage() {
                       : [{ value: 'TECH_1ER', label: t('phase1.step1.secondarySpan.TECH_1ER') }, { value: 'TECH_FULL', label: t('phase1.step1.secondarySpan.TECH_FULL') }])
                       : []).concat(offers.includes('PROFESSIONAL') ? [{ value: 'PRO_SAR', label: t('phase1.step1.secondarySpan.PRO_SAR') }, { value: 'PRO_CFM', label: t('phase1.step1.secondarySpan.PRO_CFM') }] : []).map((option) => (
                     <button key={option.value} type="button" onClick={() => { setSecondarySpan(option.value as SecondarySpan); setSelectedTemplateCode(null) }}
-                      style={{ padding: '9px 12px', border: `2px solid ${secondarySpan === option.value ? 'var(--green)' : 'var(--border2)'}`, borderRadius: 10, background: secondarySpan === option.value ? 'rgba(5,150,105,0.07)' : 'white', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, color: secondarySpan === option.value ? 'var(--green2)' : 'var(--text2)', textAlign: 'left' }}>
+                      style={{ padding: '9px 12px', border: `2px solid ${secondarySpan === option.value ? 'var(--primary)' : 'var(--border2)'}`, borderRadius: 10, background: secondarySpan === option.value ? 'rgba(180,83,42,0.07)' : 'white', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, color: secondarySpan === option.value ? 'var(--green2)' : 'var(--text2)', textAlign: 'left' }}>
                       {option.label}
                     </button>
                   ))}
@@ -1114,8 +1041,8 @@ export default function OnboardingPage() {
                         return (
                           <button key={opt.code} type="button" onClick={() => setSelectedTemplateCode(opt.code)}
                             style={{
-                              flex: 1, padding: '8px 10px', border: `2px solid ${active ? 'var(--green)' : 'var(--border2)'}`,
-                              borderRadius: 10, background: active ? 'rgba(5,150,105,0.07)' : 'white',
+                              flex: 1, padding: '8px 10px', border: `2px solid ${active ? 'var(--primary)' : 'var(--border2)'}`,
+                              borderRadius: 10, background: active ? 'rgba(180,83,42,0.07)' : 'white',
                               cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
                               color: active ? 'var(--green2)' : 'var(--text2)',
                               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
@@ -1144,8 +1071,8 @@ export default function OnboardingPage() {
                         return (
                           <button key={opt.code} type="button" onClick={() => setSelectedTemplateCode(opt.code)}
                             style={{
-                              flex: 1, padding: '8px 10px', border: `2px solid ${active ? 'var(--green)' : 'var(--border2)'}`,
-                              borderRadius: 10, background: active ? 'rgba(5,150,105,0.07)' : 'white',
+                              flex: 1, padding: '8px 10px', border: `2px solid ${active ? 'var(--primary)' : 'var(--border2)'}`,
+                              borderRadius: 10, background: active ? 'rgba(180,83,42,0.07)' : 'white',
                               cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
                               color: active ? 'var(--green2)' : 'var(--text2)',
                               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
@@ -1170,8 +1097,8 @@ export default function OnboardingPage() {
                     return (
                       <button key={tmpl.code} type="button" onClick={() => setSelectedTemplateCode(tmpl.code)}
                         style={{
-                          padding: '8px 10px', border: `2px solid ${active ? 'var(--green)' : 'var(--border2)'}`,
-                          borderRadius: 10, background: active ? 'rgba(5,150,105,0.07)' : 'white',
+                          padding: '8px 10px', border: `2px solid ${active ? 'var(--primary)' : 'var(--border2)'}`,
+                          borderRadius: 10, background: active ? 'rgba(180,83,42,0.07)' : 'white',
                           cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
                           color: active ? 'var(--green2)' : 'var(--text2)', textAlign: 'left',
                         }}>
@@ -1188,7 +1115,7 @@ export default function OnboardingPage() {
                   <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text2)' }}>
                     {t('phase1.step1.modelSelect.suggestion')} : <strong>{templateDisplayName(templateCatalog.find(t => t.code === suggestedCode)!, currentLang === 'en' ? 'en' : 'fr')}</strong>
                     <button type="button" onClick={() => setSelectedTemplateCode(suggestedCode)}
-                      style={{ marginLeft: 8, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--green)', background: 'var(--green)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: 12 }}>
+                      style={{ marginLeft: 8, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--primary)', background: 'var(--primary)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: 12 }}>
                       {t('phase1.step1.modelSelect.useSuggestion')}
                     </button>
                   </div>
@@ -1221,7 +1148,7 @@ export default function OnboardingPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 {/* Preview or placeholder */}
                 <div onClick={() => logoInputRef.current?.click()}
-                  style={{ width: 72, height: 72, borderRadius: 14, border: `2px dashed ${form.logoBase64 ? 'var(--green)' : 'var(--border2)'}`, background: form.logoBase64 ? 'transparent' : 'var(--bg2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', flexShrink: 0, transition: 'all 0.15s' }}>
+                  style={{ width: 72, height: 72, borderRadius: 14, border: `2px dashed ${form.logoBase64 ? 'var(--primary)' : 'var(--border2)'}`, background: form.logoBase64 ? 'transparent' : 'var(--bg2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', flexShrink: 0, transition: 'all 0.15s' }}>
                   {form.logoBase64
                     ? <img src={form.logoBase64} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     : <School size={28} strokeWidth={2} style={{ color: 'var(--text3)' }} />}
@@ -1357,7 +1284,7 @@ export default function OnboardingPage() {
               <div style={{ marginTop: 4, marginBottom: 8 }}>
                 <div style={{
                   fontSize: 15, fontWeight: 800, color: 'var(--text)',
-                  padding: '8px 0', borderBottom: '2px solid var(--green)', marginBottom: 14,
+                  padding: '8px 0', borderBottom: '2px solid var(--primary)', marginBottom: 14,
                 }}>
                   {t('phase1.step3.firstCycle.sectionTitle')}
                 </div>
@@ -1415,8 +1342,8 @@ export default function OnboardingPage() {
                         <label key={opt.value}
                           style={{
                             display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
-                            border: `2px solid ${active ? 'var(--green)' : 'var(--border2)'}`,
-                            borderRadius: 10, background: active ? 'rgba(5,150,105,0.07)' : 'white',
+                            border: `2px solid ${active ? 'var(--primary)' : 'var(--border2)'}`,
+                            borderRadius: 10, background: active ? 'rgba(180,83,42,0.07)' : 'white',
                             cursor: 'pointer', transition: 'all 0.15s',
                           }}>
                           <input type="radio" name="convention" value={opt.value}
@@ -1456,8 +1383,8 @@ export default function OnboardingPage() {
                       {['4e', '3e', 'NON_APPLICABLE'].map(opt => (
                         <button key={opt} type="button" onClick={() => set('lv2Debut')(opt)}
                           style={{
-                            flex: 1, padding: '10px 8px', border: `2px solid ${form.lv2Debut === opt ? 'var(--green)' : 'var(--border2)'}`,
-                            borderRadius: 10, background: form.lv2Debut === opt ? 'rgba(5,150,105,0.07)' : 'white',
+                            flex: 1, padding: '10px 8px', border: `2px solid ${form.lv2Debut === opt ? 'var(--primary)' : 'var(--border2)'}`,
+                            borderRadius: 10, background: form.lv2Debut === opt ? 'rgba(180,83,42,0.07)' : 'white',
                             cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
                             color: form.lv2Debut === opt ? 'var(--green2)' : 'var(--text2)',
                           }}>
@@ -1495,7 +1422,7 @@ export default function OnboardingPage() {
                         }
                       }}
                         style={{
-                          padding: '7px 12px', background: 'var(--green)', color: 'white', border: 'none',
+                          padding: '7px 12px', background: 'var(--primary)', color: 'white', border: 'none',
                           borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
                         }}>
                         {t('phase1.step3.lv2.add')}
@@ -1590,8 +1517,8 @@ export default function OnboardingPage() {
                             ] as const).map(opt => (
                               <button key={opt.value} type="button" onClick={() => setEnStreamStartLevel(opt.value)}
                                 style={{
-                                  flex: 1, padding: '10px 8px', border: `2px solid ${enStreamStartLevel === opt.value ? 'var(--green)' : 'var(--border2)'}`,
-                                  borderRadius: 10, background: enStreamStartLevel === opt.value ? 'rgba(5,150,105,0.07)' : 'white',
+                                  flex: 1, padding: '10px 8px', border: `2px solid ${enStreamStartLevel === opt.value ? 'var(--primary)' : 'var(--border2)'}`,
+                                  borderRadius: 10, background: enStreamStartLevel === opt.value ? 'rgba(180,83,42,0.07)' : 'white',
                                   cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
                                   color: enStreamStartLevel === opt.value ? 'var(--green2)' : 'var(--text2)',
                                 }}>
@@ -1609,8 +1536,8 @@ export default function OnboardingPage() {
                           ] as const).map(opt => (
                             <button key={opt.value} type="button" onClick={() => setEnGradingSystem(opt.value)}
                               style={{
-                                flex: 1, padding: '10px 8px', border: `2px solid ${enGradingSystem === opt.value ? 'var(--green)' : 'var(--border2)'}`,
-                                borderRadius: 10, background: enGradingSystem === opt.value ? 'rgba(5,150,105,0.07)' : 'white',
+                                flex: 1, padding: '10px 8px', border: `2px solid ${enGradingSystem === opt.value ? 'var(--primary)' : 'var(--border2)'}`,
+                                borderRadius: 10, background: enGradingSystem === opt.value ? 'rgba(180,83,42,0.07)' : 'white',
                                 cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
                                 color: enGradingSystem === opt.value ? 'var(--green2)' : 'var(--text2)',
                               }}>
@@ -1666,7 +1593,7 @@ export default function OnboardingPage() {
                                 setCustomFiliere('')
                               }
                             }}
-                              style={{ padding: '7px 12px', background: 'var(--green)', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                              style={{ padding: '7px 12px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                               {t('phase1.step3.secondCycle.add')}
                             </button>
                           </div>
@@ -1702,7 +1629,7 @@ export default function OnboardingPage() {
                           setCustomA4('')
                         }
                       }}
-                        style={{ padding: '7px 12px', background: 'var(--green)', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        style={{ padding: '7px 12px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                         {t('phase1.step3.secondCycle.add')}
                       </button>
                     </div>
@@ -1720,8 +1647,8 @@ export default function OnboardingPage() {
                       ].map(opt => (
                         <button key={opt.value} type="button" onClick={() => set('classesParFiliere')(opt.value)}
                           style={{
-                            flex: 1, padding: '10px 8px', border: `2px solid ${form.classesParFiliere === opt.value ? 'var(--green)' : 'var(--border2)'}`,
-                            borderRadius: 10, background: form.classesParFiliere === opt.value ? 'rgba(5,150,105,0.07)' : 'white',
+                            flex: 1, padding: '10px 8px', border: `2px solid ${form.classesParFiliere === opt.value ? 'var(--primary)' : 'var(--border2)'}`,
+                            borderRadius: 10, background: form.classesParFiliere === opt.value ? 'rgba(180,83,42,0.07)' : 'white',
                             cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
                             color: form.classesParFiliere === opt.value ? 'var(--green2)' : 'var(--text2)',
                           }}>
@@ -1749,8 +1676,8 @@ export default function OnboardingPage() {
                   {([{ v: true, l: t('phase1.step3.secondCycle.pebsYes') }, { v: false, l: t('phase1.step3.secondCycle.pebsNo') }]).map(opt => (
                     <button key={String(opt.v)} type="button" onClick={() => setHasPEBSFrancophone(opt.v)}
                       style={{
-                        flex: 1, padding: '10px 8px', border: `2px solid ${hasPEBSFrancophone === opt.v ? 'var(--green)' : 'var(--border2)'}`,
-                        borderRadius: 10, background: hasPEBSFrancophone === opt.v ? 'rgba(5,150,105,0.07)' : 'white',
+                        flex: 1, padding: '10px 8px', border: `2px solid ${hasPEBSFrancophone === opt.v ? 'var(--primary)' : 'var(--border2)'}`,
+                        borderRadius: 10, background: hasPEBSFrancophone === opt.v ? 'rgba(180,83,42,0.07)' : 'white',
                         cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
                         color: hasPEBSFrancophone === opt.v ? 'var(--green2)' : 'var(--text2)',
                       }}>
@@ -1771,8 +1698,8 @@ export default function OnboardingPage() {
                   {([{ v: true, l: t('phase1.step3.secondCycle.pebsYesEN') }, { v: false, l: t('phase1.step3.secondCycle.pebsNoEN') }]).map(opt => (
                     <button key={String(opt.v)} type="button" onClick={() => setHasPEBSAnglophone(opt.v)}
                       style={{
-                        flex: 1, padding: '10px 8px', border: `2px solid ${hasPEBSAnglophone === opt.v ? 'var(--green)' : 'var(--border2)'}`,
-                        borderRadius: 10, background: hasPEBSAnglophone === opt.v ? 'rgba(5,150,105,0.07)' : 'white',
+                        flex: 1, padding: '10px 8px', border: `2px solid ${hasPEBSAnglophone === opt.v ? 'var(--primary)' : 'var(--border2)'}`,
+                        borderRadius: 10, background: hasPEBSAnglophone === opt.v ? 'rgba(180,83,42,0.07)' : 'white',
                         cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
                         color: hasPEBSAnglophone === opt.v ? 'var(--green2)' : 'var(--text2)',
                       }}>
@@ -1829,8 +1756,8 @@ export default function OnboardingPage() {
                     ] as const).map(opt => (
                       <button key={opt.value} type="button" onClick={() => setEnGradingSystem(opt.value)}
                         style={{
-                          flex: 1, padding: '10px 8px', border: `2px solid ${enGradingSystem === opt.value ? 'var(--green)' : 'var(--border2)'}`,
-                          borderRadius: 10, background: enGradingSystem === opt.value ? 'rgba(5,150,105,0.07)' : 'white',
+                          flex: 1, padding: '10px 8px', border: `2px solid ${enGradingSystem === opt.value ? 'var(--primary)' : 'var(--border2)'}`,
+                          borderRadius: 10, background: enGradingSystem === opt.value ? 'rgba(180,83,42,0.07)' : 'white',
                           cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
                           color: enGradingSystem === opt.value ? 'var(--green2)' : 'var(--text2)',
                         }}>
@@ -1915,8 +1842,8 @@ export default function OnboardingPage() {
                     ] as const).map(opt => (
                       <button key={opt.value} type="button" onClick={() => setForm(f => ({ ...f, admissionType: opt.value }))}
                         style={{
-                          flex: 1, padding: '10px 6px', border: `2px solid ${form.admissionType === opt.value ? 'var(--green)' : 'var(--border2)'}`,
-                          borderRadius: 10, background: form.admissionType === opt.value ? 'rgba(5,150,105,0.07)' : 'white',
+                          flex: 1, padding: '10px 6px', border: `2px solid ${form.admissionType === opt.value ? 'var(--primary)' : 'var(--border2)'}`,
+                          borderRadius: 10, background: form.admissionType === opt.value ? 'rgba(180,83,42,0.07)' : 'white',
                           cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
                           color: form.admissionType === opt.value ? 'var(--green2)' : 'var(--text2)',
                         }}>
@@ -1954,7 +1881,7 @@ export default function OnboardingPage() {
                             setSarMetiers(m => [...m, customSarMetier.trim()]); setCustomSarMetier('')
                           }
                         }}
-                          style={{ padding: '7px 12px', background: 'var(--green)', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          style={{ padding: '7px 12px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                           {t('phase1.step3.technical.add')}
                         </button>
                       </div>
@@ -1990,7 +1917,7 @@ export default function OnboardingPage() {
                             setCfmFilieres(m => [...m, customCfmFiliere.trim()]); setCustomCfmFiliere('')
                           }
                         }}
-                          style={{ padding: '7px 12px', background: 'var(--green)', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          style={{ padding: '7px 12px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                           {t('phase1.step3.technical.add')}
                         </button>
                       </div>
@@ -2013,8 +1940,8 @@ export default function OnboardingPage() {
                         ] as const).map(opt => (
                           <button key={opt.value} type="button" onClick={() => setSousTypeTechnique(opt.value)}
                             style={{
-                              flex: 1, padding: '10px 6px', border: `2px solid ${sousTypeTechnique === opt.value ? 'var(--green)' : 'var(--border2)'}`,
-                              borderRadius: 10, background: sousTypeTechnique === opt.value ? 'rgba(5,150,105,0.07)' : 'white',
+                              flex: 1, padding: '10px 6px', border: `2px solid ${sousTypeTechnique === opt.value ? 'var(--primary)' : 'var(--border2)'}`,
+                              borderRadius: 10, background: sousTypeTechnique === opt.value ? 'rgba(180,83,42,0.07)' : 'white',
                               cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
                               color: sousTypeTechnique === opt.value ? 'var(--green2)' : 'var(--text2)',
                               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
@@ -2055,8 +1982,8 @@ export default function OnboardingPage() {
                         ] as const).map(opt => (
                           <button key={opt.value} type="button" onClick={() => setSousTypeTechnique(opt.value)}
                             style={{
-                              flex: 1, padding: '10px 6px', border: `2px solid ${sousTypeTechnique === opt.value ? 'var(--green)' : 'var(--border2)'}`,
-                              borderRadius: 10, background: sousTypeTechnique === opt.value ? 'rgba(5,150,105,0.07)' : 'white',
+                              flex: 1, padding: '10px 6px', border: `2px solid ${sousTypeTechnique === opt.value ? 'var(--primary)' : 'var(--border2)'}`,
+                              borderRadius: 10, background: sousTypeTechnique === opt.value ? 'rgba(180,83,42,0.07)' : 'white',
                               cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
                               color: sousTypeTechnique === opt.value ? 'var(--green2)' : 'var(--text2)',
                               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
@@ -2100,8 +2027,8 @@ export default function OnboardingPage() {
                             setForm(f => ({ ...f, admissionType: opt.val ? 'FILLES' : 'MIXTE' }))
                           }}
                             style={{
-                              flex: 1, padding: '10px 6px', border: `2px solid ${cetifMode === opt.val ? 'var(--green)' : 'var(--border2)'}`,
-                              borderRadius: 10, background: cetifMode === opt.val ? 'rgba(5,150,105,0.07)' : 'white',
+                              flex: 1, padding: '10px 6px', border: `2px solid ${cetifMode === opt.val ? 'var(--primary)' : 'var(--border2)'}`,
+                              borderRadius: 10, background: cetifMode === opt.val ? 'rgba(180,83,42,0.07)' : 'white',
                               cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
                               color: cetifMode === opt.val ? 'var(--green2)' : 'var(--text2)',
                               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
@@ -2163,7 +2090,7 @@ export default function OnboardingPage() {
                           }
                         }}
                           style={{
-                            padding: '7px 12px', background: 'var(--green)', color: 'white', border: 'none',
+                            padding: '7px 12px', background: 'var(--primary)', color: 'white', border: 'none',
                             borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
                           }}>
                           {t('phase1.step3.technical.add')}
@@ -2246,8 +2173,8 @@ export default function OnboardingPage() {
                         ] as const).map(opt => (
                           <button key={opt.value} type="button" onClick={() => setEvalSystemPrimaire(opt.value)}
                             style={{
-                              flex: 1, padding: '10px 8px', border: `2px solid ${evalSystemPrimaire === opt.value ? 'var(--green)' : 'var(--border2)'}`,
-                              borderRadius: 10, background: evalSystemPrimaire === opt.value ? 'rgba(5,150,105,0.07)' : 'white',
+                              flex: 1, padding: '10px 8px', border: `2px solid ${evalSystemPrimaire === opt.value ? 'var(--primary)' : 'var(--border2)'}`,
+                              borderRadius: 10, background: evalSystemPrimaire === opt.value ? 'rgba(180,83,42,0.07)' : 'white',
                               cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
                               color: evalSystemPrimaire === opt.value ? 'var(--green2)' : 'var(--text2)',
                             }}>
@@ -2264,8 +2191,8 @@ export default function OnboardingPage() {
                         ] as const).map(opt => (
                           <button key={opt.value} type="button" onClick={() => setAppelFrequency(opt.value)}
                             style={{
-                              flex: 1, padding: '10px 8px', border: `2px solid ${appelFrequency === opt.value ? 'var(--green)' : 'var(--border2)'}`,
-                              borderRadius: 10, background: appelFrequency === opt.value ? 'rgba(5,150,105,0.07)' : 'white',
+                              flex: 1, padding: '10px 8px', border: `2px solid ${appelFrequency === opt.value ? 'var(--primary)' : 'var(--border2)'}`,
+                              borderRadius: 10, background: appelFrequency === opt.value ? 'rgba(180,83,42,0.07)' : 'white',
                               cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
                               color: appelFrequency === opt.value ? 'var(--green2)' : 'var(--text2)',
                             }}>
@@ -2292,8 +2219,8 @@ export default function OnboardingPage() {
                         ] as const).map(opt => (
                           <button key={opt.value} type="button" onClick={() => setBulletinFrequency(opt.value)}
                             style={{
-                              flex: 1, padding: '10px 8px', border: `2px solid ${bulletinFrequency === opt.value ? 'var(--green)' : 'var(--border2)'}`,
-                              borderRadius: 10, background: bulletinFrequency === opt.value ? 'rgba(5,150,105,0.07)' : 'white',
+                              flex: 1, padding: '10px 8px', border: `2px solid ${bulletinFrequency === opt.value ? 'var(--primary)' : 'var(--border2)'}`,
+                              borderRadius: 10, background: bulletinFrequency === opt.value ? 'rgba(180,83,42,0.07)' : 'white',
                               cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
                               color: bulletinFrequency === opt.value ? 'var(--green2)' : 'var(--text2)',
                             }}>
@@ -2319,8 +2246,8 @@ export default function OnboardingPage() {
                             ] as const).map(opt => (
                               <button key={opt.value} type="button" onClick={() => setEvalSystemPrimaire(opt.value)}
                                 style={{
-                                  flex: 1, padding: '10px 8px', border: `2px solid ${evalSystemPrimaire === opt.value ? 'var(--green)' : 'var(--border2)'}`,
-                                  borderRadius: 10, background: evalSystemPrimaire === opt.value ? 'rgba(5,150,105,0.07)' : 'white',
+                                  flex: 1, padding: '10px 8px', border: `2px solid ${evalSystemPrimaire === opt.value ? 'var(--primary)' : 'var(--border2)'}`,
+                                  borderRadius: 10, background: evalSystemPrimaire === opt.value ? 'rgba(180,83,42,0.07)' : 'white',
                                   cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
                                   color: evalSystemPrimaire === opt.value ? 'var(--green2)' : 'var(--text2)',
                                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
@@ -2339,8 +2266,8 @@ export default function OnboardingPage() {
                             ] as const).map(opt => (
                               <button key={opt.value} type="button" onClick={() => setAppelFrequency(opt.value)}
                                 style={{
-                                  flex: 1, padding: '10px 8px', border: `2px solid ${appelFrequency === opt.value ? 'var(--green)' : 'var(--border2)'}`,
-                                  borderRadius: 10, background: appelFrequency === opt.value ? 'rgba(5,150,105,0.07)' : 'white',
+                                  flex: 1, padding: '10px 8px', border: `2px solid ${appelFrequency === opt.value ? 'var(--primary)' : 'var(--border2)'}`,
+                                  borderRadius: 10, background: appelFrequency === opt.value ? 'rgba(180,83,42,0.07)' : 'white',
                                   cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
                                   color: appelFrequency === opt.value ? 'var(--green2)' : 'var(--text2)',
                                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
@@ -2364,8 +2291,8 @@ export default function OnboardingPage() {
                           ] as const).map(opt => (
                             <button key={opt.value} type="button" onClick={() => setBulletinFrequency(opt.value)}
                               style={{
-                                flex: 1, padding: '10px 8px', border: `2px solid ${bulletinFrequency === opt.value ? 'var(--green)' : 'var(--border2)'}`,
-                                borderRadius: 10, background: bulletinFrequency === opt.value ? 'rgba(5,150,105,0.07)' : 'white',
+                                flex: 1, padding: '10px 8px', border: `2px solid ${bulletinFrequency === opt.value ? 'var(--primary)' : 'var(--border2)'}`,
+                                borderRadius: 10, background: bulletinFrequency === opt.value ? 'rgba(180,83,42,0.07)' : 'white',
                                 cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
                                 color: bulletinFrequency === opt.value ? 'var(--green2)' : 'var(--text2)',
                               }}>
@@ -2708,8 +2635,8 @@ export default function OnboardingPage() {
           background: var(--border2); transition: background 0.4s;
         }
         .edu-step.s-done:not(:last-child)::after,
-        .edu-step.s-active:not(:last-child)::after { background: var(--green2); }
-        .edu-field:focus { border-color: var(--green) !important; background: #f0ece6 !important; box-shadow: 0 0 0 3px rgba(142,42,58,0.08); }
+        .edu-step.s-active:not(:last-child)::after { background: var(--primary); }
+        .edu-field:focus { border-color: var(--primary) !important; background: #f0ece6 !important; box-shadow: 0 0 0 3px rgba(142,42,58,0.08); }
         @keyframes edu-spin { to { transform: rotate(360deg); } }
         @keyframes edu-fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
         @keyframes edu-fadeDown { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }
@@ -2723,31 +2650,80 @@ export default function OnboardingPage() {
         }
       `}</style>
 
-      <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: 'var(--font-nunito),Nunito,sans-serif' }}>
+      <div style={{
+        minHeight: '100dvh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        background: 'var(--bg)',
+        position: 'relative',
+        overflowX: 'hidden',
+        paddingTop: 80,
+        paddingBottom: 40,
+        fontFamily: 'var(--font-nunito),Nunito,sans-serif'
+      }}>
+        {/* Motif géométrique discret */}
+        <div className="login-bg" />
 
-        {LeftPanel}
+        {/* Bande multicolore camerounaise */}
+        <div className="deco-band" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, height: 5 }} />
 
-        {/* ── Right panel ── */}
-        <div className="edu-right-panel" style={{ flex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', background: 'var(--bg)', overflowY: 'auto', overflowX: 'hidden', position: 'relative', padding: '32px 24px' }}>
-          <div style={{ position: 'absolute', top: -100, right: -100, width: 350, height: 350, borderRadius: '50%', background: 'radial-gradient(circle,rgba(34,197,94,0.05) 0%,transparent 70%)', pointerEvents: 'none' }} />
-          <div style={{ width: '100%', maxWidth: 520, position: 'relative', zIndex: 1 }}>
-            {/* Bascule de langue — visible uniquement sur mobile (le panneau gauche, qui porte
-                le toggle sur desktop, est masqué sous 768px) */}
-            <div className="edu-mobile-lang" style={{ justifyContent: 'flex-end', gap: 3, marginBottom: 16 }}>
-              {(['fr', 'en'] as const).map((l) => {
-                const active = currentLang === l
-                return (
-                  <button key={l} type="button" onClick={() => { if (!active) changeLanguage(l) }} aria-pressed={active}
-                    style={{ padding: '5px 13px', borderRadius: 8, border: `1.5px solid ${active ? 'var(--green)' : 'var(--border2)'}`, cursor: active ? 'default' : 'pointer', fontFamily: 'inherit', fontWeight: 800, fontSize: 12.5, letterSpacing: '0.3px', background: active ? 'var(--green)' : 'var(--surface)', color: active ? 'white' : 'var(--text2)', transition: 'background 0.15s, color 0.15s' }}>
-                    {l === 'fr' ? 'FR' : 'EN'}
-                  </button>
-                )
-              })}
+        {/* En-tête commun */}
+        <header style={{
+          position: 'absolute', top: 5, left: 0, right: 0, zIndex: 10,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '16px 24px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 38, height: 38, borderRadius: 10,
+              background: 'linear-gradient(135deg,var(--primary),var(--accent))',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 2px 10px rgba(180,83,42,0.22)', overflow: 'hidden'
+            }}>
+              <img src="/logo.svg" alt="ZekoulABia" style={{ width: '65%', height: '65%', objectFit: 'contain' }} />
             </div>
-            {content}
+            <div>
+              <span style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>
+                ZekoulABia
+              </span>
+              <span style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>
+                {t('phase1.leftPanel.brandTagline')}
+              </span>
+            </div>
           </div>
-        </div>
+
+          {/* Toggle FR / EN */}
+          <div role="group" aria-label="Language / Langue" style={{ display: 'flex', gap: 4 }}>
+            {(['fr', 'en'] as const).map((l) => {
+              const active = currentLang === l
+              return (
+                <button key={l} type="button" onClick={() => { if (!active) changeLanguage(l) }} aria-pressed={active}
+                  style={{ padding: '6px 14px', borderRadius: 8, border: `1.5px solid ${active ? 'var(--primary)' : 'var(--border)'}`, cursor: active ? 'default' : 'pointer', fontFamily: 'inherit', fontWeight: 800, fontSize: 13, background: active ? 'var(--primary)' : 'var(--surface)', color: active ? 'white' : 'var(--text2)', transition: 'all 0.15s' }}>
+                  {l === 'fr' ? 'FR' : 'EN'}
+                </button>
+              )
+            })}
+          </div>
+        </header>
+
+        {/* Conteneur principal */}
+        <main style={{
+          position: 'relative',
+          zIndex: 1,
+          maxWidth: 680,
+          width: 'calc(100% - 32px)',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 16,
+          padding: '32px 28px',
+          boxShadow: '0 10px 40px rgba(58, 36, 25, 0.10)',
+        }}>
+          {content}
+        </main>
       </div>
+
     </>
   )
 }

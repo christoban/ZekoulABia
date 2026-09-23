@@ -290,7 +290,7 @@ export default function StudentFollowUpButtons({ studentId, triggeringRecommenda
           )}
 
           <button onClick={soumettre} disabled={submitting}
-            style={{ marginTop: 12, padding: '8px 16px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 13, cursor: submitting ? 'wait' : 'pointer', opacity: submitting ? 0.7 : 1, fontFamily: 'inherit' }}>
+            style={{ marginTop: 12, padding: '8px 16px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 700, fontSize: 13, cursor: submitting ? 'wait' : 'pointer', opacity: submitting ? 0.7 : 1, fontFamily: 'inherit' }}>
             {submitting ? t('suivi.envoi_en_cours') : t('suivi.confirmer')}
           </button>
         </div>
@@ -334,7 +334,7 @@ export default function StudentFollowUpButtons({ studentId, triggeringRecommenda
                       placeholder={t('suivi.note_cloture_placeholder')}
                       style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: 12, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }} />
                     <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-                      <button onClick={() => clore(a.id)} style={{ padding: '5px 12px', borderRadius: 6, border: 'none', background: 'var(--green)', color: '#fff', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{t('suivi.confirmer_cloture')}</button>
+                      <button onClick={() => clore(a.id)} style={{ padding: '5px 12px', borderRadius: 6, border: 'none', background: 'var(--primary)', color: '#fff', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{t('suivi.confirmer_cloture')}</button>
                       <button onClick={() => { setClosingId(null); setClosingNote('') }} style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid var(--border2)', background: 'var(--surface)', color: 'var(--text2)', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{t('suivi.annuler')}</button>
                     </div>
                   </div>

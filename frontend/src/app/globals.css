@@ -11,7 +11,7 @@
 
 /* ── DESIGN TOKENS ZEKOULABIA ── */
 :root {
-  /* ── NOUVELLE PALETTE BORDEAUX + OR ── */
+  /* ── NOUVELLE PALETTE CACAO + TERRACOTTA + OR ── */
 
   /* Backgrounds */
   --bg: #FBF7F2;
@@ -20,32 +20,32 @@
   --surface-2: #F4ECE3;
 
   /* Sidebar */
-  --sidebar: #4A1A24;
-  --sidebar2: #5A2430;
-  --sidebar3: #6B3340;
-  --sidebar-active: #D9A441;
-  --sidebar-bg: var(--sidebar);
-  --sidebar-hover: var(--sidebar2);
-  --sidebar-border: #6B3340;
-  --sidebar-text: #F1E4DC;
-  --sidebar-text-muted: #C9AFA8;
+  --sidebar-bg: #3A2419;
+  --sidebar-hover: #4A2D20;
+  --sidebar-border: #5B392A;
+  --sidebar-text: #F5E9DF;
+  --sidebar-text-muted: #CDB7AA;
+  --sidebar: var(--sidebar-bg);
+  --sidebar2: var(--sidebar-hover);
+  --sidebar3: var(--sidebar-border);
+  --sidebar-active: #E3B04B;
   --sidebar-width: 200px;
 
   /* Borders */
-  --border: #E9DFD4;
+  --border: #E5D8CC;
   --border2: #DED3C8;
 
   /* Text */
-  --text: #2B1B1E;
-  --text2: #7A6A66;
-  --text3: #B5A19D;
+  --text: #2A1A15;
+  --text2: #76645D;
+  --text3: #9E8C84;
   --text-muted: var(--text2);
 
   /* Action */
-  --primary: #8E2A3A;
-  --primary-hover: #74212F;
-  --primary-light: rgba(142, 42, 58, 0.12);
-  --accent: #D9A441;
+  --primary: #B4532A;
+  --primary-hover: #963F20;
+  --primary-light: rgba(180, 83, 42, 0.12);
+  --accent: #E3B04B;
 
   /* Density tokens - Ultra dense */
   --text-xs: 9px;
@@ -112,50 +112,50 @@
   --shadow-lg: 0 4px 16px rgba(0,0,0,0.08);
 }
 
-/* ── DARK THEME PALETTE (Warm African) ── */
+/* ── DARK THEME PALETTE (Cacao profond + Terracotta + Or) ── */
 .dark {
-  /* ── DARK THEME BORDEAUX + OR ── */
+  /* ── DARK THEME CACAO PROFOND + TERRACOTTA + OR ── */
 
   /* Backgrounds */
-  --bg: #171012;
-  --bg2: #2B1D22;
-  --surface: #21161A;
-  --surface-2: #2B1D22;
+  --bg: #16100C;
+  --bg2: #2B1D17;
+  --surface: #211612;
+  --surface-2: #2B1D17;
 
   /* Sidebar */
-  --sidebar: #120C0E;
-  --sidebar2: #21161A;
-  --sidebar3: #2B1D22;
-  --sidebar-active: #E3B356;
-  --sidebar-bg: var(--sidebar);
-  --sidebar-hover: var(--sidebar2);
-  --sidebar-border: #3E2B31;
-  --sidebar-text: #F3E9E3;
-  --sidebar-text-muted: #B5A19D;
+  --sidebar-bg: #3A2419;
+  --sidebar-hover: #4A2D20;
+  --sidebar-border: #5B392A;
+  --sidebar-text: #F5E9DF;
+  --sidebar-text-muted: #CDB7AA;
+  --sidebar: var(--sidebar-bg);
+  --sidebar2: var(--sidebar-hover);
+  --sidebar3: var(--sidebar-border);
+  --sidebar-active: #E3B04B;
 
   /* Borders */
-  --border: #3E2B31;
-  --border2: #4A343A;
+  --border: #443027;
+  --border2: #553C31;
 
   /* Text */
-  --text: #F3E9E3;
-  --text2: #B5A19D;
-  --text3: #8A7A76;
+  --text: #F3E9E1;
+  --text2: #B8A49B;
+  --text3: #8D7970;
   --text-muted: var(--text2);
 
   /* Action */
-  --primary: #C8586A;
-  --primary-hover: #D66C7D;
-  --primary-light: rgba(200, 88, 106, 0.16);
-  --accent: #E3B356;
+  --primary: #B4532A;
+  --primary-hover: #C76335;
+  --primary-light: rgba(180, 83, 42, 0.18);
+  --accent: #E3B04B;
 
   /* Semantic colors */
-  --success: #4ADE80;
+  --success: #4BA66F;
   --green: var(--success);
   --green2: #22c55e;
   --green-light: #14532d;
 
-  --danger: #F87171;
+  --danger: #E05A32;
   --red: var(--danger);
   --red-light: #450a0a;
 
@@ -286,6 +286,41 @@ body {
   );
   flex-shrink: 0;
 }
+
+/* ── MOTIF DE FOND SUBTIL ÉCRANS AUTHENTIFICATION (BRODERIE TRADITIONNELLE) ── */
+.login-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.login-bg::before {
+  content: '';
+  position: absolute;
+  inset: -50px;
+  background-image: 
+    radial-gradient(circle at 50% 50%, rgba(227, 176, 75, 0.06) 0%, transparent 65%),
+    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg stroke='%23B4532A' stroke-width='1.2' stroke-opacity='0.06'%3E%3Cpath d='M30 0L60 30L30 60L0 30z'/%3E%3Cpath d='M30 10L50 30L30 50L10 30z'/%3E%3C/g%3E%3Cg stroke='%23E3B04B' stroke-width='1' stroke-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='5'/%3E%3Cpath d='M0 0l15 15M60 0L45 15M0 60l15-15M60 60L45 45'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: auto, 60px 60px;
+  opacity: 0.9;
+  animation: loginBgSlowFloat 60s linear infinite;
+}
+
+@keyframes loginBgSlowFloat {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+  100% { transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-bg::before {
+    animation: none;
+  }
+}
+
 
 /* ── FADE IN ANIMATION ── */
 @keyframes fadeIn {

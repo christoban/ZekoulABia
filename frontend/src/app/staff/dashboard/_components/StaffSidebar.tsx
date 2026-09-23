@@ -160,7 +160,7 @@ export default function StaffSidebar({
 
       {/* Brand */}
       <div className="flex items-center gap-2.5 border-b border-white/[0.07]" style={{ padding: '12px 12px' }}>
-        <div className="w-7.5 h-7.5 rounded-[8px] flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: "linear-gradient(135deg,var(--amber),var(--green))" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "70%", height: "70%", objectFit: "contain" }} /></div>
+        <div className="w-7.5 h-7.5 rounded-[8px] flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: "linear-gradient(135deg,var(--amber),var(--accent))" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "70%", height: "70%", objectFit: "contain" }} /></div>
         <div>
           <div className="font-spectral text-[16px] font-bold text-white leading-tight">ZekoulABia</div>
           <div className="text-[11px] text-white/50 font-semibold truncate">{displayRoleTitle}</div>
@@ -173,7 +173,7 @@ export default function StaffSidebar({
           <div className="flex items-center gap-2.5">
             {logoUrl
               ? <img src={logoUrl} alt={schoolName ?? 'Logo'} className="w-6.5 h-6.5 rounded-[6px] flex-shrink-0" style={{ objectFit: 'cover' }} />
-              : <div className="w-6.5 h-6.5 rounded-[6px] bg-gradient-to-br from-[var(--green)] to-[var(--blue)] flex items-center justify-center text-[11px] font-black text-white flex-shrink-0">
+              : <div className="w-6.5 h-6.5 rounded-[6px] bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center text-[11px] font-black text-white flex-shrink-0">
                   {(schoolName ?? 'ET').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
                 </div>
             }
@@ -194,12 +194,12 @@ export default function StaffSidebar({
             'w-full flex items-center gap-2.5 rounded-r-md mb-[4px]',
             'text-[12.5px] font-bold transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
             current === 'dashboard'
-              ? 'bg-gradient-to-r from-amber-500/25 to-amber-500/10 text-amber-300 border-l-3 border-amber-400 shadow-sm shadow-amber-500/10'
+              ? 'bg-[var(--accent)]/15 text-[var(--accent)] border-l-3 border-[var(--accent)] shadow-sm'
               : 'bg-transparent text-white/70 hover:bg-[var(--sidebar2)] hover:text-white border-l-3 border-transparent'
           )}
           style={{ padding: '7px 8px' }}>
           <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <LayoutDashboard size={16} strokeWidth={2} className={current === 'dashboard' ? 'text-amber-400' : ''} />
+            <LayoutDashboard size={16} strokeWidth={2} className={current === 'dashboard' ? 'text-[var(--accent)]' : ''} />
           </span>
           <span className="truncate flex-1">{tnav('sidebar.dashboard')}</span>
         </button>
@@ -216,12 +216,12 @@ export default function StaffSidebar({
                   'w-full flex items-center gap-2.5 rounded-r-md mb-[2px]',
                   'text-[12px] font-semibold transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
                   current === item.id
-                    ? 'bg-gradient-to-r from-amber-500/25 to-amber-500/10 text-amber-300 font-bold border-l-3 border-amber-400 shadow-sm shadow-amber-500/10'
+                    ? 'bg-[var(--accent)]/15 text-[var(--accent)] font-bold border-l-3 border-[var(--accent)] shadow-sm'
                     : 'bg-transparent text-white/60 hover:bg-[var(--sidebar2)] hover:text-white/90 border-l-3 border-transparent'
                 )}
                 style={{ padding: '6px 8px' }}>
                 <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <item.icon size={16} strokeWidth={2} className={current === item.id ? 'text-amber-400' : ''} />
+                  <item.icon size={16} strokeWidth={2} className={current === item.id ? 'text-[var(--accent)]' : ''} />
                 </span>
                 <span className="truncate flex-1">{item.label}</span>
                 {item.badge && (
@@ -244,7 +244,7 @@ export default function StaffSidebar({
                 onClick={() => toggleAccordion(grp.id)}
                 className={cn(
                   'w-full flex items-center justify-between text-[10px] font-black tracking-[0.8px] uppercase hover:text-white/75 transition-all border-none bg-transparent cursor-pointer font-nunito',
-                  isCurrentInGroup ? 'text-amber-400/90 font-bold' : 'text-white/35'
+                  isCurrentInGroup ? 'text-[var(--accent)] font-bold' : 'text-white/35'
                 )}
                 style={{ padding: '6px 6px 4px' }}
               >
@@ -260,12 +260,12 @@ export default function StaffSidebar({
                         'w-full flex items-center gap-2.5 rounded-r-md mb-[2px]',
                         'text-[12px] font-semibold transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
                         current === item.id
-                          ? 'bg-gradient-to-r from-amber-500/25 to-amber-500/10 text-amber-300 font-bold border-l-3 border-amber-400 shadow-sm shadow-amber-500/10'
+                          ? 'bg-[var(--accent)]/15 text-[var(--accent)] font-bold border-l-3 border-[var(--accent)] shadow-sm'
                           : 'bg-transparent text-white/55 hover:bg-[var(--sidebar2)] hover:text-white/85 border-l-3 border-transparent'
                       )}
                       style={{ padding: '6px 8px' }}>
                       <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <item.icon size={15} strokeWidth={2} className={current === item.id ? 'text-amber-400' : ''} />
+                        <item.icon size={15} strokeWidth={2} className={current === item.id ? 'text-[var(--accent)]' : ''} />
                       </span>
                       <span className="truncate flex-1">{item.label}</span>
                       {item.badge && (
@@ -292,12 +292,12 @@ export default function StaffSidebar({
                   className={cn(
                     'w-full flex items-center gap-2.5 rounded-r-md transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
                     isConfigActive
-                      ? 'bg-gradient-to-r from-amber-500/25 to-amber-500/10 text-amber-300 font-bold border-l-3 border-amber-400 shadow-sm shadow-amber-500/10'
+                      ? 'bg-[var(--accent)]/15 text-[var(--accent)] font-bold border-l-3 border-[var(--accent)] shadow-sm'
                       : 'bg-white/[0.04] text-white/70 hover:bg-white/[0.08] hover:text-white border-l-3 border-transparent'
                   )}
                   style={{ padding: '8px 10px' }}
                 >
-                  <Settings size={16} className={cn('flex-shrink-0', isConfigActive ? 'text-amber-400' : 'text-blue-400')} />
+                  <Settings size={16} className={cn('flex-shrink-0', isConfigActive ? 'text-[var(--accent)]' : 'text-amber-400')} />
                   <div className="min-w-0 flex-1">
                     <div className="text-[12px] font-bold leading-tight">Configuration</div>
                     <div className="text-[10px] text-white/40">Grilles, Rentrée, Classes</div>
@@ -319,12 +319,12 @@ export default function StaffSidebar({
                 'w-full flex items-center gap-2.5 rounded-r-md mb-[2px]',
                 'text-[12px] font-semibold transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
                 current === 'mon-profil-rh'
-                  ? 'bg-gradient-to-r from-amber-500/25 to-amber-500/10 text-amber-300 font-bold border-l-3 border-amber-400 shadow-sm shadow-amber-500/10'
+                  ? 'bg-[var(--accent)]/15 text-[var(--accent)] font-bold border-l-3 border-[var(--accent)] shadow-sm'
                   : 'bg-transparent text-white/50 hover:bg-[var(--sidebar2)] hover:text-white/80 border-l-3 border-transparent'
               )}
               style={{ padding: '6px 8px' }}>
               <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <IdCard size={15} strokeWidth={2} className={current === 'mon-profil-rh' ? 'text-amber-400' : ''} />
+                <IdCard size={15} strokeWidth={2} className={current === 'mon-profil-rh' ? 'text-[var(--accent)]' : ''} />
               </span>
               <span className="truncate flex-1">{tnav('sidebar.monProfilRH')}</span>
             </button>
@@ -335,12 +335,12 @@ export default function StaffSidebar({
                 'w-full flex items-center gap-2.5 rounded-r-md mb-[2px]',
                 'text-[12px] font-semibold transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
                 current === 'sync-offline'
-                  ? 'bg-gradient-to-r from-amber-500/25 to-amber-500/10 text-amber-300 font-bold border-l-3 border-amber-400 shadow-sm shadow-amber-500/10'
+                  ? 'bg-[var(--accent)]/15 text-[var(--accent)] font-bold border-l-3 border-[var(--accent)] shadow-sm'
                   : 'bg-transparent text-white/50 hover:bg-[var(--sidebar2)] hover:text-white/80 border-l-3 border-transparent'
               )}
               style={{ padding: '6px 8px' }}>
               <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <RefreshCw size={15} strokeWidth={2} className={current === 'sync-offline' ? 'text-amber-400' : ''} />
+                <RefreshCw size={15} strokeWidth={2} className={current === 'sync-offline' ? 'text-[var(--accent)]' : ''} />
               </span>
               <span className="truncate flex-1">{tnav('sidebar.syncOffline') ?? 'Synchronisation hors-ligne'}</span>
             </button>
@@ -353,7 +353,7 @@ export default function StaffSidebar({
       {/* User — desktop uniquement (comme AdminSidebar) */}
       <div className="hidden md:block border-t border-white/[0.07]" style={{ padding: '9px 12px', flexShrink: 0 }}>
         <div className="flex items-center gap-2.5 rounded-[8px] hover:bg-white/[0.06]" style={{ padding: '6px 8px' }}>
-          <div className="w-7 h-7 rounded-[6px] bg-gradient-to-br from-[var(--primary)] to-[var(--green)] flex items-center justify-center text-white font-black text-[11px] flex-shrink-0">
+          <div className="w-7 h-7 rounded-[6px] bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center text-white font-black text-[11px] flex-shrink-0">
             {initials}
           </div>
           <div className="min-w-0 flex-1">

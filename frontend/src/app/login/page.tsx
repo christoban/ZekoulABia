@@ -2,16 +2,18 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Eye, EyeOff, Loader2, ChevronRight, Search, School, Presentation, Users, GraduationCap, User, Ban, Hand, AlertTriangle, Check, Mail, Clock, ArrowLeft, KeyRound, Shield, Copy, Award } from 'lucide-react'
+import {
+  Eye, EyeOff, Loader2, Search, School, Presentation, Users, GraduationCap,
+  User, Ban, Hand, AlertTriangle, Mail, Clock, ArrowLeft, KeyRound, Shield, Copy, Award
+} from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import AnimatedBackground from '@/components/AnimatedBackground'
 import LanguageSwitch from '@/components/LanguageSwitch'
 import { useT } from '@/lib/i18n'
 import { resetNotificationSocket } from '@/lib/notificationSocket'
 
-// ── Configuration d'affichage par rôle (icônes, badges, couleurs, redirections) ──
+// ── Configuration d'affichage par rôle (icônes, badges, redirections) ──
 type SuccessInfo = { icon: LucideIcon; badge: string; color: string; bg: string; dest: string; firstName: string }
 
 const ROLE_CONFIG: Record<string, Omit<SuccessInfo, 'firstName'>> = {
@@ -21,22 +23,6 @@ const ROLE_CONFIG: Record<string, Omit<SuccessInfo, 'firstName'>> = {
   STUDENT: { icon: GraduationCap,badge: 'Élève',           color: 'var(--purple)', bg: 'var(--purple-light)', dest: '/student/dashboard' },
   STAFF:   { icon: Search,       badge: 'Staff',           color: 'var(--primary)', bg: 'var(--primary-light)', dest: '/staff/dashboard' },
 }
-
-const ROLE_SELECTOR = [
-  { role: 'ADMIN',   icon: School,       label: 'login.role_admin', shortLabel: 'login.role_admin_short', color: 'var(--primary)', bg: 'var(--primary-light)', border: 'rgba(142,42,58,0.3)' },
-  { role: 'TEACHER', icon: Presentation, label: 'login.role_teacher', shortLabel: 'login.role_teacher_short', color: 'var(--blue)', bg: 'var(--blue-light)', border: 'rgba(29,78,216,0.3)'  },
-  { role: 'PARENT',  icon: Users,        label: 'login.role_parent', shortLabel: 'login.role_parent_short', color: 'var(--amber)', bg: 'var(--amber-light)', border: 'rgba(180,83,9,0.3)'   },
-  { role: 'STUDENT', icon: GraduationCap,label: 'login.role_student', shortLabel: 'login.role_student_short', color: 'var(--purple)', bg: 'var(--purple-light)', border: 'rgba(124,58,237,0.3)' },
-  { role: 'STAFF',   icon: Search,       label: 'login.role_staff', shortLabel: 'login.role_staff_short', color: 'var(--primary)', bg: 'var(--primary-light)', border: 'rgba(142,42,58,0.3)' },
-]
-
-const ROLES = [
-  { icon: School,       nameKey:'login.role_admin',  descKey:'login.role_admin_desc' },
-  { icon: Presentation, nameKey:'login.role_teacher', descKey:'login.role_teacher_desc' },
-  { icon: Users,        nameKey:'login.role_parent', descKey:'login.role_parent_desc' },
-  { icon: GraduationCap,nameKey:'login.role_student', descKey:'login.role_student_desc' },
-  { icon: Search,       nameKey:'login.role_staff',  descKey:'login.role_staff_desc' },
-]
 
 type AccountChoice = {
   userId: string
@@ -64,7 +50,7 @@ export default function LoginPage() {
   const [email, setEmail]           = useState('')
   const [password, setPassword]     = useState('')
   const [showPwd, setShowPwd]       = useState(false)
-  const [loading, setLoading]                   = useState(false)
+  const [loading, setLoading]       = useState(false)
   const [alert, setAlert]           = useState<{ msg: string; type: 'error' | 'warning' } | null>(null)
   const [suspended, setSuspended]   = useState<{ schoolName: string } | null>(null)
   const [success, setSuccess]       = useState<SuccessInfo | null>(null)
@@ -84,14 +70,14 @@ export default function LoginPage() {
   const otpRefs = useRef<(HTMLInputElement | null)[]>([])
   const otpTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // ── Étape TOTP (Admin/Staff/Teacher, MFA déjà configuré) ──
+  // ── Étape TOTP ──
   const [totpCode, setTotpCode] = useState('')
   const [isRecovery, setIsRecovery] = useState(false)
   const [recoveryCode, setRecoveryCode] = useState('')
   const [totpLoading, setTotpLoading] = useState(false)
   const [totpAlert, setTotpAlert] = useState<string | null>(null)
 
-  // ── Étape configuration MFA obligatoire (1re connexion Admin/Staff/Teacher) ──
+  // ── Étape configuration MFA ──
   const [qrDataUri, setQrDataUri] = useState('')
   const [manualKey, setManualKey] = useState('')
   const [setupTotpCode, setSetupTotpCode] = useState('')
@@ -110,7 +96,7 @@ export default function LoginPage() {
 
   useEffect(() => { emailRef.current?.focus() }, [])
 
-  // Empêcher le remplissage automatique du navigateur (sécurité)
+  // Empêcher le remplissage automatique du navigateur
   useEffect(() => {
     const tmr = setTimeout(() => { setEmail(''); setPassword('') }, 50)
     return () => clearTimeout(tmr)
@@ -141,10 +127,9 @@ export default function LoginPage() {
     }, 1000)
   }
 
-  // ── Finalise la connexion (appelé après OTP seul, ou après TOTP, ou après activation MFA) ──
   const completeLogin = (data: LoginData) => {
-    const { role, nomComplet, userId, permissions, roleMismatch, mustChangePassword, redirectTo } = data
-    const config = ROLE_CONFIG[role] ?? { icon: User, badge: role, color: 'var(--text3)', bg: 'var(--bg2)', dest: '/' }
+    const { role, nomComplet, userId, permissions, mustChangePassword, redirectTo } = data
+    const config = ROLE_CONFIG[role] ?? { icon: User, badge: role, color: 'var(--text-muted)', bg: 'var(--bg2)', dest: '/' }
     const dest = mustChangePassword ? '/change-password' : (redirectTo ?? config.dest)
     const firstName = nomComplet?.split(' ')[0] ?? 'Bienvenue'
 
@@ -159,7 +144,6 @@ export default function LoginPage() {
     setSuccess({ ...config, dest, firstName })
   }
 
-  // ── Étape 1 : identifiants ──
   const submitCredentials = async () => {
     setAlert(null)
     setSuspended(null)
@@ -194,7 +178,6 @@ export default function LoginPage() {
       }
 
       if (res.status === 422 && data.code === 'ROLE_MISMATCH_MULTIPLE') {
-        // Backward compat: role mismatch within same school
         setAlert({ msg: data.message ?? 'Rôle invalide', type: 'error' })
         return
       }
@@ -216,7 +199,6 @@ export default function LoginPage() {
     }
   }
 
-  // ── Choisir un compte (multi-comptes) ──
   const submitAccountChoice = async (account: AccountChoice) => {
     if (!pendingCredentials) return
     setLoading(true)
@@ -273,7 +255,6 @@ export default function LoginPage() {
     }
   }
 
-  // ── Étape 2 : code email ──
   const handleOtpInput = (idx: number, val: string) => {
     const digit = val.replace(/\D/g, '').slice(-1)
     const next = [...otp]; next[idx] = digit; setOtp(next)
@@ -337,7 +318,6 @@ export default function LoginPage() {
     }
   }
 
-  // ── Étape 3 : TOTP (MFA déjà configuré) ──
   const submitTotp = async () => {
     setTotpAlert(null)
     const code = isRecovery ? recoveryCode.trim() : totpCode.trim()
@@ -360,7 +340,6 @@ export default function LoginPage() {
     }
   }
 
-  // ── Étape 4 : configuration MFA obligatoire (1re connexion) ──
   const startMfaSetup = async () => {
     setSetupAlert(null)
     try {
@@ -403,266 +382,232 @@ export default function LoginPage() {
   const timerMin = Math.floor(Math.max(otpTimerSecs, 0) / 60)
   const timerSecDisp = Math.max(otpTimerSecs, 0) % 60
 
+  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.style.borderColor = 'var(--accent)'
+    e.target.style.boxShadow = '0 0 0 3px rgba(227, 176, 75, 0.2)'
+  }
+
+  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.style.borderColor = 'var(--border)'
+    e.target.style.boxShadow = 'none'
+  }
+
   return (
-    <div className="overflow-y-auto xl:overflow-hidden" style={{
-      display: 'flex', minHeight: '100dvh',
+    <div style={{
+      minHeight: '100dvh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
       background: 'var(--bg)',
+      position: 'relative',
+      overflowX: 'hidden',
+      paddingTop: 80,
+      paddingBottom: 40,
       fontFamily: 'var(--font-nunito), Nunito, sans-serif'
     }}>
 
-      {/* ══ PANNEAU GAUCHE — vitrine, cachée sous xl : en dessous, le panneau droit devient trop
-          etroit pour la grille des roles (le mot "Administrateur" wrap), donc on repousse
-          l-apparition du panneau gauche a un point ou la moitie d-ecran restante reste large ══ */}
-      <div className="hidden xl:flex xl:w-[48%]" style={{
-        background: 'var(--sidebar)',
-        flexDirection: 'column',
-        position: 'relative', overflow: 'hidden', flexShrink: 0
+      {/* Motif géométrique discret */}
+      <div className="login-bg" />
+
+      {/* Bande multicolore camerounaise */}
+      <div className="deco-band" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, height: 5 }} />
+
+      {/* En-tête commun */}
+      <header style={{
+        position: 'absolute', top: 5, left: 0, right: 0, zIndex: 10,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '16px 24px'
       }}>
-        <AnimatedBackground variant="stars" style={{ zIndex: 0 }} />
-
-        <div style={{
-          height: 6, flexShrink: 0, position: 'relative', zIndex: 1,
-          background: 'repeating-linear-gradient(90deg,var(--amber) 0,var(--amber) 16px,var(--green) 16px,var(--green) 32px,var(--red) 32px,var(--red) 48px,#60a5fa 48px,#60a5fa 64px,#d4a843 64px,#d4a843 80px)'
-        }} />
-
-        <div style={{
-          position: 'absolute', bottom: -80, right: -80,
-          width: 300, height: 300, borderRadius: '50%', pointerEvents: 'none',
-          background: 'radial-gradient(circle, rgba(34,197,94,0.08) 0%, transparent 70%)'
-        }} />
-        <div style={{
-          position: 'absolute', top: 100, left: -60,
-          width: 200, height: 200, borderRadius: '50%', pointerEvents: 'none',
-          background: 'radial-gradient(circle, rgba(245,158,11,0.06) 0%, transparent 70%)'
-        }} />
-
-<div style={{
-            padding: '16px 20px', display: 'flex', flexDirection: 'column',
-            flex: 1, position: 'relative', zIndex: 1
-          }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
-            <div style={{ width: 48, height: 48, borderRadius: 10, background: "linear-gradient(135deg,var(--amber),var(--green))", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 10px rgba(34,197,94,0.2)", overflow: "hidden" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "65%", height: "65%", objectFit: "contain" }} /></div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 24, fontWeight: 700, color: 'white' }}>ZekoulABia</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontWeight: 700 }}>{t('login.tagline')}</div>
-            </div>
-            <LanguageSwitch compact style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }} />
-          </div>
-
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
-            fontFamily: 'var(--font-spectral),Spectral,serif',
-            fontSize: 'clamp(24px, 3vw, 28px)', fontWeight: 700, lineHeight: 1.15,
-            color: 'white', marginBottom: 12
+            width: 38, height: 38, borderRadius: 10,
+            background: 'linear-gradient(135deg,var(--primary),var(--accent))',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 10px rgba(180,83,42,0.22)', overflow: 'hidden'
           }}>
-            {t('login.left_title_1')}<br />
-            {t('login.left_title_2')} <span style={{ color: '#4ade80' }}>{t('login.left_title_highlight')}</span><br />
-            {t('login.left_title_3')}
+            <img src="/logo.svg" alt="ZekoulABia" style={{ width: '65%', height: '65%', objectFit: 'contain' }} />
           </div>
-
-          <p style={{
-            fontSize: 12, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5,
-            fontWeight: 500, maxWidth: 340, marginBottom: 28
-          }}>
-            {t('login.left_subtitle')}
-          </p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {ROLES.map((role, i) => (
-              <div key={i} style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '8px 10px',
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: 9, cursor: 'default',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { background: 'rgba(255,255,255,0.07)', borderColor: 'rgba(255,255,255,0.12)', transform: 'translateX(2px)' })}
-              onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.06)', transform: 'none' })}
-              >
-                <div style={{
-                  width: 38, height: 38, color: 'white',
-                  background: 'rgba(255,255,255,0.06)', borderRadius: 8,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
-                }}><role.icon size={20} strokeWidth={2} /></div>
-                <div>
-                  <div style={{ color: 'white', fontSize: 13, fontWeight: 700 }}>{t(role.nameKey)}</div>
-                  <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11, fontWeight: 500 }}>{t(role.descKey)}</div>
-                </div>
-                <div style={{ marginLeft: 'auto', color: 'rgba(255,255,255,0.2)', display: 'flex' }}><ChevronRight size={15} strokeWidth={2} /></div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ marginTop: 'auto', fontSize: 11, color: 'rgba(255,255,255,0.2)', fontWeight: 500, paddingTop: 10 }}>
-            {t('login.copyright')}
+          <div>
+            <span style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>
+              ZekoulABia
+            </span>
+            <span style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>
+              {t('login.tagline')}
+            </span>
           </div>
         </div>
-      </div>
+        <LanguageSwitch compact />
+      </header>
 
-      {/* ══ PANNEAU DROIT ══ */}
-      <div className="px-4 py-4 md:p-6" style={{
-        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'var(--bg)', position: 'relative', overflowY: 'auto',
-      }}>
-        {/* Le panneau gauche (qui porte normalement le selecteur de langue) est cache sous xl */}
-        <div className="xl:hidden" style={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}>
-          <LanguageSwitch compact />
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: 'easeOut' }}
-          style={{ width: '100%', maxWidth: 490, position: 'relative', zIndex: 1 }}>
-
-          {suspended ? (
-            <div style={{ animation: 'edu-fadeUp 0.25s ease both' }}>
-              <style>{`@keyframes edu-fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }`}</style>
-              <div style={{ background: 'var(--red-light)', border: '1px solid rgba(220,38,38,0.2)', borderRadius: 10, padding: '16px 20px', boxShadow: '0 2px 8px rgba(220,38,38,0.06)' }}>
-                <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--red)', marginBottom: 8 }}><Ban size={24} strokeWidth={2} /></div>
-                <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--red)', marginBottom: 7, textAlign: 'center' }}>
-                  {t('login.suspended_title')}
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--red)', fontWeight: 600, lineHeight: 1.5, marginBottom: 12 }}>
-                  {t('login.suspended_msg', { school: suspended.schoolName })}
-                </div>
-                <div style={{ background: 'var(--surface)', border: '1px solid rgba(220,38,38,0.12)', borderRadius: 7, padding: '9px 12px', marginBottom: 12, fontSize: 11, color: 'var(--text2)', lineHeight: 1.4 }}>
-                  {t('login.suspended_support')}{' '}
-                  <a href="mailto: zekoulabia.noreply@gmail.com" style={{ color: 'var(--green)', fontWeight: 700 }}>zekoulabia.noreply@gmail.com</a>
-                </div>
-                <button
-                  onClick={() => setSuspended(null)}
-                  style={{ width: '100%', padding: '9px 0', background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 8, fontSize: 12, fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', fontFamily: 'inherit' }}>
-                  {t('login.suspended_back')}
-                </button>
+      {/* Carte de formulaire principale */}
+      <motion.main
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+        style={{
+          position: 'relative',
+          zIndex: 1,
+          maxWidth: 440,
+          width: 'calc(100% - 32px)',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 16,
+          padding: '32px 28px',
+          boxShadow: '0 10px 40px rgba(58, 36, 25, 0.10)',
+        }}
+      >
+        {suspended ? (
+          <div style={{ animation: 'edu-fadeUp 0.25s ease both' }}>
+            <div style={{ background: 'var(--red-light)', border: '1px solid rgba(217,72,31,0.2)', borderRadius: 10, padding: '16px 20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--red)', marginBottom: 8 }}><Ban size={24} strokeWidth={2} /></div>
+              <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--red)', marginBottom: 7, textAlign: 'center' }}>
+                {t('login.suspended_title')}
               </div>
-            </div>
-          ) : step === 'credentials' ? (
-
-          <>{/* Welcome */}
-          <div className="mb-3 md:mb-5">
-            <span className="[&>svg]:w-6 [&>svg]:h-6 md:[&>svg]:w-8 md:[&>svg]:h-8 mb-1.5 md:mb-6" style={{ color: 'var(--text)', display: 'block' }}><Hand strokeWidth={2} /></span>
-            <div className="text-[22px] md:text-[28px] mb-1 md:mb-1.5" style={{
-              fontFamily: 'var(--font-spectral),Spectral,serif',
-              fontWeight: 700, color: 'var(--text)', lineHeight: 1.15
-            }}>
-              {t('login.right_title')}
-            </div>
-            <div className="text-[12px] md:text-[14px]" style={{ color: 'var(--text2)', fontWeight: 500, lineHeight: 1.35 }}>
-              {t('login.right_subtitle')}
-            </div>
-          </div>
-
-          {alert && (
-            <div className="text-[12px] md:text-[13px] mb-3 md:mb-3 px-3 py-2 md:px-3.5 md:py-2.5" style={{
-              borderRadius: 8, fontWeight: 700,
-              display: 'flex', alignItems: 'center', gap: 6,
-              background: alert.type === 'error' ? 'var(--red-light)' : 'var(--orange-light)',
-              border: alert.type === 'error' ? '1px solid rgba(220,38,38,0.18)' : '1px solid rgba(234,88,12,0.18)',
-              color: alert.type === 'error' ? 'var(--red)' : 'var(--orange)'
-            }}>
-              <AlertTriangle size={14} strokeWidth={2} className="shrink-0" /><span>{alert.msg}</span>
-            </div>
-          )}
-
-          {/* Email */}
-          <div className="mb-3 md:mb-[14px]">
-            <label className="text-[11px] md:text-[12px] mb-1 md:mb-[5px]" style={{ fontWeight: 800, color: 'var(--text2)', display: 'block', letterSpacing: '0.3px', textTransform: 'uppercase' }}>
-              {t('fields.email')}
-            </label>
-            <input
-              ref={emailRef} type="email" value={email}
-              onChange={e => { setEmail(e.target.value); setAlert(null) }}
-              onKeyDown={e => e.key === 'Enter' && submitCredentials()}
-              placeholder={t('login.email_placeholder')}
-              autoComplete="off"
-              className="text-[13px] md:text-[14px] px-3 py-2 md:px-3.5 md:py-2.5"
-              style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontFamily: 'inherit', fontWeight: 600, outline: 'none', transition: 'all 0.2s' }}
-            />
-          </div>
-
-          {/* Mot de passe */}
-          <div className="mb-3 md:mb-[14px]">
-            <label className="text-[11px] md:text-[12px] mb-1 md:mb-[5px]" style={{ fontWeight: 800, color: 'var(--text2)', display: 'block', letterSpacing: '0.3px', textTransform: 'uppercase' }}>
-              {t('fields.password')}
-            </label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type={showPwd ? 'text' : 'password'} value={password}
-                onChange={e => { setPassword(e.target.value); setAlert(null) }}
-                onKeyDown={e => e.key === 'Enter' && submitCredentials()}
-                placeholder={t('login.password_placeholder')} autoComplete="new-password"
-                className="text-[13px] md:text-[14px] px-3 py-2 md:px-3.5 md:py-2.5"
-                style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontFamily: 'inherit', fontWeight: 600, outline: 'none', transition: 'all 0.2s' }}
-              />
-              <button type="button" onClick={() => setShowPwd(s => !s)}
-                style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', padding: 2 }}>
-                {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+              <div style={{ fontSize: 13, color: 'var(--red)', fontWeight: 600, lineHeight: 1.5, marginBottom: 12 }}>
+                {t('login.suspended_msg', { school: suspended.schoolName })}
+              </div>
+              <div style={{ background: 'var(--surface)', border: '1px solid rgba(217,72,31,0.12)', borderRadius: 7, padding: '9px 12px', marginBottom: 12, fontSize: 12, color: 'var(--text2)', lineHeight: 1.4 }}>
+                {t('login.suspended_support')}{' '}
+                <a href="mailto:zekoulabia.noreply@gmail.com" style={{ color: 'var(--primary)', fontWeight: 700 }}>zekoulabia.noreply@gmail.com</a>
+              </div>
+              <button
+                onClick={() => setSuspended(null)}
+                style={{ width: '100%', minHeight: 44, padding: '9px 0', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                {t('login.suspended_back')}
               </button>
             </div>
           </div>
+        ) : step === 'credentials' ? (
 
-          <div className="mb-3 md:mb-[14px]" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -2 }}>
-            <button
-              type="button"
-              onClick={() => { setForgotOpen(true); setForgotDone(false); setForgotError(''); setForgotEmail(email) }}
-              className="text-[12px] md:text-[13px]"
-              style={{ fontWeight: 700, color: 'var(--green)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-              {t('auth.forgotPassword')}
-            </button>
-          </div>
+          <>
+            <div style={{ marginBottom: 24 }}>
+              <span style={{ color: 'var(--text)', display: 'block', marginBottom: 10 }}><Hand size={28} strokeWidth={2} /></span>
+              <h1 style={{
+                fontFamily: 'var(--font-spectral),Spectral,serif',
+                fontSize: 24, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2, margin: '0 0 6px'
+              }}>
+                {t('login.right_title')}
+              </h1>
+              <p style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 500, margin: 0, lineHeight: 1.4 }}>
+                {t('login.right_subtitle')}
+              </p>
+            </div>
 
-          <button onClick={submitCredentials} disabled={loading}
-            className="text-[14px] md:text-[15px] py-2.5 md:py-3.5"
-            style={{
-              width: '100%',
-              background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))',
-              color: 'white', fontWeight: 800,
-              border: 'none', borderRadius: 9, cursor: loading ? 'not-allowed' : 'pointer',
-              fontFamily: 'inherit', transition: 'all 0.12s',
-              boxShadow: '0 2px 10px rgba(142,42,58,0.22)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              opacity: loading ? 0.8 : 1
-            }}>
-            {loading ? <Loader2 size={16} className="animate-spin" /> : null}
-            {loading ? t('login.signing_in') : t('auth.signIn')}
-          </button>
+            {alert && (
+              <div style={{
+                fontSize: 13, marginBottom: 16, padding: '10px 14px',
+                borderRadius: 8, fontWeight: 700,
+                display: 'flex', alignItems: 'center', gap: 8,
+                background: alert.type === 'error' ? 'var(--red-light)' : 'var(--amber-light)',
+                border: alert.type === 'error' ? '1px solid rgba(217,72,31,0.2)' : '1px solid rgba(217,119,6,0.2)',
+                color: alert.type === 'error' ? 'var(--red)' : 'var(--amber)'
+              }}>
+                <AlertTriangle size={16} strokeWidth={2} style={{ flexShrink: 0 }} /><span>{alert.msg}</span>
+              </div>
+            )}
 
-          <div style={{ marginTop: 18, textAlign: 'center' }}>
-            <Link
-              href="/concours/resultats"
+            {/* Email */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, fontWeight: 800, color: 'var(--text2)', display: 'block', marginBottom: 6, letterSpacing: '0.4px', textTransform: 'uppercase' }}>
+                {t('fields.email')}
+              </label>
+              <input
+                ref={emailRef} type="email" value={email}
+                onChange={e => { setEmail(e.target.value); setAlert(null) }}
+                onKeyDown={e => e.key === 'Enter' && submitCredentials()}
+                onFocus={handleInputFocus} onBlur={handleInputBlur}
+                placeholder={t('login.email_placeholder')}
+                autoComplete="off"
+                style={{
+                  width: '100%', minHeight: 48, padding: '12px 14px',
+                  background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10,
+                  color: 'var(--text)', fontFamily: 'inherit', fontSize: 16, fontWeight: 600, outline: 'none', transition: 'all 0.2s'
+                }}
+              />
+            </div>
+
+            {/* Mot de passe */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, fontWeight: 800, color: 'var(--text2)', display: 'block', marginBottom: 6, letterSpacing: '0.4px', textTransform: 'uppercase' }}>
+                {t('fields.password')}
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPwd ? 'text' : 'password'} value={password}
+                  onChange={e => { setPassword(e.target.value); setAlert(null) }}
+                  onKeyDown={e => e.key === 'Enter' && submitCredentials()}
+                  onFocus={handleInputFocus} onBlur={handleInputBlur}
+                  placeholder={t('login.password_placeholder')} autoComplete="new-password"
+                  style={{
+                    width: '100%', minHeight: 48, padding: '12px 44px 12px 14px',
+                    background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10,
+                    color: 'var(--text)', fontFamily: 'inherit', fontSize: 16, fontWeight: 600, outline: 'none', transition: 'all 0.2s'
+                  }}
+                />
+                <button type="button" onClick={() => setShowPwd(s => !s)}
+                  aria-label={showPwd ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                  style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', padding: 6, minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {showPwd ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20, marginTop: -4 }}>
+              <button
+                type="button"
+                onClick={() => { setForgotOpen(true); setForgotDone(false); setForgotError(''); setForgotEmail(email) }}
+                style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '4px 0' }}>
+                {t('auth.forgotPassword')}
+              </button>
+            </div>
+
+            <button onClick={submitCredentials} disabled={loading}
               style={{
-                fontSize: 12,
-                color: 'var(--text3)',
-                textDecoration: 'none',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                fontWeight: 500,
-                transition: 'color 0.15s',
+                width: '100%', minHeight: 48,
+                background: 'var(--primary)',
+                color: 'white', fontSize: 15, fontWeight: 800,
+                border: 'none', borderRadius: 10, cursor: loading ? 'not-allowed' : 'pointer',
+                fontFamily: 'inherit', transition: 'background 0.2s',
+                boxShadow: '0 4px 14px rgba(180,83,42,0.22)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                opacity: loading ? 0.8 : 1
               }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'var(--green, #16a34a)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'var(--text3)')}
+              onMouseEnter={e => !loading && (e.currentTarget.style.background = 'var(--primary-hover)')}
+              onMouseLeave={e => !loading && (e.currentTarget.style.background = 'var(--primary)')}
             >
-              <Award size={13} />
-              Résultats du concours d'entrée
-            </Link>
-          </div>
+              {loading ? <Loader2 size={18} className="animate-spin" /> : null}
+              {loading ? t('login.signing_in') : t('auth.signIn')}
+            </button>
 
-        </>
+            <div style={{ marginTop: 20, textAlign: 'center' }}>
+              <Link
+                href="/concours/resultats"
+                style={{
+                  fontSize: 13, color: 'var(--text3)', textDecoration: 'none',
+                  display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 600, transition: 'color 0.15s'
+                }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'var(--primary)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'var(--text3)')}
+              >
+                <Award size={15} />
+                Résultats du concours d'entrée
+              </Link>
+            </div>
+          </>
+
         ) : step === 'choose_account' ? (
 
-          <div style={{ animation: 'edu-fadeUp 0.3s ease both' }}>
-            <style>{`@keyframes edu-fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }`}</style>
+          <div>
             <button onClick={() => { setStep('credentials'); setAccountChoices(null); setPendingCredentials(null) }}
-              className="text-[13px] md:text-[14px] mb-3 md:mb-4"
-              style={{ display: 'flex', alignItems: 'center', gap: 5, fontWeight: 700, color: 'var(--text3)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: 'var(--text3)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit', marginBottom: 16, padding: 0 }}>
               <ArrowLeft size={16} /> {t('login.back')}
             </button>
-            <div className="mb-3 md:mb-4">
-              <div className="text-[22px] md:text-[28px] mb-1 md:mb-1.5" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('login.choose_account_title')}</div>
-              <div className="text-[13px] md:text-[15px]" style={{ color: 'var(--text2)', fontWeight: 500, lineHeight: 1.4 }}>
+            <div style={{ marginBottom: 16 }}>
+              <h2 style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', margin: '0 0 6px' }}>{t('login.choose_account_title')}</h2>
+              <p style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 500, margin: 0 }}>
                 {t('login.choose_account_subtitle')}
-              </div>
+              </p>
             </div>
             {accountChoices && accountChoices.map((account) => (
               <button
@@ -670,10 +615,16 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => submitAccountChoice(account)}
                 disabled={loading}
-                className="w-full text-left p-3.5 mb-2.5 rounded-xl border border-[var(--border)] hover:bg-[var(--bg2)] transition-all cursor-pointer"
+                style={{
+                  width: '100%', textAlign: 'left', padding: '14px 16px', marginBottom: 10,
+                  borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)',
+                  cursor: 'pointer', transition: 'all 0.15s'
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg2)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface)')}
               >
-                <div className="text-[14px] md:text-[15px] font-bold text-[var(--text)]">{account.schoolName}</div>
-                <div className="text-[12px] md:text-[13.5px] text-[var(--text3)] font-medium mt-0.5">
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{account.schoolName}</div>
+                <div style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 500, marginTop: 2 }}>
                   {t(`login.role_${account.role.toLowerCase()}`) || account.role} · {account.nomComplet}
                 </div>
               </button>
@@ -682,97 +633,96 @@ export default function LoginPage() {
 
         ) : step === 'email_otp' ? (
 
-          <div style={{ animation: 'edu-fadeUp 0.3s ease both' }}>
-            <style>{`@keyframes edu-fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }`}</style>
+          <div>
             <button onClick={() => { setStep('credentials'); if (otpTimerRef.current) clearInterval(otpTimerRef.current) }}
-              className="text-[13px] md:text-[14px] mb-3 md:mb-4"
-              style={{ display: 'flex', alignItems: 'center', gap: 5, fontWeight: 700, color: 'var(--text3)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: 'var(--text3)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit', marginBottom: 16, padding: 0 }}>
               <ArrowLeft size={16} /> {t('login.back')}
             </button>
-            <div className="mb-3 md:mb-4">
-              <div className="text-[22px] md:text-[28px] mb-1 md:mb-1.5" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('login.otp_title')}</div>
-              <div className="text-[13px] md:text-[15px]" style={{ color: 'var(--text2)', fontWeight: 500, lineHeight: 1.4 }}>
+            <div style={{ marginBottom: 16 }}>
+              <h2 style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', margin: '0 0 6px' }}>{t('login.otp_title')}</h2>
+              <p style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 500, margin: 0, lineHeight: 1.4 }}>
                 {t('login.otp_subtitle', { email: maskEmail(email) })}
-              </div>
+              </p>
             </div>
             {otpAlert && (
-              <div className="text-[12px] md:text-[14px] mb-2 md:mb-3 px-3 py-2 md:px-3.5 md:py-2.5" style={{ borderRadius: 9, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 7, background: 'var(--red-light)', border: '1px solid rgba(220,38,38,0.2)', color: 'var(--red)' }}>
-                <AlertTriangle size={15} strokeWidth={2} className="shrink-0" /><span>{otpAlert}</span>
+              <div style={{ borderRadius: 9, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', marginBottom: 14, background: 'var(--red-light)', border: '1px solid rgba(217,72,31,0.2)', color: 'var(--red)', fontSize: 13 }}>
+                <AlertTriangle size={16} strokeWidth={2} style={{ flexShrink: 0 }} /><span>{otpAlert}</span>
               </div>
             )}
-            <div style={{ display: 'flex', gap: 8, width: '100%' }}>
+            <div style={{ display: 'flex', gap: 8, width: '100%', marginBottom: 14 }}>
               {otp.map((v, i) => (
                 <input key={i}
                   ref={el => { otpRefs.current[i] = el }}
                   type="tel" maxLength={1} value={v}
                   onChange={e => handleOtpInput(i, e.target.value)}
                   onKeyDown={e => handleOtpKey(i, e)}
-                  className="h-12 sm:h-14 text-[18px] sm:text-[22px]"
-                  style={{ flex: 1, textAlign: 'center', fontWeight: 900, background: v ? 'var(--green-light)' : 'var(--surface)', border: `1.5px solid ${v ? 'var(--green)' : 'var(--border)'}`, borderRadius: 10, outline: 'none', color: v ? 'var(--green)' : 'var(--text)', fontFamily: 'inherit', transition: 'all 0.2s', minWidth: 0, maxWidth: 100 }}
+                  onFocus={handleInputFocus} onBlur={handleInputBlur}
+                  style={{ flex: 1, minHeight: 52, textAlign: 'center', fontSize: 22, fontWeight: 900, background: v ? 'var(--primary-light)' : 'var(--surface)', border: `1.5px solid ${v ? 'var(--primary)' : 'var(--border)'}`, borderRadius: 10, outline: 'none', color: v ? 'var(--primary)' : 'var(--text)', fontFamily: 'inherit', transition: 'all 0.2s', minWidth: 0 }}
                 />
               ))}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-              <div className="text-[13px] md:text-[14px]" style={{ fontWeight: 700, color: otpTimerSecs <= 60 ? 'var(--red)' : 'var(--amber)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Clock size={14} /> {timerMin}:{String(timerSecDisp).padStart(2, '0')}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: otpTimerSecs <= 60 ? 'var(--red)' : 'var(--amber)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Clock size={15} /> {timerMin}:{String(timerSecDisp).padStart(2, '0')}
               </div>
               <button onClick={resendOtp} disabled={!otpResendEnabled}
-                className="text-[13px] md:text-[14px]"
-                style={{ fontWeight: 700, color: otpResendEnabled ? 'var(--green)' : 'var(--text3)', cursor: otpResendEnabled ? 'pointer' : 'default', background: 'none', border: 'none', fontFamily: 'inherit' }}>
+                style={{ fontSize: 13, fontWeight: 700, color: otpResendEnabled ? 'var(--primary)' : 'var(--text3)', cursor: otpResendEnabled ? 'pointer' : 'default', background: 'none', border: 'none', fontFamily: 'inherit', padding: 0 }}>
                 {t('login.otp_resend')}
               </button>
             </div>
             <button onClick={() => submitOtp()} disabled={otpLoading}
-              className="text-[14px] md:text-[16px] py-2.5 md:py-3.5 mt-3.5 md:mt-4"
-              style={{ width: '100%', background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', fontWeight: 800, border: 'none', borderRadius: 9, cursor: otpLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, opacity: otpLoading ? 0.8 : 1 }}>
-              {otpLoading ? <Loader2 size={16} className="animate-spin" /> : null}
+              style={{ width: '100%', minHeight: 48, background: 'var(--primary)', color: 'white', fontSize: 15, fontWeight: 800, border: 'none', borderRadius: 10, cursor: otpLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: otpLoading ? 0.8 : 1 }}
+              onMouseEnter={e => !otpLoading && (e.currentTarget.style.background = 'var(--primary-hover)')}
+              onMouseLeave={e => !otpLoading && (e.currentTarget.style.background = 'var(--primary)')}
+            >
+              {otpLoading ? <Loader2 size={18} className="animate-spin" /> : null}
               {t('login.otp_verify')}
             </button>
           </div>
 
         ) : step === 'totp' ? (
 
-          <div style={{ animation: 'edu-fadeUp 0.3s ease both' }}>
+          <div>
             <button onClick={() => setStep('email_otp')}
-              className="text-[13px] md:text-[14px] mb-3 md:mb-4"
-              style={{ display: 'flex', alignItems: 'center', gap: 5, fontWeight: 700, color: 'var(--text3)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: 'var(--text3)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit', marginBottom: 16, padding: 0 }}>
               <ArrowLeft size={16} /> {t('login.back')}
             </button>
-            <div className="mb-3 md:mb-4">
-              <div className="text-[22px] md:text-[28px] mb-1 md:mb-1.5" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('login.totp_title')}</div>
-              <div className="text-[13px] md:text-[15px]" style={{ color: 'var(--text2)', fontWeight: 500, lineHeight: 1.4 }}>
+            <div style={{ marginBottom: 16 }}>
+              <h2 style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', margin: '0 0 6px' }}>{t('login.totp_title')}</h2>
+              <p style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 500, margin: 0, lineHeight: 1.4 }}>
                 {isRecovery ? t('login.totp_subtitle_recovery') : t('login.totp_subtitle')}
-              </div>
+              </p>
             </div>
             {totpAlert && (
-              <div className="text-[12px] md:text-[14px] mb-2 md:mb-3 px-3 py-2 md:px-3.5 md:py-2.5" style={{ borderRadius: 9, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 7, background: 'var(--red-light)', border: '1px solid rgba(220,38,38,0.2)', color: 'var(--red)' }}>
-                <AlertTriangle size={15} strokeWidth={2} className="shrink-0" /><span>{totpAlert}</span>
+              <div style={{ borderRadius: 9, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', marginBottom: 14, background: 'var(--red-light)', border: '1px solid rgba(217,72,31,0.2)', color: 'var(--red)', fontSize: 13 }}>
+                <AlertTriangle size={16} strokeWidth={2} style={{ flexShrink: 0 }} /><span>{totpAlert}</span>
               </div>
             )}
             {!isRecovery ? (
               <input type="tel" maxLength={6} value={totpCode} placeholder="123456" autoComplete="one-time-code"
                 onChange={e => { setTotpCode(e.target.value.replace(/\D/g, '')); setTotpAlert(null) }}
                 onKeyDown={e => e.key === 'Enter' && submitTotp()}
-                className="text-[20px] md:text-[22px] placeholder:text-[12px] md:placeholder:text-[14px] placeholder:font-extrabold tracking-[4px] md:tracking-[6px] px-3.5 py-2.5 md:px-4 md:py-3"
-                style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontFamily: 'inherit', fontWeight: 900, textAlign: 'center', outline: 'none' }} />
+                onFocus={handleInputFocus} onBlur={handleInputBlur}
+                style={{ width: '100%', minHeight: 48, background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontFamily: 'inherit', fontSize: 22, fontWeight: 900, textAlign: 'center', outline: 'none', letterSpacing: 6, marginBottom: 16 }} />
             ) : (
               <input type="text" value={recoveryCode} placeholder="ABCD-1234-EFGH-5678" autoComplete="off"
                 onChange={e => { setRecoveryCode(e.target.value); setTotpAlert(null) }}
                 onKeyDown={e => e.key === 'Enter' && submitTotp()}
-                className="text-[15px] md:text-[17px] tracking-[1.5px] md:tracking-[2.5px] px-3.5 py-2.5 md:px-4 md:py-3"
-                style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontFamily: 'inherit', fontWeight: 700, textAlign: 'center', outline: 'none' }} />
+                onFocus={handleInputFocus} onBlur={handleInputBlur}
+                style={{ width: '100%', minHeight: 48, background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontFamily: 'inherit', fontSize: 16, fontWeight: 700, textAlign: 'center', outline: 'none', letterSpacing: 2, marginBottom: 16 }} />
             )}
-            <div className="my-2.5 md:my-[14px]" style={{ textAlign: 'center' }}>
+            <div style={{ textAlign: 'center', marginBottom: 16 }}>
               <button onClick={() => { setIsRecovery(r => !r); setTotpAlert(null) }}
-                className="text-[13px] md:text-[14px]"
-                style={{ fontWeight: 700, color: 'var(--green)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 0' }}>
                 {isRecovery ? <><ArrowLeft size={15} /> {t('login.totp_use_app')}</> : <><KeyRound size={15} /> {t('login.totp_use_recovery')}</>}
               </button>
             </div>
             <button onClick={submitTotp} disabled={totpLoading}
-              className="text-[14px] md:text-[15px] py-2.5 md:py-3.5"
-              style={{ width: '100%', background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', fontWeight: 800, border: 'none', borderRadius: 9, cursor: totpLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: totpLoading ? 0.8 : 1 }}>
-              {totpLoading ? <Loader2 size={16} className="animate-spin" /> : null}
+              style={{ width: '100%', minHeight: 48, background: 'var(--primary)', color: 'white', fontSize: 15, fontWeight: 800, border: 'none', borderRadius: 10, cursor: totpLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: totpLoading ? 0.8 : 1 }}
+              onMouseEnter={e => !totpLoading && (e.currentTarget.style.background = 'var(--primary-hover)')}
+              onMouseLeave={e => !totpLoading && (e.currentTarget.style.background = 'var(--primary)')}
+            >
+              {totpLoading ? <Loader2 size={18} className="animate-spin" /> : null}
               {t('login.totp_verify')}
             </button>
           </div>
@@ -780,73 +730,76 @@ export default function LoginPage() {
         ) : (
 
           /* ── step === 'mfa_setup' — configuration obligatoire (1re connexion) ── */
-          <div style={{ animation: 'edu-fadeUp 0.3s ease both' }}>
+          <div>
             {!recoveryCodes ? (
               <>
-                <div className="text-[12.5px] md:text-[13.5px] px-3 py-2.5 md:px-3.5 md:py-3" style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--amber-light)', border: '1px solid rgba(217,119,6,0.2)', borderRadius: 10, marginBottom: 16, fontWeight: 700, color: 'var(--amber)' }}>
-                  <Shield size={16} /> {t('login.mfa_setup_subtitle')}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--amber-light)', border: '1px solid rgba(217,119,6,0.2)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 13, fontWeight: 700, color: 'var(--amber)' }}>
+                  <Shield size={18} style={{ flexShrink: 0 }} /> {t('login.mfa_setup_subtitle')}
                 </div>
-                <div className="text-[22px] md:text-[28px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 14 }}>
+                <h2 style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', margin: '0 0 14px' }}>
                   {t('login.mfa_setup_title')}
-                </div>
+                </h2>
                 {setupAlert && (
-                  <div className="text-[12.5px] md:text-[14px] mb-3 px-3 py-2.5" style={{ borderRadius: 9, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 7, background: 'var(--red-light)', border: '1px solid rgba(220,38,38,0.2)', color: 'var(--red)' }}>
-                    <AlertTriangle size={15} strokeWidth={2} className="shrink-0" /><span>{setupAlert}</span>
+                  <div style={{ borderRadius: 9, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', marginBottom: 14, background: 'var(--red-light)', border: '1px solid rgba(217,72,31,0.2)', color: 'var(--red)', fontSize: 13 }}>
+                    <AlertTriangle size={16} strokeWidth={2} style={{ flexShrink: 0 }} /><span>{setupAlert}</span>
                   </div>
                 )}
-                <div className="text-[13px] md:text-[14px]" style={{ fontWeight: 700, color: 'var(--text2)', marginBottom: 8 }}>{t('login.mfa_setup_step1')}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)', marginBottom: 8 }}>{t('login.mfa_setup_step1')}</div>
                 {qrDataUri ? (
-                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
-                    <img src={qrDataUri} alt="QR MFA" className="w-[140px] h-[140px] md:w-[170px] md:h-[170px]" style={{ borderRadius: 12, border: '1.5px solid var(--border)', padding: 8, background: 'white' }} />
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
+                    <img src={qrDataUri} alt="QR MFA" style={{ width: 160, height: 160, borderRadius: 12, border: '1.5px solid var(--border)', padding: 8, background: 'white' }} />
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}><Loader2 size={24} className="animate-spin" /></div>
+                  <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}><Loader2 size={24} className="animate-spin" style={{ color: 'var(--primary)' }} /></div>
                 )}
                 {manualKey && (
                   <div style={{ marginBottom: 14 }}>
-                    <div className="text-[11px] md:text-[12px]" style={{ color: 'var(--text3)', fontWeight: 700, marginBottom: 4 }}>{t('login.mfa_setup_manual_label')}</div>
-                    <div className="text-[12.5px] md:text-[14px] px-2.5 py-2 md:px-3.5 md:py-2.5" style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--text)', background: 'var(--bg2)', borderRadius: 8, textAlign: 'center', letterSpacing: 1, wordBreak: 'break-all' }}>{manualKey}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 700, marginBottom: 4 }}>{t('login.mfa_setup_manual_label')}</div>
+                    <div style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--text)', background: 'var(--bg2)', padding: '10px 12px', borderRadius: 8, textAlign: 'center', fontSize: 14, letterSpacing: 1, wordBreak: 'break-all' }}>{manualKey}</div>
                   </div>
                 )}
-                <div className="text-[13px] md:text-[14px]" style={{ fontWeight: 700, color: 'var(--text2)', marginBottom: 8 }}>{t('login.mfa_setup_code_label')}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)', marginBottom: 8 }}>{t('login.mfa_setup_code_label')}</div>
                 <input type="tel" maxLength={6} value={setupTotpCode} placeholder="123456" autoComplete="one-time-code"
                   onChange={e => { setSetupTotpCode(e.target.value.replace(/\D/g, '')); setSetupAlert(null) }}
                   onKeyDown={e => e.key === 'Enter' && submitMfaSetup()}
-                  className="text-[20px] md:text-[22px] tracking-[4px] md:tracking-[6px] px-3.5 py-2.5 md:px-4 md:py-3"
-                  style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontFamily: 'inherit', fontWeight: 900, textAlign: 'center', outline: 'none', marginBottom: 16 }} />
+                  onFocus={handleInputFocus} onBlur={handleInputBlur}
+                  style={{ width: '100%', minHeight: 48, background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontFamily: 'inherit', fontSize: 22, fontWeight: 900, textAlign: 'center', outline: 'none', letterSpacing: 6, marginBottom: 16 }} />
                 <button onClick={submitMfaSetup} disabled={setupLoading || !qrDataUri}
-                  className="text-[14px] md:text-[15px] py-2.5 md:py-3.5"
-                  style={{ width: '100%', background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', fontWeight: 800, border: 'none', borderRadius: 9, cursor: setupLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: setupLoading ? 0.8 : 1 }}>
-                  {setupLoading ? <Loader2 size={16} className="animate-spin" /> : null}
+                  style={{ width: '100%', minHeight: 48, background: 'var(--primary)', color: 'white', fontSize: 15, fontWeight: 800, border: 'none', borderRadius: 10, cursor: setupLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: setupLoading ? 0.8 : 1 }}
+                  onMouseEnter={e => !setupLoading && (e.currentTarget.style.background = 'var(--primary-hover)')}
+                  onMouseLeave={e => !setupLoading && (e.currentTarget.style.background = 'var(--primary)')}
+                >
+                  {setupLoading ? <Loader2 size={18} className="animate-spin" /> : null}
                   {t('login.mfa_setup_confirm')}
                 </button>
               </>
             ) : (
               <>
-                <div className="[&>svg]:w-8 [&>svg]:h-8 md:[&>svg]:w-10 md:[&>svg]:h-10" style={{ display: 'flex', justifyContent: 'center', color: 'var(--green)', marginBottom: 14 }}><Shield strokeWidth={2} /></div>
-                <div className="text-[20px] md:text-[24px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', marginBottom: 8, textAlign: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--primary)', marginBottom: 14 }}><Shield size={36} strokeWidth={2} /></div>
+                <h2 style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', margin: '0 0 8px', textAlign: 'center' }}>
                   {t('login.mfa_setup_recovery_title')}
-                </div>
-                <div className="text-[13px] md:text-[14.5px]" style={{ color: 'var(--text2)', lineHeight: 1.5, marginBottom: 16, textAlign: 'center' }}>
+                </h2>
+                <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.5, marginBottom: 16, textAlign: 'center' }}>
                   {t('login.mfa_setup_recovery_subtitle')}
-                </div>
+                </p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16, background: 'var(--bg2)', borderRadius: 12, padding: 14 }}>
                   {recoveryCodes.map(code => (
-                    <div key={code} className="text-[12px] md:text-[13.5px] px-2 py-1.5 md:px-2.5 md:py-2" style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--text)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6, textAlign: 'center' }}>{code}</div>
+                    <div key={code} style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: 'var(--text)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6, padding: '8px 6px', textAlign: 'center' }}>{code}</div>
                   ))}
                 </div>
                 <button onClick={() => navigator.clipboard?.writeText(recoveryCodes.join('\n'))}
-                  className="text-[12.5px] md:text-[13.5px] py-2 md:py-2.5"
-                  style={{ width: '100%', marginBottom: 16, background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 9, fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
-                  <Copy size={14} /> Copier les codes
+                  style={{ width: '100%', minHeight: 44, marginBottom: 16, background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 13, fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  <Copy size={16} /> Copier les codes
                 </button>
                 <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 16, cursor: 'pointer' }}>
-                  <input type="checkbox" checked={recoveryAck} onChange={e => setRecoveryAck(e.target.checked)} style={{ marginTop: 3, flexShrink: 0, width: 17, height: 17 }} />
-                  <span className="text-[12.5px] md:text-[14px]" style={{ fontWeight: 700, color: 'var(--text)' }}>{t('login.mfa_setup_recovery_confirm')}</span>
+                  <input type="checkbox" checked={recoveryAck} onChange={e => setRecoveryAck(e.target.checked)} style={{ marginTop: 3, flexShrink: 0, width: 18, height: 18 }} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', lineHeight: 1.4 }}>{t('login.mfa_setup_recovery_confirm')}</span>
                 </label>
                 <button onClick={() => pendingLoginData && completeLogin(pendingLoginData)} disabled={!recoveryAck}
-                  className="text-[14px] md:text-[15px] py-2.5 md:py-3.5"
-                  style={{ width: '100%', background: recoveryAck ? 'linear-gradient(135deg,var(--primary),var(--primary-hover))' : 'var(--text3)', color: 'white', fontWeight: 800, border: 'none', borderRadius: 9, cursor: recoveryAck ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
+                  style={{ width: '100%', minHeight: 48, background: recoveryAck ? 'var(--primary)' : 'var(--text3)', color: 'white', fontSize: 15, fontWeight: 800, border: 'none', borderRadius: 10, cursor: recoveryAck ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}
+                  onMouseEnter={e => recoveryAck && (e.currentTarget.style.background = 'var(--primary-hover)')}
+                  onMouseLeave={e => recoveryAck && (e.currentTarget.style.background = 'var(--primary)')}
+                >
                   {t('login.mfa_setup_continue')}
                 </button>
               </>
@@ -854,54 +807,58 @@ export default function LoginPage() {
           </div>
 
         )}
+      </motion.main>
 
-        </motion.div>
-      </div>
+      {/* Footer Copyright */}
+      <footer style={{ position: 'relative', zIndex: 1, marginTop: 24, textAlign: 'center', fontSize: 12, color: 'var(--text-muted)', fontWeight: 500 }}>
+        {t('login.copyright', { year: String(new Date().getFullYear()) })}
+      </footer>
 
-      {/* ══ MODAL SUCCÈS ══ */}
+      {/* ══ MODAL SUCCÈS (vert strictement réservé au statut positif) ══ */}
       {success && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
           zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
-          <div className="px-5 py-5 md:px-6 md:py-6" style={{
-            background: 'var(--surface)', borderRadius: 12,
-            textAlign: 'center', maxWidth: 300, width: '88%',
+          <div style={{
+            background: 'var(--surface)', borderRadius: 16,
+            textAlign: 'center', maxWidth: 320, width: '88%',
+            padding: '24px 20px',
             boxShadow: '0 12px 36px rgba(0,0,0,0.15)',
             animation: 'popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both'
           }}>
-            <span style={{ color: success.color, marginBottom: 8, display: 'flex', justifyContent: 'center' }}>
-              <success.icon size={32} strokeWidth={2} />
+            <span style={{ color: success.color, marginBottom: 10, display: 'flex', justifyContent: 'center' }}>
+              <success.icon size={36} strokeWidth={2} />
             </span>
-            <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 5 }}>
+            <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
               {t('login.success_greeting', { name: success.firstName })}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text2)', fontWeight: 500, lineHeight: 1.4, marginBottom: 6 }}>
+            <div style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 500, lineHeight: 1.4, marginBottom: 8 }}>
               {t('messages.welcome')}
             </div>
             <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 4,
-              padding: '4px 10px', borderRadius: 12,
-              fontSize: 10, fontWeight: 800, margin: '8px 0 12px',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '5px 12px', borderRadius: 12,
+              fontSize: 12, fontWeight: 800, margin: '8px 0 14px',
               background: success.bg, color: success.color
             }}>
-              <success.icon size={10} strokeWidth={2} /> {success.badge}
+              <success.icon size={14} strokeWidth={2} /> {success.badge}
             </div>
 
-            <div style={{ background: 'var(--bg2)', borderRadius: 6, overflow: 'hidden', height: 4, marginBottom: 10 }}>
+            <div style={{ background: 'var(--bg2)', borderRadius: 6, overflow: 'hidden', height: 4, marginBottom: 12 }}>
               <div style={{
-                height: '100%', background: 'var(--green)',
+                height: '100%', background: 'var(--success)',
                 width: progress ? '100%' : '0%',
                 transition: 'width 2s linear', borderRadius: 6
               }} />
             </div>
-            <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 600, marginBottom: 10 }}>
+            <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 600, marginBottom: 12 }}>
               {t('login.success_redirecting')}
             </div>
             <button
               onClick={() => router.push(success.dest)}
-              style={{ width: '100%', padding: 9, background: 'var(--green)', color: 'white', fontSize: 11, fontWeight: 800, border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
+              style={{ width: '100%', minHeight: 44, padding: 10, background: 'var(--success)', color: 'white', fontSize: 13, fontWeight: 800, border: 'none', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit' }}>
               {t('login.success_goto')}
             </button>
           </div>
@@ -912,33 +869,36 @@ export default function LoginPage() {
       {forgotOpen && (
         <div
           onClick={() => !forgotLoading && setForgotOpen(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} className="px-5 py-5 md:px-6 md:py-6"
-            style={{ background: 'var(--surface)', borderRadius: 14, width: 400, maxWidth: '90vw', boxShadow: '0 12px 36px rgba(0,0,0,0.14)', animation: 'popIn 0.2s cubic-bezier(0.34,1.56,0.64,1) both' }}>
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, width: 400, maxWidth: '100%', boxShadow: '0 12px 36px rgba(0,0,0,0.14)', animation: 'popIn 0.2s cubic-bezier(0.34,1.56,0.64,1) both' }}>
 
             {forgotDone ? (
               <div style={{ textAlign: 'center', padding: '6px 0' }}>
-                <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--green)', marginBottom: 10 }}><Mail size={34} strokeWidth={2} /></div>
+                <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--success)', marginBottom: 12 }}><Mail size={38} strokeWidth={2} /></div>
                 <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', marginBottom: 8 }}>{t('login.forgot_success_title')}</div>
                 <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.5, marginBottom: 18 }}>
                   {t('login.forgot_success_msg')}
                 </div>
                 <button onClick={() => setForgotOpen(false)}
-                  style={{ padding: '10px 22px', borderRadius: 9, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', fontSize: 13, fontWeight: 800, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  style={{ width: '100%', minHeight: 44, padding: '10px 22px', borderRadius: 10, background: 'var(--primary)', color: 'white', fontSize: 14, fontWeight: 800, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--primary-hover)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'var(--primary)')}
+                >
                   {t('login.forgot_back')}
                 </button>
               </div>
             ) : (
               <>
-                <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 19, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
+                <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
                   {t('login.forgot_title')}
                 </div>
-                <div style={{ fontSize: 12.5, color: 'var(--text3)', marginBottom: 18, lineHeight: 1.45 }}>
+                <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 18, lineHeight: 1.45 }}>
                   {t('login.forgot_subtitle')}
                 </div>
 
-                <div style={{ marginBottom: 14 }}>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: 'var(--text2)', marginBottom: 5, letterSpacing: '0.3px', textTransform: 'uppercase' as const }}>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 800, color: 'var(--text2)', marginBottom: 6, letterSpacing: '0.4px', textTransform: 'uppercase' }}>
                     {t('login.forgot_email_label')}
                   </label>
                   <input
@@ -946,25 +906,29 @@ export default function LoginPage() {
                     value={forgotEmail}
                     onChange={e => setForgotEmail(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') handleForgotSubmit() }}
+                    onFocus={handleInputFocus} onBlur={handleInputBlur}
                     placeholder={t('login.forgot_email_placeholder')}
                     autoFocus
-                    style={{ width: '100%', padding: '10px 12px', background: 'var(--bg2)', border: '1.5px solid var(--border2)', borderRadius: 9, color: 'var(--text)', fontSize: 13.5, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' as const }}
+                    style={{ width: '100%', minHeight: 48, padding: '12px 14px', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontSize: 16, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
                   />
                 </div>
 
                 {forgotError && (
-                  <div style={{ background: 'var(--red-light)', color: 'var(--red)', borderRadius: 7, padding: '8px 12px', fontSize: 12, fontWeight: 600, marginBottom: 14 }}>
+                  <div style={{ background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8, padding: '10px 14px', fontSize: 13, fontWeight: 600, marginBottom: 16 }}>
                     {forgotError}
                   </div>
                 )}
 
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 10 }}>
                   <button onClick={() => setForgotOpen(false)} disabled={forgotLoading}
-                    style={{ flex: 1, padding: '10px', borderRadius: 9, fontSize: 13, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    style={{ flex: 1, minHeight: 44, padding: '10px', borderRadius: 10, fontSize: 14, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }}>
                     {t('login.forgot_cancel')}
                   </button>
                   <button onClick={handleForgotSubmit} disabled={forgotLoading}
-                    style={{ flex: 1, padding: '10px', borderRadius: 9, fontSize: 13, fontWeight: 800, background: forgotLoading ? 'var(--text3)' : 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: forgotLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+                    style={{ flex: 1, minHeight: 44, padding: '10px', borderRadius: 10, fontSize: 14, fontWeight: 800, background: forgotLoading ? 'var(--text3)' : 'var(--primary)', color: 'white', border: 'none', cursor: forgotLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+                    onMouseEnter={e => !forgotLoading && (e.currentTarget.style.background = 'var(--primary-hover)')}
+                    onMouseLeave={e => !forgotLoading && (e.currentTarget.style.background = 'var(--primary)')}
+                  >
                     {forgotLoading ? t('login.forgot_sending') : t('login.forgot_send')}
                   </button>
                 </div>

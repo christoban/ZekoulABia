@@ -175,12 +175,12 @@ export default function SectionTeacherClasses({ onNav, onToast, user }: Props) {
               <div style={{ display: 'flex', gap: 8 }}>
                 <button
                   style={{ flex: 1, padding: '6px 10px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.12s' }}
-                  onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--green)', color: 'var(--green)' })}
+                  onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--primary)', color: 'var(--primary)' })}
                   onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--border2)', color: 'var(--text2)' })}
                   onClick={() => onNav('attendance')}>{t('classes.btn_attendance')}</button>
                 <button
                   style={{ flex: 1, padding: '6px 10px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.12s' }}
-                  onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--green)', color: 'var(--green)' })}
+                  onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--primary)', color: 'var(--primary)' })}
                   onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--border2)', color: 'var(--text2)' })}
                   onClick={() => onNav('grades')}>{t('classes.btn_grades')}</button>
               </div>

@@ -245,7 +245,7 @@ export default function Step6Recapitulatif({
               padding: '10px 20px',
               borderRadius: 8,
               border: 'none',
-              background: 'linear-gradient(135deg, var(--green), var(--green2))',
+              background: 'linear-gradient(135deg, var(--primary), var(--primary-hover))',
               color: '#fff',
               fontSize: 13,
               fontWeight: 800,
@@ -253,7 +253,7 @@ export default function Step6Recapitulatif({
               display: 'inline-flex',
               alignItems: 'center',
               gap: 8,
-              boxShadow: '0 2px 8px rgba(34,197,94,0.3)',
+              boxShadow: '0 2px 8px rgba(180,83,42,0.3)',
             }}
           >
             {loading ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}

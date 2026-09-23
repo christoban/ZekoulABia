@@ -34,7 +34,7 @@ const DOCUMENT_TYPES = [
   { value: 'AUTRE', labelKey: 'docAutre' },
 ]
 
-const btnPri = { padding: '6px 14px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 600, fontSize: 12.5, cursor: 'pointer' as const }
+const btnPri = { padding: '6px 14px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 600, fontSize: 12.5, cursor: 'pointer' as const }
 const btnSec = { padding: '5px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 12, cursor: 'pointer' as const }
 const inputStyle = { padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 12.5, width: '100%', boxSizing: 'border-box' as const }
 const cardStyle = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 18px', marginBottom: 14 }

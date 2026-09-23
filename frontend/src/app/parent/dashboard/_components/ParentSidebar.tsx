@@ -83,7 +83,7 @@ export default function ParentSidebar({ current, onChange, onLogout, user, schoo
         style={{ background: 'repeating-linear-gradient(90deg,var(--amber) 0,var(--amber) 13px,var(--green) 13px,var(--green) 25px,var(--red) 25px,var(--red) 37px,#60a5fa 37px,#60a5fa 49px)' }} />
 
       <div className="flex items-center gap-2.5 border-b border-white/[0.07]" style={{ padding: '12px 12px' }}>
-        <div className="w-7.5 h-7.5 rounded-[8px] flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: "linear-gradient(135deg,var(--amber),var(--green))" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "70%", height: "70%", objectFit: "contain" }} /></div>
+        <div className="w-7.5 h-7.5 rounded-[8px] flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: "linear-gradient(135deg,var(--amber),var(--accent))" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "70%", height: "70%", objectFit: "contain" }} /></div>
         <div>
           <div className="font-spectral text-[16px] font-bold text-white leading-tight">ZekoulABia</div>
           <div className="text-[11px] text-white/35 font-semibold">{tcommon('brand.roleParent')}</div>
@@ -95,7 +95,7 @@ export default function ParentSidebar({ current, onChange, onLogout, user, schoo
           <div className="flex items-center gap-2.5">
             {school?.logoUrl
               ? <img src={school.logoUrl} alt={school.name} className="w-6.5 h-6.5 rounded-[6px] flex-shrink-0" style={{ objectFit: 'cover' }} />
-              : <div className="w-6.5 h-6.5 rounded-[6px] bg-gradient-to-br from-[var(--green)] to-[var(--blue)] flex items-center justify-center text-[11px] font-black text-white flex-shrink-0">
+              : <div className="w-6.5 h-6.5 rounded-[6px] bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center text-[11px] font-black text-white flex-shrink-0">
                   {school ? school.name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('') : tcommon('brand.fallbackInitials')}
                 </div>
             }

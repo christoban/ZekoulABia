@@ -248,7 +248,8 @@
     "mfa_setup_recovery_confirm": "J'ai enregistré mes codes de récupération",
     "mfa_setup_continue": "Continuer vers mon tableau de bord →",
     "choose_account_title": "Plusieurs comptes trouvés",
-    "choose_account_subtitle": "Choisissez le compte avec lequel vous souhaitez vous connecter."
+    "choose_account_subtitle": "Choisissez le compte avec lequel vous souhaitez vous connecter.",
+    "copyright": "© {year} ZekoulABia · Tous droits réservés · Plateforme de gestion scolaire"
   },
   "messages": {
     "operationSuccess": "Opération réussie",

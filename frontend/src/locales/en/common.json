@@ -248,7 +248,8 @@
     "mfa_setup_recovery_confirm": "I have saved my recovery codes",
     "mfa_setup_continue": "Continue to my dashboard →",
     "choose_account_title": "Multiple accounts found",
-    "choose_account_subtitle": "Choose the account you want to sign in with."
+    "choose_account_subtitle": "Choose the account you want to sign in with.",
+    "copyright": "© {year} ZekoulABia · All rights reserved · School Management Platform"
   },
   "messages": {
     "operationSuccess": "Operation completed successfully",

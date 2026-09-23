@@ -250,13 +250,13 @@ export default function SectionTeacherDashboard({ onNav, onToast, user }: Props)
             {/* Actions rapides */}
             <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 6 }}>
               <button style={{ width: '100%', padding: '7px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 7, transition: 'all 0.12s' }}
-                onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--green)', color: 'var(--green)' })}
+                onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--primary)', color: 'var(--primary)' })}
                 onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--border2)', color: 'var(--text2)' })}
                 onClick={() => onNav('attendance')}>
                 <CheckCircle2 size={14} strokeWidth={2} />{t('dashboard.take_attendance')}
               </button>
               <button style={{ width: '100%', padding: '7px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 7, transition: 'all 0.12s' }}
-                onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--green)', color: 'var(--green)' })}
+                onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--primary)', color: 'var(--primary)' })}
                 onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--border2)', color: 'var(--text2)' })}
                 onClick={() => onNav('grades')}>
                 <FileText size={14} strokeWidth={2} />{t('dashboard.enter_grades')}

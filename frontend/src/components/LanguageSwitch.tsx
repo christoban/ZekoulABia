@@ -32,7 +32,7 @@ export default function LanguageSwitch({ style, compact }: { style?: React.CSSPr
               padding: compact ? '3px 8px' : '6px 14px', borderRadius: compact ? 6 : 8, border: 'none',
               cursor: active ? 'default' : 'pointer', fontFamily: 'inherit',
               fontWeight: 800, fontSize: compact ? 10 : 13, letterSpacing: '0.3px',
-              background: active ? 'var(--green)' : 'transparent',
+              background: active ? 'var(--primary)' : 'transparent',
               color: active ? 'white' : 'var(--text2)',
               transition: 'background 0.15s, color 0.15s',
             }}

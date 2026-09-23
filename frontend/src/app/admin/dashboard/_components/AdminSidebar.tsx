@@ -226,12 +226,12 @@ export default function AdminSidebar({
                 'w-full flex items-center gap-2.5 rounded-r-md mb-[4px]',
                 'text-[12.5px] font-bold transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
                 current === 'dashboard'
-                  ? 'bg-gradient-to-r from-amber-500/25 to-amber-500/10 text-amber-300 border-l-3 border-amber-400 shadow-sm shadow-amber-500/10'
+                  ? 'bg-[var(--accent)]/15 text-[var(--accent)] border-l-3 border-[var(--accent)] shadow-sm'
                   : 'bg-transparent text-white/70 hover:bg-[var(--sidebar2)] hover:text-white border-l-3 border-transparent'
               )}
               style={{ padding: '7px 8px' }}>
               <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <LayoutDashboard size={16} strokeWidth={2} className={current === 'dashboard' ? 'text-amber-400' : ''} />
+                <LayoutDashboard size={16} strokeWidth={2} className={current === 'dashboard' ? 'text-[var(--accent)]' : ''} />
               </span>
               <span className="truncate flex-1">{tnav('sidebar.dashboard')}</span>
             </button>
@@ -242,17 +242,17 @@ export default function AdminSidebar({
               className={cn(
                 'w-full flex items-center gap-2.5 rounded-xl my-2.5 p-2.5 transition-all text-left border cursor-pointer font-nunito',
                 current === 'org-pedagogy'
-                  ? 'bg-gradient-to-r from-amber-500/30 via-primary/25 to-primary/20 text-amber-300 border-amber-400/80 shadow-md shadow-amber-500/20 ring-1 ring-amber-400/30'
+                  ? 'bg-[var(--accent)]/15 text-[var(--accent)] border-[var(--accent)] shadow-md ring-1 ring-[var(--accent)]/30'
                   : 'bg-white/[0.06] hover:bg-white/[0.1] text-white/90 border-white/15'
               )}
             >
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500/35 to-primary/35 text-amber-300 flex items-center justify-center flex-shrink-0 border border-amber-500/40 shadow-sm">
+              <div className="w-7 h-7 rounded-lg bg-[var(--accent)]/20 text-[var(--accent)] flex items-center justify-center flex-shrink-0 border border-[var(--accent)]/40 shadow-sm">
                 <School size={16} />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
                   <span className="text-[12px] font-extrabold truncate text-white">Supervision Pédagogique</span>
-                  <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-500/30 text-amber-300 border border-amber-400/40 tracking-wider">HUB</span>
+                  <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-[var(--accent)]/25 text-[var(--accent)] border border-[var(--accent)]/40 tracking-wider">HUB</span>
                 </div>
                 <div className="text-[10px] text-white/60 truncate font-semibold mt-0.5">Classes, programmes & inscriptions</div>
               </div>
@@ -275,12 +275,12 @@ export default function AdminSidebar({
                     'w-full flex items-center gap-2.5 rounded-r-md mb-[2px]',
                     'text-[12px] font-semibold transition-all duration-[120ms] text-left border-none cursor-pointer font-nunito',
                     current === item.id
-                      ? 'bg-gradient-to-r from-amber-500/25 to-amber-500/10 text-amber-300 font-bold border-l-3 border-amber-400 shadow-sm shadow-amber-500/10'
+                      ? 'bg-[var(--accent)]/15 text-[var(--accent)] font-bold border-l-3 border-[var(--accent)] shadow-sm'
                       : 'bg-transparent text-white/60 hover:bg-[var(--sidebar2)] hover:text-white/90 border-l-3 border-transparent'
                   )}
                   style={{ padding: '6px 8px' }}>
                   <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <item.icon size={16} strokeWidth={2} className={current === item.id ? 'text-amber-400' : ''} />
+                    <item.icon size={16} strokeWidth={2} className={current === item.id ? 'text-[var(--accent)]' : ''} />
                   </span>
                   <span className="truncate flex-1">{item.label}</span>
                   {item.badge && (
@@ -305,11 +305,11 @@ export default function AdminSidebar({
                     onClick={() => toggleGroup(groupId)}
                     className={cn(
                       'w-full flex items-center justify-between text-[10px] font-black tracking-[0.5px] uppercase pt-2 px-1.5 pb-1 cursor-pointer transition-colors border-none bg-transparent font-nunito whitespace-nowrap',
-                      hasActiveItem ? 'text-amber-400 font-bold' : 'text-white/35 hover:text-white/60'
+                      hasActiveItem ? 'text-[var(--accent)] font-bold' : 'text-white/35 hover:text-white/60'
                     )}
                   >
                     <span className="truncate flex-1 text-left">{section.label}</span>
-                    {isOpen ? <ChevronDown size={13} className={hasActiveItem ? 'text-amber-400 flex-shrink-0 ml-1' : 'text-white/40 flex-shrink-0 ml-1'} /> : <ChevronRight size={13} className={hasActiveItem ? 'text-amber-400 flex-shrink-0 ml-1' : 'text-white/40 flex-shrink-0 ml-1'} />}
+                    {isOpen ? <ChevronDown size={13} className={hasActiveItem ? 'text-[var(--accent)] flex-shrink-0 ml-1' : 'text-white/40 flex-shrink-0 ml-1'} /> : <ChevronRight size={13} className={hasActiveItem ? 'text-[var(--accent)] flex-shrink-0 ml-1' : 'text-white/40 flex-shrink-0 ml-1'} />}
                   </button>
 
                   {isOpen && (
@@ -321,11 +321,11 @@ export default function AdminSidebar({
                             'text-[12px] text-left border-none cursor-pointer font-nunito',
                             'py-1.5 px-2 transition-all',
                             current === item.id
-                              ? 'text-amber-300 font-bold bg-gradient-to-r from-amber-500/25 to-amber-500/10 border-l-3 border-amber-400 shadow-sm shadow-amber-500/10'
+                              ? 'text-[var(--accent)] font-bold bg-[var(--accent)]/15 border-l-3 border-[var(--accent)] shadow-sm'
                               : 'text-white/60 font-semibold hover:bg-[var(--sidebar2)] hover:text-white/90 border-l-3 border-transparent'
                           )}>
                           <span className="relative z-10 w-[18px] flex items-center justify-center flex-shrink-0">
-                            <item.icon size={15} strokeWidth={2} className={current === item.id ? 'text-amber-400' : ''} />
+                            <item.icon size={15} strokeWidth={2} className={current === item.id ? 'text-[var(--accent)]' : ''} />
                           </span>
                           <span className="relative z-10 truncate flex-1">{item.label}</span>
                           {item.badge && (

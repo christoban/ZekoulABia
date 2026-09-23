@@ -366,13 +366,13 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
               <div>
                 <label style={fLb}>{t('finance.depenseLabelLabel')} <span style={{ color: 'var(--red)' }}>*</span></label>
                 <input type="text" value={depenseForm.label} onChange={e => setDepenseForm(f => ({ ...f, label: e.target.value }))} placeholder={t('finance.depenseLabelPlaceholder')} style={fIn}
-                  onFocus={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--green)'; (e.currentTarget as HTMLElement).style.background = 'var(--surface)' }}
+                  onFocus={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--primary)'; (e.currentTarget as HTMLElement).style.background = 'var(--surface)' }}
                   onBlur={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border2)'; (e.currentTarget as HTMLElement).style.background = 'var(--bg2)' }} />
               </div>
               <div>
                 <label style={fLb}>{t('finance.depenseAmountLabel')} <span style={{ color: 'var(--red)' }}>*</span></label>
                 <input type="number" min="1" value={depenseForm.amount} onChange={e => setDepenseForm(f => ({ ...f, amount: e.target.value }))} placeholder={t('finance.depenseAmountPlaceholder')} style={fIn}
-                  onFocus={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--green)'; (e.currentTarget as HTMLElement).style.background = 'var(--surface)' }}
+                  onFocus={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--primary)'; (e.currentTarget as HTMLElement).style.background = 'var(--surface)' }}
                   onBlur={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border2)'; (e.currentTarget as HTMLElement).style.background = 'var(--bg2)' }} />
               </div>
               <div>
@@ -385,7 +385,7 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
               <div>
                 <label style={fLb}>{t('finance.depenseDateLabel')} <span style={{ color: 'var(--text3)', fontWeight: 600, fontSize: 11 }}>({t('finance.depenseDateOptional')})</span></label>
                 <input type="date" value={depenseForm.date} onChange={e => setDepenseForm(f => ({ ...f, date: e.target.value }))} style={fIn}
-                  onFocus={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--green)'; (e.currentTarget as HTMLElement).style.background = 'var(--surface)' }}
+                  onFocus={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--primary)'; (e.currentTarget as HTMLElement).style.background = 'var(--surface)' }}
                   onBlur={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border2)'; (e.currentTarget as HTMLElement).style.background = 'var(--bg2)' }} />
               </div>
               {depenseError && (

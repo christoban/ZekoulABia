@@ -28,7 +28,7 @@ interface Subject { id: string; name: string }
 interface AcademicYear { id: string; label: string; isCurrent: boolean }
 interface ClassItem { id: string; name: string; level: string | null }
 
-const btnPri = { padding: '8px 18px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }
+const btnPri = { padding: '8px 18px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }
 const btnSec = { padding: '8px 18px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 14, cursor: 'pointer' }
 
 export default function SectionAdminLV2Choice({ onToast }: Props) {

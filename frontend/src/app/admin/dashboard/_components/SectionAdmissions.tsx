@@ -410,12 +410,12 @@ export default function SectionAdmissions({ schoolInfo }: { schoolInfo: any }) {
             borderRadius: 8,
             fontWeight: 700,
             fontSize: 13,
-            background: 'linear-gradient(135deg, var(--green), var(--green2))',
+            background: 'linear-gradient(135deg, var(--primary), var(--primary-hover))',
             color: 'white',
             border: 'none',
             cursor: saving ? 'wait' : 'pointer',
             opacity: saving ? 0.7 : 1,
-            boxShadow: '0 2px 6px rgba(46,204,113,0.3)',
+            boxShadow: '0 2px 6px rgba(180,83,42,0.25)',
           }}
         >
           <Save size={16} />

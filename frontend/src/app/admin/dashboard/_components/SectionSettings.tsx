@@ -548,7 +548,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
               <input ref={logoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleLogoChange} />
               <div onClick={() => !logoLoading && logoInputRef.current?.click()}
                 className="w-[56px] h-[56px] md:w-[72px] md:h-[72px]"
-                style={{ borderRadius: 12, border: `2px dashed ${logoPreview ? 'var(--green)' : 'var(--border2)'}`, background: logoPreview ? 'transparent' : 'var(--bg2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: logoLoading ? 'wait' : 'pointer', overflow: 'hidden', flexShrink: 0, transition: 'all 0.15s', position: 'relative' }}>
+                style={{ borderRadius: 12, border: `2px dashed ${logoPreview ? 'var(--primary)' : 'var(--border2)'}`, background: logoPreview ? 'transparent' : 'var(--bg2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: logoLoading ? 'wait' : 'pointer', overflow: 'hidden', flexShrink: 0, transition: 'all 0.15s', position: 'relative' }}>
                 {logoLoading && (
                   <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
                     <div style={{ width: 20, height: 20, border: '2.5px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-settings-spin 0.7s linear infinite' }} />
@@ -601,21 +601,21 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
                 <div key={i}>
                   <div className={fieldLabelCls} style={fieldLabel}>{f.label}</div>
                   <input type={f.type} value={f.val} onChange={e => f.set(e.target.value)} className={fieldInputCls} style={fieldInput}
-                    onFocus={e => { e.currentTarget.style.borderColor = 'var(--green)'; e.currentTarget.style.background = 'var(--surface)' }}
+                    onFocus={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.background = 'var(--surface)' }}
                     onBlur={e => { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.background = 'var(--bg2)' }} />
                 </div>
               ))}
               <div style={{ gridColumn: '1 / -1' }}>
                 <div className={fieldLabelCls} style={fieldLabel}>{t('settings.profile.email_label')}</div>
                 <input type="email" value={schoolEmail} onChange={e => setSchoolEmail(e.target.value)} className={fieldInputCls} style={fieldInput}
-                  onFocus={e => { e.currentTarget.style.borderColor = 'var(--green)'; e.currentTarget.style.background = 'var(--surface)' }}
+                  onFocus={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.background = 'var(--surface)' }}
                   onBlur={e => { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.background = 'var(--bg2)' }} />
               </div>
               <div style={{ gridColumn: '1 / -1' }}>
                 <div className={fieldLabelCls} style={fieldLabel}>{t('settings.profile.minesec_code_label')}</div>
                 <input value={minesecSchoolCode} onChange={e => setMinesecSchoolCode(e.target.value)} className={fieldInputCls} style={fieldInput}
                   placeholder={t('settings.profile.minesec_code_placeholder')}
-                  onFocus={e => { e.currentTarget.style.borderColor = 'var(--green)'; e.currentTarget.style.background = 'var(--surface)' }}
+                  onFocus={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.background = 'var(--surface)' }}
                   onBlur={e => { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.background = 'var(--bg2)' }} />
                 <div className="text-[10.5px] md:text-[11.5px]" style={{ color: 'var(--text3)', marginTop: 5 }}>{t('settings.profile.minesec_code_hint')}</div>
               </div>
@@ -657,7 +657,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
                   className={fieldInputCls}
                   style={{ ...fieldInput, flex: 1, minWidth: 100 }}
                   placeholder={t('settings.profile.subdomain_placeholder')}
-                  onFocus={e => { e.currentTarget.style.borderColor = 'var(--green)'; e.currentTarget.style.background = 'var(--surface)' }}
+                  onFocus={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.background = 'var(--surface)' }}
                   onBlur={e => { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.background = 'var(--bg2)' }}
                 />
                 <span className="text-xs md:text-[13px]" style={{ color: 'var(--text3)', whiteSpace: 'nowrap', fontWeight: 600 }}>.zekoulabia.cm</span>
@@ -792,7 +792,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
                     onChange={e => setAuditActInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') { setAuditAction(auditActInput); setAuditPage(1) } }}
                     style={{ flex: 1, minWidth: 130, padding: '6px 10px', background: 'var(--bg2)', border: '1.5px solid var(--border2)', borderRadius: 8, color: 'var(--text)', fontSize: 12.5, fontFamily: 'inherit', fontWeight: 600, outline: 'none' }}
-                    onFocus={e => { e.currentTarget.style.borderColor = 'var(--green)'; e.currentTarget.style.background = 'var(--surface)' }}
+                    onFocus={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.background = 'var(--surface)' }}
                     onBlur={e => { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.background = 'var(--bg2)' }}
                   />
                   <input type="date" value={auditFrom} onChange={e => { setAuditFrom(e.target.value); setAuditPage(1) }}
@@ -1058,7 +1058,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
               onKeyDown={e => { if (e.key === 'Enter') { setActSearch(actSearchInput); setActPage(1) } }}
               className={fieldInputCls}
               style={{ flex: 1, background: 'var(--bg2)', border: '1.5px solid var(--border2)', borderRadius: 8, color: 'var(--text)', fontFamily: 'inherit', fontWeight: 600, outline: 'none', transition: 'all 0.15s' }}
-              onFocus={e => { e.currentTarget.style.borderColor = 'var(--green)'; e.currentTarget.style.background = 'var(--surface)' }}
+              onFocus={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.background = 'var(--surface)' }}
               onBlur={e => { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.background = 'var(--bg2)' }} />
             <button className={btnSecCls} style={{ ...btnSec, display: 'inline-flex', alignItems: 'center' }} onClick={() => { setActSearch(actSearchInput); setActPage(1) }}><Search size={13} strokeWidth={2} /></button>
           </div>
@@ -1166,7 +1166,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
               onKeyDown={e => { if (e.key === 'Enter') { setEmlSearch(emlSearchInput); setEmlPage(1) } }}
               className={fieldInputCls}
               style={{ flex: 1, minWidth: 180, background: 'var(--bg2)', border: '1.5px solid var(--border2)', borderRadius: 8, color: 'var(--text)', fontFamily: 'inherit', fontWeight: 600, outline: 'none', transition: 'all 0.15s' }}
-              onFocus={e => { e.currentTarget.style.borderColor = 'var(--green)'; e.currentTarget.style.background = 'var(--surface)' }}
+              onFocus={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.background = 'var(--surface)' }}
               onBlur={e => { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.background = 'var(--bg2)' }} />
             <select value={emlStatus} onChange={e => { setEmlStatus(e.target.value); setEmlPage(1) }}
               className={fieldSelectCls}
