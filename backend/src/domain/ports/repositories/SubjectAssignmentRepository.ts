@@ -20,7 +20,14 @@ export interface SubjectAssignmentRepository {
   createSubject(schoolId: string, data: {
     name: string; code: string; coefficient: number; hoursPerWeek: number;
   }): Promise<{ id: string }>;
-  upsertSubjectCoefficient(schoolId: string, subjectId: string, classLevel: string, serieCode: string | null, coefficient: number): Promise<void>;
+  upsertSubjectCoefficient(
+    schoolId: string,
+    subjectId: string,
+    classLevel: string,
+    serieCode: string | null,
+    coefficient: number,
+    weeklyPeriods?: number | null,
+  ): Promise<void>;
   findSubjectCoefficient(schoolId: string, subjectId: string, classLevel: string, serieCode: string | null): Promise<{ id: string } | null>;
   findSubjects(schoolId: string): Promise<{ id: string; name: string; coefficient: number }[]>;
   findAnySubjectCoefficient(schoolId: string, classLevel: string): Promise<{ id: string } | null>;

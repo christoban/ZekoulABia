@@ -815,14 +815,17 @@ model StaffPermission {
 }
 
 model SubjectCoefficient {
-  id          String  @id @default(cuid())
-  schoolId    String
-  subjectId   String
-  classLevel  String
-  serieCode   String?
-  coefficient Float
-  school      School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  subject     Subject @relation(fields: [subjectId], references: [id])
+  id             String  @id @default(cuid())
+  schoolId       String
+  subjectId      String
+  classLevel     String
+  serieCode      String?
+  coefficient    Float
+  // Volume horaire hebdomadaire officiel. Null pour les templates sans source fiable
+  // (ex. 2nd cycle francophone BacCoefficient n'en fournit pas).
+  weeklyPeriods  Int?
+  school         School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  subject        Subject @relation(fields: [subjectId], references: [id])
 
   @@unique([schoolId, subjectId, classLevel, serieCode])
   @@index([schoolId])

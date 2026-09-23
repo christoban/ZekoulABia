@@ -120,7 +120,7 @@ export async function assignerMatieresPourClasse(
       const entry = loadMap.get(nomMatiere);
       if (!entry) continue;
       const subjectId = await getOrCreateSubject(repo, schoolId, nomMatiere, entry.coefficient, subjectByName, subjectCountRef, entry.weeklyPeriods ?? 2);
-      await repo.upsertSubjectCoefficient(schoolId, subjectId, level, null, entry.coefficient);
+      await repo.upsertSubjectCoefficient(schoolId, subjectId, level, null, entry.coefficient, entry.weeklyPeriods);
     }
   }
 
@@ -132,7 +132,7 @@ export async function assignerMatieresPourClasse(
       const allSubjects = await repo.findSubjects(schoolId);
       for (const subj of allSubjects) {
         const subjectId = await getOrCreateSubject(repo, schoolId, subj.name, subj.coefficient, subjectByName, subjectCountRef);
-        await repo.upsertSubjectCoefficient(schoolId, subjectId, level, null, subj.coefficient);
+        await repo.upsertSubjectCoefficient(schoolId, subjectId, level, null, subj.coefficient, null);
       }
     }
   }
@@ -164,7 +164,7 @@ export async function assignerMatieresPourClasse(
       // Données officielles depuis CycleCoefficient (DB)
       for (const cc of cycleCoeffs) {
         const subjectId = await getOrCreateSubject(repo, schoolId, cc.subjectName, cc.coefficient, subjectByName, subjectCountRef, cc.weeklyPeriods ?? 2);
-        await repo.upsertSubjectCoefficient(schoolId, subjectId, level, filiere1er, cc.coefficient);
+        await repo.upsertSubjectCoefficient(schoolId, subjectId, level, filiere1er, cc.coefficient, cc.weeklyPeriods);
       }
     } else if (!isAnglophone && CYCLE1_FR_SUBJECTS[level]) {
       // Fallback : programme 1er cycle FR en dur (CycleCoefficient non encore seedé)
@@ -207,7 +207,7 @@ export async function assignerMatieresPourClasse(
 
     const subjectId = await getOrCreateSubject(repo, schoolId, subjectName, bc.coefficient, subjectByName, subjectCountRef);
     const effectiveSerieCode = seriePart === 'A4' ? serieRaw : seriePart;
-    await repo.upsertSubjectCoefficient(schoolId, subjectId, level, effectiveSerieCode, bc.coefficient);
+    await repo.upsertSubjectCoefficient(schoolId, subjectId, level, effectiveSerieCode, bc.coefficient, null);
   }
   // Pas de fallback ensureCoefficients() ici — évite la contamination cross-série
 }

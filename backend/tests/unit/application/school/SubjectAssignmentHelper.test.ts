@@ -12,7 +12,7 @@ function mockRepo() {
       subjCounter++;
       return { id: `subj-${subjCounter}` };
     },
-    upsertSubjectCoefficient: async (...args) => {
+    upsertSubjectCoefficient: async (...args: any[]) => {
       calls.push({ method: 'upsertSubjectCoefficient', args });
     },
     findSubjectCoefficient: async (...args) => {
@@ -126,6 +126,54 @@ describe('SubjectAssignmentHelper — PEBS filiere filtering', () => {
         expect(cycleCall!.args).toEqual(['PRIVE_FR', '5e', 'FR_GENERAL']);
       });
     });
+
+    describe('weeklyPeriods — câblage du volume horaire', () => {
+      it('copie weeklyPeriods depuis CycleCoefficient pour le 1er cycle', async () => {
+        const mock = mockRepo();
+        beforeEachTest(mock);
+        mock.repo.findCycleCoefficients = async () => [
+          { subjectName: 'Mathématiques', coefficient: 4, weeklyPeriods: 5 },
+        ];
+
+        await assignerMatieresPourClasse(
+          mock.repo,
+          { name: '6e A', level: '6e' },
+          SCHOOL_ID,
+          { niveaux1erCycle: ['6e'] },
+          false,
+          EMPTY_SUBJECT_MAP,
+          SUBJECT_COUNT_REF,
+          'LYCEE_FR',
+        );
+
+        const upsertCall = mock.calls.find(c => c.method === 'upsertSubjectCoefficient');
+        expect(upsertCall).toBeDefined();
+        expect(upsertCall!.args[5]).toBe(5);
+      });
+
+      it('laisse weeklyPeriods à null pour BacCoefficient (2nd cycle FR)', async () => {
+        const mock = mockRepo();
+        beforeEachTest(mock);
+        mock.repo.findBacCoefficients = async () => [
+          { subjectName: 'Mathématiques', coefficient: 4 },
+        ];
+
+        await assignerMatieresPourClasse(
+          mock.repo,
+          { name: 'Tle C A', level: 'Tle' },
+          SCHOOL_ID,
+          EMPTY_CONFIG,
+          false,
+          EMPTY_SUBJECT_MAP,
+          SUBJECT_COUNT_REF,
+          'LYCEE_FR',
+        );
+
+        const upsertCall = mock.calls.find(c => c.method === 'upsertSubjectCoefficient');
+        expect(upsertCall).toBeDefined();
+        expect(upsertCall!.args[5]).toBeNull();
+      });
+    });
   });
 
   describe('assignerMatieresPourClasse — Anglophone', () => {
@@ -152,6 +200,10 @@ describe('SubjectAssignmentHelper — PEBS filiere filtering', () => {
         const aslCall = mock.calls.find(c => c.method === 'findAnglophoneSubjectLoads');
         expect(aslCall).toBeDefined();
         expect(aslCall!.args).toEqual(['GHS_EN', 'Form1', 'EN_PEBS']);
+
+        const upsertCall = mock.calls.find(c => c.method === 'upsertSubjectCoefficient');
+        expect(upsertCall).toBeDefined();
+        expect(upsertCall!.args[5]).toBe(4);
       });
 
       it('filtre par filiere=EN_GENERAL quand la classe a filiere=EN_GENERAL', async () => {

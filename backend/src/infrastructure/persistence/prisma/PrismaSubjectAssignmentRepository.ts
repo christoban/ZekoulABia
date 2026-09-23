@@ -19,12 +19,20 @@ export class PrismaSubjectAssignmentRepository implements SubjectAssignmentRepos
     return { id: created.id };
   }
 
-  async upsertSubjectCoefficient(schoolId: string, subjectId: string, classLevel: string, serieCode: string | null, coefficient: number): Promise<void> {
+  async upsertSubjectCoefficient(
+    schoolId: string,
+    subjectId: string,
+    classLevel: string,
+    serieCode: string | null,
+    coefficient: number,
+    weeklyPeriods?: number | null,
+  ): Promise<void> {
+    const payload = { coefficient, weeklyPeriods };
     if (serieCode !== null) {
       await this.db.subjectCoefficient.upsert({
         where: { schoolId_subjectId_classLevel_serieCode: { schoolId, subjectId, classLevel, serieCode } },
-        update: { coefficient },
-        create: { schoolId, subjectId, classLevel, serieCode, coefficient },
+        update: payload,
+        create: { schoolId, subjectId, classLevel, serieCode, ...payload },
       });
       return;
     }
@@ -33,9 +41,9 @@ export class PrismaSubjectAssignmentRepository implements SubjectAssignmentRepos
       select: { id: true },
     });
     if (existing) {
-      await this.db.subjectCoefficient.update({ where: { id: existing.id }, data: { coefficient } });
+      await this.db.subjectCoefficient.update({ where: { id: existing.id }, data: payload });
     } else {
-      await this.db.subjectCoefficient.create({ data: { schoolId, subjectId, classLevel, serieCode: null, coefficient } });
+      await this.db.subjectCoefficient.create({ data: { schoolId, subjectId, classLevel, serieCode: null, ...payload } });
     }
   }
 
