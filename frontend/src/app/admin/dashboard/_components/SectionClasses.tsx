@@ -1070,7 +1070,7 @@ export default function SectionClasses({ onToast, onNav }: Props) {
                   {lv2Form.rows.map((row, i) => {
                     const currentSub = lv2Form.subjects.find(s => s.id === row.lv2SubjectId)
                     return (
-                      <div key={row.id} style={{ display: 'grid', gridTemplateColumns: '32px 1fr 200px', gap: 10, padding: '8px 14px', alignItems: 'center', borderBottom: i < lv2Form.rows.length - 1 ? '1px solid var(--bg2)' : 'none', background: lv2Form.bulkSelected.has(row.id) ? 'var(--blue-light)' : 'white' }}>
+                      <div key={row.id} style={{ display: 'grid', gridTemplateColumns: '32px 1fr 200px', gap: 10, padding: '8px 14px', alignItems: 'center', borderBottom: i < lv2Form.rows.length - 1 ? '1px solid var(--bg2)' : 'none', background: lv2Form.bulkSelected.has(row.id) ? 'var(--blue-light)' : 'var(--surface)' }}>
                         <div>
                           <input type="checkbox"
                             checked={lv2Form.bulkSelected.has(row.id)}
