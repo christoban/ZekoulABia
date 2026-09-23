@@ -33,6 +33,8 @@ export class PrismaEleveOnboardingRepository implements EleveOnboardingRepositor
         reminderDelayDays: data.reminderDelayDays ?? [3, 7],
         escalationDelayDays: data.escalationDelayDays ?? 10,
         responsableRole: (data.responsableRole ?? 'ADMIN') as any,
+        directAdmissionWithoutExam: data.directAdmissionWithoutExam ?? false,
+        capacityBufferPercent: data.capacityBufferPercent ?? 0,
       },
       update: data as any,
     });

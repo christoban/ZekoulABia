@@ -735,6 +735,7 @@
     },
     "admissions": {
       "title": "Politique d'admission et d'inscription",
+      "subtitle": "Choisissez les règles qui s'appliqueront aux inscriptions de votre établissement.",
       "directAdmission": "Admission directe sur dossier (sans concours obligatoire)",
       "directAdmissionDesc": "Permet d'inscrire directement un élève sur dossier sans exiger de notes de concours.",
       "selfService": "Portail d'auto-inscription en ligne pour les familles",

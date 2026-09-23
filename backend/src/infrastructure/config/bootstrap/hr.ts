@@ -61,7 +61,6 @@ import { StaffAttendanceController } from '@infrastructure/http/controllers/Staf
 import { creerStaffAttendanceRoutes } from '@infrastructure/http/routes/staffAttendance.routes';
 import { creerParentRoutes } from '@infrastructure/http/routes/parent.routes';
 import { creerSchoolSettingsRoutes } from '@infrastructure/http/routes/schoolSettings.routes';
-import { creerSchoolConfigRoutes } from '@infrastructure/http/routes/school-config.routes';
 import { creerActivitiesRoutes } from '@infrastructure/http/routes/activities.routes';
 import { creerDashboardRoutes } from '@infrastructure/http/routes/dashboard.routes';
 import { creerEmailLogRoutes } from '@infrastructure/http/routes/emailLog.routes';

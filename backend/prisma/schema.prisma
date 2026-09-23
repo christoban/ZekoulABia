@@ -4087,6 +4087,11 @@ model SchoolOnboardingSettings {
   responsableRole       UserRole            @default(ADMIN) // UserRole existant : ADMIN ou STAFF
   requireEntranceExam   Boolean             @default(false)
   admissionPolicy       String? // ex: SELECTIF, OUVERT, CONCOURS_OBLIGATOIRE
+
+  // Bug préexistant corrigé par migration 20260922100000 :
+  // ces champs étaient référencés par le TS mais absents du schéma.
+  directAdmissionWithoutExam Boolean          @default(false)
+  capacityBufferPercent      Int              @default(0)
 }
 
 // ─────────────────────────────────────────────────────────────────────────

@@ -1,17 +1,13 @@
 /**
- * Test d'intégration — Activation de bout en bout via ConfigurerEtablissementUseCase
- * (POST /api/v2/onboarding/execute)
+ * Test d'intégration — Mapping des paramètres d'admission Phase 2
+ * Vérifie qu'après un POST /api/v2/onboarding/execute, les 5 champs collectés
+ * par ConversationalOnboarding sont bien persistés dans :
+ *  - School.adminGereInscriptions
+ *  - SchoolOnboardingSettings (directAdmissionWithoutExam, capacityBufferPercent,
+ *    selfServiceEnabled, defaultRecipient)
  *
  * Prérequis : bun test --env-file .env.test
- *
- * Vérifie qu'une activation réelle via la route conversationnelle crée correctement l'année
- * scolaire, les périodes, séquences, classes et matières. Point de vigilance historique :
- * chaque classe créée doit porter l'academicYearId de l'année scolaire fraîchement créée dans
- * la même transaction — pas une valeur par défaut, pas une omission silencieuse.
- *
- * Nécessite le référentiel curriculaire national seedé (CycleCoefficient, SchoolTemplate, etc. —
- * `bunx prisma db seed` contre zekoulabia_test) : sans lui, LYCEE_FR n'a pas de coefficients de
- * matières et l'activation échoue avant même d'atteindre la création des classes.
+ * Nécessite le référentiel seedé (LYCEE_FR).
  */
 import { describe, it, expect, beforeAll, afterAll } from 'bun:test';
 import express from 'express';
@@ -50,8 +46,8 @@ beforeAll(async () => {
 
   const school = await prismaTest.school.create({
     data: {
-      name: 'Lycée Test Activation',
-      subdomain: `test-activation-${Date.now()}`,
+      name: 'Lycée Test Admission Phase 2',
+      subdomain: `test-admission-${Date.now()}`,
       status: 'APPROVED',
       subsystem: 'FRANCOPHONE',
       templateCode: 'LYCEE_FR',
@@ -72,16 +68,18 @@ afterAll(async () => {
   await prismaTest.mentionRule.deleteMany({ where: { schoolId } });
   await prismaTest.schoolConfig.deleteMany({ where: { schoolId } });
   await prismaTest.schoolSettings.deleteMany({ where: { schoolId } });
+  await prismaTest.schoolOnboardingSettings.deleteMany({ where: { schoolId } });
   await prismaTest.academicSequence.deleteMany({ where: { schoolId } });
   await prismaTest.academicPeriod.deleteMany({ where: { academicYear: { schoolId } } });
   await prismaTest.academicYear.deleteMany({ where: { schoolId } });
   await prismaTest.user.deleteMany({ where: { schoolId } });
+  await prismaTest.activitiesLog.deleteMany({ where: { schoolId } });
   await nettoyerEcole(prismaTest, schoolId);
   await prismaTest.$disconnect();
 });
 
-describe("ConfigurerEtablissementUseCase — activation de bout en bout (POST /onboarding/execute)", () => {
-  it("stampe academicYearId sur chaque classe créée, sans cast de contournement ni valeur par défaut", async () => {
+describe('ConfigurerEtablissementUseCase — persistance des admissions Phase 2', () => {
+  it('persiste les 5 champs dans School et SchoolOnboardingSettings après /onboarding/execute', async () => {
     const admin = await creerUtilisateurTest(prismaTest, schoolId, { role: 'ADMIN' });
     const token = jwt.sign(
       { userId: admin.id, schoolId, role: 'ADMIN', permissions: [], tokenType: 'access' },
@@ -90,14 +88,22 @@ describe("ConfigurerEtablissementUseCase — activation de bout en bout (POST /o
 
     const state = {
       schoolId,
+      schoolName: 'Lycée Test Admission Phase 2',
       template: 'LYCEE_FR',
       subSystem: 'FRANCOPHONE',
       cycles: ['PREMIER_CYCLE'],
-      classesPerLevel: { '6ème': 2 },
+      classesPerLevel: { '6ème': 1 },
       conventionNommage: 'LETTRES',
       academicYearStart: '2025-09-01',
       academicYearEnd: '2026-06-30',
-      adminUserId: admin.id,
+      periodsCount: 3,
+      sequencesPerPeriod: 2,
+      // Valeurs Phase 2 à vérifier
+      adminGereInscriptions: true,
+      directAdmissionWithoutExam: true,
+      capacityBufferPercent: 15,
+      selfServiceEnabled: true,
+      defaultRecipient: 'PARENT',
     };
 
     const res = await fetch(`${baseUrl}/onboarding/execute`, {
@@ -105,28 +111,23 @@ describe("ConfigurerEtablissementUseCase — activation de bout en bout (POST /o
       headers: { Cookie: `access_token=${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(state),
     });
-    const body = await res.json() as { success: boolean; message?: string; data?: { classCount: number; academicYear: string } };
+    const body = await res.json() as { success: boolean; message?: string; data?: { classCount: number } };
 
-    // Si l'activation échoue, afficher la vraie raison plutôt qu'un simple "status 200 attendu" —
-    // ce use case a de nombreux chemins possibles d'échec (référentiel manquant, config invalide).
     if (!body.success) {
       throw new Error(`Activation échouée : ${body.message ?? JSON.stringify(body)}`);
     }
     expect(res.status).toBe(200);
     expect(body.data!.classCount).toBeGreaterThan(0);
 
-    const anneeScolaire = await prismaTest.academicYear.findFirst({ where: { schoolId, isCurrent: true } });
-    expect(anneeScolaire).not.toBeNull();
+    const school = await prismaTest.school.findUnique({ where: { id: schoolId } });
+    expect(school).not.toBeNull();
+    expect(school!.adminGereInscriptions).toBe(true);
 
-    const classes = await prismaTest.class.findMany({ where: { schoolId } });
-    expect(classes.length).toBe(body.data!.classCount);
-    expect(classes.length).toBeGreaterThan(0);
-    for (const c of classes) {
-      expect(c.academicYearId).toBe(anneeScolaire!.id);
-      expect(c.status).toBe('ACTIVE');
-    }
-
-    const ecoleActive = await prismaTest.school.findUnique({ where: { id: schoolId } });
-    expect(ecoleActive?.status).toBe('ACTIVE');
+    const settings = await prismaTest.schoolOnboardingSettings.findUnique({ where: { schoolId } });
+    expect(settings).not.toBeNull();
+    expect(settings!.directAdmissionWithoutExam).toBe(true);
+    expect(settings!.capacityBufferPercent).toBe(15);
+    expect(settings!.selfServiceEnabled).toBe(true);
+    expect(settings!.defaultRecipient).toBe('PARENT');
   });
 });

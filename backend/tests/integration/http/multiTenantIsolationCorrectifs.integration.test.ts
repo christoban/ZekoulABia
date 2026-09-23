@@ -10,7 +10,7 @@
  *   2.4  PATCH /examens/:id/set-candidate-number
  *   2.4  PATCH /examens/:id/result
  *   2.5  PATCH /academic-years/periods/:id/set-current   (non couvrable en unitaire)
- *   2.6  POST  /schools/:id/activate
+ *   2.6  POST  /onboarding/execute
  *   2.7  GET   /matricules/import-jobs/:id
  *
  * Le point clé de méthode : l'appelant est un ADMIN parfaitement légitime dans SON école. Un test
@@ -221,9 +221,14 @@ describe('Isolation multi-tenant — correctifs de la cartographie (admin légit
   it("2.6 — activer l'établissement de l'école B est refusé", async () => {
     const statutAvant = (await prismaTest.school.findUnique({ where: { id: schoolB.id } }))?.status;
 
-    const res = await fetch(`${baseUrl}/schools/${schoolB.id}/activate`, {
+    const res = await fetch(`${baseUrl}/onboarding/execute`, {
       method: 'POST',
       headers: authHeaders(tokenA),
+      body: JSON.stringify({
+        schoolId: schoolB.id,
+        template: 'LYCEE_FR',
+        cycles: ['PREMIER_CYCLE'],
+      }),
     });
     expect(res.status).toBe(403);
 

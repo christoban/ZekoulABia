@@ -735,6 +735,7 @@
     },
     "admissions": {
       "title": "Admissions & Enrollment Policy",
+      "subtitle": "Choose the rules that will apply to your school's enrollments.",
       "directAdmission": "Direct admission on file (without mandatory entrance exam)",
       "directAdmissionDesc": "Enables direct student admission without requiring entrance exam scores.",
       "selfService": "Online self-service portal for families",

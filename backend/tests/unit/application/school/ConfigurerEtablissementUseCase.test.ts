@@ -13,6 +13,31 @@ class FakeActiverEtablissement {
   }
 }
 
+class FakeEleveOnboardingRepository {
+  settings: Record<string, Record<string, unknown>> = {};
+  async upsertSettings(schoolId: string, data: unknown) {
+    this.settings[schoolId] = { ...(this.settings[schoolId] ?? {}), ...(data as Record<string, unknown>) };
+    return this.settings[schoolId] as any;
+  }
+}
+
+class FakeChangerGestionAdmin {
+  calls: unknown[] = [];
+  async execute(cmd: unknown) {
+    this.calls.push(cmd);
+    return { success: true, adminGereInscriptions: (cmd as { actif: boolean }).actif };
+  }
+}
+
+function makeUseCase(repo: InMemorySchoolActivationRepository, activator: FakeActiverEtablissement) {
+  return new ConfigurerEtablissementUseCase(
+    repo as never,
+    activator as never,
+    new FakeEleveOnboardingRepository() as never,
+    new FakeChangerGestionAdmin() as never,
+  );
+}
+
 function makeSchool(overrides: Partial<SchoolActivationData> = {}): SchoolActivationData {
   return {
     id: overrides.id ?? 's1',
@@ -39,6 +64,7 @@ function baseState(overrides: Partial<OnboardingState> = {}): OnboardingState {
     academicYearEnd: '2027-06-30',
     periodsCount: 3,
     sequencesPerPeriod: 3,
+    adminUserId: 'admin-1',
     ...overrides,
   };
 }
@@ -47,14 +73,14 @@ describe('ConfigurerEtablissementUseCase', () => {
   it('schoolId manquant → erreur', async () => {
     const repo = new InMemorySchoolActivationRepository();
     const activator = new FakeActiverEtablissement();
-    const uc = new ConfigurerEtablissementUseCase(repo as never, activator as never);
-    await expect(uc.execute({ schoolId: '' })).rejects.toThrow('schoolId requis');
+    const uc = makeUseCase(repo, activator);
+    await expect(uc.execute({ schoolId: '', adminUserId: '' })).rejects.toThrow('schoolId requis');
   });
 
   it('école introuvable → erreur', async () => {
     const repo = new InMemorySchoolActivationRepository();
     const activator = new FakeActiverEtablissement();
-    const uc = new ConfigurerEtablissementUseCase(repo as never, activator as never);
+    const uc = makeUseCase(repo, activator);
     await expect(uc.execute(baseState({ schoolId: 'nonexistent' }))).rejects.toThrow('École introuvable');
   });
 
@@ -62,7 +88,7 @@ describe('ConfigurerEtablissementUseCase', () => {
     const repo = new InMemorySchoolActivationRepository();
     repo.schools.set('s1', makeSchool({ status: 'ACTIVE' }));
     const activator = new FakeActiverEtablissement();
-    const uc = new ConfigurerEtablissementUseCase(repo as never, activator as never);
+    const uc = makeUseCase(repo, activator);
     await expect(uc.execute(baseState())).rejects.toThrow('déjà configuré et actif');
   });
 
@@ -70,7 +96,7 @@ describe('ConfigurerEtablissementUseCase', () => {
     const repo = new InMemorySchoolActivationRepository();
     repo.schools.set('s1', makeSchool({ status: 'DRAFT' }));
     const activator = new FakeActiverEtablissement();
-    const uc = new ConfigurerEtablissementUseCase(repo as never, activator as never);
+    const uc = makeUseCase(repo, activator);
     await expect(uc.execute(baseState())).rejects.toThrow('doit être approuvé');
   });
 
@@ -78,7 +104,7 @@ describe('ConfigurerEtablissementUseCase', () => {
     const repo = new InMemorySchoolActivationRepository();
     repo.schools.set('s1', makeSchool({ status: 'APPROVED' }));
     const activator = new FakeActiverEtablissement();
-    const uc = new ConfigurerEtablissementUseCase(repo as never, activator as never);
+    const uc = makeUseCase(repo, activator);
     const result = await uc.execute(baseState());
     expect(activator.calls).toEqual(['s1']);
     expect(result.schoolId).toBe('s1');
@@ -90,10 +116,38 @@ describe('ConfigurerEtablissementUseCase', () => {
     const repo = new InMemorySchoolActivationRepository();
     repo.schools.set('s1', makeSchool({ status: 'APPROVED', onboardingConfig: { existingKey: 'preserved' } }));
     const activator = new FakeActiverEtablissement();
-    const uc = new ConfigurerEtablissementUseCase(repo as never, activator as never);
+    const uc = makeUseCase(repo, activator);
     await uc.execute(baseState());
     const updated = repo.schools.get('s1');
     expect((updated?.onboardingConfig as Record<string, unknown>)?.existingKey).toBe('preserved');
+  });
+
+  it('persiste les paramètres d\'admission Phase 2', async () => {
+    const repo = new InMemorySchoolActivationRepository();
+    repo.schools.set('s1', makeSchool({ status: 'APPROVED' }));
+    const activator = new FakeActiverEtablissement();
+    const onboardingRepo = new FakeEleveOnboardingRepository();
+    const changerGestion = new FakeChangerGestionAdmin();
+    const uc = new ConfigurerEtablissementUseCase(
+      repo as never,
+      activator as never,
+      onboardingRepo as never,
+      changerGestion as never,
+    );
+    await uc.execute(baseState({
+      adminGereInscriptions: true,
+      directAdmissionWithoutExam: true,
+      capacityBufferPercent: 10,
+      selfServiceEnabled: true,
+      defaultRecipient: 'PARENT',
+    }));
+    expect(changerGestion.calls).toEqual([{ schoolId: 's1', adminUserId: 'admin-1', actif: true }]);
+    expect(onboardingRepo.settings['s1']).toEqual({
+      directAdmissionWithoutExam: true,
+      capacityBufferPercent: 10,
+      selfServiceEnabled: true,
+      defaultRecipient: 'PARENT',
+    });
   });
 });
 

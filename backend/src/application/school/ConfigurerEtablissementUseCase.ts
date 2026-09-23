@@ -11,6 +11,8 @@
  * généré par le LLM.
  */
 import type { SchoolActivationRepository } from '@domain/ports/repositories/SchoolActivationRepository';
+import type { EleveOnboardingRepository } from '@domain/ports/repositories/EleveOnboardingRepository';
+import { ChangerGestionInscriptionsAdminUseCase } from '@application/eleveOnboarding/ChangerGestionInscriptionsAdminUseCase';
 import { ActiverEtablissementUseCase } from './ActiverEtablissementUseCase';
 import { findTemplateInCatalog } from './templateCatalog';
 
@@ -73,6 +75,14 @@ export interface OnboardingState {
   hasTransport?: boolean;
   hasLibrary?: boolean;
   hasBoarding?: boolean;
+
+  // Admissions & inscriptions (pré-remplissage initial — modifiable ensuite dans SectionAdmissions)
+  adminUserId: string;
+  adminGereInscriptions?: boolean;
+  directAdmissionWithoutExam?: boolean;
+  capacityBufferPercent?: number;
+  selfServiceEnabled?: boolean;
+  defaultRecipient?: 'ELEVE' | 'PARENT' | 'LES_DEUX';
 }
 
 export interface ConfigurerEtablissementResultat {
@@ -113,6 +123,8 @@ export class ConfigurerEtablissementUseCase {
   constructor(
     private readonly schoolActivationRepository: SchoolActivationRepository,
     private readonly activerEtablissement: ActiverEtablissementUseCase,
+    private readonly eleveOnboardingRepository: EleveOnboardingRepository,
+    private readonly changerGestionAdmin: ChangerGestionInscriptionsAdminUseCase,
   ) {}
 
   /** Traduit l'OnboardingState vers le format onboardingConfig historique. */
@@ -223,6 +235,20 @@ export class ConfigurerEtablissementUseCase {
     await this.schoolActivationRepository.mettreAJourOnboardingConfig(state.schoolId, {
       onboardingConfig: mergedConfig,
       ...(state.template ? { templateCode: state.template } : {}),
+    });
+
+    // Pré-remplir les paramètres d'admission/inscription dans leurs sources de vérité
+    // (modifiables ensuite dans SectionAdmissions sans lien avec l'onboarding)
+    await this.changerGestionAdmin.execute({
+      schoolId: state.schoolId,
+      adminUserId: state.adminUserId,
+      actif: state.adminGereInscriptions ?? false,
+    });
+    await this.eleveOnboardingRepository.upsertSettings(state.schoolId, {
+      directAdmissionWithoutExam: state.directAdmissionWithoutExam ?? false,
+      capacityBufferPercent: state.capacityBufferPercent ?? 0,
+      selfServiceEnabled: state.selfServiceEnabled ?? false,
+      defaultRecipient: state.defaultRecipient ?? 'ELEVE',
     });
 
     // Déléguer la construction atomique au moteur déterministe existant

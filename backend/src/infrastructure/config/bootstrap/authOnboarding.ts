@@ -15,7 +15,6 @@ import { ConfigurerEtablissementUseCase } from '@application/school/ConfigurerEt
 import { ListerTemplatesCatalogUseCase } from '@application/school/ListerTemplatesCatalogUseCase';
 import { creerParentRoutes } from '@infrastructure/http/routes/parent.routes';
 import { creerSchoolSettingsRoutes } from '@infrastructure/http/routes/schoolSettings.routes';
-import { creerSchoolConfigRoutes } from '@infrastructure/http/routes/school-config.routes';
 import { requireAuth, requireRole } from '../../http/middlewares/auth';
 
 type Container = ReturnType<typeof creerContainer>;
@@ -55,7 +54,6 @@ export function registerAuthOnboardingRoutes(app: Application, prismaParam: type
   // ── Activation de l'établissement (Admin, après configuration) ─────
   const schoolActivationRepository = new PrismaSchoolActivationRepository(p);
   const activerEtablissementUseCase = new ActiverEtablissementUseCase(schoolActivationRepository);
-  app.use('/api/v2', creerSchoolConfigRoutes(activerEtablissementUseCase));
 
   // ── Catalogue templates (public, lecture seule) ──
   const listerTemplatesCatalogUseCase = new ListerTemplatesCatalogUseCase();
@@ -65,12 +63,23 @@ export function registerAuthOnboardingRoutes(app: Application, prismaParam: type
   });
 
   // ── Onboarding conversationnel Phase 2 : exécution déterministe ────
-  const configurerEtablissementUseCase = new ConfigurerEtablissementUseCase(schoolActivationRepository, activerEtablissementUseCase);
+  const configurerEtablissementUseCase = new ConfigurerEtablissementUseCase(
+    schoolActivationRepository,
+    activerEtablissementUseCase,
+    c.eleveOnboarding.repository,
+    c.eleveOnboarding.changerGestionAdmin,
+  );
   const onboardingPEBSController = new OnboardingPEBSController();
   app.post('/api/v2/onboarding/execute', requireAuth, requireRole('ADMIN'), async (req, res, next) => {
     try {
       const schoolId = req.user!.schoolId; // schoolId forcé depuis la session (sécurité)
-      const state = { ...(req.body ?? {}), schoolId };
+      const bodySchoolId = (req.body ?? {}).schoolId;
+      // Garantie d'isolation multi-tenant : refuser explicitement si le body tente de cibler une autre école.
+      if (bodySchoolId && bodySchoolId !== schoolId) {
+        res.status(403).json({ success: false, message: 'Accès refusé' });
+        return;
+      }
+      const state = { ...(req.body ?? {}), schoolId, adminUserId: req.user!.userId };
       const result = await configurerEtablissementUseCase.execute(state);
       res.json({ success: true, data: result });
     } catch (error) {
