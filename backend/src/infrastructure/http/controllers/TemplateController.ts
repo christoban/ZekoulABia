@@ -133,12 +133,12 @@ export class TemplateController {
 
       const wb = XLSX.utils.book_new();
 
-      const headers = ['nom', 'prenom', 'email', 'telephone', 'matieres', 'classe_principale'];
+      const headers = ['nom', 'prenom', 'email', 'telephone', 'matieres'];
       const ws = XLSX.utils.aoa_to_sheet([
         headers,
-        ['NGONO', 'Jean', 'jean.ngono@lycee.cm', '+237690000001', 'Mathématiques,Physique', '6e A'],
-        ['ESSOMBA', 'Marie', 'marie.essomba@lycee.cm', '', 'Français,Histoire-Géographie', ''],
-        ['BELA', 'Paul', 'paul.bela@lycee.cm', '+237690000003', 'SVTEEHB', ''],
+        ['NGONO', 'Jean', 'jean.ngono@lycee.cm', '+237690000001', 'Mathématiques,Physique'],
+        ['ESSOMBA', 'Marie', 'marie.essomba@lycee.cm', '', 'Français,Histoire-Géographie'],
+        ['BELA', 'Paul', 'paul.bela@lycee.cm', '+237690000003', 'SVTEEHB'],
       ]);
 
       ws['!cols'] = headers.map((_, i) => ({ wch: i >= 5 ? 26 : 22 }));
@@ -149,7 +149,7 @@ export class TemplateController {
         ['INSTRUCTIONS — Import des enseignants'],
         [''],
         ['Colonnes obligatoires : nom, prenom, email'],
-        ['Colonnes optionnelles : telephone, matieres, classe_principale'],
+        ['Colonnes optionnelles : telephone, matieres'],
         [''],
         ['Email : obligatoire — l\'enseignant recevra son invitation par email'],
         ['Format téléphone : +237XXXXXXXXX (9 chiffres après +237)'],
@@ -158,14 +158,7 @@ export class TemplateController {
         ['  Séparez les matières par des virgules'],
         ['  Exemple : "Mathématiques,Physique,SVTEEHB"'],
         [''],
-        ['Colonnes optionnelles avancées :'],
-        [''],
-        ['  classe_principale :'],
-        ['    Désigne cet enseignant comme Professeur Principal d\'une classe.'],
-        ['    Indiquez le nom exact de la classe (ex: "6e A").'],
-        ['    Une seule personne peut être PP par classe.'],
-        [''],
-
+       
         ['Matières disponibles dans votre établissement :'],
         ...subjectNames.map(s => [`  • ${s}`]),
         [''],

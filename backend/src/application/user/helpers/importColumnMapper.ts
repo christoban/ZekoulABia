@@ -83,7 +83,7 @@ const FIELD_DEFINITIONS: FieldDefinition[] = [
   {
     targetField: 'classePrincipale',
     aliases: ['classe_principale', 'classe_pp', 'main_class', 'professeur_principal_de', 'pp_class'],
-    requiredFor: ['TEACHER'],
+    requiredFor: [],
   },
   {
     targetField: 'departementAp',
