@@ -120,37 +120,44 @@ export default function SectionOrgPedagogyHub({ onNav, onToast }: Props) {
       accentColor: 'var(--amber)',
       badgeBg: 'var(--amber-light)',
       statusBadge: 'Alertes Retard',
-      statusColor: '#d97706',
+       statusColor: 'var(--amber)',
+
     },
     {
       id: 'subjects' as AdminSection,
       title: 'Matières & Coefficients',
       desc: 'Volumes horaires et groupes de matières — Piloté par l’Animateur Pédagogique',
       icon: BookOpen,
-      accentColor: '#6366f1',
-      badgeBg: 'rgba(99,102,241,0.12)',
+       accentColor: 'var(--purple)',
+       badgeBg: 'var(--purple-light)',
+
       statusBadge: 'Coefficients & Groupes',
-      statusColor: '#4f46e5',
+       statusColor: 'var(--purple)',
+
     },
     {
       id: 'timetable' as AdminSection,
       title: 'Emplois du temps',
       desc: 'Créneaux, salles et séances de cours — Piloté par le Censeur',
       icon: Calendar,
-      accentColor: '#0284c7',
-      badgeBg: 'rgba(2,132,199,0.12)',
+       accentColor: 'var(--blue)',
+       badgeBg: 'var(--blue-light)',
+
       statusBadge: 'Publication EDT',
-      statusColor: '#0284c7',
+       statusColor: 'var(--blue)',
+
     },
     {
       id: 'eleve-onboarding' as AdminSection,
       title: 'Onboarding & Inscriptions',
       desc: 'Dossiers d’admissions et matricules élèves — Piloté par le Secrétaire',
       icon: UserPlus,
-      accentColor: '#ec4899',
-      badgeBg: 'rgba(236,72,153,0.12)',
+       accentColor: 'var(--red)',
+       badgeBg: 'var(--red-light)',
+
       statusBadge: 'Dossiers Admissions',
-      statusColor: '#db2777',
+       statusColor: 'var(--red)',
+
     },
     {
       id: 'users' as AdminSection,

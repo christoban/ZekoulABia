@@ -236,17 +236,17 @@ export default function SectionElevesAffectationsStaff({ onToast }: Props) {
       {/* Modal de transfert */}
       {transferTarget && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ background: '#18181b', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 20, width: '100%', maxWidth: 400 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 12px 0', color: '#fff' }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20, width: '100%', maxWidth: 400 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 12px 0', color: 'var(--text)' }}>
               Transfert d'élève
             </h2>
-            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 16 }}>
+            <p style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 16 }}>
               Transférer <strong>{transferTarget.name || `${transferTarget.firstName || ''} ${transferTarget.lastName || ''}`}</strong> vers une autre classe :
             </p>
 
             <form onSubmit={handleTransfer} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text2)', marginBottom: 4 }}>
                   Classe de destination *
                 </label>
                 <select
@@ -257,16 +257,18 @@ export default function SectionElevesAffectationsStaff({ onToast }: Props) {
                     width: '100%',
                     padding: '8px 10px',
                     borderRadius: 6,
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    color: '#fff',
+                     background: 'var(--bg2)',
+                     border: '1px solid var(--border2)',
+                     color: 'var(--text)',
+
                     fontSize: 12,
                   }}
                 >
                   {classes
                     .filter(c => c.id !== selectedClassId)
                     .map(c => (
-                      <option key={c.id} value={c.id} style={{ background: '#18181b', color: '#fff' }}>
+                       <option key={c.id} value={c.id} style={{ background: 'var(--surface)', color: 'var(--text)' }}>
+
                         {c.name} {c.level ? `(${c.level})` : ''}
                       </option>
                     ))}
@@ -277,7 +279,8 @@ export default function SectionElevesAffectationsStaff({ onToast }: Props) {
                 <button
                   type="button"
                   onClick={() => setTransferTarget(null)}
-                  style={{ padding: '6px 12px', borderRadius: 6, background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontSize: 12, cursor: 'pointer' }}
+                   style={{ padding: '6px 12px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text)', fontSize: 12, cursor: 'pointer' }}
+
                 >
                   Annuler
                 </button>

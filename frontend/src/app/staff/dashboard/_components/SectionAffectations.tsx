@@ -304,7 +304,7 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
                     const isSaving = saving === row.subjectId
                     const unassigned = row.currentTeacherId === null
                     return (
-                      <tr key={row.subjectId} style={{ borderBottom: '1px solid var(--bg2)', background: unassigned ? 'var(--amber-light)' : 'white' }}>
+                      <tr key={row.subjectId} style={{ borderBottom: '1px solid var(--bg2)', background: unassigned ? 'var(--amber-light)' : 'var(--surface)' }}>
                         <td style={{ padding: '8px 12px', fontSize: 12.5, fontWeight: 600, color: 'var(--text)' }}>
                           {unassigned && <span style={{ marginRight: 5, display: 'inline-flex' }}><AlertTriangle size={13} strokeWidth={2} /></span>}
                           {row.subjectName}
@@ -321,7 +321,7 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
                               fontSize: 12,
                               opacity: isSaving ? 0.6 : 1,
                               borderColor: unassigned ? 'var(--amber-light)' : 'var(--border)',
-                              background: unassigned ? 'var(--amber-light)' : 'white',
+                              background: unassigned ? 'var(--amber-light)' : 'var(--surface)',
                             }}
                             value={row.currentTeacherId ?? ''}
                             disabled={isSaving}

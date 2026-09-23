@@ -228,7 +228,8 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
       {/* RACI 2-Step Validation Banner */}
       <div className="mb-3.5 p-2.5 rounded-lg border border-purple-500/20 bg-purple-500/5 text-xs text-[var(--text)] flex items-center justify-between gap-2.5 shadow-xs">
         <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-md bg-purple-500/15 text-purple-600 flex-shrink-0">
+           <div className="p-1.5 rounded-md bg-purple-500/15 text-purple-600 dark:text-purple-300 flex-shrink-0">
+
             <FileText size={14} />
           </div>
           <div>

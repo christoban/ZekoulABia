@@ -1129,7 +1129,8 @@ export default function SectionUsers({ onToast, onNav }: Props) {
                 ? 'rgba(59,130,246,0.15)'
                 : 'rgba(16,185,129,0.15)',
               color: (ROLE_TABS[activeTab]?.role === 'STUDENT' || ROLE_TABS[activeTab]?.role === 'PARENT')
-                ? '#2563eb'
+                 ? 'var(--blue)'
+
                 : 'var(--primary)',
             }}
           >
@@ -1180,7 +1181,7 @@ export default function SectionUsers({ onToast, onNav }: Props) {
           const cnt = i === 0 ? totalAll : (counts[tab.role] ?? 0)
           return (
             <button key={i} onClick={() => setActiveTab(i)}
-              style={{ padding: '6px 14px', borderRadius: 7, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: 'none', display: 'flex', alignItems: 'center', gap: 5, background: activeTab === i ? 'white' : 'transparent', color: activeTab === i ? 'var(--text)' : 'var(--text3)', boxShadow: activeTab === i ? '0 1px 3px rgba(0,0,0,0.06)' : 'none', transition: 'all 0.12s', whiteSpace: 'nowrap' }}>
+              style={{ padding: '6px 14px', borderRadius: 7, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: 'none', display: 'flex', alignItems: 'center', gap: 5, background: activeTab === i ? 'var(--surface)' : 'transparent', color: activeTab === i ? 'var(--text)' : 'var(--text3)', boxShadow: activeTab === i ? '0 1px 3px rgba(0,0,0,0.06)' : 'none', transition: 'all 0.12s', whiteSpace: 'nowrap' }}>
               {tab.label}
               <span style={{ fontSize: 11, padding: '1.5px 6px', borderRadius: 6, background: activeTab === i ? 'var(--green-light)' : 'var(--border)', color: activeTab === i ? 'var(--green2)' : 'var(--text3)', fontWeight: 800 }}>{cnt}</span>
             </button>

@@ -115,7 +115,7 @@ export default function SectionParentGrades({ onToast, userId }: Props) {
         <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
           {children.map((c, i) => (
             <button key={c.studentId} onClick={() => setSelectedChild(i)}
-              style={{ padding: '6px 12px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: '1.5px solid', transition: 'all 0.12s', background: selectedChild === i ? 'var(--green-light)' : 'white', borderColor: selectedChild === i ? 'var(--green)' : 'var(--border2)', color: selectedChild === i ? 'var(--green)' : 'var(--text2)' }}>
+              style={{ padding: '6px 12px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: '1.5px solid', transition: 'all 0.12s', background: selectedChild === i ? 'var(--green-light)' : 'var(--surface)', borderColor: selectedChild === i ? 'var(--green)' : 'var(--border2)', color: selectedChild === i ? 'var(--green)' : 'var(--text2)' }}>
               {c.prenom} {c.nom}
             </button>
           ))}
@@ -156,7 +156,8 @@ export default function SectionParentGrades({ onToast, userId }: Props) {
                       <td style={tdSt}>
                         <button
                           title={!isOnline ? t('grades.downloadUnavailable') : undefined}
-                          style={{ padding: '5px 10px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: isOnline ? 'white' : 'var(--bg2)', color: isOnline ? 'var(--green)' : 'var(--text3)', border: `1.5px solid ${isOnline ? 'var(--green)' : 'var(--border2)'}`, cursor: isOnline ? 'pointer' : 'not-allowed', fontFamily: 'inherit', opacity: downloading === b.id ? 0.6 : 1, display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                           style={{ padding: '5px 10px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: isOnline ? 'var(--surface)' : 'var(--bg2)', color: isOnline ? 'var(--green)' : 'var(--text3)', border: `1.5px solid ${isOnline ? 'var(--green)' : 'var(--border2)'}`, cursor: isOnline ? 'pointer' : 'not-allowed', fontFamily: 'inherit', opacity: downloading === b.id ? 0.6 : 1, display: 'inline-flex', alignItems: 'center', gap: 5 }}
+
                           onClick={() => downloadPdf(b.id, b.academicPeriod?.name || 'bulletin')}
                           disabled={downloading === b.id || !isOnline}>
                           {downloading === b.id ? <><Loader2 size={13} strokeWidth={2} className="animate-spin" /> {t('grades.downloading')}</> : isOnline ? <><Download size={13} strokeWidth={2} /> {t('grades.downloadPdf')}</> : <WifiOff size={13} strokeWidth={2} />}

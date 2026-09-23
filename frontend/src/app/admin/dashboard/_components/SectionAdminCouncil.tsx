@@ -143,7 +143,7 @@ export default function SectionAdminCouncil({ onToast, onNav }: Props) {
       {/* RACI Solemn Presidency Governance Notice */}
       <div className="mb-3 p-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 text-xs text-[var(--text)] flex items-center justify-between gap-2.5 shadow-xs">
         <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-md bg-amber-500/15 text-amber-600 flex-shrink-0">
+          <div className="p-1.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-300 flex-shrink-0">
             <GraduationCap size={14} />
           </div>
           <div>

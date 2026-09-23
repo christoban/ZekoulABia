@@ -211,7 +211,8 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
       {/* Explicative Banner */}
       <div className="mb-3.5 p-2.5 md:p-3 rounded-lg border border-purple-500/20 bg-purple-500/5 text-xs text-[var(--text)] flex items-center justify-between gap-2.5 shadow-xs">
         <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-md bg-purple-500/15 text-purple-600 flex-shrink-0">
+           <div className="p-1.5 rounded-md bg-purple-500/15 text-purple-600 dark:text-purple-300 flex-shrink-0">
+
             <CalendarClock size={15} />
           </div>
           <div>
@@ -283,7 +284,8 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
             style={{ background: 'var(--surface)', textAlign: 'center' }}
           >
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
-              <CalendarClock size={36} className="text-purple-600" />
+               <CalendarClock size={36} className="text-purple-600 dark:text-purple-300" />
+
             </div>
             <div className="text-sm md:text-base font-bold text-[var(--text)] mb-1">
               {t('academicEvents.emptyTitle')}
@@ -296,14 +298,16 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
           {/* Suggestions Cards */}
           <div className="rounded-xl border border-[var(--border)] p-4 md:p-5" style={{ background: 'var(--surface)' }}>
             <h3 className="font-bold text-xs md:text-sm text-[var(--text)] mb-3 flex items-center gap-2">
-              <Sparkles size={16} className="text-purple-600" /> {t('academicEvents.suggestionsTitle')}
+               <Sparkles size={16} className="text-purple-600 dark:text-purple-300" /> {t('academicEvents.suggestionsTitle')}
+
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {/* Suggestion 1: Concours 6e */}
               <div className="p-3.5 rounded-xl border border-purple-500/20 bg-purple-500/5 flex flex-col justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2 mb-1.5">
-                    <div className="p-1.5 rounded-lg bg-purple-500/15 text-purple-600">
+                     <div className="p-1.5 rounded-lg bg-purple-500/15 text-purple-600 dark:text-purple-300">
+
                       <GraduationCap size={16} />
                     </div>
                     <span className="font-bold text-xs text-[var(--text)]">
@@ -326,7 +330,7 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
               <div className="p-3.5 rounded-xl border border-blue-500/20 bg-blue-500/5 flex flex-col justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2 mb-1.5">
-                    <div className="p-1.5 rounded-lg bg-blue-500/15 text-blue-600">
+                    <div className="p-1.5 rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-300">
                       <BookOpen size={16} />
                     </div>
                     <span className="font-bold text-xs text-[var(--text)]">
@@ -476,7 +480,7 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
                   <button
                     onClick={() => cloturer(ev.id)}
                     disabled={closingId === ev.id}
-                    className="text-xs md:text-[12px] px-2.5 py-1.5 rounded-lg font-bold border border-red-500/30 text-red-600 hover:bg-red-500/10 flex items-center gap-1 transition-colors"
+                    className="text-xs md:text-[12px] px-2.5 py-1.5 rounded-lg font-bold border border-red-500/30 text-red-600 dark:text-red-300 hover:bg-red-500/10 flex items-center gap-1 transition-colors"
                   >
                     {closingId === ev.id ? (
                       <Loader2 size={13} className="animate-spin" />

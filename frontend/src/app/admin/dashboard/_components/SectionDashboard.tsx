@@ -160,10 +160,10 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
           <div className="mb-4 p-4 rounded-xl border border-[var(--border)]" style={{ background: 'var(--surface)' }}>
             <div className="flex items-center justify-between mb-3 pb-2 border-b border-[var(--border)]">
               <div className="flex items-center gap-2">
-                <ShieldAlert size={18} className="text-amber-500" />
+                <ShieldAlert size={18} className="text-amber-500 dark:text-amber-300" />
                 <span className="font-extrabold text-[14px] text-[var(--text)]">Files de Décision & Validations d'Urgence</span>
               </div>
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600">Supervision Directoriale</span>
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-300">Supervision Directoriale</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -172,7 +172,7 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
                 className="p-3 rounded-lg border border-[var(--border)] bg-[var(--bg)] hover:border-amber-500/50 cursor-pointer transition-all flex items-center justify-between"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-md bg-blue-500/10 text-blue-600">
+                  <div className="p-2 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-300">
                     <ScrollText size={16} />
                   </div>
                   <div>
@@ -188,7 +188,7 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
                 className="p-3 rounded-lg border border-[var(--border)] bg-[var(--bg)] hover:border-amber-500/50 cursor-pointer transition-all flex items-center justify-between"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-md bg-amber-500/10 text-amber-600">
+                  <div className="p-2 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-300">
                     <UserPlus size={16} />
                   </div>
                   <div>
@@ -204,7 +204,7 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
                 className="p-3 rounded-lg border border-[var(--border)] bg-[var(--bg)] hover:border-amber-500/50 cursor-pointer transition-all flex items-center justify-between"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-md bg-purple-500/10 text-purple-600">
+                  <div className="p-2 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-300">
                     <Award size={16} />
                   </div>
                   <div>

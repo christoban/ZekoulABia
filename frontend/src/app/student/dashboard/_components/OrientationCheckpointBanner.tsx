@@ -120,7 +120,8 @@ export default function OrientationCheckpointBanner({ onToast }: Props) {
                 display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3, textAlign: 'left',
                 padding: '8px 12px', borderRadius: 8, minWidth: 130, cursor: 'pointer', fontFamily: 'inherit',
                 border: `1.5px solid ${selectedTrack === st.track ? 'var(--amber)' : 'var(--border)'}`,
-                background: selectedTrack === st.track ? 'white' : 'var(--surface)',
+                 background: selectedTrack === st.track ? 'var(--amber-light)' : 'var(--surface)',
+
               }}>
               <span style={{ fontSize: 15, fontWeight: 900, color: 'var(--text)' }}>{st.track}</span>
               <span style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.4 }}>{st.justification}</span>

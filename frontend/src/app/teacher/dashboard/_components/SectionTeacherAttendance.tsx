@@ -322,7 +322,8 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
                                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                                   cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800,
                                   border: `1.5px solid ${sel ? st.selBorder : 'var(--border2)'}`,
-                                  background: sel ? st.selBg : 'white',
+                                   background: sel ? st.selBg : 'var(--surface)',
+
                                   color: sel ? st.selColor : 'var(--text3)',
                                   transition: 'all 0.1s'
                                 }}>

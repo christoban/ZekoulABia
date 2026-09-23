@@ -117,7 +117,7 @@ export default function AdminTopbar({ title, onNavigate, onChangePassword, onMen
             <div className="flex items-center justify-between px-2.5 py-2 border-b border-[var(--border)]">
               <span className="text-[13.5px] font-bold text-[var(--text)]">{t('topbar.notifications')}</span>
               {unreadCount > 0 && (
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-600">
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-300">
                   {unreadCount} {t('topbar.unread') || 'non lue(s)'}
                 </span>
               )}

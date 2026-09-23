@@ -48,7 +48,7 @@ interface Department {
 const COEFF_SERIES = ['A4', 'A', 'C', 'D', 'TI']
 const COEFF_LEVELS = ['2nde', '1ère', 'Tle']
 
-const AVATAR_PALETTE = ['var(--green)', 'var(--blue)', 'var(--amber)', 'var(--purple)', '#db2777', 'var(--primary)']
+const AVATAR_PALETTE = ['var(--green)', 'var(--blue)', 'var(--amber)', 'var(--purple)', 'var(--red)', 'var(--primary)']
 function avatarColor(id: string) {
   let hash = 0
   for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) & 0xffffffff
@@ -631,7 +631,7 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
             {(['catalogue', 'par-classe', 'departements', 'par-enseignant'] as const).map(v => (
               <button key={v} onClick={() => setView(v)}
                 style={{ padding: '7px 14px', borderRadius: 8, fontSize: 13.5, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                  background: view === v ? 'white' : 'transparent',
+                  background: view === v ? 'var(--surface)' : 'transparent',
                   color:      view === v ? 'var(--text)' : 'var(--text3)',
                   boxShadow:  view === v ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
                 }}>

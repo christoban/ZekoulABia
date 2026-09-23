@@ -380,7 +380,8 @@ export default function SectionRH({ onToast }: { onToast: OnToast }) {
       {/* Bannière de cadrage du rôle Direction */}
       <div className="p-3 md:p-3.5 rounded-xl border border-[var(--border)] bg-[var(--surface)]">
         <div className="flex items-start gap-2.5">
-          <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-600 mt-0.5">
+           <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-300 mt-0.5">
+
             <Users size={14} />
           </div>
           <div>
@@ -458,7 +459,7 @@ export default function SectionRH({ onToast }: { onToast: OnToast }) {
                       style={{
                         textAlign: 'left',
                         border: 'none',
-                        background: active ? 'var(--bg2)' : 'white',
+                        background: active ? 'var(--bg2)' : 'var(--surface)',
                         borderBottom: '1px solid var(--bg2)',
                         cursor: 'pointer',
                         display: 'flex',

@@ -150,11 +150,11 @@ export default function SectionClassesStaff({ onToast }: Props) {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
-          <h1 style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg)', margin: 0, display: 'flex', alignItems: 'center', gap: 7 }}>
+          <h1 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: 0, display: 'flex', alignItems: 'center', gap: 7 }}>
             <School size={18} style={{ color: 'var(--amber)' }} />
             Gestion des Classes
           </h1>
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '2px 0 0 0' }}>
+          <p style={{ fontSize: 12, color: 'var(--text3)', margin: '2px 0 0 0' }}>
             Organisation pédagogique et effectifs des classes
           </p>
         </div>
@@ -168,11 +168,11 @@ export default function SectionClassesStaff({ onToast }: Props) {
               gap: 5,
               padding: '6px 12px',
               borderRadius: 7,
-              background: 'rgba(255,255,255,0.08)',
-              color: 'var(--fg)',
+              background: 'var(--bg2)',
+              color: 'var(--text)',
               fontWeight: 600,
               fontSize: 12,
-              border: '1px solid rgba(255,255,255,0.2)',
+              border: '1px solid var(--border2)',
               cursor: 'pointer',
             }}
           >
@@ -187,7 +187,7 @@ export default function SectionClassesStaff({ onToast }: Props) {
               gap: 5,
               padding: '6px 12px',
               borderRadius: 7,
-              background: 'linear-gradient(135deg, var(--amber), #d97706)',
+              background: 'var(--amber)',
               color: '#000',
               fontWeight: 700,
               fontSize: 12,
@@ -204,7 +204,7 @@ export default function SectionClassesStaff({ onToast }: Props) {
       {/* Barre de recherche */}
       <div style={{ marginBottom: 14, display: 'flex', gap: 10 }}>
         <div style={{ position: 'relative', flex: 1, maxWidth: 340 }}>
-          <Search size={13} style={{ position: 'absolute', left: 9, top: 8, color: 'rgba(255,255,255,0.4)' }} />
+          <Search size={13} style={{ position: 'absolute', left: 9, top: 8, color: 'var(--text3)' }} />
           <input
             type="text"
             value={search}
@@ -214,9 +214,9 @@ export default function SectionClassesStaff({ onToast }: Props) {
               width: '100%',
               padding: '5px 10px 5px 28px',
               borderRadius: 6,
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              color: '#fff',
+              background: 'var(--bg2)',
+              border: '1px solid var(--border)',
+              color: 'var(--text)',
               fontSize: 12,
               outline: 'none',
             }}
@@ -226,14 +226,14 @@ export default function SectionClassesStaff({ onToast }: Props) {
 
       {/* Grille / Liste des classes */}
       {loading ? (
-        <div style={{ padding: 36, textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>
+        <div style={{ padding: 36, textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
           <Loader2 size={20} className="animate-spin" style={{ margin: '0 auto 6px' }} />
           Chargement des classes...
         </div>
       ) : filtered.length === 0 ? (
-        <div style={{ padding: 36, textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: 10, border: '1px border-dashed rgba(255,255,255,0.1)' }}>
-          <School size={28} style={{ color: 'rgba(255,255,255,0.2)', marginBottom: 6 }} />
-          <p style={{ margin: 0, fontSize: 12.5, color: 'rgba(255,255,255,0.5)' }}>Aucune classe trouvée</p>
+        <div style={{ padding: 36, textAlign: 'center', background: 'var(--surface)', borderRadius: 10, border: '1px dashed var(--border)' }}>
+          <School size={28} style={{ color: 'var(--text3)', marginBottom: 6 }} />
+          <p style={{ margin: 0, fontSize: 12.5, color: 'var(--text2)' }}>Aucune classe trouvée</p>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
@@ -241,8 +241,8 @@ export default function SectionClassesStaff({ onToast }: Props) {
             <div
               key={cls.id}
               style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
                 borderRadius: 9,
                 padding: '10px 13px',
                 display: 'flex',
@@ -252,15 +252,15 @@ export default function SectionClassesStaff({ onToast }: Props) {
             >
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <span style={{ fontSize: 13.5, fontWeight: 700, color: '#fff' }}>{cls.name}</span>
+                  <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>{cls.name}</span>
                   {cls.level && (
-                    <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: 'rgba(245,158,11,0.15)', color: '#f59e0b', fontWeight: 600 }}>
+                    <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: 'var(--amber-light)', color: 'var(--amber)', fontWeight: 600 }}>
                       {cls.level}
                     </span>
                   )}
                 </div>
 
-                <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.5)', display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <div style={{ fontSize: 11.5, color: 'var(--text2)', display: 'flex', flexDirection: 'column', gap: 3 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                     <Users size={11} />
                     <span>Effectif : {cls._count?.students ?? 0} {cls.capacity ? `/ ${cls.capacity}` : ''} élèves</span>
@@ -280,14 +280,14 @@ export default function SectionClassesStaff({ onToast }: Props) {
       {/* Modal Créer classe */}
       {createOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ background: '#18181b', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: '16px 20px', width: '100%', maxWidth: 390 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 16px 0', color: '#fff' }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px', width: '100%', maxWidth: 390 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 16px 0', color: 'var(--text)' }}>
               Nouvelle classe
             </h2>
 
             <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text2)', marginBottom: 4 }}>
                   Nom de la classe (ex: 6ème A) *
                 </label>
                 <input
@@ -300,16 +300,16 @@ export default function SectionClassesStaff({ onToast }: Props) {
                     width: '100%',
                     padding: '8px 10px',
                     borderRadius: 6,
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    color: '#fff',
+                    background: 'var(--bg2)',
+                    border: '1px solid var(--border2)',
+                    color: 'var(--text)',
                     fontSize: 12,
                   }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text2)', marginBottom: 4 }}>
                   Niveau (ex: 6eme, 2nde)
                 </label>
                 <input
@@ -321,16 +321,16 @@ export default function SectionClassesStaff({ onToast }: Props) {
                     width: '100%',
                     padding: '8px 10px',
                     borderRadius: 6,
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    color: '#fff',
+                    background: 'var(--bg2)',
+                    border: '1px solid var(--border2)',
+                    color: 'var(--text)',
                     fontSize: 12,
                   }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text2)', marginBottom: 4 }}>
                   Capacité d'accueil
                 </label>
                 <input
@@ -341,9 +341,9 @@ export default function SectionClassesStaff({ onToast }: Props) {
                     width: '100%',
                     padding: '8px 10px',
                     borderRadius: 6,
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    color: '#fff',
+                    background: 'var(--bg2)',
+                    border: '1px solid var(--border2)',
+                    color: 'var(--text)',
                     fontSize: 12,
                   }}
                 />
@@ -353,7 +353,7 @@ export default function SectionClassesStaff({ onToast }: Props) {
                 <button
                   type="button"
                   onClick={() => setCreateOpen(false)}
-                  style={{ padding: '6px 12px', borderRadius: 6, background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontSize: 12, cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text)', fontSize: 12, cursor: 'pointer' }}
                 >
                   Annuler
                 </button>
@@ -373,15 +373,15 @@ export default function SectionClassesStaff({ onToast }: Props) {
       {/* Modal Proposer Structure N+1 */}
       {proposeOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div style={{ background: '#18181b', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12, padding: 24, width: 420, maxWidth: '90%' }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px 0', color: '#fff' }}>Proposer la structure d'année N+1</h2>
-            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', margin: '0 0 16px 0' }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 12, padding: 24, width: 420, maxWidth: '90%' }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px 0', color: 'var(--text)' }}>Proposer la structure d'année N+1</h2>
+            <p style={{ fontSize: 12, color: 'var(--text2)', margin: '0 0 16px 0' }}>
               Duplique les classes actives de l'année actuelle vers l'année cible sous forme de classes DRAFT. La validation finale relève du Proviseur (ADMIN).
             </p>
 
             <form onSubmit={handlePropose} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text2)', marginBottom: 4 }}>
                   Année Actuelle (Source) *
                 </label>
                 {academicYears.length > 0 ? (
@@ -393,9 +393,9 @@ export default function SectionClassesStaff({ onToast }: Props) {
                       width: '100%',
                       padding: '8px 10px',
                       borderRadius: 6,
-                      background: '#27272a',
-                      border: '1px solid rgba(255,255,255,0.15)',
-                      color: '#fff',
+                      background: 'var(--bg2)',
+                      border: '1px solid var(--border2)',
+                      color: 'var(--text)',
                       fontSize: 12,
                     }}
                   >
@@ -417,9 +417,9 @@ export default function SectionClassesStaff({ onToast }: Props) {
                       width: '100%',
                       padding: '8px 10px',
                       borderRadius: 6,
-                      background: 'rgba(255,255,255,0.06)',
-                      border: '1px solid rgba(255,255,255,0.15)',
-                      color: '#fff',
+                      background: 'var(--bg2)',
+                      border: '1px solid var(--border2)',
+                      color: 'var(--text)',
                       fontSize: 12,
                     }}
                   />
@@ -427,7 +427,7 @@ export default function SectionClassesStaff({ onToast }: Props) {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text2)', marginBottom: 4 }}>
                   Année Cible N+1 *
                 </label>
                 {academicYears.length > 0 ? (
@@ -439,9 +439,9 @@ export default function SectionClassesStaff({ onToast }: Props) {
                       width: '100%',
                       padding: '8px 10px',
                       borderRadius: 6,
-                      background: '#27272a',
-                      border: '1px solid rgba(255,255,255,0.15)',
-                      color: '#fff',
+                      background: 'var(--bg2)',
+                      border: '1px solid var(--border2)',
+                      color: 'var(--text)',
                       fontSize: 12,
                     }}
                   >
@@ -463,9 +463,9 @@ export default function SectionClassesStaff({ onToast }: Props) {
                       width: '100%',
                       padding: '8px 10px',
                       borderRadius: 6,
-                      background: 'rgba(255,255,255,0.06)',
-                      border: '1px solid rgba(255,255,255,0.15)',
-                      color: '#fff',
+                      background: 'var(--bg2)',
+                      border: '1px solid var(--border2)',
+                      color: 'var(--text)',
                       fontSize: 12,
                     }}
                   />
@@ -476,7 +476,7 @@ export default function SectionClassesStaff({ onToast }: Props) {
                 <button
                   type="button"
                   onClick={() => setProposeOpen(false)}
-                  style={{ padding: '6px 12px', borderRadius: 6, background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontSize: 12, cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text)', fontSize: 12, cursor: 'pointer' }}
                 >
                   Annuler
                 </button>

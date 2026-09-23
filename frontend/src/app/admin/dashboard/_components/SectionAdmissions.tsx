@@ -251,7 +251,7 @@ export default function SectionAdmissions({ schoolInfo }: { schoolInfo: any }) {
             gap: 8,
           }}
         >
-          <Shield size={18} style={{ color: '#e67e22' }} />
+          <Shield size={18} style={{ color: 'var(--amber)' }} />
           <span className="text-xs md:text-sm font-bold" style={{ color: 'var(--text)' }}>
             {t('settings.admissions.governance_section') || 'Gouvernance et séparation des pouvoirs'}
           </span>
@@ -263,14 +263,16 @@ export default function SectionAdmissions({ schoolInfo }: { schoolInfo: any }) {
             style={{
               padding: 12,
               borderRadius: 8,
-              background: 'rgba(230,126,34,0.08)',
-              border: '1px solid rgba(230,126,34,0.25)',
+               background: 'var(--amber-light)',
+               border: '1px solid var(--amber)',
+
               display: 'flex',
               alignItems: 'flex-start',
               gap: 10,
             }}
           >
-            <Shield size={16} style={{ color: '#d35400', flexShrink: 0, marginTop: 2 }} />
+             <Shield size={16} style={{ color: 'var(--amber)', flexShrink: 0, marginTop: 2 }} />
+
             <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.5 }}>
               <strong>Règle fixe de gouvernance (non désactivable) :</strong> Tout dossier de la <em>voie dossier (hors concours)</em> est obligatoirement validé par l'administrateur. Les admis au concours sont quant à eux inscrits sans validation supplémentaire une fois leurs résultats confirmés.
             </div>
@@ -292,7 +294,8 @@ export default function SectionAdmissions({ schoolInfo }: { schoolInfo: any }) {
                 width: 44,
                 height: 24,
                 borderRadius: 12,
-                background: formData.adminGereInscriptions ? '#e67e22' : 'var(--border2)',
+                 background: formData.adminGereInscriptions ? 'var(--amber)' : 'var(--border2)',
+
                 cursor: 'pointer',
                 position: 'relative',
                 transition: 'background 0.2s',

@@ -297,7 +297,8 @@ export default function SectionParentPayments({ onToast }: Props) {
             <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
               {(['MTN_MOMO', 'ORANGE_MONEY'] as const).map(m => (
                 <button key={m} onClick={() => setModal(s => ({ ...s, method: m }))}
-                  style={{ flex: 1, padding: '7px 10px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: '1.5px solid', borderColor: modal.method === m ? 'var(--green)' : 'var(--border)', background: modal.method === m ? 'var(--green-light)' : 'white', color: modal.method === m ? 'var(--green)' : 'var(--text3)', transition: 'all 0.12s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                   style={{ flex: 1, padding: '7px 10px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: '1.5px solid', borderColor: modal.method === m ? 'var(--green)' : 'var(--border)', background: modal.method === m ? 'var(--green-light)' : 'var(--surface)', color: modal.method === m ? 'var(--green)' : 'var(--text3)', transition: 'all 0.12s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+
                   <Circle size={8} fill={m === 'MTN_MOMO' ? 'var(--amber)' : 'var(--orange)'} stroke="none" />
                   {m === 'MTN_MOMO' ? 'MTN MoMo' : 'Orange Money'}
                 </button>

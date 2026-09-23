@@ -33,12 +33,12 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  NONE: 'bg-gray-500/20 text-gray-300',
-  CODES_GENERES: 'bg-blue-500/20 text-blue-300',
-  EQUIPE_DESIGNEE: 'bg-indigo-500/20 text-indigo-300',
-  ANONYMISATION_EN_COURS: 'bg-amber-500/20 text-amber-300',
+  NONE: 'bg-gray-500/20 text-gray-600 dark:text-gray-300',
+  CODES_GENERES: 'bg-blue-500/20 text-blue-600 dark:text-blue-300',
+  EQUIPE_DESIGNEE: 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-300',
+  ANONYMISATION_EN_COURS: 'bg-amber-500/20 text-amber-700 dark:text-amber-300',
   ANONYMISATION_TERMINEE: 'bg-success/20 text-success',
-  EN_CORRECTION: 'bg-purple-500/20 text-purple-300',
+  EN_CORRECTION: 'bg-purple-500/20 text-purple-600 dark:text-purple-300',
   CORRECTION_TERMINEE: 'bg-primary/20 text-primary',
   RECONCILIE: 'bg-success/20 text-success',
 }
@@ -480,7 +480,7 @@ export default function SectionAnonymatStaff({ onToast }: Props) {
                     <td className="px-2.5 py-2 text-xs text-[var(--text)]">{session.subjectName || session.subjectId}</td>
                     <td className="px-2.5 py-2 text-xs text-[var(--text3)]">{new Date(session.scheduledDate).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
                     <td className="px-2.5 py-2 text-xs">
-                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${session.status === 'PLANNED' ? 'bg-blue-500/20 text-blue-300' : session.status === 'IN_PROGRESS' ? 'bg-amber-500/20 text-amber-300' : 'bg-success/20 text-success'}`}>
+                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${session.status === 'PLANNED' ? 'bg-blue-500/20 text-blue-600 dark:text-blue-300' : session.status === 'IN_PROGRESS' ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300' : 'bg-success/20 text-success'}`}>
                         {session.status}
                       </span>
                     </td>
@@ -500,7 +500,8 @@ export default function SectionAnonymatStaff({ onToast }: Props) {
                               action.variant === 'primary'
                                 ? 'bg-[var(--primary)] text-white hover:opacity-90'
                                 : action.variant === 'danger'
-                                ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30'
+                                 ? 'bg-red-500/20 text-red-600 dark:text-red-300 hover:bg-red-500/30'
+
                                 : 'bg-[var(--bg2)] text-[var(--text)] hover:bg-[var(--border)]'
                             }`}
                           >
@@ -586,7 +587,7 @@ export default function SectionAnonymatStaff({ onToast }: Props) {
                           <option key={t.id} value={t.id}>{t.name}</option>
                         ))}
                       </select>
-                      <button onClick={() => setCrossAssignments(crossAssignments.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-300 text-sm">×</button>
+                      <button onClick={() => setCrossAssignments(crossAssignments.filter((_, i) => i !== idx))} className="text-red-600 hover:text-red-300 dark:text-red-300 dark:hover:text-red-200 text-sm">×</button>
                     </div>
                   ))}
                 </div>

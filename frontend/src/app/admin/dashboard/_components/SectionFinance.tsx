@@ -207,8 +207,8 @@ export default function SectionFinance({ onToast, onNav }: Props) {
               cursor: 'pointer',
               fontFamily: 'inherit',
               border: 'none',
-              background: tab === tabKey ? 'white' : 'transparent',
-              color: tab === tabKey ? 'var(--text)' : 'var(--text3)',
+              background: tab === tabKey ? 'var(--surface)' : 'transparent',
+               color: tab === tabKey ? 'var(--text)' : 'var(--text3)',
               boxShadow: tab === tabKey ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
               transition: 'all 0.12s',
             }}
@@ -293,7 +293,7 @@ export default function SectionFinance({ onToast, onNav }: Props) {
           {/* File d'attente d'arbitrage / Décisions */}
           <div className="p-3 md:p-3.5 rounded-xl border border-[var(--border)]" style={{ background: 'var(--surface)' }}>
             <div className="flex items-center gap-1.5 mb-2">
-              <CheckCircle2 className="w-4 h-4 text-amber-600" />
+              <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--amber)' }} />
               <div className="text-[12.5px] md:text-[13.5px] font-bold text-[var(--text)]">
                 {t('supervision_queue.title')}
               </div>
@@ -304,13 +304,13 @@ export default function SectionFinance({ onToast, onNav }: Props) {
                 <span>{t('supervision_queue.all_clear')}</span>
               </div>
             ) : (
-              <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2.5 flex items-center justify-between">
-                <span className="text-xs font-bold text-amber-800">
+              <div className="rounded-lg p-2.5 flex items-center justify-between" style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)' }}>
+                <span className="text-xs font-bold" style={{ color: 'var(--amber)' }}>
                   {t('supervision_queue.overdue_invoices').replace('{count}', String(overdueCount))}
                 </span>
                 <button
                   onClick={() => setTab('invoices')}
-                  className="text-[11px] font-bold text-amber-900 underline hover:no-underline ml-2"
+                  className="text-[11px] font-bold underline hover:no-underline ml-2" style={{ color: 'var(--amber)' }}
                 >
                   Examiner les factures
                 </button>
@@ -322,7 +322,7 @@ export default function SectionFinance({ onToast, onNav }: Props) {
           <div className="p-3 md:p-3.5 rounded-xl border border-[var(--border)]" style={{ background: 'var(--surface)' }}>
             <div className="flex items-center justify-between mb-3">
               <div className="text-[13px] font-bold text-[var(--text)] flex items-center gap-2">
-                <Clock size={16} className="text-blue-600" /> Historique des opérations financières récentes
+                <Clock size={16} style={{ color: 'var(--blue)' }} /> Historique des opérations financières récentes
               </div>
               <span className="text-[11px] text-[var(--text3)]">Saisies par l&apos;Intendant</span>
             </div>
@@ -358,8 +358,8 @@ export default function SectionFinance({ onToast, onNav }: Props) {
                               borderRadius: 8,
                               fontSize: 11,
                               fontWeight: 600,
-                              background: p.method === 'CASH' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(37, 99, 235, 0.1)',
-                              color: p.method === 'CASH' ? 'var(--green)' : 'var(--accent, #2563eb)',
+                              background: p.method === 'CASH' ? 'var(--green-light)' : 'var(--blue-light)',
+                              color: p.method === 'CASH' ? 'var(--green)' : 'var(--blue)',
                             }}
                           >
                             {p.method === 'CASH' ? 'Espèces' : p.method || 'Mobile'}
@@ -383,7 +383,7 @@ export default function SectionFinance({ onToast, onNav }: Props) {
         <>
           <div className="flex items-center justify-between mb-3">
             <div className="text-[13px] md:text-[14px] font-bold text-[var(--text)]">{t('tabs.plans')}</div>
-            <span className="text-[11px] font-bold text-amber-700 bg-amber-500/15 border border-amber-500/30 px-2.5 py-1 rounded-lg">
+            <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg" style={{ background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid var(--amber)' }}>
               Gestion déléguée à l&apos;Intendant (Lecture seule)
             </span>
           </div>
@@ -477,7 +477,7 @@ export default function SectionFinance({ onToast, onNav }: Props) {
         <>
           <div className="flex items-center justify-between mb-3">
             <div className="text-[13px] md:text-[14px] font-bold text-[var(--text)]">{t('tabs.invoices')}</div>
-            <span className="text-[11px] font-bold text-amber-700 bg-amber-500/15 border border-amber-500/30 px-2.5 py-1 rounded-lg">
+            <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg" style={{ background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid var(--amber)' }}>
               Facturation gérée par l&apos;Intendant (Lecture seule)
             </span>
           </div>

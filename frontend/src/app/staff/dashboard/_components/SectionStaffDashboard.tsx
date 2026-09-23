@@ -185,7 +185,8 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
           {admissions.activeEvent ? (
             <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-amber-500/20 text-amber-600 flex items-center justify-center flex-shrink-0">
+                 <div className="w-10 h-10 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-300 flex items-center justify-center flex-shrink-0">
+
                   <Award size={22} />
                 </div>
                 <div>
@@ -228,11 +229,11 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
               onClick={() => onNav('inscriptions')}
               className="p-3 rounded-xl border border-orange-500/40 bg-orange-500/10 cursor-pointer hover:shadow-md transition-all flex flex-col justify-between"
             >
-              <div className="flex items-center justify-between text-orange-600 mb-1">
+              <div className="flex items-center justify-between text-orange-600 dark:text-orange-400 mb-1">
                 <span className="text-xs font-extrabold">À compléter</span>
                 <AlertTriangle size={15} />
               </div>
-              <div className="text-2xl font-black text-orange-600">{admissions.aCompleter}</div>
+              <div className="text-2xl font-black text-orange-600 dark:text-orange-400">{admissions.aCompleter}</div>
               <div className="text-[11px] text-[var(--text3)] mt-1 leading-tight">Renvoyés par la direction</div>
             </div>
 
@@ -254,7 +255,7 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
               onClick={() => onNav('inscriptions')}
               className="p-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] cursor-pointer hover:shadow-md transition-all flex flex-col justify-between"
             >
-              <div className="flex items-center justify-between text-blue-600 mb-1">
+              <div className="flex items-center justify-between text-blue-600 dark:text-blue-400 mb-1">
                 <span className="text-xs font-bold">Brouillons</span>
                 <FileText size={15} />
               </div>
@@ -267,7 +268,7 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
               onClick={() => onNav('inscriptions')}
               className="p-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] cursor-pointer hover:shadow-md transition-all flex flex-col justify-between"
             >
-              <div className="flex items-center justify-between text-purple-600 mb-1">
+              <div className="flex items-center justify-between text-purple-600 dark:text-purple-400 mb-1">
                 <span className="text-xs font-bold">Chez la famille</span>
                 <Mail size={15} />
               </div>
@@ -280,7 +281,7 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
               onClick={() => onNav('inscriptions')}
               className="p-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] cursor-pointer hover:shadow-md transition-all flex flex-col justify-between"
             >
-              <div className="flex items-center justify-between text-amber-600 mb-1">
+              <div className="flex items-center justify-between text-amber-600 dark:text-amber-400 mb-1">
                 <span className="text-xs font-bold">En attente</span>
                 <Clock size={15} />
               </div>
@@ -295,7 +296,7 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
             <div className="md:col-span-8 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
                 <div className="flex items-center gap-2">
-                  <AlertCircle size={16} className="text-orange-500" />
+                  <AlertCircle size={16} className="text-orange-500 dark:text-orange-400" />
                   <span className="font-extrabold text-sm text-[var(--text)]">À faire maintenant</span>
                 </div>
                 <span className="text-[11px] text-[var(--text3)] font-semibold">Priorités de la journée</span>
@@ -304,17 +305,17 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
               <div className="space-y-2">
                 <div className="flex items-center justify-between p-2.5 rounded-lg border border-orange-500/20 bg-orange-500/5 text-xs">
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-orange-500" />
+                    <span className="w-2 h-2 rounded-full bg-orange-500 dark:bg-orange-400" />
                     <span className="font-semibold text-[var(--text)]">2 dossiers renvoyés par la direction requièrent des compléments</span>
                   </div>
-                  <button onClick={() => onNav('inscriptions')} className="font-bold text-orange-600 hover:underline">
+                  <button onClick={() => onNav('inscriptions')} className="font-bold text-orange-600 dark:text-orange-400 hover:underline">
                     Examiner &rarr;
                   </button>
                 </div>
 
                 <div className="flex items-center justify-between p-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg)]/50 text-xs">
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                    <span className="w-2 h-2 rounded-full bg-amber-500 dark:bg-amber-400" />
                     <span className="text-[var(--text2)]">3 invitations parents expirent dans moins de 48h</span>
                   </div>
                   <button onClick={() => onNav('inscriptions')} className="font-bold text-[var(--primary)] hover:underline">
@@ -324,7 +325,7 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
 
                 <div className="flex items-center justify-between p-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg)]/50 text-xs">
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-blue-500" />
+                    <span className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400" />
                     <span className="text-[var(--text2)]">1 dossier hors concours en attente de pièces d&apos;identité</span>
                   </div>
                   <button onClick={() => onNav('inscriptions')} className="font-bold text-[var(--primary)] hover:underline">
@@ -344,7 +345,8 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
                   onClick={() => onNav('inscriptions')}
                   className="w-full flex items-center justify-between p-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/40 hover:border-[var(--primary)] transition-all"
                 >
-                  <span className="flex items-center gap-2"><FileText size={14} className="text-blue-500" /> Nouveau dossier</span>
+                   <span className="flex items-center gap-2"><FileText size={14} className="text-blue-500 dark:text-blue-400" /> Nouveau dossier</span>
+
                   <ArrowRight size={13} className="text-[var(--text3)]" />
                 </button>
                 <button
@@ -358,14 +360,16 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
                   onClick={() => window.open('/api/v2/eleve-onboarding/fiche-vierge-pdf', '_blank')}
                   className="w-full flex items-center justify-between p-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/40 hover:border-[var(--primary)] transition-all"
                 >
-                  <span className="flex items-center gap-2"><Printer size={14} className="text-amber-500" /> Fiche vierge PDF</span>
+                   <span className="flex items-center gap-2"><Printer size={14} className="text-amber-500 dark:text-amber-400" /> Fiche vierge PDF</span>
+
                   <ArrowRight size={13} className="text-[var(--text3)]" />
                 </button>
                 <button
                   onClick={() => onNav('messagerie')}
                   className="w-full flex items-center justify-between p-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/40 hover:border-[var(--primary)] transition-all"
                 >
-                  <span className="flex items-center gap-2"><MessageCircle size={14} className="text-purple-500" /> Messagerie</span>
+                   <span className="flex items-center gap-2"><MessageCircle size={14} className="text-purple-500 dark:text-purple-400" /> Messagerie</span>
+
                   <ArrowRight size={13} className="text-[var(--text3)]" />
                 </button>
               </div>

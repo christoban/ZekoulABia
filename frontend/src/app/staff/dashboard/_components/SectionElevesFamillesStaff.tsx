@@ -164,7 +164,8 @@ export default function SectionElevesFamillesStaff({ onToast }: Props) {
       case 'SMS_SEUL':
         return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400"><Phone size={11} /> SMS uniquement</span>
       default:
-        return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-gray-500/15 text-gray-500"><X size={11} /> Non connecté</span>
+         return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-gray-500/15 text-gray-600 dark:text-gray-300"><X size={11} /> Non connecté</span>
+
     }
   }
 
@@ -381,7 +382,7 @@ export default function SectionElevesFamillesStaff({ onToast }: Props) {
                     className="w-full flex items-center justify-between p-2.5 rounded-lg border border-[var(--border)] hover:border-[var(--primary)] bg-[var(--bg)] text-left transition-all"
                   >
                     <div className="flex items-center gap-2">
-                      <FileText size={16} className="text-blue-500" />
+                      <FileText size={16} className="text-blue-500 dark:text-blue-400" />
                       <div>
                         <div className="font-bold text-xs text-[var(--text)]">Certificat de scolarité</div>
                         <div className="text-[11px] text-[var(--text3)]">Attestation d&apos;inscription officielle</div>
@@ -409,7 +410,7 @@ export default function SectionElevesFamillesStaff({ onToast }: Props) {
                     className="w-full flex items-center justify-between p-2.5 rounded-lg border border-[var(--border)] hover:border-[var(--primary)] bg-[var(--bg)] text-left transition-all"
                   >
                     <div className="flex items-center gap-2">
-                      <FileText size={16} className="text-amber-500" />
+                      <FileText size={16} className="text-amber-500 dark:text-amber-400" />
                       <div>
                         <div className="font-bold text-xs text-[var(--text)]">Fiche d&apos;inscription</div>
                         <div className="text-[11px] text-[var(--text3)]">Dossier individuel complet</div>
@@ -423,7 +424,7 @@ export default function SectionElevesFamillesStaff({ onToast }: Props) {
                     className="w-full flex items-center justify-between p-2.5 rounded-lg border border-[var(--border)] hover:border-[var(--primary)] bg-[var(--bg)] text-left transition-all"
                   >
                     <div className="flex items-center gap-2">
-                      <ArrowRight size={16} className="text-purple-500" />
+                      <ArrowRight size={16} className="text-purple-500 dark:text-purple-400" />
                       <div>
                         <div className="font-bold text-xs text-[var(--text)]">Lettre de transfert</div>
                         <div className="text-[11px] text-[var(--text3)]">Certificat de radiation / changement d&apos;école</div>

@@ -135,7 +135,7 @@ export default function SectionParentTimetable({ onToast, userId }: Props) {
         <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
           {children.map((c, i) => (
             <button key={c.studentId} onClick={() => setSelectedChild(i)}
-              style={{ padding: '5px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: '1.5px solid', transition: 'all 0.12s', background: selectedChild === i ? 'var(--green-light)' : 'white', borderColor: selectedChild === i ? 'var(--green)' : 'var(--border2)', color: selectedChild === i ? 'var(--green)' : 'var(--text2)' }}>
+              style={{ padding: '5px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: '1.5px solid', transition: 'all 0.12s', background: selectedChild === i ? 'var(--green-light)' : 'var(--surface)', borderColor: selectedChild === i ? 'var(--green)' : 'var(--border2)', color: selectedChild === i ? 'var(--green)' : 'var(--text2)' }}>
               {c.prenom} {c.nom}
             </button>
           ))}

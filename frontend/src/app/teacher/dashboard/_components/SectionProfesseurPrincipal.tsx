@@ -139,7 +139,7 @@ export default function SectionProfesseurPrincipal({ user: _user, classeId, clas
                   {students.map((s, i) => {
                     const badge = BADGE(s.moyenne)
                     return (
-                      <tr key={s.id} style={{ borderTop: '1px solid var(--bg)', background: i % 2 === 0 ? 'white' : 'var(--bg)' }}>
+                      <tr key={s.id} style={{ borderTop: '1px solid var(--bg)', background: i % 2 === 0 ? 'var(--surface)' : 'var(--bg)' }}>
                         <td style={{ padding: '8px 12px', fontSize: 12, fontWeight: 800, color: 'var(--text3)' }}>#{s.rang}</td>
                         <td style={{ padding: '8px 12px', fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>{s.lastName} {s.firstName}</td>
                         <td style={{ padding: '8px 12px' }}>
@@ -206,7 +206,7 @@ export default function SectionProfesseurPrincipal({ user: _user, classeId, clas
                     }
                     const s = statusStyle[a.status] ?? { bg: 'var(--bg2)', color: 'var(--text3)', label: a.status }
                     return (
-                      <tr key={a.id} style={{ borderTop: '1px solid var(--bg)', background: i % 2 === 0 ? 'white' : 'var(--bg)' }}>
+                      <tr key={a.id} style={{ borderTop: '1px solid var(--bg)', background: i % 2 === 0 ? 'var(--surface)' : 'var(--bg)' }}>
                         <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>
                           {new Date(a.date).toLocaleDateString('fr-FR')}
                         </td>

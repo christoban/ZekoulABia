@@ -298,7 +298,8 @@ export default function AssistantWidget({ section, rolePrefix = 'admin', suggest
                   <div key={it.id} style={{ display: 'flex', justifyContent: it.kind === 'user' ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
                     <div className="max-w-[80%] md:max-w-[82%] rounded-[14px] md:rounded-[13px] px-[13px] py-[10px] text-[14px]" style={{
                       lineHeight: 1.5, whiteSpace: 'pre-wrap',
-                      background: it.kind === 'user' ? 'linear-gradient(135deg,var(--primary),var(--primary-hover))' : 'white',
+                       background: it.kind === 'user' ? 'linear-gradient(135deg,var(--primary),var(--primary-hover))' : 'var(--surface)',
+
                       color: it.kind === 'user' ? 'white' : 'var(--text)',
                       border: it.kind === 'user' ? 'none' : '1.5px solid var(--border)',
                     }}>{it.text}</div>

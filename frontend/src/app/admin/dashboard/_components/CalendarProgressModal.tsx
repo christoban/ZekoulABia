@@ -155,7 +155,7 @@ export default function CalendarProgressModal({ isOpen, onClose }: Props) {
           {/* Calendrier des événements & Congés */}
           <div className="space-y-3">
             <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: 'var(--text)' }}>
-              <PartyPopper size={18} className="text-amber-500" />
+              <PartyPopper size={18} className="text-amber-500 dark:text-amber-300" />
               Jours Fériés, Congés & Étapes Académiques
             </h3>
 
@@ -178,9 +178,11 @@ export default function CalendarProgressModal({ isOpen, onClose }: Props) {
                       {isPassed ? (
                         <CheckCircle2 size={18} className="text-success flex-shrink-0" />
                       ) : isActive ? (
-                        <Sparkles size={18} className="text-blue-500 flex-shrink-0 animate-pulse" />
+                         <Sparkles size={18} className="text-blue-500 dark:text-blue-300 flex-shrink-0 animate-pulse" />
+
                       ) : (
-                        <Clock size={18} className="text-amber-500 flex-shrink-0" />
+                         <Clock size={18} className="text-amber-500 dark:text-amber-300 flex-shrink-0" />
+
                       )}
                       <div className="min-w-0 flex-1">
                         <p className={`text-xs font-bold truncate sm:whitespace-normal ${isPassed ? 'line-through' : ''}`} style={{ color: 'var(--text)' }}>
@@ -195,10 +197,12 @@ export default function CalendarProgressModal({ isOpen, onClose }: Props) {
                     <span
                       className={`text-[9.5px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded flex-shrink-0 ml-1 ${
                         isPassed
-                          ? 'bg-gray-500/15 text-gray-500'
+                           ? 'bg-gray-500/15 text-gray-600 dark:text-gray-300'
+
                           : isActive
                           ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
-                          : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                           : 'bg-amber-500/15 text-amber-600 dark:text-amber-300'
+
                       }`}
                     >
                       {isPassed ? 'Terminé' : isActive ? 'En Cours' : 'À Venir'}

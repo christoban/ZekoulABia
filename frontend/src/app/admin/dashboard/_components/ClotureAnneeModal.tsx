@@ -263,7 +263,8 @@ export default function ClotureAnneeModal({ isOpen, onClose, onSuccess, onToast 
         <div className="p-6 overflow-y-auto space-y-6 flex-1">
           {loading ? (
             <div className="py-12 text-center space-y-3">
-              <RefreshCw className="animate-spin mx-auto text-amber-500" size={32} />
+               <RefreshCw className="animate-spin mx-auto text-amber-500 dark:text-amber-300" size={32} />
+
               <p className="text-sm font-medium" style={{ color: 'var(--text2)' }}>
                 Diagnostic & pré-calcul de la structure N+1 en cours...
               </p>
@@ -298,7 +299,8 @@ export default function ClotureAnneeModal({ isOpen, onClose, onSuccess, onToast 
                   {/* Résultat du Pre-Close Check */}
                   <div className="space-y-3">
                     <h4 className="text-sm font-bold flex items-center gap-2" style={{ color: 'var(--text)' }}>
-                      <ShieldCheck size={18} className="text-blue-500" />
+                       <ShieldCheck size={18} className="text-blue-500 dark:text-blue-300" />
+
                       Vérifications Pré-Clôture Intelligentes
                     </h4>
 

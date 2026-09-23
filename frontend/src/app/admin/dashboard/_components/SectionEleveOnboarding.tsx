@@ -36,9 +36,9 @@ type TabType = 'A_VALIDER' | 'RENVOYES' | 'REFUSES' | 'HISTORIQUE'
 
 const STATUT_STYLES: Record<string, { bg: string; color: string; label: string }> = {
   DRAFT: { bg: 'var(--bg2, #f3f4f6)', color: 'var(--text2, #4b5563)', label: 'Brouillon' },
-  LINK_SENT: { bg: 'rgba(59,130,246,0.1)', color: 'var(--blue, #2563eb)', label: 'Chez la famille' },
-  SUBMITTED: { bg: 'rgba(234,179,8,0.15)', color: '#b45309', label: 'Soumis à la direction' },
-  RETURNED: { bg: 'rgba(245,158,11,0.15)', color: '#d97706', label: 'À compléter' },
+  LINK_SENT: { bg: 'var(--blue-light)', color: 'var(--blue)', label: 'Chez la famille' },
+  SUBMITTED: { bg: 'var(--amber-light)', color: 'var(--amber)', label: 'Soumis à la direction' },
+  RETURNED: { bg: 'var(--amber-light)', color: 'var(--amber)', label: 'À compléter' },
   VALIDATED: { bg: 'rgba(22,163,74,0.12)', color: 'var(--green, #16a34a)', label: 'Inscrit' },
   ACTIVATED: { bg: 'rgba(22,163,74,0.12)', color: 'var(--green, #16a34a)', label: 'Inscrit' },
   REJECTED: { bg: 'rgba(239,68,68,0.12)', color: 'var(--red, #ef4444)', label: 'Refusé' },
@@ -46,12 +46,12 @@ const STATUT_STYLES: Record<string, { bg: string; color: string; label: string }
 }
 
 const SOURCE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  CONCOURS: { label: 'Concours', color: '#16a34a', bg: 'rgba(22,163,74,0.1)' },
-  AUTOSERVICE: { label: 'Hors concours', color: '#2563eb', bg: 'rgba(37,99,235,0.1)' },
-  HORS_CONCOURS: { label: 'Hors concours', color: '#2563eb', bg: 'rgba(37,99,235,0.1)' },
-  TRANSFERT: { label: 'Transfert', color: '#7c3aed', bg: 'rgba(124,58,237,0.1)' },
-  IMPORT_MASSE: { label: 'Import', color: '#d97706', bg: 'rgba(217,119,6,0.1)' },
-  DIRECT: { label: 'Hors concours', color: '#2563eb', bg: 'rgba(37,99,235,0.1)' },
+  CONCOURS: { label: 'Concours', color: 'var(--green)', bg: 'var(--green-light)' },
+  AUTOSERVICE: { label: 'Hors concours', color: 'var(--blue)', bg: 'var(--blue-light)' },
+  HORS_CONCOURS: { label: 'Hors concours', color: 'var(--blue)', bg: 'var(--blue-light)' },
+  TRANSFERT: { label: 'Transfert', color: 'var(--purple)', bg: 'var(--purple-light)' },
+  IMPORT_MASSE: { label: 'Import', color: 'var(--amber)', bg: 'var(--amber-light)' },
+  DIRECT: { label: 'Hors concours', color: 'var(--blue)', bg: 'var(--blue-light)' },
 }
 
 export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
@@ -205,8 +205,9 @@ export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
         style={{
           padding: '12px 16px',
           borderRadius: 10,
-          background: 'rgba(37,99,235,0.06)',
-          border: '1px solid rgba(37,99,235,0.18)',
+           background: 'var(--blue-light)',
+           border: '1px solid var(--blue)',
+
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -215,7 +216,8 @@ export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Info size={18} style={{ color: '#2563eb', flexShrink: 0 }} />
+           <Info size={18} style={{ color: 'var(--blue)', flexShrink: 0 }} />
+
           <span style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 600 }}>
             Les inscriptions sont préparées par le secrétariat. Vous validez chaque dossier hors concours.
           </span>
@@ -349,8 +351,8 @@ export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
             borderRadius: '8px 8px 0 0',
             border: 'none',
             background: activeTab === 'HISTORIQUE' ? 'var(--surface, #fff)' : 'transparent',
-            borderBottom: activeTab === 'HISTORIQUE' ? '2px solid var(--blue, #2563eb)' : '2px solid transparent',
-            color: activeTab === 'HISTORIQUE' ? 'var(--blue, #2563eb)' : 'var(--text2, #4b5563)',
+            borderBottom: activeTab === 'HISTORIQUE' ? '2px solid var(--blue)' : '2px solid transparent',
+            color: activeTab === 'HISTORIQUE' ? 'var(--blue)' : 'var(--text2, #4b5563)',
             fontWeight: activeTab === 'HISTORIQUE' ? 700 : 500,
             fontSize: 13,
             cursor: 'pointer',
@@ -483,7 +485,7 @@ export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
               {dossiersFiltres.map((d) => {
                 const isSelected = selectedIds.includes(d.id)
                 const statutInfo = STATUT_STYLES[d.status] || { bg: 'var(--bg2)', color: 'var(--text)', label: d.status }
-                const sourceInfo = SOURCE_LABELS[d.sourceType] || { label: 'Hors concours', color: '#2563eb', bg: 'rgba(37,99,235,0.1)' }
+                const sourceInfo = SOURCE_LABELS[d.sourceType] || { label: 'Hors concours', color: 'var(--blue)', bg: 'var(--blue-light)' }
                 const motifDerogation = (d.submittedData as any)?.motifDerogation || (d.submittedData as any)?.motifHorsConcours
 
                 return (
@@ -506,7 +508,7 @@ export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
                     <td style={{ padding: '10px 14px' }}>
                       <div style={{ fontWeight: 700, color: 'var(--text)' }}>{d.nomProvisoire}</div>
                       {d.numeroInterne && (
-                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--blue, #2563eb)' }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--blue)' }}>
                           {d.numeroInterne}
                         </div>
                       )}

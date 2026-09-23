@@ -300,7 +300,8 @@ export default function ModalNouvelEvenement({
         {/* Header */}
         <div className="px-5 py-4 border-b border-[var(--border)] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600">
+             <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-300">
+
               <Sparkles size={18} />
             </div>
             <div>

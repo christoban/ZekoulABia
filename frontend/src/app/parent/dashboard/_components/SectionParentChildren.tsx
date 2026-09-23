@@ -192,7 +192,7 @@ export default function SectionParentChildren({ onNav, onToast, userId }: Props)
                     { label: t('children.actionPayments'),  icon: Smartphone,  action: () => onNav('payments'),  prim: false },
                   ].map((btn, j) => (
                     <button key={j} onClick={btn.action}
-                      style={{ flex: 1, padding: '6px 10px', borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: btn.prim ? 'none' : '1px solid var(--border2)', background: btn.prim ? 'linear-gradient(135deg,var(--primary),var(--primary-hover))' : 'white', color: btn.prim ? 'white' : 'var(--text2)', transition: 'all 0.12s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}
+                      style={{ flex: 1, padding: '6px 10px', borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: btn.prim ? 'none' : '1px solid var(--border2)', background: btn.prim ? 'linear-gradient(135deg,var(--primary),var(--primary-hover))' : 'var(--surface)', color: btn.prim ? 'white' : 'var(--text2)', transition: 'all 0.12s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}
                       onMouseEnter={e => { if (!btn.prim) Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--green)', color: 'var(--green)' }) }}
                       onMouseLeave={e => { if (!btn.prim) Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--border2)', color: 'var(--text2)' }) }}>
                       <btn.icon size={13} strokeWidth={2} /> {btn.label}

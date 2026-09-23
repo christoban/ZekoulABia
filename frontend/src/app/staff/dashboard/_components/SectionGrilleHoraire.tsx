@@ -73,7 +73,7 @@ function calculerSquelette(f: GridForm): PeriodeGrille[] {
 const sScroll: React.CSSProperties = { height: '100%', overflowY: 'auto' }
 const sCard: React.CSSProperties = { background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: '14px 18px' }
 const sLabel: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: 'var(--text2)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }
-const sInput: React.CSSProperties = { width: '100%', padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 12.5, color: 'var(--text)', fontFamily: 'inherit', boxSizing: 'border-box' }
+const sInput: React.CSSProperties = { width: '100%', padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 12.5, color: 'var(--text)', background: 'var(--surface)', fontFamily: 'inherit', boxSizing: 'border-box' }
 const sNum: React.CSSProperties = { ...sInput, width: 75 }
 
 export default function SectionGrilleHoraire({ onToast }: { onToast: (msg: string, type?: 'success' | 'error' | 'info') => void }) {
@@ -252,7 +252,7 @@ export default function SectionGrilleHoraire({ onToast }: { onToast: (msg: strin
                 {JOURS.map(j => (
                   <button key={j} onClick={() => toggleJour(j)} style={{
                     padding: '4px 10px', borderRadius: 14, fontSize: 11.5, fontWeight: 600, cursor: 'pointer', border: '1px solid',
-                    background: form.joursActifs.includes(j) ? 'var(--sidebar)' : 'white',
+                    background: form.joursActifs.includes(j) ? 'var(--sidebar)' : 'var(--surface)',
                     color: form.joursActifs.includes(j) ? 'white' : 'var(--text2)',
                     borderColor: form.joursActifs.includes(j) ? 'var(--sidebar)' : 'var(--border)',
                   }}>
@@ -300,17 +300,17 @@ export default function SectionGrilleHoraire({ onToast }: { onToast: (msg: strin
                 <tbody>
                   {squelette.map((p, i) => {
                     const isPause = p.type !== 'COURS'
-                    const bg = p.type === 'GRANDE_PAUSE' ? 'var(--amber-light)' : p.type === 'PETITE_PAUSE' ? 'var(--green-light)' : 'white'
+                    const bg = p.type === 'GRANDE_PAUSE' ? 'var(--amber-light)' : p.type === 'PETITE_PAUSE' ? 'var(--green-light)' : 'var(--surface)'
                     const label = p.type === 'COURS' ? t('grilleHoraire.periodLabel', { ordre: p.ordre }) : p.type === 'PETITE_PAUSE' ? t('grilleHoraire.petitePauseLabel') : t('grilleHoraire.grandePauseLabel')
                     return (
                       <tr key={i} style={{ borderBottom: '1px solid var(--bg2)', background: bg }}>
-                        <td style={{ padding: '7px 10px', textAlign: 'center', fontSize: 12.5, fontWeight: 700, color: isPause ? 'var(--text3)' : 'var(--text)' }}>
+                        <td style={{ padding: '7px 10px', textAlign: 'center', fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>
                           {isPause ? '—' : p.ordre}
                         </td>
                         <td style={{ padding: '7px 10px', fontSize: 12.5, fontWeight: 600, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>{p.debut}</td>
                         <td style={{ padding: '7px 10px', fontSize: 12.5, fontWeight: 600, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>{p.fin}</td>
                         <td style={{ padding: '7px 10px', textAlign: 'center', fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>{p.duree} min</td>
-                        <td style={{ padding: '7px 10px', fontSize: 12, color: isPause ? 'var(--green)' : 'var(--text2)' }}>{label}</td>
+                        <td style={{ padding: '7px 10px', fontSize: 12, color: isPause ? 'var(--text)' : 'var(--text2)' }}>{label}</td>
                       </tr>
                     )
                   })}

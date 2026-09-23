@@ -159,7 +159,7 @@ export default function SectionDepartementAP({ user: _user, departementId, depar
                     const moyBg = moy === null ? 'var(--bg2)' : moy >= 12 ? 'var(--green-light)' : moy >= 8 ? 'var(--amber-light)' : 'var(--red-light)'
                     const moyColor = moy === null ? 'var(--text3)' : moy >= 12 ? 'var(--green)' : moy >= 8 ? 'var(--amber)' : 'var(--red)'
                     return (
-                      <tr key={i} style={{ borderTop: '1px solid var(--bg)', background: i % 2 === 0 ? 'white' : 'var(--bg)' }}>
+                      <tr key={i} style={{ borderTop: '1px solid var(--bg)', background: i % 2 === 0 ? 'var(--surface)' : 'var(--bg)' }}>
                         <td style={{ padding: '8px 12px', fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>{row.teacherName}</td>
                         <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>{row.subjectName}</td>
                         <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>{row.className}</td>
@@ -213,7 +213,7 @@ export default function SectionDepartementAP({ user: _user, departementId, depar
                   </thead>
                   <tbody>
                     {horaires.map((row, i) => (
-                      <tr key={i} style={{ borderTop: '1px solid var(--bg)', background: row.isOverLimit ? 'var(--red-light)' : i % 2 === 0 ? 'white' : 'var(--bg)' }}>
+                      <tr key={i} style={{ borderTop: '1px solid var(--bg)', background: row.isOverLimit ? 'var(--red-light)' : i % 2 === 0 ? 'var(--surface)' : 'var(--bg)' }}>
                         <td style={{ padding: '8px 12px', fontSize: 12.5, fontWeight: 700, color: row.isOverLimit ? 'var(--red)' : 'var(--text)' }}>{row.teacherName}</td>
                         <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>{row.subjectName}</td>
                         <td style={{ padding: '8px 12px' }}>

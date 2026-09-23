@@ -765,7 +765,8 @@ export default function SectionAcademicYear({ onToast }: Props) {
           </div>
 
           <div className="mb-4 p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/10 text-xs text-[var(--text)] flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-amber-500/20 text-amber-600 flex-shrink-0 mt-0.5">
+             <div className="p-2 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-300 flex-shrink-0 mt-0.5">
+
               <Star size={16} />
             </div>
             <div>

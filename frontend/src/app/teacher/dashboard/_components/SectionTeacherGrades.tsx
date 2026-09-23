@@ -527,7 +527,7 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
                               setNotes(a)
                             }}
                             disabled={status !== 'DRAFT' && status !== 'REJECTED'}
-                            style={{ width: 68, padding: '5px 8px', border: '1.5px solid var(--border2)', borderRadius: 7, fontSize: 13.5, fontWeight: 800, textAlign: 'center', fontFamily: 'inherit', outline: 'none', background: status !== 'DRAFT' && status !== 'REJECTED' ? 'var(--bg2)' : 'white', color: (notes[sid] ?? 0) < 10 ? 'var(--red)' : (notes[sid] ?? 0) >= 16 ? 'var(--green)' : 'var(--text)' }}
+                            style={{ width: 68, padding: '5px 8px', border: '1.5px solid var(--border2)', borderRadius: 7, fontSize: 13.5, fontWeight: 800, textAlign: 'center', fontFamily: 'inherit', outline: 'none', background: status !== 'DRAFT' && status !== 'REJECTED' ? 'var(--bg2)' : 'var(--surface)', color: (notes[sid] ?? 0) < 10 ? 'var(--red)' : (notes[sid] ?? 0) >= 16 ? 'var(--green)' : 'var(--text)' }}
                           />
                         </td>
                         <td style={tdSt}>
@@ -538,7 +538,7 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
                               setObservations(a)
                             }}
                             disabled={status !== 'DRAFT' && status !== 'REJECTED'}
-                            style={{ width: 200, padding: '5px 9px', border: '1.5px solid var(--border2)', borderRadius: 7, fontSize: 12, fontFamily: 'inherit', outline: 'none', background: status !== 'DRAFT' && status !== 'REJECTED' ? 'var(--bg2)' : 'white', color: 'var(--text)' }}
+                            style={{ width: 200, padding: '5px 9px', border: '1.5px solid var(--border2)', borderRadius: 7, fontSize: 12, fontFamily: 'inherit', outline: 'none', background: status !== 'DRAFT' && status !== 'REJECTED' ? 'var(--bg2)' : 'var(--surface)', color: 'var(--text)' }}
                           />
                         </td>
                         <td style={tdSt}>

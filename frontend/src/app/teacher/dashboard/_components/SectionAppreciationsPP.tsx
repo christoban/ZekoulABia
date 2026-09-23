@@ -420,7 +420,8 @@ export default function SectionAppreciationsPP({ user: _user, classeId }: Props)
                         maxLength={300}
                         placeholder={t('pp.write_placeholder')}
                         rows={2}
-                        style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid var(--border2)', fontSize: 12.5, fontFamily: 'inherit', fontWeight: 500, color: 'var(--text)', resize: 'vertical', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' }}
+                         style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid var(--border2)', background: 'var(--surface)', fontSize: 12.5, fontFamily: 'inherit', fontWeight: 500, color: 'var(--text)', resize: 'vertical', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' }}
+
                         onFocus={e => (e.currentTarget.style.borderColor = 'var(--sidebar)')}
                         onBlur={e => (e.currentTarget.style.borderColor = 'var(--border2)')}
                       />

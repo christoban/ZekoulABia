@@ -52,7 +52,7 @@ const SUBJECT_PALETTES = [
   { bg: 'rgba(37,99,235,0.09)', border: 'var(--blue)', text: 'var(--blue)' },
   { bg: 'rgba(217,119,6,0.09)', border: 'var(--amber)', text: 'var(--amber)' },
   { bg: 'rgba(139,92,246,0.09)', border: 'var(--purple)', text: 'var(--purple)' },
-  { bg: 'rgba(236,72,153,0.09)', border: '#db2777', text: '#be185d' },
+  { bg: 'rgba(236,72,153,0.09)', border: 'var(--red)', text: 'var(--red)' },
   { bg: 'rgba(142,42,58,0.09)', border: 'var(--primary)', text: 'var(--primary)' },
 ]
 function subjectColor(id: string) {

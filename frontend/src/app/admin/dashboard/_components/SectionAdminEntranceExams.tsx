@@ -124,7 +124,8 @@ export default function SectionAdminEntranceExams({ onToast }: Props) {
       {!selectedSessionId && (
         <>
           <div className="mb-4 p-3.5 rounded-xl border border-blue-500/20 bg-blue-500/5 text-xs text-[var(--text)] flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-blue-500/15 text-blue-600 flex-shrink-0">
+             <div className="p-2 rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-300 flex-shrink-0">
+
               <ClipboardList size={18} />
             </div>
             <div>
