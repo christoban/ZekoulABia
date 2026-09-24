@@ -12,6 +12,7 @@ export interface AppliquerPropositionCommande {
 
 export interface AppliquerPropositionResultat {
   creneauxCrees: number;
+  avertissements?: string[];
 }
 
 /**
@@ -37,7 +38,12 @@ export class AppliquerPropositionEmploiDuTempsUseCase {
     }
 
     const contexte = await this.proposer.chargerContexte(commande);
-    validerReglesPedagogiquesProposition(commande.seances, contexte.exigences, contexte.grille);
+    const avertissements: string[] = [];
+    try {
+      validerReglesPedagogiquesProposition(commande.seances, contexte.exigences, contexte.grille);
+    } catch (error) {
+      avertissements.push(error instanceof Error ? `Règle pédagogique à revoir : ${error.message}` : 'Une règle pédagogique doit être revue.');
+    }
 
     const seancesGroupesAttendues = (contexte.groupesLV2?.length ?? 0) > 0
       ? await this.proposer.calculerSeancesGroupes?.(contexte, commande.seances)
@@ -57,12 +63,13 @@ export class AppliquerPropositionEmploiDuTempsUseCase {
       .filter(grilleCase => !casesOccupees.has(`${grilleCase.dayOfWeek}|${grilleCase.startTime}|${grilleCase.endTime}`))
       .map(grilleCase => ({ ...grilleCase, kind: 'FREE' }));
 
-    return this.timetableRepository.creerCreneauxEnLot(
+    const resultat = await this.timetableRepository.creerCreneauxEnLot(
       commande.timetableId,
       commande.schoolId,
       [...seancesOccupees, ...tempsLibres],
       { remplacerLignesGerees: true },
     );
+    return { ...resultat, ...(avertissements.length > 0 ? { avertissements } : {}) };
   }
 
   private normaliserGroupes(seances: SeanceGroupeProposee[]): SeanceGroupeProposee[] {

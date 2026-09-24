@@ -86,7 +86,7 @@ export class PrismaTimetableRepository implements TimetableRepository {
 
   async findSubmittedBySchool(schoolId: string): Promise<EmploiDuTemps[]> {
     const data = await this.prisma.timetable.findMany({
-      where: { schoolId, status: 'SUBMITTED' },
+      where: { schoolId, status: 'SUBMITTED', academicYear: { isCurrent: true } },
       orderBy: { createdAt: 'asc' },
     });
     return data.map(d => this.toEmploiDuTemps(d));
@@ -104,12 +104,12 @@ export class PrismaTimetableRepository implements TimetableRepository {
   async publishSubmittedBySchool(schoolId: string): Promise<EmploiDuTemps[]> {
     return this.prisma.$transaction(async tx => {
       const data = await tx.timetable.findMany({
-        where: { schoolId, status: 'SUBMITTED' },
+        where: { schoolId, status: 'SUBMITTED', academicYear: { isCurrent: true } },
         orderBy: { createdAt: 'asc' },
       });
       if (data.length === 0) return [];
       const resultat = await tx.timetable.updateMany({
-        where: { id: { in: data.map(d => d.id) }, schoolId, status: 'SUBMITTED' },
+        where: { id: { in: data.map(d => d.id) }, schoolId, status: 'SUBMITTED', academicYear: { isCurrent: true } },
         data: { status: 'PUBLISHED' },
       });
       if (resultat.count !== data.length) {

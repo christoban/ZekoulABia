@@ -14,25 +14,35 @@ export class PrismaDashboardQueryRepository implements DashboardQueryRepository 
   }
 
   async countAdminStats(schoolId: string): Promise<DashboardCounts> {
-    const [totalStudents, totalTeachers, activeExams, presentAttendance, totalAttendance] = await Promise.all([
+    const currentYear = schoolId
+      ? await this.prisma.academicYear.findFirst({ where: { schoolId, isCurrent: true }, select: { id: true } })
+      : null;
+    const [totalStudents, totalTeachers, activeExams, presentAttendance, totalAttendance, pendingTeachingIssues] = await Promise.all([
       this.prisma.user.count({ where: { ...(schoolId ? { schoolId } : {}), role: 'STUDENT' } }),
       this.prisma.user.count({ where: { ...(schoolId ? { schoolId } : {}), role: 'TEACHER' } }),
       this.prisma.harmonizedAssessmentSession.count({ where: { ...(schoolId ? { schoolId } : {}), status: { in: ['PLANNED', 'IN_PROGRESS'] } } }),
       this.prisma.attendance.count({ where: { ...(schoolId ? { schoolId } : {}), status: { in: ['PRESENT', 'LATE'] } } }),
       this.prisma.attendance.count({ where: { ...(schoolId ? { schoolId } : {}) } }),
+      currentYear
+        ? this.prisma.teachingAssignmentIssue.count({ where: { schoolId, academicYearId: currentYear.id, status: 'OPEN' } })
+        : Promise.resolve(0),
     ]);
-    return { totalStudents, totalTeachers, activeExams, presentAttendance, totalAttendance };
+    return { totalStudents, totalTeachers, activeExams, presentAttendance, totalAttendance, pendingTeachingIssues };
   }
 
   async countAdminBadges(schoolId: string): Promise<AdminBadges> {
-    const [users, classes, pendingGrades, pendingInvoices, pendingOnboardings] = await Promise.all([
+    const currentYear = await this.prisma.academicYear.findFirst({ where: { schoolId, isCurrent: true }, select: { id: true } });
+    const [users, classes, pendingGrades, pendingInvoices, pendingOnboardings, pendingTeachingIssues] = await Promise.all([
       this.prisma.user.count({ where: { schoolId } }),
       this.prisma.class.count({ where: { schoolId } }),
       this.prisma.grade.count({ where: { schoolId, validationStatus: 'DRAFT' } }),
       this.prisma.invoice.count({ where: { schoolId, status: { in: ['PENDING', 'OVERDUE'] } } }),
       this.prisma.studentOnboarding.count({ where: { schoolId, status: 'SUBMITTED' } }),
+      currentYear
+        ? this.prisma.teachingAssignmentIssue.count({ where: { schoolId, academicYearId: currentYear.id, status: 'OPEN' } })
+        : Promise.resolve(0),
     ]);
-    return { users, classes, pendingGrades, pendingInvoices, pendingOnboardings };
+    return { users, classes, pendingGrades, pendingInvoices, pendingOnboardings, pendingTeachingIssues };
   }
 
   async findTeacherDashboard(schoolId: string, teacherId: string): Promise<TeacherSlots> {

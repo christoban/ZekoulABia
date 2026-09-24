@@ -4,6 +4,7 @@ import type { GenererAffectationsUseCase } from '@application/teachingAssignment
 import type { RattachementEnseignantRepository } from '@domain/ports/repositories/RattachementEnseignantRepository';
 import type { AIActionAuditPort } from '@domain/ports/services/AIActionAuditPort';
 import type { ActivityLogPort } from '@domain/ports/services/ActivityLogPort';
+import type { NotificationService } from '@domain/ports/services/NotificationService';
 
 export class TeachingAssignmentController {
   constructor(
@@ -11,7 +12,24 @@ export class TeachingAssignmentController {
     private readonly genererAffectationsUseCase: GenererAffectationsUseCase,
     private readonly audit: AIActionAuditPort,
     private readonly activityLog?: ActivityLogPort,
+    private readonly notificationService?: NotificationService,
   ) {}
+
+  private async notifyIssue(params: { schoolId: string; className: string; subjectName: string; reason: string }): Promise<void> {
+    if (!this.notificationService) return;
+    const recipients = await this.rattachementRepository.listerUtilisateursAffectations(params.schoolId);
+    for (const recipient of recipients) {
+      void this.notificationService.envoyer({
+        schoolId: params.schoolId,
+        userId: recipient.id,
+        type: 'SYSTEM',
+        urgency: 'NORMAL',
+        titre: 'Affectation pédagogique à traiter',
+        corps: `${params.className} — ${params.subjectName} : ${params.reason}.`,
+        metadata: { domain: 'teaching-assignment', reason: params.reason },
+      }).catch(() => undefined);
+    }
+  }
 
   // GET /api/v2/teaching-assignments?classId=:id
   getByClass = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -105,6 +123,20 @@ export class TeachingAssignmentController {
     }
   };
 
+  getIssues = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { academicYearId, status } = req.query as { academicYearId?: string; status?: string };
+      const issues = await this.rattachementRepository.listerIssuesAffectations({
+        schoolId: req.user!.schoolId,
+        academicYearId,
+        status,
+      });
+      res.json({ success: true, data: issues });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   // POST /api/v2/teaching-assignments
   assign = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -160,7 +192,20 @@ export class TeachingAssignmentController {
         schoolId,
         academicYearId: cls.academicYearId,
       });
-      if (!validation.ok) {
+      if (validation.ok === false) {
+        await this.rattachementRepository.enregistrerIssueAffectation({
+          schoolId,
+          academicYearId: cls.academicYearId,
+          classId,
+          subjectId,
+          reason: validation.code,
+          details: {
+            currentLoad: validation.currentLoad,
+            candidateLoad: validation.candidateLoad,
+            suggestions: validation.suggestions,
+          },
+        });
+        void this.notifyIssue({ schoolId, className: cls.name, subjectName: subjectId, reason: validation.code });
         res.status(409).json({ success: false, error: validation });
         return;
       }
@@ -171,6 +216,13 @@ export class TeachingAssignmentController {
         teacherId,
         schoolId,
         academicYearId: cls.academicYearId,
+      });
+      await this.rattachementRepository.resoudreIssueAffectation({
+        schoolId,
+        academicYearId: cls.academicYearId,
+        classId,
+        subjectId,
+        userId: req.user!.userId,
       });
 
       this.audit.journaliser({
@@ -208,18 +260,88 @@ export class TeachingAssignmentController {
     }
   };
 
+  // POST /api/v2/teaching-assignments/clear-class
+  clearClass = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const schoolId = req.user!.schoolId;
+      const classId = typeof req.body?.classId === 'string' ? req.body.classId : '';
+      if (!classId) {
+        res.status(400).json({ success: false, message: 'classId requis' });
+        return;
+      }
+      const cls = await this.rattachementRepository.trouverClasse(classId, schoolId);
+      if (!cls) {
+        res.status(404).json({ success: false, message: 'Classe introuvable' });
+        return;
+      }
+      const count = await this.rattachementRepository.supprimerToutesLesAffectationsDeLaClasse({ classId, schoolId });
+      if (count === 0) {
+        res.status(409).json({ success: false, message: 'Cette classe n’a aucune affectation à annuler.' });
+        return;
+      }
+      this.audit.journaliser({
+        actorUserId: req.user!.userId,
+        actorRole: req.user!.role,
+        schoolId,
+        actionName: 'annuler_toutes_affectations_classe',
+        targetType: 'Class',
+        targetId: classId,
+        origin: 'UI_DIRECT',
+        outcome: 'SUCCES',
+        parametersSummary: { classId, count },
+      });
+      res.json({ success: true, data: { count }, message: `${count} affectation(s) annulée(s).` });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // POST /api/v2/teaching-assignments/clear-all
+  clearAll = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const schoolId = req.user!.schoolId;
+      const academicYearId = typeof req.body?.academicYearId === 'string' ? req.body.academicYearId : '';
+      if (!academicYearId) {
+        res.status(400).json({ success: false, message: 'academicYearId requis' });
+        return;
+      }
+      const count = await this.rattachementRepository.supprimerToutesLesAffectationsDeLEtablissement({ schoolId, academicYearId });
+      if (count === 0) {
+        res.status(409).json({ success: false, message: 'L’établissement n’a aucune affectation à annuler pour cette année.' });
+        return;
+      }
+      this.audit.journaliser({
+        actorUserId: req.user!.userId,
+        actorRole: req.user!.role,
+        schoolId,
+        actionName: 'annuler_toutes_affectations',
+        targetType: 'School',
+        targetId: schoolId,
+        origin: 'UI_DIRECT',
+        outcome: 'SUCCES',
+        parametersSummary: { academicYearId, count },
+      });
+      res.json({ success: true, data: { count }, message: `${count} affectation(s) annulée(s).` });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   // POST /api/v2/teaching-assignments/generate
   genererAffectations = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const schoolId = req.user!.schoolId;
-      const { academicYearId, classId } = req.body as { academicYearId?: string; classId?: string };
+      const { academicYearId, classId, rebalanceExisting = true } = req.body as { academicYearId?: string; classId?: string; rebalanceExisting?: boolean };
 
       if (!academicYearId) {
         res.status(400).json({ success: false, message: 'academicYearId requis' });
         return;
       }
 
-      const result = await this.genererAffectationsUseCase.execute({ schoolId, academicYearId, classId });
+       const result = await this.genererAffectationsUseCase.execute({ schoolId, academicYearId, classId, rebalanceExisting });
+       for (const issue of result.nonResolus) {
+         void this.notifyIssue({ schoolId, className: issue.className, subjectName: issue.subjectName, reason: issue.raison });
+       }
 
       this.audit.journaliser({
         actorUserId: req.user!.userId,
@@ -230,7 +352,8 @@ export class TeachingAssignmentController {
         targetId: schoolId,
         origin: 'UI_DIRECT',
         outcome: 'SUCCES',
-        parametersSummary: { academicYearId, classId, createdCount: result.createdCount },
+         parametersSummary: { academicYearId, classId, createdCount: result.createdCount, rebalancedCount: result.rebalancedCount },
+
       });
 
       res.json({ success: true, data: result });

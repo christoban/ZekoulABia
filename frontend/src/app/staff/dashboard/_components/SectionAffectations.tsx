@@ -32,7 +32,9 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
   const [loadingClasses, setLoadingClasses] = useState(true)
   const [loadingRows, setLoadingRows] = useState(false)
   const [saving, setSaving] = useState<string | null>(null) // subjectId en cours de sauvegarde
+  const [clearing, setClearing] = useState(false)
   const [generating, setGenerating] = useState(false)
+  const [generatingAll, setGeneratingAll] = useState(false)
   const { isOnline, addToQueue } = useSyncQueue()
 
   useEffect(() => {
@@ -84,6 +86,28 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
     })
   }
 
+  const handleClearClass = async () => {
+    const selectedClass = classes.find(c => c.id === classId)
+    if (!selectedClass || !window.confirm(t('affectations.clearClassConfirm', { className: selectedClass.name }))) return
+    setClearing(true)
+    try {
+      const res = await fetchApi('/api/v2/teaching-assignments/clear-class', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ classId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || t('affectations.clearClassError'))
+      onToast(t('affectations.clearClassSuccess', { count: data.data.count }), 'success')
+      loadAssignments(classId)
+    } catch (error) {
+      onToast(error instanceof Error ? error.message : t('affectations.clearClassError'), 'error')
+    } finally {
+      setClearing(false)
+    }
+  }
+
   const handleAssign = async (subjectId: string, teacherId: string | null) => {
     const payload = { classId, subjectId, teacherId }
     setAssignmentError(null)
@@ -122,6 +146,28 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
       onToast(err instanceof Error ? err.message : 'Erreur', 'error')
     } finally {
       setSaving(null)
+    }
+  }
+
+  const handleGenerateAll = async () => {
+    const academicYearId = classes[0]?.academicYearId
+    if (!academicYearId || !window.confirm(t('affectations.generateAllConfirm'))) return
+    setGeneratingAll(true)
+    try {
+      const res = await fetchApi('/api/v2/teaching-assignments/generate', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ academicYearId, rebalanceExisting: false }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || t('affectations.generateError'))
+      setGenerationResult(data.data)
+      onToast(t('affectations.generateAllSuccess', { count: data.data.createdCount }), 'success')
+    } catch (error) {
+      onToast(error instanceof Error ? error.message : t('affectations.generateError'), 'error')
+    } finally {
+      setGeneratingAll(false)
     }
   }
 
@@ -183,6 +229,26 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
           </select>
         )}
       </div>
+      {classId && selectedClass && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -8, marginBottom: 16 }}>
+          <button type="button" onClick={handleClearClass} disabled={clearing} style={{ background: 'var(--red-light)', color: 'var(--red)', border: '1px solid var(--red-light)', borderRadius: 8, padding: '7px 12px', fontSize: 12, fontWeight: 700, cursor: clearing ? 'wait' : 'pointer', opacity: clearing ? 0.6 : 1 }}>
+            {clearing ? t('affectations.clearing') : t('affectations.clearClass')}
+          </button>
+        </div>
+      )}
+
+      {!classId && classes.length > 0 && (
+        <div style={{ ...sCard, marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{t('affectations.generateAllTitle')}</div>
+            <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 2 }}>{t('affectations.generateAllHint')}</div>
+          </div>
+          <button type="button" onClick={handleGenerateAll} disabled={generatingAll} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-primary text-white text-xs font-bold disabled:opacity-50">
+            {generatingAll ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+            {generatingAll ? t('affectations.generatingAll') : t('affectations.generateAllButton')}
+          </button>
+        </div>
+      )}
 
       {/* KPI */}
       {meta && classId && (

@@ -85,6 +85,18 @@ export interface ContraintesDoucesOptions {
   equilibrageSemaine?: boolean;
   /** Plafond journalier par enseignant, en minutes. Absent = désactivé. */
   volumeMaxEnseignantParJour?: number;
+  /** V2.5 — interdire deux cases Temps libre consécutives. */
+  interdireTempsLibresConsecutifs?: boolean;
+  /** V2.5 — nombre maximal de cases Temps libre par jour. */
+  maxTempsLibresParJour?: number;
+  /** Relâchement interne réservé au diagnostic d'infaisabilité. */
+  reglesPedagogiques?: boolean;
+  reglesOccurrencesParJour?: boolean;
+  reglesContiguite?: boolean;
+  reglesJoursDistinctsEPS?: boolean;
+  conflitClasse?: boolean;
+  conflitEnseignant?: boolean;
+  conflitSalle?: boolean;
   /** V2.5 — honorer Subject.blocDureeCases (blocs de 2 h). Défaut true. */
   blocsDeuxHeures?: boolean;
   /** V2.5 — générer une explication textuelle par séance retenue (Explain My Timetable). */
@@ -103,6 +115,7 @@ export const POIDS_TROU_CASE = 5;
 export const POIDS_TROIS_CONSECUTIFS = 15;
 export const POIDS_DESEQUILIBRE = 2;
 export const POIDS_VOLUME_JOUR = 3;
+export const POIDS_TEMPS_LIBRES_CONSECUTIFS = 1000;
 
 export interface ProposerEmploiDuTempsInput {
   classId: string;
@@ -118,6 +131,8 @@ export interface ProposerEmploiDuTempsInput {
   contraintes?: ContraintesDoucesOptions;
   /** V2.5 — retourner plusieurs solutions classées par score (no-good re-solve). */
   solutionsMultiples?: { nombre?: number; margeScore?: number };
+  /** Interne : empêche la récursion pendant le diagnostic de relaxation. */
+  diagnosticInterne?: boolean;
 }
 
 export interface SeanceProposee {
@@ -158,12 +173,16 @@ export interface PropositionEmploiDuTemps {
    * de recevoir un échec opaque.
    */
   raisonInfaisabilite?: string;
+  /** V2.5 — causes détaillées et vérifiables d'un INFAISABLE. */
+  problemes?: string[];
   /** V2.5 — pistes de correction déterministes (max 5) sur INFAISABLE (réparation auto). */
   suggestions?: string[];
   /** V2.5 — solutions alternatives scorées (la principale reste `seances`). Jamais appliquées auto. */
   solutionsAlternatives?: { score: number; seances: SeanceProposee[] }[];
   /** V2.5 — texte explicatif d'une ligne par séance retenue (Explain My Timetable). */
   explicatifs?: string[];
+  /** Préférences non bloquantes non respectées par la solution finale. */
+  avertissements?: string[];
 }
 
 export interface SchedulingSolverPort {

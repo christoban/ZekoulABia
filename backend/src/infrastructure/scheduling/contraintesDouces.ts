@@ -32,6 +32,7 @@ import {
   POIDS_TROIS_CONSECUTIFS,
   POIDS_DESEQUILIBRE,
   POIDS_VOLUME_JOUR,
+  POIDS_TEMPS_LIBRES_CONSECUTIFS,
 } from '@domain/ports/services/SchedulingSolverPort';
 import { exigeDeuxJours } from '@domain/rules/ReglesPedagogiquesEmploiDuTemps';
 import { modeliserReglesPedagogiques } from '@infrastructure/scheduling/reglesPedagogiques';
@@ -62,17 +63,33 @@ export function modeliserContraintesDouces(args: {
   const y = construireY(model, placements, variables, exigences.length, grille.length);
   const pres = construirePres(model, y, exigences, grille.length);
 
-  modeliserReglesPedagogiques({ model, y, exigences, grille });
+  if (options?.reglesPedagogiques !== false) {
+    modeliserReglesPedagogiques({
+       model, y, exigences, grille,
+       options: {
+         occurrencesParJour: options?.reglesOccurrencesParJour,
+         contiguite: options?.reglesContiguite,
+         joursDistinctsEPS: options?.reglesJoursDistinctsEPS,
+       },
+
+    });
+  }
 
   // Blocs de 2 h (DUR) — indépendants des pénalités douces.
   if (options?.blocsDeuxHeures !== false) {
     modeliserBlocsDeuxHeures(model, y, exigences, grille, parJour);
   }
 
-  if (!options) return [];
+  const occupation = options?.interdireTempsLibresConsecutifs
+    ? construireCasesOccupees(model, y, grille.length)
+    : null;
+  const termes: TermeObjectif[] = options?.interdireTempsLibresConsecutifs
+    ? penaliteTempsLibresConsecutifs(model, occupation!, parJour, grille)
+    : [];
+
+  if (!options) return termes;
 
   const poids = options.poids ?? {};
-  const termes: TermeObjectif[] = [];
 
   if (options.trouEnseignant) {
     termes.push(...penaliteTrou(model, pres, parJour, poids.trou ?? POIDS_TROU_CASE));
@@ -89,6 +106,40 @@ export function modeliserContraintesDouces(args: {
     termes.push(...penaliteVolumeJour(model, pres, parJour, capCases, poids.volumeJour ?? POIDS_VOLUME_JOUR));
   }
 
+  return termes;
+}
+
+function construireCasesOccupees(model: CpModel, y: (BoolVar | null)[][], nbCases: number): BoolVar[] {
+  return Array.from({ length: nbCases }, (_, c) => {
+    const vars = y.map(row => row[c]).filter((variable): variable is BoolVar => variable !== null);
+    const variable = model.newBoolVar(`case_occupee_${c}`);
+    model.addEquality(variable, vars.length === 0 ? 0 : weightedSum(vars, vars.map(() => 1)));
+    return variable;
+  });
+}
+
+function penaliteTempsLibresConsecutifs(
+  model: CpModel,
+  occupation: BoolVar[],
+  parJour: Map<number, number[]>,
+  grille: CaseGrille[],
+): TermeObjectif[] {
+
+  const termes: TermeObjectif[] = [];
+  for (const cases of parJour.values()) {
+    for (let i = 0; i + 1 < cases.length; i++) {
+      const current = cases[i]!;
+      const suivant = cases[i + 1]!;
+      if (grille[suivant]!.startTime !== grille[current]!.endTime) continue;
+      const currentOccupee = occupation[current]!;
+      const suivantOccupee = occupation[suivant]!;
+      const consecutifs = model.newBoolVar(`temps_libres_consecutifs_${current}`);
+      model.addImplication(consecutifs, currentOccupee.not());
+      model.addImplication(consecutifs, suivantOccupee.not());
+      model.addBoolOr([consecutifs, currentOccupee, suivantOccupee]);
+      termes.push({ terme: consecutifs, coeff: -POIDS_TEMPS_LIBRES_CONSECUTIFS });
+    }
+  }
   return termes;
 }
 

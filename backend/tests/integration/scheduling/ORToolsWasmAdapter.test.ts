@@ -87,7 +87,7 @@ describe('ORToolsWasmAdapter — modèle CP-SAT', () => {
     expect(resultat.seances[0]!.roomId).toBe(SALLE_LABO.roomId);
   });
 
-  it('DUR — aucune matière ne dépasse 2 occurrences dans une journée', async () => {
+  it('solution de secours — signale une règle pédagogique non respectée', async () => {
     const resultat = await adapter.proposer(input({
       exigences: Array.from({ length: 3 }, () => ({
         subjectId: 'maths', subjectType: 'THEORETICAL' as const,
@@ -100,7 +100,8 @@ describe('ORToolsWasmAdapter — modèle CP-SAT', () => {
       ],
     }));
 
-    expect(resultat.statut).toBe('INFAISABLE');
+    expect(resultat.statut).toBe('FEASIBLE');
+    expect(resultat.avertissements?.length).toBeGreaterThan(0);
   });
 
   it('DUR — trois occurrences d’une matière restent possibles si elles sont réparties sur deux jours', async () => {
@@ -242,8 +243,7 @@ describe('ORToolsWasmAdapter — modèle CP-SAT', () => {
     expect(resultat.statut).toBe('INFAISABLE');
     expect(resultat.seances).toHaveLength(0);
     // Réparation auto : la suggestion nomme la matière concernée.
-    expect(resultat.suggestions).toHaveLength(1);
-    expect(resultat.suggestions![0]).toContain('Maths');
+    expect(resultat.suggestions!.some(suggestion => suggestion.includes('Maths'))).toBe(true);
   });
 
   it('DUR — ne place jamais une séance dans une salle déjà occupée par une autre classe', async () => {

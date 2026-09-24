@@ -76,13 +76,6 @@ export default function SectionTimetable({ onToast, onNav }: Props) {
   const [reopening, setReopening]             = useState(false)
   const [error, setError]                     = useState<string | null>(null)
 
-  // Auto-generation state
-
-  // Groq adjustment state
-  const [adjustInstruction, setAdjustInstruction] = useState('')
-  const [adjusting, setAdjusting]             = useState(false)
-  const [adjustResult, setAdjustResult]       = useState<{ applied: string[]; errors: string[]; message: string } | null>(null)
-
   // Vue mobile : un jour a la fois (onglets) au lieu de la grille complete, illisible en dessous de md.
   const [mobileDay, setMobileDay]             = useState('LUNDI')
 
@@ -129,7 +122,7 @@ export default function SectionTimetable({ onToast, onNav }: Props) {
   }, [fetchTimetable, classId])
 
   const handleClassChange = (newId: string) => {
-    setClassId(newId); setTimetable(null); setError(null); setAdjustResult(null); setAdjustInstruction('')
+    setClassId(newId); setTimetable(null); setError(null)
     if (newId) fetchTimetable(newId)
   }
 
@@ -186,33 +179,6 @@ export default function SectionTimetable({ onToast, onNav }: Props) {
     }
   }
 
-  const handleAdjust = async () => {
-    if (!timetable || !adjustInstruction.trim()) return
-    setAdjusting(true); setAdjustResult(null)
-    try {
-      const res = await fetchApi(`/api/v2/timetables/${timetable.id}/adjust`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ instruction: adjustInstruction }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || t('timetable.err'))
-      setAdjustResult(data.data)
-      if (data.data.applied?.length) {
-        onToast(data.data.message, 'success')
-        setAdjustInstruction('')
-        fetchTimetable()
-      } else {
-        onToast(data.data.message, 'info')
-      }
-    } catch (err) {
-      onToast(err instanceof Error ? err.message : t('timetable.errAI'), 'error')
-    } finally {
-      setAdjusting(false)
-    }
-  }
-
   const slots = timetable?.slots ?? []
   const slotMap = new Map<string, TimetableSlot>()
   for (const s of slots) slotMap.set(`${s.dayOfWeek}-${s.startTime}`, s)
@@ -231,38 +197,6 @@ export default function SectionTimetable({ onToast, onNav }: Props) {
     : slots.filter(s => s.kind === 'CLASS').length
   const remplis    = slots.filter(s => s.kind === 'CLASS' && s.subject).length
   const pct        = totalCours > 0 ? Math.round(remplis / totalCours * 100) : 0
-
-  const [generating, setGenerating]           = useState(false)
-
-  const handleProposeSchedule = async () => {
-    if (!classId) return
-    setGenerating(true)
-    try {
-      let targetId = timetable?.id
-      if (!targetId) {
-        const createRes = await fetchApi('/api/v2/timetables/manual', {
-          method: 'POST', credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ classId }),
-        })
-        const createData = await createRes.json()
-        targetId = createData.data?.id
-      }
-      if (!targetId) throw new Error(t('timetable.errGen'))
-
-      const res = await fetchApi(`/api/v2/timetables/${targetId}/propose-schedule`, {
-        method: 'POST', credentials: 'include',
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || t('timetable.errGen'))
-      onToast('Génération automatique d\'emploi du temps réussie', 'success')
-      fetchTimetable()
-    } catch (err) {
-      onToast(err instanceof Error ? err.message : t('timetable.errGen'), 'error')
-    } finally {
-      setGenerating(false)
-    }
-  }
 
   return (
     <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto', boxSizing: 'border-box', paddingBottom: 140 }}>
@@ -289,14 +223,7 @@ export default function SectionTimetable({ onToast, onNav }: Props) {
           </select>
 
           <div className="flex flex-wrap gap-2.5 md:items-center">
-            {classId && (
-              <button className="text-xs md:text-sm font-bold rounded-lg px-3.5 py-2"
-                style={btnSec}
-                onClick={handleProposeSchedule} disabled={generating || timetable?.status === 'SUBMITTED' || timetable?.status === 'PUBLISHED'}>
-                {generating ? <><span style={spinInline} />{t('timetable.generating')}</> : <><Bot size={15} className="inline mr-1" />{t('timetable.autoGen')}</>}
-              </button>
-            )}
-            <button className="text-xs md:text-sm font-bold rounded-lg px-3.5 py-2"
+             <button className="text-xs md:text-sm font-bold rounded-lg px-3.5 py-2"
               style={btnSec}
               onClick={handlePublishAll}
               disabled={publishingAll || publishing || reopening}>
@@ -581,53 +508,6 @@ export default function SectionTimetable({ onToast, onNav }: Props) {
         </div>
       )}
 
-      {/* Ajustement IA — visible si EDT DRAFT sélectionné */}
-      {timetable && timetable.status === 'DRAFT' && (
-        <div className="rounded-xl p-4 md:p-5 mt-5 border border-[var(--border2)] bg-[var(--surface)]">
-          <div className="text-sm md:text-base font-bold text-[var(--text)] mb-1">{t('timetable.adjustTitle')}</div>
-          <div className="text-xs md:text-sm text-[var(--text3)] mb-3">
-            {t('timetable.adjustHint')}
-          </div>
-          <div className="flex flex-col md:flex-row gap-3 items-start">
-            <textarea
-              value={adjustInstruction}
-              onChange={e => setAdjustInstruction(e.target.value)}
-              placeholder={t('timetable.adjustPlaceholder')}
-              rows={2}
-              className="w-full text-xs md:text-sm font-semibold p-3 border border-[var(--border2)] rounded-lg outline-none text-[var(--text)] resize-y flex-1"
-              style={{ fontFamily: 'inherit' }}
-            />
-            <button
-              className="w-full md:w-auto justify-center self-end opacity-100 disabled:opacity-60"
-              style={btnAI}
-              disabled={adjusting || !adjustInstruction.trim()}
-              onClick={handleAdjust}
-            >
-              {adjusting ? <><span style={spinInline} />{t('timetable.processing')}</> : t('timetable.apply')}
-            </button>
-          </div>
-
-          {adjustResult && (
-            <div className="mt-3">
-              {adjustResult.applied.length > 0 && (
-                <div className="bg-[var(--green-light)] border border-[var(--green)] rounded-lg p-3 mb-2">
-                  <div className="text-xs md:text-sm font-bold text-[var(--green)] mb-1">{t('timetable.changesApplied')}</div>
-                  {adjustResult.applied.map((a, i) => <div key={i} className="text-xs md:text-sm text-[var(--green)]">• {a}</div>)}
-                </div>
-              )}
-              {adjustResult.errors.length > 0 && (
-                <div className="bg-[var(--red-light)] border border-[var(--red-light)] rounded-lg p-3">
-                  <div className="text-xs md:text-sm font-bold text-[var(--red)] mb-1">{t('timetable.conflicts')}</div>
-                  {adjustResult.errors.map((e, i) => <div key={i} className="text-xs md:text-sm text-[var(--red)]">• {e}</div>)}
-                </div>
-              )}
-              {adjustResult.applied.length === 0 && adjustResult.errors.length === 0 && (
-                <div className="text-xs md:text-sm text-[var(--text3)] italic">{adjustResult.message}</div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   )
 }
@@ -635,7 +515,6 @@ export default function SectionTimetable({ onToast, onNav }: Props) {
 const sTitle:    React.CSSProperties = { fontFamily: 'var(--font-spectral,Spectral,serif)', fontWeight: 700, color: 'var(--text)' }
 const sSub:      React.CSSProperties = { color: 'var(--text3)', marginTop: 3 }
 const btnPrim:   React.CSSProperties = { padding: '9px 17px', borderRadius: 9, fontSize: 14, fontWeight: 800, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }
-const btnAI:     React.CSSProperties = { padding: '9px 17px', borderRadius: 9, fontSize: 14, fontWeight: 800, background: 'linear-gradient(135deg,var(--purple),var(--purple))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }
 const btnSec:    React.CSSProperties = { padding: '9px 15px', borderRadius: 9, fontSize: 14, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
 const selectSt:  React.CSSProperties = { background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 9, padding: '8.5px 13px', fontSize: 14, fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }
 const thSt:      React.CSSProperties = { padding: '9px 8px', textAlign: 'center', fontSize: 12, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', border: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.4px' }

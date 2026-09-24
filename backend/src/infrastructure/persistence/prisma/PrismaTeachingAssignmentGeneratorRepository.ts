@@ -7,6 +7,8 @@ import type {
   TeachingAssignmentGeneratorRepository,
   DonneesGenerationAffectations,
   AssignmentACreerPayload,
+  AssignmentAModifierPayload,
+  IssueAffectationGeneration,
   ClassePourGeneration,
   MatiereCandidateGeneration,
 } from '@domain/ports/repositories/TeachingAssignmentGeneratorRepository';
@@ -168,7 +170,7 @@ export class PrismaTeachingAssignmentGeneratorRepository implements TeachingAssi
       const teacherSubjects = await this.prisma.teacherSubject.findMany({
         where: {
           subjectId: { in: Array.from(candidateSubjectIds) },
-          teacherProfile: { user: { schoolId } },
+          teacherProfile: { user: { schoolId, isActive: true } },
         },
         include: {
           teacherProfile: {
@@ -199,14 +201,20 @@ export class PrismaTeachingAssignmentGeneratorRepository implements TeachingAssi
 
     const affectations = await this.prisma.teachingAssignment.findMany({
       where: { schoolId, academicYearId },
-      select: { classId: true, subjectId: true, teacherId: true },
+      select: { id: true, classId: true, subjectId: true, teacherId: true, subject: { select: { hoursPerWeek: true } } },
     });
 
     return {
       classes: classes as ClassePourGeneration[],
       matieres,
       enseignants,
-      affectations,
+      affectations: affectations.map(affectation => ({
+        id: affectation.id,
+        classId: affectation.classId,
+        subjectId: affectation.subjectId,
+        teacherId: affectation.teacherId,
+        subjectHoursPerWeek: affectation.subject.hoursPerWeek,
+      })),
     };
   }
 
@@ -216,6 +224,54 @@ export class PrismaTeachingAssignmentGeneratorRepository implements TeachingAssi
       tx.teachingAssignment.createMany({ data: assignments }),
     );
     return result.count;
+  }
+
+  async updateAssignmentsInTransaction(assignments: AssignmentAModifierPayload[]): Promise<number> {
+    if (assignments.length === 0) return 0;
+    const updated = await this.prisma.$transaction(async (tx) => {
+      let count = 0;
+      for (const assignment of assignments) {
+        const result = await tx.teachingAssignment.updateMany({ where: { id: assignment.id }, data: { teacherId: assignment.teacherId } });
+        count += result.count;
+      }
+      return count;
+    });
+    return updated;
+  }
+
+  async persistIssues(params: {
+    schoolId: string;
+    academicYearId: string;
+    issues: IssueAffectationGeneration[];
+  }): Promise<number> {
+    if (params.issues.length === 0) return 0;
+    await this.prisma.$transaction(
+      params.issues.map(issue => this.prisma.teachingAssignmentIssue.upsert({
+        where: {
+          schoolId_academicYearId_classId_subjectId: {
+            schoolId: params.schoolId,
+            academicYearId: params.academicYearId,
+            classId: issue.classId,
+            subjectId: issue.subjectId,
+          },
+        },
+        create: {
+          schoolId: params.schoolId,
+          academicYearId: params.academicYearId,
+          classId: issue.classId,
+          subjectId: issue.subjectId,
+          reason: issue.reason,
+        },
+        update: {
+          reason: issue.reason,
+          status: 'OPEN',
+          detectedAt: new Date(),
+          resolvedAt: null,
+          resolvedById: null,
+        },
+      })),
+    );
+    return params.issues.length;
   }
 
   async syncLv2Groups(schoolId: string, academicYearId: string): Promise<void> {

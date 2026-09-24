@@ -19,6 +19,12 @@ export type EnseignantEligible = {
   chargeActuelleHeures: number;
 };
 
+export type AffectationAReequilibrer = {
+  id: string;
+  ancienTeacherId: string;
+  nouveauTeacherId: string;
+};
+
 export type AffectationACreer = {
   classId: string;
   subjectId: string;
@@ -129,4 +135,31 @@ export function genererAffectations(
   }
 
   return { aCreer, nonResolus, horsPerimetre };
+}
+
+export function reequilibrerAffectations(
+  affectations: { id: string; subjectId: string; teacherId: string; weeklyPeriods: number }[],
+  enseignants: EnseignantEligible[],
+): AffectationAReequilibrer[] {
+  const charge = new Map<string, number>();
+  for (const affectation of affectations) {
+    charge.set(affectation.teacherId, (charge.get(affectation.teacherId) ?? 0) + affectation.weeklyPeriods);
+  }
+  const eligiblesParMatiere = new Map<string, EnseignantEligible[]>();
+  for (const enseignant of enseignants) {
+    const liste = eligiblesParMatiere.get(enseignant.subjectId) ?? [];
+    liste.push({ ...enseignant });
+    eligiblesParMatiere.set(enseignant.subjectId, liste);
+  }
+  const modifications: AffectationAReequilibrer[] = [];
+  for (const affectation of [...affectations].sort((a, b) => b.weeklyPeriods - a.weeklyPeriods || a.id.localeCompare(b.id))) {
+    const choisi = (eligiblesParMatiere.get(affectation.subjectId) ?? [])
+      .filter(enseignant => !enseignant.estAP || (charge.get(enseignant.teacherId) ?? 0) + affectation.weeklyPeriods <= LIMITE_AP_HEURES)
+      .sort((a, b) => (charge.get(a.teacherId) ?? 0) - (charge.get(b.teacherId) ?? 0) || a.teacherId.localeCompare(b.teacherId))[0];
+    if (!choisi || choisi.teacherId === affectation.teacherId) continue;
+    modifications.push({ id: affectation.id, ancienTeacherId: affectation.teacherId, nouveauTeacherId: choisi.teacherId });
+    charge.set(affectation.teacherId, (charge.get(affectation.teacherId) ?? 0) - affectation.weeklyPeriods);
+    charge.set(choisi.teacherId, (charge.get(choisi.teacherId) ?? 0) + affectation.weeklyPeriods);
+  }
+  return modifications;
 }

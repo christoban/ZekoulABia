@@ -63,7 +63,10 @@ interface Proposal {
   scoreObjectif: number
   dureeResolutionMs: number
   raisonInfaisabilite?: string
+  problemes?: string[]
   suggestions?: string[]
+  explicatifs?: string[]
+  avertissements?: string[]
 }
 
 interface SimulationResult {
@@ -257,9 +260,13 @@ export default function SectionTimetableStaffActions({
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || t('timetable.planning.applyError'))
-      setProposal(null)
-      setSimulation(null)
-      onToast(t('timetable.planning.applied'), 'success')
+       setProposal(null)
+       setSimulation(null)
+       if ((data.data as { avertissements?: string[] } | undefined)?.avertissements?.length) {
+         onToast(t('timetable.planning.applyWarnings'), 'info')
+       }
+       onToast(t('timetable.planning.applied'), 'success')
+
       onRefresh()
     } catch (error) {
       onToast(error instanceof Error ? error.message : t('timetable.planning.applyError'), 'error')
@@ -436,7 +443,40 @@ export default function SectionTimetableStaffActions({
           <div style={{ color: 'var(--text3)', fontSize: 11.5, marginTop: 4 }}>
              {t('timetable.planning.proposalMeta', { count: proposal.seances.length + (proposal.seancesGroupes?.length ?? 0) + (proposal.tempsLibres?.length ?? 0), score: proposal.scoreObjectif })}
           </div>
-          {proposal.raisonInfaisabilite && <div style={{ color: 'var(--red)', fontSize: 12, marginTop: 7 }}>{proposal.raisonInfaisabilite}</div>}
+           {proposal.raisonInfaisabilite && <div style={{ color: 'var(--red)', fontSize: 12, marginTop: 7 }}>{proposal.raisonInfaisabilite}</div>}
+           {proposal.problemes && proposal.problemes.length > 0 && (
+             <div style={{ marginTop: 9 }}>
+               <strong style={{ color: 'var(--text2)', fontSize: 12 }}>{t('timetable.planning.problemsTitle')}</strong>
+               <ul style={{ margin: '5px 0 0 18px', padding: 0, color: 'var(--red)', fontSize: 12 }}>
+                 {proposal.problemes.map(probleme => <li key={probleme}>{probleme}</li>)}
+               </ul>
+             </div>
+           )}
+           {proposal.suggestions && proposal.suggestions.length > 0 && (
+             <div style={{ marginTop: 9 }}>
+               <strong style={{ color: 'var(--text2)', fontSize: 12 }}>{t('timetable.planning.suggestionsTitle')}</strong>
+               <ul style={{ margin: '5px 0 0 18px', padding: 0, color: 'var(--amber)', fontSize: 12 }}>
+                 {proposal.suggestions.map(suggestion => <li key={suggestion}>{suggestion}</li>)}
+               </ul>
+             </div>
+           )}
+           {proposal.avertissements && proposal.avertissements.length > 0 && (
+             <div style={{ marginTop: 9 }}>
+               <strong style={{ color: 'var(--amber)', fontSize: 12 }}>{t('timetable.planning.warningsTitle')}</strong>
+               <ul style={{ margin: '5px 0 0 18px', padding: 0, color: 'var(--amber)', fontSize: 12 }}>
+                 {proposal.avertissements.map(avertissement => <li key={avertissement}>{avertissement}</li>)}
+               </ul>
+             </div>
+           )}
+           {proposal.explicatifs && proposal.explicatifs.length > 0 && (
+             <div style={{ marginTop: 10, maxHeight: 130, overflowY: 'auto' }}>
+               <strong style={{ color: 'var(--text2)', fontSize: 12 }}>{t('timetable.planning.explanationsTitle')}</strong>
+               <ul style={{ margin: '5px 0 0 18px', padding: 0, color: 'var(--text3)', fontSize: 11.5 }}>
+                 {proposal.explicatifs.map(explication => <li key={explication}>{explication}</li>)}
+               </ul>
+             </div>
+           )}
+
            {(proposal.seances.length > 0 || (proposal.seancesGroupes?.length ?? 0) > 0 || (proposal.tempsLibres?.length ?? 0) > 0) && (
              <div style={{ display: 'grid', gap: 5, marginTop: 10, maxHeight: 220, overflowY: 'auto' }}>
               {proposal.seances.map((session, index) => (

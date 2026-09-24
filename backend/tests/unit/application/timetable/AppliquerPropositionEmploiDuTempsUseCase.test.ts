@@ -4,7 +4,7 @@ import type { ContexteEmploiDuTemps } from '../../../../src/application/timetabl
 import { InMemoryTimetableRepository } from '../../../helpers/repositories/InMemoryTimetableRepository.ts';
 import { CreneauHoraire } from '@domain/entities/CreneauHoraire.ts';
 
-it('rejette une proposition apply EPS avec deux occurrences le même jour', async () => {
+it('applique une proposition EPS avec deux occurrences le même jour et signale la règle à revoir', async () => {
   const repository = new InMemoryTimetableRepository();
   const contexte: ContexteEmploiDuTemps = {
     classId: 'classe-1',
@@ -33,16 +33,19 @@ it('rejette une proposition apply EPS avec deux occurrences le même jour', asyn
     chargerContexte: async () => contexte,
   });
 
-  await expect(useCase.execute({
+   const resultat = await useCase.execute({
+
     timetableId: 'edt-1',
     schoolId: 'school-1',
     seances: [
       { subjectId: 'eps', teacherId: 'prof-1', roomId: 'terrain', dayOfWeek: 0, startTime: '08:00', endTime: '09:00' },
       { subjectId: 'eps', teacherId: 'prof-1', roomId: 'terrain', dayOfWeek: 0, startTime: '09:00', endTime: '10:00' },
     ],
-  })).rejects.toThrow('doit être répartie sur deux jours différents');
+   });
 
-  expect(await repository.countCreneaux('edt-1')).toBe(0);
+   expect(resultat.avertissements?.some(avertissement => avertissement.includes('deux jours différents'))).toBe(true);
+   expect(await repository.countCreneaux('edt-1')).toBe(3);
+
 });
 
 it('accepte trois occurrences d’une matière réparties sur deux jours', async () => {

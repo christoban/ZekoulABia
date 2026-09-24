@@ -101,6 +101,7 @@ export function registerFinanceRoutes(app: Application, prismaParam: typeof pris
     genererAffectationsUseCase,
     auditForFinance,
     c.activityLog,
+    c.notificationService,
   );
   app.use('/api/v2/teaching-assignments', creerTeachingAssignmentRoutes(teachingAssignmentController));
 

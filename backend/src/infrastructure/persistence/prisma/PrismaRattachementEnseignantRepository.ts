@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { Prisma, PrismaClient } from '@prisma/client';
 import {
   CYCLE2_LEVELS,
   parseSerie,
@@ -47,11 +47,84 @@ export class PrismaRattachementEnseignantRepository implements RattachementEnsei
     }) as Promise<import('@domain/ports/repositories/RattachementEnseignantRepository').AffectationAvecEnseignant[]>;
   }
 
+  async listerIssuesAffectations(params: { schoolId: string; academicYearId?: string; status?: string }) {
+    const issues = await this.prisma.teachingAssignmentIssue.findMany({
+      where: {
+        schoolId: params.schoolId,
+        ...(params.academicYearId && { academicYearId: params.academicYearId }),
+        ...(params.status && { status: params.status }),
+      },
+      select: { id: true, classId: true, subjectId: true, reason: true, status: true, detectedAt: true, resolvedAt: true },
+      orderBy: { detectedAt: 'desc' },
+    });
+    const classIds = [...new Set(issues.map(issue => issue.classId))];
+    const subjectIds = [...new Set(issues.map(issue => issue.subjectId))];
+    const [classes, subjects] = await Promise.all([
+      this.prisma.class.findMany({ where: { id: { in: classIds }, schoolId: params.schoolId }, select: { id: true, name: true } }),
+      this.prisma.subject.findMany({ where: { id: { in: subjectIds }, schoolId: params.schoolId }, select: { id: true, name: true } }),
+    ]);
+    const classNames = new Map(classes.map(classe => [classe.id, classe.name]));
+    const subjectNames = new Map(subjects.map(subject => [subject.id, subject.name]));
+    return issues.map(issue => ({
+      ...issue,
+      className: classNames.get(issue.classId) ?? 'Classe inconnue',
+      subjectName: subjectNames.get(issue.subjectId) ?? 'Matière inconnue',
+    }));
+  }
+
+  async enregistrerIssueAffectation(params: {
+    schoolId: string;
+    academicYearId: string;
+    classId: string;
+    subjectId: string;
+    reason: string;
+    details?: Record<string, unknown>;
+  }): Promise<void> {
+    await this.prisma.teachingAssignmentIssue.upsert({
+      where: {
+        schoolId_academicYearId_classId_subjectId: {
+          schoolId: params.schoolId,
+          academicYearId: params.academicYearId,
+          classId: params.classId,
+          subjectId: params.subjectId,
+        },
+      },
+      create: {
+        schoolId: params.schoolId,
+        academicYearId: params.academicYearId,
+        classId: params.classId,
+        subjectId: params.subjectId,
+        reason: params.reason,
+        details: params.details as Prisma.InputJsonValue | undefined,
+      },
+      update: {
+        reason: params.reason,
+        status: 'OPEN',
+        details: params.details as Prisma.InputJsonValue | undefined,
+        detectedAt: new Date(),
+        resolvedAt: null,
+        resolvedById: null,
+      },
+    });
+  }
+
+  async listerUtilisateursAffectations(schoolId: string): Promise<{ id: string }[]> {
+    return this.prisma.user.findMany({
+      where: {
+        schoolId,
+        isActive: true,
+        staffProfile: { permissions: { some: { permission: 'MANAGE_TEACHING_ASSIGNMENTS' } } },
+      },
+      select: { id: true },
+    });
+  }
+
   async listerEnseignantsEligibles(schoolId: string, subjectId: string) {
     return this.prisma.user.findMany({
       where: {
         schoolId,
         role: 'TEACHER',
+        isActive: true,
         teacherProfile: { teacherSubjects: { some: { subjectId } } },
       },
       select: { id: true, firstName: true, lastName: true },
@@ -61,7 +134,7 @@ export class PrismaRattachementEnseignantRepository implements RattachementEnsei
 
   async verifierEnseignant(teacherId: string, schoolId: string): Promise<boolean> {
     const teacher = await this.prisma.user.findFirst({
-      where: { id: teacherId, schoolId, role: 'TEACHER' },
+      where: { id: teacherId, schoolId, role: 'TEACHER', isActive: true },
       select: { id: true },
     });
     return !!teacher;
@@ -84,6 +157,39 @@ export class PrismaRattachementEnseignantRepository implements RattachementEnsei
   async retirer(params: { classId: string; subjectId: string; schoolId: string }): Promise<void> {
     await this.prisma.teachingAssignment.deleteMany({
       where: { classId: params.classId, subjectId: params.subjectId, schoolId: params.schoolId },
+    });
+  }
+
+  async supprimerToutesLesAffectationsDeLaClasse(params: { classId: string; schoolId: string }): Promise<number> {
+    const resultat = await this.prisma.teachingAssignment.deleteMany({
+      where: { classId: params.classId, schoolId: params.schoolId },
+    });
+    return resultat.count;
+  }
+
+  async supprimerToutesLesAffectationsDeLEtablissement(params: { schoolId: string; academicYearId: string }): Promise<number> {
+    const resultat = await this.prisma.teachingAssignment.deleteMany({
+      where: { schoolId: params.schoolId, academicYearId: params.academicYearId },
+    });
+    return resultat.count;
+  }
+
+  async resoudreIssueAffectation(params: {
+    schoolId: string;
+    academicYearId: string;
+    classId: string;
+    subjectId: string;
+    userId: string;
+  }): Promise<void> {
+    await this.prisma.teachingAssignmentIssue.updateMany({
+      where: {
+        schoolId: params.schoolId,
+        academicYearId: params.academicYearId,
+        classId: params.classId,
+        subjectId: params.subjectId,
+        status: 'OPEN',
+      },
+      data: { status: 'RESOLVED', resolvedAt: new Date(), resolvedById: params.userId },
     });
   }
 
@@ -125,7 +231,10 @@ export class PrismaRattachementEnseignantRepository implements RattachementEnsei
       return { ok: true };
     }
 
-    const currentLoad = await this.calculerChargeEnseignant(params.teacherId, params.schoolId, params.academicYearId);
+    const currentLoad = await this.calculerChargeEnseignant(params.teacherId, params.schoolId, params.academicYearId, {
+      classId: params.classId,
+      subjectId: params.subjectId,
+    });
     if (currentLoad + candidateLoad <= 14) {
       return { ok: true };
     }
@@ -191,9 +300,19 @@ export class PrismaRattachementEnseignantRepository implements RattachementEnsei
     return permissions.includes('SUPERVISE_TEACHERS') || permissions.includes('SUPERVISE_DEPARTMENT_TEACHERS');
   }
 
-  private async calculerChargeEnseignant(teacherId: string, schoolId: string, academicYearId: string): Promise<number> {
+  private async calculerChargeEnseignant(
+    teacherId: string,
+    schoolId: string,
+    academicYearId: string,
+    exclude?: { classId: string; subjectId: string },
+  ): Promise<number> {
     const assignments = await this.prisma.teachingAssignment.findMany({
-      where: { teacherId, schoolId, academicYearId },
+      where: {
+        teacherId,
+        schoolId,
+        academicYearId,
+        ...(exclude && { NOT: { classId: exclude.classId, subjectId: exclude.subjectId } }),
+      },
       select: { classId: true, subjectId: true },
     });
 

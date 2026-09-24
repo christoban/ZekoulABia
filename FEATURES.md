@@ -44,7 +44,7 @@
 **Objectif** : structurer l'école (classes, sous-groupes TP, matières, coefficients, enseignants).
 - **Fichiers** : `app/class/*`, `app/subject/*`, `app/teachingAssignment/*`, `ClasseController`, `SubjectController`, `TeachingAssignmentController`, `fe/.../SectionClasses.tsx`, `SectionSubjects.tsx`, `SectionAffectations.tsx`.
 - **Interactions** : prof principal, sous-groupes TP (`ClassSubGroup`), LV2/A-Level par élève (module `student`), coefficients par cycle/filière.
-- **Génération automatique des affectations** : algorithme glouton (moins chargé d'abord, plafond AP 14h), exclut LV2/groupes et le 2nd cycle FR sans volume horaire (`weeklyPeriods` null). Bouton côté `SectionAffectations`.
+- **Génération automatique des affectations** : algorithme glouton (moins chargé d'abord, plafond AP 14h), exclut LV2/groupes et le 2nd cycle FR sans volume horaire (`weeklyPeriods` null). Les matières non résolues sont persistées dans `TeachingAssignmentIssue`, notifiées aux gestionnaires et affichées dans le compteur du tableau de bord ; une affectation réussie les clôture. Bouton côté `SectionAffectations`.
 
 ## 6. Notes (workflow MINESEC)
 
@@ -72,6 +72,7 @@
 - **Interactions** : créneaux électifs `isLV2Slot`/`isElectiveSlot`, génération auto via **Groq** + **Inngest**, drag & drop (`@dnd-kit`), demandes de rattrapage.
 - **Journées raccourcies** : la grille peut définir un nombre différent de périodes de cours par jour actif (par exemple samedi après la grande pause).
 - **Règles pédagogiques du solveur CP-SAT** : 2 occurrences hebdomadaires maximum par matière, occurrences journalières contiguës dans l’ordre des cases de cours, EPS/TM à 2 occurrences réparties sur 2 jours et exemptées du bloc de 2 h ; invariants également revalidés avant apply.
+- **Temps libre** : les cases libres restantes sont séparées autant que possible afin d’éviter deux créneaux libres consécutifs.
 - **LV2** : les matières liées aux `StudentGroup` sont exclues du solveur classe-entière puis ajoutées à la proposition comme séances groupées au même horaire ; le groupe majoritaire garde la salle habituelle, les autres utilisent des salles normales libres, avec application atomique.
 
 ## 10. Année scolaire, périodes & promotions

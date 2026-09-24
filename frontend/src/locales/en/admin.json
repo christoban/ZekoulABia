@@ -211,7 +211,8 @@
       "students": "Enrolled Students",
       "teachers": "Teachers",
       "attendance_rate": "Attendance Rate",
-      "active_exams": "Active Exams"
+      "active_exams": "Active Exams",
+      "assignment_issues": "Assignments to resolve"
     },
     "recent_activity_title": "Recent Activity",
     "no_recent_activity": "No recent activity",
@@ -1238,7 +1239,15 @@
     }
   },
   "affectations": {
-    "title": "Pedagogical Assignments"
+    "title": "Pedagogical Assignments",
+    "apCapExceeded": "The 14-hour limit would be exceeded ({current}h + {candidate}h).",
+    "clearClass": "Cancel all assignments",
+    "clearClassConfirm": "Cancel all assignments for {className}? This action is irreversible.",
+    "clearClassSuccess": "{count} assignment(s) cancelled",
+    "clearClassError": "Could not cancel assignments",
+    "clearing": "Cancelling…",
+    "apCapSuggestions": "Alternative teachers",
+    "apCapNoSuggestion": "No qualified teacher is available without exceeding the limit."
   },
   "attendance": {
     "title": "Attendance"

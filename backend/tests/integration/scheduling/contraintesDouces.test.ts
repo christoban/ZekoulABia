@@ -191,7 +191,14 @@ describe('Contraintes douces V2.5 — effet réel sur les séances', () => {
     expect(ecartCharge(resultat.seances, 5)).toBeLessThanOrEqual(2);
   });
 
-  it('T6 — blocs de 2h : les deux occurrences forment une paire adjacente', async () => {
+  it('T6 — limite de deux temps libres par jour', async () => {
+    const fixture = { exigences: exigences(5), grille: grille(1, 8) };
+    const resultat = await adapter.proposer(input({ ...fixture, contraintes: { maxTempsLibresParJour: 2 } }));
+
+    expect(resultat.statut).toBe('INFAISABLE');
+  });
+
+  it('T7 — blocs de 2h : les deux occurrences forment une paire adjacente', async () => {
     const exigencesBloc = Array.from({ length: 2 }, () => ({
       subjectId: 'maths', subjectType: 'THEORETICAL' as const, teacherId: 'prof-T',
       durationMinutes: 60, blocDureeCases: 2,

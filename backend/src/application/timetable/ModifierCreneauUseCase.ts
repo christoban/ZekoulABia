@@ -25,7 +25,7 @@ const LIMITE_AP_HEURES = 14;
 export class ModifierCreneauUseCase {
   constructor(private readonly timetableRepository: TimetableRepository) {}
 
-  async execute(commande: ModifierCreneauCommande): Promise<void> {
+  async execute(commande: ModifierCreneauCommande): Promise<CreneauHoraire> {
     // 1. Charger le créneau existant
     const creneauExistant = await this.timetableRepository.findCreneauById(commande.creneauId);
     if (!creneauExistant) throw new Error(`Créneau introuvable : ${commande.creneauId}`);
@@ -103,5 +103,6 @@ export class ModifierCreneauUseCase {
     }
 
     await this.timetableRepository.updateCreneau(creneauModifie);
+    return creneauModifie;
   }
 }

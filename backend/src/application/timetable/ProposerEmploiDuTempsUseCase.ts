@@ -19,10 +19,10 @@ import type {
   TempsLibrePropose,
 } from '@domain/ports/services/SchedulingSolverPort';
 import type { SchedulingGridPort } from '@domain/ports/services/SchedulingGridPort';
-import { joursActifsVersIndex } from '@domain/types/joursSemaine';
+import { joursActifsVersIndex, NOMS_JOURS } from '@domain/types/joursSemaine';
 import type { SubjectType } from '@domain/types/enums';
 import { CreneauHoraire } from '@domain/entities/CreneauHoraire';
-import { calculerCategorieJoursDistincts } from '@domain/rules/ReglesPedagogiquesEmploiDuTemps';
+import { calculerCategorieJoursDistincts, validerReglesPedagogiquesProposition } from '@domain/rules/ReglesPedagogiquesEmploiDuTemps';
 
 export interface ProposerEmploiDuTempsCommande {
   timetableId: string;
@@ -70,6 +70,10 @@ export class ProposerEmploiDuTempsUseCase {
 
   async execute(commande: ProposerEmploiDuTempsCommande): Promise<PropositionEmploiDuTemps> {
     const contexte = await this.chargerContexte(commande);
+    const contraintesSolveur = { ...(commande.contraintes ?? {}) };
+    delete contraintesSolveur.interdireTempsLibresConsecutifs;
+    delete contraintesSolveur.maxTempsLibresParJour;
+    contraintesSolveur.reglesPedagogiques = false;
     const proposition = await this.solver.proposer({
       classId: contexte.classId,
       salleHabituelleId: contexte.salleHabituelleId,
@@ -78,12 +82,19 @@ export class ProposerEmploiDuTempsUseCase {
       sallesDisponibles: contexte.sallesDisponibles,
       occupationExistante: contexte.occupationExistante,
       indisponibilitesEnseignants: contexte.indisponibilitesEnseignants,
-      contraintes: commande.contraintes,
+       contraintes: { ...contraintesSolveur, explicatifs: true },
+
     });
     if (proposition.statut === 'INFAISABLE') return proposition;
     const seancesGroupes = await this.calculerSeancesGroupes(contexte, proposition.seances);
     const tempsLibres = this.calculerTempsLibres(contexte, [...proposition.seances, ...seancesGroupes]);
-    return { ...proposition, seancesGroupes, tempsLibres };
+    const avertissements = this.verifierPreferencesTempsLibres(tempsLibres);
+    try {
+      validerReglesPedagogiquesProposition(proposition.seances, contexte.exigences, contexte.grille);
+    } catch (error) {
+      avertissements.push(error instanceof Error ? `Règle pédagogique à revoir : ${error.message}` : 'Une règle pédagogique doit être revue.');
+    }
+    return { ...proposition, seancesGroupes, tempsLibres, ...(avertissements.length > 0 ? { avertissements } : {}) };
   }
 
   /** Charge et valide tout le contexte du solveur, sans résoudre — réutilisé par le what-if. */
@@ -93,8 +104,8 @@ export class ProposerEmploiDuTempsUseCase {
     if (emploiDuTemps.schoolId !== commande.schoolId) {
       throw new Error('Accès refusé : EDT hors de votre établissement');
     }
-    if (emploiDuTemps.estPublie()) {
-      throw new Error("Impossible de proposer un emploi du temps pour un EDT déjà publié");
+    if (!emploiDuTemps.estBrouillon()) {
+      throw new Error("Seul un EDT en brouillon peut être proposé ou modifié");
     }
 
     const grille = await this.chargerGrille(commande.schoolId);
@@ -173,6 +184,26 @@ export class ProposerEmploiDuTempsUseCase {
        groupesLV2,
        indisponibilitesEnseignants,
     };
+  }
+
+  private verifierPreferencesTempsLibres(tempsLibres: TempsLibrePropose[]): string[] {
+    const avertissements: string[] = [];
+    const parJour = new Map<number, TempsLibrePropose[]>();
+    for (const tempsLibre of tempsLibres) {
+      const valeurs = parJour.get(tempsLibre.dayOfWeek) ?? [];
+      valeurs.push(tempsLibre);
+      parJour.set(tempsLibre.dayOfWeek, valeurs);
+    }
+    for (const [jour, valeurs] of parJour) {
+      if (valeurs.length > 2) avertissements.push(`Le ${NOMS_JOURS[jour] ?? String(jour)} comporte ${valeurs.length} Temps libre ; la préférence est de 2 maximum.`);
+      valeurs.sort((a, b) => a.startTime.localeCompare(b.startTime));
+      for (let i = 1; i < valeurs.length; i++) {
+        if (valeurs[i - 1]!.endTime === valeurs[i]!.startTime) {
+          avertissements.push(`Deux Temps libre se suivent le ${NOMS_JOURS[jour] ?? String(jour)} (${valeurs[i - 1]!.startTime}).`);
+        }
+      }
+    }
+    return avertissements;
   }
 
   private calculerTempsLibres(contexte: ContexteEmploiDuTemps, seances: SeanceProposee[]): TempsLibrePropose[] {

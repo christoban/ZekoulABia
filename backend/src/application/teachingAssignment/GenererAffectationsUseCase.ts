@@ -1,6 +1,7 @@
 import type { TeachingAssignmentGeneratorRepository } from '@domain/ports/repositories/TeachingAssignmentGeneratorRepository';
 import {
   genererAffectations,
+  reequilibrerAffectations,
   type CandidatMatiereClasse,
   type EnseignantEligible,
   type MatiereNonResolue,
@@ -11,10 +12,12 @@ export interface GenererAffectationsCommande {
   schoolId: string;
   academicYearId: string;
   classId?: string;
+  rebalanceExisting?: boolean;
 }
 
 export interface ResumeGenerationAffectations {
   createdCount: number;
+  rebalancedCount: number;
   nonResolus: MatiereNonResolue[];
   horsPerimetre: MatiereHorsPerimetre[];
 }
@@ -47,7 +50,7 @@ export class GenererAffectationsUseCase {
     const chargeParEnseignant = new Map<string, number>();
     for (const a of data.affectations) {
       const key = `${a.classId}:${a.subjectId}`;
-      const wp = weeklyPeriodsByKey.get(key) ?? 0;
+      const wp = weeklyPeriodsByKey.get(key) ?? a.subjectHoursPerWeek ?? 0;
       chargeParEnseignant.set(a.teacherId, (chargeParEnseignant.get(a.teacherId) ?? 0) + wp);
     }
 
@@ -57,6 +60,21 @@ export class GenererAffectationsUseCase {
       estAP: e.estAP,
       chargeActuelleHeures: chargeParEnseignant.get(e.teacherId) ?? 0,
     }));
+
+    let rebalancedCount = 0;
+    if (commande.rebalanceExisting) {
+      const affectationsAEquilibrer = data.affectations
+        .filter(affectation => !classId || affectation.classId === classId)
+        .map(affectation => ({
+          ...affectation,
+          weeklyPeriods: weeklyPeriodsByKey.get(`${affectation.classId}:${affectation.subjectId}`) ?? affectation.subjectHoursPerWeek ?? 0,
+        }));
+      const modifications = reequilibrerAffectations(affectationsAEquilibrer, enseignantsEligibles);
+      rebalancedCount = await this.generatorRepository.updateAssignmentsInTransaction(modifications.map(modification => ({
+        id: modification.id,
+        teacherId: modification.nouveauTeacherId,
+      })));
+    }
 
     const resultat = genererAffectations(candidats, enseignantsEligibles);
 
@@ -69,9 +87,19 @@ export class GenererAffectationsUseCase {
     }));
 
     const createdCount = await this.generatorRepository.createAssignmentsInTransaction(assignments);
+    await this.generatorRepository.persistIssues({
+      schoolId,
+      academicYearId,
+      issues: resultat.nonResolus.map(issue => ({
+        classId: issue.classId,
+        subjectId: issue.subjectId,
+        reason: issue.raison,
+      })),
+    });
 
     return {
       createdCount,
+      rebalancedCount,
       nonResolus: resultat.nonResolus,
       horsPerimetre: resultat.horsPerimetre,
     };

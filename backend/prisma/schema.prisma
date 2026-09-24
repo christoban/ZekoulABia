@@ -1198,6 +1198,23 @@ model TeacherDepartment {
   @@id([teacherProfileId, departmentId])
 }
 
+model TeachingAssignmentIssue {
+  id             String    @id @default(cuid())
+  schoolId       String
+  academicYearId String
+  classId        String
+  subjectId      String
+  reason         String
+  status         String    @default("OPEN")
+  details        Json?
+  detectedAt     DateTime  @default(now())
+  resolvedAt     DateTime?
+  resolvedById   String?
+
+  @@unique([schoolId, academicYearId, classId, subjectId])
+  @@index([schoolId, academicYearId, status])
+}
+
 model TeachingAssignment {
   id             String @id @default(cuid())
   classId        String

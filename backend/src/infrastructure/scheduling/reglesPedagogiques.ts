@@ -9,8 +9,13 @@ export function modeliserReglesPedagogiques(args: {
   y: (BoolVar | null)[][];
   exigences: ExigenceSeance[];
   grille: CaseGrille[];
+  options?: {
+    occurrencesParJour?: boolean;
+    contiguite?: boolean;
+    joursDistinctsEPS?: boolean;
+  };
 }): void {
-  const { model, y, exigences, grille } = args;
+  const { model, y, exigences, grille, options } = args;
   const indicesParMatiere = new Map<string, number[]>();
   exigences.forEach((exigence, index) => {
     const indices = indicesParMatiere.get(exigence.subjectId) ?? [];
@@ -49,13 +54,16 @@ export function modeliserReglesPedagogiques(args: {
         .filter((variable): variable is BoolVar => variable !== undefined);
       if (variablesJour.length === 0) continue;
 
-      model.addLinearConstraint(weightedSum(variablesJour, variablesJour.map(() => 1)), 0, 2);
+      if (options?.occurrencesParJour !== false) {
+        model.addLinearConstraint(weightedSum(variablesJour, variablesJour.map(() => 1)), 0, 2);
+      }
 
-      if (doitEtreDeuxJours) {
+      if (doitEtreDeuxJours && options?.joursDistinctsEPS !== false) {
         model.addAtMostOne(variablesJour);
         continue;
       }
 
+      if (options?.contiguite === false) continue;
       for (let i = 0; i < casesJour.length; i++) {
         for (let j = i + 2; j < casesJour.length; j++) {
           const premiere = variableParCase.get(casesJour[i]!);

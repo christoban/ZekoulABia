@@ -22,6 +22,7 @@ let server: Server;
 let baseUrl: string;
 let schoolId: string;
 let adminToken: string;
+let staffToken: string;
 let academicYearId: string;
 let classId: string;
 let subjectMathsId: string;
@@ -29,7 +30,7 @@ let subjectHistoryId: string;
 let teacherAPId: string;
 let teacherNormalId: string;
 
-const headers = () => ({ Cookie: `access_token=${adminToken}`, 'Content-Type': 'application/json' });
+const headers = () => ({ Cookie: `access_token=${staffToken}`, 'Content-Type': 'application/json' });
 
 beforeAll(async () => {
   const app = express();
@@ -46,6 +47,12 @@ beforeAll(async () => {
   const admin = await creerUtilisateurTest(prismaTest, schoolId, { role: 'ADMIN', suffix: 'affect-manuelle-admin' });
   adminToken = jwt.sign(
     { userId: admin.id, schoolId, role: 'ADMIN', permissions: [], tokenType: 'access' },
+    process.env.JWT_SECRET!,
+  );
+
+  const staff = await creerUtilisateurTest(prismaTest, schoolId, { role: 'STAFF', suffix: 'affect-manuelle-staff' });
+  staffToken = jwt.sign(
+    { userId: staff.id, schoolId, role: 'STAFF', permissions: ['MANAGE_TEACHING_ASSIGNMENTS'], tokenType: 'access' },
     process.env.JWT_SECRET!,
   );
 
@@ -123,11 +130,45 @@ describe('POST /teaching-assignments — validation charge AP', () => {
     expect(body.error.suggestions.some((s: any) => s.teacherId === teacherNormalId)).toBe(true);
   });
 
+  it('ne compte pas deux fois une affectation déjà existante', async () => {
+    const res = await assign(subjectMathsId, teacherAPId);
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.success).toBe(true);
+  });
+
+  it('annule toutes les affectations de la classe en une requête', async () => {
+    const res = await fetch(`${baseUrl}/teaching-assignments/clear-class`, {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({ classId }),
+    });
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.success).toBe(true);
+    expect(body.data.count).toBeGreaterThan(0);
+  });
+
   it('autorise l’affectation si l’enseignant n’est pas AP', async () => {
     const res = await assign(subjectHistoryId, teacherNormalId);
     const body = await res.json();
 
     expect(res.status).toBe(200);
     expect(body.success).toBe(true);
+  });
+
+  it('annule toutes les affectations de l’année pour l’établissement', async () => {
+    const res = await fetch(`${baseUrl}/teaching-assignments/clear-all`, {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({ academicYearId }),
+    });
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.success).toBe(true);
+    expect(body.data.count).toBeGreaterThan(0);
   });
 });

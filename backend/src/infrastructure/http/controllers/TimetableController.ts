@@ -113,13 +113,13 @@ export class TimetableController {
   modifierSlot = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const user = req.user;
-      await this.modifierCreneau.execute({
+      const resultat = await this.modifierCreneau.execute({
         creneauId: req.params['slotId'] as string,
         timetableId: req.params['id'] as string,
         schoolId: user.schoolId,
         ...req.body,
       });
-      res.json({ success: true, message: 'Créneau mis à jour' });
+      res.json({ success: true, message: 'Créneau mis à jour', data: resultat.toObject() });
     } catch (error) {
       this.gererErreur(error, res, next);
     }

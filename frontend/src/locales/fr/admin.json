@@ -211,7 +211,8 @@
       "students": "Élèves inscrits",
       "teachers": "Enseignants",
       "attendance_rate": "Taux de présence",
-      "active_exams": "Examens actifs"
+      "active_exams": "Examens actifs",
+      "assignment_issues": "Affectations à traiter"
     },
     "recent_activity_title": "Activité récente",
     "no_recent_activity": "Aucune activité récente",
@@ -1204,7 +1205,15 @@
     }
   },
   "affectations": {
-    "title": "Affectations pédagogiques"
+    "title": "Affectations pédagogiques",
+    "apCapExceeded": "Le plafond de 14 heures serait dépassé ({current}h + {candidate}h).",
+    "clearClass": "Annuler toutes les affectations",
+    "clearClassConfirm": "Annuler toutes les affectations de la classe {className} ? Cette action est irréversible.",
+    "clearClassSuccess": "{count} affectation(s) annulée(s)",
+    "clearClassError": "Impossible d'annuler les affectations",
+    "clearing": "Annulation…",
+    "apCapSuggestions": "Enseignants alternatifs",
+    "apCapNoSuggestion": "Aucun enseignant qualifié disponible sans dépasser le plafond."
   },
   "attendance": {
     "title": "Présences"

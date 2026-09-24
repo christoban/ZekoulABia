@@ -2,10 +2,20 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
-import { AlertTriangle, Calendar, CalendarDays, Coffee, Trash2, UtensilsCrossed } from 'lucide-react'
+import { AlertTriangle, Calendar, CalendarDays, Coffee, Loader2, Trash2, UtensilsCrossed } from 'lucide-react'
 import SectionTimetableStaffActions from './SectionTimetableStaffActions'
 
 const FREE_VALUE = '__FREE__'
+
+async function lireReponseJson<T>(reponse: Response): Promise<T> {
+  const texte = await reponse.text()
+  if (!texte.trim()) throw new Error(`Réponse vide du serveur (HTTP ${reponse.status})`)
+  try {
+    return JSON.parse(texte) as T
+  } catch {
+    throw new Error(`Réponse invalide du serveur (HTTP ${reponse.status})`)
+  }
+}
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
@@ -45,6 +55,21 @@ interface Assignment {
   subjectId: string; subjectName: string; coefficient: number
   currentTeacherId: string | null; currentTeacherName: string | null
   eligibleTeachers: { id: string; name: string }[]
+}
+
+interface BulkProposal {
+  seances: unknown[]
+  seancesGroupes: unknown[]
+}
+
+interface BulkResult {
+  classId: string
+  className: string
+  timetableId?: string
+  status: 'success' | 'error' | 'applied'
+  error?: string
+  warnings: string[]
+  proposal?: BulkProposal
 }
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -88,6 +113,9 @@ export default function SectionTimetable({ onToast }: Props) {
   const [generating, setGenerating]       = useState(false)
   const [submitting, setSubmitting]       = useState(false)
   const [clearingAll, setClearingAll]     = useState(false)
+  const [bulkPropose, setBulkPropose]     = useState<{ current: number; total: number; className: string; errors: string[]; warnings: string[] } | null>(null)
+  const [bulkResults, setBulkResults]     = useState<BulkResult[]>([])
+  const [applyingAll, setApplyingAll]     = useState(false)
   const [error, setError]                 = useState<string | null>(null)
 
   // Modal
@@ -179,6 +207,91 @@ export default function SectionTimetable({ onToast }: Props) {
     }
   }
 
+  const handleProposeAll = async () => {
+    if (classes.length === 0 || !window.confirm(t('timetable.bulkProposeConfirm'))) return
+    const errors: string[] = []
+    const warnings: string[] = []
+    const results: BulkResult[] = []
+    setBulkResults([])
+    setBulkPropose({ current: 0, total: classes.length, className: '', errors, warnings })
+    for (const [index, classe] of classes.entries()) {
+      setBulkPropose({ current: index, total: classes.length, className: classe.name, errors: [...errors], warnings: [...warnings] })
+      try {
+        const listResponse = await fetchApi(`/api/v2/timetables?classId=${encodeURIComponent(classe.id)}`, { credentials: 'include' })
+        const listData = await lireReponseJson<{ data?: Timetable[] }>(listResponse)
+        let timetableId = listData.data?.[0]?.id
+        if (!timetableId) {
+          const skeletonResponse = await fetchApi('/api/v2/timetables/generate-skeleton', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ classId: classe.id }),
+          })
+          const skeletonData = await lireReponseJson<{ data?: { id?: string; timetableId?: string }; message?: string }>(skeletonResponse)
+          if (!skeletonResponse.ok && skeletonResponse.status !== 409) throw new Error(skeletonData.message || t('timetable.generationError'))
+          timetableId = skeletonData.data?.id ?? skeletonData.data?.timetableId
+        }
+        if (!timetableId) throw new Error(t('timetable.bulkNoTimetable'))
+        const proposalResponse = await fetchApi(`/api/v2/timetables/${timetableId}/propose-schedule`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        })
+        const proposalData = await lireReponseJson<{ message?: string; data?: BulkProposal & { avertissements?: string[]; problemes?: string[] } }>(proposalResponse)
+        if (!proposalResponse.ok) throw new Error(proposalData.message || t('timetable.planning.proposeError'))
+        const classWarnings = [
+          ...(proposalData.data?.avertissements ?? []),
+          ...(proposalData.data?.problemes ?? []),
+        ].map(warning => `${classe.name} : ${warning}`)
+        warnings.push(...classWarnings)
+        results.push({ classId: classe.id, className: classe.name, timetableId, status: 'success', warnings: classWarnings, proposal: proposalData.data ? { seances: proposalData.data.seances ?? [], seancesGroupes: proposalData.data.seancesGroupes ?? [] } : undefined })
+      } catch (error) {
+        const message = error instanceof Error ? error.message : t('timetable.planning.proposeError')
+        errors.push(`${classe.name} : ${message}`)
+        results.push({ classId: classe.id, className: classe.name, status: 'error', error: message, warnings: [] })
+      }
+      setBulkResults([...results])
+      setBulkPropose({ current: index + 1, total: classes.length, className: classe.name, errors: [...errors], warnings: [...warnings] })
+    }
+    setBulkPropose(null)
+    onToast(errors.length > 0 ? t('timetable.bulkProposePartial', { count: errors.length }) : t('timetable.bulkProposeSuccess'), errors.length > 0 ? 'info' : 'success')
+  }
+
+  const handleApplyAll = async () => {
+    const applicable = bulkResults.filter(result => result.status === 'success' && result.timetableId && result.proposal)
+    if (applicable.length === 0 || !window.confirm(t('timetable.bulkApplyConfirm', { count: applicable.length }))) return
+    setApplyingAll(true)
+    const appliedResults: BulkResult[] = []
+    for (const result of bulkResults) {
+      if (result.status !== 'success' || !result.timetableId || !result.proposal) {
+        appliedResults.push(result)
+        continue
+      }
+      try {
+        const response = await fetchApi(`/api/v2/timetables/${result.timetableId}/apply-schedule`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ seances: result.proposal.seances, seancesGroupes: result.proposal.seancesGroupes }),
+        })
+        const data = await lireReponseJson<{ message?: string }>(response)
+        if (!response.ok) throw new Error(data.message || t('timetable.planning.applyError'))
+        appliedResults.push({ ...result, status: 'applied' })
+      } catch (error) {
+        appliedResults.push({ ...result, status: 'error', error: error instanceof Error ? error.message : t('timetable.planning.applyError') })
+      }
+      setBulkResults([...appliedResults])
+    }
+    setApplyingAll(false)
+    onToast(t('timetable.bulkApplyDone'), 'success')
+  }
+
+  const clearBulkResults = () => {
+    setBulkResults([])
+    setBulkPropose(null)
+  }
+
   const handleSubmit = async () => {
     if (!timetable || timetable.status !== 'DRAFT') return
     setSubmitting(true)
@@ -249,7 +362,7 @@ export default function SectionTimetable({ onToast }: Props) {
   }
 
   const handleSaveSlot = async () => {
-    if (!modalSlot) return
+    if (!modalSlot || !timetable) return
     setSaving(true); setConflictMsg(null)
     try {
       // Vérification conflit avant envoi
@@ -259,31 +372,53 @@ export default function SectionTimetable({ onToast }: Props) {
            `/api/v2/timetables/check-conflict?teacherId=${modalTeacherId}&dayOfWeek=${modalSlot.dayOfWeek}&startTime=${encodeURIComponent(modalSlot.startTime)}${excludeSlotId}`,
            { credentials: 'include' }
          )
-        const chkData = await chkRes.json()
+         const chkData = await lireReponseJson<{
+           data?: { hasConflict?: boolean; conflictClass?: string }
+         }>(chkRes)
         if (chkData.data?.hasConflict) {
-          setConflictMsg(t('timetable.conflictPrefix', { conflictClass: chkData.data.conflictClass }))
+          setConflictMsg(t('timetable.conflictPrefix', { conflictClass: chkData.data.conflictClass ?? '' }))
           setSaving(false); return
         }
       }
 
-      const res = await fetchApi(`/api/v2/timetables/slots/${modalSlot.id}`, {
-        method: 'PATCH', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-           subjectId: modalSubjectId === FREE_VALUE ? null : modalSubjectId || null,
-           teacherId: modalTeacherId || null,
-           kind: modalSubjectId === FREE_VALUE ? 'FREE' : 'CLASS',
-           isLV2Slot: lv2SubjectIds.has(modalSubjectId) ? modalIsLV2Slot : false,
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        if (data.code === 'CONFLIT_HORAIRE') { setConflictMsg(data.message); return; }
-        if (data.code === 'VOLUME_AP_DEPASSE') { setConflictMsg(data.message); return; }
-        throw new Error(data.message || 'Erreur sauvegarde')
-      }
+       const isNewSlot = !modalSlot.id
+       const res = await fetchApi(
+         isNewSlot
+           ? `/api/v2/timetables/${timetable.id}/slots`
+           : `/api/v2/timetables/${timetable.id}/slots/${modalSlot.id}`,
+         {
+           method: isNewSlot ? 'POST' : 'PUT', credentials: 'include',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({
+              dayOfWeek: modalSlot.dayOfWeek,
+              startTime: modalSlot.startTime,
+              endTime: modalSlot.endTime,
+              subjectId: modalSubjectId === FREE_VALUE ? null : modalSubjectId || null,
+              teacherId: modalTeacherId || null,
+              kind: modalSubjectId === FREE_VALUE ? 'FREE' : 'CLASS',
+              isLV2Slot: lv2SubjectIds.has(modalSubjectId) ? modalIsLV2Slot : false,
+           }),
+         }
+       )
+       const data = await lireReponseJson<{
+         data?: Partial<TimetableSlot>
+         message?: string
+         code?: string
+       }>(res)
+       if (!res.ok) {
+if (data.code === 'CONFLIT_HORAIRE') { setConflictMsg(data.message ?? 'Erreur'); return; }
+         if (data.code === 'VOLUME_AP_DEPASSE') { setConflictMsg(data.message ?? 'Erreur'); return; }
+         throw new Error(data.message || 'Erreur sauvegarde')
+       }
 
-      // Mettre à jour le slot dans l'état local
+       if (isNewSlot) {
+         setModalSlot(null)
+         await fetchTimetable()
+         onToast(t('timetable.slotUpdated'), 'success')
+         return
+       }
+
+       // Mettre à jour le slot dans l'état local
       setTimetable(prev => prev ? {
         ...prev,
         slots: prev.slots.map(s => s.id === modalSlot.id ? { ...s, ...data.data } : s),
@@ -316,10 +451,14 @@ export default function SectionTimetable({ onToast }: Props) {
              isLV2Slot: lv2SubjectIds.has(modalSubjectId) ? modalIsLV2Slot : false,
            }),
          })
-         const data = await res.json()
-         if (!res.ok) {
-           if (data.code === 'CONFLIT_HORAIRE') { setConflictMsg(data.message); return }
-           if (data.code === 'VOLUME_AP_DEPASSE') { setConflictMsg(data.message); return }
+       const data = await lireReponseJson<{
+         data?: Partial<TimetableSlot>
+         message?: string
+         code?: string
+       }>(res)
+       if (!res.ok) {
+if (data.code === 'CONFLIT_HORAIRE') { setConflictMsg(data.message ?? 'Erreur'); return }
+            if (data.code === 'VOLUME_AP_DEPASSE') { setConflictMsg(data.message ?? 'Erreur'); return }
            throw new Error(data.message || 'Erreur sauvegarde')
          }
          setModalSlot(null)
@@ -398,10 +537,43 @@ export default function SectionTimetable({ onToast }: Props) {
              </>
            )}
 
-        </div>
-      </div>
+         {!classId && (
+             <button style={btnSec} onClick={handleProposeAll} disabled={loadingClasses || classes.length === 0 || bulkPropose !== null}>
+               {bulkPropose ? <Loader2 size={14} className="animate-spin" /> : <CalendarDays size={14} />} {bulkPropose ? t('timetable.bulkProposeRunning', { current: bulkPropose.current, total: bulkPropose.total }) : t('timetable.bulkProposeButton')}
+             </button>
+         )}
+         </div>
+       </div>
 
-      {classId && !loadingClasses && (
+       {bulkPropose && (
+         <div style={{ background: 'var(--blue-light)', border: '1px solid var(--blue-light)', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12.5, color: 'var(--text2)' }}>
+           <div style={{ fontWeight: 700 }}>{t('timetable.bulkProposeProgress', { current: bulkPropose.current, total: bulkPropose.total, className: bulkPropose.className })}</div>
+           {bulkPropose.errors.length > 0 && <div style={{ marginTop: 4, color: 'var(--red)' }}>{bulkPropose.errors.join(' · ')}</div>}
+           {bulkPropose.warnings.length > 0 && <div style={{ marginTop: 4, color: 'var(--amber)' }}>{bulkPropose.warnings.join(' · ')}</div>}
+         </div>
+       )}
+
+        {bulkResults.length > 0 && !bulkPropose && (
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px', marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
+              <strong style={{ fontSize: 13, color: 'var(--text)' }}>{t('timetable.bulkResultsTitle')}</strong>
+              <button type="button" style={btnSec} onClick={clearBulkResults}><Trash2 size={13} /> {t('timetable.bulkClear')}</button>
+            </div>
+            {bulkResults.map(result => (
+              <div key={result.classId} style={{ padding: '7px 0', borderTop: '1px solid var(--border)', fontSize: 12, color: result.status === 'error' ? 'var(--red)' : result.status === 'applied' ? 'var(--green)' : 'var(--text2)' }}>
+                <strong>{result.className}</strong> — {result.status === 'error' ? result.error : result.status === 'applied' ? t('timetable.bulkApplied') : t('timetable.bulkProposed')}
+                {result.warnings.map(warning => <div key={warning} style={{ marginTop: 3, color: 'var(--amber)' }}>{warning}</div>)}
+              </div>
+            ))}
+            {bulkResults.every(result => result.status === 'success') && (
+              <button type="button" style={{ ...btnPrim, marginTop: 10 }} onClick={handleApplyAll} disabled={applyingAll}>
+                {applyingAll ? <Loader2 size={14} className="animate-spin" /> : null} {applyingAll ? t('timetable.bulkApplying') : t('timetable.bulkApplyAll')}
+              </button>
+            )}
+          </div>
+        )}
+
+        {classId && !loadingClasses && (
         <SectionTimetableStaffActions
           classId={classId}
           academicYearId={classes.find(c => c.id === classId)?.academicYearId}
@@ -473,18 +645,25 @@ export default function SectionTimetable({ onToast }: Props) {
               </thead>
               <tbody>
                 {squelette.map((periode, idx) => {
-                  if (periode.type !== 'COURS') {
-                    // Ligne pause
-                    const isPetite = periode.type === 'PETITE_PAUSE'
-                    return (
-                      <tr key={`pause-${idx}`}>
-                        <td colSpan={joursActifs.length + 1}
-                          style={{ textAlign: 'center', padding: '3px 10px', background: 'var(--amber-light)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 700, color: 'var(--amber)', letterSpacing: '0.4px' }}>
-                          {isPetite ? <Coffee size={12} strokeWidth={2} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} /> : <UtensilsCrossed size={12} strokeWidth={2} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />}{isPetite ? t('timetable.smallBreak') : t('timetable.bigBreak')} — {periode.debut} à {periode.fin} ({periode.duree} min)
-                        </td>
-                      </tr>
-                    )
-                  }
+                   if (periode.type !== 'COURS') {
+                     const isPetite = periode.type === 'PETITE_PAUSE'
+                     return (
+                       <tr key={`pause-${idx}`}>
+                         <td style={{ padding: '3px 8px', background: 'var(--bg)', fontSize: 11.5, fontWeight: 800, color: 'var(--text3)', textAlign: 'center', border: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
+                           {periode.debut}<br /><span style={{ fontSize: 10, fontWeight: 600 }}>{periode.fin}</span>
+                         </td>
+                         {joursActifs.map(jour => {
+                           const pauseActive = (squeletteParJour[jour] ?? squelette).some(periodeJour => periodeJour.type === periode.type && periodeJour.debut === periode.debut && periodeJour.fin === periode.fin)
+                           return (
+                             <td key={jour} style={{ padding: '3px 10px', background: pauseActive ? 'var(--amber-light)' : 'var(--bg)', border: '1px solid var(--border)', textAlign: 'center', fontSize: 11, fontWeight: 700, color: pauseActive ? 'var(--amber)' : 'var(--text3)' }}>
+                               {pauseActive && <>{isPetite ? <Coffee size={12} strokeWidth={2} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} /> : <UtensilsCrossed size={12} strokeWidth={2} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />}{isPetite ? t('timetable.smallBreak') : t('timetable.bigBreak')}</>}
+                             </td>
+                           )
+                         })}
+                       </tr>
+                     )
+                   }
+
 
                   return (
                     <tr key={`cours-${periode.debut}`}>

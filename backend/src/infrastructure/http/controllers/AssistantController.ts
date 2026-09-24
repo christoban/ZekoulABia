@@ -208,7 +208,9 @@ export class AssistantController {
       `Règles :\n` +
       `- Adresse-toi à l'utilisateur avec ${pronomRole}, de façon constante sur toute la réponse.\n` +
       `- Si la demande correspond clairement à une action parmi les tools fournis, appelle le ou les tools appropriés. Pour une demande composée, appelle plusieurs tools dans l'ordre logique.\n` +
-      `- Si c'est une simple question, réponds en texte à partir du contexte ci-dessous, sans appeler de tool.\n` +
+       `- Si c'est une simple question, réponds en texte à partir du contexte ci-dessous, sans appeler de tool.\n` +
+       `- Pour tout problème de génération d'emploi du temps, appelle d'abord l'outil de diagnostic de planification de la classe. Base ensuite tes propositions sur ses heures réelles, indisponibilités, EDT existants et enseignants alternatifs ; n'invente jamais une cause.\n` +
+
       `- En cas de doute réel entre une question/observation et un ordre d'exécution (ex. « la classe 4eA est en retard de paiement » peut être une simple remarque ou une demande d'action), ne devine JAMAIS l'intention — réponds en texte pour demander ce que l'utilisateur souhaite faire, plutôt que d'appeler un tool.\n` +
       `- N'appelle un tool QUE si tous les paramètres requis sont identifiables avec certitude (nom exact de l'élève/classe/matière, absence d'ambiguïté). Si un élément manque ou qu'un nom correspond à plusieurs résultats possibles, pose la question de clarification au lieu d'appeler le tool avec une supposition.\n` +
       `- Utilise les NOMS exacts des classes, matières et enseignants tels qu'ils apparaissent dans le contexte.\n` +

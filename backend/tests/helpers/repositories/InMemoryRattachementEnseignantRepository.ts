@@ -65,6 +65,23 @@ export class InMemoryRattachementEnseignantRepository implements RattachementEns
       }));
   }
 
+  async listerIssuesAffectations(_params: { schoolId: string; academicYearId?: string; status?: string }) {
+    return [];
+  }
+
+  async enregistrerIssueAffectation(_params: {
+    schoolId: string;
+    academicYearId: string;
+    classId: string;
+    subjectId: string;
+    reason: string;
+    details?: Record<string, unknown>;
+  }): Promise<void> {}
+
+  async listerUtilisateursAffectations(_schoolId: string): Promise<{ id: string }[]> {
+    return [];
+  }
+
   async listerEnseignantsEligibles(_schoolId: string, subjectId: string): Promise<EnseignantEligible[]> {
     return this.eligibleBySubject.get(subjectId) ?? [];
   }
@@ -86,6 +103,26 @@ export class InMemoryRattachementEnseignantRepository implements RattachementEns
   async retirer(params: { classId: string; subjectId: string; schoolId: string }): Promise<void> {
     this.assignations = this.assignations.filter(a => !(a.classId === params.classId && a.subjectId === params.subjectId));
   }
+
+  async supprimerToutesLesAffectationsDeLaClasse(params: { classId: string; schoolId: string }): Promise<number> {
+    const before = this.assignations.length;
+    this.assignations = this.assignations.filter(a => a.classId !== params.classId || (a.schoolId !== undefined && a.schoolId !== params.schoolId));
+    return before - this.assignations.length;
+  }
+
+  async supprimerToutesLesAffectationsDeLEtablissement(params: { schoolId: string; academicYearId: string }): Promise<number> {
+    const before = this.assignations.length;
+    this.assignations = this.assignations.filter(a => a.schoolId !== params.schoolId || (a.academicYearId !== undefined && a.academicYearId !== params.academicYearId));
+    return before - this.assignations.length;
+  }
+
+  async resoudreIssueAffectation(_params: {
+    schoolId: string;
+    academicYearId: string;
+    classId: string;
+    subjectId: string;
+    userId: string;
+  }): Promise<void> {}
 
   async estRattacheALaClasse(
     teacherId: string,

@@ -92,6 +92,13 @@ describe('Workflow HTTP EDT', () => {
     expect((await prismaTest.timetable.findUnique({ where: { id: timetableId } }))?.status).toBe('DRAFT');
   });
 
+  it('refuse à l’Admin les actions techniques de préparation', async () => {
+    const response = await fetch(`${baseUrl}/timetables/${timetableId}/propose-schedule`, {
+      method: 'POST', headers: headers(adminToken),
+    });
+    expect(response.status).toBe(403);
+  });
+
   it('publie tous les EDT en attente et refuse un lot vide', async () => {
     const publishAll = await fetch(`${baseUrl}/timetables/publish-all`, { method: 'PUT', headers: headers(adminToken) });
     const body = await publishAll.json() as { data?: { publies: number; timetableIds: string[] } };

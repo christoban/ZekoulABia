@@ -16,6 +16,13 @@ interface AssignmentRow {
   eligibleTeachers: { id: string; name: string }[]
 }
 
+interface AssignmentError {
+  subjectId: string
+  currentLoad: number
+  candidateLoad: number
+  suggestions: { teacherId: string; firstName: string; lastName: string; chargeHeures: number }[]
+}
+
 const sScroll: React.CSSProperties = { height: '100%', overflowY: 'auto', padding: '32px 40px' }
 const sCardCls = 'rounded-[16px] md:rounded-[16px] p-[16px] md:px-[32px] md:py-[28px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]'
 const sCard: React.CSSProperties = { background: 'var(--surface)' }
@@ -31,6 +38,8 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
   const [loadingClasses, setLoadingClasses] = useState(true)
   const [loadingRows, setLoadingRows] = useState(false)
   const [saving, setSaving] = useState<string | null>(null) // subjectId en cours de sauvegarde
+  const [clearing, setClearing] = useState(false)
+  const [assignmentError, setAssignmentError] = useState<AssignmentError | null>(null)
   const { isOnline, addToQueue } = useSyncQueue()
 
   useEffect(() => {
@@ -81,8 +90,30 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
     })
   }
 
+  const handleClearClass = async () => {
+    const selectedClass = classes.find(c => c.id === classId)
+    if (!selectedClass || !window.confirm(t('affectations.clearClassConfirm', { className: selectedClass.name }))) return
+    setClearing(true)
+    try {
+      const res = await fetchApi('/api/v2/teaching-assignments/clear-class', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ classId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || t('affectations.clearClassError'))
+      onToast(t('affectations.clearClassSuccess', { count: data.data.count }), 'success')
+      loadAssignments(classId)
+    } catch (error) {
+      onToast(error instanceof Error ? error.message : t('affectations.clearClassError'), 'error')
+    } finally {
+      setClearing(false)
+    }
+  }
+
   const handleAssign = async (subjectId: string, teacherId: string | null) => {
     const payload = { classId, subjectId, teacherId }
+    setAssignmentError(null)
 
     if (!isOnline) {
       await addToQueue({ type: 'TEACHER_ASSIGNMENT', endpoint: '/api/v2/teaching-assignments', method: 'POST', payload })
@@ -99,6 +130,16 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
         body: JSON.stringify(payload),
       })
       const d = await res.json()
+      if (res.status === 409 && d.error?.code === 'AP_WEEKLY_CAP_EXCEEDED') {
+        setAssignmentError({
+          subjectId,
+          currentLoad: d.error.currentLoad,
+          candidateLoad: d.error.candidateLoad,
+          suggestions: d.error.suggestions ?? [],
+        })
+        onToast(t('affectations.apCapExceeded'), 'error')
+        return
+      }
       if (!res.ok) throw new Error(d.message || 'Erreur')
 
       applyAssignmentLocally(subjectId, teacherId)
@@ -108,6 +149,32 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
     } finally {
       setSaving(null)
     }
+  }
+
+  const renderAssignmentError = (subjectId: string) => {
+    if (assignmentError?.subjectId !== subjectId) return null
+    return (
+      <div style={{ marginTop: 8, padding: 8, borderRadius: 8, background: 'var(--red-light)', border: '1px solid var(--red-light)', fontSize: 11.5, color: 'var(--red)' }}>
+        <div style={{ fontWeight: 700, marginBottom: 4 }}>
+          {t('affectations.apCapExceeded', { current: assignmentError.currentLoad, candidate: assignmentError.candidateLoad })}
+        </div>
+        {assignmentError.suggestions.length > 0 ? (
+          <div>
+            <div style={{ marginBottom: 2 }}>{t('affectations.apCapSuggestions')} :</div>
+            {assignmentError.suggestions.map(suggestion => (
+              <button
+                key={suggestion.teacherId}
+                type="button"
+                onClick={() => handleAssign(subjectId, suggestion.teacherId)}
+                style={{ display: 'block', textAlign: 'left', background: 'transparent', border: 'none', padding: '2px 0', color: 'var(--red)', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                {suggestion.firstName} {suggestion.lastName} ({suggestion.chargeHeures}h)
+              </button>
+            ))}
+          </div>
+        ) : <div>{t('affectations.apCapNoSuggestion')}</div>}
+      </div>
+    )
   }
 
   const selectedClass = classes.find(c => c.id === classId)
@@ -145,6 +212,13 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
           </select>
         )}
       </div>
+      {classId && selectedClass && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -12, marginBottom: 24 }}>
+          <button type="button" onClick={handleClearClass} disabled={clearing} style={{ background: 'var(--red-light)', color: 'var(--red)', border: '1px solid var(--red-light)', borderRadius: 8, padding: '8px 13px', fontSize: 12, fontWeight: 700, cursor: clearing ? 'wait' : 'pointer', opacity: clearing ? 0.6 : 1 }}>
+            {clearing ? t('affectations.clearing') : t('affectations.clearClass')}
+          </button>
+        </div>
+      )}
 
       {/* KPI */}
       {meta && classId && (
@@ -220,12 +294,13 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
                         <option value={row.currentTeacherId}>{row.currentTeacherName ?? row.currentTeacherId}</option>
                       )}
                     </select>
-                    {row.eligibleTeachers.length === 0 && (
-                      <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>
-                        Aucun enseignant n'a déclaré cette matière.
-                      </div>
-                    )}
-                  </div>
+                     {row.eligibleTeachers.length === 0 && (
+                       <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>
+                         Aucun enseignant n'a déclaré cette matière.
+                       </div>
+                     )}
+                     {renderAssignmentError(row.subjectId)}
+                   </div>
                 )
               })}
             </div>
@@ -276,12 +351,13 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
                               <option value={row.currentTeacherId}>{row.currentTeacherName ?? row.currentTeacherId}</option>
                             )}
                           </select>
-                          {row.eligibleTeachers.length === 0 && (
-                            <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>
-                              Aucun enseignant n'a déclaré cette matière.
-                            </div>
-                          )}
-                        </td>
+                           {row.eligibleTeachers.length === 0 && (
+                             <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>
+                               Aucun enseignant n'a déclaré cette matière.
+                             </div>
+                           )}
+                           {renderAssignmentError(row.subjectId)}
+                         </td>
                         <td style={{ padding: '12px 8px', textAlign: 'center' }}>
                           {isSaving && <Loader2 size={16} className="animate-spin" />}
                           {!isSaving && !unassigned && <Check size={16} color="var(--green)" />}

@@ -20,6 +20,7 @@ interface DashStats {
   totalTeachers: number
   activeExams: number
   avgAttendance: string
+  pendingTeachingIssues: number
   recentActivity: string[]
 }
 
@@ -43,6 +44,7 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
     { icon: <Presentation size={22} strokeWidth={2} />, bg: 'var(--amber-light)', val: String(stats.totalTeachers ?? 0), label: t('dashboard.kpi.teachers'), trendBg: 'var(--amber-light)', trendColor: 'var(--amber)', nav: 'users' },
     { icon: <CheckCircle2 size={22} strokeWidth={2} />, bg: 'var(--green-light)', val: stats.avgAttendance || '0%', label: t('dashboard.kpi.attendance_rate'), trendBg: 'var(--green-light)', trendColor: 'var(--green)', nav: 'attendance' },
     { icon: <FileText size={22} strokeWidth={2} />, bg: 'var(--orange-light)', val: String(stats.activeExams ?? 0), label: t('dashboard.kpi.active_exams'), trendBg: 'var(--orange-light)', trendColor: 'var(--orange)', nav: 'academic-events' },
+    { icon: <AlertTriangle size={22} strokeWidth={2} />, bg: 'var(--red-light)', val: String(stats.pendingTeachingIssues ?? 0), label: t('dashboard.kpi.assignment_issues'), trendBg: 'var(--red-light)', trendColor: 'var(--red)', nav: 'org-pedagogy' },
   ] : []
 
   // Filtrage du flux d'activité par rôle

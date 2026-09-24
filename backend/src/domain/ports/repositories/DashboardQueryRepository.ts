@@ -7,6 +7,7 @@ export interface DashboardCounts {
   activeExams: number;
   presentAttendance: number;
   totalAttendance: number;
+  pendingTeachingIssues: number;
 }
 
 export interface TeacherSlots {
@@ -26,6 +27,7 @@ export interface AdminBadges {
   pendingGrades: number;
   pendingInvoices: number;
   pendingOnboardings?: number;
+  pendingTeachingIssues: number;
 }
 
 export interface DashboardQueryRepository {

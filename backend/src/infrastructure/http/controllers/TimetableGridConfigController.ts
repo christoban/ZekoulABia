@@ -51,7 +51,7 @@ export function calculerSqelette(cfg: {
 
   ajouterCours(cfg.periodesAvantP1)
 
-  if (cfg.dureePetitePause > 0 && cfg.periodesAvantP1 > 0 && periodesDemandees >= cfg.periodesAvantP1) {
+  if (cfg.dureePetitePause > 0 && cfg.periodesAvantP1 > 0 && periodesDemandees > cfg.periodesAvantP1) {
     const debut = toTime(cursor)
     cursor += cfg.dureePetitePause
     result.push({ ordre: 0, debut, fin: toTime(cursor), type: 'PETITE_PAUSE', duree: cfg.dureePetitePause })
@@ -60,7 +60,7 @@ export function calculerSqelette(cfg: {
   const avantGrandePause = cfg.periodesAvantP1 + cfg.periodesAvantP2
   ajouterCours(cfg.periodesAvantP2)
 
-  if (cfg.dureeGrandePause > 0 && cfg.periodesAvantP2 > 0 && periodesDemandees >= avantGrandePause) {
+  if (cfg.dureeGrandePause > 0 && cfg.periodesAvantP2 > 0 && periodesDemandees > avantGrandePause) {
     const debut = toTime(cursor)
     cursor += cfg.dureeGrandePause
     result.push({ ordre: 0, debut, fin: toTime(cursor), type: 'GRANDE_PAUSE', duree: cfg.dureeGrandePause })

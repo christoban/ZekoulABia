@@ -344,15 +344,16 @@ describe('ProposerEmploiDuTempsUseCase — volume horaire exact multi-séances (
       contraintes: { trouEnseignant: true, volumeMaxEnseignantParJour: 240 },
     });
 
-    expect(input()!.contraintes).toEqual({ trouEnseignant: true, volumeMaxEnseignantParJour: 240 });
+     expect(input()!.contraintes).toEqual({ trouEnseignant: true, volumeMaxEnseignantParJour: 240, reglesPedagogiques: false, explicatifs: true });
+
   });
 
-  it('sans contraintes → le solveur ne reçoit pas de champ contraintes', async () => {
+  it('active la séparation des temps libres même sans autres contraintes', async () => {
     const { solver, input } = solverCapturant();
     const useCase = construireUseCase(solver, { nbPeriodesParJour: 2 });
 
     await useCase.execute({ timetableId: 'edt-1', schoolId: 'school-1' });
 
-    expect(input()!.contraintes).toBeUndefined();
+    expect(input()!.contraintes).toEqual({ reglesPedagogiques: false, explicatifs: true });
   });
 });

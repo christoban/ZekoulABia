@@ -48,6 +48,18 @@ export type SuggestionEnseignant = {
   chargeHeures: number;
 };
 
+export type IssueAffectation = {
+  id: string;
+  classId: string;
+  className: string;
+  subjectId: string;
+  subjectName: string;
+  reason: string;
+  status: string;
+  detectedAt: Date;
+  resolvedAt: Date | null;
+};
+
 export type ValidationAffectationResultat =
   | { ok: true }
   | { ok: false; code: 'AP_WEEKLY_CAP_EXCEEDED'; currentLoad: number; candidateLoad: number; suggestions: SuggestionEnseignant[] };
@@ -76,6 +88,23 @@ export interface RattachementEnseignantRepository {
 
   listerAffectations(classId: string, schoolId: string): Promise<AffectationAvecEnseignant[]>;
 
+  listerIssuesAffectations(params: {
+    schoolId: string;
+    academicYearId?: string;
+    status?: string;
+  }): Promise<IssueAffectation[]>;
+
+  enregistrerIssueAffectation(params: {
+    schoolId: string;
+    academicYearId: string;
+    classId: string;
+    subjectId: string;
+    reason: string;
+    details?: Record<string, unknown>;
+  }): Promise<void>;
+
+  listerUtilisateursAffectations(schoolId: string): Promise<{ id: string }[]>;
+
   listerEnseignantsEligibles(schoolId: string, subjectId: string): Promise<EnseignantEligible[]>;
 
   verifierEnseignant(teacherId: string, schoolId: string): Promise<boolean>;
@@ -89,6 +118,18 @@ export interface RattachementEnseignantRepository {
   }): Promise<void>;
 
   retirer(params: { classId: string; subjectId: string; schoolId: string }): Promise<void>;
+
+  supprimerToutesLesAffectationsDeLaClasse(params: { classId: string; schoolId: string }): Promise<number>;
+
+  supprimerToutesLesAffectationsDeLEtablissement(params: { schoolId: string; academicYearId: string }): Promise<number>;
+
+  resoudreIssueAffectation(params: {
+    schoolId: string;
+    academicYearId: string;
+    classId: string;
+    subjectId: string;
+    userId: string;
+  }): Promise<void>;
 
   validerAffectationPossible(params: {
     classId: string;

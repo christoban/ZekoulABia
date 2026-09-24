@@ -4,6 +4,7 @@ import {
   type ActionDefinition,
   resolveClass,
   resolveSubject,
+  resolveTeacher,
   resolveCurrentAcademicYear,
   resolveCurrentPeriod,
   resolveCurrentSequence,
@@ -274,7 +275,214 @@ export function buildAdminAcademicGradeActions(deps: AdminActionDeps): ActionDef
       },
     },
 
-    // 29. Publier l'emploi du temps d'une classe — NON destructif (réversible)
+    {
+      name: 'reaffecter_enseignant_classe',
+      domain: 'timetable',
+      description: "Réaffecte une matière d'une classe à un autre enseignant qualifié après validation explicite.",
+      destructive: true,
+      requiredPermission: 'MANAGE_TEACHING_ASSIGNMENTS',
+      inputSchema: z.object({ className: z.string().min(1), subjectName: z.string().min(1), teacherName: z.string().min(1) }),
+      async summarizeDestructive(input, ctx) {
+        const classe = await resolveClass(ctx, input.className);
+        const matiere = await resolveSubject(ctx, input.subjectName);
+        const teacher = await resolveTeacher(ctx, input.teacherName);
+        const current = await ctx.prisma.teachingAssignment.findFirst({ where: { classId: classe.id, subjectId: matiere.id, schoolId: ctx.schoolId }, select: { teacher: { select: { firstName: true, lastName: true } } } });
+        return `Réaffecter ${matiere.name} de ${classe.name} à ${teacher.name} ? Actuellement : ${current?.teacher ? `${current.teacher.firstName} ${current.teacher.lastName}` : 'aucun enseignant'}.`;
+      },
+      async execute(input, ctx) {
+        const classe = await resolveClass(ctx, input.className);
+        const matiere = await resolveSubject(ctx, input.subjectName);
+        const teacher = await resolveTeacher(ctx, input.teacherName);
+        const current = await ctx.prisma.teachingAssignment.findFirst({ where: { classId: classe.id, subjectId: matiere.id, schoolId: ctx.schoolId }, select: { id: true, teacher: { select: { firstName: true, lastName: true } } } });
+        if (!current) throw new Error(`Aucune affectation de ${matiere.name} pour ${classe.name}.`);
+        const teacherProfile = await ctx.prisma.teacherProfile.findFirst({ where: { userId: teacher.id, user: { schoolId: ctx.schoolId, role: 'TEACHER', isActive: true }, teacherSubjects: { some: { subjectId: matiere.id } } }, select: { id: true } });
+        if (!teacherProfile) throw new Error(`${teacher.name} n'est pas qualifié pour ${matiere.name}.`);
+        await ctx.prisma.teachingAssignment.update({ where: { id: current.id }, data: { teacherId: teacher.id } });
+        return { resultLabel: `${matiere.name} de ${classe.name} réaffecté à ${teacher.name}.`, section: 'affectations', entity: 'teachingAssignment' };
+      },
+      async undo() {
+        throw new Error("La réaffectation d'un enseignant n'est pas annulable depuis l'assistant.");
+      },
+    },
+
+    {
+      name: 'annuler_affectations_classe',
+      domain: 'affectations',
+      description: "Annule toutes les affectations d'une classe après confirmation explicite.",
+      destructive: true,
+      requiredPermission: 'MANAGE_TEACHING_ASSIGNMENTS',
+      inputSchema: z.object({ className: z.string().min(1) }),
+      async summarizeDestructive(input, ctx) {
+        const classe = await resolveClass(ctx, input.className);
+        const count = await ctx.prisma.teachingAssignment.count({ where: { classId: classe.id, schoolId: ctx.schoolId } });
+        return `Annuler les ${count} affectation(s) de ${classe.name} ? Cette action est irréversible.`;
+      },
+      async execute(input, ctx) {
+        const classe = await resolveClass(ctx, input.className);
+        const result = await ctx.prisma.teachingAssignment.deleteMany({ where: { classId: classe.id, schoolId: ctx.schoolId } });
+        if (result.count === 0) throw new Error(`Aucune affectation à annuler pour ${classe.name}.`);
+        return { resultLabel: `${result.count} affectation(s) annulée(s) pour ${classe.name}.`, section: 'affectations', entity: 'teachingAssignment' };
+      },
+      async undo() {
+        throw new Error("L'annulation groupée des affectations n'est pas annulable depuis l'assistant.");
+      },
+    },
+
+    {
+      name: 'annuler_toutes_affectations',
+      domain: 'affectations',
+      description: "Annule toutes les affectations de l'établissement pour l'année scolaire courante après confirmation explicite.",
+      destructive: true,
+      requiredPermission: 'MANAGE_TEACHING_ASSIGNMENTS',
+      inputSchema: z.object({}),
+      async summarizeDestructive(_input, ctx) {
+        const annee = await resolveCurrentAcademicYear(ctx);
+        const count = await ctx.prisma.teachingAssignment.count({ where: { schoolId: ctx.schoolId, academicYearId: annee.id } });
+        return `Annuler les ${count} affectation(s) de l'établissement pour ${annee.name} ? Cette action est irréversible.`;
+      },
+      async execute(_input, ctx) {
+        const annee = await resolveCurrentAcademicYear(ctx);
+        const result = await ctx.prisma.teachingAssignment.deleteMany({ where: { schoolId: ctx.schoolId, academicYearId: annee.id } });
+        if (result.count === 0) throw new Error('Aucune affectation à annuler pour cette année scolaire.');
+        return { resultLabel: `${result.count} affectation(s) annulée(s) pour ${annee.name}.`, section: 'affectations', entity: 'teachingAssignment' };
+      },
+      async undo() {
+        throw new Error("L'annulation groupée des affectations n'est pas annulable depuis l'assistant.");
+      },
+    },
+
+    {
+      name: 'lister_issues_affectations',
+      domain: 'affectations',
+      description: "Liste les signalements persistants d'affectation non résolus, éventuellement filtrés par classe et statut, sans modifier les données.",
+      destructive: false,
+      requiredPermission: 'MANAGE_TEACHING_ASSIGNMENTS',
+      inputSchema: z.object({ className: z.string().optional(), status: z.enum(['OPEN', 'RESOLVED']).optional() }),
+      async execute(input, ctx) {
+        const annee = await resolveCurrentAcademicYear(ctx);
+        const classe = input.className ? await resolveClass(ctx, input.className) : null;
+        const issues = await ctx.prisma.teachingAssignmentIssue.findMany({
+          where: {
+            schoolId: ctx.schoolId,
+            academicYearId: annee.id,
+            ...(classe && { classId: classe.id }),
+            ...(input.status && { status: input.status }),
+          },
+          orderBy: { detectedAt: 'desc' },
+          select: { classId: true, subjectId: true, reason: true, status: true, detectedAt: true },
+        });
+        const classIds = [...new Set(issues.map(issue => issue.classId))];
+        const subjectIds = [...new Set(issues.map(issue => issue.subjectId))];
+        const [classes, subjects] = await Promise.all([
+          ctx.prisma.class.findMany({ where: { id: { in: classIds }, schoolId: ctx.schoolId }, select: { id: true, name: true } }),
+          ctx.prisma.subject.findMany({ where: { id: { in: subjectIds }, schoolId: ctx.schoolId }, select: { id: true, name: true } }),
+        ]);
+        const classNames = new Map(classes.map(item => [item.id, item.name]));
+        const subjectNames = new Map(subjects.map(item => [item.id, item.name]));
+        const lines = issues.map(issue => `${classNames.get(issue.classId) ?? 'Classe inconnue'} — ${subjectNames.get(issue.subjectId) ?? 'Matière inconnue'} : ${issue.reason} (${issue.status})`);
+        return { resultLabel: lines.length > 0 ? lines.join('\n') : 'Aucun signalement d’affectation correspondant.', section: 'affectations', entity: 'teachingAssignmentIssue' };
+      },
+      async undo() {
+        throw new Error('La consultation des signalements ne modifie aucune donnée.');
+      },
+    },
+
+    {
+      name: 'diagnostiquer_planification_classe',
+      domain: 'timetable',
+      description:
+        "Analyse précisément la génération de l'emploi du temps d'une classe : heures demandées et réelles par enseignant, plafond de 14 heures des animateurs pédagogiques, créneaux déjà occupés dans les autres classes, indisponibilités déclarées et enseignants alternatifs qualifiés. Retourne des solutions concrètes, sans modifier les données.",
+      destructive: false,
+      requiredPermission: 'MANAGE_TIMETABLE',
+      inputSchema: z.object({ className: z.string().min(1) }),
+      async execute(input, ctx) {
+        const classe = await resolveClass(ctx, input.className);
+        const annee = await resolveCurrentAcademicYear(ctx);
+        const grid = await ctx.prisma.timetableGridConfig.findUnique({ where: { schoolId: ctx.schoolId } });
+        if (!grid) throw new Error("La grille horaire n'est pas configurée.");
+        const [affectations, indisponibilites, occupation, allOccupation, teachers] = await Promise.all([
+          ctx.prisma.teachingAssignment.findMany({ where: { classId: classe.id, schoolId: ctx.schoolId, academicYearId: annee.id }, select: { subject: { select: { id: true, name: true, hoursPerWeek: true } }, teacher: { select: { id: true, firstName: true, lastName: true, staffProfile: { select: { permissions: { select: { permission: true } } } } } } } }),
+          ctx.prisma.teacherUnavailability.findMany({ where: { schoolId: ctx.schoolId, active: true }, select: { teacherId: true, dayOfWeek: true, startTime: true, endTime: true } }),
+          ctx.prisma.timetableSlot.findMany({ where: { kind: 'CLASS', timetable: { schoolId: ctx.schoolId, academicYearId: annee.id, NOT: { classId: classe.id } } }, select: { teacherId: true, dayOfWeek: true, startTime: true, endTime: true, timetable: { select: { class: { select: { name: true } } } } } }),
+          ctx.prisma.timetableSlot.findMany({ where: { kind: 'CLASS', timetable: { schoolId: ctx.schoolId, academicYearId: annee.id } }, select: { teacherId: true, startTime: true, endTime: true } }),
+          ctx.prisma.user.findMany({ where: { schoolId: ctx.schoolId, role: 'TEACHER', isActive: true }, select: { id: true, firstName: true, lastName: true, staffProfile: { select: { permissions: { select: { permission: true } } } }, teacherProfile: { select: { teacherSubjects: { select: { subjectId: true } } } } } }),
+        ]);
+        const dayMap: Record<string, number> = { LUNDI: 0, MARDI: 1, MERCREDI: 2, JEUDI: 3, VENDREDI: 4, SAMEDI: 5 };
+        const minutes = (time: string) => { const [h, m] = time.split(':').map(Number); return h * 60 + m; };
+        const heuresReellesParEnseignant = new Map<string, number>();
+        for (const slot of allOccupation) {
+          if (!slot.teacherId) continue;
+          heuresReellesParEnseignant.set(
+            slot.teacherId,
+            (heuresReellesParEnseignant.get(slot.teacherId) ?? 0) + (minutes(slot.endTime) - minutes(slot.startTime)) / 60,
+          );
+        }
+        const isAP = (teacher: { staffProfile?: { permissions: { permission: string }[] } | null }) =>
+          teacher.staffProfile?.permissions.some(permission => ['SUPERVISE_TEACHERS', 'SUPERVISE_DEPARTMENT_TEACHERS'].includes(permission.permission)) ?? false;
+        const cases = grid.joursActifs.flatMap(jour => {
+          const day = dayMap[jour];
+          if (day === undefined) return [];
+          const count = grid.periodesCoursParJour?.[jour] ?? grid.periodesAvantP1 + grid.periodesAvantP2 + grid.periodesApresP2;
+          let cursor = minutes(grid.heureDebut);
+          const periods: { dayOfWeek: number; startTime: string; endTime: string }[] = [];
+          const addPeriods = (numberOfPeriods: number) => {
+            for (let index = 0; index < numberOfPeriods; index++) {
+              const start = cursor;
+              cursor += grid.dureePeriode;
+              periods.push({ dayOfWeek: day, startTime: `${String(Math.floor(start / 60)).padStart(2, '0')}:${String(start % 60).padStart(2, '0')}`, endTime: `${String(Math.floor(cursor / 60)).padStart(2, '0')}:${String(cursor % 60).padStart(2, '0')}` });
+            }
+          };
+          addPeriods(grid.periodesAvantP1);
+          cursor += grid.dureePetitePause;
+          addPeriods(grid.periodesAvantP2);
+          cursor += grid.dureeGrandePause;
+          addPeriods(grid.periodesApresP2);
+          return periods.slice(0, count);
+        });
+        const load = new Map<string, { name: string; requested: number; actualHours: number; ap: boolean; free: number; occupied: string[] }>();
+        for (const affectation of affectations) {
+          const ap = isAP(affectation.teacher);
+          const current = load.get(affectation.teacher.id) ?? {
+            name: `${affectation.teacher.firstName} ${affectation.teacher.lastName}`,
+            requested: 0,
+            actualHours: heuresReellesParEnseignant.get(affectation.teacher.id) ?? 0,
+            ap,
+            free: cases.length,
+            occupied: [],
+          };
+          current.requested += affectation.subject.hoursPerWeek;
+          load.set(affectation.teacher.id, current);
+        }
+        for (const entry of load.values()) {
+          const teacherId = affectations.find(a => `${a.teacher.firstName} ${a.teacher.lastName}` === entry.name)?.teacher.id;
+          if (!teacherId) continue;
+          entry.free = cases.filter(candidate => ![...occupation.filter(slot => slot.teacherId === teacherId), ...indisponibilites.filter(slot => slot.teacherId === teacherId)].some(slot => slot.dayOfWeek === candidate.dayOfWeek && minutes(slot.startTime) < minutes(candidate.endTime || '23:59') && minutes(slot.endTime || '24:00') > minutes(candidate.startTime || '00:00'))).length;
+          entry.occupied = occupation.filter(slot => slot.teacherId === teacherId).map(slot => `${slot.timetable.class.name} ${slot.startTime}-${slot.endTime}`);
+        }
+        const alternatives = new Map<string, string[]>();
+        for (const affectation of affectations) {
+          const candidates = teachers.filter(teacher => teacher.id !== affectation.teacher.id && teacher.teacherProfile?.teacherSubjects.some(subject => subject.subjectId === affectation.subject.id));
+          alternatives.set(affectation.subject.name, candidates.map(candidate => {
+            const heures = heuresReellesParEnseignant.get(candidate.id) ?? 0;
+            const ap = isAP(candidate) ? ', AP' : '';
+            return `${candidate.firstName} ${candidate.lastName} (${heures}h EDT${ap})`;
+          }));
+        }
+        const lines = affectations.map(affectation => {
+          const teacherName = `${affectation.teacher.firstName} ${affectation.teacher.lastName}`;
+          const entry = load.get(affectation.teacher.id)!;
+          const alternate = alternatives.get(affectation.subject.name)?.join(', ') || 'aucun enseignant qualifié disponible';
+          const occupations = entry.free < entry.requested ? ` Occupée(s) dans : ${entry.occupied.slice(0, 6).join(', ')}.` : '';
+          const cap = entry.ap ? ` Statut AP : ${entry.actualHours}h actuellement, maximum 14h${entry.actualHours > 14 ? ' — DÉPASSEMENT' : ''}.` : '';
+          return `${affectation.subject.name} : ${affectation.subject.hoursPerWeek}h demandées à ${teacherName}; ${entry.free} créneaux libres; alternative(s) : ${alternate}.${cap}${occupations}`;
+        });
+        return { resultLabel: `Diagnostic ${classe.name} :\n${lines.join('\n')}`, section: 'timetable', entity: 'timetable' };
+      },
+      async undo() {
+        throw new Error("Le diagnostic d'emploi du temps ne modifie aucune donnée.");
+      },
+    },
+
     {
       name: 'publier_emploi_du_temps',
       domain: 'classes',

@@ -61,13 +61,13 @@ function calculerSquelette(f: GridForm, jour?: string): PeriodeGrille[] {
   }
 
   cours(f.periodesAvantP1)
-  if (f.dureePetitePause > 0 && f.periodesAvantP1 > 0 && demandees >= f.periodesAvantP1) {
+  if (f.dureePetitePause > 0 && f.periodesAvantP1 > 0 && demandees > f.periodesAvantP1) {
     const d = toTime(cursor); cursor += f.dureePetitePause
     result.push({ ordre: 0, debut: d, fin: toTime(cursor), type: 'PETITE_PAUSE', duree: f.dureePetitePause })
   }
   const avantGrandePause = f.periodesAvantP1 + f.periodesAvantP2
   cours(f.periodesAvantP2)
-  if (f.dureeGrandePause > 0 && f.periodesAvantP2 > 0 && demandees >= avantGrandePause) {
+  if (f.dureeGrandePause > 0 && f.periodesAvantP2 > 0 && demandees > avantGrandePause) {
     const d = toTime(cursor); cursor += f.dureeGrandePause
     result.push({ ordre: 0, debut: d, fin: toTime(cursor), type: 'GRANDE_PAUSE', duree: f.dureeGrandePause })
   }

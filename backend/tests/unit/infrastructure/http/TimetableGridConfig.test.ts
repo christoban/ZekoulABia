@@ -14,10 +14,10 @@ describe('Grille horaire — périodes par jour', () => {
     expect(periods.some(p => p.type === 'GRANDE_PAUSE')).toBe(true);
   });
 
-  it('arrête le samedi après la grande pause', () => {
+  it('arrête le samedi à la fin des périodes avant la grande pause', () => {
     const periods = calculerSqelette(config, 'SAMEDI');
     expect(periods.filter(p => p.type === 'COURS')).toHaveLength(5);
-    expect(periods.some(p => p.type === 'GRANDE_PAUSE')).toBe(true);
-    expect(periods.at(-1)?.fin).toBe('12:50');
+    expect(periods.some(p => p.type === 'GRANDE_PAUSE')).toBe(false);
+    expect(periods.at(-1)?.fin).toBe('12:20');
   });
 });

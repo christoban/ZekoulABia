@@ -22,9 +22,11 @@ export type EnseignantQualifieGeneration = {
 };
 
 export type AffectationExistanteGeneration = {
+  id: string;
   classId: string;
   subjectId: string;
   teacherId: string;
+  subjectHoursPerWeek?: number;
 };
 
 export type DonneesGenerationAffectations = {
@@ -42,6 +44,18 @@ export type AssignmentACreerPayload = {
   academicYearId: string;
 };
 
+export type AssignmentAModifierPayload = {
+  id: string;
+  teacherId: string;
+};
+
+export type IssueAffectationGeneration = {
+  classId: string;
+  subjectId: string;
+  reason: string;
+  details?: Record<string, unknown>;
+};
+
 export interface TeachingAssignmentGeneratorRepository {
   loadGenerationData(
     schoolId: string,
@@ -50,6 +64,14 @@ export interface TeachingAssignmentGeneratorRepository {
   ): Promise<DonneesGenerationAffectations>;
 
   createAssignmentsInTransaction(assignments: AssignmentACreerPayload[]): Promise<number>;
+
+  updateAssignmentsInTransaction(assignments: AssignmentAModifierPayload[]): Promise<number>;
+
+  persistIssues(params: {
+    schoolId: string;
+    academicYearId: string;
+    issues: IssueAffectationGeneration[];
+  }): Promise<number>;
 
   /**
    * Synchronise le StudentGroupSet "LV2" et les groupes/memberships à partir des choix

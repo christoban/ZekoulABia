@@ -74,6 +74,10 @@ export function formatAssistantInline(text: string, keyPrefix = 'inline'): React
 
 export function renderAssistantText(text: string): React.ReactNode {
   return text.split('\n').map((line, lineIndex) => {
+    const heading = line.match(/^\s*#{1,6}\s+(.*)$/)
+    if (heading) {
+      return <div key={`line-${lineIndex}`} style={{ fontWeight: 800, color: 'var(--text)' }}>{formatAssistantInline(heading[1]!, `line-${lineIndex}`)}</div>
+    }
     const unordered = line.match(/^\s*[-*]\s+(.*)$/)
     const ordered = line.match(/^\s*\d+[.)]\s+(.*)$/)
     if (unordered || ordered) {

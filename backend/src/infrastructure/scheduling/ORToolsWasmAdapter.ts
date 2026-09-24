@@ -35,6 +35,7 @@ import type {
   SalleDisponible,
   CreneauOccupe,
   IndisponibiliteEnseignant,
+  ContraintesDoucesOptions,
 } from '@domain/ports/services/SchedulingSolverPort';
 import { modeliserContraintesDouces } from '@infrastructure/scheduling/contraintesDouces';
 import type { Placement } from '@infrastructure/scheduling/contraintesDouces';
@@ -75,8 +76,10 @@ export class ORToolsWasmAdapter implements SchedulingSolverPort {
       if (sallesCompatibles.length === 0) {
         return {
           statut: 'INFAISABLE', seances: [], scoreObjectif: 0, dureeResolutionMs: 0,
-          raisonInfaisabilite: `Aucune salle compatible pour une matière ${exigence.subjectType} (matière ${exigence.subjectId}) — une matière pratique exige une salle spécialisée (laboratoire, atelier, salle informatique ou terrain).`,
-          suggestions: [`Créez ou libérez une salle spécialisée (laboratoire, atelier, salle informatique…) pour la matière ${exigence.subjectName ?? exigence.subjectId}.`],
+           raisonInfaisabilite: `Aucune salle compatible pour une matière ${exigence.subjectType} (matière ${exigence.subjectName ?? exigence.subjectId}) — une matière pratique exige une salle spécialisée (laboratoire, atelier, salle informatique ou terrain).`,
+           problemes: [`Aucune salle compatible pour ${exigence.subjectName ?? exigence.subjectId} (${exigence.subjectType}).`],
+           suggestions: [`Créez ou libérez une salle spécialisée pour ${exigence.subjectName ?? exigence.subjectId}.`],
+
         };
       }
 
@@ -98,8 +101,13 @@ export class ORToolsWasmAdapter implements SchedulingSolverPort {
       if (placementsPourCetteExigence === 0) {
         return {
           statut: 'INFAISABLE', seances: [], scoreObjectif: 0, dureeResolutionMs: 0,
-          raisonInfaisabilite: `Aucun créneau libre pour la matière ${exigence.subjectId} : l'enseignant ou toutes les salles compatibles sont déjà occupés sur l'ensemble de la grille horaire.`,
-          suggestions: [`La matière ${exigence.subjectName ?? exigence.subjectId} (enseignant ${exigence.teacherName ?? exigence.teacherId}) n'a aucun créneau libre — vérifiez les indisponibilités de l'enseignant ou l'occupation des salles compatibles.`],
+           raisonInfaisabilite: `Aucun créneau libre pour ${exigence.subjectName ?? exigence.subjectId} : l'enseignant ou toutes les salles compatibles sont bloqués sur l'ensemble de la grille horaire.`,
+           problemes: diagnostiquerInfaisabilite(exigences, grille, sallesDisponibles, occupationExistante, indisponibilitesEnseignants, contraintes),
+           suggestions: [
+             `Vérifiez les indisponibilités de ${exigence.teacherName ?? exigence.teacherId} et l'occupation des salles compatibles pour ${exigence.subjectName ?? exigence.subjectId}.`,
+             ...construireSuggestions(contraintes),
+           ],
+
         };
       }
     }
@@ -110,28 +118,34 @@ export class ORToolsWasmAdapter implements SchedulingSolverPort {
     }
 
     // --- Contrainte 2 (DURE) : la classe ne suit qu'une séance à la fois ---
-    for (let c = 0; c < grille.length; c++) {
-      const vars = variablesOu(placements, variables, p => p.caseIdx === c);
-      if (vars.length > 1) model.addAtMostOne(vars);
-    }
-
-    // --- Contrainte 3 (DURE) : conflit enseignant ---
-    const enseignants = [...new Set(exigences.map(e => e.teacherId))];
-    for (const teacherId of enseignants) {
+    if (contraintes?.conflitClasse !== false) {
       for (let c = 0; c < grille.length; c++) {
-        const vars = variablesOu(
-          placements, variables,
-          p => p.caseIdx === c && exigences[p.exigenceIdx]!.teacherId === teacherId,
-        );
+        const vars = variablesOu(placements, variables, p => p.caseIdx === c);
         if (vars.length > 1) model.addAtMostOne(vars);
       }
     }
 
+    // --- Contrainte 3 (DURE) : conflit enseignant ---
+    if (contraintes?.conflitEnseignant !== false) {
+      const enseignants = [...new Set(exigences.map(e => e.teacherId))];
+      for (const teacherId of enseignants) {
+        for (let c = 0; c < grille.length; c++) {
+          const vars = variablesOu(
+            placements, variables,
+            p => p.caseIdx === c && exigences[p.exigenceIdx]!.teacherId === teacherId,
+          );
+          if (vars.length > 1) model.addAtMostOne(vars);
+        }
+      }
+    }
+
     // --- Contrainte 4 (DURE) : conflit salle ---
-    for (let s = 0; s < sallesDisponibles.length; s++) {
-      for (let c = 0; c < grille.length; c++) {
-        const vars = variablesOu(placements, variables, p => p.caseIdx === c && p.salleIdx === s);
-        if (vars.length > 1) model.addAtMostOne(vars);
+    if (contraintes?.conflitSalle !== false) {
+      for (let s = 0; s < sallesDisponibles.length; s++) {
+        for (let c = 0; c < grille.length; c++) {
+          const vars = variablesOu(placements, variables, p => p.caseIdx === c && p.salleIdx === s);
+          if (vars.length > 1) model.addAtMostOne(vars);
+        }
       }
     }
 
@@ -161,10 +175,23 @@ export class ORToolsWasmAdapter implements SchedulingSolverPort {
 
     const statusName = solver.statusName(status);
     if (statusName !== 'OPTIMAL' && statusName !== 'FEASIBLE') {
+      const solutionSecours = construireSolutionSecours(exigences, grille, sallesDisponibles, placements, salleHabituelleId);
+      if (solutionSecours) {
+        return {
+          ...solutionSecours,
+          dureeResolutionMs,
+          avertissements: ['Solution de secours : les règles pédagogiques souples ou de placement n’ont pas pu toutes être respectées.'],
+        };
+      }
       return {
         statut: 'INFAISABLE', seances: [], scoreObjectif: 0, dureeResolutionMs,
-        raisonInfaisabilite: `Aucune combinaison ne satisfait toutes les contraintes (statut solveur : ${statusName}). Libérez des créneaux, ajoutez une salle compatible, ou réduisez le nombre de séances à placer.`,
-        suggestions: ['Libérez des créneaux (occupation existante), ajoutez une salle compatible, ou réduisez le nombre de séances à placer.'],
+        raisonInfaisabilite: `Aucune combinaison ne satisfait toutes les contraintes (statut solveur : ${statusName}).`,
+         problemes: [
+           ...(await this.diagnostiquerContraintesPedagogiques(input)),
+           ...diagnostiquerInfaisabilite(exigences, grille, sallesDisponibles, occupationExistante, indisponibilitesEnseignants, contraintes),
+         ],
+         suggestions: construireSuggestions(contraintes),
+
       };
     }
 
@@ -189,6 +216,25 @@ export class ORToolsWasmAdapter implements SchedulingSolverPort {
     };
 
     const { seances, score } = extraire();
+
+    if (contraintes?.interdireTempsLibresConsecutifs && aDesTempsLibresConsecutifs(seances, grille)) {
+      return {
+        statut: 'INFAISABLE', seances: [], scoreObjectif: 0, dureeResolutionMs,
+        raisonInfaisabilite: 'Impossible de séparer tous les temps libres sans modifier le volume pédagogique.',
+        problemes: ['Deux Temps libre consécutifs seraient nécessaires avec les contraintes actuelles.'],
+        suggestions: ['Réduisez ou ajustez le volume pédagogique, ou configurez une journée avec davantage de créneaux disponibles.'],
+      };
+    }
+
+    if (contraintes?.maxTempsLibresParJour != null && maxTempsLibresParJour(seances, grille) > contraintes.maxTempsLibresParJour) {
+      return {
+        statut: 'INFAISABLE', seances: [], scoreObjectif: 0, dureeResolutionMs,
+        raisonInfaisabilite: `La proposition dépasserait ${contraintes.maxTempsLibresParJour} Temps libre sur un même jour.`,
+        problemes: [`Leplacement obtenu contient plus de ${contraintes.maxTempsLibresParJour} Temps libre sur au moins un jour.`],
+        suggestions: ['Réduisez le volume pédagogique ou augmentez les créneaux disponibles de la journée concernée.'],
+      };
+    }
+
 
     // --- Explain My Timetable (V2.5 §7) : une ligne par séance retenue ---
     let explicatifs: string[] | undefined;
@@ -241,6 +287,140 @@ export class ORToolsWasmAdapter implements SchedulingSolverPort {
       ...(explicatifs ? { explicatifs } : {}),
     };
   }
+
+  private async diagnostiquerContraintesPedagogiques(input: ProposerEmploiDuTempsInput): Promise<string[]> {
+    if (input.diagnosticInterne) return [];
+    const relaxation = await this.proposer({
+      ...input,
+      contraintes: { ...(input.contraintes ?? {}), reglesPedagogiques: false },
+      diagnosticInterne: true,
+    });
+    if (relaxation.statut === 'OPTIMAL' || relaxation.statut === 'FEASIBLE') {
+      return ['Les règles pédagogiques de placement (occurrences par jour, contiguïté et répartition EPS/TM) rendent cette proposition impossible.'];
+    }
+    return [];
+  }
+}
+
+function construireSolutionSecours(
+  exigences: ExigenceSeance[],
+  grille: CaseGrille[],
+  sallesDisponibles: SalleDisponible[],
+  placements: { exigenceIdx: number; caseIdx: number; salleIdx: number }[],
+  salleHabituelleId?: string,
+): { statut: 'FEASIBLE'; seances: SeanceProposee[]; scoreObjectif: number } | null {
+  const casesOccupees = new Set<string>();
+  const enseignantsOccupes = new Set<string>();
+  const sallesOccupees = new Set<string>();
+  const seances: SeanceProposee[] = [];
+  let score = 0;
+  const ordre = exigences.map((_, index) => index).sort((a, b) => {
+    const countA = placements.filter(placement => placement.exigenceIdx === a).length;
+    const countB = placements.filter(placement => placement.exigenceIdx === b).length;
+    return countA - countB;
+  });
+
+  for (const exigenceIdx of ordre) {
+    const candidates = placements
+      .filter(placement => placement.exigenceIdx === exigenceIdx)
+      .sort((a, b) => {
+        const salleA = sallesDisponibles[a.salleIdx]!.roomId === salleHabituelleId ? 1 : 0;
+        const salleB = sallesDisponibles[b.salleIdx]!.roomId === salleHabituelleId ? 1 : 0;
+        return salleB - salleA;
+      });
+    const place = candidates.find(candidate => {
+      const caseGrille = grille[candidate.caseIdx]!;
+      const salle = sallesDisponibles[candidate.salleIdx]!;
+      const cleCase = `${caseGrille.dayOfWeek}|${caseGrille.startTime}|${caseGrille.endTime}`;
+      const cleEnseignant = `${exigences[exigenceIdx]!.teacherId}|${cleCase}`;
+      const cleSalle = `${salle.roomId}|${cleCase}`;
+      return !casesOccupees.has(cleCase) && !enseignantsOccupes.has(cleEnseignant) && !sallesOccupees.has(cleSalle);
+    });
+    if (!place) return null;
+    const exigence = exigences[exigenceIdx]!;
+    const caseGrille = grille[place.caseIdx]!;
+    const salle = sallesDisponibles[place.salleIdx]!;
+    const cleCase = `${caseGrille.dayOfWeek}|${caseGrille.startTime}|${caseGrille.endTime}`;
+    const cleEnseignant = `${exigence.teacherId}|${cleCase}`;
+    const cleSalle = `${salle.roomId}|${cleCase}`;
+    casesOccupees.add(cleCase);
+    enseignantsOccupes.add(cleEnseignant);
+    sallesOccupees.add(cleSalle);
+    seances.push({ subjectId: exigence.subjectId, teacherId: exigence.teacherId, roomId: salle.roomId, dayOfWeek: caseGrille.dayOfWeek, startTime: caseGrille.startTime, endTime: caseGrille.endTime });
+    if (salle.roomId === salleHabituelleId) score += POIDS_SALLE_HABITUELLE;
+  }
+  return { statut: 'FEASIBLE', seances, scoreObjectif: score };
+}
+
+function diagnostiquerInfaisabilite(
+  exigences: ExigenceSeance[],
+  grille: CaseGrille[],
+  sallesDisponibles: SalleDisponible[],
+  occupationExistante: CreneauOccupe[],
+  indisponibilites: IndisponibiliteEnseignant[],
+  options?: ContraintesDoucesOptions,
+): string[] {
+  const problemes: string[] = [];
+  for (const exigence of exigences) {
+    const sallesCompatibles = sallesDisponibles.filter(salle => salleAccepteMatiere(salle, exigence));
+    if (sallesCompatibles.length === 0) {
+      problemes.push(`Aucune salle compatible pour ${exigence.subjectName ?? exigence.subjectId}.`);
+      continue;
+    }
+    const casesDisponibles = grille.filter(caseGrille =>
+      !estOccupe(occupationExistante, caseGrille, { teacherId: exigence.teacherId }) &&
+      !indisponibilites.some(indisponibilite =>
+        indisponibilite.teacherId === exigence.teacherId && estOccupe([indisponibilite], caseGrille, { teacherId: exigence.teacherId }),
+      ) &&
+      sallesCompatibles.some(salle => !estOccupe(occupationExistante, caseGrille, { roomId: salle.roomId })),
+    );
+    if (casesDisponibles.length === 0) {
+      const indisponible = indisponibilites.some(indisponibilite => indisponibilite.teacherId === exigence.teacherId);
+      const casesEnseignantLibres = grille.filter(caseGrille =>
+        !estOccupe(occupationExistante, caseGrille, { teacherId: exigence.teacherId }) &&
+        !indisponibilites.some(indisponibilite => indisponibilite.teacherId === exigence.teacherId && estOccupe([indisponibilite], caseGrille, { teacherId: exigence.teacherId })),
+      ).length;
+      if (casesEnseignantLibres === 0) {
+        problemes.push(`${exigence.subjectName ?? exigence.subjectId} / ${exigence.teacherName ?? exigence.teacherId} n'a aucune case disponible : l'enseignant est occupé ou déclaré indisponible sur toute la grille.`);
+      } else {
+        problemes.push(`${exigence.subjectName ?? exigence.subjectId} n'a aucune salle compatible libre${indisponible ? ' et l\'enseignant possède une indisponibilité' : ''}.`);
+      }
+    }
+  }
+  const parEnseignant = new Map<string, { nom: string; occurrences: number; matieres: string[] }>();
+  for (const exigence of exigences) {
+    const courant = parEnseignant.get(exigence.teacherId) ?? { nom: exigence.teacherName ?? exigence.teacherId, occurrences: 0, matieres: [] };
+    courant.occurrences += 1;
+    courant.matieres.push(exigence.subjectName ?? exigence.subjectId);
+    parEnseignant.set(exigence.teacherId, courant);
+  }
+  for (const [teacherId, info] of parEnseignant) {
+    const casesLibres = grille.filter(caseGrille =>
+      !estOccupe(occupationExistante, caseGrille, { teacherId }) &&
+      !indisponibilites.some(indisponibilite => indisponibilite.teacherId === teacherId && estOccupe([indisponibilite], caseGrille, { teacherId })),
+    ).length;
+    if (info.occurrences > casesLibres) {
+      problemes.push(`${info.nom} porte ${info.occurrences} séances (${info.matieres.join(', ')}), mais seulement ${casesLibres} créneaux sont libres : libérez ${info.occurrences - casesLibres} créneaux ou réaffectez la matière.`);
+    }
+  }
+  if (options?.interdireTempsLibresConsecutifs) {
+    problemes.push('La séparation des Temps libre consécutifs ne peut pas être obtenue avec les contraintes actuelles.');
+  }
+  if (options?.maxTempsLibresParJour != null) {
+    problemes.push(`La limite de ${options.maxTempsLibresParJour} Temps libre par jour entre en conflit avec les autres contraintes.`);
+  }
+  if (problemes.length === 0) {
+    problemes.push('Chaque séance possède des cases candidates, mais aucune combinaison globale ne respecte simultanément toutes les contraintes.');
+  }
+  return [...new Set(problemes)].slice(0, 8);
+}
+
+function construireSuggestions(options?: ContraintesDoucesOptions): string[] {
+  const suggestions = ['Libérez un créneau occupé ou ajustez les indisponibilités des enseignants.', 'Ajoutez une salle compatible si une matière pratique manque de place.'];
+  suggestions.push('Si le diagnostic indique les règles pédagogiques, vérifiez EPS/TM sur deux jours, les occurrences contiguës et les autres horaires déjà publiés.');
+  if (options?.interdireTempsLibresConsecutifs) suggestions.push('Réduisez le volume d\'une journée ou augmentez sa capacité pour séparer les Temps libre.');
+  if (options?.maxTempsLibresParJour != null) suggestions.push(`Réduisez le volume pédagogique ou augmentez les créneaux disponibles pour respecter au maximum ${options.maxTempsLibresParJour} Temps libre par jour.`);
+  return suggestions;
 }
 
 /**
@@ -251,6 +431,42 @@ export class ORToolsWasmAdapter implements SchedulingSolverPort {
 function salleAccepteMatiere(salle: SalleDisponible, exigence: ExigenceSeance): boolean {
   if (exigence.subjectType !== 'PRACTICAL') return true;
   return salle.type !== 'NORMAL';
+}
+
+function maxTempsLibresParJour(seances: SeanceProposee[], grille: CaseGrille[]): number {
+  const occupees = new Set(seances.map(seance => `${seance.dayOfWeek}|${seance.startTime}`));
+  const parJour = new Map<number, CaseGrille[]>();
+  for (const caseGrille of grille) {
+    const cases = parJour.get(caseGrille.dayOfWeek) ?? [];
+    cases.push(caseGrille);
+    parJour.set(caseGrille.dayOfWeek, cases);
+  }
+  let maximum = 0;
+  for (const cases of parJour.values()) {
+    const libres = cases.filter(caseGrille => !occupees.has(`${caseGrille.dayOfWeek}|${caseGrille.startTime}`)).length;
+    maximum = Math.max(maximum, libres);
+  }
+  return maximum;
+}
+
+function aDesTempsLibresConsecutifs(seances: SeanceProposee[], grille: CaseGrille[]): boolean {
+  const occupees = new Set(seances.map(seance => `${seance.dayOfWeek}|${seance.startTime}`));
+  const parJour = new Map<number, CaseGrille[]>();
+  for (const caseGrille of grille) {
+    const cases = parJour.get(caseGrille.dayOfWeek) ?? [];
+    cases.push(caseGrille);
+    parJour.set(caseGrille.dayOfWeek, cases);
+  }
+  for (const cases of parJour.values()) {
+    cases.sort((a, b) => a.startTime.localeCompare(b.startTime));
+    for (let i = 0; i + 1 < cases.length; i++) {
+      const current = cases[i]!;
+      const suivant = cases[i + 1]!;
+      if (current.endTime !== suivant.startTime) continue;
+      if (!occupees.has(`${current.dayOfWeek}|${current.startTime}`) && !occupees.has(`${suivant.dayOfWeek}|${suivant.startTime}`)) return true;
+    }
+  }
+  return false;
 }
 
 /**
