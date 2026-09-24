@@ -43,15 +43,36 @@ export class EmploiDuTemps {
 
   estPublie(): boolean { return this.props.status === 'PUBLISHED'; }
   estBrouillon(): boolean { return this.props.status === 'DRAFT'; }
+  estSoumis(): boolean { return this.props.status === 'SUBMITTED'; }
 
-  publier(nombreCreneaux: number): void {
+  soumettre(nombreCreneaux: number): void {
+    if (this.props.status === 'SUBMITTED') {
+      throw new Error('Cet emploi du temps est déjà soumis');
+    }
+    if (this.props.status === 'PUBLISHED') {
+      throw new Error('Un emploi du temps publié ne peut pas être soumis');
+    }
+    if (nombreCreneaux === 0) {
+      throw new Error('Impossible de soumettre un emploi du temps sans créneaux');
+    }
+    this.props.status = 'SUBMITTED';
+  }
+
+  publier(): void {
     if (this.props.status === 'PUBLISHED') {
       throw new Error('Cet emploi du temps est déjà publié');
     }
-    if (nombreCreneaux === 0) {
-      throw new Error('Impossible de publier un emploi du temps sans créneaux');
+    if (this.props.status !== 'SUBMITTED') {
+      throw new Error("Impossible de publier : l'emploi du temps doit être soumis");
     }
     this.props.status = 'PUBLISHED';
+  }
+
+  rouvrir(): void {
+    if (this.props.status !== 'PUBLISHED') {
+      throw new Error("Seul un emploi du temps publié peut être rouvert");
+    }
+    this.props.status = 'DRAFT';
   }
 
   toObject(): EmploiDuTempsProps {

@@ -1,0 +1,1 @@
+ALTER TYPE "SlotKind" ADD VALUE 'FREE';

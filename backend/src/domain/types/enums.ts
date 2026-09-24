@@ -87,8 +87,8 @@ export type StaffPermissionType =
   | 'MANAGE_TEACHING_ASSIGNMENTS';
 
 export type SyncStatus = 'PENDING' | 'SYNCED' | 'CONFLICT' | 'REJECTED';
-export type TimetableStatus = 'DRAFT' | 'PUBLISHED';
-export type SlotKind = 'CLASS' | 'BREAK' | 'ACTIVITY' | 'TD';
+export type TimetableStatus = 'DRAFT' | 'SUBMITTED' | 'PUBLISHED';
+export type SlotKind = 'CLASS' | 'BREAK' | 'ACTIVITY' | 'TD' | 'FREE';
 export type RoomType = 'NORMAL' | 'LABORATORY' | 'WORKSHOP' | 'COMPUTER_LAB' | 'FIELD';
 /** MAINTENANCE/INACTIVE = salle hors service — indisponible pour toute proposition de créneau, distinct d'un conflit ponctuel de créneau. */
 export type RoomStatus = 'ACTIVE' | 'MAINTENANCE' | 'INACTIVE';

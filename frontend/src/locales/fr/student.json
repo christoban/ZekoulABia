@@ -94,8 +94,10 @@
   "timetable": {
     "title": "Mon emploi du temps",
     "week_prefix": "Semaine du",
-    "time_header": "Horaire",
-    "day_monday": "Lundi",
+     "time_header": "Horaire",
+     "roomLabel": "Salle :",
+    "freeTime": "Temps libre",
+     "day_monday": "Lundi",
     "day_tuesday": "Mardi",
     "day_wednesday": "Mercredi",
     "day_thursday": "Jeudi",

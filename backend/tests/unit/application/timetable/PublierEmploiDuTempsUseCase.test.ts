@@ -4,83 +4,51 @@ import { InMemoryTimetableRepository } from '../../../helpers/repositories/InMem
 import { EmploiDuTemps } from '@domain/entities/EmploiDuTemps';
 import { CreneauHoraire } from '@domain/entities/CreneauHoraire';
 
+const activityLog = { log: async () => {} };
+
 describe('PublierEmploiDuTempsUseCase', () => {
   let repo: InMemoryTimetableRepository;
   let useCase: PublierEmploiDuTempsUseCase;
 
-  const creerEdtDraft = () =>
+  const creerEdt = (status: 'DRAFT' | 'SUBMITTED' | 'PUBLISHED' = 'SUBMITTED', id = 'edt-1') =>
     EmploiDuTemps.reconstituer({
-      id: 'edt-1',
+      id,
       schoolId: 'school-1',
       classId: 'classe-1',
       academicYearId: 'annee-1',
-      status: 'DRAFT',
+      status,
       generatedByAI: false,
       createdAt: new Date(),
     });
 
   beforeEach(() => {
     repo = new InMemoryTimetableRepository();
-    useCase = new PublierEmploiDuTempsUseCase(repo);
-    repo.ajouterEDT(creerEdtDraft());
+    useCase = new PublierEmploiDuTempsUseCase(repo, activityLog);
+    repo.ajouterEDT(creerEdt());
   });
 
-  it('devrait publier un EDT avec au moins un créneau', async () => {
-    repo.ajouterCreneau(
-      CreneauHoraire.create({
-        timetableId: 'edt-1', dayOfWeek: 0, startTime: '08:00', endTime: '09:00',
-      })
-    );
-
-    await useCase.execute({ timetableId: 'edt-1', schoolId: 'school-1' });
-
-    const edt = await repo.findById('edt-1');
-    expect(edt?.status).toBe('PUBLISHED');
+  it('publie un EDT soumis', async () => {
+    repo.ajouterCreneau(CreneauHoraire.create({ timetableId: 'edt-1', dayOfWeek: 0, startTime: '08:00', endTime: '09:00' }));
+    await useCase.execute({ timetableId: 'edt-1', schoolId: 'school-1', demandeurId: 'admin-1', demandeurRole: 'ADMIN' });
+    expect((await repo.findById('edt-1'))?.status).toBe('PUBLISHED');
   });
 
-  it('devrait rejeter si aucun créneau', async () => {
-    await expect(
-      useCase.execute({ timetableId: 'edt-1', schoolId: 'school-1' })
-    ).rejects.toThrow('sans créneaux');
+  it('refuse un rôle STAFF même avec MANAGE_TIMETABLE', async () => {
+    await expect(useCase.execute({ timetableId: 'edt-1', schoolId: 'school-1', demandeurId: 'staff-1', demandeurRole: 'STAFF' })).rejects.toThrow('seul ADMIN');
   });
 
-  it('devrait rejeter si déjà publié', async () => {
-    const edtPublie = EmploiDuTemps.reconstituer({
-      id: 'edt-publie',
-      schoolId: 'school-1',
-      classId: 'classe-1',
-      academicYearId: 'annee-1',
-      status: 'PUBLISHED',
-      generatedByAI: false,
-      createdAt: new Date(),
-    });
-    repo.ajouterEDT(edtPublie);
-    repo.ajouterCreneau(
-      CreneauHoraire.create({
-        timetableId: 'edt-publie', dayOfWeek: 0, startTime: '08:00', endTime: '09:00',
-      })
-    );
-
-    await expect(
-      useCase.execute({ timetableId: 'edt-publie', schoolId: 'school-1' })
-    ).rejects.toThrow('déjà publié');
+  it('refuse la publication directe d’un DRAFT', async () => {
+    const draft = creerEdt('DRAFT', 'edt-draft');
+    repo.ajouterEDT(draft);
+    await expect(useCase.execute({ timetableId: 'edt-draft', schoolId: 'school-1', demandeurId: 'admin-1', demandeurRole: 'ADMIN' })).rejects.toThrow('doit être soumis');
   });
 
-  it('devrait rejeter si EDT introuvable', async () => {
-    await expect(
-      useCase.execute({ timetableId: 'inconnu', schoolId: 'school-1' })
-    ).rejects.toThrow('introuvable');
+  it('rejette une publication répétée', async () => {
+    repo.ajouterEDT(creerEdt('PUBLISHED', 'edt-publie'));
+    await expect(useCase.execute({ timetableId: 'edt-publie', schoolId: 'school-1', demandeurId: 'admin-1', demandeurRole: 'ADMIN' })).rejects.toThrow('déjà publié');
   });
 
-  it('devrait rejeter si schoolId ne correspond pas', async () => {
-    repo.ajouterCreneau(
-      CreneauHoraire.create({
-        timetableId: 'edt-1', dayOfWeek: 0, startTime: '08:00', endTime: '09:00',
-      })
-    );
-
-    await expect(
-      useCase.execute({ timetableId: 'edt-1', schoolId: 'school-mauvaise' })
-    ).rejects.toThrow('Accès refusé');
+  it('rejette un EDT hors tenant', async () => {
+    await expect(useCase.execute({ timetableId: 'edt-1', schoolId: 'school-2', demandeurId: 'admin-1', demandeurRole: 'ADMIN' })).rejects.toThrow('Accès refusé');
   });
 });

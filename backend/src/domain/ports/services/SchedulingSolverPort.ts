@@ -25,6 +25,12 @@ export interface ExigenceSeance {
   seanceId?: string;
   /** V2.5 — séances groupées en blocs de N cases adjacentes (2 = blocs de 2 h). null/1 = libre. */
   blocDureeCases?: number | null;
+  /** Volume hebdomadaire pédagogique, en heures. */
+  volumeHebdomadaire?: number;
+  /** Nombre réel d'occurrences générées pour la semaine, après conversion en cases de cours. */
+  nbOccurrencesHebdomadaires?: number;
+  /** Catégorie exigeant deux jours distincts lorsqu'elle compte deux occurrences. */
+  categorieJoursDistincts?: 'EPS_TM';
 }
 
 /**
@@ -123,9 +129,25 @@ export interface SeanceProposee {
   endTime: string;
 }
 
+export interface SeanceGroupeProposee extends SeanceProposee {
+  groupId: string;
+  groupName: string;
+  participantsCount: number;
+  isLV2Slot: true;
+}
+
+export interface TempsLibrePropose {
+  kind: 'FREE';
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+}
+
 export interface PropositionEmploiDuTemps {
   statut: 'OPTIMAL' | 'FEASIBLE' | 'INFAISABLE';
   seances: SeanceProposee[];
+  seancesGroupes?: SeanceGroupeProposee[];
+  tempsLibres?: TempsLibrePropose[];
   /** Score de l'objectif souple (préférence salle habituelle) — 0 si INFAISABLE. */
   scoreObjectif: number;
   /** Temps de résolution mesuré, remonté pour observabilité (le solveur WASM a un coût à froid). */

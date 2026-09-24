@@ -1,7 +1,7 @@
 import type { EmploiDuTemps } from '@domain/entities/EmploiDuTemps';
 import type { CreneauHoraire } from '@domain/entities/CreneauHoraire';
 import type { CreneauOccupe } from '@domain/ports/services/SchedulingSolverPort';
-import type { TimetableStatus } from '@domain/types/enums';
+import type { SlotKind, TimetableStatus } from '@domain/types/enums';
 
 export interface CreneauConflitInfo {
   id: string;
@@ -20,6 +20,7 @@ export interface GridConfig {
   dureeGrandePause: number;
   periodesApresP2: number;
   joursActifs: string[];
+  periodesCoursParJour: Record<string, number>;
 }
 
 /** Créneau d'un enseignant pour un jour donné (pré-remplissage formulaire cahier de texte). */
@@ -93,8 +94,10 @@ export interface TimetableRepository {
   // --- EmploiDuTemps ---
   findById(id: string): Promise<EmploiDuTemps | null>;
   findByClasse(classId: string, academicYearId: string): Promise<EmploiDuTemps | null>;
+  findSubmittedBySchool(schoolId: string): Promise<EmploiDuTemps[]>;
   save(emploiDuTemps: EmploiDuTemps): Promise<void>;
   update(emploiDuTemps: EmploiDuTemps): Promise<void>;
+  publishSubmittedBySchool(schoolId: string): Promise<EmploiDuTemps[]>;
   countCreneaux(timetableId: string): Promise<number>;
 
   // --- Créneaux ---
@@ -103,6 +106,7 @@ export interface TimetableRepository {
   saveCreneaux(creneau: CreneauHoraire): Promise<void>;
   updateCreneau(creneau: CreneauHoraire): Promise<void>;
   deleteCreneau(id: string, timetableId: string): Promise<void>;
+  deleteCreneauxTimetable(timetableId: string): Promise<number>;
 
   /**
    * Retourne les créneaux existants d'un enseignant pour un jour donné.
@@ -192,7 +196,7 @@ export interface TimetableRepository {
     timetableId: string,
     schoolId: string,
     creneaux: CreneauALoter[],
-    options?: { verifierConflits?: boolean }
+    options?: { verifierConflits?: boolean; remplacerLignesGerees?: boolean }
   ): Promise<{ creneauxCrees: number }>;
 
   /**
@@ -231,7 +235,7 @@ export interface TimetableRepository {
    * Affectations pédagogiques classe-entière (hors StudentGroup et hors matière restreinte à un
    * groupe) avec les infos matière nécessaires au solveur (type, volume horaire, bloc).
    */
-  findAffectationsSolver(classId: string, schoolId: string): Promise<AffectationSolver[]>;
+  findAffectationsSolver(classId: string, schoolId: string, includeGrouped?: boolean): Promise<AffectationSolver[]>;
 
   /** Noms complets d'enseignants par id (une seule requête groupée, pas de N+1). */
   findNomsEnseignants(teacherIds: string[]): Promise<NomEnseignant[]>;
@@ -268,6 +272,9 @@ export interface CreneauALoter {
   subjectId?: string;
   teacherId?: string;
   roomId?: string;
+  groupId?: string;
+  isLV2Slot?: boolean;
+  kind?: SlotKind;
   dayOfWeek: number;
   startTime: string;
   endTime: string;

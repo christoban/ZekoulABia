@@ -52,18 +52,42 @@ const DEFAULT_SUGGESTIONS = [
 /** Omit qui se distribue sur chaque membre de l'union (sinon seules les clés communes survivent). */
 type DistributiveOmit<T, K extends keyof any> = T extends unknown ? Omit<T, K> : never
 
-let itemId = 0
-
 /** Notifie l'interface métier : navigation vers l'écran + rafraîchissement des données. */
 function notifyInterface(section?: string | null, entity?: string | null) {
   if (section) window.dispatchEvent(new CustomEvent('zekoulabia:navigate', { detail: { section } }))
   if (entity) window.dispatchEvent(new CustomEvent('zekoulabia:data-changed', { detail: { entity } }))
 }
 
-/** Déclenche le surlignage des éléments UI référencés par une fiche d'aide (écouté par HighlightController). */
 function highlightElements(selectors?: string[]) {
   if (!selectors || selectors.length === 0) return
   window.dispatchEvent(new CustomEvent('zekoulabia:highlight', { detail: { selectors } }))
+}
+
+export function formatAssistantInline(text: string, keyPrefix = 'inline'): React.ReactNode[] {
+  return text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g).map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) return <strong key={`${keyPrefix}-${index}`}>{part.slice(2, -2)}</strong>
+    if (part.startsWith('*') && part.endsWith('*')) return <em key={`${keyPrefix}-${index}`}>{part.slice(1, -1)}</em>
+    if (part.startsWith('`') && part.endsWith('`')) return <code key={`${keyPrefix}-${index}`}>{part.slice(1, -1)}</code>
+    return <span key={`${keyPrefix}-${index}`}>{part}</span>
+  })
+}
+
+export function renderAssistantText(text: string): React.ReactNode {
+  return text.split('\n').map((line, lineIndex) => {
+    const unordered = line.match(/^\s*[-*]\s+(.*)$/)
+    const ordered = line.match(/^\s*\d+[.)]\s+(.*)$/)
+    if (unordered || ordered) {
+      const content = (unordered?.[1] ?? ordered?.[1] ?? '').trim()
+      const marker = unordered ? '•' : line.trim().split(/\s+/)[0]
+      return (
+        <div key={`line-${lineIndex}`} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+          <span style={{ flexShrink: 0 }}>{marker}</span>
+          <span>{formatAssistantInline(content, `line-${lineIndex}`)}</span>
+        </div>
+      )
+    }
+    return <div key={`line-${lineIndex}`} style={{ whiteSpace: 'pre-wrap' }}>{formatAssistantInline(line, `line-${lineIndex}`)}</div>
+  })
 }
 
 export default function AssistantWidget({ section, rolePrefix = 'admin', suggestions = DEFAULT_SUGGESTIONS }: Props) {
@@ -74,6 +98,7 @@ export default function AssistantWidget({ section, rolePrefix = 'admin', suggest
   const [, setTick] = useState(0)
   const t = useT('admin')
   const scrollRef = useRef<HTMLDivElement>(null)
+  const itemIdRef = useRef(0)
   const [modalActive, setModalActive] = useState(false)
   const isPriorityScreen = !!section && PRIORITY_SCREENS.includes(section)
   const isIdle = useIdleDetection(IDLE_THRESHOLD_MS, isPriorityScreen && !open)
@@ -102,7 +127,7 @@ export default function AssistantWidget({ section, rolePrefix = 'admin', suggest
     return () => clearInterval(t)
   }, [])
 
-  const push = (item: DistributiveOmit<ChatItem, 'id'>) => setItems(prev => [...prev, { ...item, id: ++itemId } as ChatItem])
+  const push = (item: DistributiveOmit<ChatItem, 'id'>) => setItems(prev => [...prev, { ...item, id: ++itemIdRef.current } as ChatItem])
 
   async function send(text: string) {
     const clean = text.trim()
@@ -300,9 +325,9 @@ export default function AssistantWidget({ section, rolePrefix = 'admin', suggest
                       lineHeight: 1.5, whiteSpace: 'pre-wrap',
                        background: it.kind === 'user' ? 'linear-gradient(135deg,var(--primary),var(--primary-hover))' : 'var(--surface)',
 
-                      color: it.kind === 'user' ? 'white' : 'var(--text)',
-                      border: it.kind === 'user' ? 'none' : '1.5px solid var(--border)',
-                    }}>{it.text}</div>
+                       color: it.kind === 'user' ? 'white' : 'var(--text)',
+                       border: it.kind === 'user' ? 'none' : '1.5px solid var(--border)',
+                     }}>{it.kind === 'assistant' ? renderAssistantText(it.text) : it.text}</div>
                   </div>
                 )
               }

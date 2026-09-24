@@ -274,7 +274,12 @@ import { AppliquerReapplicationTemplateUseCase } from '@application/schoolSettin
 import { CreerEmploiDuTempsUseCase } from '@application/timetable/CreerEmploiDuTempsUseCase';
 import { AjouterCreneauUseCase } from '@application/timetable/AjouterCreneauUseCase';
 import { ModifierCreneauUseCase } from '@application/timetable/ModifierCreneauUseCase';
+import { SupprimerCreneauUseCase } from '@application/timetable/SupprimerCreneauUseCase';
+import { ViderCreneauxClasseUseCase } from '@application/timetable/ViderCreneauxClasseUseCase';
+import { SoumettreEmploiDuTempsUseCase } from '@application/timetable/SoumettreEmploiDuTempsUseCase';
 import { PublierEmploiDuTempsUseCase } from '@application/timetable/PublierEmploiDuTempsUseCase';
+import { PublierTousEmploisDuTempsUseCase } from '@application/timetable/PublierTousEmploisDuTempsUseCase';
+import { RouvrirEmploiDuTempsUseCase } from '@application/timetable/RouvrirEmploiDuTempsUseCase';
 import { DemanderRattrapageUseCase } from '@application/timetable/DemanderRattrapageUseCase';
 import { GenererSeancesGroupeUseCase } from '@application/timetable/GenererSeancesGroupeUseCase';
 import { ResoudreParticipantsSeanceUseCase } from '@application/timetable/ResoudreParticipantsSeanceUseCase';
@@ -740,9 +745,15 @@ export function creerContainer() {
   const timetableRepository = new PrismaTimetableRepository(prisma);
 
   const creerEmploiDuTempsUseCase = new CreerEmploiDuTempsUseCase(timetableRepository);
-  const ajouterCreneauUseCase = new AjouterCreneauUseCase(timetableRepository);
+  const ajouterCreneauUseCase = new AjouterCreneauUseCase(timetableRepository, schedulingGridAdapter);
   const modifierCreneauUseCase = new ModifierCreneauUseCase(timetableRepository);
-  const publierEmploiDuTempsUseCase = new PublierEmploiDuTempsUseCase(timetableRepository);
+  const supprimerCreneauUseCase = new SupprimerCreneauUseCase(timetableRepository, activityLog);
+  const viderCreneauxClasseUseCase = new ViderCreneauxClasseUseCase(timetableRepository, activityLog);
+  const soumettreEmploiDuTempsUseCase = new SoumettreEmploiDuTempsUseCase(timetableRepository, activityLog);
+
+  const publierEmploiDuTempsUseCase = new PublierEmploiDuTempsUseCase(timetableRepository, activityLog);
+  const publierTousEmploisDuTempsUseCase = new PublierTousEmploisDuTempsUseCase(timetableRepository, activityLog);
+  const rouvrirEmploiDuTempsUseCase = new RouvrirEmploiDuTempsUseCase(timetableRepository, activityLog);
   const demanderRattrapageUseCase = new DemanderRattrapageUseCase(
     userRepository,
     notificationService,
@@ -760,9 +771,10 @@ export function creerContainer() {
   const schedulingSolver = new ORToolsWasmAdapter();
   const proposerEmploiDuTempsUseCase = new ProposerEmploiDuTempsUseCase(
     timetableRepository, roomRepository, classRoomAssignmentRepository, teacherUnavailabilityRepository, schedulingSolver, schedulingGridAdapter,
+    studentGroupSetRepository, studentGroupRepository, studentGroupMembershipRepository,
   );
   const appliquerPropositionEmploiDuTempsUseCase = new AppliquerPropositionEmploiDuTempsUseCase(
-    timetableRepository,
+    timetableRepository, proposerEmploiDuTempsUseCase,
   );
   const simulerEmploiDuTempsUseCase = new SimulerEmploiDuTempsUseCase(
     proposerEmploiDuTempsUseCase, schedulingSolver, timetableRepository,
@@ -1119,8 +1131,14 @@ export function creerContainer() {
     timetable: {
       creer: creerEmploiDuTempsUseCase,
       ajouterCreneau: ajouterCreneauUseCase,
-      modifierCreneau: modifierCreneauUseCase,
+       modifierCreneau: modifierCreneauUseCase,
+        supprimerCreneau: supprimerCreneauUseCase,
+        viderCreneaux: viderCreneauxClasseUseCase,
+        soumettre: soumettreEmploiDuTempsUseCase,
+
       publier: publierEmploiDuTempsUseCase,
+      publierTous: publierTousEmploisDuTempsUseCase,
+      rouvrir: rouvrirEmploiDuTempsUseCase,
       demanderRattrapage: demanderRattrapageUseCase,
       genererSeancesGroupe: genererSeancesGroupeUseCase,
       resoudreParticipantsSeance: resoudreParticipantsSeanceUseCase,

@@ -87,6 +87,97 @@ describe('ORToolsWasmAdapter — modèle CP-SAT', () => {
     expect(resultat.seances[0]!.roomId).toBe(SALLE_LABO.roomId);
   });
 
+  it('DUR — aucune matière ne dépasse 2 occurrences dans une journée', async () => {
+    const resultat = await adapter.proposer(input({
+      exigences: Array.from({ length: 3 }, () => ({
+        subjectId: 'maths', subjectType: 'THEORETICAL' as const,
+        teacherId: 'prof-A', durationMinutes: 60,
+      })),
+      grille: [
+        { dayOfWeek: 0, startTime: '08:00', endTime: '09:00' },
+        { dayOfWeek: 0, startTime: '09:00', endTime: '10:00' },
+        { dayOfWeek: 0, startTime: '10:00', endTime: '11:00' },
+      ],
+    }));
+
+    expect(resultat.statut).toBe('INFAISABLE');
+  });
+
+  it('DUR — trois occurrences d’une matière restent possibles si elles sont réparties sur deux jours', async () => {
+    const resultat = await adapter.proposer(input({
+      exigences: Array.from({ length: 3 }, () => ({
+        subjectId: 'maths', subjectType: 'THEORETICAL' as const,
+        teacherId: 'prof-A', durationMinutes: 60,
+      })),
+      grille: [
+        { dayOfWeek: 0, startTime: '08:00', endTime: '09:00' },
+        { dayOfWeek: 0, startTime: '09:00', endTime: '10:00' },
+        { dayOfWeek: 1, startTime: '08:00', endTime: '09:00' },
+      ],
+    }));
+
+    expect(['OPTIMAL', 'FEASIBLE']).toContain(resultat.statut);
+    expect(resultat.seances).toHaveLength(3);
+    for (const day of [0, 1]) {
+      expect(resultat.seances.filter(seance => seance.dayOfWeek === day && seance.subjectId === 'maths').length).toBeLessThanOrEqual(2);
+    }
+  });
+
+  it('DUR — deux occurrences journalières sont contiguës dans les cases de cours', async () => {
+    const resultat = await adapter.proposer(input({
+      exigences: [
+        ...Array.from({ length: 2 }, () => ({ subjectId: 'maths', subjectType: 'THEORETICAL' as const, teacherId: 'prof-A', durationMinutes: 60 })),
+        ...Array.from({ length: 2 }, (_, i) => ({ subjectId: `matiere-${i}`, subjectType: 'THEORETICAL' as const, teacherId: 'prof-A', durationMinutes: 60 })),
+      ],
+      grille: [
+        { dayOfWeek: 0, startTime: '08:00', endTime: '09:00' },
+        { dayOfWeek: 0, startTime: '09:00', endTime: '10:00' },
+        { dayOfWeek: 0, startTime: '10:00', endTime: '11:00' },
+        { dayOfWeek: 0, startTime: '11:00', endTime: '12:00' },
+      ],
+    }));
+
+    expect(['OPTIMAL', 'FEASIBLE']).toContain(resultat.statut);
+    const maths = resultat.seances
+      .filter(seance => seance.subjectId === 'maths')
+      .sort((a, b) => a.startTime.localeCompare(b.startTime));
+    expect(Number(maths[1]!.startTime.slice(0, 2)) - Number(maths[0]!.startTime.slice(0, 2))).toBe(1);
+  });
+
+  it('DUR — EPS à 2 occurrences occupe deux jours et est exempté du bloc de 2 h', async () => {
+    const resultat = await adapter.proposer(input({
+      exigences: [
+        { subjectId: 'eps', subjectType: 'PRACTICAL' as const, teacherId: 'prof-A', durationMinutes: 60, subjectName: 'EPS', blocDureeCases: 2, volumeHebdomadaire: 2, nbOccurrencesHebdomadaires: 2, categorieJoursDistincts: 'EPS_TM' },
+        { subjectId: 'eps', subjectType: 'PRACTICAL' as const, teacherId: 'prof-A', durationMinutes: 60, subjectName: 'EPS', blocDureeCases: 2, volumeHebdomadaire: 2, nbOccurrencesHebdomadaires: 2, categorieJoursDistincts: 'EPS_TM' },
+        { subjectId: 'maths', subjectType: 'THEORETICAL' as const, teacherId: 'prof-B', durationMinutes: 60, blocDureeCases: 2 },
+        { subjectId: 'maths', subjectType: 'THEORETICAL' as const, teacherId: 'prof-B', durationMinutes: 60, blocDureeCases: 2 },
+      ],
+      grille: [
+        { dayOfWeek: 0, startTime: '08:00', endTime: '09:00' },
+        { dayOfWeek: 0, startTime: '09:00', endTime: '10:00' },
+        { dayOfWeek: 1, startTime: '08:00', endTime: '09:00' },
+        { dayOfWeek: 1, startTime: '09:00', endTime: '10:00' },
+        { dayOfWeek: 2, startTime: '08:00', endTime: '09:00' },
+        { dayOfWeek: 2, startTime: '09:00', endTime: '10:00' },
+      ],
+    }));
+
+    expect(['OPTIMAL', 'FEASIBLE']).toContain(resultat.statut);
+    expect(new Set(resultat.seances.filter(seance => seance.subjectId === 'eps').map(seance => seance.dayOfWeek)).size).toBe(2);
+  });
+
+  it('DUR — subjectType seul ne classe pas une matière dans EPS/TM', async () => {
+    const resultat = await adapter.proposer(input({
+      exigences: [
+        { subjectId: 'sport', subjectType: 'PRACTICAL' as const, teacherId: 'prof-A', durationMinutes: 60, subjectName: 'Matière quelconque', blocDureeCases: 2, volumeHebdomadaire: 2, nbOccurrencesHebdomadaires: 2 },
+        { subjectId: 'sport', subjectType: 'PRACTICAL' as const, teacherId: 'prof-A', durationMinutes: 60, subjectName: 'Matière quelconque', blocDureeCases: 2, volumeHebdomadaire: 2, nbOccurrencesHebdomadaires: 2 },
+      ],
+    }));
+
+    expect(['OPTIMAL', 'FEASIBLE']).toContain(resultat.statut);
+    expect(new Set(resultat.seances.map(seance => seance.dayOfWeek)).size).toBe(1);
+  });
+
   it('DUR — ne place jamais un enseignant déjà occupé par une autre classe', async () => {
     // prof-A est pris toute la journée 0 ; sa séance doit basculer sur la journée 1.
     const resultat = await adapter.proposer(input({

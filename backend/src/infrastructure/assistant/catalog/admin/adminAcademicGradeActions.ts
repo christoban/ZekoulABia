@@ -230,6 +230,50 @@ export function buildAdminAcademicGradeActions(deps: AdminActionDeps): ActionDef
       },
     },
 
+    {
+      name: 'vider_creneaux_classe',
+      domain: 'classes',
+      description:
+        "Supprime en une seule action tous les créneaux de l'emploi du temps d'une classe sur l'année scolaire courante. " +
+        "Uniquement pour un emploi du temps en brouillon.",
+      destructive: true,
+      requiredPermission: 'MANAGE_TIMETABLE',
+      inputSchema: z.object({ className: z.string().min(1) }),
+      async summarizeDestructive(input, ctx) {
+        const classe = await resolveClass(ctx, input.className);
+        const annee = await resolveCurrentAcademicYear(ctx);
+        const timetable = await ctx.prisma.timetable.findFirst({
+          where: { classId: classe.id, academicYearId: annee.id, schoolId: ctx.schoolId },
+          select: { id: true, status: true, _count: { select: { slots: true } } },
+        });
+        if (!timetable) throw new Error(`Aucun emploi du temps n'existe pour ${classe.name} sur l'année courante.`);
+        if (timetable.status === 'PUBLISHED') throw new Error("Impossible de vider un emploi du temps publié.");
+        return `Supprimer les ${timetable._count.slots} créneaux de ${classe.name} ? Cette action est irréversible depuis l'assistant.`;
+      },
+      async execute(input, ctx) {
+        const classe = await resolveClass(ctx, input.className);
+        const annee = await resolveCurrentAcademicYear(ctx);
+        const timetable = await ctx.prisma.timetable.findFirst({
+          where: { classId: classe.id, academicYearId: annee.id, schoolId: ctx.schoolId },
+          select: { id: true },
+        });
+        if (!timetable) throw new Error(`Aucun emploi du temps n'existe pour ${classe.name} sur l'année courante.`);
+        const nombreSupprimes = await deps.viderEDT.execute({
+          timetableId: timetable.id,
+          schoolId: ctx.schoolId,
+          demandeurId: ctx.userId,
+        });
+        return {
+          resultLabel: `${nombreSupprimes} créneau(x) vidé(s) pour ${classe.name}`,
+          section: 'timetable',
+          entity: 'timetable',
+        };
+      },
+      async undo() {
+        throw new Error("Le vidage des créneaux est irréversible depuis l'assistant.");
+      },
+    },
+
     // 29. Publier l'emploi du temps d'une classe — NON destructif (réversible)
     {
       name: 'publier_emploi_du_temps',
@@ -250,7 +294,7 @@ export function buildAdminAcademicGradeActions(deps: AdminActionDeps): ActionDef
         if (timetable.status === 'PUBLISHED') {
           return { resultLabel: `L'emploi du temps de ${classe.name} est déjà publié.`, section: 'timetable', entity: 'timetable' };
         }
-        await deps.publierEDT.execute({ timetableId: timetable.id, schoolId: ctx.schoolId });
+        await deps.publierEDT.execute({ timetableId: timetable.id, schoolId: ctx.schoolId, demandeurId: ctx.userId, demandeurRole: ctx.role });
         return {
           resultLabel: `Emploi du temps de ${classe.name} publié`,
           undoData: { timetableId: timetable.id },
@@ -259,7 +303,7 @@ export function buildAdminAcademicGradeActions(deps: AdminActionDeps): ActionDef
         };
       },
       async undo(_params, undoData, ctx) {
-        await ctx.prisma.timetable.update({ where: { id: String(undoData.timetableId) }, data: { status: 'DRAFT' } });
+        await deps.rouvrirEDT.execute({ timetableId: String(undoData.timetableId), schoolId: ctx.schoolId, demandeurId: ctx.userId, demandeurRole: ctx.role });
       },
     },
 

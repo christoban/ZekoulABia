@@ -88,14 +88,17 @@ function timetableRepositoryStub(edt: EmploiDuTemps, occupation: CreneauOccupe[]
   return {
     findById: async () => edt,
     findByClasse: async () => null,
+    findSubmittedBySchool: async () => [],
     save: async () => {},
     update: async () => {},
+    publishSubmittedBySchool: async () => [],
     countCreneaux: async () => 0,
     findCreneauById: async () => null,
     findCreneauxByTimetable: async () => [],
     saveCreneaux: async () => {},
     updateCreneau: async () => {},
     deleteCreneau: async () => {},
+    deleteCreneauxTimetable: async () => 0,
     findCreneauxEnseignantParJour: async () => [],
     calculerVolumeHoraireHebdo: async () => 0,
     getInfosEnseignant: async () => null,
@@ -210,17 +213,21 @@ describe('ProposerEmploiDuTempsUseCase — volume horaire exact multi-séances (
     blocDureeCases?: number | null;
     nbPeriodesParJour?: number;
     joursActifs?: string[];
+    subjectName?: string;
+    subjectType?: 'THEORETICAL' | 'PRACTICAL' | 'MIXED';
   } = {}) {
     const {
       hoursPerWeek = 2,
       blocDureeCases = null,
       nbPeriodesParJour = 2,
       joursActifs = ['LUNDI'],
+      subjectName = 'Maths',
+      subjectType = 'THEORETICAL',
     } = options;
 
     const affectations = [{
-      teacherId: 'prof-1', subjectId: 'maths', subjectType: 'THEORETICAL',
-      hoursPerWeek, name: 'Maths', blocDureeCases,
+      teacherId: 'prof-1', subjectId: 'maths', subjectType,
+      hoursPerWeek, name: subjectName, blocDureeCases,
     }];
     const gridConfig = {
       joursActifs,
@@ -296,6 +303,36 @@ describe('ProposerEmploiDuTempsUseCase — volume horaire exact multi-séances (
     const exigences = input()!.exigences;
     expect(exigences).toHaveLength(2);
     expect(exigences.every(e => e.blocDureeCases === 2)).toBe(true);
+  });
+
+  it('calcule volume, occurrences et catégorie EPS/TM depuis le nom normalisé', async () => {
+    for (const subjectName of [
+      'Éducation Physique et Sportive',
+      'Physical Education and Sports',
+      'Travaux Manuels / Technologie',
+      'Manual Work and Technology',
+    ]) {
+      const { solver, input } = solverCapturant();
+      const useCase = construireUseCase(solver, { subjectName, hoursPerWeek: 2, blocDureeCases: 2, joursActifs: ['LUNDI', 'MARDI'] });
+
+      await useCase.execute({ timetableId: 'edt-1', schoolId: 'school-1' });
+
+      expect(input()!.exigences[0]).toMatchObject({
+        subjectName,
+        volumeHebdomadaire: 2,
+        nbOccurrencesHebdomadaires: 2,
+        categorieJoursDistincts: 'EPS_TM',
+      });
+    }
+  });
+
+  it('ne décide jamais EPS/TM avec subjectType seul', async () => {
+    const { solver, input } = solverCapturant();
+    const useCase = construireUseCase(solver, { subjectName: 'Maths', subjectType: 'PRACTICAL' });
+
+    await useCase.execute({ timetableId: 'edt-1', schoolId: 'school-1' });
+
+    expect(input()!.exigences[0]!.categorieJoursDistincts).toBeUndefined();
   });
 
   it('contraintes douces transmises telles quelles au solveur', async () => {

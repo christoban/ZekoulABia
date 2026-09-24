@@ -1614,6 +1614,7 @@ model Timetable {
   slots          TimetableSlot[]
 
   @@unique([schoolId, classId, academicYearId])
+  @@index([schoolId, status])
 }
 
 model TimetableGridConfig {
@@ -1627,6 +1628,7 @@ model TimetableGridConfig {
   dureeGrandePause Int
   periodesApresP2  Int
   joursActifs      String[]
+  periodesCoursParJour Json @default("{}")
 
   school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 }
@@ -1740,6 +1742,7 @@ model TimetableSlot {
   subGroupId     String?
   isLV2Slot      Boolean        @default(false)
   isElectiveSlot Boolean        @default(false)
+  managedBySolver Boolean       @default(false)
   // StudentGroup (StudentGroupSet générique — LV2/Programme/...), distinct de subGroupId
   // (ClassSubGroup — sous-groupes TP ad hoc par classe, non touché). Posé par
   // GenererSeancesGroupeUseCase lors du fan-out d'une matière liée à un GroupSet.
@@ -2788,6 +2791,7 @@ enum AttendanceStatus {
 
 enum TimetableStatus {
   DRAFT
+  SUBMITTED
   PUBLISHED
 }
 
@@ -2803,6 +2807,7 @@ enum SlotKind {
   BREAK // Pause (récréation matin, pause midi)
   ACTIVITY // Activité générale (sport, sortie, etc.)
   TD // Travaux Dirigés ou Travaux Pratiques — pratique de certains établissements
+  FREE // Temps libre explicite
   // pour les classes d'examens (3e, Tle). Non standard — activable par l'école.
 }
 

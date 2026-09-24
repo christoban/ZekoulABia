@@ -37,6 +37,9 @@ import { PrismaClasseRepository } from '@infrastructure/persistence/prisma/Prism
 import { CreerSalleUseCase } from '@application/room/CreerSalleUseCase';
 import { ModifierSalleUseCase } from '@application/room/ModifierSalleUseCase';
 import { PrismaRoomRepository } from '@infrastructure/persistence/prisma/PrismaRoomRepository';
+import { PrismaClassRoomAssignmentRepository } from '@infrastructure/persistence/prisma/PrismaClassRoomAssignmentRepository';
+import { AssignerSalleClasseUseCase } from '@application/studentGroup/AssignerSalleClasseUseCase';
+import { RetirerAssignationSalleUseCase } from '@application/studentGroup/RetirerAssignationSalleUseCase';
 
 if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET non défini — requis dans .env.test pour ce test.');
@@ -114,11 +117,14 @@ beforeAll(async () => {
   // Catalogue Admin réel, avec les seules dépendances qu'exercent nos scénarios.
   const classeRepo = new PrismaClasseRepository(prismaTest);
   const roomRepo = new PrismaRoomRepository(prismaTest);
+  const classRoomAssignmentRepo = new PrismaClassRoomAssignmentRepository(prismaTest);
   const catalog = buildAdminActionCatalog({
     creerClasse: new CreerClasseUseCase(classeRepo),
     supprimerClasse: new SupprimerClasseUseCase(classeRepo),
     creerSalle: new CreerSalleUseCase(roomRepo),
     modifierSalle: new ModifierSalleUseCase(roomRepo),
+    assignerSalleClasse: new AssignerSalleClasseUseCase(classRoomAssignmentRepo, classeRepo, roomRepo),
+    retirerAssignationSalle: new RetirerAssignationSalleUseCase(classRoomAssignmentRepo),
   } as unknown as Parameters<typeof buildAdminActionCatalog>[0]);
 
   const controller = new AssistantController(
@@ -257,6 +263,74 @@ describe('execute — le serveur ne fait jamais confiance au modèle', () => {
     expect(classe).not.toBeNull();
 
     await prismaTest.class.deleteMany({ where: { schoolId, name: '6e Z' } });
+  });
+
+  it('affecte automatiquement les salles naturel et ignore les classes déjà affectées', async () => {
+    await prismaTest.room.createMany({ data: [
+      { schoolId, name: '3e A', type: 'NORMAL', status: 'ACTIVE', capacity: 30, equipment: [] },
+      { schoolId, name: '3e B', type: 'NORMAL', status: 'ACTIVE', capacity: 30, equipment: [] },
+    ] });
+    await prismaTest.class.createMany({ data: [
+      { schoolId, academicYearId, name: '3e A', capacity: 30, status: 'ACTIVE' },
+      { schoolId, academicYearId, name: '3e B', capacity: 30, status: 'ACTIVE' },
+    ] });
+    const premiereClasse = await prismaTest.class.findFirstOrThrow({ where: { schoolId, name: '3e A' } });
+    const salle = await prismaTest.room.findFirstOrThrow({ where: { schoolId, name: '3e A' } });
+    await prismaTest.classRoomAssignment.create({ data: { schoolId, academicYearId, classId: premiereClasse.id, roomId: salle.id } });
+    sortieModele = {
+      text: '',
+      toolCalls: [{ toolName: 'affecter_salles_naturelles', input: {} }],
+    };
+
+    const { body } = await demander(staffToken, 'Fais correspondre chaque classe à la salle du même nom');
+
+    expect(body.executed?.[0]?.error).toBeUndefined();
+    expect(body.executed?.[0]?.label).toContain('1 classe(s) affectée(s)');
+    expect(body.executed?.[0]?.label).toContain('1 déjà affectée(s)');
+    expect(await prismaTest.classRoomAssignment.count({ where: { schoolId, academicYearId } })).toBe(2);
+
+    await prismaTest.classRoomAssignment.deleteMany({ where: { schoolId, academicYearId } });
+    await prismaTest.class.deleteMany({ where: { schoolId, name: { in: ['3e A', '3e B'] } } });
+    await prismaTest.room.deleteMany({ where: { schoolId, name: { in: ['3e A', '3e B'] } } });
+  });
+
+  it('permet à un Censeur d’affecter une salle à plusieurs classes', async () => {
+    const room = await prismaTest.room.create({ data: { schoolId, name: 'Salle Commune', type: 'NORMAL', status: 'ACTIVE', capacity: 50, equipment: [] } });
+    await prismaTest.class.createMany({
+      data: [
+        { schoolId, academicYearId, name: '6e A', capacity: 30, status: 'ACTIVE' },
+        { schoolId, academicYearId, name: '6e B', capacity: 30, status: 'ACTIVE' },
+      ],
+    });
+    sortieModele = {
+      text: '',
+      toolCalls: [{ toolName: 'affecter_salle_classes', input: { roomName: 'Salle Commune', classNames: ['6e A', '6e B'] } }],
+    };
+
+    const { body } = await demander(staffToken, 'Affecte la Salle Commune aux classes 6e A et 6e B');
+
+    expect(body.executed?.[0]?.error).toBeUndefined();
+    expect(await prismaTest.classRoomAssignment.count({ where: { schoolId, roomId: room.id, academicYearId } })).toBe(2);
+    await prismaTest.classRoomAssignment.deleteMany({ where: { schoolId, roomId: room.id } });
+    await prismaTest.class.deleteMany({ where: { schoolId, name: { in: ['6e A', '6e B'] } } });
+    await prismaTest.room.delete({ where: { id: room.id } });
+  });
+
+  it('permet à un Censeur de créer plusieurs salles en une seule action', async () => {
+    sortieModele = {
+      text: '',
+      toolCalls: [{ toolName: 'creer_salles', input: { salles: [
+        { name: 'Salle A', capacity: 20 },
+        { name: 'Salle B', capacity: 25 },
+        { name: 'Salle C', type: 'LABORATORY', capacity: 30, equipment: ['Tables'] },
+      ] } }],
+    };
+
+    const { body } = await demander(staffToken, 'Crée les salles A, B et C');
+
+    expect(body.executed?.[0]?.error).toBeUndefined();
+    expect(body.executed?.[0]?.label).toContain('3 salle(s) créée(s)');
+    expect(await prismaTest.room.count({ where: { schoolId } })).toBe(3);
   });
 
   it('permet à un Censeur de créer une salle via le catalogue Assistant', async () => {

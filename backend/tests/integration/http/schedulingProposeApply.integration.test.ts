@@ -121,6 +121,17 @@ beforeAll(async () => {
   await prismaTest.timetableSlot.create({
     data: {
       timetableId,
+      roomId: salleHabituelleId,
+      dayOfWeek: 0,
+      startTime: '08:00',
+      endTime: '09:00',
+      kind: 'CLASS',
+    },
+  });
+
+  await prismaTest.timetableSlot.create({
+    data: {
+      timetableId,
       subjectId: subjectMathsId,
       teacherId: teacherAId,
       roomId: salleHabituelleId,
@@ -197,9 +208,10 @@ describe('Scheduling Engine V2.5 — propose puis apply', () => {
     // SOUPLE — la matière théorique prend la salle habituelle de la classe.
     expect(seanceMaths.roomId).toBe(salleHabituelleId);
 
-    // Le solveur ne persiste RIEN : le squelette et le créneau rempli restent inchangés.
-    const slots = await prismaTest.timetableSlot.count({ where: { timetableId } });
-    expect(slots).toBe(5);
+    // Le solveur ne persiste RIEN : le squelette, y compris sa ligne vide avec salle, et le créneau rempli restent inchangés.
+    const slots = await prismaTest.timetableSlot.findMany({ where: { timetableId } });
+    expect(slots).toHaveLength(6);
+    expect(slots.find(s => s.subjectId === null && s.teacherId === null)!.managedBySolver).toBe(false);
   });
 
   it('apply-schedule écrit réellement les créneaux de la proposition confirmée', async () => {
@@ -213,7 +225,9 @@ describe('Scheduling Engine V2.5 — propose puis apply', () => {
 
     const slots = await prismaTest.timetableSlot.findMany({ where: { timetableId } });
     expect(slots).toHaveLength(5);
+    expect(slots.some(s => s.subjectId === null && s.teacherId === null && s.roomId !== null)).toBe(false);
     expect(slots.find(s => s.subjectId === subjectTpId)!.roomId).toBe(salleLaboId);
+    expect(slots.filter(s => (s.subjectId === subjectMathsId || s.subjectId === subjectTpId) && s.dayOfWeek < 2).every(s => s.managedBySolver)).toBe(true);
     expect(slots.find(s => s.subjectId === subjectMathsId && s.dayOfWeek === 2)!.id).toBeDefined();
     expect(slots.filter(s => s.dayOfWeek === 0 || s.dayOfWeek === 1)).toHaveLength(4);
 
@@ -272,6 +286,32 @@ describe('Scheduling Engine V2.5 — propose puis apply', () => {
     await prismaTest.timetableSlot.deleteMany({ where: { timetableId: autreEdt.id } });
     await prismaTest.timetable.delete({ where: { id: autreEdt.id } });
     await prismaTest.class.delete({ where: { id: autreClasse.id } });
+  });
+
+  it('apply-schedule rejette des occurrences non contiguës avant toute écriture (422)', async () => {
+    await prismaTest.timetableGridConfig.update({
+      where: { schoolId },
+      data: { periodesAvantP1: 3 },
+    });
+
+    try {
+      const { res, body } = await appliquer([
+        { subjectId: subjectMathsId, teacherId: teacherAId, roomId: salleHabituelleId, dayOfWeek: 0, startTime: '08:00', endTime: '09:00' },
+        { subjectId: subjectTpId, teacherId: teacherBId, roomId: salleLaboId, dayOfWeek: 0, startTime: '09:00', endTime: '10:00' },
+        { subjectId: subjectMathsId, teacherId: teacherAId, roomId: salleHabituelleId, dayOfWeek: 0, startTime: '10:00', endTime: '11:00' },
+        { subjectId: subjectTpId, teacherId: teacherBId, roomId: salleLaboId, dayOfWeek: 1, startTime: '08:00', endTime: '09:00' },
+      ]);
+
+      expect(res.status).toBe(422);
+      expect(body.success).toBe(false);
+      expect(body.message).toContain('ne sont pas contiguës');
+      expect(await prismaTest.timetableSlot.count({ where: { timetableId } })).toBe(1);
+    } finally {
+      await prismaTest.timetableGridConfig.update({
+        where: { schoolId },
+        data: { periodesAvantP1: 2 },
+      });
+    }
   });
 
   it('apply-schedule rejette une proposition vide (422)', async () => {

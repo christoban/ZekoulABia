@@ -126,8 +126,10 @@
   "timetable": {
     "title": "Mon emploi du temps",
     "week_range": "Semaine du {start} au {end}",
-    "my_courses": "Mes cours",
-    "free": "Libre",
+     "my_courses": "Mes cours",
+     "free": "Libre",
+     "roomLabel": "Salle :",
+    "freeTime": "Temps libre",
     "catchup_request": "Demander un rattrapage",
     "catchup_title": "Demander un rattrapage",
     "catchup_class_label": "Classe *",

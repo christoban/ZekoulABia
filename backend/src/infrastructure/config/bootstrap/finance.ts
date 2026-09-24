@@ -106,6 +106,7 @@ export function registerFinanceRoutes(app: Application, prismaParam: typeof pris
 
   const timetableGridConfigController = new TimetableGridConfigController(
     new PrismaTimetableRepository(p as any),
+    c.events.publisher,
   );
   app.use('/api/v2/timetable-grid-config', creerTimetableGridConfigRoutes(timetableGridConfigController));
 }

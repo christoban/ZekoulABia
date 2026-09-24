@@ -41,9 +41,25 @@ interface ProposedSession {
   endTime: string
 }
 
+interface ProposedGroupSession extends ProposedSession {
+  groupId: string
+  groupName: string
+  participantsCount: number
+  isLV2Slot: true
+}
+
+interface ProposedFreeTime {
+  kind: 'FREE'
+  dayOfWeek: number
+  startTime: string
+  endTime: string
+}
+
 interface Proposal {
   statut: 'OPTIMAL' | 'FEASIBLE' | 'INFAISABLE'
   seances: ProposedSession[]
+  seancesGroupes?: ProposedGroupSession[]
+  tempsLibres?: ProposedFreeTime[]
   scoreObjectif: number
   dureeResolutionMs: number
   raisonInfaisabilite?: string
@@ -78,6 +94,20 @@ interface Props {
 type BusyAction = 'propose' | 'apply' | 'whatif' | 'adjust' | 'group' | 'room' | null
 
 const DAY_NAMES = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
+
+type ReponseApi<T> = T & { message?: string; data?: T }
+
+async function lireReponseJson<T>(reponse: Response): Promise<ReponseApi<T>> {
+  const texte = await reponse.text()
+  if (!texte.trim()) throw new Error(`Réponse vide du serveur (HTTP ${reponse.status})`)
+  try {
+    return JSON.parse(texte) as ReponseApi<T>
+  } catch {
+    throw new Error(`Réponse invalide du serveur (HTTP ${reponse.status})`)
+  }
+}
+
+const attendre = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
 export default function SectionTimetableStaffActions({
   classId,
@@ -145,9 +175,10 @@ export default function SectionTimetableStaffActions({
     return [...teachers.entries()]
   }, [assignments])
   const selectedGroupSet = groupSets.find(groupSet => groupSet.id === groupSetId)
-  const canPropose = Boolean(gridConfigured && activeRooms.length > 0 && assignedCount > 0)
+  const canEdit = !timetable || timetable.status === 'DRAFT'
+  const canPropose = canEdit && Boolean(gridConfigured && activeRooms.length > 0 && assignedCount > 0)
   const canSimulate = Boolean(timetable?.id && assignments.length > 0)
-  const canAdjust = Boolean(timetable?.id && timetable.status !== 'PUBLISHED')
+  const canAdjust = Boolean(timetable?.id && canEdit)
 
   const ensureTimetable = async (): Promise<string> => {
     if (timetable?.id) return timetable.id
@@ -155,14 +186,43 @@ export default function SectionTimetableStaffActions({
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ classId }),
-    })
-    const data = await res.json()
+       body: JSON.stringify({ classId }),
+     })
+     const data = await lireReponseJson<{ id?: string; timetableId?: string }>(res)
     if (!res.ok) {
       if (res.status === 409 && data.data?.timetableId) return data.data.timetableId as string
       throw new Error(data.message || t('timetable.planning.createError'))
     }
     return data.data?.id as string
+  }
+
+  const chargerProposition = async (timetableId: string): Promise<{ res: Response; data: ReponseApi<Proposal> }> => {
+    let derniereErreur: unknown
+    for (let tentative = 0; tentative < 2; tentative++) {
+      try {
+        const res = await fetchApi(`/api/v2/timetables/${timetableId}/propose-schedule`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        })
+        const data = await lireReponseJson<Proposal>(res)
+        if ([502, 503, 504].includes(res.status) && tentative === 0) {
+          derniereErreur = new Error(`Serveur temporairement indisponible (HTTP ${res.status})`)
+          await attendre(1500)
+          continue
+        }
+        return { res, data }
+      } catch (error) {
+        derniereErreur = error
+        if (tentative === 0) {
+          await attendre(1500)
+          continue
+        }
+        throw error
+      }
+    }
+    throw derniereErreur instanceof Error ? derniereErreur : new Error(t('timetable.planning.proposeError'))
   }
 
   const handlePropose = async () => {
@@ -172,13 +232,7 @@ export default function SectionTimetableStaffActions({
     try {
       const timetableId = await ensureTimetable()
       setProposalTimetableId(timetableId)
-      const res = await fetchApi(`/api/v2/timetables/${timetableId}/propose-schedule`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      })
-      const data = await res.json()
+       const { res, data } = await chargerProposition(timetableId)
       if (data.data) setProposal(data.data)
       if (!res.ok) throw new Error(data.message || t('timetable.planning.proposeError'))
       onToast(t('timetable.planning.proposed'), 'success')
@@ -191,7 +245,7 @@ export default function SectionTimetableStaffActions({
   }
 
   const handleApply = async () => {
-    if (!proposal || !proposalTimetableId || proposal.seances.length === 0) return
+    if (!proposal || !proposalTimetableId || (proposal.seances.length === 0 && (proposal.seancesGroupes?.length ?? 0) === 0 && (proposal.tempsLibres?.length ?? 0) === 0)) return
     if (!window.confirm(t('timetable.planning.applyConfirm'))) return
     setBusy('apply')
     try {
@@ -199,7 +253,7 @@ export default function SectionTimetableStaffActions({
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seances: proposal.seances }),
+         body: JSON.stringify({ seances: proposal.seances, seancesGroupes: proposal.seancesGroupes ?? [] }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || t('timetable.planning.applyError'))
@@ -356,8 +410,8 @@ export default function SectionTimetableStaffActions({
           <button style={secondaryButton} onClick={() => setWhatIfOpen(value => !value)} disabled={!canSimulate}>
             <FlaskConical size={14} /> {t('timetable.planning.whatIf')}
           </button>
-          {proposal && proposal.seances.length > 0 && (
-            <button style={actionButton} onClick={handleApply} disabled={busy !== null}>
+           {proposal && (proposal.seances.length > 0 || (proposal.seancesGroupes?.length ?? 0) > 0 || (proposal.tempsLibres?.length ?? 0) > 0) && (
+            <button style={actionButton} onClick={handleApply} disabled={!canEdit || busy !== null}>
               <Check size={14} /> {busy === 'apply' ? t('timetable.planning.applying') : t('timetable.planning.apply')}
             </button>
           )}
@@ -380,18 +434,30 @@ export default function SectionTimetableStaffActions({
             <button style={iconButton} onClick={() => setProposal(null)} aria-label={t('timetable.planning.close')}><X size={15} /></button>
           </div>
           <div style={{ color: 'var(--text3)', fontSize: 11.5, marginTop: 4 }}>
-            {t('timetable.planning.proposalMeta', { count: proposal.seances.length, score: proposal.scoreObjectif })}
+             {t('timetable.planning.proposalMeta', { count: proposal.seances.length + (proposal.seancesGroupes?.length ?? 0) + (proposal.tempsLibres?.length ?? 0), score: proposal.scoreObjectif })}
           </div>
           {proposal.raisonInfaisabilite && <div style={{ color: 'var(--red)', fontSize: 12, marginTop: 7 }}>{proposal.raisonInfaisabilite}</div>}
-          {proposal.seances.length > 0 && (
-            <div style={{ display: 'grid', gap: 5, marginTop: 10, maxHeight: 220, overflowY: 'auto' }}>
+           {(proposal.seances.length > 0 || (proposal.seancesGroupes?.length ?? 0) > 0 || (proposal.tempsLibres?.length ?? 0) > 0) && (
+             <div style={{ display: 'grid', gap: 5, marginTop: 10, maxHeight: 220, overflowY: 'auto' }}>
               {proposal.seances.map((session, index) => (
                 <div key={`${session.subjectId}-${session.teacherId}-${session.dayOfWeek}-${session.startTime}-${index}`} style={sessionRow}>
                   <span>{DAY_NAMES[session.dayOfWeek] ?? session.dayOfWeek} · {session.startTime}–{session.endTime}</span>
                   <span>{assignments.find(a => a.subjectId === session.subjectId)?.subjectName ?? session.subjectId} · {rooms.find(r => r.id === session.roomId)?.name ?? session.roomId}</span>
                 </div>
-              ))}
-            </div>
+               ))}
+               {proposal.seancesGroupes?.map((session, index) => (
+                 <div key={`${session.groupId}-${session.dayOfWeek}-${session.startTime}-${index}`} style={sessionRow}>
+                   <span>{DAY_NAMES[session.dayOfWeek] ?? session.dayOfWeek} · {session.startTime}–{session.endTime}</span>
+                   <span>{assignments.find(a => a.subjectId === session.subjectId)?.subjectName ?? session.subjectId} · {session.groupName} ({session.participantsCount}) · {rooms.find(r => r.id === session.roomId)?.name ?? session.roomId}</span>
+                 </div>
+                ))}
+                {proposal.tempsLibres?.map((session, index) => (
+                  <div key={`${session.dayOfWeek}-${session.startTime}-${index}`} style={{ ...sessionRow, background: 'var(--blue-light)' }}>
+                    <span>{DAY_NAMES[session.dayOfWeek] ?? session.dayOfWeek} · {session.startTime}–{session.endTime}</span>
+                    <span>{t('timetable.freeTime')}</span>
+                  </div>
+                ))}
+              </div>
           )}
         </div>
       )}
@@ -467,7 +533,7 @@ export default function SectionTimetableStaffActions({
             <option value="">{t('timetable.planning.roomPlaceholder')}</option>
             {activeRooms.map(room => <option key={room.id} value={room.id}>{room.name} · {room.capacity}</option>)}
           </select>
-          <button style={secondaryButton} onClick={saveRoomAssignment} disabled={!roomId || !academicYearId || busy !== null}>{t('timetable.planning.saveRoom')}</button>
+          <button style={secondaryButton} onClick={saveRoomAssignment} disabled={!canEdit || !roomId || !academicYearId || busy !== null}>{t('timetable.planning.saveRoom')}</button>
         </div>
       </div>
 
@@ -485,7 +551,7 @@ export default function SectionTimetableStaffActions({
               </select>
               <input type="time" value={groupStart} onChange={event => setGroupStart(event.target.value)} style={{ ...inputStyle, width: 120 }} />
               <input type="time" value={groupEnd} onChange={event => setGroupEnd(event.target.value)} style={{ ...inputStyle, width: 120 }} />
-              <button style={secondaryButton} onClick={generateGroupSessions} disabled={!timetable?.id || !selectedGroupSet || busy !== null}>{t('timetable.planning.generateGroups')}</button>
+               <button style={secondaryButton} onClick={generateGroupSessions} disabled={!canEdit || !timetable?.id || !selectedGroupSet || busy !== null}>{t('timetable.planning.generateGroups')}</button>
             </div>
           </div>
         </div>

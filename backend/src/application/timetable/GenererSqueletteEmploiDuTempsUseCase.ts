@@ -61,12 +61,14 @@ export class GenererSqueletteEmploiDuTempsUseCase {
     });
     await this.timetableRepository.save(emploiDuTemps);
 
-    const periodesCours = this.schedulingGrid.calculerSqelette(gridConfig).filter(p => p.type === 'COURS');
-    const jours = joursActifsVersIndex(gridConfig.joursActifs);
+    const jours = gridConfig.joursActifs;
 
-    const creneaux: CreneauALoter[] = jours.flatMap(dayOfWeek =>
-      periodesCours.map(p => ({ dayOfWeek, startTime: p.debut, endTime: p.fin })),
-    );
+    const creneaux: CreneauALoter[] = jours.flatMap(jour => {
+      const dayOfWeek = joursActifsVersIndex([jour])[0]!;
+      return this.schedulingGrid.calculerSqelette(gridConfig, jour)
+        .filter(p => p.type === 'COURS')
+        .map(p => ({ dayOfWeek, startTime: p.debut, endTime: p.fin }));
+    });
 
     const { creneauxCrees } = await this.timetableRepository.creerCreneauxEnLot(
       emploiDuTemps.id, commande.schoolId, creneaux, { verifierConflits: false },

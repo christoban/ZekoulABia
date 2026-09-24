@@ -13,6 +13,9 @@ import { PrismaLv2ChoiceRepository } from "../../persistence/prisma/PrismaLv2Cho
 import { PrismaAnneeAcademiqueRepository } from "../../persistence/prisma/PrismaAnneeAcademiqueRepository";
 import { PrismaAcademicEventRepository } from "../../persistence/prisma/PrismaAcademicEventRepository";
 import { PrismaSchoolRepository } from "../../persistence/prisma/PrismaSchoolRepository";
+import { PrismaTimetableRepository } from "../../persistence/prisma/PrismaTimetableRepository";
+import { SchedulingGridAdapter } from "../../scheduling/SchedulingGridAdapter";
+import { GenererSqueletteEmploiDuTempsUseCase } from "@application/timetable/GenererSqueletteEmploiDuTempsUseCase";
 import { PrismaStaffProfileRepository } from "../../persistence/prisma/PrismaStaffProfileRepository";
 import { PrismaUserRepository } from "../../persistence/prisma/PrismaUserRepository";
 import { PrismaExamRepository } from "../../persistence/prisma/PrismaExamRepository";
@@ -157,6 +160,44 @@ export const handleTimetableSeancesAppliquees = inngest.createFunction(
 
     return { timetableId, nbSeances: (seances ?? []).length };
   }
+);
+
+export const generateAllTimetableSkeletons = inngest.createFunction(
+  { id: "Generate-All-Timetable-Skeletons", triggers: [{ event: "timetable/grille.sauvee" }] },
+  async ({ event, step }) => {
+    const { schoolId } = event.data as { schoolId: string };
+    return step.run("generate-skeletons-for-classes", async () => {
+      const annee = await prisma.academicYear.findFirst({
+        where: { schoolId, isCurrent: true },
+        select: { id: true },
+      });
+      if (!annee) return { schoolId, created: 0, existing: 0, errors: 0, skipped: true };
+
+      const classes = await prisma.class.findMany({
+        where: { schoolId, academicYearId: annee.id, status: "ACTIVE", deletedAt: null },
+        select: { id: true, name: true },
+        orderBy: { name: "asc" },
+      });
+      const useCase = new GenererSqueletteEmploiDuTempsUseCase(
+        new PrismaTimetableRepository(prisma),
+        new PrismaAnneeAcademiqueRepository(prisma),
+        new SchedulingGridAdapter(),
+      );
+      let created = 0;
+      let existing = 0;
+      let errors = 0;
+      for (const classe of classes) {
+        try {
+          await useCase.execute({ schoolId, classId: classe.id });
+          created += 1;
+        } catch (error) {
+          if (error instanceof Error && error.message.includes("existe déjà")) existing += 1;
+          else errors += 1;
+        }
+      }
+      return { schoolId, total: classes.length, created, existing, errors };
+    });
+  },
 );
 
 export const handleAssessmentScheduled = inngest.createFunction(

@@ -156,12 +156,12 @@ describe('Contraintes douces V2.5 — effet réel sur les séances', () => {
   });
 
   it('T4 — volumeMaxEnseignantParJour : plafond journalier respecté', async () => {
-    const fixture = { exigences: exigences(5), grille: grille(3, 3) };
+    const fixture = { exigences: exigences(4), grille: grille(2, 3) };
     const off = await adapter.proposer(input(fixture));
     const on = await adapter.proposer(input({ ...fixture, contraintes: { volumeMaxEnseignantParJour: 120 } }));
 
     expect(['OPTIMAL', 'FEASIBLE']).toContain(on.statut);
-    expect(on.seances).toHaveLength(5);
+    expect(on.seances).toHaveLength(4);
     expect(maxJourEnseignant(on.seances, 'prof-T')).toBeLessThanOrEqual(2);
     expect(maxJourEnseignant(off.seances, 'prof-T')).toBeGreaterThan(2);
   });
@@ -191,19 +191,16 @@ describe('Contraintes douces V2.5 — effet réel sur les séances', () => {
     expect(ecartCharge(resultat.seances, 5)).toBeLessThanOrEqual(2);
   });
 
-  it('T6 — blocs de 2h : les séances forment des paires adjacentes', async () => {
-    const exigencesBloc = Array.from({ length: 4 }, () => ({
+  it('T6 — blocs de 2h : les deux occurrences forment une paire adjacente', async () => {
+    const exigencesBloc = Array.from({ length: 2 }, () => ({
       subjectId: 'maths', subjectType: 'THEORETICAL' as const, teacherId: 'prof-T',
       durationMinutes: 60, blocDureeCases: 2,
     }));
-    const fixture = { exigences: exigencesBloc, grille: grille(1, 6) };
-    const off = await adapter.proposer(input({ ...fixture, contraintes: { blocsDeuxHeures: false } }));
-    const on = await adapter.proposer(input(fixture));
+    const resultat = await adapter.proposer(input({ exigences: exigencesBloc, grille: grille(1, 4) }));
 
-    expect(['OPTIMAL', 'FEASIBLE']).toContain(on.statut);
-    expect(on.seances).toHaveLength(4);
-    expect(estEnBlocsAdjacents(on.seances, 'maths')).toBe(true);
-    expect(estEnBlocsAdjacents(off.seances, 'maths')).toBe(false);
+    expect(['OPTIMAL', 'FEASIBLE']).toContain(resultat.statut);
+    expect(resultat.seances).toHaveLength(2);
+    expect(estEnBlocsAdjacents(resultat.seances, 'maths')).toBe(true);
   });
 });
 

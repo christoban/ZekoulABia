@@ -70,6 +70,9 @@
 **Objectif** : construire, publier et ajuster les emplois du temps ; génération automatique assistée par IA.
 - **Fichiers** : `app/timetable/*`, `TimetableController`, `TimetableAutoController` (IA), `TimetableGridConfigController`, `fe/.../SectionTimetable.tsx`, `SectionGrilleHoraire.tsx`, `SectionTimetableStaff.tsx`.
 - **Interactions** : créneaux électifs `isLV2Slot`/`isElectiveSlot`, génération auto via **Groq** + **Inngest**, drag & drop (`@dnd-kit`), demandes de rattrapage.
+- **Journées raccourcies** : la grille peut définir un nombre différent de périodes de cours par jour actif (par exemple samedi après la grande pause).
+- **Règles pédagogiques du solveur CP-SAT** : 2 occurrences hebdomadaires maximum par matière, occurrences journalières contiguës dans l’ordre des cases de cours, EPS/TM à 2 occurrences réparties sur 2 jours et exemptées du bloc de 2 h ; invariants également revalidés avant apply.
+- **LV2** : les matières liées aux `StudentGroup` sont exclues du solveur classe-entière puis ajoutées à la proposition comme séances groupées au même horaire ; le groupe majoritaire garde la salle habituelle, les autres utilisent des salles normales libres, avec application atomique.
 
 ## 10. Année scolaire, périodes & promotions
 

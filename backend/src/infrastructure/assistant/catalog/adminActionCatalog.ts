@@ -46,6 +46,8 @@ import type { GenererBulletinUseCase } from '@application/reportCard/GenererBull
 import type { EnvoyerBulletinsUseCase } from '@application/reportCard/EnvoyerBulletinsUseCase';
 import type { VerrouillerNotesEnMasseUseCase } from '@application/grade/VerrouillerNotesEnMasseUseCase';
 import type { PublierEmploiDuTempsUseCase } from '@application/timetable/PublierEmploiDuTempsUseCase';
+import type { RouvrirEmploiDuTempsUseCase } from '@application/timetable/RouvrirEmploiDuTempsUseCase';
+import type { ViderCreneauxClasseUseCase } from '@application/timetable/ViderCreneauxClasseUseCase';
 import type { TenirConseilClasseUseCase } from '@application/classCouncil/TenirConseilClasseUseCase';
 import type { DefinirPeriodeCouranteUseCase } from '@application/academicYear/DefinirPeriodeCouranteUseCase';
 import type { VerifierPrerequisClotureUseCase } from '@application/academicYear/VerifierPrerequisClotureUseCase';
@@ -59,6 +61,8 @@ import type { CalculerSelectionPebsUseCase } from '@application/pebsExam/Calcule
 import type { VerifierMatriculeUseCase } from '@application/matricule/VerifierMatriculeUseCase';
 import type { CreerSalleUseCase } from '@application/room/CreerSalleUseCase';
 import type { ModifierSalleUseCase } from '@application/room/ModifierSalleUseCase';
+import type { AssignerSalleClasseUseCase } from '@application/studentGroup/AssignerSalleClasseUseCase';
+import type { RetirerAssignationSalleUseCase } from '@application/studentGroup/RetirerAssignationSalleUseCase';
 
 // ── Re-exports ────────────────────────────────────────────────────────────────
 export type { ActionContext, ActionExecuteResult, ActionDefinition };
@@ -87,6 +91,8 @@ export interface AdminActionDeps {
   envoyerBulletins: EnvoyerBulletinsUseCase;
   verrouillerNotesEnMasse: VerrouillerNotesEnMasseUseCase;
   publierEDT: PublierEmploiDuTempsUseCase;
+  rouvrirEDT: RouvrirEmploiDuTempsUseCase;
+  viderEDT: ViderCreneauxClasseUseCase;
   ouvrirConseilClasse: TenirConseilClasseUseCase;
   definirPeriodeCourante: DefinirPeriodeCouranteUseCase;
   verifierPrerequisCloture: VerifierPrerequisClotureUseCase;
@@ -100,6 +106,8 @@ export interface AdminActionDeps {
   verifierMatricule: VerifierMatriculeUseCase;
   creerSalle: CreerSalleUseCase;
   modifierSalle: ModifierSalleUseCase;
+  assignerSalleClasse: AssignerSalleClasseUseCase;
+  retirerAssignationSalle: RetirerAssignationSalleUseCase;
   /** Approuve/rejette une demande de congé (déduit le solde si approuvée). */
   traiterDemandeConge: (
     schoolId: string,
@@ -128,6 +136,7 @@ export interface AdminActionDeps {
 
 // ── Builders par domaine ──────────────────────────────────────────────────────
 import { buildAdminClassSubjectActions } from './admin/adminClassSubjectActions';
+import { buildAdminRoomAssignmentActions } from './admin/adminRoomAssignmentActions';
 import { buildAdminStudentUserActions } from './admin/adminStudentUserActions';
 import { buildAdminLv2PebsExamActions } from './admin/adminLv2PebsExamActions';
 import { buildAdminAcademicGradeActions } from './admin/adminAcademicGradeActions';
@@ -138,6 +147,7 @@ import { buildAdminHrCommRiskActions } from './admin/adminHrCommRiskActions';
 export function buildAdminActionCatalog(deps: AdminActionDeps): ActionDefinition[] {
   return [
     ...buildAdminClassSubjectActions(deps),
+    ...buildAdminRoomAssignmentActions(deps),
     ...buildAdminStudentUserActions(deps),
     ...buildAdminLv2PebsExamActions(deps),
     ...buildAdminAcademicGradeActions(deps),

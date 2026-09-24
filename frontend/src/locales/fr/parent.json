@@ -126,8 +126,10 @@
   "timetable": {
     "title": "Emploi du temps",
     "schedule": "Horaire",
-    "weekRange": "Semaine du {start} au {end}",
-    "days": "Lundi,Mardi,Mercredi,Jeudi,Vendredi"
+     "weekRange": "Semaine du {start} au {end}",
+     "days": "Lundi,Mardi,Mercredi,Jeudi,Vendredi",
+     "roomLabel": "Salle :",
+    "freeTime": "Temps libre"
   },
   "library": {
     "title": "Lectures",

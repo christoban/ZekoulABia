@@ -10,7 +10,7 @@ interface Props {
   user?: UserInfo | null
 }
 
-type SlotType = { subject: string; classe: string } | null
+type SlotType = { subject: string; classe: string; room: string; kind: string } | null
 type GridRow = { start: string; end: string }
 
 const EMPTY_CATCHUP = { open: false, classId: '', proposedDate: '', subjectId: '', proposedStartTime: '', proposedEndTime: '', reason: '', loading: false, error: '' }
@@ -46,10 +46,12 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
             // Filtrer uniquement les créneaux de cet enseignant (User.id)
             if (!userId || s.teacher?.id !== userId) return
             const key = `${s.dayOfWeek}-${s.startTime}`
-            slotMap[key] = {
-              subject: s.subject?.name || '',
-              classe: tt.class?.name || '',
-            }
+             slotMap[key] = {
+               subject: s.subject?.name || '',
+               classe: tt.class?.name || '',
+               room: s.room || '',
+               kind: s.kind || 'CLASS',
+             }
           })
         })
 
@@ -235,12 +237,19 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
                             <div
                               style={{
                                 padding: '6px 8px', height: '100%', cursor: 'pointer',
-                                background: 'linear-gradient(135deg,rgba(5,150,105,0.09),rgba(5,150,105,0.04))',
-                                borderLeft: '2.5px solid var(--green)',
+                                 background: slot.kind === 'FREE' ? 'var(--blue-light)' : 'linear-gradient(135deg,rgba(5,150,105,0.09),rgba(5,150,105,0.04))',
+                                 borderLeft: slot.kind === 'FREE' ? '2.5px solid var(--blue)' : '2.5px solid var(--green)',
                               }}
                               onClick={() => onToast(`${slot.subject} — ${slot.classe}`, 'info')}>
-                              <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--green2)', lineHeight: 1.2 }}>{slot.subject}</div>
-                              <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{slot.classe}</div>
+                               {slot.kind === 'FREE' ? (
+                                 <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--blue)' }}>{t('timetable.freeTime')}</div>
+                               ) : (
+                                 <>
+                                   <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--green2)', lineHeight: 1.2 }}>{slot.subject}</div>
+                                   <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{slot.classe}</div>
+                                   {slot.room && <div style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 2 }}>{t('timetable.roomLabel')} {slot.room}</div>}
+                                 </>
+                               )}
                             </div>
                           ) : (
                             <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--border2)', fontSize: 16 }}>·</div>

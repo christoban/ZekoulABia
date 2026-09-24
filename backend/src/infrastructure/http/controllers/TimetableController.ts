@@ -3,14 +3,19 @@ import { z } from 'zod';
 import type { CreerEmploiDuTempsUseCase } from '@application/timetable/CreerEmploiDuTempsUseCase';
 import type { AjouterCreneauUseCase } from '@application/timetable/AjouterCreneauUseCase';
 import type { ModifierCreneauUseCase } from '@application/timetable/ModifierCreneauUseCase';
+import type { SupprimerCreneauUseCase } from '@application/timetable/SupprimerCreneauUseCase';
+import type { ViderCreneauxClasseUseCase } from '@application/timetable/ViderCreneauxClasseUseCase';
+import type { SoumettreEmploiDuTempsUseCase } from '@application/timetable/SoumettreEmploiDuTempsUseCase';
 import type { PublierEmploiDuTempsUseCase } from '@application/timetable/PublierEmploiDuTempsUseCase';
+import type { PublierTousEmploisDuTempsUseCase } from '@application/timetable/PublierTousEmploisDuTempsUseCase';
+import type { RouvrirEmploiDuTempsUseCase } from '@application/timetable/RouvrirEmploiDuTempsUseCase';
 import type { DemanderRattrapageUseCase } from '@application/timetable/DemanderRattrapageUseCase';
 import type { GenererSeancesGroupeUseCase } from '@application/timetable/GenererSeancesGroupeUseCase';
 import type { ProposerEmploiDuTempsUseCase } from '@application/timetable/ProposerEmploiDuTempsUseCase';
 import type { AppliquerPropositionEmploiDuTempsUseCase } from '@application/timetable/AppliquerPropositionEmploiDuTempsUseCase';
 import type { SimulerEmploiDuTempsUseCase } from '@application/timetable/SimulerEmploiDuTempsUseCase';
 import type { SimulationEmploiDuTemps } from '@application/timetable/SimulerEmploiDuTempsUseCase';
-import type { SeanceProposee, ContraintesDoucesOptions } from '@domain/ports/services/SchedulingSolverPort';
+import type { SeanceGroupeProposee, SeanceProposee, ContraintesDoucesOptions } from '@domain/ports/services/SchedulingSolverPort';
 import { ConflitHoraireError } from '@domain/errors/ConflitHoraireError';
 import { ConflitSalleError } from '@domain/errors/ConflitSalleError';
 import { VolumeHoraireAPError } from '@domain/errors/VolumeHoraireAPError';
@@ -53,9 +58,15 @@ const simulationsSchema = z.object({
 export class TimetableController {
   constructor(
     private readonly creer: CreerEmploiDuTempsUseCase,
-    private readonly ajouterCreneau: AjouterCreneauUseCase,
-    private readonly modifierCreneau: ModifierCreneauUseCase,
+     private readonly ajouterCreneau: AjouterCreneauUseCase,
+     private readonly modifierCreneau: ModifierCreneauUseCase,
+      private readonly supprimerCreneau: SupprimerCreneauUseCase,
+     private readonly viderCreneaux: ViderCreneauxClasseUseCase,
+     private readonly soumettre: SoumettreEmploiDuTempsUseCase,
+
     private readonly publier: PublierEmploiDuTempsUseCase,
+    private readonly publierTous: PublierTousEmploisDuTempsUseCase,
+    private readonly rouvrir: RouvrirEmploiDuTempsUseCase,
     private readonly demanderRattrapage: DemanderRattrapageUseCase,
     private readonly genererSeances: GenererSeancesGroupeUseCase,
     private readonly proposerEmploiDuTemps: ProposerEmploiDuTempsUseCase,
@@ -114,19 +125,64 @@ export class TimetableController {
     }
   };
 
+  supprimerSlot = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = req.user;
+      await this.supprimerCreneau.execute({
+        creneauId: req.params['slotId'] as string,
+        schoolId: user.schoolId,
+        demandeurId: user.userId,
+      });
+      res.json({ success: true, message: 'Créneau supprimé' });
+    } catch (error) {
+      this.gererErreur(error, res, next);
+    }
+  };
+
+  viderCreneauxEDT = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = req.user;
+      const nombreSupprimes = await this.viderCreneaux.execute({
+        timetableId: req.params['id'] as string,
+        schoolId: user.schoolId,
+        demandeurId: user.userId,
+      });
+      res.json({ success: true, message: `${nombreSupprimes} créneau(x) vidé(s)`, data: { nombreSupprimes } });
+    } catch (error) {
+      this.gererErreur(error, res, next);
+    }
+  };
+
+  soumettreEDT = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = req.user;
+      await this.soumettre.execute({
+        timetableId: req.params['id'] as string,
+        schoolId: user.schoolId,
+        demandeurId: user.userId,
+        demandeurRole: user.role,
+        demandeurPermissions: user.permissions ?? [],
+      });
+      res.json({ success: true, message: 'Emploi du temps soumis' });
+    } catch (error) {
+      this.gererErreur(error, res, next);
+    }
+  };
+
   publierEDT = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const user = req.user;
       await this.publier.execute({
         timetableId: req.params['id'] as string,
         schoolId: user.schoolId,
+        demandeurId: user.userId,
+        demandeurRole: user.role,
       });
       journaliserActionIA(prisma, {
         actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
         actionName: 'publier_emploi_du_temps', targetType: 'Timetable', targetId: req.params['id'] as string,
         origin: 'UI_DIRECT', outcome: 'SUCCES', parametersSummary: { timetableId: req.params['id'] },
       });
-      void logActivity({ userId: user.userId, schoolId: user.schoolId, action: 'Emploi du temps publié', details: `EDT ${req.params['id']} publié` });
       res.json({ success: true, message: 'Emploi du temps publié' });
     } catch (error) {
       const user = req.user;
@@ -136,6 +192,35 @@ export class TimetableController {
         origin: 'UI_DIRECT', outcome: 'ERREUR',
         refusalReason: error instanceof Error ? error.message : undefined, parametersSummary: req.body,
       });
+      this.gererErreur(error, res, next);
+    }
+  };
+
+  publierTousEDT = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = req.user;
+      const resultat = await this.publierTous.execute({
+        schoolId: user.schoolId,
+        demandeurId: user.userId,
+        demandeurRole: user.role,
+      });
+      res.json({ success: true, data: resultat });
+    } catch (error) {
+      this.gererErreur(error, res, next);
+    }
+  };
+
+  rouvrirEDT = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = req.user;
+      await this.rouvrir.execute({
+        timetableId: req.params['id'] as string,
+        schoolId: user.schoolId,
+        demandeurId: user.userId,
+        demandeurRole: user.role,
+      });
+      res.json({ success: true, message: 'Emploi du temps rouvert' });
+    } catch (error) {
       this.gererErreur(error, res, next);
     }
   };
@@ -211,18 +296,19 @@ export class TimetableController {
   appliquerPropositionEDT = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const user = req.user;
-      const { seances } = req.body as { seances?: SeanceProposee[] };
+       const { seances, seancesGroupes } = req.body as { seances?: SeanceProposee[]; seancesGroupes?: SeanceGroupeProposee[] };
 
-      if (!Array.isArray(seances)) {
-        res.status(400).json({ success: false, message: 'seances[] requis' });
-        return;
-      }
+       if (!Array.isArray(seances) || (seancesGroupes !== undefined && !Array.isArray(seancesGroupes))) {
+         res.status(400).json({ success: false, message: 'seances[] requis et seancesGroupes[] doit être un tableau' });
+         return;
+       }
 
-      const resultat = await this.appliquerProposition.execute({
-        timetableId: req.params['id'] as string,
-        schoolId: user.schoolId,
-        seances,
-      });
+       const resultat = await this.appliquerProposition.execute({
+         timetableId: req.params['id'] as string,
+         schoolId: user.schoolId,
+         seances,
+         seancesGroupes,
+       });
 
       journaliserActionIA(prisma, {
         actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
@@ -238,8 +324,9 @@ export class TimetableController {
       void this.eventPublisher?.emit('timetable/seances.appliquees', {
         schoolId: user.schoolId,
         timetableId: req.params['id'] as string,
-        nbSeances: seances.length,
-        seances,
+         nbSeances: seances.length + (seancesGroupes?.length ?? 0),
+         seances,
+         seancesGroupes,
       } as unknown as Record<string, unknown>)?.catch((err) => console.error('[TimetableController] Échec envoi timetable/seances.appliquees:', (err as Error)?.message));
 
       res.status(201).json({ success: true, data: resultat });
@@ -336,14 +423,21 @@ export class TimetableController {
         res.status(404).json({ success: false, message: error.message });
         return;
       }
-      if (error.message.includes('existent déjà')) {
+      if (
+        error.message.includes('existent déjà') ||
+        error.message.includes('déjà publié') ||
+        error.message.includes('déjà soumis') ||
+        error.message.startsWith('Aucun EDT en attente')
+      ) {
         res.status(409).json({ success: false, message: error.message });
         return;
       }
       if (
         error.message.includes('Impossible') ||
-        error.message.includes('déjà publié') ||
+        error.message.includes('doit être soumis') ||
+        error.message.includes('peut être rouvert') ||
         error.message.includes('Proposition vide') ||
+        error.message.startsWith('Proposition invalide') ||
         error.message.startsWith('Aucun')
       ) {
         res.status(422).json({ success: false, message: error.message });

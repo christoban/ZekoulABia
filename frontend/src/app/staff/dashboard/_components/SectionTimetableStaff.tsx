@@ -2,8 +2,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
-import { AlertTriangle, Calendar, CalendarDays, Coffee, UtensilsCrossed } from 'lucide-react'
+import { AlertTriangle, Calendar, CalendarDays, Coffee, Trash2, UtensilsCrossed } from 'lucide-react'
 import SectionTimetableStaffActions from './SectionTimetableStaffActions'
+
+const FREE_VALUE = '__FREE__'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
@@ -14,7 +16,7 @@ interface ClassItem { id: string; name: string; academicYearId?: string }
 
 interface TimetableSlot {
   id: string; dayOfWeek: number; startTime: string; endTime: string
-  room: { id: string; name: string } | null; kind: string
+  room: string | null; kind: string
   subject: { id: string; name: string } | null
   teacher: { id: string; firstName: string; lastName: string } | null
   isLV2Slot?: boolean
@@ -34,9 +36,10 @@ interface PeriodeGrille {
 interface GridConfig {
   heureDebut: string; dureePeriode: number
   periodesAvantP1: number; dureePetitePause: number
-  periodesAvantP2: number; dureeGrandePause: number
-  periodesApresP2: number; joursActifs: string[]
+  periodesAvantP2: number; dureeGrandePause: number; periodesApresP2: number; joursActifs: string[]
+  periodesCoursParJour: Record<string, number>
 }
+
 
 interface Assignment {
   subjectId: string; subjectName: string; coefficient: number
@@ -78,11 +81,13 @@ export default function SectionTimetable({ onToast }: Props) {
   const [timetable, setTimetable]         = useState<Timetable | null>(null)
   const [gridConfig, setGridConfig]       = useState<GridConfig | null>(null)
   const [squelette, setSquelette]         = useState<PeriodeGrille[]>([])
+  const [squeletteParJour, setSqueletteParJour] = useState<Record<string, PeriodeGrille[]>>({})
   const [assignments, setAssignments]     = useState<Assignment[]>([])
   const [loading, setLoading]             = useState(false)
   const [loadingClasses, setLoadingClasses] = useState(true)
   const [generating, setGenerating]       = useState(false)
-  const [publishing, setPublishing]       = useState(false)
+  const [submitting, setSubmitting]       = useState(false)
+  const [clearingAll, setClearingAll]     = useState(false)
   const [error, setError]                 = useState<string | null>(null)
 
   // Modal
@@ -108,8 +113,10 @@ export default function SectionTimetable({ onToast }: Props) {
       const list = Array.isArray(classData?.data) ? classData.data : Array.isArray(classData) ? classData : []
       setClasses(list)
       if (configData?.data) {
-        setGridConfig(configData.data.config)
-        setSquelette(configData.data.squelette)
+         setGridConfig(configData.data.config)
+         setSquelette(configData.data.squelette)
+         setSqueletteParJour(configData.data.squeletteParJour ?? {})
+
       }
       if (Array.isArray(subjectData?.data)) {
         setLv2SubjectIds(new Set(subjectData.data.filter((s: any) => s.isLV2).map((s: any) => s.id)))
@@ -172,40 +179,70 @@ export default function SectionTimetable({ onToast }: Props) {
     }
   }
 
-  const handlePublish = async () => {
-    if (!timetable) return
-    setPublishing(true)
+  const handleSubmit = async () => {
+    if (!timetable || timetable.status !== 'DRAFT') return
+    setSubmitting(true)
     try {
-      const res = await fetchApi(`/api/v2/timetables/${timetable.id}/publish`, {
-        method: 'PUT', credentials: 'include',
+      const res = await fetchApi(`/api/v2/timetables/${timetable.id}/submit`, {
+        method: 'POST', credentials: 'include',
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Erreur publication')
-      onToast(t('timetable.publishSuccess'), 'success')
+      if (!res.ok) throw new Error(data.message || t('timetable.submitError'))
+      onToast(t('timetable.submitSuccess'), 'success')
       fetchTimetable()
     } catch (err) {
-      onToast(err instanceof Error ? err.message : t('timetable.publishError'), 'error')
+      onToast(err instanceof Error ? err.message : t('timetable.submitError'), 'error')
     } finally {
-      setPublishing(false)
+      setSubmitting(false)
     }
   }
 
-  // ─── Modal ─────────────────────────────────────────────────────────────────
+  const handleClearAll = async () => {
+    if (!timetable || timetable.status !== 'DRAFT') return
+    if (!window.confirm(t('timetable.clearAllConfirm', { className: timetable.class.name }))) return
+    setClearingAll(true)
+    try {
+      const res = await fetchApi(`/api/v2/timetables/${timetable.id}/slots`, {
+        method: 'DELETE', credentials: 'include',
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || t('timetable.clearAllError'))
+      await fetchTimetable()
+      onToast(t('timetable.allSlotsCleared'), 'success')
+    } catch (err) {
+      onToast(err instanceof Error ? err.message : t('timetable.clearAllError'), 'error')
+    } finally {
+      setClearingAll(false)
+    }
+  }
+
   const openModal = (slot: TimetableSlot) => {
     setModalSlot(slot)
-    setModalSubjectId(slot.subject?.id ?? '')
+    setModalSubjectId(slot.kind === 'FREE' ? FREE_VALUE : slot.subject?.id ?? '')
     setModalTeacherId(slot.teacher?.id ?? '')
     setModalTeacherName(slot.teacher ? `${slot.teacher.firstName} ${slot.teacher.lastName}` : '')
     setModalIsLV2Slot(slot.isLV2Slot ?? false) // reflète la valeur actuelle à l'édition
     setConflictMsg(null)
   }
 
+  const openEmptyModal = (slot: TimetableSlot) => {
+    setModalSlot(slot)
+    setModalSubjectId('')
+    setModalTeacherId('')
+    setModalTeacherName('')
+    setModalIsLV2Slot(false)
+    setConflictMsg(null)
+  }
+
   const handleSubjectSelect = (subjectId: string) => {
     setModalSubjectId(subjectId)
     setConflictMsg(null)
-    // Matière de langue LV2 → case proposée cochée par défaut ; sinon pas de case
-    setModalIsLV2Slot(lv2SubjectIds.has(subjectId))
-    if (!subjectId) { setModalTeacherId(''); setModalTeacherName(''); return; }
+    setModalIsLV2Slot(subjectId !== FREE_VALUE && lv2SubjectIds.has(subjectId))
+    if (!subjectId || subjectId === FREE_VALUE) {
+      setModalTeacherId('')
+      setModalTeacherName('')
+      return
+    }
     const aff = assignments.find(a => a.subjectId === subjectId)
     setModalTeacherId(aff?.currentTeacherId ?? '')
     setModalTeacherName(aff?.currentTeacherName ?? (aff?.currentTeacherId ? t('timetable.assignedTeacher') : t('timetable.unassigned')))
@@ -216,11 +253,12 @@ export default function SectionTimetable({ onToast }: Props) {
     setSaving(true); setConflictMsg(null)
     try {
       // Vérification conflit avant envoi
-      if (modalTeacherId) {
-        const chkRes = await fetchApi(
-          `/api/v2/timetables/check-conflict?teacherId=${modalTeacherId}&dayOfWeek=${modalSlot.dayOfWeek}&startTime=${encodeURIComponent(modalSlot.startTime)}&excludeSlotId=${modalSlot.id}`,
-          { credentials: 'include' }
-        )
+       if (modalTeacherId) {
+         const excludeSlotId = modalSlot.id ? `&excludeSlotId=${encodeURIComponent(modalSlot.id)}` : ''
+         const chkRes = await fetchApi(
+           `/api/v2/timetables/check-conflict?teacherId=${modalTeacherId}&dayOfWeek=${modalSlot.dayOfWeek}&startTime=${encodeURIComponent(modalSlot.startTime)}${excludeSlotId}`,
+           { credentials: 'include' }
+         )
         const chkData = await chkRes.json()
         if (chkData.data?.hasConflict) {
           setConflictMsg(t('timetable.conflictPrefix', { conflictClass: chkData.data.conflictClass }))
@@ -232,9 +270,10 @@ export default function SectionTimetable({ onToast }: Props) {
         method: 'PATCH', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          subjectId: modalSubjectId || null,
-          teacherId: modalTeacherId || null,
-          isLV2Slot: lv2SubjectIds.has(modalSubjectId) ? modalIsLV2Slot : false,
+           subjectId: modalSubjectId === FREE_VALUE ? null : modalSubjectId || null,
+           teacherId: modalTeacherId || null,
+           kind: modalSubjectId === FREE_VALUE ? 'FREE' : 'CLASS',
+           isLV2Slot: lv2SubjectIds.has(modalSubjectId) ? modalIsLV2Slot : false,
         }),
       })
       const data = await res.json()
@@ -263,17 +302,41 @@ export default function SectionTimetable({ onToast }: Props) {
     if (!modalSlot) return
     setSaving(true)
     try {
-      const res = await fetchApi(`/api/v2/timetables/slots/${modalSlot.id}`, {
-        method: 'PATCH', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subjectId: null, teacherId: null }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Erreur')
-      setTimetable(prev => prev ? {
-        ...prev,
-        slots: prev.slots.map(s => s.id === modalSlot.id ? { ...s, subject: null, teacher: null } : s),
-      } : prev)
+       if (!modalSlot.id) {
+         const res = await fetchApi(`/api/v2/timetables/${timetable?.id}/slots`, {
+           method: 'POST', credentials: 'include',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({
+             dayOfWeek: modalSlot.dayOfWeek,
+             startTime: modalSlot.startTime,
+             endTime: modalSlot.endTime,
+             kind: modalSubjectId === FREE_VALUE ? 'FREE' : 'CLASS',
+             subjectId: modalSubjectId === FREE_VALUE ? null : modalSubjectId || null,
+             teacherId: modalTeacherId || null,
+             isLV2Slot: lv2SubjectIds.has(modalSubjectId) ? modalIsLV2Slot : false,
+           }),
+         })
+         const data = await res.json()
+         if (!res.ok) {
+           if (data.code === 'CONFLIT_HORAIRE') { setConflictMsg(data.message); return }
+           if (data.code === 'VOLUME_AP_DEPASSE') { setConflictMsg(data.message); return }
+           throw new Error(data.message || 'Erreur sauvegarde')
+         }
+         setModalSlot(null)
+         await fetchTimetable()
+         onToast(t('timetable.slotUpdated'), 'success')
+         return
+       }
+
+       const res = await fetchApi(`/api/v2/timetables/slots/${modalSlot.id}`, {
+         method: 'DELETE', credentials: 'include',
+       })
+       const data = await res.json()
+       if (!res.ok) throw new Error(data.message || 'Erreur')
+       setTimetable(prev => prev ? {
+         ...prev,
+         slots: prev.slots.filter(s => s.id !== modalSlot.id),
+       } : prev)
       setModalSlot(null)
       onToast('Créneau vidé', 'info')
     } catch (err) {
@@ -293,9 +356,13 @@ export default function SectionTimetable({ onToast }: Props) {
   const joursNumeriques = joursActifs.map(j => DAY_MAP[j]).filter((d): d is number => d !== undefined)
 
   // Calcul du remplissage
-  const totalCours = slots.filter(s => s.kind === 'CLASS').length
-  const remplis    = slots.filter(s => s.kind === 'CLASS' && s.subject).length
-  const pct        = totalCours > 0 ? Math.round(remplis / totalCours * 100) : 0
+   const totalCours = gridConfig
+     ? (Object.keys(squeletteParJour).length > 0
+         ? joursActifs.reduce((total, jour) => total + (squeletteParJour[jour] ?? squelette).filter(periode => periode.type === 'COURS').length, 0)
+         : squelette.filter(periode => periode.type === 'COURS').length * joursNumeriques.length)
+     : slots.filter(s => s.kind === 'CLASS').length
+   const remplis    = slots.filter(s => s.kind === 'CLASS' && s.subject).length
+   const pct        = totalCours > 0 ? Math.round(remplis / totalCours * 100) : 0
 
   return (
     <div className="px-4 py-4 md:px-7 md:py-6" style={{ height: '100%', overflowY: 'auto', boxSizing: 'border-box', paddingBottom: 140 }}>
@@ -311,7 +378,7 @@ export default function SectionTimetable({ onToast }: Props) {
           <div style={sTitle}>{t('timetable.title')}</div>
           <div style={sSub}>
             {timetable
-              ? t('timetable.subtitleFilled', { className: timetable.class.name, filled: remplis, total: totalCours, pct, status: timetable.status === 'PUBLISHED' ? t('timetable.statusPublished') : t('timetable.statusDraft') })
+              ? t('timetable.subtitleFilled', { className: timetable.class.name, filled: remplis, total: totalCours, pct, status: timetable.status === 'PUBLISHED' ? t('timetable.statusPublished') : timetable.status === 'SUBMITTED' ? t('timetable.statusSubmitted') : t('timetable.statusDraft') })
               : gridConfig ? t('timetable.selectClass') : t('timetable.gridNotConfigured')}
           </div>
         </div>
@@ -320,11 +387,17 @@ export default function SectionTimetable({ onToast }: Props) {
             <option value="">{loadingClasses ? t('timetable.loading') : t('timetable.selectClassOption')}</option>
             {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-          {timetable && timetable.status !== 'PUBLISHED' && (
-            <button style={btnPrim} onClick={handlePublish} disabled={publishing}>
-              {publishing ? <><Spinner /> {t('timetable.publishing')}</> : t('timetable.validateAndPublish')}
-            </button>
-          )}
+           {timetable && timetable.status === 'DRAFT' && (
+             <>
+               <button style={btnSec} onClick={handleClearAll} disabled={clearingAll || submitting}>
+                 <Trash2 size={14} /> {clearingAll ? t('timetable.clearingAll') : t('timetable.clearAll')}
+               </button>
+               <button style={btnPrim} onClick={handleSubmit} disabled={submitting || clearingAll}>
+                 {submitting ? <><Spinner /> {t('timetable.submitting')}</> : t('timetable.submitForValidation')}
+               </button>
+             </>
+           )}
+
         </div>
       </div>
 
@@ -419,39 +492,53 @@ export default function SectionTimetable({ onToast }: Props) {
                         {periode.debut}<br /><span style={{ fontSize: 10, fontWeight: 600 }}>{periode.fin}</span>
                       </td>
                       {joursActifs.map(jour => {
-                        const dayNum = DAY_MAP[jour]
-                        const slot = slotMap.get(`${dayNum}-${periode.debut}`)
-                        const filled = !!(slot?.subject)
-                        const col = slot?.subject ? subjectColor(slot.subject.id) : null
+                         const dayNum = DAY_MAP[jour]
+                         const slot = slotMap.get(`${dayNum}-${periode.debut}`)
+                         const courseActive = (squeletteParJour[jour] ?? squelette).some(periodeJour => periodeJour.type === 'COURS' && periodeJour.debut === periode.debut && periodeJour.fin === periode.fin)
+                         const filled = slot?.kind === 'FREE' || !!slot?.subject
+                         const col = slot?.subject ? subjectColor(slot.subject.id) : null
+
 
                         return (
-                          <td key={jour}
-                            style={{ padding: 0, border: '1px solid var(--border)', verticalAlign: 'top', minWidth: 105, height: 58 }}
-                            onClick={() => slot && openModal(slot)}>
-                            {slot ? (
+                           <td key={jour}
+                             style={{ padding: 0, border: '1px solid var(--border)', verticalAlign: 'top', minWidth: 105, height: 58, opacity: courseActive ? 1 : 0.4 }}
+                             onClick={courseActive ? () => slot ? openModal(slot) : openEmptyModal({ id: '', dayOfWeek: dayNum, startTime: periode.debut, endTime: periode.fin, room: null, kind: 'CLASS', subject: null, teacher: null, isLV2Slot: false }) : undefined}>
+                             {!courseActive ? (
+                               <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)' }}>—</div>
+                             ) : slot ? (
+
                               filled ? (
-                                <div className="tt-cell-filled"
-                                  style={{ padding: '5px 8px', height: '100%', background: col!.bg, borderLeft: `3px solid ${col!.border}`, boxSizing: 'border-box' }}>
-                                  <div style={{ fontSize: 12, fontWeight: 800, color: col!.text, lineHeight: 1.2, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{slot.subject!.name}</span>
-                                    {slot.isLV2Slot && (
-                                      <span title={t('timetable.lv2Tooltip')} style={{ background: 'rgba(3,105,161,0.14)', color: 'var(--blue)', fontSize: 9, fontWeight: 900, padding: '1px 4px', borderRadius: 4, letterSpacing: '0.2px', flexShrink: 0 }}>{t('timetable.lv2Badge')}</span>
-                                    )}
-                                  </div>
-                                  <div style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {slot.teacher ? `${slot.teacher.firstName} ${slot.teacher.lastName}` : <span style={{ color: 'var(--amber)' }}>{t('timetable.noTeacher')}</span>}
-                                  </div>
-                                  {slot.room && <div style={{ fontSize: 9.5, color: 'var(--text3)', marginTop: 2 }}>{slot.room.name}</div>}
-                                </div>
+                                 <div className="tt-cell-filled"
+                                   style={{ padding: '5px 8px', height: '100%', background: slot.kind === 'FREE' ? 'var(--blue-light)' : col?.bg ?? 'var(--bg)', borderLeft: `3px solid ${slot.kind === 'FREE' ? 'var(--blue)' : col?.border ?? 'var(--border)'}`, boxSizing: 'border-box' }}>
+                                   {slot.kind === 'FREE' ? (
+                                     <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--blue)', lineHeight: 1.2 }}>{t('timetable.freeTime')}</div>
+                                   ) : (
+                                     <>
+                                       <div style={{ fontSize: 12, fontWeight: 800, color: col!.text, lineHeight: 1.2, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{slot.subject!.name}</span>
+                                         {slot.isLV2Slot && (
+                                           <span title={t('timetable.lv2Tooltip')} style={{ background: 'rgba(3,105,161,0.14)', color: 'var(--blue)', fontSize: 9, fontWeight: 900, padding: '1px 4px', borderRadius: 4, letterSpacing: '0.2px', flexShrink: 0 }}>{t('timetable.lv2Badge')}</span>
+                                         )}
+                                       </div>
+                                       <div style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                         {slot.teacher ? `${slot.teacher.firstName} ${slot.teacher.lastName}` : <span style={{ color: 'var(--amber)' }}>{t('timetable.noTeacher')}</span>}
+                                       </div>
+                                       {slot.room && <div style={{ fontSize: 9.5, color: 'var(--text3)', marginTop: 2 }}>{t('timetable.roomLabel')} {slot.room}</div>}
+                                     </>
+                                   )}
+                                 </div>
                               ) : (
                                 <div className="tt-cell-hover"
                                   style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
                                   <span style={{ fontSize: 16, color: 'var(--border2)' }}>+</span>
                                 </div>
                               )
-                            ) : (
-                              <div style={{ height: '100%', background: 'var(--bg)' }} />
-                            )}
+                             ) : (
+                               <div className="tt-cell-hover"
+                                 style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
+                                 <span style={{ fontSize: 16, color: 'var(--border2)' }}>+</span>
+                               </div>
+                             )}
                           </td>
                         )
                       })}
@@ -486,6 +573,7 @@ export default function SectionTimetable({ onToast }: Props) {
               <label style={labelSt}>{t('timetable.subjectLabel')}</label>
               <select value={modalSubjectId} onChange={e => handleSubjectSelect(e.target.value)} style={inputSt}>
                 <option value="">{t('timetable.selectSubjectPlaceholder')}</option>
+                <option value={FREE_VALUE}>{t('timetable.freeTime')}</option>
                 {assignments.map(a => (
                   <option key={a.subjectId} value={a.subjectId}>
                     {a.subjectName} {a.coefficient > 0 ? t('timetable.coefficientTag', { coeff: a.coefficient }) : ''}

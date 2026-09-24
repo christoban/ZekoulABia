@@ -309,7 +309,8 @@ const MOTS_CLES_PAR_DOMAINE: Record<string, string[]> = {
   enseignants_rh: ['enseignant', 'professeur', 'diplome', 'diplôme', 'conge', 'congé', 'programme'],
   communication: ['message', 'sms', 'email', 'diffus', 'notifier', 'notification'],
   sante_risque: ['risque', 'sante', 'santé', 'decrochage', 'décrochage'],
-  salles: ['salle', 'salles', 'laboratoire', 'atelier', 'équipement', 'equipement'],
+  salle_gestion: ['salle', 'salles', 'laboratoire', 'atelier', 'équipement', 'equipement'],
+  salle_affectation: ['affect', 'attribuer', 'habituelle', 'salle de la classe', 'correspondance'],
 };
 
 /**

@@ -94,8 +94,10 @@
   "timetable": {
     "title": "My timetable",
     "week_prefix": "Week of",
-    "time_header": "Time",
-    "day_monday": "Monday",
+     "time_header": "Time",
+     "roomLabel": "Room:",
+    "freeTime": "Free time",
+     "day_monday": "Monday",
     "day_tuesday": "Tuesday",
     "day_wednesday": "Wednesday",
     "day_thursday": "Thursday",

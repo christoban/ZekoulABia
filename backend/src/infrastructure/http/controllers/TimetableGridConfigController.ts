@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { TimetableRepository, GridConfig } from '@domain/ports/repositories/TimetableRepository';
+import type { EventPublisher } from '@domain/ports/services/EventPublisher';
 
 export interface PeriodeGrille {
   ordre: number
@@ -17,7 +18,8 @@ export function calculerSqelette(cfg: {
   periodesAvantP2: number
   dureeGrandePause: number
   periodesApresP2: number
-}): PeriodeGrille[] {
+  periodesCoursParJour?: Record<string, number>
+}, jour?: string): PeriodeGrille[] {
   const toMinutes = (t: string) => {
     const [h, m] = t.split(':').map(Number)
     return h * 60 + (m ?? 0)
@@ -31,26 +33,34 @@ export function calculerSqelette(cfg: {
   const result: PeriodeGrille[] = []
   let cursor = toMinutes(cfg.heureDebut)
   let ordre = 1
+  const totalPeriodes = cfg.periodesAvantP1 + cfg.periodesAvantP2 + cfg.periodesApresP2
+  const periodesDemandees = jour === undefined
+    ? totalPeriodes
+    : Math.max(0, Math.min(cfg.periodesCoursParJour?.[jour] ?? totalPeriodes, totalPeriodes))
+  let restantes = periodesDemandees
 
   const ajouterCours = (n: number) => {
-    for (let i = 0; i < n; i++) {
+    const aAjouter = Math.min(n, restantes)
+    for (let i = 0; i < aAjouter; i++) {
       const debut = toTime(cursor)
       cursor += cfg.dureePeriode
       result.push({ ordre: ordre++, debut, fin: toTime(cursor), type: 'COURS', duree: cfg.dureePeriode })
     }
+    restantes -= aAjouter
   }
 
   ajouterCours(cfg.periodesAvantP1)
 
-  if (cfg.dureePetitePause > 0 && cfg.periodesAvantP1 > 0) {
+  if (cfg.dureePetitePause > 0 && cfg.periodesAvantP1 > 0 && periodesDemandees >= cfg.periodesAvantP1) {
     const debut = toTime(cursor)
     cursor += cfg.dureePetitePause
     result.push({ ordre: 0, debut, fin: toTime(cursor), type: 'PETITE_PAUSE', duree: cfg.dureePetitePause })
   }
 
+  const avantGrandePause = cfg.periodesAvantP1 + cfg.periodesAvantP2
   ajouterCours(cfg.periodesAvantP2)
 
-  if (cfg.dureeGrandePause > 0 && cfg.periodesAvantP2 > 0) {
+  if (cfg.dureeGrandePause > 0 && cfg.periodesAvantP2 > 0 && periodesDemandees >= avantGrandePause) {
     const debut = toTime(cursor)
     cursor += cfg.dureeGrandePause
     result.push({ ordre: 0, debut, fin: toTime(cursor), type: 'GRANDE_PAUSE', duree: cfg.dureeGrandePause })
@@ -62,7 +72,10 @@ export function calculerSqelette(cfg: {
 }
 
 export class TimetableGridConfigController {
-  constructor(private readonly timetableRepository: TimetableRepository) {}
+  constructor(
+    private readonly timetableRepository: TimetableRepository,
+    private readonly eventPublisher?: EventPublisher,
+  ) {}
 
   get = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -73,7 +86,8 @@ export class TimetableGridConfigController {
         return
       }
       const squelette = calculerSqelette(config)
-      res.json({ success: true, data: { config, squelette } })
+      const squeletteParJour = Object.fromEntries(config.joursActifs.map(jour => [jour, calculerSqelette(config, jour)]))
+      res.json({ success: true, data: { config, squelette, squeletteParJour } })
     } catch (error) {
       next(error)
     }
@@ -85,10 +99,11 @@ export class TimetableGridConfigController {
       const {
         heureDebut, dureePeriode, periodesAvantP1, dureePetitePause,
         periodesAvantP2, dureeGrandePause, periodesApresP2, joursActifs,
+        periodesCoursParJour = {},
       } = req.body as {
         heureDebut: string; dureePeriode: number; periodesAvantP1: number
         dureePetitePause: number; periodesAvantP2: number; dureeGrandePause: number
-        periodesApresP2: number; joursActifs: string[]
+        periodesApresP2: number; joursActifs: string[]; periodesCoursParJour?: Record<string, number>
       }
 
       // Validation
@@ -102,19 +117,28 @@ export class TimetableGridConfigController {
       if (totalPeriodes < 1 || totalPeriodes > 12) {
         res.status(400).json({ success: false, message: 'Total de périodes doit être entre 1 et 12' }); return
       }
+      const periodesJourValides = Object.entries(periodesCoursParJour).filter(([jour, nombre]) =>
+        joursActifs.includes(jour) && Number.isInteger(nombre) && nombre >= 0 && nombre <= totalPeriodes,
+      );
+      if (periodesJourValides.length !== joursActifs.filter(jour => jour in periodesCoursParJour).length) {
+        res.status(400).json({ success: false, message: 'Nombre de périodes invalide pour un jour actif' }); return
+      }
 
       const data: GridConfig = {
         heureDebut, dureePeriode, periodesAvantP1, dureePetitePause,
         periodesAvantP2, dureeGrandePause, periodesApresP2, joursActifs,
+        periodesCoursParJour: Object.fromEntries(periodesJourValides),
       }
 
       const config = await this.timetableRepository.saveGridConfig(schoolId, data)
+      void this.eventPublisher?.emit('timetable/grille.sauvee', { schoolId })
 
       // Vérifier si des EDT existent (pour afficher l'avertissement côté frontend)
       const timetableCount = await this.timetableRepository.countTimetablesBySchool(schoolId)
 
       const squelette = calculerSqelette(config)
-      res.json({ success: true, data: { config, squelette, timetableCount } })
+      const squeletteParJour = Object.fromEntries(config.joursActifs.map(jour => [jour, calculerSqelette(config, jour)]))
+      res.json({ success: true, data: { config, squelette, squeletteParJour, timetableCount } })
     } catch (error) {
       next(error)
     }

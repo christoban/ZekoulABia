@@ -86,7 +86,7 @@ export class GenererSeancesGroupeUseCase {
     const groupesActifs = groupes
       .map(g => ({ ...g, effectif: effectifParGroupe.get(g.id) ?? 0 }))
       .filter(g => g.effectif > 0)
-      .sort((a, b) => b.effectif - a.effectif);
+       .sort((a, b) => b.effectif - a.effectif || a.name.localeCompare(b.name, 'fr'));
 
     if (groupesActifs.length === 0) {
       throw new Error("Aucun élève de cette classe n'appartient à un Group de ce GroupSet");
@@ -159,8 +159,9 @@ export class GenererSeancesGroupeUseCase {
         endTime: commande.endTime,
         roomId,
         roomNom: infosSalle.nom,
-        kind: 'CLASS',
-        groupId: groupe.id,
+         kind: 'CLASS',
+         groupId: groupe.id,
+         isLV2Slot: true,
       });
 
       // Mêmes détections de conflit que la saisie manuelle (AjouterCreneauUseCase) — pas de

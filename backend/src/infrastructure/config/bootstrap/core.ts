@@ -227,6 +227,9 @@ export function registerCoreRoutes(app: Application, prismaParam: typeof prisma 
     envoyerBulletins: c.reportCard.envoyer,
     verrouillerNotesEnMasse: c.grade.verrouillerNotesEnMasse,
     publierEDT: c.timetable.publier,
+     rouvrirEDT: c.timetable.rouvrir,
+     viderEDT: c.timetable.viderCreneaux,
+
     ouvrirConseilClasse: c.classCouncil.tenir,
     definirPeriodeCourante: c.academicYear.definirPeriode,
     verifierPrerequisCloture: c.academicYear.verifierPrerequis,
@@ -240,6 +243,8 @@ export function registerCoreRoutes(app: Application, prismaParam: typeof prisma 
     verifierMatricule: c.matricule.verifierMatricule,
     creerSalle: c.room.creer,
     modifierSalle: c.room.modifier,
+    assignerSalleClasse: c.studentGroup.assignerSalleClasse,
+    retirerAssignationSalle: c.studentGroup.retirerAssignationSalle,
     traiterDemandeConge: (schoolId, requestId, statut, validatedById) =>
       traiterDemandeConge(c.hr.leaveRepository, schoolId, requestId, statut, validatedById),
     diffuserMessage: (schoolId, createdById, target, channel, message) =>

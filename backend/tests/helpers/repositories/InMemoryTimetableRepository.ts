@@ -13,6 +13,7 @@ import type { CreneauOccupe } from '@domain/ports/services/SchedulingSolverPort'
 export class InMemoryTimetableRepository implements TimetableRepository {
   private edts = new Map<string, EmploiDuTemps>();
   private creneaux = new Map<string, CreneauHoraire>();
+  private creneauxGeres = new Set<string>();
 
   private enseignantsInfos = new Map<string, { nom: string; estAP: boolean }>();
   private sallesInfos = new Map<string, { nom: string }>();
@@ -46,8 +47,20 @@ export class InMemoryTimetableRepository implements TimetableRepository {
     );
   }
 
+  async findSubmittedBySchool(schoolId: string): Promise<EmploiDuTemps[]> {
+    return [...this.edts.values()].filter(edt => edt.schoolId === schoolId && edt.estSoumis());
+  }
+
   async save(edt: EmploiDuTemps): Promise<void> { this.edts.set(edt.id, edt); }
   async update(edt: EmploiDuTemps): Promise<void> { this.edts.set(edt.id, edt); }
+
+  async publishSubmittedBySchool(schoolId: string): Promise<EmploiDuTemps[]> {
+    const aPublier = await this.findSubmittedBySchool(schoolId);
+    for (const edt of aPublier) {
+      this.edts.set(edt.id, EmploiDuTemps.reconstituer({ ...edt.toObject(), status: 'PUBLISHED' }));
+    }
+    return aPublier;
+  }
 
   async countCreneaux(timetableId: string): Promise<number> {
     return [...this.creneaux.values()].filter(c => c.timetableId === timetableId).length;
@@ -65,6 +78,12 @@ export class InMemoryTimetableRepository implements TimetableRepository {
   async updateCreneau(c: CreneauHoraire): Promise<void> { this.creneaux.set(c.id, c); }
   async deleteCreneau(id: string, _timetableId: string): Promise<void> {
     this.creneaux.delete(id);
+  }
+
+  async deleteCreneauxTimetable(timetableId: string): Promise<number> {
+    const ids = [...this.creneaux.values()].filter(c => c.timetableId === timetableId).map(c => c.id);
+    for (const id of ids) this.creneaux.delete(id);
+    return ids.length;
   }
 
   async findCreneauxEnseignantParJour(
@@ -152,10 +171,19 @@ export class InMemoryTimetableRepository implements TimetableRepository {
    */
   async creerCreneauxEnLot(
     timetableId: string, _schoolId: string, creneaux: CreneauALoter[],
-    options?: { verifierConflits?: boolean }
+    options?: { verifierConflits?: boolean; remplacerLignesGerees?: boolean }
   ): Promise<{ creneauxCrees: number }> {
     const verifierConflits = options?.verifierConflits ?? true;
     const aInserer: CreneauHoraire[] = [];
+    const positions = new Set(creneaux.map(c => `${c.dayOfWeek}|${c.startTime}|${c.endTime}`));
+    const aRemplacer = options?.remplacerLignesGerees
+      ? [...this.creneaux.values()].filter(c =>
+           c.timetableId === timetableId && c.kind === 'CLASS' && !c.subGroupId &&
+           (this.creneauxGeres.has(c.id) || c.groupId !== undefined || (!c.subjectId && !c.teacherId && positions.has(`${c.dayOfWeek}|${c.startTime}|${c.endTime}`)))
+        )
+      : [];
+    const idsARemplacer = new Set(aRemplacer.map(c => c.id));
+    const conserve = [...this.creneaux.values()].filter(c => !idsARemplacer.has(c.id));
 
     for (const seance of creneaux) {
       const creneau = CreneauHoraire.create({
@@ -167,8 +195,10 @@ export class InMemoryTimetableRepository implements TimetableRepository {
         startTime: seance.startTime,
         endTime: seance.endTime,
         roomId: seance.roomId,
-        roomNom: seance.roomId ? this.sallesInfos.get(seance.roomId)?.nom : undefined,
-        kind: 'CLASS',
+         roomNom: seance.roomId ? this.sallesInfos.get(seance.roomId)?.nom : undefined,
+         groupId: seance.groupId,
+         isLV2Slot: seance.isLV2Slot,
+         kind: seance.kind ?? 'CLASS',
       });
 
       if (!verifierConflits) {
@@ -176,7 +206,7 @@ export class InMemoryTimetableRepository implements TimetableRepository {
         continue;
       }
 
-      const dejaVus = [...this.creneaux.values(), ...aInserer];
+      const dejaVus = [...conserve, ...aInserer];
       const conflitsEnseignant = dejaVus
         .filter(c => c.teacherId === seance.teacherId && c.dayOfWeek === seance.dayOfWeek && c.kind === 'CLASS')
         .map(c => ({ id: c.id, startTime: c.startTime, endTime: c.endTime, classeNom: 'Classe Test' }));
@@ -190,7 +220,14 @@ export class InMemoryTimetableRepository implements TimetableRepository {
       aInserer.push(creneau);
     }
 
-    for (const creneau of aInserer) this.creneaux.set(creneau.id, creneau);
+    for (const id of idsARemplacer) {
+      this.creneaux.delete(id);
+      this.creneauxGeres.delete(id);
+    }
+    for (const creneau of aInserer) {
+      this.creneaux.set(creneau.id, creneau);
+      if (options?.remplacerLignesGerees) this.creneauxGeres.add(creneau.id);
+    }
     return { creneauxCrees: aInserer.length };
   }
 

@@ -126,8 +126,10 @@
   "timetable": {
     "title": "My Timetable",
     "week_range": "Week of {start} to {end}",
-    "my_courses": "My courses",
-    "free": "Free",
+     "my_courses": "My courses",
+     "free": "Free",
+     "roomLabel": "Room:",
+    "freeTime": "Free time",
     "catchup_request": "Request catch-up",
     "catchup_title": "Request a catch-up",
     "catchup_class_label": "Class *",

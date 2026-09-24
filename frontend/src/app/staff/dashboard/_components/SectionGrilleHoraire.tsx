@@ -28,6 +28,7 @@ interface GridForm {
   dureeGrandePause: number
   periodesApresP2: number
   joursActifs: string[]
+  periodesCoursParJour: Record<string, number>
 }
 
 const DEFAULT: GridForm = {
@@ -39,30 +40,37 @@ const DEFAULT: GridForm = {
   dureeGrandePause: 30,
   periodesApresP2: 2,
   joursActifs: ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI'],
+  periodesCoursParJour: {},
 }
 
 // Calcul du squelette côté client (identique à la logique backend)
-function calculerSquelette(f: GridForm): PeriodeGrille[] {
+function calculerSquelette(f: GridForm, jour?: string): PeriodeGrille[] {
   const toMins = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + (m ?? 0) }
   const toTime = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
   const result: PeriodeGrille[] = []
   let cursor = toMins(f.heureDebut)
   let ordre = 1
+  const total = f.periodesAvantP1 + f.periodesAvantP2 + f.periodesApresP2
+  const demandees = jour === undefined ? total : Math.max(0, Math.min(f.periodesCoursParJour[jour] ?? total, total))
+  let restantes = demandees
 
   const cours = (n: number) => {
-    for (let i = 0; i < n; i++) {
+    const nombre = Math.min(n, restantes)
+    for (let i = 0; i < nombre; i++) {
       const d = toTime(cursor); cursor += f.dureePeriode
       result.push({ ordre: ordre++, debut: d, fin: toTime(cursor), type: 'COURS', duree: f.dureePeriode })
     }
+    restantes -= nombre
   }
 
   cours(f.periodesAvantP1)
-  if (f.dureePetitePause > 0 && f.periodesAvantP1 > 0) {
+  if (f.dureePetitePause > 0 && f.periodesAvantP1 > 0 && demandees >= f.periodesAvantP1) {
     const d = toTime(cursor); cursor += f.dureePetitePause
     result.push({ ordre: 0, debut: d, fin: toTime(cursor), type: 'PETITE_PAUSE', duree: f.dureePetitePause })
   }
+  const avantGrandePause = f.periodesAvantP1 + f.periodesAvantP2
   cours(f.periodesAvantP2)
-  if (f.dureeGrandePause > 0 && f.periodesAvantP2 > 0) {
+  if (f.dureeGrandePause > 0 && f.periodesAvantP2 > 0 && demandees >= avantGrandePause) {
     const d = toTime(cursor); cursor += f.dureeGrandePause
     result.push({ ordre: 0, debut: d, fin: toTime(cursor), type: 'GRANDE_PAUSE', duree: f.dureeGrandePause })
   }
@@ -91,7 +99,8 @@ export default function SectionGrilleHoraire({ onToast }: { onToast: (msg: strin
       .then(r => r.json())
       .then(d => {
         if (d.success && d.data) {
-          setForm({ ...d.data.config })
+           setForm({ ...DEFAULT, ...d.data.config, periodesCoursParJour: d.data.config.periodesCoursParJour ?? {} })
+
           setIsConfigured(true)
         }
       })
@@ -108,6 +117,10 @@ export default function SectionGrilleHoraire({ onToast }: { onToast: (msg: strin
   const set = useCallback(<K extends keyof GridForm>(k: K, v: GridForm[K]) => {
     setForm(f => ({ ...f, [k]: v }))
   }, [])
+
+  const setPeriodesJour = (jour: string, nombre: number) => {
+    setForm(f => ({ ...f, periodesCoursParJour: { ...f.periodesCoursParJour, [jour]: nombre } }))
+  }
 
   const toggleJour = (jour: string) => {
     setForm(f => ({
@@ -258,6 +271,18 @@ export default function SectionGrilleHoraire({ onToast }: { onToast: (msg: strin
                   }}>
                     {JOURS_LABELS[j]}
                   </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <div style={sLabel}>{t('grilleHoraire.dailyPeriods')}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
+                {JOURS.filter(j => form.joursActifs.includes(j)).map(j => (
+                  <div key={j} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, padding: '6px 8px', background: 'var(--bg)', borderRadius: 7 }}>
+                    <span style={{ fontSize: 11.5, color: 'var(--text2)', fontWeight: 600 }}>{JOURS_LABELS[j]}</span>
+                    <input type="number" min={0} max={totalPeriodes} style={{ ...sNum, width: 58 }} value={form.periodesCoursParJour[j] ?? totalPeriodes} onChange={e => setPeriodesJour(j, Number(e.target.value))} />
+                  </div>
                 ))}
               </div>
             </div>

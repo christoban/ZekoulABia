@@ -49,9 +49,15 @@ export function registerGradeRoutes(app: Application, prismaParam: typeof prisma
 
   const timetableController = new TimetableController(
     c.timetable.creer,
-    c.timetable.ajouterCreneau,
-    c.timetable.modifierCreneau,
+     c.timetable.ajouterCreneau,
+     c.timetable.modifierCreneau,
+      c.timetable.supprimerCreneau,
+      c.timetable.viderCreneaux,
+      c.timetable.soumettre,
+
     c.timetable.publier,
+    c.timetable.publierTous,
+    c.timetable.rouvrir,
     c.timetable.demanderRattrapage,
     c.timetable.genererSeancesGroupe,
     c.timetable.proposerEmploiDuTemps,
@@ -131,9 +137,10 @@ export function registerGradeRoutes(app: Application, prismaParam: typeof prisma
       const { subjectId, teacherId, isLV2Slot } = req.body as { subjectId?: string | null; teacherId?: string | null; isLV2Slot?: boolean };
       const slot = await p.timetableSlot.findFirst({
         where: { id: slotId },
-        include: { timetable: { select: { schoolId: true, classId: true } } },
+        include: { timetable: { select: { schoolId: true, classId: true, status: true } } },
       });
       if (!slot || slot.timetable.schoolId !== schoolId) { res.status(404).json({ success: false, message: 'Créneau introuvable.' }); return; }
+      if (slot.timetable.status === 'PUBLISHED') { res.status(422).json({ success: false, message: 'Impossible de modifier un créneau d’un EDT publié.' }); return; }
       if (teacherId && subjectId) {
         const assignment = await p.teachingAssignment.findUnique({
           where: { classId_subjectId: { classId: slot.timetable.classId, subjectId } },
@@ -182,9 +189,10 @@ export function registerGradeRoutes(app: Application, prismaParam: typeof prisma
       const updated = await p.timetableSlot.update({
         where: { id: slotId },
         data: {
-          subjectId: subjectId ?? null,
-          teacherId: teacherId ?? null,
-          ...(typeof isLV2Slot === 'boolean' ? { isLV2Slot } : {}),
+           subjectId: subjectId ?? null,
+           teacherId: teacherId ?? null,
+           kind: subjectId ? 'CLASS' : 'FREE',
+           ...(typeof isLV2Slot === 'boolean' ? { isLV2Slot } : {}),
         },
         include: {
           subject: { select: { id: true, name: true } },

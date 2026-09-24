@@ -126,8 +126,10 @@
   "timetable": {
     "title": "Timetable",
     "schedule": "Schedule",
-    "weekRange": "Week of {start} to {end}",
-    "days": "Monday,Tuesday,Wednesday,Thursday,Friday"
+     "weekRange": "Week of {start} to {end}",
+     "days": "Monday,Tuesday,Wednesday,Thursday,Friday",
+     "roomLabel": "Room:",
+    "freeTime": "Free time"
   },
   "library": {
     "title": "Library",

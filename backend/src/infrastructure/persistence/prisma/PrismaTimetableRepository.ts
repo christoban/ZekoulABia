@@ -39,6 +39,13 @@ export class PrismaTimetableRepository implements TimetableRepository {
   private creneauToDomain(data: any): CreneauHoraire {
     return CreneauHoraire.reconstituer({ id: data.id, timetableId: data.timetableId, subjectId: data.subjectId ?? undefined, teacherId: data.teacherId ?? undefined, dayOfWeek: data.dayOfWeek, startTime: data.startTime, endTime: data.endTime, roomId: data.roomId ?? undefined, kind: data.kind as SlotKind, subGroupId: data.subGroupId ?? undefined, groupId: data.groupId ?? undefined, isLV2Slot: data.isLV2Slot ?? false, isElectiveSlot: data.isElectiveSlot ?? false });
   }
+  private normaliserPeriodesCoursParJour(valeur: unknown): Record<string, number> {
+    if (!valeur || typeof valeur !== 'object' || Array.isArray(valeur)) return {};
+    return Object.fromEntries(
+      Object.entries(valeur).filter(([, nombre]) => typeof nombre === 'number' && Number.isInteger(nombre) && nombre >= 0),
+    ) as Record<string, number>;
+  }
+
   private timetableWhere(schoolId: string) { return { schoolId }; }
   private conflitWhereEnseignant(teacherId: string, dayOfWeek: number, schoolId: string, excludeId?: string) {
     return { teacherId, dayOfWeek, kind: 'CLASS' as const, timetable: this.timetableWhere(schoolId), ...(excludeId && { id: { not: excludeId } }) };
@@ -56,8 +63,8 @@ export class PrismaTimetableRepository implements TimetableRepository {
   private slotUpdateData(d: ReturnType<CreneauHoraire['toObject']>) {
     return { subjectId: d.subjectId ?? null, teacherId: d.teacherId ?? null, dayOfWeek: d.dayOfWeek, startTime: d.startTime, endTime: d.endTime, roomId: d.roomId ?? null, kind: d.kind, subGroupId: d.subGroupId ?? null, groupId: d.groupId ?? null, isLV2Slot: d.isLV2Slot ?? false, isElectiveSlot: d.isElectiveSlot ?? false };
   }
-  private slotLotData(d: ReturnType<CreneauHoraire['toObject']>) {
-    return { id: d.id, timetableId: d.timetableId, subjectId: d.subjectId ?? null, teacherId: d.teacherId ?? null, dayOfWeek: d.dayOfWeek, startTime: d.startTime, endTime: d.endTime, roomId: d.roomId ?? null, kind: d.kind };
+  private slotLotData(d: ReturnType<CreneauHoraire['toObject']>, managedBySolver: boolean) {
+    return { id: d.id, timetableId: d.timetableId, subjectId: d.subjectId ?? null, teacherId: d.teacherId ?? null, dayOfWeek: d.dayOfWeek, startTime: d.startTime, endTime: d.endTime, roomId: d.roomId ?? null, groupId: d.groupId ?? null, isLV2Slot: d.isLV2Slot ?? false, kind: d.kind, managedBySolver };
   }
   private async compterDansEcole(delegate: { count: (args: any) => Promise<number> }, ids: string[], schoolId: string): Promise<number> {
     return delegate.count({ where: { id: { in: ids }, schoolId } });
@@ -77,6 +84,14 @@ export class PrismaTimetableRepository implements TimetableRepository {
     return this.toEmploiDuTemps(data);
   }
 
+  async findSubmittedBySchool(schoolId: string): Promise<EmploiDuTemps[]> {
+    const data = await this.prisma.timetable.findMany({
+      where: { schoolId, status: 'SUBMITTED' },
+      orderBy: { createdAt: 'asc' },
+    });
+    return data.map(d => this.toEmploiDuTemps(d));
+  }
+
   async save(emploiDuTemps: EmploiDuTemps): Promise<void> {
     const data = emploiDuTemps.toObject();
     await this.prisma.timetable.create({ data: { id: data.id, schoolId: data.schoolId, classId: data.classId, academicYearId: data.academicYearId, status: data.status, generatedByAI: data.generatedByAI, createdAt: data.createdAt } });
@@ -84,6 +99,24 @@ export class PrismaTimetableRepository implements TimetableRepository {
 
   async update(emploiDuTemps: EmploiDuTemps): Promise<void> {
     await this.prisma.timetable.update({ where: { id: emploiDuTemps.id }, data: { status: emploiDuTemps.status } });
+  }
+
+  async publishSubmittedBySchool(schoolId: string): Promise<EmploiDuTemps[]> {
+    return this.prisma.$transaction(async tx => {
+      const data = await tx.timetable.findMany({
+        where: { schoolId, status: 'SUBMITTED' },
+        orderBy: { createdAt: 'asc' },
+      });
+      if (data.length === 0) return [];
+      const resultat = await tx.timetable.updateMany({
+        where: { id: { in: data.map(d => d.id) }, schoolId, status: 'SUBMITTED' },
+        data: { status: 'PUBLISHED' },
+      });
+      if (resultat.count !== data.length) {
+        throw new Error('Workflow EDT modifié pendant la publication en lot');
+      }
+      return data.map(d => this.toEmploiDuTemps({ ...d, status: 'PUBLISHED' }));
+    });
   }
 
   async countCreneaux(timetableId: string): Promise<number> {
@@ -114,6 +147,11 @@ export class PrismaTimetableRepository implements TimetableRepository {
 
   async deleteCreneau(id: string, timetableId: string): Promise<void> {
     await this.prisma.timetableSlot.deleteMany({ where: { id, timetableId } });
+  }
+
+  async deleteCreneauxTimetable(timetableId: string): Promise<number> {
+    const resultat = await this.prisma.timetableSlot.deleteMany({ where: { timetableId } });
+    return resultat.count;
   }
 
   // --- Détection de conflits (filtre schoolId — correction bug) ---
@@ -167,25 +205,30 @@ export class PrismaTimetableRepository implements TimetableRepository {
     return slots.map(s => ({ teacherId: s.teacherId ?? undefined, roomId: s.roomId ?? undefined, dayOfWeek: s.dayOfWeek, startTime: s.startTime, endTime: s.endTime }));
   }
 
-  async creerCreneauxEnLot(timetableId: string, schoolId: string, creneaux: CreneauALoter[], options?: { verifierConflits?: boolean }): Promise<{ creneauxCrees: number }> {
+  async creerCreneauxEnLot(timetableId: string, schoolId: string, creneaux: CreneauALoter[], options?: { verifierConflits?: boolean; remplacerLignesGerees?: boolean }): Promise<{ creneauxCrees: number }> {
     const verifierConflits = options?.verifierConflits ?? true;
     return this.prisma.$transaction(async (tx) => {
-      await tx.timetableSlot.deleteMany({
-        where: {
-          timetableId,
-          kind: 'CLASS',
-          subjectId: null,
-          teacherId: null,
-          roomId: null,
-        },
-      });
+      if (options?.remplacerLignesGerees) {
+        await tx.timetableSlot.deleteMany({
+          where: {
+            timetableId,
+            kind: 'CLASS',
+             AND: [{ subGroupId: null }],
+             OR: [
+               { managedBySolver: true },
+               { groupId: { not: null } },
+               ...creneaux.map(c => ({ AND: [{ subjectId: null, teacherId: null }, { dayOfWeek: c.dayOfWeek, startTime: c.startTime, endTime: c.endTime }] })),
+             ],
+          },
+        });
+      }
       for (const seance of creneaux) {
-        const creneau = CreneauHoraire.create({ timetableId, subjectId: seance.subjectId, teacherId: seance.teacherId, teacherNom: verifierConflits && seance.teacherId ? await this.nomEnseignant(tx, seance.teacherId) : undefined, dayOfWeek: seance.dayOfWeek, startTime: seance.startTime, endTime: seance.endTime, roomId: seance.roomId, roomNom: verifierConflits && seance.roomId ? await this.nomSalle(tx, seance.roomId) : undefined, kind: 'CLASS' });
+        const creneau = CreneauHoraire.create({ timetableId, subjectId: seance.subjectId, teacherId: seance.teacherId, teacherNom: verifierConflits && seance.teacherId ? await this.nomEnseignant(tx, seance.teacherId) : undefined, dayOfWeek: seance.dayOfWeek, startTime: seance.startTime, endTime: seance.endTime, roomId: seance.roomId, roomNom: verifierConflits && seance.roomId ? await this.nomSalle(tx, seance.roomId) : undefined,          groupId: seance.groupId, isLV2Slot: seance.isLV2Slot, kind: seance.kind ?? 'CLASS' });
         if (verifierConflits) {
           if (seance.teacherId) creneau.verifierConflitEnseignant(await this.conflitsEnseignant(tx, seance.teacherId, seance.dayOfWeek, schoolId));
           if (seance.roomId) creneau.verifierConflitSalle(await this.conflitsSalle(tx, seance.roomId, seance.dayOfWeek, schoolId));
         }
-        await tx.timetableSlot.create({ data: this.slotLotData(creneau.toObject()) });
+        await tx.timetableSlot.create({ data: this.slotLotData(creneau.toObject(), options?.remplacerLignesGerees ?? false) });
       }
       return { creneauxCrees: creneaux.length };
     });
@@ -212,15 +255,17 @@ export class PrismaTimetableRepository implements TimetableRepository {
 
   async getGridConfig(schoolId: string): Promise<GridConfig | null> {
     const config = await this.prisma.timetableGridConfig.findUnique({ where: { schoolId } });
-    return config;
+    if (!config) return null;
+    return { ...config, periodesCoursParJour: this.normaliserPeriodesCoursParJour(config.periodesCoursParJour) };
   }
 
   async saveGridConfig(schoolId: string, data: GridConfig): Promise<GridConfig> {
-    return this.prisma.timetableGridConfig.upsert({
+    const saved = await this.prisma.timetableGridConfig.upsert({
       where: { schoolId },
       create: { schoolId, ...data },
       update: data,
     });
+    return { ...saved, periodesCoursParJour: this.normaliserPeriodesCoursParJour(saved.periodesCoursParJour) };
   }
 
   async countTimetablesBySchool(schoolId: string): Promise<number> {
@@ -289,8 +334,11 @@ export class PrismaTimetableRepository implements TimetableRepository {
     return eleves.map(e => ({ id: e.id, firstName: e.firstName, lastName: e.lastName, studentProfileId: e.studentProfile?.id ?? null, lv2SubjectId: e.studentProfile?.lv2SubjectId ?? null, alevelSubjectIds: e.studentProfile?.alevelSubjects.map(a => a.subjectId) ?? [] }));
   }
 
-  async findAffectationsSolver(classId: string, schoolId: string): Promise<AffectationSolver[]> {
-    const affectations = await (this.prisma.teachingAssignment.findMany as any)({ where: { classId, schoolId, subject: { restrictedToGroupId: null, studentGroups: { none: {} } } }, select: this.affectationSelect });
+  async findAffectationsSolver(classId: string, schoolId: string, includeGrouped = false): Promise<AffectationSolver[]> {
+    const subjectFilter = includeGrouped
+      ? { restrictedToGroupId: null }
+      : { restrictedToGroupId: null, studentGroups: { none: {} } };
+    const affectations = await (this.prisma.teachingAssignment.findMany as any)({ where: { classId, schoolId, subject: subjectFilter }, select: this.affectationSelect });
     return affectations.map(a => ({ teacherId: a.teacherId, subjectId: a.subjectId, subjectType: a.subject.subjectType, hoursPerWeek: a.subject.hoursPerWeek, name: a.subject.name, blocDureeCases: a.subject.blocDureeCases }));
   }
 

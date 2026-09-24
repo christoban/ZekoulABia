@@ -1,10 +1,13 @@
-import type { TimetableRepository } from '@domain/ports/repositories/TimetableRepository';
-import type { SeanceProposee } from '@domain/ports/services/SchedulingSolverPort';
+import type { CreneauALoter, TimetableRepository } from '@domain/ports/repositories/TimetableRepository';
+import type { SeanceGroupeProposee, SeanceProposee } from '@domain/ports/services/SchedulingSolverPort';
+import { validerReglesPedagogiquesProposition } from '@domain/rules/ReglesPedagogiquesEmploiDuTemps';
+import type { ProposerEmploiDuTempsUseCase } from './ProposerEmploiDuTempsUseCase';
 
 export interface AppliquerPropositionCommande {
   timetableId: string;
   schoolId: string;
   seances: SeanceProposee[];
+  seancesGroupes?: SeanceGroupeProposee[];
 }
 
 export interface AppliquerPropositionResultat {
@@ -22,28 +25,49 @@ export interface AppliquerPropositionResultat {
  * AUCUNE séance de la proposition n'est écrite — jamais d'emploi du temps à moitié appliqué.
  */
 export class AppliquerPropositionEmploiDuTempsUseCase {
-  constructor(private readonly timetableRepository: TimetableRepository) {}
+  constructor(
+    private readonly timetableRepository: TimetableRepository,
+    private readonly proposer: Pick<ProposerEmploiDuTempsUseCase, 'chargerContexte'> & Partial<Pick<ProposerEmploiDuTempsUseCase, 'calculerSeancesGroupes'>>,
+  ) {}
 
   async execute(commande: AppliquerPropositionCommande): Promise<AppliquerPropositionResultat> {
-    if (commande.seances.length === 0) {
+    const seancesGroupes = commande.seancesGroupes ?? [];
+    if (commande.seances.length === 0 && seancesGroupes.length === 0) {
       throw new Error('Proposition vide : aucune séance à appliquer');
     }
 
-    const emploiDuTemps = await this.timetableRepository.findById(commande.timetableId);
-    if (!emploiDuTemps) throw new Error(`EDT introuvable : ${commande.timetableId}`);
-    if (emploiDuTemps.schoolId !== commande.schoolId) {
-      throw new Error('Accès refusé : EDT hors de votre établissement');
+    const contexte = await this.proposer.chargerContexte(commande);
+    validerReglesPedagogiquesProposition(commande.seances, contexte.exigences, contexte.grille);
+
+    const seancesGroupesAttendues = (contexte.groupesLV2?.length ?? 0) > 0
+      ? await this.proposer.calculerSeancesGroupes?.(contexte, commande.seances)
+      : [];
+    if (!this.proposer.calculerSeancesGroupes && (contexte.groupesLV2?.length ?? 0) > 0) {
+      throw new Error('La proposition LV2 ne peut pas être validée dans ce contexte');
     }
-    if (emploiDuTemps.estPublie()) {
-      throw new Error("Impossible d'appliquer une proposition à un EDT déjà publié");
+    if (JSON.stringify(this.normaliserGroupes(seancesGroupes)) !== JSON.stringify(this.normaliserGroupes(seancesGroupesAttendues ?? []))) {
+      throw new Error('Proposition LV2 invalide ou obsolète : régénérez la proposition avant de l’appliquer');
     }
 
     // verifierConflits laissé à son défaut (true) : l'état a pu changer entre la proposition et
     // sa confirmation par l'admin, c'est précisément le cas que la re-vérification couvre.
+    const seancesOccupees = [...commande.seances, ...seancesGroupes];
+    const casesOccupees = new Set(seancesOccupees.map(seance => `${seance.dayOfWeek}|${seance.startTime}|${seance.endTime}`));
+    const tempsLibres: CreneauALoter[] = contexte.grille
+      .filter(grilleCase => !casesOccupees.has(`${grilleCase.dayOfWeek}|${grilleCase.startTime}|${grilleCase.endTime}`))
+      .map(grilleCase => ({ ...grilleCase, kind: 'FREE' }));
+
     return this.timetableRepository.creerCreneauxEnLot(
       commande.timetableId,
       commande.schoolId,
-      commande.seances,
+      [...seancesOccupees, ...tempsLibres],
+      { remplacerLignesGerees: true },
     );
+  }
+
+  private normaliserGroupes(seances: SeanceGroupeProposee[]): SeanceGroupeProposee[] {
+    return [...seances].sort((a, b) => a.groupId.localeCompare(b.groupId)).map(seance => ({
+      ...seance,
+    }));
   }
 }

@@ -2,6 +2,7 @@ import { CreneauHoraire } from '@domain/entities/CreneauHoraire';
 import type { TimetableRepository } from '@domain/ports/repositories/TimetableRepository';
 import { VolumeHoraireAPError } from '@domain/errors/VolumeHoraireAPError';
 import type { SlotKind } from '@domain/types/enums';
+import type { SchedulingGridPort } from '@domain/ports/services/SchedulingGridPort';
 
 export interface AjouterCreneauCommande {
   timetableId: string;
@@ -24,9 +25,13 @@ export interface AjouterCreneauResultat {
 }
 
 const LIMITE_AP_HEURES = 14;
+const JOURS = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'] as const;
 
 export class AjouterCreneauUseCase {
-  constructor(private readonly timetableRepository: TimetableRepository) {}
+  constructor(
+    private readonly timetableRepository: TimetableRepository,
+    private readonly schedulingGrid?: SchedulingGridPort,
+  ) {}
 
   async execute(commande: AjouterCreneauCommande): Promise<AjouterCreneauResultat> {
     // 1. Vérifier l'EDT
@@ -37,6 +42,21 @@ export class AjouterCreneauUseCase {
     }
     if (emploiDuTemps.estPublie()) {
       throw new Error("Impossible d'ajouter un créneau à un EDT déjà publié");
+    }
+
+    if (this.schedulingGrid && commande.kind !== 'BREAK') {
+      const grid = await this.timetableRepository.getGridConfig(commande.schoolId);
+      const jour = JOURS[commande.dayOfWeek];
+      if (!grid || !jour || !grid.joursActifs.includes(jour)) {
+        throw new Error('Ce jour ne fait pas partie de la grille horaire active');
+      }
+      const casesAutorisees = this.schedulingGrid.calculerSqelette(grid, jour);
+      const caseAutorisee = casesAutorisees.some(periode =>
+        periode.type === 'COURS' && periode.debut === commande.startTime && periode.fin === commande.endTime,
+      );
+      if (!caseAutorisee) {
+        throw new Error('Ce créneau est hors de la plage horaire autorisée pour ce jour');
+      }
     }
 
     // 2. Vérifier appartenance sous-groupe à la classe

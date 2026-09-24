@@ -35,6 +35,12 @@ export class ModifierCreneauUseCase {
     if (!emploiDuTemps || emploiDuTemps.schoolId !== commande.schoolId) {
       throw new Error('Accès refusé');
     }
+    if (emploiDuTemps.estPublie()) {
+      throw new Error("Impossible de modifier un créneau d'un EDT publié");
+    }
+    if (creneauExistant.timetableId !== commande.timetableId) {
+      throw new Error('Accès refusé : le créneau n’appartient pas à cet EDT');
+    }
 
     // 3. Construire le créneau modifié par patch partiel
     const ancienProps = creneauExistant.toObject();

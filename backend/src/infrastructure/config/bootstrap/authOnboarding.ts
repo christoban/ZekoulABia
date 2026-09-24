@@ -81,6 +81,8 @@ export function registerAuthOnboardingRoutes(app: Application, prismaParam: type
       }
       const state = { ...(req.body ?? {}), schoolId, adminUserId: req.user!.userId };
       const result = await configurerEtablissementUseCase.execute(state);
+      const grid = await p.timetableGridConfig.findUnique({ where: { schoolId }, select: { schoolId: true } });
+      if (grid) void c.events.publisher.emit('timetable/grille.sauvee', { schoolId });
       res.json({ success: true, data: result });
     } catch (error) {
       if (error instanceof Error) {

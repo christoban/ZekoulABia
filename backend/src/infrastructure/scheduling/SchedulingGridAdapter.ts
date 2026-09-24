@@ -10,7 +10,8 @@ export class SchedulingGridAdapter implements SchedulingGridPort {
     periodesAvantP2: number;
     dureeGrandePause: number;
     periodesApresP2: number;
-  }): PeriodeGrille[] {
-    return calculerSqelette(cfg);
+    periodesCoursParJour?: Record<string, number>;
+  }, jour?: string): PeriodeGrille[] {
+    return calculerSqelette(cfg, jour);
   }
 }

@@ -15,5 +15,6 @@ export interface SchedulingGridPort {
     periodesAvantP2: number;
     dureeGrandePause: number;
     periodesApresP2: number;
-  }): PeriodeGrille[];
+    periodesCoursParJour?: Record<string, number>;
+  }, jour?: string): PeriodeGrille[];
 }

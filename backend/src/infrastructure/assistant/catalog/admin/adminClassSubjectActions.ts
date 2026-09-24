@@ -298,8 +298,61 @@ export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefi
     },
 
     {
+      name: 'creer_salles',
+      domain: 'salle_gestion',
+      description: "Crée plusieurs salles physiques en une seule action. Utilise cette action pour une liste de salles, par exemple pour créer 12 salles.",
+      destructive: false,
+      requiredPermission: 'MANAGE_CLASSES',
+      inputSchema: z.object({
+        salles: z.array(z.object({
+          name: z.string().trim().min(1).describe('Nom de la salle'),
+          type: z.enum(['NORMAL', 'LABORATORY', 'WORKSHOP', 'COMPUTER_LAB', 'FIELD']).optional().describe('Type de salle'),
+          capacity: z.number().int().positive().optional().describe('Capacité de la salle'),
+          equipment: z.array(z.string().trim().min(1)).optional().describe('Équipements de la salle'),
+        })).min(1).max(50).describe('Liste des salles à créer'),
+      }),
+      async execute(input, ctx) {
+        const roomIds: string[] = [];
+        const erreurs: string[] = [];
+        for (const salle of input.salles) {
+          try {
+            const room = await deps.creerSalle.execute({
+              schoolId: ctx.schoolId,
+              name: salle.name,
+              type: salle.type ?? undefined,
+              capacity: salle.capacity ?? undefined,
+              equipment: salle.equipment ?? undefined,
+            });
+            roomIds.push(room.roomId);
+          } catch (error) {
+            erreurs.push(`${salle.name} : ${error instanceof Error ? error.message : 'création impossible'}`);
+          }
+        }
+        if (roomIds.length === 0) throw new Error(`Aucune salle créée. ${erreurs.join(' | ')}`);
+        const resultLabel = erreurs.length > 0
+          ? `${roomIds.length} salle(s) créée(s), ${erreurs.length} en échec : ${erreurs.join(' | ')}`
+          : `${roomIds.length} salle(s) créée(s)`;
+        return {
+          resultLabel,
+          undoData: { roomIds },
+          section: 'configuration',
+          entity: 'room',
+        };
+      },
+      async undo(_params, undoData, ctx) {
+        const roomIds = Array.isArray(undoData.roomIds) ? undoData.roomIds.map(String) : [];
+        if (roomIds.length === 0) return;
+        const result = await ctx.prisma.room.updateMany({
+          where: { id: { in: roomIds }, schoolId: ctx.schoolId, deletedAt: null },
+          data: { deletedAt: new Date(), deletedById: ctx.userId },
+        });
+        if (result.count !== roomIds.length) throw new Error('Toutes les salles ne peuvent pas être annulées.');
+      },
+    },
+
+    {
       name: 'creer_salle',
-      domain: 'salles',
+      domain: 'salle_gestion',
       description: "Crée une salle physique dans l'établissement.",
       destructive: false,
       requiredPermission: 'MANAGE_CLASSES',
@@ -335,7 +388,7 @@ export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefi
 
     {
       name: 'modifier_salle',
-      domain: 'salles',
+      domain: 'salle_gestion',
       description: 'Modifie une salle physique existante.',
       destructive: false,
       requiredPermission: 'MANAGE_CLASSES',

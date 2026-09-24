@@ -33,6 +33,8 @@ import {
   POIDS_DESEQUILIBRE,
   POIDS_VOLUME_JOUR,
 } from '@domain/ports/services/SchedulingSolverPort';
+import { exigeDeuxJours } from '@domain/rules/ReglesPedagogiquesEmploiDuTemps';
+import { modeliserReglesPedagogiques } from '@infrastructure/scheduling/reglesPedagogiques';
 
 /** Un placement candidat (variable booléenne x[e][c][s]). */
 export type Placement = { exigenceIdx: number; caseIdx: number; salleIdx: number };
@@ -59,6 +61,8 @@ export function modeliserContraintesDouces(args: {
   const parJour = casesParJour(grille);
   const y = construireY(model, placements, variables, exigences.length, grille.length);
   const pres = construirePres(model, y, exigences, grille.length);
+
+  modeliserReglesPedagogiques({ model, y, exigences, grille });
 
   // Blocs de 2 h (DUR) — indépendants des pénalités douces.
   if (options?.blocsDeuxHeures !== false) {
@@ -108,8 +112,9 @@ function modeliserBlocsDeuxHeures(
   // Regrouper les exigences par matière à blocs.
   const parMatiere = new Map<string, number[]>();
   for (let e = 0; e < exigences.length; e++) {
-    if (exigences[e]!.blocDureeCases !== 2) continue;
-    const arr = parMatiere.get(exigences[e]!.subjectId) ?? [];
+    const exigence = exigences[e]!;
+    if (exigence.blocDureeCases !== 2 || exigeDeuxJours(exigence)) continue;
+    const arr = parMatiere.get(exigence.subjectId) ?? [];
     arr.push(e);
     parMatiere.set(exigences[e]!.subjectId, arr);
   }
