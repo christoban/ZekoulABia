@@ -238,6 +238,8 @@ export function registerCoreRoutes(app: Application, prismaParam: typeof prisma 
     resumeSessionPebs: c.pebsExam.resumeSession,
     calculerSelectionPebs: c.pebsExam.calculerSelection,
     verifierMatricule: c.matricule.verifierMatricule,
+    creerSalle: c.room.creer,
+    modifierSalle: c.room.modifier,
     traiterDemandeConge: (schoolId, requestId, statut, validatedById) =>
       traiterDemandeConge(c.hr.leaveRepository, schoolId, requestId, statut, validatedById),
     diffuserMessage: (schoolId, createdById, target, channel, message) =>

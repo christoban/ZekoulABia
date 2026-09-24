@@ -297,6 +297,103 @@ export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefi
       },
     },
 
+    {
+      name: 'creer_salle',
+      domain: 'salles',
+      description: "Crée une salle physique dans l'établissement.",
+      destructive: false,
+      requiredPermission: 'MANAGE_CLASSES',
+      inputSchema: z.object({
+        name: z.string().trim().min(1).describe('Nom de la salle'),
+        type: z.enum(['NORMAL', 'LABORATORY', 'WORKSHOP', 'COMPUTER_LAB', 'FIELD']).optional().describe('Type de salle'),
+        capacity: z.number().int().positive().optional().describe('Capacité de la salle'),
+        equipment: z.array(z.string().trim().min(1)).optional().describe('Équipements de la salle'),
+      }),
+      async execute(input, ctx) {
+        const room = await deps.creerSalle.execute({
+          schoolId: ctx.schoolId,
+          name: input.name,
+          type: input.type ?? undefined,
+          capacity: input.capacity ?? undefined,
+          equipment: input.equipment ?? undefined,
+        });
+        return {
+          resultLabel: `Salle « ${room.name} » créée`,
+          undoData: { roomId: room.roomId },
+          section: 'configuration',
+          entity: 'room',
+        };
+      },
+      async undo(_params, undoData, ctx) {
+        const result = await ctx.prisma.room.updateMany({
+          where: { id: String(undoData.roomId), schoolId: ctx.schoolId, deletedAt: null },
+          data: { deletedAt: new Date(), deletedById: ctx.userId },
+        });
+        if (result.count === 0) throw new Error('La salle à annuler est introuvable ou déjà supprimée.');
+      },
+    },
+
+    {
+      name: 'modifier_salle',
+      domain: 'salles',
+      description: 'Modifie une salle physique existante.',
+      destructive: false,
+      requiredPermission: 'MANAGE_CLASSES',
+      inputSchema: z.object({
+        roomName: z.string().trim().min(1).describe('Nom actuel de la salle'),
+        newName: z.string().trim().min(1).optional().describe('Nouveau nom de la salle'),
+        type: z.enum(['NORMAL', 'LABORATORY', 'WORKSHOP', 'COMPUTER_LAB', 'FIELD']).optional().describe('Nouveau type'),
+        capacity: z.number().int().positive().optional().describe('Nouvelle capacité'),
+        equipment: z.array(z.string().trim().min(1)).optional().describe('Nouveaux équipements'),
+        status: z.enum(['ACTIVE', 'MAINTENANCE', 'INACTIVE']).optional().describe('Nouveau statut'),
+      }),
+      async execute(input, ctx) {
+        const room = await ctx.prisma.room.findFirst({
+          where: { schoolId: ctx.schoolId, name: input.roomName, deletedAt: null },
+          select: { id: true, name: true, type: true, capacity: true, equipment: true, status: true },
+        });
+        if (!room) throw new Error(`Aucune salle nommée « ${input.roomName} » n'existe dans votre établissement.`);
+        const hasChange = input.newName !== undefined || input.type !== undefined || input.capacity !== undefined || input.equipment !== undefined || input.status !== undefined;
+        if (!hasChange) throw new Error('Précise au moins un champ à modifier pour la salle.');
+
+        await deps.modifierSalle.execute({
+          roomId: room.id,
+          schoolId: ctx.schoolId,
+          name: input.newName ?? undefined,
+          type: input.type ?? undefined,
+          capacity: input.capacity ?? undefined,
+          equipment: input.equipment ?? undefined,
+          status: input.status ?? undefined,
+        });
+        return {
+          resultLabel: `Salle « ${room.name} » modifiée`,
+          undoData: {
+            roomId: room.id,
+            name: room.name,
+            type: room.type,
+            capacity: room.capacity,
+            equipment: room.equipment,
+            status: room.status,
+          },
+          section: 'configuration',
+          entity: 'room',
+        };
+      },
+      async undo(_params, undoData, ctx) {
+        const result = await ctx.prisma.room.updateMany({
+          where: { id: String(undoData.roomId), schoolId: ctx.schoolId, deletedAt: null },
+          data: {
+            name: undoData.name as string,
+            type: undoData.type as 'NORMAL' | 'LABORATORY' | 'WORKSHOP' | 'COMPUTER_LAB' | 'FIELD',
+            capacity: undoData.capacity as number,
+            equipment: undoData.equipment as string[],
+            status: undoData.status as 'ACTIVE' | 'MAINTENANCE' | 'INACTIVE',
+          },
+        });
+        if (result.count === 0) throw new Error('La salle à restaurer est introuvable.');
+      },
+    },
+
     // 50. Professeur principal d'une classe — LECTURE SEULE
     {
       name: 'professeur_principal_classe',

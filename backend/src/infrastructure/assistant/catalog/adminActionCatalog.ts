@@ -57,6 +57,8 @@ import type { CalculerAdmissionConcoursUseCase } from '@application/entranceExam
 import type { ResumeSessionPebsUseCase } from '@application/pebsExam/ResumeSessionPebsUseCase';
 import type { CalculerSelectionPebsUseCase } from '@application/pebsExam/CalculerSelectionPebsUseCase';
 import type { VerifierMatriculeUseCase } from '@application/matricule/VerifierMatriculeUseCase';
+import type { CreerSalleUseCase } from '@application/room/CreerSalleUseCase';
+import type { ModifierSalleUseCase } from '@application/room/ModifierSalleUseCase';
 
 // ── Re-exports ────────────────────────────────────────────────────────────────
 export type { ActionContext, ActionExecuteResult, ActionDefinition };
@@ -96,6 +98,8 @@ export interface AdminActionDeps {
   resumeSessionPebs: ResumeSessionPebsUseCase;
   calculerSelectionPebs: CalculerSelectionPebsUseCase;
   verifierMatricule: VerifierMatriculeUseCase;
+  creerSalle: CreerSalleUseCase;
+  modifierSalle: ModifierSalleUseCase;
   /** Approuve/rejette une demande de congé (déduit le solde si approuvée). */
   traiterDemandeConge: (
     schoolId: string,

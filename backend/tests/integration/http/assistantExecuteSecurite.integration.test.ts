@@ -34,6 +34,9 @@ import { creerEcoleTest, creerUtilisateurTest, nettoyerEcole } from '../../helpe
 import { CreerClasseUseCase } from '@application/class/CreerClasseUseCase';
 import { SupprimerClasseUseCase } from '@application/class/SupprimerClasseUseCase';
 import { PrismaClasseRepository } from '@infrastructure/persistence/prisma/PrismaClasseRepository';
+import { CreerSalleUseCase } from '@application/room/CreerSalleUseCase';
+import { ModifierSalleUseCase } from '@application/room/ModifierSalleUseCase';
+import { PrismaRoomRepository } from '@infrastructure/persistence/prisma/PrismaRoomRepository';
 
 if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET non défini — requis dans .env.test pour ce test.');
@@ -53,6 +56,7 @@ let server: Server;
 let baseUrl: string;
 let schoolId: string;
 let adminToken: string;
+let staffToken: string;
 let studentToken: string;
 let academicYearId: string;
 
@@ -91,6 +95,11 @@ beforeAll(async () => {
     { userId: admin.id, schoolId, role: 'ADMIN', permissions: [], tokenType: 'access' },
     process.env.JWT_SECRET!,
   );
+  const staff = await creerUtilisateurTest(prismaTest, schoolId, { role: 'STAFF', suffix: 'exec-staff' });
+  staffToken = jwt.sign(
+    { userId: staff.id, schoolId, role: 'STAFF', permissions: ['MANAGE_CLASSES'], tokenType: 'access' },
+    process.env.JWT_SECRET!,
+  );
   const student = await creerUtilisateurTest(prismaTest, schoolId, { role: 'STUDENT', suffix: 'exec-student' });
   studentToken = jwt.sign(
     { userId: student.id, schoolId, role: 'STUDENT', permissions: [], tokenType: 'access' },
@@ -104,9 +113,12 @@ beforeAll(async () => {
 
   // Catalogue Admin réel, avec les seules dépendances qu'exercent nos scénarios.
   const classeRepo = new PrismaClasseRepository(prismaTest);
+  const roomRepo = new PrismaRoomRepository(prismaTest);
   const catalog = buildAdminActionCatalog({
     creerClasse: new CreerClasseUseCase(classeRepo),
     supprimerClasse: new SupprimerClasseUseCase(classeRepo),
+    creerSalle: new CreerSalleUseCase(roomRepo),
+    modifierSalle: new ModifierSalleUseCase(roomRepo),
   } as unknown as Parameters<typeof buildAdminActionCatalog>[0]);
 
   const controller = new AssistantController(
@@ -133,6 +145,7 @@ afterAll(async () => {
   await prismaTest.assistantConversationTurn.deleteMany({ where: { schoolId } });
   await prismaTest.assistantHelpQueryLog.deleteMany({ where: { schoolId } });
   await prismaTest.enrollment.deleteMany({ where: { schoolId } });
+  await prismaTest.room.deleteMany({ where: { schoolId } });
   await prismaTest.class.deleteMany({ where: { schoolId } });
   await prismaTest.academicYear.deleteMany({ where: { schoolId } });
   await prismaTest.user.deleteMany({ where: { schoolId } });
@@ -244,6 +257,34 @@ describe('execute — le serveur ne fait jamais confiance au modèle', () => {
     expect(classe).not.toBeNull();
 
     await prismaTest.class.deleteMany({ where: { schoolId, name: '6e Z' } });
+  });
+
+  it('permet à un Censeur de créer une salle via le catalogue Assistant', async () => {
+    sortieModele = {
+      text: '',
+      toolCalls: [{ toolName: 'creer_salle', input: { name: 'Laboratoire Sciences', type: 'LABORATORY', capacity: 30, equipment: ['Tables', 'Équipements scientifiques'] } }],
+    };
+
+    const { body } = await demander(staffToken, 'Crée une salle de laboratoire de 30 places');
+
+    expect(body.executed?.[0]?.error).toBeUndefined();
+    const room = await prismaTest.room.findFirst({ where: { schoolId, name: 'Laboratoire Sciences' } });
+    expect(room?.type).toBe('LABORATORY');
+    expect(room?.capacity).toBe(30);
+  });
+
+  it('permet à un Censeur de modifier une salle et conserve les données de retour', async () => {
+    sortieModele = {
+      text: '',
+      toolCalls: [{ toolName: 'modifier_salle', input: { roomName: 'Laboratoire Sciences', newName: 'Labo Sciences', capacity: 40, status: 'MAINTENANCE' } }],
+    };
+
+    const { body } = await demander(staffToken, 'Modifie la salle Laboratoire Sciences');
+
+    expect(body.executed?.[0]?.error).toBeUndefined();
+    const room = await prismaTest.room.findFirst({ where: { schoolId, name: 'Labo Sciences' } });
+    expect(room?.capacity).toBe(40);
+    expect(room?.status).toBe('MAINTENANCE');
   });
 
   it("sur plusieurs outils dont un interdit, seul l'autorisé passe", async () => {
