@@ -689,6 +689,39 @@
       "start": "Start date",
       "end": "End date (optional)"
     },
+    "timetableGrid": {
+      "title": "Now let's configure your weekly timetable.",
+      "subtitle": "A standard schedule is suggested. Adjust it to match your school's rhythm.",
+      "startTime": "Start time",
+      "periodDuration": "Period duration (min)",
+      "morning": "Before the short break",
+      "periodsBeforeSmall": "Number of periods",
+      "smallBreakDuration": "Short break (min)",
+      "middle": "Before the lunch break",
+      "periodsBeforeBig": "Number of periods",
+      "bigBreakDuration": "Lunch break (min)",
+      "periodsAfterBig": "Periods after lunch",
+      "activeDays": "Teaching days",
+      "days": {
+        "LUNDI": "Monday",
+        "MARDI": "Tuesday",
+        "MERCREDI": "Wednesday",
+        "JEUDI": "Thursday",
+        "VENDREDI": "Friday",
+        "SAMEDI": "Saturday"
+      },
+      "summary": "{periods} class periods · {days} days per week · ends around {end}",
+      "saveError": "Unable to save the timetable grid.",
+      "validation": {
+        "heure": "Choose a valid start time.",
+        "dureePeriode": "A period must last between 30 and 120 minutes.",
+        "periodes": "The grid must have between 1 and 12 periods, with no block exceeding 6.",
+        "petitePause": "The short break must be between 0 and 60 minutes.",
+        "grandePause": "The lunch break must be between 0 and 90 minutes.",
+        "jours": "Select at least one teaching day.",
+        "journee": "The timetable must not extend beyond the end of the day."
+      }
+    },
     "periods": {
       "title": "How is your school year divided?",
       "trimesters": "3 terms (most common in Cameroon)",
@@ -754,6 +787,7 @@
       "structure": "Academic Structure",
       "langues": "Modern Languages",
       "calendrier": "Calendar",
+      "timetableGrid": "Timetable grid",
       "finances": "Finances",
       "direction": "Leadership",
       "admissions": "Admissions & Enrollment",

@@ -9,7 +9,7 @@ import { TimetableAutoController } from '@infrastructure/http/controllers/Timeta
 import { creerGradeRoutes } from '@infrastructure/http/routes/grade.routes';
 import { creerAttendanceRoutes } from '@infrastructure/http/routes/attendance.routes';
 import { creerTimetableRoutes } from '@infrastructure/http/routes/timetable.routes';
-import { requireAuth, requireRole } from '../../http/middlewares/auth';
+import { requireAuth, requirePermission } from '../../http/middlewares/auth';
 
 type Container = ReturnType<typeof creerContainer>;
 
@@ -60,7 +60,7 @@ export function registerGradeRoutes(app: Application, prismaParam: typeof prisma
     c.events.publisher,
   );
 
-  app.post('/api/v2/timetables/generate-skeleton', requireAuth, requireRole('ADMIN', 'STAFF'), async (req, res, next) => {
+  app.post('/api/v2/timetables/generate-skeleton', requireAuth, requirePermission('MANAGE_TIMETABLE'), async (req, res, next) => {
     try {
       const schoolId = req.user!.schoolId;
       const { classId } = req.body as { classId?: string };
@@ -124,7 +124,7 @@ export function registerGradeRoutes(app: Application, prismaParam: typeof prisma
     } catch (err) { next(err); }
   });
 
-  app.patch('/api/v2/timetables/slots/:slotId', requireAuth, requireRole('ADMIN', 'STAFF'), async (req, res, next) => {
+  app.patch('/api/v2/timetables/slots/:slotId', requireAuth, requirePermission('MANAGE_TIMETABLE'), async (req, res, next) => {
     try {
       const schoolId = req.user!.schoolId;
       const slotId = String(req.params['slotId']);
@@ -199,7 +199,7 @@ export function registerGradeRoutes(app: Application, prismaParam: typeof prisma
     c.timetable.timetableRepository,
     c.timetable.modifierCreneau,
   );
-  app.post('/api/v2/timetables/:id/adjust', requireAuth, requireRole('ADMIN', 'STAFF'), timetableAutoController.adjust);
+  app.post('/api/v2/timetables/:id/adjust', requireAuth, requirePermission('MANAGE_TIMETABLE'), timetableAutoController.adjust);
 
   app.use('/api/v2/grades', creerGradeRoutes(gradeController));
   app.use('/api/v2/attendance', creerAttendanceRoutes(attendanceController));

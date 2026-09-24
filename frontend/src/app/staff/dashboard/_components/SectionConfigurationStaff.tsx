@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { Settings, UserPlus, School, Clock, Link2, Lock } from 'lucide-react'
+import { Settings, UserPlus, School, Clock, Link2, Lock, Building2 } from 'lucide-react'
 import type { StaffSection } from '../_types'
+import { useT } from '@/lib/i18n'
 
 import SectionImportElevesStaff from './SectionImportElevesStaff'
 import SectionClassesStaff from './SectionClassesStaff'
+import SectionRoomsStaff from './SectionRoomsStaff'
 import SectionGrilleHoraire from './SectionGrilleHoraire'
 import SectionAffectations from './SectionAffectations'
 import SectionCautions from './SectionCautions'
@@ -16,17 +18,19 @@ interface Props {
   initialTab?: string
 }
 
-type ConfigTab = 'import-eleves' | 'classes' | 'grille-horaire' | 'affectations' | 'cautions'
+type ConfigTab = 'import-eleves' | 'classes' | 'salles' | 'grille-horaire' | 'affectations' | 'cautions'
 
-const TAB_CONFIGS: { id: ConfigTab; label: string; icon: any; perm: StaffSection }[] = [
-  { id: 'import-eleves', label: 'Import & Admissions', icon: UserPlus, perm: 'import-eleves' },
-  { id: 'classes', label: 'Structure des Classes', icon: School, perm: 'classes' },
-  { id: 'grille-horaire', label: 'Grille horaire', icon: Clock, perm: 'grille-horaire' },
-  { id: 'affectations', label: 'Affectations profs', icon: Link2, perm: 'affectations' },
-  { id: 'cautions', label: 'Gestion Cautions', icon: Lock, perm: 'cautions' },
+const TAB_CONFIGS: { id: ConfigTab; labelKey: string; icon: any; perm: StaffSection }[] = [
+  { id: 'import-eleves', labelKey: 'config.tabs.import', icon: UserPlus, perm: 'import-eleves' },
+  { id: 'classes', labelKey: 'config.tabs.classes', icon: School, perm: 'classes' },
+  { id: 'salles', labelKey: 'config.tabs.rooms', icon: Building2, perm: 'classes' },
+  { id: 'grille-horaire', labelKey: 'config.tabs.grid', icon: Clock, perm: 'grille-horaire' },
+  { id: 'affectations', labelKey: 'config.tabs.assignments', icon: Link2, perm: 'affectations' },
+  { id: 'cautions', labelKey: 'config.tabs.cautions', icon: Lock, perm: 'cautions' },
 ]
 
 export default function SectionConfigurationStaff({ onToast, allowedSections, initialTab }: Props) {
+  const t = useT('staff')
   // Filtrer les onglets accessibles selon les permissions de l'utilisateur
   const availableTabs = TAB_CONFIGS.filter(t => allowedSections.has(t.perm))
   
@@ -66,10 +70,10 @@ export default function SectionConfigurationStaff({ onToast, allowedSections, in
                 lineHeight: 1.2,
               }}
             >
-              Configuration & Administration Établissement
+              {t('config.title')}
             </h1>
             <p className="hidden sm:block text-xs text-[var(--text3)] mt-0.5">
-              Paramétrage des structures, grilles horaires, affectations, cautions et admissions
+              {t('config.subtitle')}
             </p>
           </div>
         </div>
@@ -102,7 +106,7 @@ export default function SectionConfigurationStaff({ onToast, allowedSections, in
                 }}
               >
                 <Icon size={14} color={isActive ? 'var(--blue)' : 'var(--text3)'} />
-                <span>{tab.label}</span>
+                <span>{t(tab.labelKey)}</span>
               </button>
             )
           })}
@@ -116,6 +120,9 @@ export default function SectionConfigurationStaff({ onToast, allowedSections, in
         )}
         {activeTab === 'classes' && allowedSections.has('classes') && (
           <SectionClassesStaff onToast={onToast} />
+        )}
+        {activeTab === 'salles' && allowedSections.has('classes') && (
+          <SectionRoomsStaff onToast={onToast} />
         )}
         {activeTab === 'grille-horaire' && allowedSections.has('grille-horaire') && (
           <SectionGrilleHoraire onToast={onToast} />

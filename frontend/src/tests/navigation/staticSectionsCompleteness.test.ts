@@ -24,6 +24,8 @@ describe('Static completeness audit for Staff Sections', () => {
     const configContent = fs.readFileSync(configSectionPath, 'utf8')
     const financeSectionPath = path.resolve(componentsDir, 'SectionFinanceStaff.tsx')
     const financeContent = fs.readFileSync(financeSectionPath, 'utf8')
+    const timetableSectionPath = path.resolve(componentsDir, 'SectionTimetableStaff.tsx')
+    const timetableContent = fs.readFileSync(timetableSectionPath, 'utf8')
 
     for (const file of sectionFiles) {
       const componentName = file.replace('.tsx', '')
@@ -31,8 +33,9 @@ describe('Static completeness audit for Staff Sections', () => {
       const inPage = pageContent.includes(componentName)
       const inConfig = configContent.includes(componentName)
       const inFinance = financeContent.includes(componentName)
+      const inTimetable = timetableContent.includes(componentName)
 
-      expect(inPage || inConfig || inFinance).toBe(true)
+      expect(inPage || inConfig || inFinance || inTimetable).toBe(true)
     }
   })
 

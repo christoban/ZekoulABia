@@ -689,6 +689,39 @@
       "start": "Date de début",
       "end": "Date de fin (optionnel)"
     },
+    "timetableGrid": {
+      "title": "Configurons maintenant votre grille horaire hebdomadaire.",
+      "subtitle": "Une configuration standard est proposée. Ajustez-la selon le rythme de votre établissement.",
+      "startTime": "Heure de début",
+      "periodDuration": "Durée d'une période (min)",
+      "morning": "Avant la récréation",
+      "periodsBeforeSmall": "Nombre de périodes",
+      "smallBreakDuration": "Petite pause (min)",
+      "middle": "Avant la pause déjeuner",
+      "periodsBeforeBig": "Nombre de périodes",
+      "bigBreakDuration": "Pause déjeuner (min)",
+      "periodsAfterBig": "Périodes après le déjeuner",
+      "activeDays": "Jours d'enseignement",
+      "days": {
+        "LUNDI": "Lundi",
+        "MARDI": "Mardi",
+        "MERCREDI": "Mercredi",
+        "JEUDI": "Jeudi",
+        "VENDREDI": "Vendredi",
+        "SAMEDI": "Samedi"
+      },
+      "summary": "{periods} périodes de cours · {days} jours par semaine · fin vers {end}",
+      "saveError": "Impossible d'enregistrer la grille horaire.",
+      "validation": {
+        "heure": "Choisissez une heure de début valide.",
+        "dureePeriode": "La durée d'une période doit être comprise entre 30 et 120 minutes.",
+        "periodes": "La grille doit comporter entre 1 et 12 périodes réparties en blocs de 6 au maximum.",
+        "petitePause": "La petite pause doit être comprise entre 0 et 60 minutes.",
+        "grandePause": "La pause déjeuner doit être comprise entre 0 et 90 minutes.",
+        "jours": "Sélectionnez au moins un jour d'enseignement.",
+        "journee": "La grille ne doit pas dépasser la fin de la journée."
+      }
+    },
     "periods": {
       "title": "Comment est découpée votre année scolaire ?",
       "trimesters": "3 trimestres (le plus courant au Cameroun)",
@@ -754,6 +787,7 @@
       "structure": "Structure pédagogique",
       "langues": "Langues vivantes",
       "calendrier": "Calendrier",
+      "timetableGrid": "Grille horaire",
       "finances": "Finances",
       "direction": "Direction",
       "admissions": "Admissions & Inscriptions",

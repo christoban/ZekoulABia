@@ -1,0 +1,501 @@
+'use client'
+
+import { useEffect, useMemo, useState } from 'react'
+import { Bot, Check, FlaskConical, Play, RefreshCw, Sparkles, X } from 'lucide-react'
+import { fetchApi } from '@/lib/fetchApi'
+import { useT } from '@/lib/i18n'
+
+interface Assignment {
+  subjectId: string
+  subjectName: string
+  currentTeacherId: string | null
+  currentTeacherName: string | null
+}
+
+interface Room {
+  id: string
+  name: string
+  type: string
+  status: string
+  capacity: number
+}
+
+interface Group {
+  id: string
+  name: string
+  subjectId?: string | null
+}
+
+interface GroupSet {
+  id: string
+  name: string
+  groups: Group[]
+}
+
+interface ProposedSession {
+  subjectId: string
+  teacherId: string
+  roomId: string
+  dayOfWeek: number
+  startTime: string
+  endTime: string
+}
+
+interface Proposal {
+  statut: 'OPTIMAL' | 'FEASIBLE' | 'INFAISABLE'
+  seances: ProposedSession[]
+  scoreObjectif: number
+  dureeResolutionMs: number
+  raisonInfaisabilite?: string
+  suggestions?: string[]
+}
+
+interface SimulationResult {
+  propositionSimulee: Proposal
+  differences: {
+    seancesDeplacees: number
+    scoreBase: number
+    scoreSimule: number
+    avertissements: string[]
+  }
+}
+
+interface TimetableLike {
+  id: string
+  status: string
+}
+
+interface Props {
+  classId: string
+  academicYearId?: string
+  timetable: TimetableLike | null
+  assignments: Assignment[]
+  gridConfigured: boolean
+  onRefresh: () => void
+  onToast: (message: string, type?: 'success' | 'error' | 'info') => void
+}
+
+type BusyAction = 'propose' | 'apply' | 'whatif' | 'adjust' | 'group' | 'room' | null
+
+const DAY_NAMES = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
+
+export default function SectionTimetableStaffActions({
+  classId,
+  academicYearId,
+  timetable,
+  assignments,
+  gridConfigured,
+  onRefresh,
+  onToast,
+}: Props) {
+  const t = useT('staff')
+  const [rooms, setRooms] = useState<Room[]>([])
+  const [groupSets, setGroupSets] = useState<GroupSet[]>([])
+  const [roomId, setRoomId] = useState('')
+  const [groupSetId, setGroupSetId] = useState('')
+  const [groupDay, setGroupDay] = useState('0')
+  const [groupStart, setGroupStart] = useState('08:00')
+  const [groupEnd, setGroupEnd] = useState('09:00')
+  const [whatIfOpen, setWhatIfOpen] = useState(false)
+  const [unavailableRooms, setUnavailableRooms] = useState<Set<string>>(new Set())
+  const [hoursToRemove, setHoursToRemove] = useState<Record<string, number>>({})
+  const [teacherUnavailableId, setTeacherUnavailableId] = useState('')
+  const [teacherDay, setTeacherDay] = useState('0')
+  const [teacherStart, setTeacherStart] = useState('08:00')
+  const [teacherEnd, setTeacherEnd] = useState('09:00')
+  const [adjustInstruction, setAdjustInstruction] = useState('')
+  const [adjustResult, setAdjustResult] = useState<{ applied: string[]; errors: string[]; message: string } | null>(null)
+  const [proposal, setProposal] = useState<Proposal | null>(null)
+  const [proposalTimetableId, setProposalTimetableId] = useState('')
+  const [simulation, setSimulation] = useState<SimulationResult | null>(null)
+  const [busy, setBusy] = useState<BusyAction>(null)
+
+  useEffect(() => {
+    let active = true
+    const load = async () => {
+      const [roomRes, groupRes, roomAssignmentRes] = await Promise.all([
+        fetchApi('/api/v2/rooms', { credentials: 'include' }),
+        fetchApi('/api/v2/student-groups', { credentials: 'include' }),
+        academicYearId
+          ? fetchApi(`/api/v2/class-room-assignments?academicYearId=${encodeURIComponent(academicYearId)}`, { credentials: 'include' })
+          : Promise.resolve(null),
+      ])
+      const [roomData, groupData, roomAssignmentData] = await Promise.all([roomRes.json(), groupRes.json(), roomAssignmentRes?.json() ?? Promise.resolve(null)])
+      if (!active) return
+      setRooms(Array.isArray(roomData.data) ? roomData.data : [])
+      setGroupSets(Array.isArray(groupData.data) ? groupData.data : [])
+      const assignment = Array.isArray(roomAssignmentData?.data)
+        ? roomAssignmentData.data.find((item: { classId?: string }) => item.classId === classId)
+        : null
+      setRoomId(assignment?.roomId ?? '')
+    }
+    load().catch(() => {
+      if (active) onToast(t('timetable.planning.loadError'), 'error')
+    })
+    return () => { active = false }
+  }, [academicYearId, classId])
+
+  const activeRooms = useMemo(() => rooms.filter(room => room.status === 'ACTIVE'), [rooms])
+  const assignedCount = assignments.filter(assignment => assignment.currentTeacherId).length
+  const assignedTeachers = useMemo(() => {
+    const teachers = new Map<string, string>()
+    for (const assignment of assignments) {
+      if (assignment.currentTeacherId && assignment.currentTeacherName) teachers.set(assignment.currentTeacherId, assignment.currentTeacherName)
+    }
+    return [...teachers.entries()]
+  }, [assignments])
+  const selectedGroupSet = groupSets.find(groupSet => groupSet.id === groupSetId)
+  const canPropose = Boolean(gridConfigured && activeRooms.length > 0 && assignedCount > 0)
+  const canSimulate = Boolean(timetable?.id && assignments.length > 0)
+  const canAdjust = Boolean(timetable?.id && timetable.status !== 'PUBLISHED')
+
+  const ensureTimetable = async (): Promise<string> => {
+    if (timetable?.id) return timetable.id
+    const res = await fetchApi('/api/v2/timetables/generate-skeleton', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ classId }),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      if (res.status === 409 && data.data?.timetableId) return data.data.timetableId as string
+      throw new Error(data.message || t('timetable.planning.createError'))
+    }
+    return data.data?.id as string
+  }
+
+  const handlePropose = async () => {
+    setBusy('propose')
+    setProposal(null)
+    setSimulation(null)
+    try {
+      const timetableId = await ensureTimetable()
+      setProposalTimetableId(timetableId)
+      const res = await fetchApi(`/api/v2/timetables/${timetableId}/propose-schedule`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      const data = await res.json()
+      if (data.data) setProposal(data.data)
+      if (!res.ok) throw new Error(data.message || t('timetable.planning.proposeError'))
+      onToast(t('timetable.planning.proposed'), 'success')
+      onRefresh()
+    } catch (error) {
+      onToast(error instanceof Error ? error.message : t('timetable.planning.proposeError'), 'error')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const handleApply = async () => {
+    if (!proposal || !proposalTimetableId || proposal.seances.length === 0) return
+    if (!window.confirm(t('timetable.planning.applyConfirm'))) return
+    setBusy('apply')
+    try {
+      const res = await fetchApi(`/api/v2/timetables/${proposalTimetableId}/apply-schedule`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seances: proposal.seances }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || t('timetable.planning.applyError'))
+      setProposal(null)
+      setSimulation(null)
+      onToast(t('timetable.planning.applied'), 'success')
+      onRefresh()
+    } catch (error) {
+      onToast(error instanceof Error ? error.message : t('timetable.planning.applyError'), 'error')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const handleWhatIf = async () => {
+    if (!timetable?.id) return
+    setBusy('whatif')
+    try {
+      const retraitHeures = Object.entries(hoursToRemove)
+        .filter(([, heures]) => heures > 0)
+        .map(([subjectId, heures]) => ({ subjectId, heures }))
+      const res = await fetchApi(`/api/v2/timetables/${timetable.id}/what-if`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          simulations: {
+            sallesHorsService: [...unavailableRooms],
+            ...(teacherUnavailableId ? {
+              indisponibilitesSupplementaires: [{
+                teacherId: teacherUnavailableId,
+                dayOfWeek: Number(teacherDay),
+                startTime: teacherStart,
+                endTime: teacherEnd,
+              }],
+            } : {}),
+            ...(retraitHeures.length > 0 ? { retraitHeures } : {}),
+          },
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || t('timetable.planning.whatIfError'))
+      setSimulation(data.data)
+    } catch (error) {
+      onToast(error instanceof Error ? error.message : t('timetable.planning.whatIfError'), 'error')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const handleAdjust = async () => {
+    if (!timetable?.id || !adjustInstruction.trim()) return
+    if (!window.confirm(t('timetable.planning.adjustConfirm'))) return
+    setBusy('adjust')
+    setAdjustResult(null)
+    try {
+      const res = await fetchApi(`/api/v2/timetables/${timetable.id}/adjust`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ instruction: adjustInstruction }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || t('timetable.planning.adjustError'))
+      setAdjustResult(data.data)
+      setAdjustInstruction('')
+      onRefresh()
+    } catch (error) {
+      onToast(error instanceof Error ? error.message : t('timetable.planning.adjustError'), 'error')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const saveRoomAssignment = async () => {
+    if (!roomId || !academicYearId) return
+    setBusy('room')
+    try {
+      const res = await fetchApi(`/api/v2/classes/${classId}/room-assignment`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId, academicYearId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || t('timetable.planning.roomError'))
+      onToast(t('timetable.planning.roomSaved'), 'success')
+    } catch (error) {
+      onToast(error instanceof Error ? error.message : t('timetable.planning.roomError'), 'error')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const generateGroupSessions = async () => {
+    if (!timetable?.id || !selectedGroupSet || !academicYearId) return
+    const assignmentsBySubject = new Map(assignments.map(assignment => [assignment.subjectId, assignment.currentTeacherId]))
+    const enseignantParGroupe = selectedGroupSet.groups.flatMap(group => {
+      const teacherId = group.subjectId ? assignmentsBySubject.get(group.subjectId) : null
+      return teacherId ? [{ groupId: group.id, teacherId }] : []
+    })
+    if (enseignantParGroupe.length !== selectedGroupSet.groups.length) {
+      onToast(t('timetable.planning.groupTeacherMissing'), 'error')
+      return
+    }
+    if (!window.confirm(t('timetable.planning.groupConfirm'))) return
+    setBusy('group')
+    try {
+      const res = await fetchApi(`/api/v2/timetables/${timetable.id}/generate-group-sessions`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          groupSetId: selectedGroupSet.id,
+          academicYearId,
+          dayOfWeek: Number(groupDay),
+          startTime: groupStart,
+          endTime: groupEnd,
+          enseignantParGroupe,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || t('timetable.planning.groupError'))
+      onToast(t('timetable.planning.groupSuccess'), 'success')
+      onRefresh()
+    } catch (error) {
+      onToast(error instanceof Error ? error.message : t('timetable.planning.groupError'), 'error')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const toggleRoom = (id: string) => {
+    setUnavailableRooms(previous => {
+      const next = new Set(previous)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  return (
+    <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <Sparkles size={16} color="var(--purple)" />
+          <strong style={{ color: 'var(--text)', fontSize: 14 }}>{t('timetable.planning.title')}</strong>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+          <button style={actionButton} onClick={handlePropose} disabled={!canPropose || busy !== null}>
+            {busy === 'propose' ? <RefreshCw size={14} className="animate-spin" /> : <Bot size={14} />}
+            {t('timetable.planning.propose')}
+          </button>
+          <button style={secondaryButton} onClick={() => setWhatIfOpen(value => !value)} disabled={!canSimulate}>
+            <FlaskConical size={14} /> {t('timetable.planning.whatIf')}
+          </button>
+          {proposal && proposal.seances.length > 0 && (
+            <button style={actionButton} onClick={handleApply} disabled={busy !== null}>
+              <Check size={14} /> {busy === 'apply' ? t('timetable.planning.applying') : t('timetable.planning.apply')}
+            </button>
+          )}
+        </div>
+        {!canPropose && (
+          <div style={{ marginTop: 9, color: 'var(--amber)', fontSize: 12 }}>
+            {t('timetable.planning.prerequisites', {
+              grid: gridConfigured ? '✓' : '⚠',
+              rooms: activeRooms.length > 0 ? '✓' : '⚠',
+              assignments: assignedCount > 0 ? '✓' : '⚠',
+            })}
+          </div>
+        )}
+      </div>
+
+      {proposal && (
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--purple)', borderRadius: 12, padding: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
+            <strong style={{ color: 'var(--text)', fontSize: 13 }}>{t('timetable.planning.proposalTitle')}</strong>
+            <button style={iconButton} onClick={() => setProposal(null)} aria-label={t('timetable.planning.close')}><X size={15} /></button>
+          </div>
+          <div style={{ color: 'var(--text3)', fontSize: 11.5, marginTop: 4 }}>
+            {t('timetable.planning.proposalMeta', { count: proposal.seances.length, score: proposal.scoreObjectif })}
+          </div>
+          {proposal.raisonInfaisabilite && <div style={{ color: 'var(--red)', fontSize: 12, marginTop: 7 }}>{proposal.raisonInfaisabilite}</div>}
+          {proposal.seances.length > 0 && (
+            <div style={{ display: 'grid', gap: 5, marginTop: 10, maxHeight: 220, overflowY: 'auto' }}>
+              {proposal.seances.map((session, index) => (
+                <div key={`${session.subjectId}-${session.teacherId}-${session.dayOfWeek}-${session.startTime}-${index}`} style={sessionRow}>
+                  <span>{DAY_NAMES[session.dayOfWeek] ?? session.dayOfWeek} · {session.startTime}–{session.endTime}</span>
+                  <span>{assignments.find(a => a.subjectId === session.subjectId)?.subjectName ?? session.subjectId} · {rooms.find(r => r.id === session.roomId)?.name ?? session.roomId}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {whatIfOpen && (
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--blue)', borderRadius: 12, padding: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <strong style={{ color: 'var(--text)', fontSize: 13 }}>{t('timetable.planning.whatIfTitle')}</strong>
+            <button style={iconButton} onClick={() => setWhatIfOpen(false)} aria-label={t('timetable.planning.close')}><X size={15} /></button>
+          </div>
+          <div style={{ color: 'var(--text3)', fontSize: 11.5, marginBottom: 9 }}>{t('timetable.planning.whatIfHint')}</div>
+          <div style={{ display: 'grid', gap: 6, maxHeight: 130, overflowY: 'auto' }}>
+            {activeRooms.map(room => (
+              <label key={room.id} style={{ display: 'flex', alignItems: 'center', gap: 7, color: 'var(--text2)', fontSize: 12 }}>
+                <input type="checkbox" checked={unavailableRooms.has(room.id)} onChange={() => toggleRoom(room.id)} />
+                {room.name} · {room.capacity}
+              </label>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gap: 6, marginTop: 10 }}>
+            <label style={{ display: 'grid', gap: 4 }}>
+              <span style={{ color: 'var(--text2)', fontSize: 11.5 }}>{t('timetable.planning.teacherUnavailable')}</span>
+              <select value={teacherUnavailableId} onChange={event => setTeacherUnavailableId(event.target.value)} style={inputStyle}>
+                <option value="">{t('timetable.planning.teacherPlaceholder')}</option>
+                {assignedTeachers.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+              </select>
+            </label>
+            {teacherUnavailableId && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                <select value={teacherDay} onChange={event => setTeacherDay(event.target.value)} style={{ ...inputStyle, width: 130 }}>
+                  {DAY_NAMES.map((day, index) => <option key={day} value={index}>{day}</option>)}
+                </select>
+                <input type="time" value={teacherStart} onChange={event => setTeacherStart(event.target.value)} style={{ ...inputStyle, width: 120 }} />
+                <input type="time" value={teacherEnd} onChange={event => setTeacherEnd(event.target.value)} style={{ ...inputStyle, width: 120 }} />
+              </div>
+            )}
+          </div>
+          <div style={{ display: 'grid', gap: 6, marginTop: 10 }}>
+            {assignments.map(assignment => (
+              <label key={assignment.subjectId} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, color: 'var(--text2)', fontSize: 12 }}>
+                <span>{assignment.subjectName}</span>
+                <input type="number" min={0} step={0.5} value={hoursToRemove[assignment.subjectId] ?? 0} onChange={event => setHoursToRemove(previous => ({ ...previous, [assignment.subjectId]: Number(event.target.value) }))} style={{ width: 72, padding: 5, border: '1px solid var(--border)', borderRadius: 6 }} />
+              </label>
+            ))}
+          </div>
+          <button style={{ ...actionButton, marginTop: 12 }} onClick={handleWhatIf} disabled={busy !== null}>
+            <Play size={14} /> {busy === 'whatif' ? t('timetable.planning.simulating') : t('timetable.planning.simulate')}
+          </button>
+          {simulation && (
+            <div style={{ marginTop: 10, padding: 10, borderRadius: 8, background: 'var(--blue-light)', color: 'var(--text2)', fontSize: 12 }}>
+              <strong style={{ color: 'var(--blue)' }}>{t('timetable.planning.simulationResult')}</strong>
+              <div>{t('timetable.planning.moved', { count: simulation.differences.seancesDeplacees })}</div>
+              <div>{t('timetable.planning.score', { base: simulation.differences.scoreBase, simulated: simulation.differences.scoreSimule })}</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {canAdjust && (
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 7 }}><Bot size={15} color="var(--purple)" /><strong style={{ color: 'var(--text)', fontSize: 13 }}>{t('timetable.planning.adjustTitle')}</strong></div>
+          <div style={{ color: 'var(--text3)', fontSize: 11.5, marginBottom: 8 }}>{t('timetable.planning.adjustHint')}</div>
+          <textarea value={adjustInstruction} onChange={event => setAdjustInstruction(event.target.value)} placeholder={t('timetable.planning.adjustPlaceholder')} rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
+          <button style={{ ...actionButton, marginTop: 8 }} onClick={handleAdjust} disabled={busy !== null || !adjustInstruction.trim()}>{busy === 'adjust' ? t('timetable.planning.adjusting') : t('timetable.planning.adjust')}</button>
+          {adjustResult && <div style={{ marginTop: 8, color: adjustResult.errors.length > 0 ? 'var(--red)' : 'var(--green)', fontSize: 12 }}>{adjustResult.message}</div>}
+        </div>
+      )}
+
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 14 }}>
+        <strong style={{ color: 'var(--text)', fontSize: 13 }}>{t('timetable.planning.roomTitle')}</strong>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginTop: 8 }}>
+          <select value={roomId} onChange={event => setRoomId(event.target.value)} style={{ ...inputStyle, flex: 1, minWidth: 170 }}>
+            <option value="">{t('timetable.planning.roomPlaceholder')}</option>
+            {activeRooms.map(room => <option key={room.id} value={room.id}>{room.name} · {room.capacity}</option>)}
+          </select>
+          <button style={secondaryButton} onClick={saveRoomAssignment} disabled={!roomId || !academicYearId || busy !== null}>{t('timetable.planning.saveRoom')}</button>
+        </div>
+      </div>
+
+      {groupSets.length > 0 && (
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 14 }}>
+          <strong style={{ color: 'var(--text)', fontSize: 13 }}>{t('timetable.planning.groupTitle')}</strong>
+          <div style={{ display: 'grid', gap: 8, marginTop: 8 }}>
+            <select value={groupSetId} onChange={event => setGroupSetId(event.target.value)} style={inputStyle}>
+              <option value="">{t('timetable.planning.groupPlaceholder')}</option>
+              {groupSets.map(groupSet => <option key={groupSet.id} value={groupSet.id}>{groupSet.name}</option>)}
+            </select>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, alignItems: 'center' }}>
+              <select value={groupDay} onChange={event => setGroupDay(event.target.value)} style={{ ...inputStyle, width: 130 }}>
+                {DAY_NAMES.map((day, index) => <option key={day} value={index}>{day}</option>)}
+              </select>
+              <input type="time" value={groupStart} onChange={event => setGroupStart(event.target.value)} style={{ ...inputStyle, width: 120 }} />
+              <input type="time" value={groupEnd} onChange={event => setGroupEnd(event.target.value)} style={{ ...inputStyle, width: 120 }} />
+              <button style={secondaryButton} onClick={generateGroupSessions} disabled={!timetable?.id || !selectedGroupSet || busy !== null}>{t('timetable.planning.generateGroups')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const actionButton: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', fontSize: 12, fontWeight: 750, cursor: 'pointer', opacity: 1 }
+const secondaryButton: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text2)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }
+const iconButton: React.CSSProperties = { border: 'none', background: 'transparent', color: 'var(--text3)', cursor: 'pointer', display: 'inline-flex', padding: 3 }
+const inputStyle: React.CSSProperties = { width: '100%', padding: '7px 9px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: 12, fontFamily: 'inherit', boxSizing: 'border-box' }
+const sessionRow: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', gap: 10, padding: '6px 8px', borderRadius: 6, background: 'var(--bg)', color: 'var(--text2)', fontSize: 11.5 }

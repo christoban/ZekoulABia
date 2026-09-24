@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { CheckCircle2, Loader2, PartyPopper, XCircle } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
+import { useT } from '@/lib/i18n'
 import ConversationalOnboarding, { type OnboardingState } from './ConversationalOnboarding'
+import { validateGrilleHoraire } from './timetableGridConfig'
 import AnimatedBackground from '@/components/AnimatedBackground'
 import LanguageSwitch from '@/components/LanguageSwitch'
 
@@ -72,6 +74,7 @@ const PROGRESS_STEPS = [
 
 export default function ConfigurationPage() {
   const router = useRouter()
+  const t = useT('onboarding')
 
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [school, setSchool] = useState<SchoolData | null>(null)
@@ -113,6 +116,18 @@ export default function ConfigurationPage() {
 
     const startTime = Date.now()
     try {
+      const gridError = validateGrilleHoraire(state.gridConfig)
+      if (gridError) throw new Error(t(`phase2.timetableGrid.validation.${gridError}`))
+
+      const gridResponse = await fetchApi('/api/v2/timetable-grid-config', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(state.gridConfig),
+      })
+      const gridData = await gridResponse.json()
+      if (!gridResponse.ok || !gridData.success) throw new Error(gridData.message || t('phase2.timetableGrid.saveError'))
+
       const res = await fetchApi(`/api/v2/onboarding/execute`, {
         method: 'POST',
         credentials: 'include',

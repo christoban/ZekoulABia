@@ -3,17 +3,18 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { AlertTriangle, Calendar, CalendarDays, Coffee, UtensilsCrossed } from 'lucide-react'
+import SectionTimetableStaffActions from './SectionTimetableStaffActions'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface ClassItem { id: string; name: string }
+interface ClassItem { id: string; name: string; academicYearId?: string }
 
 interface TimetableSlot {
   id: string; dayOfWeek: number; startTime: string; endTime: string
-  room: string | null; kind: string
+  room: { id: string; name: string } | null; kind: string
   subject: { id: string; name: string } | null
   teacher: { id: string; firstName: string; lastName: string } | null
   isLV2Slot?: boolean
@@ -297,7 +298,7 @@ export default function SectionTimetable({ onToast }: Props) {
   const pct        = totalCours > 0 ? Math.round(remplis / totalCours * 100) : 0
 
   return (
-    <div className="px-4 py-4 md:px-7 md:py-6" style={{ height: '100%', overflowY: 'auto' }}>
+    <div className="px-4 py-4 md:px-7 md:py-6" style={{ height: '100%', overflowY: 'auto', boxSizing: 'border-box', paddingBottom: 140 }}>
       <style>{`
         @keyframes edu-spin { to { transform: rotate(360deg); } }
         .tt-cell-hover:hover { background: rgba(5,150,105,0.05) !important; cursor: pointer; }
@@ -326,6 +327,18 @@ export default function SectionTimetable({ onToast }: Props) {
           )}
         </div>
       </div>
+
+      {classId && !loadingClasses && (
+        <SectionTimetableStaffActions
+          classId={classId}
+          academicYearId={classes.find(c => c.id === classId)?.academicYearId}
+          timetable={timetable}
+          assignments={assignments}
+          gridConfigured={!!gridConfig}
+          onRefresh={() => fetchTimetable()}
+          onToast={onToast}
+        />
+      )}
 
       {/* Grille non configurée */}
       {!gridConfig && !loadingClasses && (
@@ -428,6 +441,7 @@ export default function SectionTimetable({ onToast }: Props) {
                                   <div style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                     {slot.teacher ? `${slot.teacher.firstName} ${slot.teacher.lastName}` : <span style={{ color: 'var(--amber)' }}>{t('timetable.noTeacher')}</span>}
                                   </div>
+                                  {slot.room && <div style={{ fontSize: 9.5, color: 'var(--text3)', marginTop: 2 }}>{slot.room.name}</div>}
                                 </div>
                               ) : (
                                 <div className="tt-cell-hover"

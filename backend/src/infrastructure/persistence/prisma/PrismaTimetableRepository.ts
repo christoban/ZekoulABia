@@ -170,6 +170,15 @@ export class PrismaTimetableRepository implements TimetableRepository {
   async creerCreneauxEnLot(timetableId: string, schoolId: string, creneaux: CreneauALoter[], options?: { verifierConflits?: boolean }): Promise<{ creneauxCrees: number }> {
     const verifierConflits = options?.verifierConflits ?? true;
     return this.prisma.$transaction(async (tx) => {
+      await tx.timetableSlot.deleteMany({
+        where: {
+          timetableId,
+          kind: 'CLASS',
+          subjectId: null,
+          teacherId: null,
+          roomId: null,
+        },
+      });
       for (const seance of creneaux) {
         const creneau = CreneauHoraire.create({ timetableId, subjectId: seance.subjectId, teacherId: seance.teacherId, teacherNom: verifierConflits && seance.teacherId ? await this.nomEnseignant(tx, seance.teacherId) : undefined, dayOfWeek: seance.dayOfWeek, startTime: seance.startTime, endTime: seance.endTime, roomId: seance.roomId, roomNom: verifierConflits && seance.roomId ? await this.nomSalle(tx, seance.roomId) : undefined, kind: 'CLASS' });
         if (verifierConflits) {

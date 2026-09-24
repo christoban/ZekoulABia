@@ -111,12 +111,25 @@ beforeAll(async () => {
     ],
   });
 
-  const resEdt = await fetch(`${baseUrl}/timetables/manual`, {
-    method: 'POST', headers: headers(), body: JSON.stringify({ classId, academicYearId }),
+  const resEdt = await fetch(`${baseUrl}/timetables/generate-skeleton`, {
+    method: 'POST', headers: headers(), body: JSON.stringify({ classId }),
   });
-  const bodyEdt = await resEdt.json() as { success: boolean; data?: { timetableId: string } };
+  const bodyEdt = await resEdt.json() as { success: boolean; data?: { id: string } };
   if (!bodyEdt.success || !bodyEdt.data) throw new Error(`Échec création EDT : ${JSON.stringify(bodyEdt)}`);
-  timetableId = bodyEdt.data.timetableId;
+  timetableId = bodyEdt.data.id;
+
+  await prismaTest.timetableSlot.create({
+    data: {
+      timetableId,
+      subjectId: subjectMathsId,
+      teacherId: teacherAId,
+      roomId: salleHabituelleId,
+      dayOfWeek: 2,
+      startTime: '10:00',
+      endTime: '11:00',
+      kind: 'CLASS',
+    },
+  });
 });
 
 afterAll(async () => {
@@ -184,9 +197,9 @@ describe('Scheduling Engine V2.5 — propose puis apply', () => {
     // SOUPLE — la matière théorique prend la salle habituelle de la classe.
     expect(seanceMaths.roomId).toBe(salleHabituelleId);
 
-    // Le solveur ne persiste RIEN : aucun créneau créé à ce stade.
+    // Le solveur ne persiste RIEN : le squelette et le créneau rempli restent inchangés.
     const slots = await prismaTest.timetableSlot.count({ where: { timetableId } });
-    expect(slots).toBe(0);
+    expect(slots).toBe(5);
   });
 
   it('apply-schedule écrit réellement les créneaux de la proposition confirmée', async () => {
@@ -199,12 +212,24 @@ describe('Scheduling Engine V2.5 — propose puis apply', () => {
     expect(bodyApply.data!.creneauxCrees).toBe(4);
 
     const slots = await prismaTest.timetableSlot.findMany({ where: { timetableId } });
-    expect(slots).toHaveLength(4);
+    expect(slots).toHaveLength(5);
     expect(slots.find(s => s.subjectId === subjectTpId)!.roomId).toBe(salleLaboId);
-    expect(slots.find(s => s.subjectId === subjectMathsId)!.roomId).toBe(salleHabituelleId);
+    expect(slots.find(s => s.subjectId === subjectMathsId && s.dayOfWeek === 2)!.id).toBeDefined();
+    expect(slots.filter(s => s.dayOfWeek === 0 || s.dayOfWeek === 1)).toHaveLength(4);
 
-    // Nettoyage pour le test d'atomicité qui suit.
-    await prismaTest.timetableSlot.deleteMany({ where: { timetableId } });
+    await prismaTest.timetableSlot.deleteMany({ where: { timetableId, subjectId: { not: null } } });
+    await prismaTest.timetableSlot.create({
+      data: {
+        timetableId,
+        subjectId: subjectMathsId,
+        teacherId: teacherAId,
+        roomId: salleHabituelleId,
+        dayOfWeek: 2,
+        startTime: '10:00',
+        endTime: '11:00',
+        kind: 'CLASS',
+      },
+    });
   });
 
   it("ATOMICITÉ — un conflit sur une seule séance annule TOUTE la proposition", async () => {
@@ -240,9 +265,9 @@ describe('Scheduling Engine V2.5 — propose puis apply', () => {
     expect(bodyApply.success).toBe(false);
     expect(bodyApply.code).toBe('CONFLIT_SALLE');
 
-    // LE POINT CENTRAL : aucune séance écrite, pas même celles qui auraient réussi.
+    // LE POINT CENTRAL : aucune séance écrite et seul le créneau rempli antérieur reste en base.
     const slots = await prismaTest.timetableSlot.count({ where: { timetableId } });
-    expect(slots).toBe(0);
+    expect(slots).toBe(1);
 
     await prismaTest.timetableSlot.deleteMany({ where: { timetableId: autreEdt.id } });
     await prismaTest.timetable.delete({ where: { id: autreEdt.id } });

@@ -10,10 +10,11 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
-import { Baby, BookOpen, Book, GraduationCap, Wrench, Check, XCircle, HelpCircle, BarChart3, Languages, Landmark, Calendar, Wallet, Users, UserPlus } from 'lucide-react'
+import { Baby, BookOpen, Book, GraduationCap, Wrench, Check, XCircle, HelpCircle, BarChart3, Languages, Landmark, Calendar, Clock3, Wallet, Users, UserPlus } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT, useChangeLanguage, useLanguage } from '@/lib/i18n'
+import { GRILLE_HORAIRE_PAR_DEFAUT, JOURS_GRILLE, heureFin, nombrePeriodes, validateGrilleHoraire, type GrilleHoraireConfig } from './timetableGridConfig'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 export interface LV2OrgRule {
@@ -29,6 +30,8 @@ export interface PEBSOrgRule {
   level: string
   statut: 'PEBS_PUR' | 'NON_PEBS' | 'MIXTE'
 }
+
+export type GrilleHoraireOnboarding = GrilleHoraireConfig
 
 export interface OnboardingState {
   schoolId: string
@@ -56,6 +59,7 @@ export interface OnboardingState {
 
   academicYearStart?: string
   academicYearEnd?: string
+  gridConfig: GrilleHoraireOnboarding
   periodsCount?: number
   sequencesPerPeriod?: number
 
@@ -327,6 +331,7 @@ const INITIAL = (p: Props): OnboardingState => ({
   lv2Languages: [], lv2Organisation: [], directionRoles: {}, feesTypes: [],
   periodsCount: 3, sequencesPerPeriod: 2, paymentTranches: 3,
   academicYearStart: `${new Date().getFullYear()}-09-05`,
+  gridConfig: { ...GRILLE_HORAIRE_PAR_DEFAUT, joursActifs: [...GRILLE_HORAIRE_PAR_DEFAUT.joursActifs] },
   directAdmissionWithoutExam: true,
   capacityBufferPercent: 0,
   selfServiceEnabled: true,
@@ -423,7 +428,7 @@ export default function ConversationalOnboarding(props: Props) {
     if (hasSecondary && (state.hasPEBSFrancophone || state.hasPEBSAnglophone)) {
       list.push('pebsOrg')
     }
-    list.push('calYear', 'periods', 'sequences', 'fees', 'tranches', 'services', 'direction', 'admissions', 'recap')
+    list.push('calYear', 'grid', 'periods', 'sequences', 'fees', 'tranches', 'services', 'direction', 'admissions', 'recap')
     return list
   }, [reconciled, state.subSystem, state.cycles, state.lv2Active, state.lv2Organisation, state.anglophoneStreams, state.hasPEBSFrancophone, state.hasPEBSAnglophone])
 
@@ -462,6 +467,17 @@ export default function ConversationalOnboarding(props: Props) {
       return { ...s, lv2Organisation: [...others, { ...current, ...patchRule }] }
     })
   }
+
+  const setGrid = (gridPatch: Partial<GrilleHoraireOnboarding>) => setState(s => ({
+    ...s,
+    gridConfig: { ...s.gridConfig, ...gridPatch },
+  }))
+
+  const toggleGridDay = (jour: GrilleHoraireOnboarding['joursActifs'][number]) => setGrid({
+    joursActifs: state.gridConfig.joursActifs.includes(jour)
+      ? state.gridConfig.joursActifs.filter(value => value !== jour)
+      : [...state.gridConfig.joursActifs, jour],
+  })
 
   // ── Rendu par étape ─────────────────────────────────────────────────────────
   const Bubble = ({ children }: { children: React.ReactNode }) => <div style={S.bubble}>{children}</div>
@@ -876,6 +892,79 @@ export default function ConversationalOnboarding(props: Props) {
           </>
         )
 
+      case 'grid': {
+        const gridError = validateGrilleHoraire(state.gridConfig)
+        return (
+          <>
+            <Bubble>{t('phase2.timetableGrid.title')}</Bubble>
+            <div style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 14 }}>{t('phase2.timetableGrid.subtitle')}</div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+              <label>
+                <div style={S.label}>{t('phase2.timetableGrid.startTime')}</div>
+                <input type="time" style={S.input} value={state.gridConfig.heureDebut} onChange={e => setGrid({ heureDebut: e.target.value })} />
+              </label>
+              <label>
+                <div style={S.label}>{t('phase2.timetableGrid.periodDuration')}</div>
+                <input type="number" min={30} max={120} style={S.input} value={state.gridConfig.dureePeriode} onChange={e => setGrid({ dureePeriode: Number(e.target.value) })} />
+              </label>
+            </div>
+
+            <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', margin: '8px 0 4px' }}>{t('phase2.timetableGrid.morning')}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+              <label>
+                <div style={S.label}>{t('phase2.timetableGrid.periodsBeforeSmall')}</div>
+                <input type="number" min={0} max={6} style={S.input} value={state.gridConfig.periodesAvantP1} onChange={e => setGrid({ periodesAvantP1: Number(e.target.value) })} />
+              </label>
+              <label>
+                <div style={S.label}>{t('phase2.timetableGrid.smallBreakDuration')}</div>
+                <input type="number" min={0} max={60} style={S.input} value={state.gridConfig.dureePetitePause} onChange={e => setGrid({ dureePetitePause: Number(e.target.value) })} />
+              </label>
+            </div>
+
+            <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', margin: '8px 0 4px' }}>{t('phase2.timetableGrid.middle')}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+              <label>
+                <div style={S.label}>{t('phase2.timetableGrid.periodsBeforeBig')}</div>
+                <input type="number" min={0} max={6} style={S.input} value={state.gridConfig.periodesAvantP2} onChange={e => setGrid({ periodesAvantP2: Number(e.target.value) })} />
+              </label>
+              <label>
+                <div style={S.label}>{t('phase2.timetableGrid.bigBreakDuration')}</div>
+                <input type="number" min={0} max={90} style={S.input} value={state.gridConfig.dureeGrandePause} onChange={e => setGrid({ dureeGrandePause: Number(e.target.value) })} />
+              </label>
+            </div>
+
+            <label style={{ display: 'block', marginTop: 10 }}>
+              <div style={S.label}>{t('phase2.timetableGrid.periodsAfterBig')}</div>
+              <input type="number" min={0} max={6} style={{ ...S.input, maxWidth: 170 }} value={state.gridConfig.periodesApresP2} onChange={e => setGrid({ periodesApresP2: Number(e.target.value) })} />
+            </label>
+
+            <div style={S.label}>{t('phase2.timetableGrid.activeDays')}</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+              {JOURS_GRILLE.map(jour => (
+                <button key={jour} type="button" style={{ ...S.opt(state.gridConfig.joursActifs.includes(jour)), width: 'auto', marginBottom: 0, padding: '9px 12px' }} onClick={() => toggleGridDay(jour)}>
+                  {t(`phase2.timetableGrid.days.${jour}`)}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ background: 'var(--bg)', borderRadius: 10, padding: '11px 13px', fontSize: 13, color: 'var(--text2)' }}>
+              {t('phase2.timetableGrid.summary', {
+                periods: nombrePeriodes(state.gridConfig),
+                days: state.gridConfig.joursActifs.length,
+                end: heureFin(state.gridConfig),
+              })}
+            </div>
+            {gridError && (
+              <div role="alert" style={{ fontSize: 13, color: 'var(--red)', marginTop: 8 }}>
+                {t(`phase2.timetableGrid.validation.${gridError}`)}
+              </div>
+            )}
+            <Nav canNext={!gridError} />
+          </>
+        )
+      }
+
       case 'periods':
         return (
           <>
@@ -1085,6 +1174,11 @@ function Recap({ state, template, onConfirm, onBack }: { state: OnboardingState;
     state.directionRoles.proviseur && `${t('phase2.recap.proviseur')}: ${state.directionRoles.proviseur}`,
     state.directionRoles.censeur && `${t('phase2.recap.censeur')}: ${state.directionRoles.censeur}`,
   ].filter(Boolean).join(' · ') || t('phase2.recap.directionNone')
+  const gridSummary = t('phase2.timetableGrid.summary', {
+    periods: nombrePeriodes(state.gridConfig),
+    days: state.gridConfig.joursActifs.length,
+    end: heureFin(state.gridConfig),
+  })
 
   const Block = ({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children: React.ReactNode }) => (
     <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '13px 15px', marginBottom: 10 }}>
@@ -1154,6 +1248,10 @@ function Recap({ state, template, onConfirm, onBack }: { state: OnboardingState;
       <Block icon={Calendar} title={t('phase2.recap.calendrier')}>
         {t('phase2.recap.debut')}&nbsp;: {state.academicYearStart || '—'}<br />
         {state.periodsCount === 2 ? t('phase2.periods.semesters') : t('phase2.periods.trimesters')} × {state.sequencesPerPeriod} {t('phase2.recap.sequences')}
+      </Block>
+
+      <Block icon={Clock3} title={t('phase2.recap.timetableGrid')}>
+        {gridSummary}
       </Block>
 
       <Block icon={Wallet} title={t('phase2.recap.finances')}>
