@@ -20,6 +20,7 @@ export interface ChildWithStats {
   nom: string
   classeNom?: string
   classeId?: string
+  groupIds: string[]
   tauxPresence: number
   tauxPonctualite: number
   joursAbsent: number

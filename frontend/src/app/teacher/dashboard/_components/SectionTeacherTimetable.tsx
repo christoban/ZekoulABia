@@ -4,13 +4,15 @@ import { Calendar, RefreshCw } from 'lucide-react'
 import type { UserInfo } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
+import { normalizeTimetableCellSlots } from '@/lib/timetableSlotGrouping'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void
   user?: UserInfo | null
 }
 
-type SlotType = { subject: string; classe: string; room: string; kind: string } | null
+type SlotType = { subject: string; classe: string; room: string; kind: string; groupId?: string | null }
+type CellSlots = SlotType[]
 type GridRow = { start: string; end: string }
 
 const EMPTY_CATCHUP = { open: false, classId: '', proposedDate: '', subjectId: '', proposedStartTime: '', proposedEndTime: '', reason: '', loading: false, error: '' }
@@ -19,7 +21,7 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
   const t = useT('teacher')
   const tcommon = useT('common')
   const days = [t('timetable.day_monday'), t('timetable.day_tuesday'), t('timetable.day_wednesday'), t('timetable.day_thursday'), t('timetable.day_friday')]
-  const [slots, setSlots] = useState<Record<string, SlotType>>({})
+  const [slots, setSlots] = useState<Record<string, CellSlots>>({})
   const [grid, setGrid] = useState<GridRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -33,7 +35,7 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
       const res = await fetchApi('/api/v2/timetables', { credentials: 'include' }).then(r => r.json())
       if (res.success) {
         // Clé = "dayOfWeek-startTime" (0=Lundi … 4=Vendredi, heure exacte)
-        const slotMap: Record<string, SlotType> = {}
+        const slotMap: Record<string, CellSlots> = {}
         // Dériver la grille horaire depuis les données réelles (startTime uniques triés)
         const rowMap = new Map<string, string>() // startTime → endTime
 
@@ -45,13 +47,16 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
             if (s.startTime && s.endTime) rowMap.set(s.startTime, s.endTime)
             // Filtrer uniquement les créneaux de cet enseignant (User.id)
             if (!userId || s.teacher?.id !== userId) return
-            const key = `${s.dayOfWeek}-${s.startTime}`
-             slotMap[key] = {
+             const key = `${s.dayOfWeek}-${s.startTime}`
+             const values = slotMap[key] ?? []
+             values.push({
                subject: s.subject?.name || '',
                classe: tt.class?.name || '',
                room: s.room || '',
                kind: s.kind || 'CLASS',
-             }
+               groupId: s.groupId,
+             })
+             slotMap[key] = values
           })
         })
 
@@ -229,34 +234,41 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
                     <td style={{ padding: '6px 8px', background: 'var(--bg2)', fontSize: 11.5, fontWeight: 700, color: 'var(--text3)', textAlign: 'center', border: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
                       {row.start}<br /><span style={{ fontSize: 10, color: 'var(--text3)' }}>{row.end}</span>
                     </td>
-                    {[0, 1, 2, 3, 4].map((day) => {
-                      const slot = slots[`${day}-${row.start}`]
-                      return (
-                        <td key={day} style={{ padding: 0, border: '1px solid var(--border)', verticalAlign: 'top', minWidth: 120, height: 52 }}>
-                          {slot ? (
-                            <div
-                              style={{
-                                padding: '6px 8px', height: '100%', cursor: 'pointer',
-                                 background: slot.kind === 'FREE' ? 'var(--blue-light)' : 'linear-gradient(135deg,rgba(5,150,105,0.09),rgba(5,150,105,0.04))',
-                                 borderLeft: slot.kind === 'FREE' ? '2.5px solid var(--blue)' : '2.5px solid var(--green)',
-                              }}
-                              onClick={() => onToast(`${slot.subject} — ${slot.classe}`, 'info')}>
-                               {slot.kind === 'FREE' ? (
-                                 <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--blue)' }}>{t('timetable.freeTime')}</div>
-                               ) : (
-                                 <>
-                                   <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--green2)', lineHeight: 1.2 }}>{slot.subject}</div>
-                                   <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{slot.classe}</div>
-                                   {slot.room && <div style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 2 }}>{t('timetable.roomLabel')} {slot.room}</div>}
-                                 </>
-                               )}
-                            </div>
-                          ) : (
-                            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--border2)', fontSize: 16 }}>·</div>
-                          )}
-                        </td>
-                      )
-                    })}
+                     {[0, 1, 2, 3, 4].map((day) => {
+                         const cell = slots[`${day}-${row.start}`]
+                         const visibleCell = cell ? normalizeTimetableCellSlots(cell) : []
+                         return (
+                           <td key={day} style={{ padding: 0, border: '1px solid var(--border)', verticalAlign: 'top', minWidth: 120, height: 52 }}>
+                             {visibleCell.length > 0 ? (
+                               <div style={{ height: '100%' }}>
+                                 {visibleCell.map((slot, index) => (
+                                 <div
+                                   key={`${slot.groupId ?? 'class'}-${slot.subject}-${index}`}
+                                   style={{
+                                     padding: '6px 8px', cursor: 'pointer', marginBottom: index < visibleCell.length - 1 ? 2 : 0,
+                                     background: slot.kind === 'FREE' ? 'var(--blue-light)' : 'linear-gradient(135deg,rgba(5,150,105,0.09),rgba(5,150,105,0.04))',
+                                      borderLeft: slot.kind === 'FREE' ? '2.5px solid var(--blue)' : '2.5px solid var(--green)',
+                                      ...(slot.kind === 'FREE' ? { display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, width: '100%', minHeight: '52px', boxSizing: 'border-box' } : {}),
+                                   }}
+                                   onClick={() => onToast(`${slot.subject} — ${slot.classe}`, 'info')}>
+                                   {slot.kind === 'FREE' ? (
+                                     <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--blue)' }}>{t('timetable.freeTime')}</div>
+                                   ) : (
+                                     <>
+                                       <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--green2)', lineHeight: 1.2 }}>{slot.subject}</div>
+                                       <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{slot.classe}</div>
+                                       {slot.room && <div style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 2 }}>{t('timetable.roomLabel')} {slot.room}</div>}
+                                     </>
+                                   )}
+                                 </div>
+                               ))}
+                             </div>
+                           ) : (
+                             <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--border2)', fontSize: 16 }}>·</div>
+                           )}
+                         </td>
+                       )
+                     })}
                   </tr>
                 ))}
               </tbody>

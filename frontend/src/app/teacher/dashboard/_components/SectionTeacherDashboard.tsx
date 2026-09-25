@@ -53,12 +53,10 @@ export default function SectionTeacherDashboard({ onNav, onToast, user }: Props)
       // convention unique de TimetableSlot.dayOfWeek. Dimanche devient 6 et ne matche donc
       // aucun créneau, ce qui est le comportement voulu.
       const todayIdx = (new Date().getDay() + 6) % 7
-      const teacherProfileId = user?.teacherProfile?.id
+      const teacherId = user?.id
       result.todaySlots = timetableRes.data.flatMap((tt: any) =>
         (tt.slots || [])
-          .filter((s: any) =>
-            s.dayOfWeek === todayIdx && teacherProfileId && s.teacher?.id === teacherProfileId
-          )
+          .filter((s: any) => s.dayOfWeek === todayIdx && teacherId && s.teacher?.id === teacherId)
           .map((s: any) => ({
             time: `${s.startTime}–${s.endTime}`,
             classe: tt.class?.name || '',

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Bot, Check, FlaskConical, Play, RefreshCw, Sparkles, X } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
@@ -68,6 +68,24 @@ interface Proposal {
   explicatifs?: string[]
   avertissements?: string[]
 }
+
+interface AsyncGenerationRun {
+  id: string
+  academicYearId: string
+  status: string
+  progress?: { targets?: Array<{ classId: string }> }
+  results?: Array<{
+    classId: string
+    timetableId?: string
+    status: string
+    seances?: ProposedSession[]
+    seancesGroupes?: ProposedGroupSession[]
+    warnings?: string[]
+    error?: string
+  }>
+}
+
+const RUN_STORAGE_PREFIX = 'zekoulabia_timetable_run_'
 
 interface SimulationResult {
   propositionSimulee: Proposal
@@ -142,6 +160,7 @@ export default function SectionTimetableStaffActions({
   const [proposalTimetableId, setProposalTimetableId] = useState('')
   const [simulation, setSimulation] = useState<SimulationResult | null>(null)
   const [busy, setBusy] = useState<BusyAction>(null)
+  const mountedRef = useRef(true)
 
   useEffect(() => {
     let active = true
@@ -199,34 +218,74 @@ export default function SectionTimetableStaffActions({
     return data.data?.id as string
   }
 
-  const chargerProposition = async (timetableId: string): Promise<{ res: Response; data: ReponseApi<Proposal> }> => {
-    let derniereErreur: unknown
-    for (let tentative = 0; tentative < 2; tentative++) {
-      try {
-        const res = await fetchApi(`/api/v2/timetables/${timetableId}/propose-schedule`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({}),
-        })
-        const data = await lireReponseJson<Proposal>(res)
-        if ([502, 503, 504].includes(res.status) && tentative === 0) {
-          derniereErreur = new Error(`Serveur temporairement indisponible (HTTP ${res.status})`)
-          await attendre(1500)
-          continue
+  const pollRun = useCallback(async (runId: string) => {
+    if (!mountedRef.current) return
+    const terminal = new Set(['PARTIAL', 'COMPLETED', 'FAILED', 'CANCELLED'])
+    try {
+      while (mountedRef.current) {
+        const response = await fetchApi(`/api/v2/timetables/generation-runs/${runId}`, { credentials: 'include' })
+        if (response.status === 404) {
+          localStorage.removeItem(`${RUN_STORAGE_PREFIX}${timetable?.id ?? classId}`)
+          return
         }
-        return { res, data }
-      } catch (error) {
-        derniereErreur = error
-        if (tentative === 0) {
-          await attendre(1500)
-          continue
+        const data = await lireReponseJson<{ data?: AsyncGenerationRun }>(response)
+        if (!response.ok || !data.data) throw new Error(t('timetable.planning.proposeError'))
+        if (terminal.has(data.data.status)) {
+          const result = data.data.results?.find(item => item.classId === classId)
+          if (!result || !result.seances || ['ECHEC', 'ECHEC_TECHNIQUE', 'NON_TRAITE', 'INFAISABLE', 'IGNORE_EDT_VERROUILLE'].includes(result.status)) {
+            throw new Error(result?.error || t('timetable.planning.proposeError'))
+          }
+          setProposalTimetableId(result.timetableId ?? timetable?.id ?? '')
+          setProposal({
+            statut: result.status === 'DEGRADE' || result.status === 'PARTIEL' ? 'FEASIBLE' : 'OPTIMAL',
+            seances: result.seances,
+            seancesGroupes: result.seancesGroupes ?? [],
+            tempsLibres: [],
+            scoreObjectif: 0,
+            dureeResolutionMs: 0,
+          })
+          setSimulation(null)
+          onRefresh()
+           onToast(t('timetable.planning.proposed'), 'success')
+           return
         }
-        throw error
+        await attendre(1000)
+      }
+    } catch (error) {
+      if (mountedRef.current) onToast(error instanceof Error ? error.message : t('timetable.planning.proposeError'), 'error')
+    }
+  }, [classId, onRefresh, onToast, t, timetable?.id])
+
+  useEffect(() => {
+    mountedRef.current = true
+    if (!timetable?.id || !academicYearId) return
+    let cancelled = false
+    const restore = async () => {
+      const storageKey = `${RUN_STORAGE_PREFIX}${timetable.id}`
+      const storedValue = localStorage.getItem(storageKey)
+      const stored = storedValue ? JSON.parse(storedValue) as { runId?: string } : null
+      let runId = stored?.runId
+      if (!runId) {
+        const response = await fetchApi(`/api/v2/timetables/generation-runs/active?academicYearId=${encodeURIComponent(academicYearId)}`, { credentials: 'include' })
+        if (cancelled || !response.ok) return
+        const data = await lireReponseJson<{ data?: AsyncGenerationRun | null }>(response)
+        const activeRun = data.data
+        if (!activeRun?.progress?.targets?.some(target => target.classId === classId)) return
+        runId = activeRun.id
+        localStorage.setItem(storageKey, JSON.stringify({ runId }))
+      }
+      if (runId) {
+        setBusy('propose')
+        await pollRun(runId)
+        if (mountedRef.current) setBusy(null)
       }
     }
-    throw derniereErreur instanceof Error ? derniereErreur : new Error(t('timetable.planning.proposeError'))
-  }
+    restore().catch(() => undefined)
+    return () => {
+      cancelled = true
+      mountedRef.current = false
+    }
+  }, [academicYearId, classId, pollRun, timetable?.id])
 
   const handlePropose = async () => {
     setBusy('propose')
@@ -234,12 +293,16 @@ export default function SectionTimetableStaffActions({
     setSimulation(null)
     try {
       const timetableId = await ensureTimetable()
-      setProposalTimetableId(timetableId)
-       const { res, data } = await chargerProposition(timetableId)
-      if (data.data) setProposal(data.data)
-      if (!res.ok) throw new Error(data.message || t('timetable.planning.proposeError'))
-      onToast(t('timetable.planning.proposed'), 'success')
-      onRefresh()
+      const response = await fetchApi(`/api/v2/timetables/${timetableId}/propose-schedule-async`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      const data = await lireReponseJson<{ data?: { runId: string; academicYearId: string } }>(response)
+      if (!response.ok || !data.data?.runId) throw new Error(t('timetable.planning.proposeError'))
+      localStorage.setItem(`${RUN_STORAGE_PREFIX}${timetableId}`, JSON.stringify({ runId: data.data.runId }))
+      await pollRun(data.data.runId)
     } catch (error) {
       onToast(error instanceof Error ? error.message : t('timetable.planning.proposeError'), 'error')
     } finally {

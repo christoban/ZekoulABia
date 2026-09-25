@@ -2,8 +2,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
-import { AlertTriangle, Calendar, CalendarDays, Coffee, Loader2, Trash2, UtensilsCrossed } from 'lucide-react'
+import { groupTimetableSlotsForDisplay, timetableCellKey } from '@/lib/timetableSlotGrouping'
+import { AlertTriangle, Calendar, CalendarDays, Coffee, Eye, Loader2, Trash2, UtensilsCrossed } from 'lucide-react'
 import SectionTimetableStaffActions from './SectionTimetableStaffActions'
+import TimetableProposalPreview, { type ProposalPreviewGroupSession, type ProposalPreviewMissingHours, type ProposalPreviewSession } from './TimetableProposalPreview'
 
 const FREE_VALUE = '__FREE__'
 
@@ -30,6 +32,7 @@ interface TimetableSlot {
   subject: { id: string; name: string } | null
   teacher: { id: string; firstName: string; lastName: string } | null
   isLV2Slot?: boolean
+  groupId?: string | null
 }
 
 interface Timetable {
@@ -58,19 +61,32 @@ interface Assignment {
 }
 
 interface BulkProposal {
-  seances: unknown[]
-  seancesGroupes: unknown[]
+  seances: ProposalPreviewSession[]
+  seancesGroupes: ProposalPreviewGroupSession[]
 }
 
 interface BulkResult {
   classId: string
   className: string
   timetableId?: string
-  status: 'success' | 'error' | 'applied' | 'DEGRADE' | 'IGNORE_EDT_VERROUILLE' | 'NON_TRAITE' | 'ECHEC_TECHNIQUE'
+  status: 'success' | 'PARTIEL' | 'error' | 'applied' | 'DEGRADE' | 'IGNORE_EDT_VERROUILLE' | 'NON_TRAITE' | 'ECHEC_TECHNIQUE'
   error?: string
   warnings: string[]
+  heuresNonPlacees?: ProposalPreviewMissingHours[]
+  diagnostic?: { relaxedPedagogicalRules?: boolean; relaxedProblems?: string[]; problems?: string[] }
+  degradeDetails?: string[]
   proposal?: BulkProposal
 }
+
+interface GenerationRunData {
+  id: string
+  academicYearId: string
+  status: string
+  progress?: { current?: number; total?: number; className?: string; targets?: Array<{ classId: string; timetableId?: string }> }
+  results?: Array<Record<string, unknown>>
+}
+
+const GLOBAL_RUN_STORAGE_KEY = 'zekoulabia_timetable_global_run'
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 const DAY_NAME: Record<string, string> = {
@@ -115,8 +131,13 @@ export default function SectionTimetable({ onToast }: Props) {
   const [clearingAll, setClearingAll]     = useState(false)
   const [bulkPropose, setBulkPropose]     = useState<{ current: number; total: number; className: string; errors: string[]; warnings: string[] } | null>(null)
   const [bulkResults, setBulkResults]     = useState<BulkResult[]>([])
+  const [previewResult, setPreviewResult] = useState<BulkResult | null>(null)
+  const [previewAssignments, setPreviewAssignments] = useState<Assignment[]>([])
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const [selectedPartialIds, setSelectedPartialIds] = useState<Set<string>>(new Set())
   const [applyingAll, setApplyingAll]     = useState(false)
   const [error, setError]                 = useState<string | null>(null)
+  const mountedRef = useRef(true)
 
   // Modal
   const [modalSlot, setModalSlot]         = useState<TimetableSlot | null>(null)
@@ -180,6 +201,8 @@ export default function SectionTimetable({ onToast }: Props) {
     setClassId(newClassId)
     setTimetable(null)
     setError(null)
+    setPreviewResult(null)
+    setPreviewAssignments([])
     if (newClassId) fetchTimetable(newClassId)
   }
 
@@ -207,52 +230,120 @@ export default function SectionTimetable({ onToast }: Props) {
     }
   }
 
+  const pollGlobalRun = useCallback(async (runId: string) => {
+    if (!mountedRef.current) return
+    const terminal = new Set(['PARTIAL', 'COMPLETED', 'FAILED', 'CANCELLED'])
+    try {
+      while (mountedRef.current) {
+        const runResponse = await fetchApi(`/api/v2/timetables/generation-runs/${runId}`, { credentials: 'include' })
+        if (runResponse.status === 404) {
+          localStorage.removeItem(GLOBAL_RUN_STORAGE_KEY)
+          return
+        }
+        const runData = await lireReponseJson<{ data?: GenerationRunData }>(runResponse)
+        if (!runResponse.ok || !runData.data) throw new Error(t('timetable.bulkProposeError'))
+         const progress = runData.data.progress
+         const targetTimetableIds = new Map((progress?.targets ?? []).map(target => [target.classId, target.timetableId]))
+         const rawResults = (runData.data.results ?? []).filter(item => typeof item.classId === 'string') as Array<{ classId: string; className: string; status: string; timetableId?: string; seances?: ProposalPreviewSession[]; seancesGroupes?: ProposalPreviewGroupSession[]; heuresNonPlacees?: ProposalPreviewMissingHours[]; diagnostic?: { relaxedPedagogicalRules?: boolean; relaxedProblems?: string[]; problems?: string[] }; warnings?: string[]; error?: string }>
+         setBulkResults(rawResults.map(item => {
+           const normalizedStatus: BulkResult['status'] = item.status === 'success' || item.status === 'SUCCESS_WITH_WARNINGS' ? 'success' : item.status === 'PARTIEL' ? 'PARTIEL' : item.status === 'DEGRADE' ? 'DEGRADE' : item.status === 'IGNORE_EDT_VERROUILLE' ? 'IGNORE_EDT_VERROUILLE' : 'error'
+           return { classId: item.classId, className: item.className, timetableId: item.timetableId ?? targetTimetableIds.get(item.classId), status: normalizedStatus, warnings: item.warnings ?? [], heuresNonPlacees: item.heuresNonPlacees ?? [], diagnostic: item.diagnostic, degradeDetails: item.status === 'DEGRADE' ? item.diagnostic?.relaxedProblems ?? [] : [], error: item.error, proposal: item.seances ? { seances: item.seances, seancesGroupes: item.seancesGroupes ?? [] } : undefined }
+         }))
+        setBulkPropose({ current: progress?.current ?? 0, total: progress?.total ?? classes.length, className: progress?.className ?? '', errors: [], warnings: [] })
+        if (terminal.has(runData.data.status)) {
+          onToast(t('timetable.bulkProposeSuccess'), 'success')
+          return
+        }
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      }
+    } catch (error) {
+      if (mountedRef.current) onToast(error instanceof Error ? error.message : t('timetable.bulkProposeError'), 'error')
+    } finally {
+      if (mountedRef.current) setBulkPropose(null)
+    }
+  }, [classes.length, onToast, t])
+
+  useEffect(() => {
+    mountedRef.current = true
+    const academicYearId = classes[0]?.academicYearId
+    if (loadingClasses || !academicYearId) return
+    let cancelled = false
+    const resume = async () => {
+      const storedValue = localStorage.getItem(GLOBAL_RUN_STORAGE_KEY)
+      const stored = storedValue ? JSON.parse(storedValue) as { runId?: string; academicYearId?: string } : null
+      if (stored?.runId && stored.academicYearId === academicYearId) {
+        await pollGlobalRun(stored.runId)
+        return
+      }
+      if (stored) localStorage.removeItem(GLOBAL_RUN_STORAGE_KEY)
+      const response = await fetchApi(`/api/v2/timetables/generation-runs/active?academicYearId=${encodeURIComponent(academicYearId)}`, { credentials: 'include' })
+      if (cancelled || !response.ok) return
+      const data = await lireReponseJson<{ data?: GenerationRunData | null }>(response)
+      if (cancelled || !data.data?.id) return
+      localStorage.setItem(GLOBAL_RUN_STORAGE_KEY, JSON.stringify({ runId: data.data.id, academicYearId: data.data.academicYearId }))
+      await pollGlobalRun(data.data.id)
+    }
+    resume().catch(() => undefined)
+    return () => {
+      cancelled = true
+      mountedRef.current = false
+    }
+  }, [classes[0]?.academicYearId, loadingClasses, pollGlobalRun])
+
   const handleProposeAll = async () => {
     if (classes.length === 0 || !window.confirm(t('timetable.bulkProposeConfirm'))) return
-    setBulkResults([])
-    setBulkPropose({ current: 0, total: classes.length, className: '', errors: [], warnings: [] })
+     setBulkResults([])
+     setSelectedPartialIds(new Set())
+     setBulkPropose({ current: 0, total: classes.length, className: '', errors: [], warnings: [] })
     try {
+      const academicYearId = classes[0]?.academicYearId
+      if (!academicYearId) throw new Error(t('timetable.bulkProposeError'))
       const response = await fetchApi('/api/v2/timetables/propose-all', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ academicYearId: classes[0]?.academicYearId }),
+        body: JSON.stringify({ academicYearId }),
       })
-      const data = await lireReponseJson<{ data?: { runId: string } }>(response)
+      const data = await lireReponseJson<{ data?: { runId: string; academicYearId?: string } }>(response)
       if (!response.ok || !data.data?.runId) throw new Error(t('timetable.bulkProposeError'))
-      const terminal = new Set(['PARTIAL', 'COMPLETED', 'FAILED', 'CANCELLED'])
-      while (true) {
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        const runResponse = await fetchApi(`/api/v2/timetables/generation-runs/${data.data.runId}`, { credentials: 'include' })
-        const runData = await lireReponseJson<{ data?: { status: string; progress?: { current?: number; total?: number; className?: string }; results?: Array<Record<string, unknown>> } }>(runResponse)
-        if (!runResponse.ok || !runData.data) throw new Error(t('timetable.bulkProposeError'))
-        const progress = runData.data.progress
-        const rawResults = (runData.data.results ?? []).filter(item => typeof item.classId === 'string') as Array<{ classId: string; className: string; status: string; timetableId?: string; seances?: unknown[]; seancesGroupes?: unknown[]; occupation?: unknown[]; warnings?: string[]; error?: string; diagnostic?: Record<string, unknown>; durationMs?: number }>
-        setBulkResults(rawResults.map(item => {
-          const normalizedStatus: BulkResult['status'] = item.status === 'success' || item.status === 'SUCCESS_WITH_WARNINGS' ? 'success' : item.status === 'DEGRADE' ? 'DEGRADE' : item.status === 'IGNORE_EDT_VERROUILLE' ? 'IGNORE_EDT_VERROUILLE' : 'error'
-          return { classId: item.classId, className: item.className, timetableId: item.timetableId, status: normalizedStatus, warnings: item.warnings ?? [], error: item.error, proposal: item.seances ? { seances: item.seances, seancesGroupes: item.seancesGroupes ?? [] } : undefined }
-        }))
-        setBulkPropose({ current: progress?.current ?? 0, total: progress?.total ?? classes.length, className: progress?.className ?? '', errors: [], warnings: [] })
-        if (terminal.has(runData.data.status)) break
-      }
-      onToast(t('timetable.bulkProposeSuccess'), 'success')
+      localStorage.setItem(GLOBAL_RUN_STORAGE_KEY, JSON.stringify({ runId: data.data.runId, academicYearId: data.data.academicYearId ?? academicYearId }))
+      await pollGlobalRun(data.data.runId)
     } catch (error) {
       onToast(error instanceof Error ? error.message : t('timetable.bulkProposeError'), 'error')
+    }
+  }
+
+  const openPreview = async (result: BulkResult) => {
+    if (!result.proposal) return
+    setPreviewResult(result)
+    setPreviewAssignments([])
+    setPreviewLoading(true)
+    try {
+      const response = await fetchApi(`/api/v2/teaching-assignments?classId=${result.classId}`, { credentials: 'include' })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.message || t('timetable.bulkPreviewError'))
+      setPreviewAssignments(data.data ?? [])
+    } catch (error) {
+      onToast(error instanceof Error ? error.message : t('timetable.bulkPreviewError'), 'error')
     } finally {
-      setBulkPropose(null)
+      setPreviewLoading(false)
     }
   }
 
   const handleApplyAll = async () => {
     const applicable = bulkResults.filter(result => (result.status === 'success' || result.status === 'DEGRADE') && result.timetableId && result.proposal)
-    if (applicable.length === 0 || !window.confirm(t('timetable.bulkApplyConfirm', { count: applicable.length }))) return
+    if (applicable.length === 0) {
+      onToast(t('timetable.bulkNoApplicable'), 'error')
+      return
+    }
+    if (!window.confirm(t('timetable.bulkApplyConfirm', { count: applicable.length }))) return
     setApplyingAll(true)
     try {
       const response = await fetchApi('/api/v2/timetables/apply-all', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ propositions: applicable.map(result => ({ timetableId: result.timetableId, seances: result.proposal!.seances, seancesGroupes: result.proposal!.seancesGroupes })) }),
+        body: JSON.stringify({ propositions: applicable.map(result => ({ timetableId: result.timetableId!, statut: result.status === 'DEGRADE' ? 'DEGRADE' : 'SUCCESS', seances: result.proposal!.seances, seancesGroupes: result.proposal!.seancesGroupes })) }),
       })
       const data = await lireReponseJson<{ message?: string }>(response)
       if (!response.ok) throw new Error(data.message || t('timetable.planning.applyError'))
@@ -265,9 +356,40 @@ export default function SectionTimetable({ onToast }: Props) {
     }
   }
 
+  const handleApplySelectedPartials = async () => {
+    const selected = bulkResults.filter(result => result.status === 'PARTIEL' && selectedPartialIds.has(result.classId) && result.timetableId && result.proposal)
+    if (selected.length === 0) {
+      onToast(t('timetable.bulkPartialSelectionRequired'), 'error')
+      return
+    }
+    if (!window.confirm(t('timetable.bulkApplyPartialConfirm', { count: selected.length }))) return
+    setApplyingAll(true)
+    try {
+      const response = await fetchApi('/api/v2/timetables/apply-all', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ propositions: selected.map(result => ({ timetableId: result.timetableId!, statut: 'PARTIEL', confirmationPartiel: true, seances: result.proposal!.seances, seancesGroupes: result.proposal!.seancesGroupes })) }),
+      })
+      const data = await lireReponseJson<{ message?: string }>(response)
+      if (!response.ok) throw new Error(data.message || t('timetable.planning.applyError'))
+      setBulkResults(bulkResults.map(result => selected.includes(result) ? { ...result, status: 'applied' } : result))
+      setSelectedPartialIds(new Set())
+      onToast(t('timetable.bulkApplyPartialDone'), 'success')
+    } catch (error) {
+      onToast(error instanceof Error ? error.message : t('timetable.planning.applyError'), 'error')
+    } finally {
+      setApplyingAll(false)
+    }
+  }
+
   const clearBulkResults = () => {
+    localStorage.removeItem(GLOBAL_RUN_STORAGE_KEY)
     setBulkResults([])
-    setBulkPropose(null)
+    setPreviewResult(null)
+     setPreviewAssignments([])
+     setSelectedPartialIds(new Set())
+     setBulkPropose(null)
   }
 
   const handleSubmit = async () => {
@@ -465,8 +587,7 @@ if (data.code === 'CONFLIT_HORAIRE') { setConflictMsg(data.message ?? 'Erreur');
 
   // ─── Construction de la grille ─────────────────────────────────────────────
   const slots = timetable?.slots ?? []
-  const slotMap = new Map<string, TimetableSlot>()
-  for (const s of slots) slotMap.set(`${s.dayOfWeek}-${s.startTime}`, s)
+  const slotMap = groupTimetableSlotsForDisplay(slots)
 
   const joursActifs = gridConfig?.joursActifs ?? ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI']
   // filter sur undefined et non sur la véracité : `.filter(Boolean)` supprimerait le lundi (0).
@@ -479,9 +600,11 @@ if (data.code === 'CONFLIT_HORAIRE') { setConflictMsg(data.message ?? 'Erreur');
          : squelette.filter(periode => periode.type === 'COURS').length * joursNumeriques.length)
      : slots.filter(s => s.kind === 'CLASS').length
    const remplis    = slots.filter(s => s.kind === 'CLASS' && s.subject).length
-   const pct        = totalCours > 0 ? Math.round(remplis / totalCours * 100) : 0
+     const pct        = totalCours > 0 ? Math.round(remplis / totalCours * 100) : 0
+     const applicableResults = bulkResults.filter(result => (result.status === 'success' || result.status === 'DEGRADE') && result.timetableId && result.proposal)
+     const selectedPartialResults = bulkResults.filter(result => result.status === 'PARTIEL' && selectedPartialIds.has(result.classId) && result.timetableId && result.proposal)
 
-  return (
+     return (
     <div className="px-4 py-4 md:px-7 md:py-6" style={{ height: '100%', overflowY: 'auto', boxSizing: 'border-box', paddingBottom: 140 }}>
       <style>{`
         @keyframes edu-spin { to { transform: rotate(360deg); } }
@@ -531,27 +654,78 @@ if (data.code === 'CONFLIT_HORAIRE') { setConflictMsg(data.message ?? 'Erreur');
          </div>
        )}
 
-        {bulkResults.length > 0 && !bulkPropose && (
+         {!classId && bulkResults.length > 0 && !bulkPropose && (
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px', marginBottom: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
-              <strong style={{ fontSize: 13, color: 'var(--text)' }}>{t('timetable.bulkResultsTitle')}</strong>
-              <button type="button" style={btnSec} onClick={clearBulkResults}><Trash2 size={13} /> {t('timetable.bulkClear')}</button>
-            </div>
-            {bulkResults.map(result => (
-              <div key={result.classId} style={{ padding: '7px 0', borderTop: '1px solid var(--border)', fontSize: 12, color: result.status === 'error' ? 'var(--red)' : result.status === 'applied' ? 'var(--green)' : 'var(--text2)' }}>
-                <strong>{result.className}</strong> — {result.status === 'error' ? result.error : result.status === 'applied' ? t('timetable.bulkApplied') : t('timetable.bulkProposed')}
-                {result.warnings.map(warning => <div key={warning} style={{ marginTop: 3, color: 'var(--amber)' }}>{warning}</div>)}
-              </div>
-            ))}
-            {bulkResults.every(result => result.status === 'success') && (
-              <button type="button" style={{ ...btnPrim, marginTop: 10 }} onClick={handleApplyAll} disabled={applyingAll}>
-                {applyingAll ? <Loader2 size={14} className="animate-spin" /> : null} {applyingAll ? t('timetable.bulkApplying') : t('timetable.bulkApplyAll')}
-              </button>
-            )}
+             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
+               <div>
+                 <strong style={{ fontSize: 13, color: 'var(--text)' }}>{t('timetable.bulkResultsTitle')}</strong>
+                 <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 2 }}>{t('timetable.bulkApplyHelp')}</div>
+               </div>
+               <button type="button" style={btnSec} onClick={clearBulkResults}><Trash2 size={13} /> {t('timetable.bulkClear')}</button>
+             </div>
+              {bulkResults.map(result => (
+                <div key={result.classId} style={{ padding: '7px 0', borderTop: '1px solid var(--border)', fontSize: 12, color: result.status === 'error' ? 'var(--red)' : result.status === 'PARTIEL' ? 'var(--amber)' : result.status === 'applied' ? 'var(--green)' : 'var(--text2)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                    <div>
+                      <strong>{result.className}</strong> — {result.status === 'error' ? result.error : result.status === 'PARTIEL' ? t('timetable.bulkPartial', { hours: (result.heuresNonPlacees ?? []).reduce((total, item) => total + item.nbHeures, 0) }) : result.status === 'applied' ? t('timetable.bulkApplied') : result.status === 'DEGRADE' ? t('timetable.bulkDegraded') : t('timetable.bulkProposed')}
+                      {result.status === 'DEGRADE' && result.degradeDetails?.[0] && <div style={{ marginTop: 3, color: 'var(--amber)' }}>{result.degradeDetails[0]}</div>}
+                      {result.warnings.map(warning => <div key={warning} style={{ marginTop: 3, color: 'var(--amber)' }}>{warning}</div>)}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                      {result.status === 'PARTIEL' && result.proposal && <label style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--amber)', fontSize: 10.5, whiteSpace: 'nowrap' }}>
+                        <input type="checkbox" checked={selectedPartialIds.has(result.classId)} onChange={event => setSelectedPartialIds(previous => { const next = new Set(previous); if (event.target.checked) next.add(result.classId); else next.delete(result.classId); return next })} disabled={applyingAll} />
+                        {t('timetable.bulkPartialSelect')}
+                      </label>}
+                      {result.proposal && <button type="button" style={{ ...btnSec, padding: '5px 9px', fontSize: 11 }} onClick={() => openPreview(result)} disabled={previewLoading}>
+                        <Eye size={13} /> {t('timetable.bulkPreview')}
+                      </button>}
+                    </div>
+                  </div>
+                </div>
+              ))}
+             {applyingAll && (
+               <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 10, padding: '8px 10px', background: 'var(--blue-light)', borderRadius: 7, color: 'var(--blue)', fontSize: 11.5, fontWeight: 700 }}>
+                  <Loader2 size={14} className="animate-spin" /> {t('timetable.bulkApplyingProgress', { count: applicableResults.length + selectedPartialResults.length })}
+               </div>
+             )}
+             {applicableResults.length > 0 && (
+               <button type="button" style={{ ...btnPrim, marginTop: 10 }} onClick={handleApplyAll} disabled={applyingAll}>
+                 {applyingAll ? <Loader2 size={14} className="animate-spin" /> : null} {applyingAll ? t('timetable.bulkApplying') : t('timetable.bulkApplyAll')}
+               </button>
+             )}
+              {selectedPartialResults.length > 0 && (
+                <button type="button" style={{ ...btnSec, marginTop: 8, color: 'var(--amber)', borderColor: 'var(--amber)' }} onClick={handleApplySelectedPartials} disabled={applyingAll}>
+                  {t('timetable.bulkApplySelectedPartials', { count: selectedPartialResults.length })}
+                </button>
+              )}
+              {bulkResults.some(result => result.status === 'PARTIEL') && selectedPartialResults.length === 0 && (
+                <div style={{ marginTop: 8, color: 'var(--amber)', fontSize: 11.5 }}>{t('timetable.bulkPartialSelectionHelp')}</div>
+              )}
+              {applicableResults.length === 0 && bulkResults.some(result => result.status === 'success' || result.status === 'DEGRADE') && (
+               <div style={{ marginTop: 10, color: 'var(--amber)', fontSize: 11.5 }}>{t('timetable.bulkNoApplicable')}</div>
+             )}
           </div>
         )}
 
-        {classId && !loadingClasses && (
+         {previewResult?.proposal && (
+           <TimetableProposalPreview
+             className={previewResult.className}
+             seances={previewResult.proposal.seances}
+             seancesGroupes={previewResult.proposal.seancesGroupes}
+             squelette={squelette}
+             squeletteParJour={squeletteParJour}
+             joursActifs={joursActifs}
+               assignments={previewAssignments}
+               status={previewResult.status}
+               warnings={previewResult.warnings}
+               degradeDetails={previewResult.degradeDetails}
+               heuresNonPlacees={previewResult.heuresNonPlacees}
+               loading={previewLoading}
+             onClose={() => setPreviewResult(null)}
+           />
+         )}
+
+         {classId && !loadingClasses && (
         <SectionTimetableStaffActions
           classId={classId}
           academicYearId={classes.find(c => c.id === classId)?.academicYearId}
@@ -650,50 +824,41 @@ if (data.code === 'CONFLIT_HORAIRE') { setConflictMsg(data.message ?? 'Erreur');
                       </td>
                       {joursActifs.map(jour => {
                          const dayNum = DAY_MAP[jour]
-                         const slot = slotMap.get(`${dayNum}-${periode.debut}`)
+                         const cellSlots = slotMap.get(timetableCellKey({ dayOfWeek: dayNum, startTime: periode.debut, endTime: periode.fin })) ?? []
                          const courseActive = (squeletteParJour[jour] ?? squelette).some(periodeJour => periodeJour.type === 'COURS' && periodeJour.debut === periode.debut && periodeJour.fin === periode.fin)
-                         const filled = slot?.kind === 'FREE' || !!slot?.subject
-                         const col = slot?.subject ? subjectColor(slot.subject.id) : null
-
 
                         return (
                            <td key={jour}
-                             style={{ padding: 0, border: '1px solid var(--border)', verticalAlign: 'top', minWidth: 105, height: 58, opacity: courseActive ? 1 : 0.4 }}
-                             onClick={courseActive ? () => slot ? openModal(slot) : openEmptyModal({ id: '', dayOfWeek: dayNum, startTime: periode.debut, endTime: periode.fin, room: null, kind: 'CLASS', subject: null, teacher: null, isLV2Slot: false }) : undefined}>
+                             style={{ padding: 0, border: '1px solid var(--border)', verticalAlign: 'top', minWidth: 105, minHeight: 58, opacity: courseActive ? 1 : 0.4 }}
+                             onClick={courseActive && cellSlots.length === 0 ? () => openEmptyModal({ id: '', dayOfWeek: dayNum, startTime: periode.debut, endTime: periode.fin, room: null, kind: 'CLASS', subject: null, teacher: null, isLV2Slot: false }) : undefined}>
                              {!courseActive ? (
                                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)' }}>—</div>
-                             ) : slot ? (
-
-                              filled ? (
-                                 <div className="tt-cell-filled"
-                                   style={{ padding: '5px 8px', height: '100%', background: slot.kind === 'FREE' ? 'var(--blue-light)' : col?.bg ?? 'var(--bg)', borderLeft: `3px solid ${slot.kind === 'FREE' ? 'var(--blue)' : col?.border ?? 'var(--border)'}`, boxSizing: 'border-box' }}>
-                                   {slot.kind === 'FREE' ? (
-                                     <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--blue)', lineHeight: 1.2 }}>{t('timetable.freeTime')}</div>
-                                   ) : (
-                                     <>
-                                       <div style={{ fontSize: 12, fontWeight: 800, color: col!.text, lineHeight: 1.2, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{slot.subject!.name}</span>
-                                         {slot.isLV2Slot && (
-                                           <span title={t('timetable.lv2Tooltip')} style={{ background: 'rgba(3,105,161,0.14)', color: 'var(--blue)', fontSize: 9, fontWeight: 900, padding: '1px 4px', borderRadius: 4, letterSpacing: '0.2px', flexShrink: 0 }}>{t('timetable.lv2Badge')}</span>
-                                         )}
-                                       </div>
-                                       <div style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                         {slot.teacher ? `${slot.teacher.firstName} ${slot.teacher.lastName}` : <span style={{ color: 'var(--amber)' }}>{t('timetable.noTeacher')}</span>}
-                                       </div>
-                                       {slot.room && <div style={{ fontSize: 9.5, color: 'var(--text3)', marginTop: 2 }}>{t('timetable.roomLabel')} {slot.room}</div>}
-                                     </>
-                                   )}
-                                 </div>
-                              ) : (
-                                <div className="tt-cell-hover"
-                                  style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
-                                  <span style={{ fontSize: 16, color: 'var(--border2)' }}>+</span>
-                                </div>
-                              )
-                             ) : (
-                               <div className="tt-cell-hover"
-                                 style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
+                             ) : cellSlots.length === 0 ? (
+                               <div className="tt-cell-hover" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
                                  <span style={{ fontSize: 16, color: 'var(--border2)' }}>+</span>
+                               </div>
+                             ) : (
+                               <div style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: 3, minHeight: 58, boxSizing: 'border-box' }}>
+                                 {cellSlots.map(slot => {
+                                   const col = slot.subject ? subjectColor(slot.subject.id) : null
+                                   return (
+                                     <div key={slot.id} className="tt-cell-filled" onClick={event => { event.stopPropagation(); openModal(slot) }}
+                                        style={{ padding: '4px 6px', background: slot.kind === 'FREE' ? 'var(--blue-light)' : col?.bg ?? 'var(--bg)', borderLeft: `3px solid ${slot.kind === 'FREE' ? 'var(--blue)' : col?.border ?? 'var(--border)'}`, boxSizing: 'border-box', cursor: 'pointer', ...(slot.kind === 'FREE' ? { display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, width: '100%', minHeight: '58px' } : {}) }}>
+                                       {slot.kind === 'FREE' ? (
+                                         <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--blue)' }}>{t('timetable.freeTime')}</div>
+                                       ) : (
+                                         <>
+                                           <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
+                                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 11.5, fontWeight: 800, color: col!.text }}>{slot.subject!.name}</span>
+                                             {slot.isLV2Slot && <span title={t('timetable.lv2Tooltip')} style={{ background: 'rgba(3,105,161,0.14)', color: 'var(--blue)', fontSize: 8.5, fontWeight: 900, padding: '1px 3px', borderRadius: 4, whiteSpace: 'nowrap' }}>LV2 · {slot.subject!.name}</span>}
+                                           </div>
+                                           <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{slot.teacher ? `${slot.teacher.firstName} ${slot.teacher.lastName}` : <span style={{ color: 'var(--amber)' }}>{t('timetable.noTeacher')}</span>}</div>
+                                           {slot.room && <div style={{ fontSize: 9, color: 'var(--text3)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('timetable.roomLabel')} {slot.room}</div>}
+                                         </>
+                                       )}
+                                     </div>
+                                   )
+                                 })}
                                </div>
                              )}
                           </td>

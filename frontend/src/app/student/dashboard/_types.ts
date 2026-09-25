@@ -12,11 +12,12 @@ export interface UserInfo {
   lastName: string
   email: string
   role: string
-  studentProfile?: {
-    id: string
-    class: {
-      id: string
-      name: string
-    }
-  } | null
+   studentProfile?: {
+     id: string
+     class: {
+       id: string
+       name: string
+     }
+     groupIds?: string[]
+   } | null
 }

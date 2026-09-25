@@ -7,6 +7,7 @@ import { useT } from '@/lib/i18n'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
 import Lv2ChoiceBanner from './Lv2ChoiceBanner'
 import OrientationCheckpointBanner from './OrientationCheckpointBanner'
+import { groupTimetableSlotsForStudent } from '@/lib/timetableSlotGrouping'
 
 interface Props {
   onNav: (s: string) => void
@@ -54,7 +55,7 @@ interface StudentDashData {
   rank: { pos: number; total: number } | null
   attendanceRate: number
   subjectCount: number
-  todaySlots: any[]
+  todaySlots: { time: string; subject: string; teacher: string; salle: string; color: string }[]
 }
 
 export default function SectionStudentDashboard({ onNav, onToast, user }: Props) {
@@ -107,18 +108,20 @@ export default function SectionStudentDashboard({ onNav, onToast, user }: Props)
         // getDay() : 0=Dimanche, 1=Lundi … → converti en 0=Lundi … 5=Samedi, la convention
         // unique de TimetableSlot.dayOfWeek. Dimanche (6) ne matche aucun créneau.
         const todayIdx = (new Date().getDay() + 6) % 7
-        result.todaySlots = ttRes.data.flatMap((tt: any) =>
-          (tt.slots || []).filter((s: any) => s.dayOfWeek === todayIdx)
-            .sort((a: any, b: any) => (a.startTime || '').localeCompare(b.startTime || ''))
-            .slice(0, 3)
-            .map((s: any) => ({
-              time: s.startTime || '',
-              subject: s.subject?.name || '',
-              teacher: s.teacher ? `${s.teacher.firstName} ${s.teacher.lastName}` : '',
-              salle: s.room || '',
-              color: 'var(--green)',
-            }))
+        const groupIds = user.studentProfile?.groupIds ?? []
+        const rawTodaySlots = ttRes.data.flatMap((tt: { slots?: Array<{ dayOfWeek: number; startTime: string; endTime: string; groupId?: string | null; subject?: { name?: string | null } | null; teacher?: { firstName: string; lastName: string } | null; room?: string | null }> }) =>
+          (tt.slots || []).filter(slot => slot.dayOfWeek === todayIdx),
         )
+        result.todaySlots = [...groupTimetableSlotsForStudent<{ dayOfWeek: number; startTime: string; endTime: string; groupId?: string | null; subject?: { name?: string | null } | null; teacher?: { firstName: string; lastName: string } | null; room?: string | null }>(rawTodaySlots, groupIds).values()]
+          .flatMap(entries => entries.map(entry => ({
+            time: entry.startTime,
+            subject: 'unassigned' in entry ? t('timetable.notAssignedToGroup') : entry.subject?.name || '',
+            teacher: 'unassigned' in entry ? '' : entry.teacher ? `${entry.teacher.firstName} ${entry.teacher.lastName}` : '',
+            salle: 'unassigned' in entry ? '' : entry.room || '',
+            color: 'var(--green)',
+          })))
+          .sort((a, b) => a.time.localeCompare(b.time))
+          .slice(0, 3)
       }
 
       if (gradesRes.grades) {
@@ -133,7 +136,8 @@ export default function SectionStudentDashboard({ onNav, onToast, user }: Props)
     return result
   }, [user])
 
-  const { data, loading, error, fromCache, cachedAt, refetch: fetchData } = useCachedFetch<StudentDashData>(user ? `student:dashboard:${user.id}` : '', fetchDataFn)
+  const groupIds = user?.studentProfile?.groupIds ?? []
+  const { data, loading, error, fromCache, cachedAt, refetch: fetchData } = useCachedFetch<StudentDashData>(user ? `student:dashboard:${user.id}:${[...groupIds].sort().join(',')}` : '', fetchDataFn)
   const avgGrade = data?.avgGrade ?? null
   const rank = data?.rank ?? null
   const attendanceRate = data?.attendanceRate ?? 0

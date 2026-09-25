@@ -128,8 +128,9 @@
     "schedule": "Schedule",
      "weekRange": "Week of {start} to {end}",
      "days": "Monday,Tuesday,Wednesday,Thursday,Friday",
-     "roomLabel": "Room:",
-    "freeTime": "Free time"
+      "roomLabel": "Room:",
+      "notAssignedToGroup": "Not assigned to a group in this time slot",
+     "freeTime": "Free time"
   },
   "library": {
     "title": "Library",

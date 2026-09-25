@@ -5,6 +5,8 @@ import { fetchApi } from '@/lib/fetchApi'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
 import OfflineEmptyState from '@/components/OfflineEmptyState'
 import { useT } from '@/lib/i18n'
+import { groupTimetableSlotsForStudent, normalizeTimetableCellSlots } from '@/lib/timetableSlotGrouping'
+import type { TimetableGroupSlot } from '@/lib/timetableSlotGrouping'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void
@@ -14,10 +16,12 @@ interface Props {
 const TIMES = ['07:30', '08:30', '09:30', '10:30', '12:00', '13:00', '14:00']
 const TIMES_END = ['08:30', '09:30', '10:30', '11:30', '13:00', '14:00', '15:00']
 
-type SlotType = { subject: string; teacher: string; room: string; kind: string; color: string } | null
+type SlotType = { subject: string; teacher: string; room: string; kind: string; color: string; groupId?: string | null; unassigned?: boolean }
+type RawSlot = TimetableGroupSlot & { subject?: { name?: string | null } | null; teacher?: { firstName: string; lastName: string } | null; room?: string | null; kind?: string | null }
+type CellSlots = SlotType[]
 
 interface TimetableData {
-  slots: Record<string, SlotType>
+  slots: Record<string, CellSlots>
   className: string
 }
 
@@ -36,40 +40,55 @@ export default function SectionStudentTimetable({ onToast, user }: Props) {
   const t = useT('student')
   const tcommon = useT('common')
   const DAYS = [t('timetable.day_monday'), t('timetable.day_tuesday'), t('timetable.day_wednesday'), t('timetable.day_thursday'), t('timetable.day_friday')]
-  const classId = user?.studentProfile?.class?.id ?? ''
-  const cacheKey = classId ? `student:timetable:${classId}` : ''
+   const classId = user?.studentProfile?.class?.id ?? ''
+   const groupIds = user?.studentProfile?.groupIds ?? []
+   const cacheKey = classId ? `student:timetable:${classId}:${[...groupIds].sort().join(',')}` : ''
 
   const fetchFn = useCallback(async (): Promise<TimetableData> => {
     if (!classId) throw new Error(t('timetable.no_class'))
     const res = await fetchApi(`/api/v2/timetables?classId=${classId}`, { credentials: 'include' }).then(r => r.json())
     if (!res.success) throw new Error(t('timetable.load_error'))
 
-    const slotMap: Record<string, SlotType> = {}
+    const slotMap: Record<string, CellSlots> = {}
     const colors = ['var(--green)', 'var(--blue)', 'var(--purple)', 'var(--amber)', 'var(--primary)', 'var(--red)', 'var(--orange)']
     let colorIdx = 0
     const subjectColors: Record<string, string> = {}
+    const rawSlots: RawSlot[] = res.data.flatMap((tt: { slots?: RawSlot[] }) => tt.slots ?? [])
 
-    res.data.forEach((tt: any) => {
-      (tt.slots || []).forEach((s: any) => {
-        const startIdx = TIMES.indexOf(s.startTime)
-        if (startIdx === -1) return
-        const subName = s.subject?.name || ''
+    for (const entries of groupTimetableSlotsForStudent(rawSlots, groupIds).values()) {
+      const first = entries[0]
+      const startIdx = TIMES.indexOf(first.startTime)
+      if (startIdx === -1) continue
+      const key = `${first.dayOfWeek}-${startIdx}`
+      slotMap[key] = entries.map(entry => {
+        if ('unassigned' in entry) {
+          return {
+            subject: t('timetable.notAssignedToGroup'),
+            teacher: '',
+            room: '',
+            kind: 'GROUP_UNASSIGNED',
+            color: 'var(--text3)',
+            unassigned: true,
+          }
+        }
+        const subName = entry.subject?.name || ''
         if (subName && !subjectColors[subName]) {
           subjectColors[subName] = colors[colorIdx % colors.length]
           colorIdx++
         }
-         slotMap[`${s.dayOfWeek}-${startIdx}`] = {
-           subject: subName,
-           teacher: s.teacher ? `${s.teacher.firstName} ${s.teacher.lastName}` : '',
-           room: s.room || '',
-           kind: s.kind || 'CLASS',
-           color: subjectColors[subName] || 'var(--green)',
-         }
+        return {
+          subject: subName,
+          teacher: entry.teacher ? `${entry.teacher.firstName} ${entry.teacher.lastName}` : '',
+          room: entry.room || '',
+          kind: entry.kind || 'CLASS',
+          color: subjectColors[subName] || 'var(--green)',
+          groupId: entry.groupId,
+        }
       })
-    })
+    }
 
     return { slots: slotMap, className: user?.studentProfile?.class?.name || '' }
-  }, [classId, user])
+  }, [classId, groupIds, t, user])
 
   const { data, loading, error, fromCache, cachedAt, refetch } = useCachedFetch<TimetableData>(cacheKey, fetchFn)
 
@@ -142,28 +161,33 @@ export default function SectionStudentTimetable({ onToast, user }: Props) {
                   <td style={{ padding: '6px 8px', background: 'var(--bg2)', fontSize: 11.5, fontWeight: 800, color: 'var(--text3)', textAlign: 'center', border: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
                     {time}<br /><span style={{ fontSize: 10, color: 'var(--border2)' }}>{TIMES_END[ti]}</span>
                   </td>
-                  {DAYS.map((_, di) => {
-                    const slot = slots[`${di}-${ti}`]
-                    return (
-                      <td key={di} style={{ padding: 0, border: '1px solid var(--border)', verticalAlign: 'top', minWidth: 110, height: 56 }}>
-                        {slot ? (
-                           <div style={{ padding: '6px 8px', height: '100%', background: slot.kind === 'FREE' ? 'var(--blue-light)' : `${slot.color}12`, borderLeft: `3px solid ${slot.kind === 'FREE' ? 'var(--blue)' : slot.color}` }}>
-                             {slot.kind === 'FREE' ? (
-                               <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--blue)' }}>{t('timetable.freeTime')}</div>
-                             ) : (
-                               <>
-                                 <div style={{ fontSize: 12, fontWeight: 800, color: slot.color }}>{slot.subject}</div>
-                                 <div style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 2 }}>{slot.teacher}</div>
-                                 {slot.room && <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>{t('timetable.roomLabel')} {slot.room}</div>}
-                               </>
-                             )}
-                          </div>
-                        ) : (
-                          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--border2)', fontSize: 16 }}>·</div>
-                        )}
-                      </td>
-                    )
-                  })}
+                   {DAYS.map((_, di) => {
+                     const cell = slots[`${di}-${ti}`]
+                     const visibleCell = cell ? normalizeTimetableCellSlots(cell) : []
+                     return (
+                       <td key={di} style={{ padding: 0, border: '1px solid var(--border)', verticalAlign: 'top', minWidth: 110, height: 56 }}>
+                         {visibleCell.length > 0 ? (
+                           <div style={{ height: '100%' }}>
+                             {visibleCell.map((slot, index) => (
+                               <div key={`${slot.groupId ?? 'class'}-${slot.subject}-${index}`} style={{ padding: '6px 8px', background: slot.kind === 'FREE' ? 'var(--blue-light)' : `${slot.color}12`, borderLeft: `3px solid ${slot.kind === 'FREE' ? 'var(--blue)' : slot.color}`, marginBottom: index < visibleCell.length - 1 ? 2 : 0, ...(slot.kind === 'FREE' ? { display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, width: '100%', minHeight: '56px', boxSizing: 'border-box' } : {}) }}>
+                                 {slot.kind === 'FREE' ? (
+                                   <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--blue)' }}>{t('timetable.freeTime')}</div>
+                                 ) : (
+                                   <>
+                                     <div style={{ fontSize: 12, fontWeight: 800, color: slot.color }}>{slot.subject}</div>
+                                     {slot.teacher && <div style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 2 }}>{slot.teacher}</div>}
+                                     {slot.room && <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>{t('timetable.roomLabel')} {slot.room}</div>}
+                                   </>
+                                 )}
+                               </div>
+                             ))}
+                           </div>
+                         ) : (
+                           <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--border2)', fontSize: 16 }}>·</div>
+                         )}
+                       </td>
+                     )
+                   })}
                 </tr>
               ))}
             </tbody>

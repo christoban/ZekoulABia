@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
+import { groupTimetableSlotsForDisplay, normalizeTimetableCellSlots, timetableCellKey } from '@/lib/timetableSlotGrouping'
 import { X, AlertTriangle, CalendarDays, Calendar, Bot } from 'lucide-react'
 import DelegationSupervisionBanner from './DelegationSupervisionBanner'
 
@@ -19,6 +20,8 @@ interface TimetableSlot {
   room: string | null; kind: string
   subject: { id: string; name: string } | null
   teacher: { id: string; firstName: string; lastName: string } | null
+  isLV2Slot?: boolean
+  groupId?: string | null
 }
 interface Timetable {
   id: string; classId: string; status: string; generatedByAI: boolean
@@ -60,6 +63,8 @@ function subjectColor(id: string) {
   for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) & 0xffffffff
   return SUBJECT_PALETTES[Math.abs(hash) % SUBJECT_PALETTES.length]
 }
+
+const freeSlotStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, width: '100%', minHeight: '60px', boxSizing: 'border-box' }
 
 export default function SectionTimetable({ onToast, onNav }: Props) {
   const t = useT('admin')
@@ -180,8 +185,7 @@ export default function SectionTimetable({ onToast, onNav }: Props) {
   }
 
   const slots = timetable?.slots ?? []
-  const slotMap = new Map<string, TimetableSlot>()
-  for (const s of slots) slotMap.set(`${s.dayOfWeek}-${s.startTime}`, s)
+  const slotMap = groupTimetableSlotsForDisplay(slots)
 
   // filter sur undefined et non sur la véracité : `.filter(Boolean)` supprimerait le lundi (0).
   const joursNumeriques = joursActifs.map(j => DAY_MAP[j]).filter((d): d is number => d !== undefined)
@@ -354,56 +358,45 @@ export default function SectionTimetable({ onToast, onNav }: Props) {
                       </div>
                     )
                   }
-                   const slot = slotMap.get(`${DAY_MAP[effectiveMobileDay]}-${periode.debut}`)
+                   const cellSlots = slotMap.get(timetableCellKey({ dayOfWeek: DAY_MAP[effectiveMobileDay]!, startTime: periode.debut, endTime: periode.fin })) ?? []
                    const courseActive = (squeletteParJour[effectiveMobileDay] ?? squelette).some(periodeJour => periodeJour.type === 'COURS' && periodeJour.debut === periode.debut && periodeJour.fin === periode.fin)
-                   const col = slot?.subject ? subjectColor(slot.subject.id) : null
 
                   return (
                      <div key={`m-cours-${periode.debut}`} className="rounded-lg shadow-xs flex items-stretch overflow-hidden">
                        <div className="w-14 flex-shrink-0 p-2.5 bg-[var(--bg2)] text-[10.5px] font-bold text-[var(--text3)] text-center">
                          {periode.debut}<br /><span className="text-[9.5px]">{periode.fin}</span>
                        </div>
-                       <div className="flex-1 p-2.5" style={{ background: slot?.kind === 'FREE' ? 'var(--blue-light)' : slot?.subject ? col!.bg : 'var(--surface)', borderLeft: slot?.kind === 'FREE' ? '3px solid var(--blue)' : slot?.subject ? `3px solid ${col!.border}` : 'none', opacity: courseActive ? 1 : 0.4 }}>
-                          {!courseActive ? (
-                            <div className="text-xs text-[var(--text3)]">—</div>
-                          ) : slot?.kind === 'FREE' ? (
-
-                           <div className="text-xs md:text-sm font-bold text-[var(--blue)]">{t('timetable.freeTime')}</div>
-                         ) : slot?.subject ? (
-                           <>
-                             <div className="text-xs md:text-sm font-bold" style={{ color: col!.text }}>{slot.subject.name}</div>
-                             <div className="text-[11.5px] text-[var(--text3)] mt-0.5">
-                               {slot.teacher ? `${slot.teacher.firstName} ${slot.teacher.lastName}` : <span style={{ color: 'var(--amber)' }}>{t('timetable.noTeacher')}</span>}
-                             </div>
+                       <div className="flex-1 p-2.5" style={{ background: 'var(--surface)', opacity: courseActive ? 1 : 0.4 }}>
+                         {!courseActive ? <div className="text-xs text-[var(--text3)]">—</div> : <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>{cellSlots.map(slot => {
+                           const col = slot.subject ? subjectColor(slot.subject.id) : null
+                           return <div key={slot.id} style={{ padding: '5px 6px', background: slot.kind === 'FREE' ? 'var(--blue-light)' : col?.bg, borderLeft: `3px solid ${slot.kind === 'FREE' ? 'var(--blue)' : col?.border}`, ...(slot.kind === 'FREE' ? freeSlotStyle : {}) }}>
+                             <div className="text-xs font-bold" style={{ color: slot.kind === 'FREE' ? 'var(--blue)' : col?.text }}>{slot.kind === 'FREE' ? t('timetable.freeTime') : slot.subject?.name}</div>
+                             {slot.subject && <div className="text-[11px] text-[var(--text3)] mt-0.5">{slot.teacher ? `${slot.teacher.firstName} ${slot.teacher.lastName}` : '—'}</div>}
                              {slot.room && <div className="text-[10.5px] text-[var(--text3)] mt-0.5">{t('timetable.roomLabel')} {slot.room}</div>}
-                           </>
-                         ) : (
-                           <div className="text-xs text-[var(--text3)]">—</div>
-                         )}
-                      </div>
-                    </div>
-                  )
-                }) : fallbackTimes.map(time => {
-                  const d = DAY_MAP[effectiveMobileDay]
-                  const slot = slotMap.get(`${d}-${time}`)
-                  const col = slot?.subject ? subjectColor(slot.subject.id) : null
-                  return (
-                    <div key={`m-${time}`} className="rounded-lg shadow-xs flex items-stretch overflow-hidden">
-                      <div className="w-14 flex-shrink-0 p-2.5 bg-[var(--bg2)] text-[10.5px] font-bold text-[var(--text3)] text-center">{time}</div>
-                      <div className="flex-1 p-2.5" style={{ background: slot?.kind === 'FREE' ? 'var(--blue-light)' : slot?.subject ? col!.bg : 'var(--surface)', borderLeft: slot?.kind === 'FREE' ? '3px solid var(--blue)' : slot?.subject ? `3px solid ${col!.border}` : 'none' }}>
-                         {slot?.kind === 'FREE' ? (
-                           <div className="text-xs md:text-sm font-bold text-[var(--blue)]">{t('timetable.freeTime')}</div>
-                         ) : slot?.subject ? (
-                           <>
-                             <div className="text-xs md:text-sm font-bold" style={{ color: col!.text }}>{slot.subject.name}</div>
-                             <div className="text-[11.5px] text-[var(--text3)] mt-0.5">{slot.teacher ? `${slot.teacher.firstName} ${slot.teacher.lastName}` : '—'}</div>
+                           </div>
+                         })}</div>}
+                       </div>
+                     </div>
+                   )
+                 }) : fallbackTimes.map(time => {
+                   const d = DAY_MAP[effectiveMobileDay]
+                   const cellSlots = normalizeTimetableCellSlots(slots.filter(slot => slot.dayOfWeek === d && slot.startTime === time))
+                   return (
+                     <div key={`m-${time}`} className="rounded-lg shadow-xs flex items-stretch overflow-hidden">
+                       <div className="w-14 flex-shrink-0 p-2.5 bg-[var(--bg2)] text-[10.5px] font-bold text-[var(--text3)] text-center">{time}</div>
+                       <div className="flex-1 p-2.5" style={{ background: 'var(--surface)' }}>
+                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>{cellSlots.map(slot => {
+                           const col = slot.subject ? subjectColor(slot.subject.id) : null
+                           return <div key={slot.id} style={{ padding: '5px 6px', background: slot.kind === 'FREE' ? 'var(--blue-light)' : col?.bg, borderLeft: `3px solid ${slot.kind === 'FREE' ? 'var(--blue)' : col?.border}`, ...(slot.kind === 'FREE' ? freeSlotStyle : {}) }}>
+                             <div className="text-xs font-bold" style={{ color: slot.kind === 'FREE' ? 'var(--blue)' : col?.text }}>{slot.kind === 'FREE' ? t('timetable.freeTime') : slot.subject?.name}</div>
+                             {slot.subject && <div className="text-[11px] text-[var(--text3)] mt-0.5">{slot.teacher ? `${slot.teacher.firstName} ${slot.teacher.lastName}` : '—'}</div>}
                              {slot.room && <div className="text-[10.5px] text-[var(--text3)] mt-0.5">{t('timetable.roomLabel')} {slot.room}</div>}
-                           </>
-                         ) : <div className="text-xs text-[var(--text3)]">—</div>}
-                      </div>
-                    </div>
-                  )
-                })}
+                           </div>
+                         })}</div>
+                       </div>
+                     </div>
+                   )
+                 })}
               </div>
             </div>
 
@@ -438,33 +431,35 @@ export default function SectionTimetable({ onToast, onNav }: Props) {
                             {periode.debut}<br /><span style={{ fontSize: 10.5 }}>{periode.fin}</span>
                           </td>
                           {joursActifs.map(jour => {
-                             const slot = slotMap.get(`${DAY_MAP[jour]}-${periode.debut}`)
+                             const dayNum = DAY_MAP[jour]
+                             const cellSlots = slotMap.get(timetableCellKey({ dayOfWeek: dayNum, startTime: periode.debut, endTime: periode.fin })) ?? []
                              const courseActive = (squeletteParJour[jour] ?? squelette).some(periodeJour => periodeJour.type === 'COURS' && periodeJour.debut === periode.debut && periodeJour.fin === periode.fin)
-                             const col = slot?.subject ? subjectColor(slot.subject.id) : null
 
-                            return (
-                               <td key={jour} style={{ padding: 0, border: '1px solid var(--border)', verticalAlign: 'top', minWidth: 105, height: 60, opacity: courseActive ? 1 : 0.4 }}>
-                                  {!courseActive ? (
-                                    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)' }}>—</div>
-                                  ) : slot?.kind === 'FREE' ? (
-
-                                   <div style={{ padding: '7px 9px', height: '100%', background: 'var(--blue-light)', borderLeft: '3px solid var(--blue)', boxSizing: 'border-box' }}>
-                                     <div style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--blue)' }}>{t('timetable.freeTime')}</div>
-                                   </div>
-                                 ) : slot?.subject ? (
-                                   <div style={{ padding: '7px 9px', height: '100%', background: col!.bg, borderLeft: `3px solid ${col!.border}`, boxSizing: 'border-box' }}>
-                                     <div style={{ fontSize: 12.5, fontWeight: 800, color: col!.text, lineHeight: 1.2 }}>{slot.subject.name}</div>
-                                     <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
-                                       {slot.teacher ? `${slot.teacher.firstName} ${slot.teacher.lastName}` : <span style={{ color: 'var(--amber)' }}>{t('timetable.noTeacher')}</span>}
-                                     </div>
-                                     {slot.room && <div style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 2 }}>{t('timetable.roomLabel')} {slot.room}</div>}
-                                   </div>
-                                 ) : (
+                             return (
+                               <td key={jour} style={{ padding: 0, border: '1px solid var(--border)', verticalAlign: 'top', minWidth: 105, minHeight: 60, opacity: courseActive ? 1 : 0.4 }}>
+                                 {!courseActive ? (
+                                   <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)' }}>—</div>
+                                 ) : cellSlots.length === 0 ? (
                                    <div style={{ height: '100%', background: 'var(--bg)' }} />
+                                 ) : (
+                                   <div style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: 3, minHeight: 60, boxSizing: 'border-box' }}>
+                                     {cellSlots.map(slot => {
+                                       const col = slot.subject ? subjectColor(slot.subject.id) : null
+                                       return (
+                                          <div key={slot.id} style={{ padding: '5px 7px', background: slot.kind === 'FREE' ? 'var(--blue-light)' : col?.bg, borderLeft: `3px solid ${slot.kind === 'FREE' ? 'var(--blue)' : col?.border}`, boxSizing: 'border-box', ...(slot.kind === 'FREE' ? freeSlotStyle : {}) }}>
+                                           {slot.kind === 'FREE' ? <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--blue)' }}>{t('timetable.freeTime')}</div> : <>
+                                             <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}><span style={{ fontSize: 11.5, fontWeight: 800, color: col?.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{slot.subject?.name}</span>{slot.isLV2Slot && <span style={{ fontSize: 8.5, fontWeight: 900, color: 'var(--blue)', background: 'rgba(3,105,161,0.14)', padding: '1px 3px', borderRadius: 4, whiteSpace: 'nowrap' }}>LV2 · {slot.subject?.name}</span>}</div>
+                                             <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{slot.teacher ? `${slot.teacher.firstName} ${slot.teacher.lastName}` : <span style={{ color: 'var(--amber)' }}>{t('timetable.noTeacher')}</span>}</div>
+                                             {slot.room && <div style={{ fontSize: 9, color: 'var(--text3)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('timetable.roomLabel')} {slot.room}</div>}
+                                           </>}
+                                         </div>
+                                       )
+                                     })}
+                                   </div>
                                  )}
                               </td>
-                            )
-                          })}
+                             )
+                           })}
                         </tr>
                       )
                     })
@@ -474,29 +469,23 @@ export default function SectionTimetable({ onToast, onNav }: Props) {
                         <td style={{ padding: '7px 9px', background: 'var(--bg)', fontSize: 12, fontWeight: 800, color: 'var(--text3)', textAlign: 'center', border: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
                           {time}
                         </td>
-                        {[1,2,3,4,5].map(d => {
-                          const slot = slotMap.get(`${d}-${time}`)
-                          const col = slot?.subject ? subjectColor(slot.subject.id) : null
-                          return (
-                            <td key={d} style={{ padding: 0, border: '1px solid var(--border)', verticalAlign: 'top', minWidth: 105, height: 60 }}>
-                               {slot?.kind === 'FREE' ? (
-                                 <div style={{ padding: '7px 9px', height: '100%', background: 'var(--bg2)', borderLeft: '3px solid var(--border)', boxSizing: 'border-box' }}>
-                                   <div style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--text3)' }}>{t('timetable.freeTime')}</div>
-                                 </div>
-                               ) : slot?.subject ? (
-                                 <div style={{ padding: '7px 9px', height: '100%', background: col!.bg, borderLeft: `3px solid ${col!.border}`, boxSizing: 'border-box' }}>
-                                   <div style={{ fontSize: 12.5, fontWeight: 800, color: col!.text }}>{slot.subject.name}</div>
-                                   <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
-                                     {slot.teacher ? `${slot.teacher.firstName} ${slot.teacher.lastName}` : '—'}
+                         {[1,2,3,4,5].map(d => {
+                           const cellSlots = normalizeTimetableCellSlots(slots.filter(slot => slot.dayOfWeek === d && slot.startTime === time))
+                           return (
+                             <td key={d} style={{ padding: 0, border: '1px solid var(--border)', verticalAlign: 'top', minWidth: 105, minHeight: 60 }}>
+                               <div style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: 3, boxSizing: 'border-box' }}>
+                                 {cellSlots.map(slot => {
+                                   const col = slot.subject ? subjectColor(slot.subject.id) : null
+                                    return <div key={slot.id} style={{ padding: '5px 7px', background: slot.kind === 'FREE' ? 'var(--bg2)' : col?.bg, borderLeft: `3px solid ${slot.kind === 'FREE' ? 'var(--border)' : col?.border}`, boxSizing: 'border-box', ...(slot.kind === 'FREE' ? freeSlotStyle : {}) }}>
+                                     <div style={{ fontSize: 11.5, fontWeight: 800, color: col?.text }}>{slot.kind === 'FREE' ? t('timetable.freeTime') : slot.subject?.name}</div>
+                                     {slot.subject && <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>{slot.teacher ? `${slot.teacher.firstName} ${slot.teacher.lastName}` : '—'}</div>}
+                                     {slot.room && <div style={{ fontSize: 9, color: 'var(--text3)', marginTop: 2 }}>{t('timetable.roomLabel')} {slot.room}</div>}
                                    </div>
-                                   {slot.room && <div style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 2 }}>{t('timetable.roomLabel')} {slot.room}</div>}
-                                 </div>
-                               ) : (
-                                 <div style={{ height: '100%' }} />
-                               )}
-                            </td>
-                          )
-                        })}
+                                 })}
+                               </div>
+                             </td>
+                           )
+                         })}
                       </tr>
                     ))
                   )}
