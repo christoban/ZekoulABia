@@ -8,6 +8,7 @@ export interface EnfantAvecStats {
   nom: string;
   classeNom?: string;
   classeId?: string;
+  groupIds?: string[];
   tauxPresence: number;        // % (présent + retard) / total
   tauxPonctualite: number;     // % retards / total (séparé de l'absence)
   joursAbsent: number;

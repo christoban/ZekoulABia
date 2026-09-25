@@ -38,6 +38,15 @@ const useCase = new ProposerEmploiDuTempsUseCase(
 );
 
 describe('Proposition des séances LV2', () => {
+  it('refuse deux groupes LV2 qui partagent le même enseignant au même horaire', async () => {
+    const contextePartage = {
+      ...contexte,
+      groupesLV2: contexte.groupesLV2?.map(groupe => ({ ...groupe, teacherId: 'prof-arabe' })),
+    };
+
+    await expect(useCase.calculerSeancesGroupes(contextePartage, [])).rejects.toThrow('Aucune case de la grille');
+  });
+
   it('place les langues au même horaire et réserve la salle principale au groupe majoritaire', async () => {
     const seances = await useCase.calculerSeancesGroupes(contexte, []);
 

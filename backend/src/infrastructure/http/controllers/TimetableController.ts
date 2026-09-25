@@ -13,7 +13,7 @@ import type { DemanderRattrapageUseCase } from '@application/timetable/DemanderR
 import type { GenererSeancesGroupeUseCase } from '@application/timetable/GenererSeancesGroupeUseCase';
 import type { ProposerEmploiDuTempsUseCase } from '@application/timetable/ProposerEmploiDuTempsUseCase';
 import type { AppliquerPropositionEmploiDuTempsUseCase } from '@application/timetable/AppliquerPropositionEmploiDuTempsUseCase';
-import type { AppliquerLotEmploiDuTempsUseCase } from '@application/timetable/AppliquerLotEmploiDuTempsUseCase';
+import type { AppliquerLotEmploiDuTempsUseCase, StatutPropositionGlobale } from '@application/timetable/AppliquerLotEmploiDuTempsUseCase';
 import type { SimulerEmploiDuTempsUseCase } from '@application/timetable/SimulerEmploiDuTempsUseCase';
 import type { SimulationEmploiDuTemps } from '@application/timetable/SimulerEmploiDuTempsUseCase';
 import type { SeanceGroupeProposee, SeanceProposee, ContraintesDoucesOptions } from '@domain/ports/services/SchedulingSolverPort';
@@ -113,6 +113,25 @@ export class TimetableController {
         res.status(404).json({ success: false, message: 'Run de génération introuvable' });
         return;
       }
+      res.json({ success: true, data: run });
+    } catch (error) {
+      this.gererErreur(error, res, next);
+    }
+  };
+
+  getActiveGenerationRun = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!this.generationRuns) {
+        res.status(503).json({ success: false, message: 'Suivi de génération indisponible' });
+        return;
+      }
+      const academicYearId = typeof req.query['academicYearId'] === 'string' ? req.query['academicYearId'] : '';
+      if (!academicYearId) {
+        res.status(400).json({ success: false, message: 'academicYearId requis' });
+        return;
+      }
+      await this.generationRuns.failStale(req.user!.schoolId, new Date(Date.now() - 5 * 60 * 1000));
+      const run = await this.generationRuns.findActive(req.user!.schoolId, academicYearId);
       res.json({ success: true, data: run });
     } catch (error) {
       this.gererErreur(error, res, next);
@@ -349,6 +368,34 @@ export class TimetableController {
     }
   };
 
+  proposerEDTAsync = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!this.globalGeneration) {
+        res.status(503).json({ success: false, message: 'Génération asynchrone indisponible' });
+        return;
+      }
+      const user = req.user;
+      const timetableId = req.params['id'] as string;
+      const contexte = await this.proposerEmploiDuTemps.chargerContexte({
+        timetableId,
+        schoolId: user.schoolId,
+      });
+      const run = await this.globalGeneration.lancer(
+        user.schoolId,
+        contexte.academicYearId,
+        user.userId,
+        [contexte.classId],
+      );
+      void inngest.send({
+        name: 'timetable/generation.requested',
+        data: { schoolId: user.schoolId, runId: run.runId },
+      }).catch(() => undefined);
+      res.status(202).json({ success: true, data: run });
+    } catch (error) {
+      this.gererErreur(error, res, next);
+    }
+  };
+
   // POST /timetables/:id/apply-schedule — écrit la proposition confirmée, en TOUT OU RIEN.
   appliquerPropositionEDT = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -395,7 +442,7 @@ export class TimetableController {
         targetId: req.params['id'] as string,
         origin: 'UI_DIRECT', outcome: 'ERREUR',
         refusalReason: error instanceof Error ? error.message : undefined,
-        parametersSummary: { nbSeances: (req.body as { seances?: unknown[] })?.seances?.length },
+         parametersSummary: { nbSeances: ((req.body as { seances?: unknown[]; seancesGroupes?: unknown[] })?.seances?.length ?? 0) + ((req.body as { seances?: unknown[]; seancesGroupes?: unknown[] })?.seancesGroupes?.length ?? 0) },
       });
       this.gererErreur(error, res, next);
     }
@@ -407,7 +454,7 @@ export class TimetableController {
         res.status(503).json({ success: false, message: 'Application globale indisponible' });
         return;
       }
-      const { propositions } = req.body as { propositions?: Array<{ timetableId: string; seances: SeanceProposee[]; seancesGroupes?: SeanceGroupeProposee[] }> };
+      const { propositions } = req.body as { propositions?: Array<{ timetableId: string; statut: StatutPropositionGlobale; confirmationPartiel?: boolean; seances: SeanceProposee[]; seancesGroupes?: SeanceGroupeProposee[] }> };
       if (!Array.isArray(propositions) || propositions.length === 0) {
         res.status(400).json({ success: false, message: 'propositions[] requis' });
         return;
@@ -545,7 +592,10 @@ export class TimetableController {
         error.message.includes('doit être soumis') ||
         error.message.includes('peut être rouvert') ||
         error.message.includes('Proposition vide') ||
-        error.message.startsWith('Proposition invalide') ||
+         error.message.startsWith('Proposition invalide') ||
+         error.message.startsWith('Proposition PARTIEL') ||
+         error.message.startsWith('Statut de proposition invalide') ||
+         error.message.startsWith('Proposition LV2 invalide') ||
         error.message.startsWith('Règle pédagogique bloquante') ||
         error.message.startsWith('Aucun')
       ) {

@@ -121,16 +121,18 @@ export const checkSuspiciousAiActionPattern = inngest.createFunction(
 export const handleTimetableSeancesAppliquees = inngest.createFunction(
   { id: "Handle-Timetable-Seances-Appliquees", triggers: [{ event: "timetable/seances.appliquees" }] },
   async ({ event, step }) => {
-    const { schoolId, timetableId, seances } = event.data as {
-      schoolId: string;
-      timetableId: string;
-      nbSeances: number;
-      seances: { subjectId: string }[];
-    };
+     const { schoolId, timetableId, seances, seancesGroupes } = event.data as {
+       schoolId: string;
+       timetableId: string;
+       nbSeances: number;
+       seances: { subjectId: string }[];
+       seancesGroupes?: { subjectId: string }[];
+     };
+     const toutesSeances = [...(seances ?? []), ...(seancesGroupes ?? [])];
 
     // AssessmentScheduled : matières liées à un examen à venir (filtré par schoolId + date).
     await step.run("check-upcoming-exams", async () => {
-      const subjectIds = [...new Set((seances ?? []).map(s => s.subjectId))];
+       const subjectIds = [...new Set(toutesSeances.map(s => s.subjectId))];
       if (subjectIds.length === 0) return;
       const examRepository = new PrismaExamRepository(prisma);
       const exams = await examRepository.findUpcomingBySubjects(schoolId, subjectIds);
@@ -156,14 +158,14 @@ export const handleTimetableSeancesAppliquees = inngest.createFunction(
             userId: (admin as any).id,
             type: "SYSTEM" as any,
             titre: "Emploi du temps appliqué",
-            corps: `${(seances ?? []).length} séance(s) appliquée(s).`,
+             corps: `${toutesSeances.length} séance(s) appliquée(s).`,
             urgency: "NORMAL" as any,
           })
           .catch(() => {});
       }
     });
 
-    return { timetableId, nbSeances: (seances ?? []).length };
+     return { timetableId, nbSeances: toutesSeances.length };
   }
 );
 

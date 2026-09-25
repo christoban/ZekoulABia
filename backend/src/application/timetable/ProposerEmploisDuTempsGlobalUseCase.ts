@@ -4,7 +4,7 @@ import type { GenererSqueletteEmploiDuTempsUseCase } from '@application/timetabl
 import type { ProposerEmploiDuTempsUseCase } from '@application/timetable/ProposerEmploiDuTempsUseCase';
 import type { TargetClass, TimetableGenerationTargetProvider } from '@domain/ports/services/TimetableGenerationTargetProvider';
 
-type RunResult = { classId: string; className: string; status: string; seances?: unknown[]; seancesGroupes?: unknown[]; heuresNonPlacees?: unknown[]; occupation?: CreneauOccupe[]; warnings: string[]; diagnostic?: Record<string, unknown>; durationMs: number };
+type RunResult = { classId: string; className: string; timetableId?: string; status: string; seances?: unknown[]; seancesGroupes?: unknown[]; heuresNonPlacees?: unknown[]; occupation?: CreneauOccupe[]; warnings: string[]; diagnostic?: { relaxedPedagogicalRules?: boolean; relaxedProblems?: string[]; problems?: string[]; stack?: string }; durationMs: number };
 
 export class ProposerEmploisDuTempsGlobalUseCase {
   constructor(
@@ -60,22 +60,31 @@ export class ProposerEmploisDuTempsGlobalUseCase {
       maxDeterministicTime: 3,
       contraintes: { reglesPedagogiques: true, maxTempsLibresParJour: 2, interdireTempsLibresConsecutifs: true },
     } as const;
-    let proposition;
-    try {
-      proposition = await this.proposer.execute(base);
-      if (proposition.statut === 'INFAISABLE') {
-        proposition = await this.proposer.execute({ ...base, reglesPedagogiquesDures: false, respecterContraintesTempsLibres: false, placementPartiel: true, maxDeterministicTime: 3, contraintes: { reglesPedagogiques: false } });
-      }
-    } catch (error) {
+     let proposition;
+     let relaxedPedagogicalRules = false;
+     let relaxedProblems: string[] = [];
+     try {
+       proposition = await this.proposer.execute(base);
+       if (proposition.statut === 'INFAISABLE') {
+         relaxedPedagogicalRules = true;
+         relaxedProblems = proposition.problemes ?? (proposition.raisonInfaisabilite ? [proposition.raisonInfaisabilite] : []);
+         proposition = await this.proposer.execute({ ...base, reglesPedagogiquesDures: false, respecterContraintesTempsLibres: false, placementPartiel: true, maxDeterministicTime: 3, contraintes: { reglesPedagogiques: false } });
+       }
+     } catch (error) {
       const message = error instanceof Error ? error.message : 'Erreur solveur inconnue';
       console.error('[TimetableGenerationRun] class failure', { runId, classId, error });
       const result: RunResult = { classId, className: target.className, status: 'ECHEC_TECHNIQUE', warnings: [message], diagnostic: { stack: error instanceof Error ? error.stack : undefined }, durationMs: Date.now() - started };
       await this.append(run.id, run.schoolId, result, progress, target.className);
       return { classId, status: result.status, durationMs: result.durationMs };
     }
-    const status = proposition.statut === 'PARTIEL' ? 'PARTIEL' : proposition.statut === 'INFAISABLE' ? 'ECHEC' : proposition.statut === 'FEASIBLE' ? 'DEGRADE' : proposition.avertissements?.length ? 'SUCCESS_WITH_WARNINGS' : 'success';
-    const occupation = proposition.seances.map(seance => ({ classId, teacherId: seance.teacherId, roomId: seance.roomId, dayOfWeek: seance.dayOfWeek, startTime: seance.startTime, endTime: seance.endTime }));
-    const result: RunResult = { classId, className: target.className, status, seances: proposition.seances, seancesGroupes: proposition.seancesGroupes, heuresNonPlacees: proposition.heuresNonPlacees, occupation, warnings: proposition.avertissements ?? [], diagnostic: proposition.problemes?.length ? { problems: proposition.problemes } : undefined, durationMs: Date.now() - started };
+     const status = proposition.statut === 'PARTIEL' ? 'PARTIEL' : proposition.statut === 'INFAISABLE' ? 'ECHEC' : relaxedPedagogicalRules ? 'DEGRADE' : proposition.statut === 'FEASIBLE' ? 'SUCCESS_WITH_WARNINGS' : proposition.avertissements?.length ? 'SUCCESS_WITH_WARNINGS' : 'success';
+     const warnings = [
+       ...(proposition.avertissements ?? []),
+       ...(!relaxedPedagogicalRules && proposition.statut === 'FEASIBLE' ? ['Solution réalisable mais non optimale : certaines préférences de placement n’ont pas pu être optimisées.'] : []),
+     ];
+     const relaxedDetails = relaxedProblems.length > 0 ? relaxedProblems : ['Règles pédagogiques de placement relâchées pour conserver une proposition complète.'];
+     const occupation = [...proposition.seances, ...(proposition.seancesGroupes ?? [])].map(seance => ({ classId, teacherId: seance.teacherId, roomId: seance.roomId, dayOfWeek: seance.dayOfWeek, startTime: seance.startTime, endTime: seance.endTime }));
+     const result: RunResult = { classId, className: target.className, timetableId, status, seances: proposition.seances, seancesGroupes: proposition.seancesGroupes, heuresNonPlacees: proposition.heuresNonPlacees, occupation, warnings, diagnostic: { ...(relaxedPedagogicalRules ? { relaxedPedagogicalRules, relaxedProblems: relaxedDetails } : {}), ...(proposition.problemes?.length ? { problems: proposition.problemes } : {}) }, durationMs: Date.now() - started };
     await this.append(run.id, run.schoolId, result, progress, target.className);
     return { classId, status, durationMs: result.durationMs };
   }

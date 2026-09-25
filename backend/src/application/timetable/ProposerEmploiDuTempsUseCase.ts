@@ -303,6 +303,7 @@ export class ProposerEmploiDuTempsUseCase {
           seance.teacherId === groupe.teacherId && this.chevauche(seance, grilleCase),
         ),
       )) continue;
+      if (groupes.some((groupe, index) => groupes.slice(index + 1).some(autre => autre.teacherId === groupe.teacherId))) continue;
       if (occupation.some(occupe => occupe.roomId === sallePrincipale.roomId && this.chevauche(occupe, grilleCase))) continue;
       if (seancesClasse.some(seance => seance.roomId === sallePrincipale.roomId && this.chevauche(seance, grilleCase))) continue;
 

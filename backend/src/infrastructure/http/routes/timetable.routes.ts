@@ -6,6 +6,7 @@ export function creerTimetableRoutes(controller: TimetableController): Router {
   const router = Router();
 
   router.post('/propose-all', requireAuth, requireRole('STAFF'), requirePermission('MANAGE_TIMETABLE'), controller.proposeAll);
+  router.get('/generation-runs/active', requireAuth, requirePermission('MANAGE_TIMETABLE'), controller.getActiveGenerationRun);
   router.get('/generation-runs/:runId', requireAuth, requirePermission('MANAGE_TIMETABLE'), controller.getGenerationRun);
   router.post('/generation-runs/:runId/cancel', requireAuth, requireRole('STAFF'), requirePermission('MANAGE_TIMETABLE'), controller.cancelGenerationRun);
   router.post('/manual', requireAuth, requireRole('STAFF'), requirePermission('MANAGE_TIMETABLE'), controller.creerManuel);
@@ -16,6 +17,7 @@ export function creerTimetableRoutes(controller: TimetableController): Router {
   router.delete('/:id/slots', requireAuth, requireRole('STAFF'), requirePermission('MANAGE_TIMETABLE'), controller.viderCreneauxEDT);
   router.post('/:id/generate-group-sessions', requireAuth, requireRole('STAFF'), requirePermission('MANAGE_TIMETABLE'), controller.genererSeancesGroupe);
   // Scheduling Engine V2.5 — le solveur propose, le staff applique après validation.
+  router.post('/:id/propose-schedule-async', requireAuth, requireRole('STAFF'), requirePermission('MANAGE_TIMETABLE'), controller.proposerEDTAsync);
   router.post('/:id/propose-schedule', requireAuth, requireRole('STAFF'), requirePermission('MANAGE_TIMETABLE'), controller.proposerEDT);
   router.post('/apply-all', requireAuth, requireRole('STAFF'), requirePermission('MANAGE_TIMETABLE'), controller.appliquerLotEDT);
   router.post('/:id/apply-schedule', requireAuth, requireRole('STAFF'), requirePermission('MANAGE_TIMETABLE'), controller.appliquerPropositionEDT);

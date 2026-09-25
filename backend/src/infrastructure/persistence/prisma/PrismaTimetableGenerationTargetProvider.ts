@@ -96,7 +96,7 @@ export class PrismaTimetableGenerationTargetProvider implements TimetableGenerat
     const teachers = teacherIds.length ? await this.prisma.user.findMany({ where: { id: { in: teacherIds } }, select: { id: true, firstName: true, lastName: true } }) : [];
     const teacherNames = new Map(teachers.map(t => [t.id, `${t.firstName} ${t.lastName}`]));
     const overloaded = [...byTeacher.entries()].map(([teacherId, entry]) => {
-      const teacherCapacity = calculerCapaciteDisponible(cases, indisponibilites, [], teacherId);
+       const teacherCapacity = calculerCapaciteDisponible(cases, indisponibilites, occupationFixe, teacherId);
       return { teacherId, name: teacherNames.get(teacherId) ?? teacherId, hours: entry.hours, capacity: teacherCapacity, overloaded: entry.hours > teacherCapacity, deficitHours: Math.max(0, entry.hours - teacherCapacity), details: entry.details };
     }).filter(entry => entry.overloaded);
     return { capacity, gridCases: cases.length, fixedOccupationCases: occupationFixe.length, unavailableCases: indisponibilites.length, overloaded, generatedAt: new Date().toISOString(), periodesParJour };

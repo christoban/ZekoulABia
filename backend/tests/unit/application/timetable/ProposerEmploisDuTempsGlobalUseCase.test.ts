@@ -21,8 +21,9 @@ describe('ProposerEmploisDuTempsGlobalUseCase', () => {
         proposerCalls.push(commande);
         return {
           statut: 'OPTIMAL',
-          seances: [{ subjectId: 's1', teacherId: 't1', roomId: 'r1', dayOfWeek: 1, startTime: '08:00', endTime: '09:00' }],
-          scoreObjectif: 0,
+           seances: [{ subjectId: 's1', teacherId: 't1', roomId: 'r1', dayOfWeek: 1, startTime: '08:00', endTime: '09:00' }],
+           seancesGroupes: [{ subjectId: 'arabe', teacherId: 'karim-abaa', roomId: 'r2', dayOfWeek: 0, startTime: '14:15', endTime: '15:15', groupId: 'groupe-arabe', groupName: 'Arabe', participantsCount: 5, isLV2Slot: true }],
+           scoreObjectif: 0,
           dureeResolutionMs: 100,
         };
       },
@@ -56,13 +57,45 @@ describe('ProposerEmploisDuTempsGlobalUseCase', () => {
     await useCase.processClass(runId, 'c1', 'school-1');
     const runAfterFirst = await runs.findById(runId, 'school-1');
     expect(runAfterFirst!.status).toBe('RUNNING');
-    const firstClassResult = runAfterFirst!.results[1] as { status: string; occupation: unknown[] };
-    expect(firstClassResult.status).toBe('success');
-    expect(firstClassResult.occupation).toHaveLength(1);
+     const firstClassResult = runAfterFirst!.results[1] as { timetableId: string; status: string; occupation: unknown[] };
+     expect(firstClassResult.timetableId).toBe('tt1');
+     expect(firstClassResult.status).toBe('success');
+     expect(firstClassResult.occupation).toHaveLength(2);
 
-    await useCase.processClass(runId, 'c2', 'school-1');
-    const secondCall = proposerCalls[1] as { occupationSupplementaire: unknown[] };
-    expect(secondCall.occupationSupplementaire).toHaveLength(1);
+     await useCase.processClass(runId, 'c2', 'school-1');
+     const secondCall = proposerCalls[1] as { occupationSupplementaire: Array<{ classId: string; teacherId: string; roomId: string; dayOfWeek: number; startTime: string; endTime: string }> };
+     expect(secondCall.occupationSupplementaire).toHaveLength(2);
+     expect(secondCall.occupationSupplementaire).toContainEqual({ classId: 'c1', teacherId: 'karim-abaa', roomId: 'r2', dayOfWeek: 0, startTime: '14:15', endTime: '15:15' });
+  });
+
+  it('distingue une règle pédagogique relâchée et conserve son diagnostic', async () => {
+    let appels = 0;
+    proposer = {
+      async execute() {
+        appels += 1;
+        if (appels === 1) return { statut: 'INFAISABLE', seances: [], problemes: ['Arabe : occurrences quotidiennes impossibles avec la grille.'], scoreObjectif: 0, dureeResolutionMs: 10 };
+        return { statut: 'FEASIBLE', seances: [{ subjectId: 'arabe', teacherId: 'karim-abaa', roomId: 'r1', dayOfWeek: 0, startTime: '08:00', endTime: '09:00' }], scoreObjectif: 1, dureeResolutionMs: 10 };
+      },
+    } as unknown as ProposerEmploiDuTempsUseCase;
+    useCase = new ProposerEmploisDuTempsGlobalUseCase(targetsProvider, runs, proposer, squelette);
+    const { runId } = await useCase.lancer('school-1', 'year-1', 'user-1');
+    await useCase.processClass(runId, 'c1', 'school-1');
+    const result = (await runs.findById(runId, 'school-1'))!.results[1] as { status: string; diagnostic?: { relaxedPedagogicalRules?: boolean; relaxedProblems?: string[] } };
+    expect(result.status).toBe('DEGRADE');
+    expect(result.diagnostic?.relaxedPedagogicalRules).toBe(true);
+    expect(result.diagnostic?.relaxedProblems).toContain('Arabe : occurrences quotidiennes impossibles avec la grille.');
+  });
+
+  it('inclut le timetableId du squelette créé dans le résultat', async () => {
+    targetsProvider = {
+      async listTargets() { return [{ classId: 'c1', className: '1e A', requiredHours: 12, status: 'DRAFT' }]; },
+      async buildPreflight() { return { capacity: 30 }; },
+    };
+    useCase = new ProposerEmploisDuTempsGlobalUseCase(targetsProvider, runs, proposer, squelette);
+    const { runId } = await useCase.lancer('school-1', 'year-1', 'user-1');
+    await useCase.processClass(runId, 'c1', 'school-1');
+    const run = await runs.findById(runId, 'school-1');
+    expect((run!.results[1] as { timetableId: string }).timetableId).toBe('tt-new');
   });
 
   it('bloque un second run actif', async () => {

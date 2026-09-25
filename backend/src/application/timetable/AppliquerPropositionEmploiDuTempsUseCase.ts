@@ -73,8 +73,19 @@ export class AppliquerPropositionEmploiDuTempsUseCase {
   }
 
   private normaliserGroupes(seances: SeanceGroupeProposee[]): SeanceGroupeProposee[] {
-    return [...seances].sort((a, b) => a.groupId.localeCompare(b.groupId)).map(seance => ({
-      ...seance,
-    }));
+    return [...seances]
+      .sort((a, b) => a.groupId.localeCompare(b.groupId))
+      .map(seance => ({
+        subjectId: seance.subjectId,
+        teacherId: seance.teacherId,
+        roomId: seance.roomId,
+        dayOfWeek: seance.dayOfWeek,
+        startTime: seance.startTime,
+        endTime: seance.endTime,
+        groupId: seance.groupId,
+        groupName: seance.groupName,
+        participantsCount: seance.participantsCount,
+        isLV2Slot: seance.isLV2Slot,
+      }));
   }
 }

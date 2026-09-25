@@ -77,13 +77,6 @@ function trierCandidats(a: CandidatMatiereClasse, b: CandidatMatiereClasse): num
   return a.classId.localeCompare(b.classId) || a.subjectId.localeCompare(b.subjectId);
 }
 
-function trierEnseignants(a: EnseignantEligible, b: EnseignantEligible): number {
-  if (a.chargeActuelleHeures !== b.chargeActuelleHeures) {
-    return a.chargeActuelleHeures - b.chargeActuelleHeures;
-  }
-  return a.teacherId.localeCompare(b.teacherId);
-}
-
 export function genererAffectations(
   candidats: CandidatMatiereClasse[],
   enseignantsEligibles: EnseignantEligible[],
@@ -92,7 +85,13 @@ export function genererAffectations(
   const nonResolus: MatiereNonResolue[] = [];
   const horsPerimetre: MatiereHorsPerimetre[] = [];
 
-  // Index des enseignants éligibles par matière (on travaille sur une copie mutable de la charge)
+  const chargeParEnseignant = new Map<string, number>();
+  for (const enseignant of enseignantsEligibles) {
+    if (!chargeParEnseignant.has(enseignant.teacherId)) {
+      chargeParEnseignant.set(enseignant.teacherId, enseignant.chargeActuelleHeures);
+    }
+  }
+
   const eligiblesParMatiere = new Map<string, EnseignantEligible[]>();
   for (const e of enseignantsEligibles) {
     const liste = eligiblesParMatiere.get(e.subjectId) ?? [];
@@ -130,11 +129,18 @@ export function genererAffectations(
       continue;
     }
 
-    eligibles.sort(trierEnseignants);
-    const choisi = eligibles.find((e) => respectePlafond(e, candidat.weeklyPeriods!));
+    eligibles.sort((a, b) => {
+      const chargeA = chargeParEnseignant.get(a.teacherId) ?? a.chargeActuelleHeures;
+      const chargeB = chargeParEnseignant.get(b.teacherId) ?? b.chargeActuelleHeures;
+      return chargeA - chargeB || a.teacherId.localeCompare(b.teacherId);
+    });
+    const choisi = eligibles.find((e) => respectePlafond({
+      ...e,
+      chargeActuelleHeures: chargeParEnseignant.get(e.teacherId) ?? e.chargeActuelleHeures,
+    }, candidat.weeklyPeriods!));
 
     if (!choisi) {
-      const tousAPPlafonne = eligibles.every((e) => e.estAP && e.chargeActuelleHeures + candidat.weeklyPeriods! > LIMITE_AP_HEURES);
+      const tousAPPlafonne = eligibles.every((e) => e.estAP && (chargeParEnseignant.get(e.teacherId) ?? e.chargeActuelleHeures) + candidat.weeklyPeriods! > LIMITE_AP_HEURES);
       nonResolus.push({
         classId: candidat.classId,
         className: candidat.className,
@@ -145,7 +151,7 @@ export function genererAffectations(
           weeklyPeriods: candidat.weeklyPeriods,
           candidats: eligibles.map((e) => ({
             teacherId: e.teacherId,
-            chargeActuelleHeures: e.chargeActuelleHeures,
+            chargeActuelleHeures: chargeParEnseignant.get(e.teacherId) ?? e.chargeActuelleHeures,
             capaciteHeures: e.capaciteHeures ?? null,
             estAP: e.estAP,
           })),
@@ -160,8 +166,10 @@ export function genererAffectations(
       teacherId: choisi.teacherId,
     });
 
-    // Mise à jour en mémoire de la charge pour les couples suivants du même run
-    choisi.chargeActuelleHeures += candidat.weeklyPeriods!;
+    chargeParEnseignant.set(
+      choisi.teacherId,
+      (chargeParEnseignant.get(choisi.teacherId) ?? choisi.chargeActuelleHeures) + candidat.weeklyPeriods!,
+    );
   }
 
   return { aCreer, nonResolus, horsPerimetre };

@@ -157,6 +157,23 @@ describe('AffecterEnseignantsService', () => {
     expect(second.teacherId).toBe('t2');
   });
 
+  it('partage la charge entre plusieurs matières du même enseignant', () => {
+    const result = genererAffectations(
+      [
+        candidat({ classId: 'c1', subjectId: 's1', weeklyPeriods: 2 }),
+        candidat({ classId: 'c1', subjectId: 's2', weeklyPeriods: 2 }),
+        candidat({ classId: 'c2', subjectId: 's1', weeklyPeriods: 2 }),
+      ],
+      [
+        enseignant({ teacherId: 't1', subjectId: 's1', chargeActuelleHeures: 0, capaciteHeures: 4 }),
+        enseignant({ teacherId: 't1', subjectId: 's2', chargeActuelleHeures: 0, capaciteHeures: 4 }),
+      ],
+    );
+
+    expect(result.aCreer).toHaveLength(2);
+    expect(result.nonResolus[0].raison).toBe('TEACHER_WEEKLY_CAP_EXCEEDED');
+  });
+
   it('respecte l’ordre de traitement déterministe (classId, subjectId)', () => {
     // Deux couples identiques en charge initiale ; l’ordre de traitement garantit
     // que le premier obtient t1 et le second t2 (t1 devient plus chargé après).

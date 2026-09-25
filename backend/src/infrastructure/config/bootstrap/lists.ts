@@ -107,16 +107,20 @@ export function registerListsRoutes(app: Application, p: typeof prisma = prisma,
               teacherSubjects: { select: { subject: { select: { id: true, name: true } } } },
             },
           },
-          studentProfile: {
-            select: {
-              id: true,
-              enrollmentsYearScoped: {
-                where: { status: 'ACTIVE', academicYear: { isCurrent: true } },
-                select: { class: { select: { id: true, name: true } } },
-                take: 1,
-              },
-            },
-          },
+           studentProfile: {
+             select: {
+               id: true,
+               enrollmentsYearScoped: {
+                 where: { status: 'ACTIVE', academicYear: { isCurrent: true } },
+                 select: { class: { select: { id: true, name: true } } },
+                 take: 1,
+               },
+               groupMemberships: {
+                 where: { academicYear: { isCurrent: true } },
+                 select: { groupId: true },
+               },
+             },
+           },
           staffProfile: { select: { id: true, title: true } },
           classesProfessorPrincipal: {
             select: {
@@ -141,9 +145,10 @@ export function registerListsRoutes(app: Application, p: typeof prisma = prisma,
         ...rawUser,
         studentProfile: rawUser.studentProfile
           ? {
-              id: rawUser.studentProfile.id,
-              class: rawUser.studentProfile.enrollmentsYearScoped?.[0]?.class ?? null,
-            }
+               id: rawUser.studentProfile.id,
+               class: rawUser.studentProfile.enrollmentsYearScoped?.[0]?.class ?? null,
+               groupIds: rawUser.studentProfile.groupMemberships.map(membership => membership.groupId),
+             }
           : null,
         classesProfessorPrincipal: rawUser.classesProfessorPrincipal?.map(c => ({
           id: c.id,

@@ -39,18 +39,24 @@ export class SimulerEmploiDuTempsUseCase {
     const contexte = await this.proposer.chargerContexte(commande);
 
     // Base recalculée dans le même appel (pas de cache) — référence de comparaison.
-    const base = await this.solver.proposer(contexte);
-    const propositionSimulee = await this.solver.proposer(appliquerSimulations(contexte, commande.simulations));
+    const contexteSimule = appliquerSimulations(contexte, commande.simulations);
+    const base = await this.avecSeancesGroupes(contexte, await this.solver.proposer(contexte));
+    const propositionSimulee = await this.avecSeancesGroupes(contexteSimule, await this.solver.proposer(contexteSimule));
 
     return {
       propositionSimulee,
       differences: {
-        seancesDeplacees: compterSeancesDeplacees(base.seances, propositionSimulee.seances),
+        seancesDeplacees: compterSeancesDeplacees([...base.seances, ...(base.seancesGroupes ?? [])], [...propositionSimulee.seances, ...(propositionSimulee.seancesGroupes ?? [])]),
         scoreBase: base.scoreObjectif,
         scoreSimule: propositionSimulee.scoreObjectif,
         avertissements: [],
       },
     };
+  }
+
+  private async avecSeancesGroupes(contexte: ContexteEmploiDuTemps, proposition: PropositionEmploiDuTemps): Promise<PropositionEmploiDuTemps> {
+    if (proposition.statut === 'INFAISABLE') return proposition;
+    return { ...proposition, seancesGroupes: await this.proposer.calculerSeancesGroupes(contexte, proposition.seances) };
   }
 
   /** Isolation multi-tenant : tout id référencé doit appartenir à l'école du token (sinon 404). */

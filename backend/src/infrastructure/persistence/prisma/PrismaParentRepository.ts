@@ -47,11 +47,15 @@ export class PrismaParentRepository implements ParentRepository {
             studentProfile: {
               include: {
                 user: { select: { firstName: true, lastName: true } },
-                enrollmentsYearScoped: {
-                  where: { status: 'ACTIVE', academicYear: { isCurrent: true } },
-                  select: { class: { select: { id: true, name: true, serie: true } } },
-                  take: 1,
-                },
+                 enrollmentsYearScoped: {
+                   where: { status: 'ACTIVE', academicYear: { isCurrent: true } },
+                   select: { class: { select: { id: true, name: true, serie: true } } },
+                   take: 1,
+                 },
+                 groupMemberships: {
+                   where: { academicYear: { isCurrent: true } },
+                   select: { groupId: true },
+                 },
               },
             },
           },
@@ -103,8 +107,9 @@ export class PrismaParentRepository implements ParentRepository {
           studentId,
           prenom: profil.user.firstName,
           nom: profil.user.lastName,
-          classeId: classeActuelle?.id,
-          classeNom: classeActuelle
+           classeId: classeActuelle?.id,
+           groupIds: profil.groupMemberships.map(membership => membership.groupId),
+           classeNom: classeActuelle
             ? `${classeActuelle.name}${classeActuelle.serie ? ' ' + classeActuelle.serie : ''}`
             : undefined,
           tauxPresence,
