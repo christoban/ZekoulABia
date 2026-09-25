@@ -29,6 +29,12 @@ export interface ProposerEmploiDuTempsCommande {
   schoolId: string;
   /** Contraintes douces V2.5 (optionnelles) — transmises telles quelles au solveur. */
   contraintes?: ContraintesDoucesOptions;
+  occupationSupplementaire?: CreneauOccupe[];
+  ignoreTimetableIds?: string[];
+  reglesPedagogiquesDures?: boolean;
+  respecterContraintesTempsLibres?: boolean;
+  maxDeterministicTime?: number;
+  placementPartiel?: boolean;
 }
 
 /** Contexte complet nécessaire au solveur — extrait pour être réutilisé par le what-if. */
@@ -71,9 +77,15 @@ export class ProposerEmploiDuTempsUseCase {
   async execute(commande: ProposerEmploiDuTempsCommande): Promise<PropositionEmploiDuTemps> {
     const contexte = await this.chargerContexte(commande);
     const contraintesSolveur = { ...(commande.contraintes ?? {}) };
-    delete contraintesSolveur.interdireTempsLibresConsecutifs;
-    delete contraintesSolveur.maxTempsLibresParJour;
-    contraintesSolveur.reglesPedagogiques = false;
+    if (!commande.respecterContraintesTempsLibres) {
+      delete contraintesSolveur.interdireTempsLibresConsecutifs;
+      delete contraintesSolveur.maxTempsLibresParJour;
+    }
+    if (commande.reglesPedagogiquesDures) {
+      contraintesSolveur.reglesPedagogiques = true;
+    } else {
+      contraintesSolveur.reglesPedagogiques = false;
+    }
     const proposition = await this.solver.proposer({
       classId: contexte.classId,
       salleHabituelleId: contexte.salleHabituelleId,
@@ -82,8 +94,10 @@ export class ProposerEmploiDuTempsUseCase {
       sallesDisponibles: contexte.sallesDisponibles,
       occupationExistante: contexte.occupationExistante,
       indisponibilitesEnseignants: contexte.indisponibilitesEnseignants,
-       contraintes: { ...contraintesSolveur, explicatifs: true },
-
+      contraintes: { ...contraintesSolveur, explicatifs: true },
+      reglesPedagogiquesDures: commande.reglesPedagogiquesDures,
+      maxDeterministicTime: commande.maxDeterministicTime,
+      placementPartiel: commande.placementPartiel,
     });
     if (proposition.statut === 'INFAISABLE') return proposition;
     const seancesGroupes = await this.calculerSeancesGroupes(contexte, proposition.seances);
@@ -98,7 +112,7 @@ export class ProposerEmploiDuTempsUseCase {
   }
 
   /** Charge et valide tout le contexte du solveur, sans résoudre — réutilisé par le what-if. */
-  async chargerContexte(commande: { timetableId: string; schoolId: string }): Promise<ContexteEmploiDuTemps> {
+  async chargerContexte(commande: { timetableId: string; schoolId: string; occupationSupplementaire?: CreneauOccupe[]; ignoreTimetableIds?: string[] }): Promise<ContexteEmploiDuTemps> {
     const emploiDuTemps = await this.timetableRepository.findById(commande.timetableId);
     if (!emploiDuTemps) throw new Error(`EDT introuvable : ${commande.timetableId}`);
     if (emploiDuTemps.schoolId !== commande.schoolId) {
@@ -155,9 +169,12 @@ export class ProposerEmploiDuTempsUseCase {
        commande.schoolId, emploiDuTemps.academicYearId,
      );
 
-     const occupationExistante = await this.timetableRepository.findOccupationEcole(
-       commande.schoolId, emploiDuTemps.academicYearId, commande.timetableId,
-     );
+      const occupationExistante = [
+        ...(await this.timetableRepository.findOccupationEcole(
+          commande.schoolId, emploiDuTemps.academicYearId, commande.ignoreTimetableIds?.length ? commande.ignoreTimetableIds : commande.timetableId,
+        )),
+        ...(commande.occupationSupplementaire ?? []),
+      ];
      const occupationLocale = (await this.timetableRepository.findCreneauxByTimetable(commande.timetableId))
        .filter(creneau => creneau.groupId === undefined || creneau.groupId === null)
        .map(creneau => ({
@@ -379,7 +396,7 @@ export class ProposerEmploiDuTempsUseCase {
           subjectType: a.subjectType as SubjectType,
           teacherIds: [a.teacherId],
           subjectName: a.name || `Matière ${a.subjectId}`,
-          hoursPerWeek: a.hoursPerWeek ?? 2,
+          hoursPerWeek: a.weeklyPeriods ?? a.hoursPerWeek ?? 2,
           blocDureeCases: a.blocDureeCases ?? null,
         });
       }
@@ -416,7 +433,7 @@ export class ProposerEmploiDuTempsUseCase {
           subjectName: groupe.subjectName,
           teacherName: nomParEnseignant.get(groupe.teacherIds[0]),
           seanceId: seanceId,
-          blocDureeCases: groupe.blocDureeCases,
+           blocDureeCases: groupe.blocDureeCases,
           volumeHebdomadaire: groupe.hoursPerWeek,
           nbOccurrencesHebdomadaires: nbSeances,
           categorieJoursDistincts: calculerCategorieJoursDistincts(groupe.subjectName),

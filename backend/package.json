@@ -16,6 +16,8 @@
     "script:list-groq-models": "bun scripts/list-groq-models.ts",
     "script:audit-lv2": "bun scripts/migrate-lv2-subjects.ts",
     "script:remove-test-data": "bun scripts/remove-test-data.ts",
+    "seed:timetable-partial": "bun scripts/seed-timetable-partial-fixture.ts",
+    "seed:teaching-assignment-state": "bun scripts/seed-teaching-assignment-state.ts",
     "script:seed-minesec": "bun scripts/seed-minesec-template.ts",
     "script:seed-week4": "bun scripts/seed-week4.ts",
     "test": "bun test",

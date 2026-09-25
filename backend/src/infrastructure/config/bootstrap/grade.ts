@@ -6,9 +6,14 @@ import { AttendanceController } from '@infrastructure/http/controllers/Attendanc
 import { AIActionAuditAdapter } from '@infrastructure/services/ai/AIActionAuditAdapter';
 import { TimetableController } from '@infrastructure/http/controllers/TimetableController';
 import { TimetableAutoController } from '@infrastructure/http/controllers/TimetableAutoController';
+import { ProposerEmploisDuTempsGlobalUseCase } from '@application/timetable/ProposerEmploisDuTempsGlobalUseCase';
+import { AppliquerLotEmploiDuTempsUseCase } from '@application/timetable/AppliquerLotEmploiDuTempsUseCase';
+import { PrismaTimetableGenerationRunRepository } from '@infrastructure/persistence/prisma/PrismaTimetableGenerationRunRepository';
+import { PrismaTimetableGenerationTargetProvider } from '@infrastructure/persistence/prisma/PrismaTimetableGenerationTargetProvider';
 import { creerGradeRoutes } from '@infrastructure/http/routes/grade.routes';
 import { creerAttendanceRoutes } from '@infrastructure/http/routes/attendance.routes';
 import { creerTimetableRoutes } from '@infrastructure/http/routes/timetable.routes';
+import { LIMITE_AP_HEURES } from '@domain/rules/CapaciteEmploiDuTemps';
 import { requireAuth, requirePermission, requireRole } from '../../http/middlewares/auth';
 
 type Container = ReturnType<typeof creerContainer>;
@@ -47,6 +52,19 @@ export function registerGradeRoutes(app: Application, prismaParam: typeof prisma
     new AIActionAuditAdapter(p),
   );
 
+  const timetableGenerationRuns = new PrismaTimetableGenerationRunRepository(p as any);
+  const timetableGenerationTargets = new PrismaTimetableGenerationTargetProvider(p as any);
+  const timetableGenerationGlobal = new ProposerEmploisDuTempsGlobalUseCase(
+    timetableGenerationTargets,
+    timetableGenerationRuns,
+    c.timetable.proposerEmploiDuTemps,
+    c.timetable.genererSquelette,
+  );
+  const timetableApplyAll = new AppliquerLotEmploiDuTempsUseCase(
+    c.timetable.timetableRepository,
+    c.timetable.proposerEmploiDuTemps,
+  );
+
   const timetableController = new TimetableController(
     c.timetable.creer,
      c.timetable.ajouterCreneau,
@@ -61,10 +79,13 @@ export function registerGradeRoutes(app: Application, prismaParam: typeof prisma
     c.timetable.demanderRattrapage,
     c.timetable.genererSeancesGroupe,
     c.timetable.proposerEmploiDuTemps,
-    c.timetable.appliquerProposition,
-    c.timetable.simulerEmploiDuTemps,
-    c.events.publisher,
-  );
+     c.timetable.appliquerProposition,
+     c.timetable.simulerEmploiDuTemps,
+      c.events.publisher,
+      timetableApplyAll,
+      timetableGenerationGlobal,
+      timetableGenerationRuns,
+   );
 
   app.post('/api/v2/timetables/generate-skeleton', requireAuth, requireRole('STAFF'), requirePermission('MANAGE_TIMETABLE'), async (req, res, next) => {
     try {
@@ -181,7 +202,7 @@ export function registerGradeRoutes(app: Application, prismaParam: typeof prisma
           });
           const dureePeriode = (await p.timetableGridConfig.findUnique({ where: { schoolId }, select: { dureePeriode: true } }))?.dureePeriode ?? 55;
           const heuresTotal = (slotsAP + 1) * dureePeriode / 60;
-          if (heuresTotal > 14) {
+          if (heuresTotal > LIMITE_AP_HEURES) {
             res.status(409).json({ success: false, code: 'VOLUME_AP_DEPASSE', message: `Cet Animateur Pédagogique aurait ${heuresTotal.toFixed(1)}h/semaine, dépassant la limite légale de 14h.` }); return;
           }
         }

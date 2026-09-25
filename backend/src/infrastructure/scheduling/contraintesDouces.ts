@@ -33,6 +33,10 @@ import {
   POIDS_DESEQUILIBRE,
   POIDS_VOLUME_JOUR,
   POIDS_TEMPS_LIBRES_CONSECUTIFS,
+  POIDS_TEMPS_LIBRES_INTERNE,
+  POIDS_TEMPS_LIBRES_DEBUT_JOURNEE,
+  POIDS_TEMPS_LIBRES_FIN_JOURNEE,
+  POIDS_TEMPS_LIBRES_MAX_JOUR,
 } from '@domain/ports/services/SchedulingSolverPort';
 import { exigeDeuxJours } from '@domain/rules/ReglesPedagogiquesEmploiDuTemps';
 import { modeliserReglesPedagogiques } from '@infrastructure/scheduling/reglesPedagogiques';
@@ -87,6 +91,13 @@ export function modeliserContraintesDouces(args: {
     ? penaliteTempsLibresConsecutifs(model, occupation!, parJour, grille)
     : [];
 
+  if (options?.interdireTempsLibresConsecutifs && occupation) {
+    termes.push(...penaliteTempsLibresPosition(model, occupation, parJour));
+  }
+  if (options?.maxTempsLibresParJour != null && occupation) {
+    termes.push(...penaliteTempsLibresMax(model, occupation, parJour, options.maxTempsLibresParJour));
+  }
+
   if (!options) return termes;
 
   const poids = options.poids ?? {};
@@ -116,6 +127,40 @@ function construireCasesOccupees(model: CpModel, y: (BoolVar | null)[][], nbCase
     model.addEquality(variable, vars.length === 0 ? 0 : weightedSum(vars, vars.map(() => 1)));
     return variable;
   });
+}
+
+function penaliteTempsLibresPosition(model: CpModel, occupation: BoolVar[], parJour: Map<number, number[]>): TermeObjectif[] {
+  const termes: TermeObjectif[] = [];
+  for (const cases of parJour.values()) {
+    for (const [index, caseIdx] of cases.entries()) {
+      const libre = model.newBoolVar(`temps_libre_position_${caseIdx}`);
+      model.addEquality(libre, occupation[caseIdx]!.not());
+      const poids = index === 0 ? POIDS_TEMPS_LIBRES_DEBUT_JOURNEE : index === cases.length - 1 ? POIDS_TEMPS_LIBRES_FIN_JOURNEE : POIDS_TEMPS_LIBRES_INTERNE;
+      termes.push({ terme: libre, coeff: -poids });
+    }
+  }
+  return termes;
+}
+
+function penaliteTempsLibresMax(model: CpModel, occupation: BoolVar[], parJour: Map<number, number[]>, maximum: number): TermeObjectif[] {
+  const termes: TermeObjectif[] = [];
+  for (const cases of parJour.values()) {
+    const variablesLibres = cases.map(caseIdx => {
+      const variable = model.newBoolVar(`temps_libre_max_${caseIdx}`);
+      model.addEquality(variable, occupation[caseIdx]!.not());
+      return variable;
+    });
+    const count = model.newIntVar(0, cases.length, `temps_libre_count_${cases[0]}`);
+    model.addEquality(count, weightedSum(variablesLibres, variablesLibres.map(() => 1)));
+    const capacity = cases.length;
+    for (let k = maximum + 1; k <= capacity; k++) {
+      const over = model.newBoolVar(`temps_libre_over_${k}_${cases[0]}`);
+      model.addLinearConstraint(weightedSum([count, over], [1, -capacity]), k - capacity, 1e9);
+      model.addLinearConstraint(weightedSum([count, over], [1, -capacity]), -1e9, k - 1);
+      termes.push({ terme: over, coeff: -POIDS_TEMPS_LIBRES_MAX_JOUR });
+    }
+  }
+  return termes;
 }
 
 function penaliteTempsLibresConsecutifs(

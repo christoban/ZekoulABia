@@ -1,4 +1,5 @@
 import { CreneauHoraire } from '@domain/entities/CreneauHoraire';
+import { LIMITE_AP_HEURES } from '@domain/rules/CapaciteEmploiDuTemps';
 import type { TimetableRepository } from '@domain/ports/repositories/TimetableRepository';
 import { VolumeHoraireAPError } from '@domain/errors/VolumeHoraireAPError';
 import type { SlotKind } from '@domain/types/enums';
@@ -24,7 +25,6 @@ export interface AjouterCreneauResultat {
   creneauId: string;
 }
 
-const LIMITE_AP_HEURES = 14;
 const JOURS = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'] as const;
 
 export class AjouterCreneauUseCase {

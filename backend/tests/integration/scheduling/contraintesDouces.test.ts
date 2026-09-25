@@ -193,7 +193,7 @@ describe('Contraintes douces V2.5 — effet réel sur les séances', () => {
 
   it('T6 — limite de deux temps libres par jour', async () => {
     const fixture = { exigences: exigences(5), grille: grille(1, 8) };
-    const resultat = await adapter.proposer(input({ ...fixture, contraintes: { maxTempsLibresParJour: 2 } }));
+    const resultat = await adapter.proposer(input({ ...fixture, reglesPedagogiquesDures: true, contraintes: { maxTempsLibresParJour: 2 } }));
 
     expect(resultat.statut).toBe('INFAISABLE');
   });

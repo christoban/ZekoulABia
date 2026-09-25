@@ -1,4 +1,5 @@
 import { CreneauHoraire } from '@domain/entities/CreneauHoraire';
+import { LIMITE_AP_HEURES } from '@domain/rules/CapaciteEmploiDuTemps';
 import type { TimetableRepository } from '@domain/ports/repositories/TimetableRepository';
 import { VolumeHoraireAPError } from '@domain/errors/VolumeHoraireAPError';
 import type { SlotKind } from '@domain/types/enums';
@@ -19,8 +20,6 @@ export interface ModifierCreneauCommande {
   isLV2Slot?: boolean;
   isElectiveSlot?: boolean;
 }
-
-const LIMITE_AP_HEURES = 14;
 
 export class ModifierCreneauUseCase {
   constructor(private readonly timetableRepository: TimetableRepository) {}

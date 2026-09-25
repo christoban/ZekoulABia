@@ -200,38 +200,61 @@ export class PrismaTimetableRepository implements TimetableRepository {
 
   // --- Scheduling Engine (V2.5) ---
 
-  async findOccupationEcole(schoolId: string, academicYearId: string, excludeTimetableId?: string): Promise<CreneauOccupe[]> {
-    const slots = await this.prisma.timetableSlot.findMany({ where: { kind: 'CLASS', timetable: { schoolId, academicYearId, ...(excludeTimetableId && { id: { not: excludeTimetableId } }) } }, select: this.occupationSelect });
+  async findOccupationEcole(schoolId: string, academicYearId: string, excludeTimetableId?: string | string[]): Promise<CreneauOccupe[]> {
+    const excluded = excludeTimetableId ? (Array.isArray(excludeTimetableId) ? excludeTimetableId : [excludeTimetableId]) : [];
+    const slots = await this.prisma.timetableSlot.findMany({ where: { kind: 'CLASS', timetable: { schoolId, academicYearId, ...(excluded.length > 0 && { id: { notIn: excluded } }) } }, select: this.occupationSelect });
     return slots.map(s => ({ teacherId: s.teacherId ?? undefined, roomId: s.roomId ?? undefined, dayOfWeek: s.dayOfWeek, startTime: s.startTime, endTime: s.endTime }));
   }
 
   async creerCreneauxEnLot(timetableId: string, schoolId: string, creneaux: CreneauALoter[], options?: { verifierConflits?: boolean; remplacerLignesGerees?: boolean }): Promise<{ creneauxCrees: number }> {
-    const verifierConflits = options?.verifierConflits ?? true;
-    return this.prisma.$transaction(async (tx) => {
-      if (options?.remplacerLignesGerees) {
-        await tx.timetableSlot.deleteMany({
-          where: {
-            timetableId,
-            kind: 'CLASS',
-             AND: [{ subGroupId: null }],
-             OR: [
-               { managedBySolver: true },
-               { groupId: { not: null } },
-               ...creneaux.map(c => ({ AND: [{ subjectId: null, teacherId: null }, { dayOfWeek: c.dayOfWeek, startTime: c.startTime, endTime: c.endTime }] })),
-             ],
-          },
-        });
-      }
-      for (const seance of creneaux) {
-        const creneau = CreneauHoraire.create({ timetableId, subjectId: seance.subjectId, teacherId: seance.teacherId, teacherNom: verifierConflits && seance.teacherId ? await this.nomEnseignant(tx, seance.teacherId) : undefined, dayOfWeek: seance.dayOfWeek, startTime: seance.startTime, endTime: seance.endTime, roomId: seance.roomId, roomNom: verifierConflits && seance.roomId ? await this.nomSalle(tx, seance.roomId) : undefined,          groupId: seance.groupId, isLV2Slot: seance.isLV2Slot, kind: seance.kind ?? 'CLASS' });
-        if (verifierConflits) {
-          if (seance.teacherId) creneau.verifierConflitEnseignant(await this.conflitsEnseignant(tx, seance.teacherId, seance.dayOfWeek, schoolId));
-          if (seance.roomId) creneau.verifierConflitSalle(await this.conflitsSalle(tx, seance.roomId, seance.dayOfWeek, schoolId));
-        }
-        await tx.timetableSlot.create({ data: this.slotLotData(creneau.toObject(), options?.remplacerLignesGerees ?? false) });
-      }
-      return { creneauxCrees: creneaux.length };
+    return this.prisma.$transaction(async tx => {
+      await this.validerTimetableEcole(tx, timetableId, schoolId);
+      return this.ecrireCreneauxLot(tx, timetableId, schoolId, creneaux, options);
     });
+  }
+
+  async appliquerCreneauxLotsEnAtomique(schoolId: string, lots: Array<{ timetableId: string; creneaux: CreneauALoter[] }>): Promise<{ creneauxCrees: number }> {
+    return this.prisma.$transaction(async tx => {
+      for (const lot of lots) await this.validerTimetableEcole(tx, lot.timetableId, schoolId);
+      let creneauxCrees = 0;
+      for (const lot of lots) {
+        const resultat = await this.ecrireCreneauxLot(tx, lot.timetableId, schoolId, lot.creneaux, { remplacerLignesGerees: true });
+        creneauxCrees += resultat.creneauxCrees;
+      }
+      return { creneauxCrees };
+    }, { timeout: 120_000, maxWait: 10_000 });
+  }
+
+  private async validerTimetableEcole(tx: TxClient, timetableId: string, schoolId: string): Promise<void> {
+    const timetable = await tx.timetable.findFirst({ where: { id: timetableId, schoolId }, select: { id: true } });
+    if (!timetable) throw new Error('Emploi du temps introuvable pour cette école');
+  }
+
+  private async ecrireCreneauxLot(tx: TxClient, timetableId: string, schoolId: string, creneaux: CreneauALoter[], options?: { verifierConflits?: boolean; remplacerLignesGerees?: boolean }): Promise<{ creneauxCrees: number }> {
+    const verifierConflits = options?.verifierConflits ?? true;
+    if (options?.remplacerLignesGerees) {
+      await tx.timetableSlot.deleteMany({
+        where: {
+          timetableId,
+          kind: 'CLASS',
+          AND: [{ subGroupId: null }],
+          OR: [
+            { managedBySolver: true },
+            { groupId: { not: null } },
+            ...creneaux.map(c => ({ AND: [{ subjectId: null, teacherId: null }, { dayOfWeek: c.dayOfWeek, startTime: c.startTime, endTime: c.endTime }] })),
+          ],
+        },
+      });
+    }
+    for (const seance of creneaux) {
+      const creneau = CreneauHoraire.create({ timetableId, subjectId: seance.subjectId, teacherId: seance.teacherId, teacherNom: verifierConflits && seance.teacherId ? await this.nomEnseignant(tx, seance.teacherId) : undefined, dayOfWeek: seance.dayOfWeek, startTime: seance.startTime, endTime: seance.endTime, roomId: seance.roomId, roomNom: verifierConflits && seance.roomId ? await this.nomSalle(tx, seance.roomId) : undefined, groupId: seance.groupId, isLV2Slot: seance.isLV2Slot, kind: seance.kind ?? 'CLASS' });
+      if (verifierConflits) {
+        if (seance.teacherId) creneau.verifierConflitEnseignant(await this.conflitsEnseignant(tx, seance.teacherId, seance.dayOfWeek, schoolId));
+        if (seance.roomId) creneau.verifierConflitSalle(await this.conflitsSalle(tx, seance.roomId, seance.dayOfWeek, schoolId));
+      }
+      await tx.timetableSlot.create({ data: this.slotLotData(creneau.toObject(), options?.remplacerLignesGerees ?? false) });
+    }
+    return { creneauxCrees: creneaux.length };
   }
 
   private async conflitsEnseignant(tx: TxClient, teacherId: string, dayOfWeek: number, schoolId: string): Promise<CreneauConflitInfo[]> {
@@ -335,11 +358,30 @@ export class PrismaTimetableRepository implements TimetableRepository {
   }
 
   async findAffectationsSolver(classId: string, schoolId: string, includeGrouped = false): Promise<AffectationSolver[]> {
+    const classe = await this.prisma.class.findFirst({ where: { id: classId, schoolId }, select: { level: true } });
     const subjectFilter = includeGrouped
       ? { restrictedToGroupId: null }
       : { restrictedToGroupId: null, studentGroups: { none: {} } };
-    const affectations = await (this.prisma.teachingAssignment.findMany as any)({ where: { classId, schoolId, subject: subjectFilter }, select: this.affectationSelect });
-    return affectations.map(a => ({ teacherId: a.teacherId, subjectId: a.subjectId, subjectType: a.subject.subjectType, hoursPerWeek: a.subject.hoursPerWeek, name: a.subject.name, blocDureeCases: a.subject.blocDureeCases }));
+    const affectations = await (this.prisma.teachingAssignment.findMany as any)({
+      where: { classId, schoolId, subject: subjectFilter },
+      select: {
+        ...this.affectationSelect,
+        subject: {
+          select: {
+            subjectType: true,
+            hoursPerWeek: true,
+            name: true,
+            blocDureeCases: true,
+            subjectCoefficients: {
+              where: { schoolId, classLevel: classe?.level ?? '', serieCode: null },
+              select: { weeklyPeriods: true },
+              take: 1,
+            },
+          },
+        },
+      },
+    });
+    return affectations.map(a => ({ teacherId: a.teacherId, subjectId: a.subjectId, subjectType: a.subject.subjectType, hoursPerWeek: a.subject.hoursPerWeek, weeklyPeriods: a.subject.subjectCoefficients[0]?.weeklyPeriods ?? null, name: a.subject.name, blocDureeCases: a.subject.blocDureeCases }));
   }
 
   async findNomsEnseignants(teacherIds: string[]): Promise<NomEnseignant[]> {

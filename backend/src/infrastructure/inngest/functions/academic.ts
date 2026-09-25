@@ -26,7 +26,12 @@ import { VerifierEvenementsAcademiquesUseCase } from "@application/academicEvent
 import { VerifierOrientationCheckpointsUseCase } from "@application/orientation/VerifierOrientationCheckpointsUseCase";
 import { DetecterPatternSuspicieuxUseCase } from "@application/ai/DetecterPatternSuspicieuxUseCase";
 import { PrismaAIActionAuditQueryAdapter } from "../../persistence/prisma/PrismaAIActionAuditQueryAdapter";
+import { ProposerEmploisDuTempsGlobalUseCase } from '@application/timetable/ProposerEmploisDuTempsGlobalUseCase';
+import { PrismaTimetableGenerationRunRepository } from '../../persistence/prisma/PrismaTimetableGenerationRunRepository';
+import { PrismaTimetableGenerationTargetProvider } from '../../persistence/prisma/PrismaTimetableGenerationTargetProvider';
+import { creerContainer } from '@infrastructure/config/container';
 import { NodemailerEmailService } from "@infrastructure/services/email/NodemailerEmailService";
+import { setWorkerBridgeEnabled } from 'or-tools-wasm/cp-sat';
 
 const lv2ChoiceRepository = new PrismaLv2ChoiceRepository(prisma);
 const anneeRepository = new PrismaAnneeAcademiqueRepository(prisma);
@@ -197,6 +202,35 @@ export const generateAllTimetableSkeletons = inngest.createFunction(
       }
       return { schoolId, total: classes.length, created, existing, errors };
     });
+  },
+);
+
+export const proposeTimetablesGlobally = inngest.createFunction(
+  { id: "Propose-Timetables-Globally", triggers: [{ event: "timetable/generation.requested" }] },
+  async ({ event, step }) => {
+    const { runId, schoolId } = event.data as { runId: string; schoolId: string };
+    setWorkerBridgeEnabled(true);
+    const runs = new PrismaTimetableGenerationRunRepository(prisma);
+    const run = await runs.findById(runId, schoolId);
+    if (!run) return { runId, status: "NOT_FOUND" };
+    const targets = ((run.progress as { targets?: { classId: string }[] } | null)?.targets ?? []);
+    const container = creerContainer();
+    const targetsProvider = new PrismaTimetableGenerationTargetProvider(prisma);
+    const useCase = new ProposerEmploisDuTempsGlobalUseCase(
+      targetsProvider,
+      runs,
+      container.timetable.proposerEmploiDuTemps,
+      container.timetable.genererSquelette,
+    );
+    await runs.markRunning(runId, schoolId);
+    for (const target of targets) {
+      const resultat = await step.run(`propose-${target.classId}`, async () => useCase.processClass(runId, target.classId, schoolId));
+      if (resultat.status === "CANCELLED") break;
+    }
+    const current = await runs.findById(runId, schoolId);
+    if (current?.status === "CANCELLED") return { runId, status: "CANCELLED" };
+    await runs.markFinished(runId, schoolId, current?.status === "PARTIAL" ? "PARTIAL" : "COMPLETED");
+    return { runId, status: (await runs.findById(runId, schoolId))?.status ?? "UNKNOWN" };
   },
 );
 

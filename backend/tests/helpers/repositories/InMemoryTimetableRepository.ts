@@ -231,6 +231,18 @@ export class InMemoryTimetableRepository implements TimetableRepository {
     return { creneauxCrees: aInserer.length };
   }
 
+  async appliquerCreneauxLotsEnAtomique(
+    _schoolId: string,
+    lots: Array<{ timetableId: string; creneaux: CreneauALoter[] }>
+  ): Promise<{ creneauxCrees: number }> {
+    let total = 0;
+    for (const lot of lots) {
+      const resultat = await this.creerCreneauxEnLot(lot.timetableId, _schoolId, lot.creneaux, { remplacerLignesGerees: true });
+      total += resultat.creneauxCrees;
+    }
+    return { creneauxCrees: total };
+  }
+
   // --- Lectures solveur (no-op par défaut — les tests concernés stubent ce qu'ils exercent) ---
 
   async getGridConfig(_schoolId: string) { return null; }

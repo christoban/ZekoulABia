@@ -37,6 +37,7 @@ import {
   purgeAnnoncesExpirees,
   purgeSchoolLogs,
   handleTimetableSeancesAppliquees,
+  proposeTimetablesGlobally,
 } from "./infrastructure/inngest/functions/functions.ts";
 import { syncCarteScolaire, relancePaiements, auditMatricules } from "./infrastructure/inngest/functions/paiementJobs.ts";
 import { relanceOnboarding } from "./infrastructure/inngest/functions/eleveOnboardingJobs.ts";
@@ -178,6 +179,7 @@ app.use(
       purgeAnnoncesExpirees,
       purgeSchoolLogs,
       handleTimetableSeancesAppliquees,
+      proposeTimetablesGlobally,
       syncCarteScolaire,
       relancePaiements,
       auditMatricules,

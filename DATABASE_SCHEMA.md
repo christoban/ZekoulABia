@@ -12,7 +12,7 @@
 |---|---|---|
 | **SchoolGroup** | Groupe d'écoles | id, name, ownerId, planTier |
 | **SchoolGroupOwner** | Propriétaire du groupe | id, email, passwordHash, name, mfaEnabled |
-| **School** | Établissement (racine du tenant) | id, name, subdomain, type, plan, status, subsystem, educationType, ownership, features |
+| **School** | Établissement (racine du tenant) | id, name, subdomain, type, plan, status, subsystem, educationType, ownership, features, defaultMaxWeeklyHours |
 | **SchoolInvite** | Invitation à la plateforme | id, email, token, status, expiresAt |
 | **GroupTransferRequest** | Transfert inter-école dans un groupe | id, groupId, type, sourceSchoolId, targetSchoolId, status |
 
@@ -47,7 +47,7 @@
 | **User** | Personne dans le système | firstName, lastName, email, phone, role, isActive, accessMode |
 | **UserArchive** | Archive d'un user supprimé | originalUserId, snapshot (JSON) |
 | **StudentProfile** | Données spécifiques élève | matricule, dateOfBirth, gender, healthScore, photoUrl |
-| **TeacherProfile** | Données spécifiques enseignant | specialization[], supervisedSubjectIds[] |
+| **TeacherProfile** | Données spécifiques enseignant | specialization[], supervisedSubjectIds[], maxWeeklyHours |
 | **ParentProfile** | Données spécifiques parent | (vide — extension de User) |
 | **StaffProfile** | Personnel administratif | title, sectionId |
 
@@ -85,7 +85,7 @@
 |---|---|
 | **Subject** | Matière enseignée (name, coefficient, subjectType, isLV2) |
 | **TeacherSubject** | Join enseignant ↔ matière |
-| **TeachingAssignment** | Affectation enseignant-matière-classe-année |
+| **TeachingAssignment** | Affectation enseignant-matière-classe-année | source, createdAt |
 | **TeacherUnavailability** | Indisponibilité hebdomadaire enseignant |
 | **Lv2ChoiceWindow** | Fenêtre de choix LV2 |
 | **Lv2ChoiceSubmission** | Choix LV2 d'un élève |
@@ -139,12 +139,13 @@
 
 ---
 
-### 11. Emploi du temps (3 tables)
+### 11. Emploi du temps (4 tables)
 
 | Table | Rôle |
-|---|---|
+|---|---|---|
 | **Timetable** | Container emploi du temps | status (DRAFT/PUBLISHED), generatedByAI |
 | **TimetableSlot** | Créneau horaire | dayOfWeek, startTime, endTime, kind (CLASS/BREAK/ACTIVITY) |
+| **TimetableGenerationRun** | Run asynchrone de génération globale EDT | status, requestedById, progress/results (JSON), preflightReport, budgetSeconds, heartbeatAt |
 | **Room** | Salle physique | name, type (NORMAL/LABORATORY/…), capacity, equipment |
 
 ---

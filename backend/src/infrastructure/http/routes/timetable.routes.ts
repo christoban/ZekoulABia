@@ -5,6 +5,9 @@ import { requireAuth, requirePermission, requireRole } from '../middlewares/auth
 export function creerTimetableRoutes(controller: TimetableController): Router {
   const router = Router();
 
+  router.post('/propose-all', requireAuth, requireRole('STAFF'), requirePermission('MANAGE_TIMETABLE'), controller.proposeAll);
+  router.get('/generation-runs/:runId', requireAuth, requirePermission('MANAGE_TIMETABLE'), controller.getGenerationRun);
+  router.post('/generation-runs/:runId/cancel', requireAuth, requireRole('STAFF'), requirePermission('MANAGE_TIMETABLE'), controller.cancelGenerationRun);
   router.post('/manual', requireAuth, requireRole('STAFF'), requirePermission('MANAGE_TIMETABLE'), controller.creerManuel);
   router.post('/catchup-requests', requireAuth, requireRole('TEACHER'), controller.demanderCours);
   router.post('/:id/slots', requireAuth, requireRole('STAFF'), requirePermission('MANAGE_TIMETABLE'), controller.ajouterSlot);
@@ -14,6 +17,7 @@ export function creerTimetableRoutes(controller: TimetableController): Router {
   router.post('/:id/generate-group-sessions', requireAuth, requireRole('STAFF'), requirePermission('MANAGE_TIMETABLE'), controller.genererSeancesGroupe);
   // Scheduling Engine V2.5 — le solveur propose, le staff applique après validation.
   router.post('/:id/propose-schedule', requireAuth, requireRole('STAFF'), requirePermission('MANAGE_TIMETABLE'), controller.proposerEDT);
+  router.post('/apply-all', requireAuth, requireRole('STAFF'), requirePermission('MANAGE_TIMETABLE'), controller.appliquerLotEDT);
   router.post('/:id/apply-schedule', requireAuth, requireRole('STAFF'), requirePermission('MANAGE_TIMETABLE'), controller.appliquerPropositionEDT);
   // What-if (V2.5) — simule sans écrire.
   router.post('/:id/what-if', requireAuth, requireRole('STAFF'), requirePermission('MANAGE_TIMETABLE'), controller.simulerEDT);

@@ -13,6 +13,7 @@ import type { DemanderRattrapageUseCase } from '@application/timetable/DemanderR
 import type { GenererSeancesGroupeUseCase } from '@application/timetable/GenererSeancesGroupeUseCase';
 import type { ProposerEmploiDuTempsUseCase } from '@application/timetable/ProposerEmploiDuTempsUseCase';
 import type { AppliquerPropositionEmploiDuTempsUseCase } from '@application/timetable/AppliquerPropositionEmploiDuTempsUseCase';
+import type { AppliquerLotEmploiDuTempsUseCase } from '@application/timetable/AppliquerLotEmploiDuTempsUseCase';
 import type { SimulerEmploiDuTempsUseCase } from '@application/timetable/SimulerEmploiDuTempsUseCase';
 import type { SimulationEmploiDuTemps } from '@application/timetable/SimulerEmploiDuTempsUseCase';
 import type { SeanceGroupeProposee, SeanceProposee, ContraintesDoucesOptions } from '@domain/ports/services/SchedulingSolverPort';
@@ -20,10 +21,13 @@ import { ConflitHoraireError } from '@domain/errors/ConflitHoraireError';
 import { ConflitSalleError } from '@domain/errors/ConflitSalleError';
 import { VolumeHoraireAPError } from '@domain/errors/VolumeHoraireAPError';
 import { prisma } from '@infrastructure/persistence/prisma/prisma.client';
+import { inngest } from '@infrastructure/inngest/client/index.ts';
 import { resolveLanguage } from '../../../domain/policies/LanguagePolicy';
 import { journaliserActionIA } from '@infrastructure/services/ai/AIActionAuditLogger';
 import { logActivity } from '../../services/audit/ActivityLogService';
 import type { EventPublisher } from '@domain/ports/services/EventPublisher';
+import type { ProposerEmploisDuTempsGlobalUseCase } from '@application/timetable/ProposerEmploisDuTempsGlobalUseCase';
+import type { TimetableGenerationRunRepository } from '@domain/ports/repositories/TimetableGenerationRunRepository';
 
 /** Schéma Zod des contraintes douces V2.5 — .strict() : toute clé inconnue → 400. */
 const contraintesSchema = z.object({
@@ -72,8 +76,61 @@ export class TimetableController {
     private readonly proposerEmploiDuTemps: ProposerEmploiDuTempsUseCase,
     private readonly appliquerProposition: AppliquerPropositionEmploiDuTempsUseCase,
     private readonly simulerEmploiDuTemps: SimulerEmploiDuTempsUseCase,
-    private readonly eventPublisher?: EventPublisher,
-  ) {}
+      private readonly eventPublisher?: EventPublisher,
+      private readonly appliquerLot?: AppliquerLotEmploiDuTempsUseCase,
+      private readonly globalGeneration?: ProposerEmploisDuTempsGlobalUseCase,
+     private readonly generationRuns?: TimetableGenerationRunRepository,
+   ) {}
+
+  proposeAll = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!this.globalGeneration) {
+        res.status(503).json({ success: false, message: 'Génération globale indisponible' });
+        return;
+      }
+      const { academicYearId, classIds } = req.body as { academicYearId?: string; classIds?: string[] };
+      if (!academicYearId) {
+        res.status(400).json({ success: false, message: 'academicYearId requis' });
+        return;
+      }
+      const run = await this.globalGeneration.lancer(req.user!.schoolId, academicYearId, req.user!.userId, classIds);
+      void inngest.send({ name: 'timetable/generation.requested', data: { schoolId: req.user!.schoolId, runId: run.runId } }).catch(() => {});
+      res.status(202).json({ success: true, data: run });
+    } catch (error) {
+      this.gererErreur(error, res, next);
+    }
+  };
+
+  getGenerationRun = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!this.generationRuns) {
+        res.status(503).json({ success: false, message: 'Suivi de génération indisponible' });
+        return;
+      }
+      await this.generationRuns.failStale(req.user!.schoolId, new Date(Date.now() - 5 * 60 * 1000));
+      const run = await this.generationRuns.findById(req.params['runId'] as string, req.user!.schoolId);
+      if (!run) {
+        res.status(404).json({ success: false, message: 'Run de génération introuvable' });
+        return;
+      }
+      res.json({ success: true, data: run });
+    } catch (error) {
+      this.gererErreur(error, res, next);
+    }
+  };
+
+  cancelGenerationRun = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!this.generationRuns) {
+        res.status(503).json({ success: false, message: 'Annulation indisponible' });
+        return;
+      }
+      await this.generationRuns.markCancelled(req.params['runId'] as string, req.user!.schoolId);
+      res.json({ success: true, message: 'Annulation demandée' });
+    } catch (error) {
+      this.gererErreur(error, res, next);
+    }
+  };
 
   creerManuel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -344,6 +401,53 @@ export class TimetableController {
     }
   };
 
+  appliquerLotEDT = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!this.appliquerLot) {
+        res.status(503).json({ success: false, message: 'Application globale indisponible' });
+        return;
+      }
+      const { propositions } = req.body as { propositions?: Array<{ timetableId: string; seances: SeanceProposee[]; seancesGroupes?: SeanceGroupeProposee[] }> };
+      if (!Array.isArray(propositions) || propositions.length === 0) {
+        res.status(400).json({ success: false, message: 'propositions[] requis' });
+        return;
+      }
+      const resultat = await this.appliquerLot.execute({ schoolId: req.user.schoolId, propositions });
+      journaliserActionIA(prisma, {
+        actorUserId: req.user.userId,
+        actorRole: req.user.role,
+        schoolId: req.user.schoolId,
+        actionName: 'appliquer_lot_emploi_du_temps',
+        targetType: 'TimetableBatch',
+        origin: 'UI_DIRECT',
+        outcome: 'SUCCES',
+        parametersSummary: { timetableIds: propositions.map(item => item.timetableId), creneauxCrees: resultat.creneauxCrees },
+      });
+      for (const proposition of propositions) {
+        void this.eventPublisher?.emit('timetable/seances.appliquees', {
+          schoolId: req.user.schoolId,
+          timetableId: proposition.timetableId,
+          nbSeances: proposition.seances.length + (proposition.seancesGroupes?.length ?? 0),
+          seances: proposition.seances,
+          seancesGroupes: proposition.seancesGroupes,
+        } as unknown as Record<string, unknown>)?.catch((error) => console.error('[TimetableController] Échec envoi timetable/seances.appliquees:', (error as Error).message));
+      }
+      res.status(201).json({ success: true, data: resultat });
+    } catch (error) {
+      journaliserActionIA(prisma, {
+        actorUserId: req.user?.userId,
+        actorRole: req.user?.role,
+        schoolId: req.user?.schoolId,
+        actionName: 'appliquer_lot_emploi_du_temps',
+        targetType: 'TimetableBatch',
+        origin: 'UI_DIRECT',
+        outcome: 'ERREUR',
+        refusalReason: error instanceof Error ? error.message : undefined,
+      });
+      this.gererErreur(error, res, next);
+    }
+  };
+
   // POST /timetables/:id/what-if — simule une modification SANS rien écrire.
   simulerEDT = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -419,6 +523,10 @@ export class TimetableController {
       return;
     }
     if (error instanceof Error) {
+      if (error.message.includes('Génération globale déjà en cours')) {
+        res.status(409).json({ success: false, code: 'RUN_ACTIF', message: error.message });
+        return;
+      }
       if (error.message.includes('introuvable')) {
         res.status(404).json({ success: false, message: error.message });
         return;
@@ -438,6 +546,7 @@ export class TimetableController {
         error.message.includes('peut être rouvert') ||
         error.message.includes('Proposition vide') ||
         error.message.startsWith('Proposition invalide') ||
+        error.message.startsWith('Règle pédagogique bloquante') ||
         error.message.startsWith('Aucun')
       ) {
         res.status(422).json({ success: false, message: error.message });

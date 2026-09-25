@@ -146,8 +146,9 @@ model School {
   contractEnd                  DateTime?
   hasPEBSFrancophone           Boolean                       @default(false)
   hasPEBSAnglophone            Boolean                       @default(false)
-  adminGereInscriptions        Boolean                       @default(false)
-  adminGereFinances            Boolean                       @default(true)
+   adminGereInscriptions        Boolean                       @default(false)
+   adminGereFinances            Boolean                       @default(true)
+   defaultMaxWeeklyHours        Int?
   createdAt                    DateTime                      @default(now())
   updatedAt                    DateTime                      @updatedAt
   templateCode                 String?
@@ -729,6 +730,12 @@ enum MatriculeSource {
   SYNC_NIGHTLY
 }
 
+enum TeachingAssignmentSource {
+  MANUAL
+  GENERATED
+  UNKNOWN
+}
+
 // Choix individuel des matières A-Level par élève (max 5, min 3 — GCE Advanced Level).
 // Même philosophie que lv2SubjectId : la matière appartient à l'élève, pas à la classe.
 model StudentALevelSubject {
@@ -748,6 +755,7 @@ model TeacherProfile {
   userId               String           @unique
   specialization       String[]
   supervisedSubjectIds String[]         @default([])
+  maxWeeklyHours       Int?
   user                 User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   teacherSubjects      TeacherSubject[]
   teacherDepartments   TeacherDepartment[]
@@ -1224,6 +1232,8 @@ model TeachingAssignment {
   // Explicitement redondant avec classId → Class.academicYearId : conservé pour la clarté des
   // requêtes (filtrer par année sans jointure) et la résilience si le rôle de classId évolue.
   academicYearId String
+  source         TeachingAssignmentSource @default(UNKNOWN)
+  createdAt      DateTime?
 
   class        Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
   subject      Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
@@ -1632,6 +1642,28 @@ model Timetable {
 
   @@unique([schoolId, classId, academicYearId])
   @@index([schoolId, status])
+}
+
+model TimetableGenerationRun {
+  id             String    @id @default(cuid())
+  schoolId       String
+  academicYearId String
+  status         String    @default("PENDING")
+  requestedById  String
+  preflightReport Json?
+  results        Json?
+  progress       Json?
+  errorMessage   String?
+  budgetSeconds  Int       @default(600)
+  heartbeatAt    DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  startedAt      DateTime?
+  finishedAt     DateTime?
+  cancelledAt    DateTime?
+
+  @@index([schoolId, academicYearId, status])
+  @@index([schoolId, heartbeatAt])
 }
 
 model TimetableGridConfig {

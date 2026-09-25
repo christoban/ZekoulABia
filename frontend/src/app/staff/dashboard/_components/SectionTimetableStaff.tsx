@@ -66,7 +66,7 @@ interface BulkResult {
   classId: string
   className: string
   timetableId?: string
-  status: 'success' | 'error' | 'applied'
+  status: 'success' | 'error' | 'applied' | 'DEGRADE' | 'IGNORE_EDT_VERROUILLE' | 'NON_TRAITE' | 'ECHEC_TECHNIQUE'
   error?: string
   warnings: string[]
   proposal?: BulkProposal
@@ -209,82 +209,60 @@ export default function SectionTimetable({ onToast }: Props) {
 
   const handleProposeAll = async () => {
     if (classes.length === 0 || !window.confirm(t('timetable.bulkProposeConfirm'))) return
-    const errors: string[] = []
-    const warnings: string[] = []
-    const results: BulkResult[] = []
     setBulkResults([])
-    setBulkPropose({ current: 0, total: classes.length, className: '', errors, warnings })
-    for (const [index, classe] of classes.entries()) {
-      setBulkPropose({ current: index, total: classes.length, className: classe.name, errors: [...errors], warnings: [...warnings] })
-      try {
-        const listResponse = await fetchApi(`/api/v2/timetables?classId=${encodeURIComponent(classe.id)}`, { credentials: 'include' })
-        const listData = await lireReponseJson<{ data?: Timetable[] }>(listResponse)
-        let timetableId = listData.data?.[0]?.id
-        if (!timetableId) {
-          const skeletonResponse = await fetchApi('/api/v2/timetables/generate-skeleton', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ classId: classe.id }),
-          })
-          const skeletonData = await lireReponseJson<{ data?: { id?: string; timetableId?: string }; message?: string }>(skeletonResponse)
-          if (!skeletonResponse.ok && skeletonResponse.status !== 409) throw new Error(skeletonData.message || t('timetable.generationError'))
-          timetableId = skeletonData.data?.id ?? skeletonData.data?.timetableId
-        }
-        if (!timetableId) throw new Error(t('timetable.bulkNoTimetable'))
-        const proposalResponse = await fetchApi(`/api/v2/timetables/${timetableId}/propose-schedule`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({}),
-        })
-        const proposalData = await lireReponseJson<{ message?: string; data?: BulkProposal & { avertissements?: string[]; problemes?: string[] } }>(proposalResponse)
-        if (!proposalResponse.ok) throw new Error(proposalData.message || t('timetable.planning.proposeError'))
-        const classWarnings = [
-          ...(proposalData.data?.avertissements ?? []),
-          ...(proposalData.data?.problemes ?? []),
-        ].map(warning => `${classe.name} : ${warning}`)
-        warnings.push(...classWarnings)
-        results.push({ classId: classe.id, className: classe.name, timetableId, status: 'success', warnings: classWarnings, proposal: proposalData.data ? { seances: proposalData.data.seances ?? [], seancesGroupes: proposalData.data.seancesGroupes ?? [] } : undefined })
-      } catch (error) {
-        const message = error instanceof Error ? error.message : t('timetable.planning.proposeError')
-        errors.push(`${classe.name} : ${message}`)
-        results.push({ classId: classe.id, className: classe.name, status: 'error', error: message, warnings: [] })
+    setBulkPropose({ current: 0, total: classes.length, className: '', errors: [], warnings: [] })
+    try {
+      const response = await fetchApi('/api/v2/timetables/propose-all', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ academicYearId: classes[0]?.academicYearId }),
+      })
+      const data = await lireReponseJson<{ data?: { runId: string } }>(response)
+      if (!response.ok || !data.data?.runId) throw new Error(t('timetable.bulkProposeError'))
+      const terminal = new Set(['PARTIAL', 'COMPLETED', 'FAILED', 'CANCELLED'])
+      while (true) {
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        const runResponse = await fetchApi(`/api/v2/timetables/generation-runs/${data.data.runId}`, { credentials: 'include' })
+        const runData = await lireReponseJson<{ data?: { status: string; progress?: { current?: number; total?: number; className?: string }; results?: Array<Record<string, unknown>> } }>(runResponse)
+        if (!runResponse.ok || !runData.data) throw new Error(t('timetable.bulkProposeError'))
+        const progress = runData.data.progress
+        const rawResults = (runData.data.results ?? []).filter(item => typeof item.classId === 'string') as Array<{ classId: string; className: string; status: string; timetableId?: string; seances?: unknown[]; seancesGroupes?: unknown[]; occupation?: unknown[]; warnings?: string[]; error?: string; diagnostic?: Record<string, unknown>; durationMs?: number }>
+        setBulkResults(rawResults.map(item => {
+          const normalizedStatus: BulkResult['status'] = item.status === 'success' || item.status === 'SUCCESS_WITH_WARNINGS' ? 'success' : item.status === 'DEGRADE' ? 'DEGRADE' : item.status === 'IGNORE_EDT_VERROUILLE' ? 'IGNORE_EDT_VERROUILLE' : 'error'
+          return { classId: item.classId, className: item.className, timetableId: item.timetableId, status: normalizedStatus, warnings: item.warnings ?? [], error: item.error, proposal: item.seances ? { seances: item.seances, seancesGroupes: item.seancesGroupes ?? [] } : undefined }
+        }))
+        setBulkPropose({ current: progress?.current ?? 0, total: progress?.total ?? classes.length, className: progress?.className ?? '', errors: [], warnings: [] })
+        if (terminal.has(runData.data.status)) break
       }
-      setBulkResults([...results])
-      setBulkPropose({ current: index + 1, total: classes.length, className: classe.name, errors: [...errors], warnings: [...warnings] })
+      onToast(t('timetable.bulkProposeSuccess'), 'success')
+    } catch (error) {
+      onToast(error instanceof Error ? error.message : t('timetable.bulkProposeError'), 'error')
+    } finally {
+      setBulkPropose(null)
     }
-    setBulkPropose(null)
-    onToast(errors.length > 0 ? t('timetable.bulkProposePartial', { count: errors.length }) : t('timetable.bulkProposeSuccess'), errors.length > 0 ? 'info' : 'success')
   }
 
   const handleApplyAll = async () => {
-    const applicable = bulkResults.filter(result => result.status === 'success' && result.timetableId && result.proposal)
+    const applicable = bulkResults.filter(result => (result.status === 'success' || result.status === 'DEGRADE') && result.timetableId && result.proposal)
     if (applicable.length === 0 || !window.confirm(t('timetable.bulkApplyConfirm', { count: applicable.length }))) return
     setApplyingAll(true)
-    const appliedResults: BulkResult[] = []
-    for (const result of bulkResults) {
-      if (result.status !== 'success' || !result.timetableId || !result.proposal) {
-        appliedResults.push(result)
-        continue
-      }
-      try {
-        const response = await fetchApi(`/api/v2/timetables/${result.timetableId}/apply-schedule`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ seances: result.proposal.seances, seancesGroupes: result.proposal.seancesGroupes }),
-        })
-        const data = await lireReponseJson<{ message?: string }>(response)
-        if (!response.ok) throw new Error(data.message || t('timetable.planning.applyError'))
-        appliedResults.push({ ...result, status: 'applied' })
-      } catch (error) {
-        appliedResults.push({ ...result, status: 'error', error: error instanceof Error ? error.message : t('timetable.planning.applyError') })
-      }
-      setBulkResults([...appliedResults])
+    try {
+      const response = await fetchApi('/api/v2/timetables/apply-all', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ propositions: applicable.map(result => ({ timetableId: result.timetableId, seances: result.proposal!.seances, seancesGroupes: result.proposal!.seancesGroupes })) }),
+      })
+      const data = await lireReponseJson<{ message?: string }>(response)
+      if (!response.ok) throw new Error(data.message || t('timetable.planning.applyError'))
+      setBulkResults(bulkResults.map(result => applicable.includes(result) ? { ...result, status: 'applied' } : result))
+      onToast(t('timetable.bulkApplyDone'), 'success')
+    } catch (error) {
+      onToast(error instanceof Error ? error.message : t('timetable.planning.applyError'), 'error')
+    } finally {
+      setApplyingAll(false)
     }
-    setApplyingAll(false)
-    onToast(t('timetable.bulkApplyDone'), 'success')
   }
 
   const clearBulkResults = () => {

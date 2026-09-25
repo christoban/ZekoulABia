@@ -44,7 +44,7 @@
 **Objectif** : structurer l'école (classes, sous-groupes TP, matières, coefficients, enseignants).
 - **Fichiers** : `app/class/*`, `app/subject/*`, `app/teachingAssignment/*`, `ClasseController`, `SubjectController`, `TeachingAssignmentController`, `fe/.../SectionClasses.tsx`, `SectionSubjects.tsx`, `SectionAffectations.tsx`.
 - **Interactions** : prof principal, sous-groupes TP (`ClassSubGroup`), LV2/A-Level par élève (module `student`), coefficients par cycle/filière.
-- **Génération automatique des affectations** : algorithme glouton (moins chargé d'abord, plafond AP 14h), exclut LV2/groupes et le 2nd cycle FR sans volume horaire (`weeklyPeriods` null). Les matières non résolues sont persistées dans `TeachingAssignmentIssue`, notifiées aux gestionnaires et affichées dans le compteur du tableau de bord ; une affectation réussie les clôture. Bouton côté `SectionAffectations`.
+- **Génération automatique des affectations** : algorithme glouton déterministe (moins chargé d'abord), capacité hebdomadaire de la grille par enseignant, plafond optionnel `maxWeeklyHours` par enseignant puis `defaultMaxWeeklyHours` par établissement, plafond AP 14h ; les créneaux EDT déjà issus des affectations ne sont pas retranchés une seconde fois. Chaque ligne conserve sa provenance `MANUAL`/`GENERATED`/`UNKNOWN` et sa date de création. Exclut LV2/groupes et le 2nd cycle FR sans volume horaire (`weeklyPeriods` null). Les matières non résolues sont persistées dans `TeachingAssignmentIssue` avec le détail des charges/capacités, notifiées aux gestionnaires et affichées dans le compteur du tableau de bord ; une affectation réussie les clôture. Bouton côté `SectionAffectations`.
 
 ## 6. Notes (workflow MINESEC)
 
@@ -74,6 +74,7 @@
 - **Règles pédagogiques du solveur CP-SAT** : 2 occurrences hebdomadaires maximum par matière, occurrences journalières contiguës dans l’ordre des cases de cours, EPS/TM à 2 occurrences réparties sur 2 jours et exemptées du bloc de 2 h ; invariants également revalidés avant apply.
 - **Temps libre** : les cases libres restantes sont séparées autant que possible afin d’éviter deux créneaux libres consécutifs.
 - **LV2** : les matières liées aux `StudentGroup` sont exclues du solveur classe-entière puis ajoutées à la proposition comme séances groupées au même horaire ; le groupe majoritaire garde la salle habituelle, les autres utilisent des salles normales libres, avec application atomique.
+- **Génération globale (V2.5+)** : `POST /api/v2/timetables/propose-all` lance un `TimetableGenerationRun` asynchrone exécuté par Inngest (un step par classe), avec occupation enseignant/salle cumulée entre classes, pré-flight de charge, statuts détaillés (success / DEGRADE / ECHEC / IGNORE_EDT_VERROUILLE / ECHEC_TECHNIQUE), annulation et heartbeat. `POST /api/v2/timetables/apply-all` applique les propositions valides en une transaction atomique multi-EDT.
 
 ## 10. Année scolaire, périodes & promotions
 

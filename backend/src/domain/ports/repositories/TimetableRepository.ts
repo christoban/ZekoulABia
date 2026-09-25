@@ -63,6 +63,7 @@ export interface AffectationSolver {
   subjectId: string;
   subjectType: string;
   hoursPerWeek: number | null;
+  weeklyPeriods?: number | null;
   name: string | null;
   blocDureeCases: number | null;
 }
@@ -173,7 +174,7 @@ export interface TimetableRepository {
   findOccupationEcole(
     schoolId: string,
     academicYearId: string,
-    excludeTimetableId?: string
+    excludeTimetableId?: string | string[]
   ): Promise<CreneauOccupe[]>;
 
   /**
@@ -197,6 +198,11 @@ export interface TimetableRepository {
     schoolId: string,
     creneaux: CreneauALoter[],
     options?: { verifierConflits?: boolean; remplacerLignesGerees?: boolean }
+  ): Promise<{ creneauxCrees: number }>;
+
+  appliquerCreneauxLotsEnAtomique?(
+    schoolId: string,
+    lots: Array<{ timetableId: string; creneaux: CreneauALoter[] }>
   ): Promise<{ creneauxCrees: number }>;
 
   /**

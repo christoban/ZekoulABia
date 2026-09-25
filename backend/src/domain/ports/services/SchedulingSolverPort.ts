@@ -115,7 +115,12 @@ export const POIDS_TROU_CASE = 5;
 export const POIDS_TROIS_CONSECUTIFS = 15;
 export const POIDS_DESEQUILIBRE = 2;
 export const POIDS_VOLUME_JOUR = 3;
-export const POIDS_TEMPS_LIBRES_CONSECUTIFS = 1000;
+export const POIDS_TEMPS_LIBRES_CONSECUTIFS = 2000;
+export const POIDS_TEMPS_LIBRES_INTERNE = 100;
+export const POIDS_TEMPS_LIBRES_DEBUT_JOURNEE = 40;
+export const POIDS_TEMPS_LIBRES_FIN_JOURNEE = 5;
+export const POIDS_TEMPS_LIBRES_MAX_JOUR = 2000;
+export const POIDS_NON_PLACEMENT = 1_000_000;
 
 export interface ProposerEmploiDuTempsInput {
   classId: string;
@@ -133,6 +138,12 @@ export interface ProposerEmploiDuTempsInput {
   solutionsMultiples?: { nombre?: number; margeScore?: number };
   /** Interne : empêche la récursion pendant le diagnostic de relaxation. */
   diagnosticInterne?: boolean;
+  /** V2.5 — traiter maxTempsLibresParJour / interdireTempsLibresConsecutifs comme dures (strict) ou molles (dégradé). */
+  reglesPedagogiquesDures?: boolean;
+  /** Limite temps déterministe de chaque résolution CP-SAT. */
+  maxDeterministicTime?: number;
+  /** Autorise un placement partiel et maximise le nombre de séances placées. */
+  placementPartiel?: boolean;
 }
 
 export interface SeanceProposee {
@@ -159,8 +170,9 @@ export interface TempsLibrePropose {
 }
 
 export interface PropositionEmploiDuTemps {
-  statut: 'OPTIMAL' | 'FEASIBLE' | 'INFAISABLE';
+  statut: 'OPTIMAL' | 'FEASIBLE' | 'PARTIEL' | 'INFAISABLE';
   seances: SeanceProposee[];
+  heuresNonPlacees?: Array<{ subjectId: string; teacherId: string; teacherName?: string; nbHeures: number; cause: string }>;
   seancesGroupes?: SeanceGroupeProposee[];
   tempsLibres?: TempsLibrePropose[];
   /** Score de l'objectif souple (préférence salle habituelle) — 0 si INFAISABLE. */
