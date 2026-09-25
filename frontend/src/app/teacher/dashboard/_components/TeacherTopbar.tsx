@@ -1,46 +1,214 @@
 'use client'
-import { Search } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { KeyRound, MoreVertical, Bell, Menu, Sun, Moon, LogOut } from 'lucide-react'
 import { useT } from '@/lib/i18n'
+import { useTheme } from 'next-themes'
 import ThemeToggle from '@/components/ThemeToggle'
 import NotificationBell from '@/components/NotificationBell'
-import MobileMenuButton from '@/components/MobileMenuButton'
+import OfflineSyncButtonPopover from '@/components/OfflineSyncButtonPopover'
+import { useNotifications } from '@/hooks/NotificationContext'
 import CalendarTopbarButton from '@/components/CalendarTopbarButton'
+import LanguageSwitch from '@/components/LanguageSwitch'
 
-interface UserInfo { firstName: string; lastName: string }
+interface UserInfo { firstName: string; lastName: string; role?: string }
 
 interface Props {
   title: string
-  user?: UserInfo | null
+  onNavigate?: (section: string) => void
+  onChangePassword?: () => void
   onMenuClick?: () => void
+  user?: UserInfo | null
+  onLogout?: () => void
+  onToast?: (msg: string, type?: 'success' | 'error' | 'info') => void
 }
 
-export default function TeacherTopbar({ title, user, onMenuClick }: Props) {
+export default function TeacherTopbar({ title, onNavigate, onChangePassword, onMenuClick, user, onLogout }: Props) {
+  const t = useT('navigation')
   const tcommon = useT('common')
-  const initials = user ? `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase() : '??'
+
+  const { setTheme, resolvedTheme } = useTheme()
+  const { recentNotifications, unreadCount, markAsRead, registerSeen } = useNotifications()
+
+  const [notifOpen, setNotifOpen] = useState(false)
+  const [kebabOpen, setKebabOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const notifRef = useRef<HTMLDivElement>(null)
+  const kebabRef = useRef<HTMLDivElement>(null)
+  const profileRef = useRef<HTMLDivElement>(null)
+
+  const toggleNotif = () => {
+    if (!notifOpen) registerSeen()
+    setNotifOpen(o => !o)
+    setKebabOpen(false)
+    setProfileOpen(false)
+  }
+
+  const toggleKebab = () => {
+    setKebabOpen(o => !o)
+    setNotifOpen(false)
+    setProfileOpen(false)
+  }
+
+  const toggleProfile = () => {
+    setProfileOpen(o => !o)
+    setNotifOpen(false)
+    setKebabOpen(false)
+  }
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false)
+      if (kebabRef.current && !kebabRef.current.contains(e.target as Node)) setKebabOpen(false)
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const userDisplayName = user ? `${user.firstName} ${user.lastName}` : tcommon('user.fallbackName')
+  const userInitials = user
+    ? `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase()
+    : 'EN'
+
+  const isDark = resolvedTheme === 'dark'
 
   return (
-    <header style={{
-      height: 48, background: 'var(--surface)', borderBottom: '1px solid var(--border)',
-      display: 'flex', alignItems: 'center', padding: '0 20px',
-      gap: 10, flexShrink: 0
-    }}>
-      {onMenuClick && <MobileMenuButton onClick={onMenuClick} />}
-      <div className="truncate" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
-        {title}
-      </div>
-      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-        <CalendarTopbarButton />
-        <div className="hidden sm:block" style={{ position: 'relative' }}>
-          <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)' }} />
-          <input type="text" placeholder={tcommon('actions.search')}
-            style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 9, padding: '7px 12px 7px 34px', fontSize: 13, fontWeight: 600, color: 'var(--text)', outline: 'none', width: 220, fontFamily: 'inherit' }} />
+    <header
+      className="px-3 py-[8px] gap-1.5 md:gap-[10px] md:px-[20px] md:h-[48px] md:border-b-[1px] md:border-[var(--border)]"
+      style={{ background: 'var(--surface)', display: 'flex', alignItems: 'center', flexShrink: 0, position: 'relative', boxShadow: '0 1px 0 rgba(0,0,0,0.06)' }}
+    >
+      {/* Hamburger — sous md uniquement */}
+      {onMenuClick && (
+        <button onClick={onMenuClick} aria-label="Menu" className="flex md:!hidden"
+          style={{ width: 40, height: 40, borderRadius: 20, border: 'none', background: 'transparent', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
+          <Menu size={22} color="var(--text)" strokeWidth={2} />
+        </button>
+      )}
+
+      <div className="min-w-0 flex-1">
+        <div className="text-[16px] md:text-[18px] truncate" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
+          {title}
         </div>
+      </div>
+
+      {/* Bouton calendrier unifié */}
+      <CalendarTopbarButton />
+
+      {/* Notifications — mobile */}
+      <div ref={notifRef} className="relative md:hidden flex-shrink-0">
+        <button onClick={toggleNotif} aria-label={t('topbar.notifications') ?? 'Notifications'}
+          style={{ width: 40, height: 40, borderRadius: 20, border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', cursor: 'pointer' }}>
+          <Bell size={21} color="var(--text)" strokeWidth={2} />
+          {unreadCount > 0 && (
+            <div style={{ position: 'absolute', top: 9, right: 9, width: 8, height: 8, borderRadius: '50%', background: 'var(--red)', border: '1.5px solid var(--surface)' }} />
+          )}
+        </button>
+        {notifOpen && (
+          <div className="fixed inset-x-3 top-[54px] max-w-[340px] ml-auto sm:absolute sm:inset-auto sm:top-12 sm:right-0 sm:w-[320px] max-h-[380px] overflow-y-auto bg-[var(--surface)] rounded-2xl shadow-2xl border border-[var(--border)] p-2.5 z-50 animate-fade-in font-nunito">
+            <div className="flex items-center justify-between px-2.5 py-2 border-b border-[var(--border)]">
+              <span className="text-[13.5px] font-bold text-[var(--text)]">{t('topbar.notifications') ?? 'Notifications'}</span>
+              {unreadCount > 0 && (
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-300">
+                  {unreadCount} {t('topbar.unread') ?? 'non lue(s)'}
+                </span>
+              )}
+            </div>
+            {recentNotifications.length === 0 ? (
+              <div className="py-7 text-center text-[var(--text3)] text-xs font-medium">{t('topbar.no_notifications') ?? 'Aucune notification'}</div>
+            ) : (
+              <div className="divide-y divide-[var(--border)]/40 my-1">
+                {[...recentNotifications].sort((a, b) => Number(a.isRead) - Number(b.isRead)).slice(0, 8).map(n => (
+                  <div key={n.id} onClick={() => !n.isRead && markAsRead(n.id)}
+                    className={`flex items-start gap-2.5 p-2.5 rounded-xl cursor-pointer transition-colors ${n.isRead ? 'hover:bg-[var(--bg2)]' : 'bg-blue-500/5 hover:bg-blue-500/15'}`}>
+                    <div className="mt-1 flex-shrink-0">
+                      {!n.isRead ? (
+                        <div className="w-2 h-2 rounded-full bg-[var(--accent)]" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-transparent" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[13px] font-bold text-[var(--text)] leading-snug">{n.title}</div>
+                      <div className="text-[12px] text-[var(--text2)] leading-relaxed mt-0.5 line-clamp-2">{n.body}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {onNavigate && (
+              <button onClick={() => { setNotifOpen(false); onNavigate('notifications') }}
+                className="w-full mt-1.5 py-2 px-3 rounded-xl bg-[var(--bg2)] text-[var(--primary)] hover:opacity-80 text-xs font-bold border border-[var(--border)] cursor-pointer text-center transition-colors">
+                {t('topbar.view_all_notifications') ?? 'Voir toutes les notifications'}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Kebab — mobile */}
+      <div ref={kebabRef} className="relative md:hidden flex-shrink-0">
+        <button onClick={toggleKebab} aria-label="Menu"
+          style={{ width: 40, height: 40, borderRadius: 20, border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <MoreVertical size={21} color="var(--text)" strokeWidth={2} />
+        </button>
+        {kebabOpen && (
+          <div style={{ position: 'absolute', top: 48, right: 0, width: 216, background: 'var(--surface)', borderRadius: 14, boxShadow: '0 8px 24px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.08)', padding: 8, zIndex: 20 }}>
+            <div style={{ padding: '4px 6px 8px' }}><LanguageSwitch compact style={{ width: '100%', justifyContent: 'center' }} /></div>
+            <div onClick={() => { setTheme(isDark ? 'light' : 'dark'); setKebabOpen(false) }}
+              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 10, cursor: 'pointer' }}>
+              {isDark ? <Sun size={18} color="var(--text)" strokeWidth={2} /> : <Moon size={18} color="var(--text)" strokeWidth={2} />}
+              <span style={{ fontSize: 14, color: 'var(--text)', fontWeight: 500 }}>{tcommon('theme.toggle') ?? 'Thème'}</span>
+            </div>
+            {onChangePassword && (
+              <div onClick={() => { onChangePassword(); setKebabOpen(false) }}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 10, cursor: 'pointer' }}>
+                <KeyRound size={18} color="var(--text)" strokeWidth={2} />
+                <span style={{ fontSize: 14, color: 'var(--text)', fontWeight: 500 }}>{tcommon('auth.changePassword') ?? 'Changer mot de passe'}</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Actions secondaires desktop */}
+      <div className="hidden md:flex" style={{ alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
+        <OfflineSyncButtonPopover namespace="teacher" />
         <ThemeToggle />
-        <NotificationBell />
-        <div style={{ width: 36, height: 36, borderRadius: 9, background: 'linear-gradient(135deg,var(--blue),var(--purple))', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--surface)', fontWeight: 800, fontSize: 13 }}>
-          {initials}
-        </div>
+        <LanguageSwitch compact />
+        <NotificationBell onNav={onNavigate} />
+        {onChangePassword && (
+          <button onClick={onChangePassword} title={tcommon('auth.changePassword') ?? 'Changer le mot de passe'}
+            style={{ width: 36, height: 36, borderRadius: 9, background: 'var(--bg2)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <KeyRound size={16} color="var(--text2)" />
+          </button>
+        )}
       </div>
+
+      {/* Profil utilisateur mobile */}
+      {user && (
+        <div ref={profileRef} className="relative flex-shrink-0 md:hidden" style={{ marginLeft: 2 }}>
+          <button onClick={toggleProfile} aria-label={userDisplayName}
+            style={{ width: 34, height: 34, borderRadius: 17, border: 'none', background: 'linear-gradient(135deg,var(--blue),var(--purple))', color: '#fff', fontSize: 12.5, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            {userInitials}
+          </button>
+          {profileOpen && (
+            <div style={{ position: 'absolute', top: 48, right: 0, width: 220, background: 'var(--surface)', borderRadius: 14, boxShadow: '0 8px 24px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.08)', padding: 8, zIndex: 20 }}>
+              <div style={{ padding: '8px 10px 10px', borderBottom: '1px solid var(--border)', marginBottom: 4 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{userDisplayName}</div>
+                <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{user.role ?? tcommon('user.teacherFallback')}</div>
+              </div>
+              {onLogout && (
+                <div onClick={() => { setProfileOpen(false); onLogout() }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 10, cursor: 'pointer' }}>
+                  <LogOut size={18} color="var(--red)" strokeWidth={2} />
+                  <span style={{ fontSize: 14, color: 'var(--red)', fontWeight: 600 }}>{tcommon('logout')}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
     </header>
   )
 }

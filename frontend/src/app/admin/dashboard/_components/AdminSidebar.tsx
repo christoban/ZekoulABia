@@ -194,7 +194,7 @@ export default function AdminSidebar({
       />
 
       {/* Brand */}
-      <div className="flex items-center gap-2.5 px-3.5 pt-3.5 pb-3 border-b border-white/[0.07]" style={{ flexShrink: 0 }}>
+      <div className="flex items-center gap-2.5 border-b border-white/[0.07]" style={{ padding: '12px 12px', flexShrink: 0 }}>
         <div className="w-7.5 h-7.5 rounded-[8px] flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: "linear-gradient(135deg,var(--amber),var(--accent))" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "70%", height: "70%", objectFit: "contain" }} /></div>
         <div className="flex-1 min-w-0">
           <div className="font-spectral text-[16px] font-bold text-white leading-tight truncate">ZekoulABia</div>

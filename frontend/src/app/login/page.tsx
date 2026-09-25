@@ -10,6 +10,7 @@ import type { LucideIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import LanguageSwitch from '@/components/LanguageSwitch'
+import ThemeToggle from '@/components/ThemeToggle'
 import { getDashboardLanguageKey, isLanguage, useT } from '@/lib/i18n'
 import { resetNotificationSocket } from '@/lib/notificationSocket'
 
@@ -141,8 +142,9 @@ export default function LoginPage() {
       mustChangePassword: mustChangePassword ?? false,
     }))
     const selectedLanguage = localStorage.getItem('zekoulabia_lang_override')
-    if (isLanguage(selectedLanguage)) {
-      localStorage.setItem(getDashboardLanguageKey(userId), selectedLanguage)
+    const dashboardLanguageKey = getDashboardLanguageKey(userId)
+    if (!localStorage.getItem(dashboardLanguageKey) && isLanguage(selectedLanguage)) {
+      localStorage.setItem(dashboardLanguageKey, selectedLanguage)
     }
 
     setSuccess({ ...config, dest, firstName })
@@ -441,7 +443,10 @@ export default function LoginPage() {
             </span>
           </div>
         </div>
-        <LanguageSwitch compact />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <ThemeToggle />
+          <LanguageSwitch compact />
+        </div>
       </header>
 
       {/* Carte de formulaire principale */}

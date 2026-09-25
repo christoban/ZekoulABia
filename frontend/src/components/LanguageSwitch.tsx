@@ -17,8 +17,8 @@ export default function LanguageSwitch({ style, compact }: { style?: React.CSSPr
       role="group"
       aria-label="Language / Langue"
       style={{
-        display: 'inline-flex', gap: compact ? 2 : 3, background: 'var(--bg2)',
-        border: '1.5px solid var(--border)', borderRadius: compact ? 8 : 10, padding: compact ? 2 : 3, ...style,
+        display: 'inline-flex', alignItems: 'stretch', gap: compact ? 2 : 3, background: 'var(--bg2)',
+        border: '1.5px solid var(--border)', borderRadius: compact ? 8 : 10, padding: compact ? 2 : 3, height: compact ? 36 : undefined, boxSizing: 'border-box', ...style,
       }}
     >
       {(['fr', 'en'] as const).map((l) => {
@@ -29,7 +29,7 @@ export default function LanguageSwitch({ style, compact }: { style?: React.CSSPr
             onClick={() => { if (!active) change(l) }}
             aria-pressed={active}
             style={{
-              padding: compact ? '3px 8px' : '6px 14px', borderRadius: compact ? 6 : 8, border: 'none',
+               padding: compact ? '3px 8px' : '6px 14px', height: compact ? '100%' : undefined, borderRadius: compact ? 6 : 8, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: active ? 'default' : 'pointer', fontFamily: 'inherit',
               fontWeight: 800, fontSize: compact ? 10 : 13, letterSpacing: '0.3px',
               background: active ? 'var(--primary)' : 'transparent',

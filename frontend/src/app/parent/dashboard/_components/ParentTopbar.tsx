@@ -1,5 +1,4 @@
 'use client'
-
 import { useState, useEffect, useRef } from 'react'
 import { KeyRound, MoreVertical, Bell, Menu, Sun, Moon, LogOut } from 'lucide-react'
 import { useT } from '@/lib/i18n'
@@ -10,47 +9,26 @@ import OfflineSyncButtonPopover from '@/components/OfflineSyncButtonPopover'
 import { useNotifications } from '@/hooks/NotificationContext'
 import CalendarTopbarButton from '@/components/CalendarTopbarButton'
 import LanguageSwitch from '@/components/LanguageSwitch'
-import type { StaffSection, SessionUser } from '../_types'
 
-const SECTION_KEY: Record<string, string> = {
-  'grille-horaire': 'grilleHoraire',
-  'suivi-eleves': 'suiviEleves',
-  'eleves-affectations': 'elevesAffectations',
-  'import-eleves': 'importEleves',
-  'moderation-messagerie': 'moderationMessagerie',
-  'mon-profil-rh': 'monProfilRh',
-  'sync-offline': 'syncOffline',
-  'bulletin-validation': 'bulletinValidation',
-  'configuration': 'configuration',
-  'eleves-familles': 'elevesFamilles',
-}
+interface UserInfo { firstName: string; lastName: string; role?: string }
 
 interface Props {
-  section: StaffSection
-  periodLabel?: string
+  title: string
+  onNavigate?: (section: string) => void
   onChangePassword?: () => void
-  onNav?: (section: string) => void
   onMenuClick?: () => void
-  sessionUser?: SessionUser | null
+  user?: UserInfo | null
   onLogout?: () => void
+  onToast?: (msg: string, type?: 'success' | 'error' | 'info') => void
 }
 
-export default function StaffTopbar({
-  section,
-  periodLabel,
-  onChangePassword,
-  onNav,
-  onMenuClick,
-  sessionUser,
-  onLogout,
-}: Props) {
-  const tnav = useT('navigation')
+export default function ParentTopbar({ title, onNavigate, onChangePassword, onMenuClick, user, onLogout }: Props) {
+  const t = useT('navigation')
   const tcommon = useT('common')
 
-  const { theme, setTheme, resolvedTheme } = useTheme()
+  const { setTheme, resolvedTheme } = useTheme()
   const { recentNotifications, unreadCount, markAsRead, registerSeen } = useNotifications()
 
-  // Même pattern que AdminTopbar : panneau notif + kebab + profil sur mobile
   const [notifOpen, setNotifOpen] = useState(false)
   const [kebabOpen, setKebabOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
@@ -87,18 +65,12 @@ export default function StaffTopbar({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Initiales utilisateur pour l'avatar mobile (même logique qu'admin)
-  const userDisplayName = sessionUser?.nomComplet || sessionUser?.firstName || tcommon('user.fallbackName')
-  const userInitials = userDisplayName
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w: string) => w[0]?.toUpperCase())
-    .join('') || 'ST'
+  const userDisplayName = user ? `${user.firstName} ${user.lastName}` : tcommon('user.fallbackName')
+  const userInitials = user
+    ? `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase()
+    : 'PA'
 
   const isDark = resolvedTheme === 'dark'
-
-  const title = tnav(`pageTitle.staff_${SECTION_KEY[section] ?? section}`)
 
   return (
     <header
@@ -119,30 +91,12 @@ export default function StaffTopbar({
         </div>
       </div>
 
-      {periodLabel && (
-        <span
-          className="hidden md:inline"
-          style={{
-            background: 'var(--bg2)',
-            border: '1px solid var(--border)',
-            borderRadius: 12,
-            padding: '3px 9px',
-            fontSize: 11.5,
-            fontWeight: 700,
-            color: 'var(--text3)',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {periodLabel}
-        </span>
-      )}
-
-      {/* Bouton calendrier unifié (Mobile, Tablette, Desktop) */}
+      {/* Bouton calendrier unifié */}
       <CalendarTopbarButton />
 
-      {/* Notifications — mobile : cercle 40px + pastille + panneau responsive */}
+      {/* Notifications — mobile */}
       <div ref={notifRef} className="relative md:hidden flex-shrink-0">
-        <button onClick={toggleNotif} aria-label={tnav('topbar.notifications') ?? 'Notifications'}
+        <button onClick={toggleNotif} aria-label={t('topbar.notifications') ?? 'Notifications'}
           style={{ width: 40, height: 40, borderRadius: 20, border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', cursor: 'pointer' }}>
           <Bell size={21} color="var(--text)" strokeWidth={2} />
           {unreadCount > 0 && (
@@ -152,15 +106,15 @@ export default function StaffTopbar({
         {notifOpen && (
           <div className="fixed inset-x-3 top-[54px] max-w-[340px] ml-auto sm:absolute sm:inset-auto sm:top-12 sm:right-0 sm:w-[320px] max-h-[380px] overflow-y-auto bg-[var(--surface)] rounded-2xl shadow-2xl border border-[var(--border)] p-2.5 z-50 animate-fade-in font-nunito">
             <div className="flex items-center justify-between px-2.5 py-2 border-b border-[var(--border)]">
-              <span className="text-[13.5px] font-bold text-[var(--text)]">{tnav('topbar.notifications') ?? 'Notifications'}</span>
+              <span className="text-[13.5px] font-bold text-[var(--text)]">{t('topbar.notifications') ?? 'Notifications'}</span>
               {unreadCount > 0 && (
                 <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-300">
-                  {unreadCount} {tnav('topbar.unread') ?? 'non lue(s)'}
+                  {unreadCount} {t('topbar.unread') ?? 'non lue(s)'}
                 </span>
               )}
             </div>
             {recentNotifications.length === 0 ? (
-              <div className="py-7 text-center text-[var(--text3)] text-xs font-medium">{tnav('topbar.no_notifications') ?? 'Aucune notification'}</div>
+              <div className="py-7 text-center text-[var(--text3)] text-xs font-medium">{t('topbar.no_notifications') ?? 'Aucune notification'}</div>
             ) : (
               <div className="divide-y divide-[var(--border)]/40 my-1">
                 {[...recentNotifications].sort((a, b) => Number(a.isRead) - Number(b.isRead)).slice(0, 8).map(n => (
@@ -168,7 +122,7 @@ export default function StaffTopbar({
                     className={`flex items-start gap-2.5 p-2.5 rounded-xl cursor-pointer transition-colors ${n.isRead ? 'hover:bg-[var(--bg2)]' : 'bg-blue-500/5 hover:bg-blue-500/15'}`}>
                     <div className="mt-1 flex-shrink-0">
                       {!n.isRead ? (
-                        <div className="w-2 h-2 rounded-full bg-[var(--green)]" />
+                        <div className="w-2 h-2 rounded-full bg-[var(--accent)]" />
                       ) : (
                         <div className="w-2 h-2 rounded-full bg-transparent" />
                       )}
@@ -181,10 +135,10 @@ export default function StaffTopbar({
                 ))}
               </div>
             )}
-            {onNav && (
-              <button onClick={() => { setNotifOpen(false); onNav('notifications') }}
-                className="w-full mt-1.5 py-2 px-3 rounded-xl bg-[var(--bg2)] text-[var(--green)] hover:text-success text-xs font-bold border border-[var(--border)] cursor-pointer text-center transition-colors">
-                {tnav('topbar.view_all_notifications') ?? 'Voir toutes les notifications'}
+            {onNavigate && (
+              <button onClick={() => { setNotifOpen(false); onNavigate('notifications') }}
+                className="w-full mt-1.5 py-2 px-3 rounded-xl bg-[var(--bg2)] text-[var(--primary)] hover:opacity-80 text-xs font-bold border border-[var(--border)] cursor-pointer text-center transition-colors">
+                {t('topbar.view_all_notifications') ?? 'Voir toutes les notifications'}
               </button>
             )}
           </div>
@@ -218,37 +172,31 @@ export default function StaffTopbar({
 
       {/* Actions secondaires desktop */}
       <div className="hidden md:flex" style={{ alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
-        <OfflineSyncButtonPopover namespace="staff" />
+        <OfflineSyncButtonPopover namespace="common" />
         <ThemeToggle />
         <LanguageSwitch compact />
-        <NotificationBell onNav={onNav} />
+        <NotificationBell onNav={onNavigate} />
         {onChangePassword && (
-          <button onClick={onChangePassword} title={tcommon('auth.changePassword')}
+          <button onClick={onChangePassword} title={tcommon('auth.changePassword') ?? 'Changer le mot de passe'}
             style={{ width: 36, height: 36, borderRadius: 9, background: 'var(--bg2)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             <KeyRound size={16} color="var(--text2)" />
           </button>
         )}
       </div>
 
-      {/* Profil utilisateur mobile — avatar circulaire identique à l'admin */}
-      {sessionUser && (
+      {/* Profil utilisateur mobile */}
+      {user && (
         <div ref={profileRef} className="relative flex-shrink-0 md:hidden" style={{ marginLeft: 2 }}>
           <button onClick={toggleProfile} aria-label={userDisplayName}
-            style={{ width: 34, height: 34, borderRadius: 17, border: 'none', background: 'linear-gradient(135deg,var(--primary),var(--blue,#2563eb))', color: '#fff', fontSize: 12.5, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            style={{ width: 34, height: 34, borderRadius: 17, border: 'none', background: 'linear-gradient(135deg,var(--amber),var(--primary))', color: '#fff', fontSize: 12.5, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             {userInitials}
           </button>
           {profileOpen && (
             <div style={{ position: 'absolute', top: 48, right: 0, width: 220, background: 'var(--surface)', borderRadius: 14, boxShadow: '0 8px 24px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.08)', padding: 8, zIndex: 20 }}>
               <div style={{ padding: '8px 10px 10px', borderBottom: '1px solid var(--border)', marginBottom: 4 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{userDisplayName}</div>
-                <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{tcommon('user.roleLabel')}</div>
+                <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{tcommon('user.parentFallback')}</div>
               </div>
-              {onNav && (
-                <div onClick={() => { setProfileOpen(false); onNav('mon-profil-rh') }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 10, cursor: 'pointer' }}>
-                  <span style={{ fontSize: 14, color: 'var(--text)', fontWeight: 500 }}>{tnav('sidebar.monProfilRh') ?? 'Mon profil'}</span>
-                </div>
-              )}
               {onLogout && (
                 <div onClick={() => { setProfileOpen(false); onLogout() }}
                   style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 10, cursor: 'pointer' }}>

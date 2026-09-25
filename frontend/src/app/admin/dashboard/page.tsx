@@ -285,7 +285,7 @@ export default function AdminDashboard() {
           window.location.reload()
         }}
       />
-      <AdminBottomNav current={section} onChange={setSection} />
+      <AdminBottomNav current={section} onChange={setSection} onOpenMenu={() => setMobileNavOpen(true)} />
     </div>
   )
 }

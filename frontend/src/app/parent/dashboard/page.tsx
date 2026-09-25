@@ -2,9 +2,9 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { logoutUser } from '@/lib/userAuth'
-import NotificationBell from '@/components/NotificationBell'
-import MobileMenuButton from '@/components/MobileMenuButton'
 import ParentSidebar from './_components/ParentSidebar'
+import ParentTopbar from './_components/ParentTopbar'
+import ParentBottomNav from './_components/ParentBottomNav'
 import ParentToast from './_components/ParentToast'
 import SoldeAlertBanner from './_components/SoldeAlertBanner'
 import SectionParentChildren from './_components/SectionParentChildren'
@@ -26,7 +26,7 @@ import AssistantWidget from '../../admin/dashboard/_components/AssistantWidget'
 import { useRouter } from 'next/navigation'
 import Babillard from '@/features/communication/Babillard'
 import Messagerie from '@/features/messagerie'
-import CalendarTopbarButton from '@/components/CalendarTopbarButton'
+import ChangePasswordModal from '@/components/ChangePasswordModal'
 
 interface SessionUser {
   userId: string
@@ -68,6 +68,7 @@ export default function ParentDashboard() {
   const [toasts, setToasts] = useState<Toast[]>([])
   const [user, setUser] = useState<UserInfo | null>(null)
   const [school, setSchool] = useState<SchoolInfo | null>(null)
+  const [changePwdOpen, setChangePwdOpen] = useState(false)
 
   // Lecture session depuis localStorage (stockée au login) — identique à admin/staff/teacher
   useEffect(() => {
@@ -152,20 +153,19 @@ export default function ParentDashboard() {
       <ParentSidebar current={section} onChange={setSection} onLogout={logoutUser} user={user} school={school} mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
-        <header style={{ height: 48, background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', padding: '0 20px', gap: 10, flexShrink: 0 }}>
-          <MobileMenuButton onClick={() => setMobileNavOpen(true)} />
-          <div className="truncate" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
-            {TITLES[section]}
-          </div>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <CalendarTopbarButton />
-            <NotificationBell onNav={s => setSection(s as ParentSection)} />
-          </div>
-        </header>
+        <ParentTopbar
+          title={TITLES[section]}
+          onMenuClick={() => setMobileNavOpen(true)}
+          onChangePassword={() => setChangePwdOpen(true)}
+          onNavigate={s => setSection(s as ParentSection)}
+          user={user}
+          onLogout={logoutUser}
+          onToast={showToast}
+        />
         <EventCenterWidget />
         <SoldeAlertBanner onNav={s => setSection(s as ParentSection)} />
 
-        <main style={{ flex: 1, overflow: 'hidden', background: 'var(--bg)' }}>
+        <main className="pb-[calc(60px+env(safe-area-inset-bottom,0px))] md:pb-0" style={{ flex: 1, overflow: 'hidden', background: 'var(--bg)' }}>
           {section === 'children'   && <SectionParentChildren onNav={s => setSection(s as ParentSection)} {...sProps} userId={user?.id} />}
           {section === 'grades'     && <SectionParentGrades {...sProps} userId={user?.id} />}
           {section === 'attendance' && <SectionParentAttendance {...sProps} userId={user?.id} />}
@@ -180,9 +180,11 @@ export default function ParentDashboard() {
         </main>
       </div>
 
+      {changePwdOpen && <ChangePasswordModal onClose={() => setChangePwdOpen(false)} onToast={showToast} />}
       <ParentToast toasts={toasts} onRemove={removeToast} />
       <OfflineIndicator />
       <AssistantWidget section={section} rolePrefix="parent" suggestions={PARENT_ASSISTANT_SUGGESTIONS} />
+      <ParentBottomNav current={section} onChange={setSection} onOpenMenu={() => setMobileNavOpen(true)} />
     </div>
   )
 }

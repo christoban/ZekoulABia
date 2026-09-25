@@ -1,5 +1,5 @@
 'use client'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   LogOut, LayoutDashboard, School, ClipboardCheck, FileText, Calendar,
   NotebookPen, FolderOpen, IdCard, ClipboardList, PenLine, Target, RefreshCw,
@@ -221,7 +221,7 @@ export default function TeacherSidebar({
       </div>
 
       {/* User */}
-      <div className="border-t border-white/[0.07]" style={{ padding: '8px 10px' }}>
+      <div className="hidden md:block border-t border-white/[0.07]" style={{ padding: '8px 10px' }}>
         <div className="flex items-center gap-2.5 rounded-[8px] hover:bg-white/[0.06]" style={{ padding: '6px 8px' }}>
           <div className="w-7 h-7 rounded-[6px] bg-gradient-to-br from-[var(--blue)] to-[var(--purple)] flex items-center justify-center text-white font-black text-[11px] flex-shrink-0">
             {user ? (user.firstName[0] || '') + (user.lastName[0] || '') : '??'}
@@ -245,22 +245,22 @@ export default function TeacherSidebar({
 
   return (
     <>
-      <aside className="hidden md:flex w-[225px] min-w-[225px] flex-col h-screen flex-shrink-0 relative overflow-hidden" style={{ background: 'var(--sidebar)' }}>
+      <aside className="hidden md:flex w-[250px] min-w-[250px] flex-col h-screen flex-shrink-0 relative overflow-hidden" style={{ background: 'var(--sidebar)' }}>
         {sidebarBody}
       </aside>
 
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true">
-          <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onMobileClose} />
-          <aside className="absolute left-0 top-0 h-full w-[85vw] max-w-[225px] flex flex-col relative overflow-hidden" style={{ background: 'var(--sidebar)' }}>
-            <button onClick={onMobileClose} aria-label="Fermer"
-              className="absolute z-20" style={{ top: 10, right: 10, width: 28, height: 28, borderRadius: 8, background: 'rgba(255,255,255,0.08)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-              <X size={13} color="white" />
-            </button>
-            {sidebarBody}
-          </aside>
-        </div>
-      )}
+      <AnimatePresence>
+        {mobileOpen && (
+          <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true">
+            <motion.div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onMobileClose}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }} />
+            <motion.aside className="absolute left-0 top-0 h-full w-[85vw] max-w-[250px] flex flex-col relative overflow-hidden" style={{ background: 'var(--sidebar)' }}
+              initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ duration: 0.26, ease: [0.4, 0, 0.2, 1] }}>
+              {sidebarBody}
+            </motion.aside>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   )
 }

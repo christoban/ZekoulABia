@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import { Search, KeyRound, FileText, FolderOpen } from 'lucide-react'
+import { FileText, FolderOpen } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { logoutUser } from '@/lib/userAuth'
-import MobileMenuButton from '@/components/MobileMenuButton'
 import TeacherSidebar from './_components/TeacherSidebar'
+import TeacherTopbar from './_components/TeacherTopbar'
+import TeacherBottomNav from './_components/TeacherBottomNav'
 import TeacherToast from './_components/TeacherToast'
 import SectionTeacherDashboard from './_components/SectionTeacherDashboard'
 import SectionTeacherClasses from './_components/SectionTeacherClasses'
@@ -25,7 +26,6 @@ import { useSyncQueue } from '@/hooks/useSyncQueue'
 import { OfflineIndicator } from '@/components/OfflineIndicator'
 import ChangePasswordModal from '@/components/ChangePasswordModal'
 import SectionMonProfilRH from '@/features/rh/SectionMonProfilRH'
-import NotificationBell from '@/components/NotificationBell'
 import NotificationCenter from '@/components/NotificationCenter'
 import AssistantWidget from '../../admin/dashboard/_components/AssistantWidget'
 import EventCenterWidget from '@/features/communication/EventCenterWidget'
@@ -164,31 +164,19 @@ export default function TeacherDashboard() {
       <TeacherSidebar current={section} onChange={setSection} schoolName={schoolInfo?.name} logoUrl={schoolInfo?.logoUrl} onLogout={logoutUser} user={user} pendingGrades={pendingGrades} pendingCount={pendingCount} mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
-        {/* Topbar */}
-        <header style={{ height: 56, background: 'var(--surface)', borderBottom: '1.5px solid var(--border)', display: 'flex', alignItems: 'center', padding: '0 20px', gap: 12, flexShrink: 0 }}>
-          <MobileMenuButton onClick={() => setMobileNavOpen(true)} />
-          <div className="truncate" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
-            {TITLES[section]}
-          </div>
-          <span className="hidden lg:inline" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 20, padding: '3px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text3)' }}>
-            Trimestre 2 · Séquence 3
-          </span>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div className="hidden sm:block" style={{ position: 'relative' }}>
-              <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)' }} />
-              <input placeholder={tcommon('actions.search') + '...'} style={{ background: 'var(--bg2)', border: '1.5px solid var(--border)', borderRadius: 8, padding: '6px 12px 6px 30px', fontSize: 12.5, fontWeight: 600, color: 'var(--text)', outline: 'none', width: 210, fontFamily: 'inherit' }} />
-            </div>
-            <button onClick={() => setChangePwdOpen(true)} title={tcommon('auth.changePassword')}
-              style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--bg2)', border: '1.5px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-              <KeyRound size={16} color="var(--text2)" />
-            </button>
-            <NotificationBell onNav={s => setSection(s as TeacherSection)} />
-          </div>
-        </header>
+        {/* Topbar — pattern Admin (identique admin/staff) */}
+        <TeacherTopbar
+          title={TITLES[section]}
+          onMenuClick={() => setMobileNavOpen(true)}
+          onChangePassword={() => setChangePwdOpen(true)}
+          onNavigate={s => setSection(s as TeacherSection)}
+          user={user}
+          onLogout={logoutUser}
+        />
         <EventCenterWidget />
 
         {/* Contenu */}
-        <main style={{ flex: 1, overflow: 'hidden', background: 'var(--bg)' }}>
+        <main className="pb-[calc(60px+env(safe-area-inset-bottom,0px))] md:pb-0" style={{ flex: 1, overflow: 'hidden', background: 'var(--bg)' }}>
           {section === 'dashboard' && <SectionTeacherDashboard onNav={s => setSection(s as TeacherSection)} {...sProps} />}
           {section === 'classes' && <SectionTeacherClasses onNav={s => setSection(s as TeacherSection)} {...sProps} />}
           {section === 'attendance' && <SectionTeacherAttendance {...sProps} />}
@@ -238,6 +226,7 @@ export default function TeacherDashboard() {
       <OfflineIndicator />
       {changePwdOpen && <ChangePasswordModal onClose={() => setChangePwdOpen(false)} onToast={showToast} />}
       <AssistantWidget section={section} rolePrefix="teacher" suggestions={TEACHER_ASSISTANT_SUGGESTIONS} />
+      <TeacherBottomNav current={section} onChange={setSection} onOpenMenu={() => setMobileNavOpen(true)} pendingGrades={pendingGrades} />
     </div>
   )
 }

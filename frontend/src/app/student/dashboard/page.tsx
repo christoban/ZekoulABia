@@ -2,11 +2,11 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { logoutUser } from '@/lib/userAuth'
-import NotificationBell from '@/components/NotificationBell'
-import NotificationCenter from '@/components/NotificationCenter'
-import MobileMenuButton from '@/components/MobileMenuButton'
 import StudentSidebar from './_components/StudentSidebar'
+import StudentTopbar from './_components/StudentTopbar'
+import StudentBottomNav from './_components/StudentBottomNav'
 import StudentToast from './_components/StudentToast'
+import NotificationCenter from '@/components/NotificationCenter'
 import SectionStudentDashboard from './_components/SectionStudentDashboard'
 import SectionStudentGrades from './_components/SectionStudentGrades'
 import SectionStudentBulletins from './_components/SectionStudentBulletins'
@@ -26,7 +26,7 @@ import AssistantWidget from '../../admin/dashboard/_components/AssistantWidget'
 import { useRouter } from 'next/navigation'
 import Babillard from '@/features/communication/Babillard'
 import Messagerie from '@/features/messagerie'
-import CalendarTopbarButton from '@/components/CalendarTopbarButton'
+import ChangePasswordModal from '@/components/ChangePasswordModal'
 
 interface SessionUser {
   userId: string
@@ -66,6 +66,7 @@ export default function StudentDashboard() {
   const [toasts, setToasts] = useState<Toast[]>([])
   const [schoolInfo, setSchoolInfo] = useState<{ name: string; logoUrl: string | null } | null>(null)
   const [user, setUser] = useState<UserInfo | null>(null)
+  const [changePwdOpen, setChangePwdOpen] = useState(false)
 
   // Lecture session depuis localStorage (stockée au login) — identique à admin/staff/teacher/parent
   useEffect(() => {
@@ -170,23 +171,19 @@ export default function StudentDashboard() {
       <StudentSidebar current={section} onChange={setSection} schoolName={schoolInfo?.name} logoUrl={schoolInfo?.logoUrl} onLogout={logoutUser} user={user} mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
-        <header style={{ height: 48, background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', padding: '0 20px', gap: 10, flexShrink: 0 }}>
-          <MobileMenuButton onClick={() => setMobileNavOpen(true)} />
-          <div className="truncate" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
-            {TITLES[section]}
-          </div>
-          <span className="hidden sm:inline" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, padding: '4px 10px', fontSize: 12.5, fontWeight: 700, color: 'var(--text3)' }}>
-            Trimestre 2 · Séquence 3
-          </span>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <CalendarTopbarButton />
-            <NotificationBell onNav={s => setSection(s as StudentSection)} />
-          </div>
-        </header>
+        <StudentTopbar
+          title={TITLES[section]}
+          onMenuClick={() => setMobileNavOpen(true)}
+          onChangePassword={() => setChangePwdOpen(true)}
+          onNavigate={s => setSection(s as StudentSection)}
+          user={user}
+          onLogout={logoutUser}
+          onToast={showToast}
+        />
         <EventCenterWidget />
         <HealthAlertBanner onNav={s => setSection(s as StudentSection)} />
 
-        <main style={{ flex: 1, overflow: 'hidden', background: 'var(--bg)' }}>
+        <main className="pb-[calc(60px+env(safe-area-inset-bottom,0px))] md:pb-0" style={{ flex: 1, overflow: 'hidden', background: 'var(--bg)' }}>
           {section === 'dashboard'  && <SectionStudentDashboard onNav={s => setSection(s as StudentSection)} {...sProps} />}
           {section === 'grades'     && <SectionStudentGrades {...sProps} />}
           {section === 'bulletins'  && <SectionStudentBulletins {...sProps} />}
@@ -194,16 +191,18 @@ export default function StudentDashboard() {
           {section === 'attendance' && <SectionStudentAttendance {...sProps} />}
           {section === 'library'    && <SectionStudentLibrary />}
           {section === 'health-tracking' && <SectionStudentHealthTracking user={user} />}
-          {section === 'notifications' && <NotificationCenter onNav={s => setSection(s as StudentSection)} />}
+          {section === 'notifications' && <NotificationCenter onNav={(s: string) => setSection(s as StudentSection)} />}
           {section === 'babillard' && <Babillard role={user?.role ?? 'STUDENT'} title={tnav('sidebar.babillard')} subtitle={tnav('group.communication')} currentUserId={user?.id} />}
           {section === 'messagerie' && <Messagerie />}
           {section === 'academic-profile' && <SectionProfilAcademique studentId={user?.id ?? ''} />}
         </main>
       </div>
 
+      {changePwdOpen && <ChangePasswordModal onClose={() => setChangePwdOpen(false)} onToast={showToast} />}
       <StudentToast toasts={toasts} onRemove={removeToast} />
       <OfflineIndicator />
       <AssistantWidget section={section} rolePrefix="student" suggestions={STUDENT_ASSISTANT_SUGGESTIONS} />
+      <StudentBottomNav current={section} onChange={setSection} onOpenMenu={() => setMobileNavOpen(true)} />
     </div>
   )
 }

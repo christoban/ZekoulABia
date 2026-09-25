@@ -8,6 +8,7 @@ import NotificationBell from '@/components/NotificationBell'
 import OfflineSyncButtonPopover from '@/components/OfflineSyncButtonPopover'
 import { useNotifications } from '@/hooks/NotificationContext'
 import CalendarTopbarButton from '@/components/CalendarTopbarButton'
+import LanguageSwitch from '@/components/LanguageSwitch'
 
 interface SessionUser {
   nomComplet?: string
@@ -162,6 +163,7 @@ export default function AdminTopbar({ title, onNavigate, onChangePassword, onMen
         </button>
         {kebabOpen && (
           <div style={{ position: 'absolute', top: 48, right: 0, width: 216, background: 'var(--surface)', borderRadius: 14, boxShadow: '0 8px 24px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.08)', padding: 8, zIndex: 20 }}>
+            <div style={{ padding: '4px 6px 8px' }}><LanguageSwitch compact style={{ width: '100%', justifyContent: 'center' }} /></div>
             <div onClick={() => { setTheme(isDark ? 'light' : 'dark'); setKebabOpen(false) }}
               style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 10, cursor: 'pointer' }}>
               {isDark ? <Sun size={18} color="var(--text)" strokeWidth={2} /> : <Moon size={18} color="var(--text)" strokeWidth={2} />}
@@ -182,6 +184,7 @@ export default function AdminTopbar({ title, onNavigate, onChangePassword, onMen
       <div className="hidden md:flex" style={{ alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
         <OfflineSyncButtonPopover namespace="admin" />
         <ThemeToggle />
+        <LanguageSwitch compact />
         <NotificationBell onNav={onNavigate} />
         {onChangePassword && (
           <button onClick={onChangePassword} title={t('topbar.change_password')}

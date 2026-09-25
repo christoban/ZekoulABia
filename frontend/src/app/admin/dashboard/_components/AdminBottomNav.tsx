@@ -1,26 +1,30 @@
 'use client'
 
 import React from 'react'
-import { LayoutDashboard, BookOpen, Wallet, Users, Settings } from 'lucide-react'
+import { LayoutDashboard, BookOpen, Wallet, Users, Menu } from 'lucide-react'
 import type { AdminSection } from '../_types'
 import { useT } from '@/lib/i18n'
 
 interface Props {
   current: AdminSection
   onChange: (section: AdminSection) => void
+  onOpenMenu: () => void
 }
 
 interface BottomNavItem {
-  id: AdminSection
+  id: AdminSection | 'more'
+  targetSection?: AdminSection
   matchSections: AdminSection[]
   labelKey: string
   fallbackLabel: string
   icon: React.ComponentType<{ size?: number; className?: string; strokeWidth?: number }>
+  isMenuTrigger?: boolean
 }
 
 const BOTTOM_NAV_ITEMS: BottomNavItem[] = [
   {
     id: 'dashboard',
+    targetSection: 'dashboard',
     matchSections: ['dashboard'],
     labelKey: 'page.section_titles.dashboard',
     fallbackLabel: 'Accueil',
@@ -28,6 +32,7 @@ const BOTTOM_NAV_ITEMS: BottomNavItem[] = [
   },
   {
     id: 'pedagogie',
+    targetSection: 'pedagogie',
     matchSections: ['pedagogie', 'classes', 'subjects', 'grades', 'bulletins', 'council', 'bulletin-validation', 'academic-events'],
     labelKey: 'page.section_titles.pedagogie',
     fallbackLabel: 'Pédagogie',
@@ -35,6 +40,7 @@ const BOTTOM_NAV_ITEMS: BottomNavItem[] = [
   },
   {
     id: 'finance',
+    targetSection: 'finance',
     matchSections: ['finance', 'school-payments'],
     labelKey: 'page.section_titles.finance',
     fallbackLabel: 'Finance',
@@ -42,22 +48,25 @@ const BOTTOM_NAV_ITEMS: BottomNavItem[] = [
   },
   {
     id: 'users',
+    targetSection: 'users',
     matchSections: ['users', 'eleve-onboarding'],
     labelKey: 'page.section_titles.users',
     fallbackLabel: 'Comptes',
     icon: Users,
   },
   {
-    id: 'settings',
-    matchSections: ['settings', 'matricules', 'corbeille', 'sync-offline'],
-    labelKey: 'page.section_titles.settings',
-    fallbackLabel: 'Profil',
-    icon: Settings,
+    id: 'more',
+    matchSections: [],
+    labelKey: 'sidebar.menu',
+    fallbackLabel: 'Menu',
+    icon: Menu,
+    isMenuTrigger: true,
   },
 ]
 
-export default function AdminBottomNav({ current, onChange }: Props) {
+export default function AdminBottomNav({ current, onChange, onOpenMenu }: Props) {
   const t = useT('admin')
+  const tnav = useT('navigation')
 
   return (
     <nav
@@ -71,14 +80,22 @@ export default function AdminBottomNav({ current, onChange }: Props) {
     >
       <div className="flex items-center justify-around px-1 max-w-lg mx-auto">
         {BOTTOM_NAV_ITEMS.map(item => {
-          const isActive = item.id === current || item.matchSections.includes(current)
+          const isActive = !item.isMenuTrigger && (item.targetSection === current || item.matchSections.includes(current))
           const Icon = item.icon
-          const label = t(item.labelKey) || item.fallbackLabel
+          const label = item.isMenuTrigger
+            ? (tnav(item.labelKey) || item.fallbackLabel)
+            : (t(item.labelKey) || item.fallbackLabel)
 
           return (
             <button
               key={item.id}
-              onClick={() => onChange(item.id)}
+              onClick={() => {
+                if (item.isMenuTrigger) {
+                  onOpenMenu()
+                } else if (item.targetSection) {
+                  onChange(item.targetSection)
+                }
+              }}
               className="flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-xl transition-colors border-none bg-transparent cursor-pointer min-w-[56px]"
               style={{
                 WebkitTapHighlightColor: 'transparent',
