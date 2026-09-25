@@ -108,6 +108,8 @@ export class TeachingAssignmentController {
             currentTeacherName: assignment?.teacher
               ? `${assignment.teacher.firstName} ${assignment.teacher.lastName}`
               : null,
+            currentSource: assignment?.source ?? null,
+            currentCreatedAt: assignment?.createdAt ?? null,
             eligibleTeachers: eligibleTeachers.map(t => ({
               id: t.id,
               name: `${t.firstName} ${t.lastName}`,
@@ -331,7 +333,7 @@ export class TeachingAssignmentController {
   genererAffectations = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const schoolId = req.user!.schoolId;
-      const { academicYearId, classId, rebalanceExisting = true } = req.body as { academicYearId?: string; classId?: string; rebalanceExisting?: boolean };
+      const { academicYearId, classId, rebalanceExisting = false } = req.body as { academicYearId?: string; classId?: string; rebalanceExisting?: boolean };
 
       if (!academicYearId) {
         res.status(400).json({ success: false, message: 'academicYearId requis' });

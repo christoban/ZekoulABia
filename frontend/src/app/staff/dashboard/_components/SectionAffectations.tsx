@@ -13,7 +13,33 @@ interface AssignmentRow {
   coefficient: number
   currentTeacherId: string | null
   currentTeacherName: string | null
+  currentSource: 'MANUAL' | 'GENERATED' | 'UNKNOWN' | null
   eligibleTeachers: { id: string; name: string }[]
+}
+
+interface GenerationCandidate {
+  teacherId: string
+  chargeActuelleHeures: number
+  capaciteHeures: number | null
+  estAP: boolean
+}
+
+interface UnresolvedItem {
+  classId: string
+  className: string
+  subjectName: string
+  raison: string
+  details?: {
+    weeklyPeriods: number | null
+    candidats: GenerationCandidate[]
+  }
+}
+
+interface GenerationResult {
+  createdCount: number
+  rebalancedCount?: number
+  nonResolus: UnresolvedItem[]
+  horsPerimetre: { classId: string; className: string; subjectName: string }[]
 }
 
 const sScroll: React.CSSProperties = { height: '100%', overflowY: 'auto' }
@@ -27,8 +53,8 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
   const [classId, setClassId] = useState('')
   const [rows, setRows] = useState<AssignmentRow[]>([])
   const [meta, setMeta] = useState<{ total: number; assigned: number } | null>(null)
-  const [generationResult, setGenerationResult] = useState<{ createdCount: number; nonResolus: { classId: string; className: string; subjectName: string; raison: string }[]; horsPerimetre: { classId: string; className: string; subjectName: string }[] } | null>(null)
-  const [assignmentError, setAssignmentError] = useState<{ subjectId: string; currentLoad: number; candidateLoad: number; suggestions: { teacherId: string; firstName: string; lastName: string; chargeHeures: number }[] } | null>(null)
+  const [generationResult, setGenerationResult] = useState<GenerationResult | null>(null)
+  const [assignmentError, setAssignmentError] = useState<{ subjectId: string; code: 'AP_WEEKLY_CAP_EXCEEDED' | 'TEACHER_WEEKLY_CAP_EXCEEDED'; currentLoad: number; candidateLoad: number; suggestions: { teacherId: string; firstName: string; lastName: string; chargeHeures: number }[] } | null>(null)
   const [loadingClasses, setLoadingClasses] = useState(true)
   const [loadingRows, setLoadingRows] = useState(false)
   const [saving, setSaving] = useState<string | null>(null) // subjectId en cours de sauvegarde
@@ -70,10 +96,11 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
       r.subjectId === subjectId
         ? {
             ...r,
-            currentTeacherId: teacherId,
-            currentTeacherName: teacherId
-              ? (r.eligibleTeachers.find(t => t.id === teacherId)?.name ?? null)
-              : null,
+             currentTeacherId: teacherId,
+             currentTeacherName: teacherId
+               ? (r.eligibleTeachers.find(t => t.id === teacherId)?.name ?? null)
+               : null,
+             currentSource: teacherId ? 'MANUAL' : null,
           }
         : r,
     ))
@@ -128,14 +155,15 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
         body: JSON.stringify(payload),
       })
       const d = await res.json()
-      if (res.status === 409 && d.error?.code === 'AP_WEEKLY_CAP_EXCEEDED') {
+      if (res.status === 409 && (d.error?.code === 'AP_WEEKLY_CAP_EXCEEDED' || d.error?.code === 'TEACHER_WEEKLY_CAP_EXCEEDED')) {
         setAssignmentError({
           subjectId,
+          code: d.error.code,
           currentLoad: d.error.currentLoad,
           candidateLoad: d.error.candidateLoad,
           suggestions: d.error.suggestions ?? [],
         })
-        onToast(t('affectations.apCapExceeded'), 'error')
+        onToast(t(d.error.code === 'TEACHER_WEEKLY_CAP_EXCEEDED' ? 'affectations.weeklyCapExceeded' : 'affectations.apCapExceeded'), 'error')
         return
       }
       if (!res.ok) throw new Error(d.message || 'Erreur')
@@ -173,6 +201,7 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
 
   const handleGenerate = async () => {
     if (!classId || !selectedClass) return
+    if (!window.confirm(t('affectations.generateConfirmNoRebalance'))) return
     setGenerating(true)
     setGenerationResult(null)
     try {
@@ -180,7 +209,7 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ classId, academicYearId: selectedClass.academicYearId }),
+         body: JSON.stringify({ classId, academicYearId: selectedClass.academicYearId, rebalanceExisting: false }),
       })
       const d = await res.json()
       if (!res.ok) throw new Error(d.message || 'Erreur')
@@ -292,9 +321,14 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
           {generationResult && (
             <div style={{ marginTop: 14, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 10 }}>
-                <div style={{ fontSize: 12.5, color: 'var(--green)', fontWeight: 700 }}>
-                  {t('affectations.generatedCreated', { count: generationResult.createdCount })}
-                </div>
+                 <div style={{ fontSize: 12.5, color: 'var(--green)', fontWeight: 700 }}>
+                   {t('affectations.generatedCreated', { count: generationResult.createdCount })}
+                 </div>
+                 {generationResult.rebalancedCount !== undefined && generationResult.rebalancedCount > 0 && (
+                   <div style={{ fontSize: 12.5, color: 'var(--text3)', fontWeight: 700 }}>
+                     {t('affectations.generatedRebalanced', { count: generationResult.rebalancedCount })}
+                   </div>
+                 )}
                 {generationResult.nonResolus.length > 0 && (
                   <div style={{ fontSize: 12.5, color: 'var(--orange)', fontWeight: 700 }}>
                     {t('affectations.generatedUnresolved', { count: generationResult.nonResolus.length })}
@@ -314,9 +348,25 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
                   </summary>
                   <ul style={{ margin: '6px 0 0 18px', padding: 0, fontSize: 12, color: 'var(--text2)' }}>
                     {generationResult.nonResolus.map((item, idx) => (
-                      <li key={idx} style={{ marginBottom: 3 }}>
-                        {item.className} — {item.subjectName} : {t(`affectations.reason.${item.raison}`)}
-                      </li>
+                       <li key={idx} style={{ marginBottom: 6 }}>
+                         <div>
+                           {item.className} — {item.subjectName} : {t(`affectations.reason.${item.raison}`)}
+                         </div>
+                         {item.details && item.details.candidats.length > 0 && (
+                           <div style={{ marginTop: 3, color: 'var(--text3)', fontSize: 11 }}>
+                             {item.details.candidats.map((candidate) => (
+                               <div key={candidate.teacherId}>
+                                 {t('affectations.candidateLoad', {
+                                   teacher: candidate.teacherId,
+                                   load: candidate.chargeActuelleHeures,
+                                   capacity: candidate.capaciteHeures ?? t('affectations.capacityUnconfigured'),
+                                   ap: candidate.estAP ? t('affectations.apBadge') : '',
+                                 })}
+                               </div>
+                             ))}
+                           </div>
+                         )}
+                       </li>
                     ))}
                   </ul>
                 </details>
@@ -366,9 +416,10 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map(row => {
-                    const isSaving = saving === row.subjectId
-                    const unassigned = row.currentTeacherId === null
+                       {rows.map(row => {
+                         const isSaving = saving === row.subjectId
+                         const unassigned = row.currentTeacherId === null
+                         const sourceLabel = row.currentSource ? t(`affectations.source.${row.currentSource}`) : null
                     return (
                       <tr key={row.subjectId} style={{ borderBottom: '1px solid var(--bg2)', background: unassigned ? 'var(--amber-light)' : 'var(--surface)' }}>
                         <td style={{ padding: '8px 12px', fontSize: 12.5, fontWeight: 600, color: 'var(--text)' }}>
@@ -401,15 +452,22 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
                             {row.currentTeacherId && !row.eligibleTeachers.find(t => t.id === row.currentTeacherId) && (
                               <option value={row.currentTeacherId}>{row.currentTeacherName ?? row.currentTeacherId}</option>
                             )}
-                          </select>
-                          {row.eligibleTeachers.length === 0 && (
+                           </select>
+                           {sourceLabel && !isSaving && (
+                             <div style={{ marginTop: 3, fontSize: 10.5, color: 'var(--text3)' }}>
+                               {sourceLabel}
+                             </div>
+                           )}
+                           {row.eligibleTeachers.length === 0 && (
                             <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 3 }}>
                               Aucun enseignant n'a déclaré cette matière.
                             </div>
                           )}
                           {assignmentError?.subjectId === row.subjectId && (
                             <div style={{ marginTop: 8, padding: 8, borderRadius: 8, background: 'var(--red-light)', border: '1px solid var(--red-light)', fontSize: 11.5, color: 'var(--red)' }}>
-                              <div style={{ fontWeight: 700, marginBottom: 4 }}>{t('affectations.apCapExceeded', { current: assignmentError.currentLoad, candidate: assignmentError.candidateLoad })}</div>
+                               <div style={{ fontWeight: 700, marginBottom: 4 }}>
+                                 {t(assignmentError.code === 'TEACHER_WEEKLY_CAP_EXCEEDED' ? 'affectations.weeklyCapExceeded' : 'affectations.apCapExceeded', { current: assignmentError.currentLoad, candidate: assignmentError.candidateLoad })}
+                               </div>
                               {assignmentError.suggestions.length > 0 && (
                                 <div>
                                   <div style={{ marginBottom: 2 }}>{t('affectations.apCapSuggestions')} :</div>

@@ -10,7 +10,7 @@ import type {
 } from '@domain/ports/repositories/RattachementEnseignantRepository';
 
 export class InMemoryRattachementEnseignantRepository implements RattachementEnseignantRepository {
-  private assignations: { teacherId: string; classId: string; subjectId: string; schoolId?: string; academicYearId?: string }[] = [];
+  private assignations: { teacherId: string; classId: string; subjectId: string; schoolId?: string; academicYearId?: string; source: 'MANUAL' | 'GENERATED' | 'UNKNOWN'; createdAt: Date | null }[] = [];
   private professeursPrincipaux: { classId: string; professorPrincipalId: string }[] = [];
   private classes: ClassePourAffectation[] = [];
   private coefficients: CoefficientAvecMatiere[] = [];
@@ -19,7 +19,7 @@ export class InMemoryRattachementEnseignantRepository implements RattachementEns
   private enseignantsValides: Set<string> = new Set();
 
   ajouterAssignation(teacherId: string, classId: string, subjectId: string): void {
-    this.assignations.push({ teacherId, classId, subjectId });
+    this.assignations.push({ teacherId, classId, subjectId, source: 'UNKNOWN', createdAt: null });
   }
 
   ajouterProfesseurPrincipal(classId: string, professorPrincipalId: string): void {
@@ -62,6 +62,8 @@ export class InMemoryRattachementEnseignantRepository implements RattachementEns
         subjectId: a.subjectId,
         teacherId: a.teacherId,
         teacher: { id: a.teacherId, firstName: 'Prenom', lastName: 'Nom' },
+        source: a.source,
+        createdAt: a.createdAt,
       }));
   }
 
@@ -95,8 +97,10 @@ export class InMemoryRattachementEnseignantRepository implements RattachementEns
     const existing = this.assignations.find(a => a.classId === params.classId && a.subjectId === params.subjectId);
     if (existing) {
       existing.teacherId = params.teacherId;
+      existing.source = 'MANUAL';
+      existing.createdAt = new Date();
     } else {
-      this.assignations.push({ teacherId: params.teacherId, classId: params.classId, subjectId: params.subjectId, schoolId: params.schoolId, academicYearId: params.academicYearId });
+      this.assignations.push({ teacherId: params.teacherId, classId: params.classId, subjectId: params.subjectId, schoolId: params.schoolId, academicYearId: params.academicYearId, source: 'MANUAL', createdAt: new Date() });
     }
   }
 

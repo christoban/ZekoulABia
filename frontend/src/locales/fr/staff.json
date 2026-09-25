@@ -298,19 +298,25 @@
     "generateButton": "Générer les affectations",
     "generateAllTitle": "Génération globale des affectations",
     "generateAllHint": "Analyse toutes les classes de l'année et crée uniquement les affectations manquantes, sans rééquilibrer l'existant.",
-    "generateAllConfirm": "Lancer la génération des affectations pour toutes les classes de l'année ?",
+     "generateAllConfirm": "Lancer la génération pour toutes les classes de l'année ? Les affectations existantes ne seront pas rééquilibrées.",
+     "generateConfirmNoRebalance": "Lancer la génération pour cette classe ? Les affectations existantes ne seront pas rééquilibrées.",
     "generateAllButton": "Générer toutes les classes",
     "generateAllSuccess": "{count} affectation(s) créée(s) globalement",
     "generatingAll": "Analyse globale…",
     "generateSuccess": "{count} affectation(s) créée(s)",
     "generateError": "La génération des affectations a échoué",
-    "generatedCreated": "{count} créée(s)",
-    "generatedUnresolved": "{count} non résolue(s)",
-    "generatedOutOfScope": "{count} hors périmètre",
+     "generatedCreated": "{count} créée(s)",
+     "generatedRebalanced": "{count} rééquilibrée(s)",
+     "generatedUnresolved": "{count} non résolue(s)",
+     "generatedOutOfScope": "{count} hors périmètre",
     "unresolvedTitle": "Non résolues (à traiter manuellement)",
     "outOfScopeTitle": "Hors périmètre (pas de volume horaire fiable)",
-    "apCapExceeded": "Plafond AP 14h dépassé",
-    "apCapExceededDetail": "Cette affectation ferait passer cet enseignant à {current}h + {candidate}h = dépassement du plafond AP de 14h.",
+     "apCapExceeded": "Plafond AP 14h dépassé",
+     "apCapExceededDetail": "Cette affectation ferait passer cet enseignant à {current}h + {candidate}h = dépassement du plafond AP de 14h.",
+     "weeklyCapExceeded": "Capacité hebdomadaire dépassée",
+     "candidateLoad": "{teacher} : {load}h / {capacity}{ap}",
+     "capacityUnconfigured": "capacité non configurée",
+     "apBadge": " · AP",
     "clearClass": "Annuler toutes les affectations",
     "clearClassConfirm": "Annuler toutes les affectations de la classe {className} ? Cette action est irréversible.",
     "clearClassSuccess": "{count} affectation(s) annulée(s)",
@@ -318,10 +324,16 @@
     "clearing": "Annulation…",
     "apCapSuggestions": "Enseignants suggérés",
     "apCapNoSuggestion": "Aucun autre enseignant qualifié ne respecte le plafond AP.",
-    "reason": {
-      "NO_QUALIFIED_TEACHER": "aucun enseignant qualifié",
-      "AP_WEEKLY_CAP_EXCEEDED": "plafond de 14h AP atteint pour tous les qualifiés"
-    }
+     "reason": {
+       "NO_QUALIFIED_TEACHER": "aucun enseignant qualifié",
+       "AP_WEEKLY_CAP_EXCEEDED": "plafond de 14h AP atteint pour tous les qualifiés",
+       "TEACHER_WEEKLY_CAP_EXCEEDED": "capacité hebdomadaire atteinte pour tous les qualifiés"
+     },
+     "source": {
+       "MANUAL": "Saisie manuelle",
+       "GENERATED": "Générée automatiquement",
+       "UNKNOWN": "Provenance inconnue"
+     }
   },
   "departements": {
     "title": "Départements pédagogiques",

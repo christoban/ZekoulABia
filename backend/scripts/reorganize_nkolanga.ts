@@ -169,7 +169,7 @@ async function main() {
   console.log('\n💾 Suppression anciens assignments...');
   await prisma.teachingAssignment.deleteMany({ where: { schoolId: SCHOOL_ID } });
   console.log(`💾 Création de ${toCreate.length} nouveaux assignments...`);
-  await prisma.teachingAssignment.createMany({ data: toCreate, skipDuplicates: true });
+  await prisma.teachingAssignment.createMany({ data: toCreate.map((assignment) => ({ ...assignment, source: 'MANUAL' as const, createdAt: new Date() })), skipDuplicates: true });
   console.log(`   ✓ Fait`);
 
   // ─── 6. Distribution ──────────────────────────────────────────────────────

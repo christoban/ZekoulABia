@@ -19,6 +19,9 @@ export type EnseignantQualifieGeneration = {
   teacherId: string;
   subjectId: string;
   estAP: boolean;
+  capaciteHeures?: number;
+  maxWeeklyHours?: number | null;
+  defaultMaxWeeklyHours?: number | null;
 };
 
 export type AffectationExistanteGeneration = {
@@ -27,6 +30,7 @@ export type AffectationExistanteGeneration = {
   subjectId: string;
   teacherId: string;
   subjectHoursPerWeek?: number;
+  source: 'MANUAL' | 'GENERATED' | 'UNKNOWN';
 };
 
 export type DonneesGenerationAffectations = {

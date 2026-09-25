@@ -56,6 +56,28 @@ describe('AffecterEnseignantsService', () => {
     expect(result.aCreer[0].teacherId).toBe('t2');
   });
 
+  it('respecte la capacité hebdomadaire de la grille pour un enseignant ordinaire', () => {
+    const result = genererAffectations(
+      [candidat({ classId: 'c1', subjectId: 's1', weeklyPeriods: 3 })],
+      [
+        enseignant({ teacherId: 't1', subjectId: 's1', chargeActuelleHeures: 5, capaciteHeures: 7 }),
+        enseignant({ teacherId: 't2', subjectId: 's1', chargeActuelleHeures: 1, capaciteHeures: 10 }),
+      ],
+    );
+
+    expect(result.aCreer[0].teacherId).toBe('t2');
+  });
+
+  it('signale la capacité de grille dépassée quand aucun enseignant ne peut prendre la matière', () => {
+    const result = genererAffectations(
+      [candidat({ classId: 'c1', subjectId: 's1', weeklyPeriods: 3 })],
+      [enseignant({ teacherId: 't1', subjectId: 's1', chargeActuelleHeures: 5, capaciteHeures: 7 })],
+    );
+
+    expect(result.nonResolus[0].raison).toBe('TEACHER_WEEKLY_CAP_EXCEEDED');
+    expect(result.nonResolus[0].details).toEqual({ weeklyPeriods: 3, candidats: [{ teacherId: 't1', chargeActuelleHeures: 5, capaciteHeures: 7, estAP: false }] });
+  });
+
   it('marque non résolu quand tous les qualifiés dépasseraient le plafond AP', () => {
     const result = genererAffectations(
       [candidat({ classId: 'c1', subjectId: 's1', weeklyPeriods: 3 })],

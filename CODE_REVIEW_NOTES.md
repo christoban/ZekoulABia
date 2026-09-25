@@ -16,3 +16,4 @@
 - [2026-09-23] `frontend/src/app/admin/dashboard/_components/SectionCommunications.tsx:219` — thème — l’onglet actif force `white` et risque le même défaut de contraste en mode sombre.
 - [2026-09-23] `frontend/src/app/admin/dashboard/_components/SectionSubjects.tsx:1498` — thème — les options « Toutes/Classes uniquement » d’une modale forcent aussi `white` et présentent le même risque en mode sombre.
 - [2026-09-23] `frontend/src/app/admin/dashboard/_components/SectionSettings.tsx:836` — thème — les lignes alternées du journal d’audit de l’onglet Sécurité forcent `white` et présentent le même risque en mode sombre.
+- [2026-09-25] `backend/src/infrastructure/http/controllers/BabillardController.ts` et `MasterReferentielsController.ts` — architecture hexagonale — accès Prisma direct dans des controllers ; hors périmètre du Bloc 2, à traiter dans un chantier hexagonal.

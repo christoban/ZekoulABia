@@ -3,6 +3,9 @@ import {
   CYCLE2_LEVELS,
   parseSerie,
 } from '@application/school/SubjectAssignmentHelper';
+import { SchedulingGridAdapter } from '@infrastructure/scheduling/SchedulingGridAdapter';
+import { joursActifsVersIndex } from '@domain/types/joursSemaine';
+import { calculerCapaciteDisponible, LIMITE_AP_HEURES } from '@domain/rules/CapaciteEmploiDuTemps';
 import type {
   RattachementEnseignantRepository,
   VerifierRattachementOptions,
@@ -43,7 +46,13 @@ export class PrismaRattachementEnseignantRepository implements RattachementEnsei
   async listerAffectations(classId: string, schoolId: string) {
     return this.prisma.teachingAssignment.findMany({
       where: { classId, schoolId },
-      include: { teacher: { select: { id: true, firstName: true, lastName: true } } },
+      select: {
+        subjectId: true,
+        teacherId: true,
+        source: true,
+        createdAt: true,
+        teacher: { select: { id: true, firstName: true, lastName: true } },
+      },
     }) as Promise<import('@domain/ports/repositories/RattachementEnseignantRepository').AffectationAvecEnseignant[]>;
   }
 
@@ -149,8 +158,10 @@ export class PrismaRattachementEnseignantRepository implements RattachementEnsei
         teacherId: params.teacherId,
         schoolId: params.schoolId,
         academicYearId: params.academicYearId,
+        source: 'MANUAL',
+        createdAt: new Date(),
       },
-      update: { teacherId: params.teacherId },
+      update: { teacherId: params.teacherId, source: 'MANUAL', createdAt: new Date() },
     });
   }
 
@@ -227,15 +238,14 @@ export class PrismaRattachementEnseignantRepository implements RattachementEnsei
     }
 
     const isAP = await this.estEnseignantAP(params.teacherId);
-    if (!isAP) {
-      return { ok: true };
-    }
-
     const currentLoad = await this.calculerChargeEnseignant(params.teacherId, params.schoolId, params.academicYearId, {
       classId: params.classId,
       subjectId: params.subjectId,
     });
-    if (currentLoad + candidateLoad <= 14) {
+    const capacity = await this.calculerCapaciteDisponible(params.teacherId, params.schoolId);
+    const apExceeded = isAP && currentLoad + candidateLoad > LIMITE_AP_HEURES;
+    const capacityExceeded = capacity !== null && currentLoad + candidateLoad > capacity;
+    if (!apExceeded && !capacityExceeded) {
       return { ok: true };
     }
 
@@ -244,20 +254,22 @@ export class PrismaRattachementEnseignantRepository implements RattachementEnsei
     for (const teacher of eligible) {
       if (teacher.id === params.teacherId) continue;
       const load = await this.calculerChargeEnseignant(teacher.id, params.schoolId, params.academicYearId);
-      if (load + candidateLoad <= 14) {
-        suggestions.push({
-          teacherId: teacher.id,
-          firstName: teacher.firstName,
-          lastName: teacher.lastName,
-          chargeHeures: load,
-        });
-      }
+      const teacherCapacity = await this.calculerCapaciteDisponible(teacher.id, params.schoolId);
+      const teacherAP = await this.estEnseignantAP(teacher.id);
+      if (teacherCapacity !== null && load + candidateLoad > teacherCapacity) continue;
+      if (teacherAP && load + candidateLoad > LIMITE_AP_HEURES) continue;
+      suggestions.push({
+        teacherId: teacher.id,
+        firstName: teacher.firstName,
+        lastName: teacher.lastName,
+        chargeHeures: load,
+      });
     }
     suggestions.sort((a, b) => a.chargeHeures - b.chargeHeures || a.teacherId.localeCompare(b.teacherId));
 
     return {
       ok: false,
-      code: 'AP_WEEKLY_CAP_EXCEEDED',
+      code: apExceeded ? 'AP_WEEKLY_CAP_EXCEEDED' : 'TEACHER_WEEKLY_CAP_EXCEEDED',
       currentLoad,
       candidateLoad,
       suggestions,
@@ -285,6 +297,31 @@ export class PrismaRattachementEnseignantRepository implements RattachementEnsei
     const exact = coefficients.find((c) => c.serieCode === resolvedSerie);
     const generic = coefficients.find((c) => c.serieCode === null);
     return (exact ?? generic)?.weeklyPeriods ?? null;
+  }
+
+  private async calculerCapaciteDisponible(teacherId: string, schoolId: string): Promise<number | null> {
+    const [school, teacherProfile, grid, indisponibilites] = await Promise.all([
+      this.prisma.school.findUnique({ where: { id: schoolId }, select: { defaultMaxWeeklyHours: true } }),
+      this.prisma.teacherProfile.findUnique({ where: { userId: teacherId }, select: { maxWeeklyHours: true } }),
+      this.prisma.timetableGridConfig.findUnique({ where: { schoolId } }),
+      this.prisma.teacherUnavailability.findMany({
+        where: { schoolId, teacherId, active: true },
+        select: { dayOfWeek: true, startTime: true, endTime: true },
+      }),
+    ]);
+    const configuredCapacity = teacherProfile?.maxWeeklyHours ?? school?.defaultMaxWeeklyHours ?? null;
+    if (!grid) return configuredCapacity;
+
+    const gridAdapter = new SchedulingGridAdapter();
+    const cases = grid.joursActifs.flatMap((jour) => {
+      const dayOfWeek = joursActifsVersIndex([jour])[0]!;
+      return gridAdapter
+        .calculerSqelette({ ...grid, periodesCoursParJour: (grid.periodesCoursParJour ?? {}) as Record<string, number> }, jour)
+        .filter((periode) => periode.type === 'COURS')
+        .map((periode) => ({ dayOfWeek, startTime: periode.debut, endTime: periode.fin }));
+    });
+    const gridCapacity = calculerCapaciteDisponible(cases, indisponibilites.map((indisponibilite) => ({ ...indisponibilite, teacherId })), [], teacherId);
+    return configuredCapacity === null ? gridCapacity : Math.min(gridCapacity, configuredCapacity);
   }
 
   private async estEnseignantAP(teacherId: string): Promise<boolean> {

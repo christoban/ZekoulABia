@@ -23,7 +23,7 @@ async function updateAssignmentAndSlots(
   oldTeacherId: string,
 ) {
   const tt = await prisma.timetable.findFirst({ where: { classId, schoolId: SCHOOL_ID }, select: { id: true } });
-  await prisma.teachingAssignment.update({ where: { id: assignmentId }, data: { teacherId: newTeacherId } });
+  await prisma.teachingAssignment.update({ where: { id: assignmentId }, data: { teacherId: newTeacherId, source: 'MANUAL', createdAt: new Date() } });
   if (tt) {
     const r = await prisma.timetableSlot.updateMany({
       where: { timetableId: tt.id, teacherId: oldTeacherId, subjectId },

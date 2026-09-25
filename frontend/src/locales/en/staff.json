@@ -296,19 +296,25 @@
     "generateButton": "Generate assignments",
     "generateAllTitle": "Global assignment generation",
     "generateAllHint": "Analyses every class in the year and creates only missing assignments, without rebalancing existing ones.",
-    "generateAllConfirm": "Run assignment generation for every class in the year?",
+     "generateAllConfirm": "Run assignment generation for every class in the year? Existing assignments will not be rebalanced.",
+     "generateConfirmNoRebalance": "Run assignment generation for this class? Existing assignments will not be rebalanced.",
     "generateAllButton": "Generate all classes",
     "generateAllSuccess": "{count} assignment(s) created globally",
     "generatingAll": "Analysing globally…",
     "generateSuccess": "{count} assignment(s) created",
     "generateError": "Assignment generation failed",
-    "generatedCreated": "{count} created",
-    "generatedUnresolved": "{count} unresolved",
-    "generatedOutOfScope": "{count} out of scope",
+     "generatedCreated": "{count} created",
+     "generatedRebalanced": "{count} rebalanced",
+     "generatedUnresolved": "{count} unresolved",
+     "generatedOutOfScope": "{count} out of scope",
     "unresolvedTitle": "Unresolved (to handle manually)",
     "outOfScopeTitle": "Out of scope (no reliable weekly hours)",
-    "apCapExceeded": "AP 14h cap exceeded",
-    "apCapExceededDetail": "This assignment would bring this teacher to {current}h + {candidate}h, exceeding the 14h AP cap.",
+     "apCapExceeded": "AP 14h cap exceeded",
+     "apCapExceededDetail": "This assignment would bring this teacher to {current}h + {candidate}h, exceeding the 14h AP cap.",
+     "weeklyCapExceeded": "Weekly capacity exceeded",
+     "candidateLoad": "{teacher}: {load}h / {capacity}{ap}",
+     "capacityUnconfigured": "capacity not configured",
+     "apBadge": " · AP",
     "clearClass": "Cancel all assignments",
     "clearClassConfirm": "Cancel all assignments for {className}? This action is irreversible.",
     "clearClassSuccess": "{count} assignment(s) cancelled",
@@ -316,10 +322,16 @@
     "clearing": "Cancelling…",
     "apCapSuggestions": "Suggested teachers",
     "apCapNoSuggestion": "No other qualified teacher fits within the AP cap.",
-    "reason": {
-      "NO_QUALIFIED_TEACHER": "no qualified teacher",
-      "AP_WEEKLY_CAP_EXCEEDED": "14h AP cap reached for all qualified teachers"
-    }
+     "reason": {
+       "NO_QUALIFIED_TEACHER": "no qualified teacher",
+       "AP_WEEKLY_CAP_EXCEEDED": "14h AP cap reached for all qualified teachers",
+       "TEACHER_WEEKLY_CAP_EXCEEDED": "weekly capacity reached for all qualified teachers"
+     },
+     "source": {
+       "MANUAL": "Manual entry",
+       "GENERATED": "Generated automatically",
+       "UNKNOWN": "Unknown provenance"
+     }
   },
   "departements": {
     "title": "Academic Departments",

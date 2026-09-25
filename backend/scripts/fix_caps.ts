@@ -116,7 +116,7 @@ async function main() {
       const classToMove = donor.classIds[donor.classIds.length - 1]!;
       const aToMove = assignments.find(a => a.teacherId === donor.tid && a.subjectId === gap.subjectId && a.classId === classToMove)!;
 
-      await prisma.teachingAssignment.update({ where: { id: aToMove.id }, data: { teacherId: gap.teacherId } });
+      await prisma.teachingAssignment.update({ where: { id: aToMove.id }, data: { teacherId: gap.teacherId, source: 'MANUAL', createdAt: new Date() } });
       const ttId = ttByClass.get(classToMove);
       let slotCount = 0;
       if (ttId) {
@@ -175,7 +175,7 @@ async function main() {
       const donorForMissing = donorsForMissing[0]!;
 
       // Étape 1 : retirer un surplus du bénéficiaire → repreneur
-      await prisma.teachingAssignment.update({ where: { id: aToSwap.id }, data: { teacherId: repreneur.tid } });
+      await prisma.teachingAssignment.update({ where: { id: aToSwap.id }, data: { teacherId: repreneur.tid, source: 'MANUAL', createdAt: new Date() } });
       const ttId1 = ttByClass.get(aToSwap.classId);
       if (ttId1) {
         await prisma.timetableSlot.updateMany({
@@ -187,7 +187,7 @@ async function main() {
       console.log(`   ↔  ${tName} cède ${subjectName.get(surplusSubjectId)} à ${teacherMap.get(repreneur.tid)}`);
 
       // Étape 2 : donner la matière manquante au bénéficiaire
-      await prisma.teachingAssignment.update({ where: { id: donorForMissing.aId }, data: { teacherId: gap.teacherId } });
+      await prisma.teachingAssignment.update({ where: { id: donorForMissing.aId }, data: { teacherId: gap.teacherId, source: 'MANUAL', createdAt: new Date() } });
       const ttId2 = ttByClass.get(donorForMissing.classId);
       let slotCount = 0;
       if (ttId2) {

@@ -3,6 +3,8 @@
  * Aucune dépendance Prisma/Express — testable sans base de données.
  */
 
+import { LIMITE_AP_HEURES } from '@domain/rules/CapaciteEmploiDuTemps';
+
 export type CandidatMatiereClasse = {
   classId: string;
   className: string;
@@ -17,6 +19,7 @@ export type EnseignantEligible = {
   subjectId: string;
   estAP: boolean;
   chargeActuelleHeures: number;
+  capaciteHeures?: number;
 };
 
 export type AffectationAReequilibrer = {
@@ -31,12 +34,23 @@ export type AffectationACreer = {
   teacherId: string;
 };
 
+export type CandidatNonResolu = {
+  teacherId: string;
+  chargeActuelleHeures: number;
+  capaciteHeures: number | null;
+  estAP: boolean;
+};
+
 export type MatiereNonResolue = {
   classId: string;
   className: string;
   subjectId: string;
   subjectName: string;
-  raison: 'NO_QUALIFIED_TEACHER' | 'AP_WEEKLY_CAP_EXCEEDED';
+  raison: 'NO_QUALIFIED_TEACHER' | 'AP_WEEKLY_CAP_EXCEEDED' | 'TEACHER_WEEKLY_CAP_EXCEEDED';
+  details: {
+    weeklyPeriods: number | null;
+    candidats: CandidatNonResolu[];
+  };
 };
 
 export type MatiereHorsPerimetre = {
@@ -52,7 +66,12 @@ export type ResultatGenerationAffectations = {
   horsPerimetre: MatiereHorsPerimetre[];
 };
 
-const LIMITE_AP_HEURES = 14;
+function respectePlafond(enseignant: EnseignantEligible, heures: number): boolean {
+  if (enseignant.capaciteHeures !== undefined && enseignant.chargeActuelleHeures + heures > enseignant.capaciteHeures) {
+    return false;
+  }
+  return !enseignant.estAP || enseignant.chargeActuelleHeures + heures <= LIMITE_AP_HEURES;
+}
 
 function trierCandidats(a: CandidatMatiereClasse, b: CandidatMatiereClasse): number {
   return a.classId.localeCompare(b.classId) || a.subjectId.localeCompare(b.subjectId);
@@ -103,23 +122,34 @@ export function genererAffectations(
         subjectId: candidat.subjectId,
         subjectName: candidat.subjectName,
         raison: 'NO_QUALIFIED_TEACHER',
+        details: {
+          weeklyPeriods: candidat.weeklyPeriods,
+          candidats: [],
+        },
       });
       continue;
     }
 
     eligibles.sort(trierEnseignants);
-    const choisi = eligibles.find((e) => {
-      if (!e.estAP) return true;
-      return e.chargeActuelleHeures + candidat.weeklyPeriods! <= LIMITE_AP_HEURES;
-    });
+    const choisi = eligibles.find((e) => respectePlafond(e, candidat.weeklyPeriods!));
 
     if (!choisi) {
+      const tousAPPlafonne = eligibles.every((e) => e.estAP && e.chargeActuelleHeures + candidat.weeklyPeriods! > LIMITE_AP_HEURES);
       nonResolus.push({
         classId: candidat.classId,
         className: candidat.className,
         subjectId: candidat.subjectId,
         subjectName: candidat.subjectName,
-        raison: 'AP_WEEKLY_CAP_EXCEEDED',
+        raison: tousAPPlafonne ? 'AP_WEEKLY_CAP_EXCEEDED' : 'TEACHER_WEEKLY_CAP_EXCEEDED',
+        details: {
+          weeklyPeriods: candidat.weeklyPeriods,
+          candidats: eligibles.map((e) => ({
+            teacherId: e.teacherId,
+            chargeActuelleHeures: e.chargeActuelleHeures,
+            capaciteHeures: e.capaciteHeures ?? null,
+            estAP: e.estAP,
+          })),
+        },
       });
       continue;
     }
@@ -154,7 +184,11 @@ export function reequilibrerAffectations(
   const modifications: AffectationAReequilibrer[] = [];
   for (const affectation of [...affectations].sort((a, b) => b.weeklyPeriods - a.weeklyPeriods || a.id.localeCompare(b.id))) {
     const choisi = (eligiblesParMatiere.get(affectation.subjectId) ?? [])
-      .filter(enseignant => !enseignant.estAP || (charge.get(enseignant.teacherId) ?? 0) + affectation.weeklyPeriods <= LIMITE_AP_HEURES)
+      .filter(enseignant => {
+        const currentCharge = charge.get(enseignant.teacherId) ?? 0;
+        if (enseignant.capaciteHeures !== undefined && currentCharge + affectation.weeklyPeriods > enseignant.capaciteHeures) return false;
+        return !enseignant.estAP || currentCharge + affectation.weeklyPeriods <= LIMITE_AP_HEURES;
+      })
       .sort((a, b) => (charge.get(a.teacherId) ?? 0) - (charge.get(b.teacherId) ?? 0) || a.teacherId.localeCompare(b.teacherId))[0];
     if (!choisi || choisi.teacherId === affectation.teacherId) continue;
     modifications.push({ id: affectation.id, ancienTeacherId: affectation.teacherId, nouveauTeacherId: choisi.teacherId });

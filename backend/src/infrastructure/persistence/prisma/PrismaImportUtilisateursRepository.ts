@@ -152,7 +152,7 @@ export class PrismaImportUtilisateursRepository implements ImportUtilisateursRep
   async creerAffectations(assignments: AffectationPedagogiqueData[]): Promise<number> {
     if (assignments.length === 0) return 0;
     const result = await this.prisma.teachingAssignment.createMany({
-      data: assignments,
+      data: assignments.map((assignment) => ({ ...assignment, source: 'MANUAL' as const, createdAt: new Date() })),
       skipDuplicates: true,
     });
     return result.count;

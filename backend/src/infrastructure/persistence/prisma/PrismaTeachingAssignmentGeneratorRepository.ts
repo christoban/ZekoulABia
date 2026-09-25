@@ -3,6 +3,9 @@ import {
   CYCLE2_LEVELS,
   parseSerie,
 } from '@application/school/SubjectAssignmentHelper';
+import { SchedulingGridAdapter } from '@infrastructure/scheduling/SchedulingGridAdapter';
+import { joursActifsVersIndex } from '@domain/types/joursSemaine';
+import { calculerCapaciteDisponible } from '@domain/rules/CapaciteEmploiDuTemps';
 import type {
   TeachingAssignmentGeneratorRepository,
   DonneesGenerationAffectations,
@@ -96,7 +99,7 @@ export class PrismaTeachingAssignmentGeneratorRepository implements TeachingAssi
 
     // ── Candidats LV2 : un couple (classe, langue) dès qu'au moins un élève inscrit l'a choisi ──
     const [school, lv2Subjects] = await Promise.all([
-      this.prisma.school.findUnique({ where: { id: schoolId }, select: { templateCode: true } }),
+      this.prisma.school.findUnique({ where: { id: schoolId }, select: { templateCode: true, defaultMaxWeeklyHours: true } }),
       this.prisma.subject.findMany({
         where: { schoolId, isLV2: true, deletedAt: null },
         select: { id: true, name: true, hoursPerWeek: true },
@@ -187,6 +190,37 @@ export class PrismaTeachingAssignmentGeneratorRepository implements TeachingAssi
         },
       });
 
+      const [grid, indisponibilites] = await Promise.all([
+        this.prisma.timetableGridConfig.findUnique({ where: { schoolId } }),
+        this.prisma.teacherUnavailability.findMany({
+          where: { schoolId, active: true },
+          select: { teacherId: true, dayOfWeek: true, startTime: true, endTime: true },
+        }),
+      ]);
+      const gridAdapter = new SchedulingGridAdapter();
+      const gridConfig = grid;
+      const cases = gridConfig ? gridConfig.joursActifs.flatMap((jour) => {
+        const dayOfWeek = joursActifsVersIndex([jour])[0]!;
+        return gridAdapter
+          .calculerSqelette({ ...gridConfig, periodesCoursParJour: (gridConfig.periodesCoursParJour ?? {}) as Record<string, number> }, jour)
+          .filter((periode) => periode.type === 'COURS')
+          .map((periode) => ({ dayOfWeek, startTime: periode.debut, endTime: periode.fin }));
+      }) : [];
+      const capaciteParEnseignant = new Map<string, number>();
+      for (const teacherSubject of teacherSubjects) {
+        const teacherId = teacherSubject.teacherProfile.user.id;
+        if (capaciteParEnseignant.has(teacherId)) continue;
+        const gridCapacity = grid ? calculerCapaciteDisponible(cases, indisponibilites, [], teacherId) : undefined;
+        const configuredCapacity = teacherSubject.teacherProfile.maxWeeklyHours ?? school?.defaultMaxWeeklyHours ?? null;
+        if (configuredCapacity === null) {
+          if (gridCapacity !== undefined) capaciteParEnseignant.set(teacherId, gridCapacity);
+        } else if (gridCapacity === undefined) {
+          capaciteParEnseignant.set(teacherId, configuredCapacity);
+        } else {
+          capaciteParEnseignant.set(teacherId, Math.min(gridCapacity, configuredCapacity));
+        }
+      }
+
       for (const ts of teacherSubjects) {
         const user = ts.teacherProfile.user;
         const permissions = user.staffProfile?.permissions.map((p) => p.permission) ?? [];
@@ -195,13 +229,16 @@ export class PrismaTeachingAssignmentGeneratorRepository implements TeachingAssi
           teacherId: user.id,
           subjectId: ts.subjectId,
           estAP,
+          capaciteHeures: capaciteParEnseignant.get(user.id),
+          maxWeeklyHours: ts.teacherProfile.maxWeeklyHours,
+          defaultMaxWeeklyHours: school?.defaultMaxWeeklyHours,
         });
       }
     }
 
     const affectations = await this.prisma.teachingAssignment.findMany({
       where: { schoolId, academicYearId },
-      select: { id: true, classId: true, subjectId: true, teacherId: true, subject: { select: { hoursPerWeek: true } } },
+      select: { id: true, classId: true, subjectId: true, teacherId: true, source: true, subject: { select: { hoursPerWeek: true } } },
     });
 
     return {
@@ -213,6 +250,7 @@ export class PrismaTeachingAssignmentGeneratorRepository implements TeachingAssi
         classId: affectation.classId,
         subjectId: affectation.subjectId,
         teacherId: affectation.teacherId,
+        source: affectation.source,
         subjectHoursPerWeek: affectation.subject.hoursPerWeek,
       })),
     };
@@ -221,7 +259,9 @@ export class PrismaTeachingAssignmentGeneratorRepository implements TeachingAssi
   async createAssignmentsInTransaction(assignments: AssignmentACreerPayload[]): Promise<number> {
     if (assignments.length === 0) return 0;
     const result = await this.prisma.$transaction((tx) =>
-      tx.teachingAssignment.createMany({ data: assignments }),
+      tx.teachingAssignment.createMany({
+        data: assignments.map((assignment) => ({ ...assignment, source: 'GENERATED' as const, createdAt: new Date() })),
+      }),
     );
     return result.count;
   }

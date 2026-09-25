@@ -89,7 +89,7 @@ async function main() {
   for (const u of updates) {
     await prisma.teachingAssignment.update({
       where: { id: u.id },
-      data: { teacherId: u.newTeacherId },
+      data: { teacherId: u.newTeacherId, source: 'MANUAL', createdAt: new Date() },
     });
   }
 

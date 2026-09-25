@@ -33,6 +33,8 @@ export type AffectationAvecEnseignant = {
   subjectId: string;
   teacherId: string;
   teacher: { id: string; firstName: string; lastName: string };
+  source: 'MANUAL' | 'GENERATED' | 'UNKNOWN';
+  createdAt: Date | null;
 };
 
 export type EnseignantEligible = {
@@ -62,7 +64,7 @@ export type IssueAffectation = {
 
 export type ValidationAffectationResultat =
   | { ok: true }
-  | { ok: false; code: 'AP_WEEKLY_CAP_EXCEEDED'; currentLoad: number; candidateLoad: number; suggestions: SuggestionEnseignant[] };
+  | { ok: false; code: 'AP_WEEKLY_CAP_EXCEEDED' | 'TEACHER_WEEKLY_CAP_EXCEEDED'; currentLoad: number; candidateLoad: number; suggestions: SuggestionEnseignant[] };
 
 export interface RattachementEnseignantRepository {
   /**

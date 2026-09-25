@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { calculateAverageScoreOn20 } from '@domain/rules/GradingEngine';
+import { LIMITE_AP_HEURES } from '@domain/rules/CapaciteEmploiDuTemps';
 import {
   type ActionDefinition,
   resolveClass,
@@ -297,7 +298,7 @@ export function buildAdminAcademicGradeActions(deps: AdminActionDeps): ActionDef
         if (!current) throw new Error(`Aucune affectation de ${matiere.name} pour ${classe.name}.`);
         const teacherProfile = await ctx.prisma.teacherProfile.findFirst({ where: { userId: teacher.id, user: { schoolId: ctx.schoolId, role: 'TEACHER', isActive: true }, teacherSubjects: { some: { subjectId: matiere.id } } }, select: { id: true } });
         if (!teacherProfile) throw new Error(`${teacher.name} n'est pas qualifié pour ${matiere.name}.`);
-        await ctx.prisma.teachingAssignment.update({ where: { id: current.id }, data: { teacherId: teacher.id } });
+        await ctx.prisma.teachingAssignment.update({ where: { id: current.id }, data: { teacherId: teacher.id, source: 'MANUAL', createdAt: new Date() } });
         return { resultLabel: `${matiere.name} de ${classe.name} réaffecté à ${teacher.name}.`, section: 'affectations', entity: 'teachingAssignment' };
       },
       async undo() {
@@ -473,7 +474,7 @@ export function buildAdminAcademicGradeActions(deps: AdminActionDeps): ActionDef
           const entry = load.get(affectation.teacher.id)!;
           const alternate = alternatives.get(affectation.subject.name)?.join(', ') || 'aucun enseignant qualifié disponible';
           const occupations = entry.free < entry.requested ? ` Occupée(s) dans : ${entry.occupied.slice(0, 6).join(', ')}.` : '';
-          const cap = entry.ap ? ` Statut AP : ${entry.actualHours}h actuellement, maximum 14h${entry.actualHours > 14 ? ' — DÉPASSEMENT' : ''}.` : '';
+          const cap = entry.ap ? ` Statut AP : ${entry.actualHours}h actuellement, maximum ${LIMITE_AP_HEURES}h${entry.actualHours > LIMITE_AP_HEURES ? ' — DÉPASSEMENT' : ''}.` : '';
           return `${affectation.subject.name} : ${affectation.subject.hoursPerWeek}h demandées à ${teacherName}; ${entry.free} créneaux libres; alternative(s) : ${alternate}.${cap}${occupations}`;
         });
         return { resultLabel: `Diagnostic ${classe.name} :\n${lines.join('\n')}`, section: 'timetable', entity: 'timetable' };

@@ -142,7 +142,7 @@ async function main() {
     // 1. Mettre à jour TeachingAssignment
     await prisma.teachingAssignment.update({
       where: { id: aId },
-      data: { teacherId: gap.teacherId },
+      data: { teacherId: gap.teacherId, source: 'MANUAL', createdAt: new Date() },
     });
 
     // 2. Mettre à jour les TimetableSlots correspondants
@@ -150,7 +150,7 @@ async function main() {
     if (ttId) {
       const slotsUpdated = await prisma.timetableSlot.updateMany({
         where: { timetableId: ttId, teacherId: bestDonorId, subjectId: gap.subjectId },
-        data: { teacherId: gap.teacherId },
+      data: { teacherId: gap.teacherId },
       });
       console.log(`\n   ✓ ${gap.teacherName} ← ${gap.subjectName} (était ${donorName.lastName} ${donorName.firstName}, ${slotsUpdated.count} slots mis à jour)`);
     } else {

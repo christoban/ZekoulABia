@@ -1,4 +1,5 @@
 import type { TeachingAssignmentGeneratorRepository } from '@domain/ports/repositories/TeachingAssignmentGeneratorRepository';
+import { calculerChargeParEnseignant } from '@domain/rules/CapaciteEmploiDuTemps';
 import {
   genererAffectations,
   reequilibrerAffectations,
@@ -47,29 +48,48 @@ export class GenererAffectationsUseCase {
       dejaAffecte: existingKeys.has(`${m.classId}:${m.subjectId}`),
     }));
 
-    const chargeParEnseignant = new Map<string, number>();
-    for (const a of data.affectations) {
-      const key = `${a.classId}:${a.subjectId}`;
-      const wp = weeklyPeriodsByKey.get(key) ?? a.subjectHoursPerWeek ?? 0;
-      chargeParEnseignant.set(a.teacherId, (chargeParEnseignant.get(a.teacherId) ?? 0) + wp);
-    }
+    const chargeParEnseignant = calculerChargeParEnseignant(data.affectations.map((a) => ({
+      teacherId: a.teacherId,
+      weeklyPeriods: weeklyPeriodsByKey.get(`${a.classId}:${a.subjectId}`) ?? a.subjectHoursPerWeek,
+    })));
 
-    const enseignantsEligibles: EnseignantEligible[] = data.enseignants.map((e) => ({
-      teacherId: e.teacherId,
-      subjectId: e.subjectId,
-      estAP: e.estAP,
-      chargeActuelleHeures: chargeParEnseignant.get(e.teacherId) ?? 0,
-    }));
+    const enseignantsEligibles: EnseignantEligible[] = data.enseignants.map((e) => {
+      const configuredCapacity = e.maxWeeklyHours ?? e.defaultMaxWeeklyHours;
+      const capaciteHeures = configuredCapacity === null || configuredCapacity === undefined
+        ? e.capaciteHeures
+        : e.capaciteHeures === undefined
+          ? configuredCapacity
+          : Math.min(e.capaciteHeures, configuredCapacity);
+      return {
+        teacherId: e.teacherId,
+        subjectId: e.subjectId,
+        estAP: e.estAP,
+        chargeActuelleHeures: chargeParEnseignant.get(e.teacherId) ?? 0,
+        capaciteHeures,
+      };
+    });
 
     let rebalancedCount = 0;
     if (commande.rebalanceExisting) {
       const affectationsAEquilibrer = data.affectations
-        .filter(affectation => !classId || affectation.classId === classId)
+        .filter(affectation => affectation.source === 'GENERATED' && (!classId || affectation.classId === classId))
         .map(affectation => ({
           ...affectation,
           weeklyPeriods: weeklyPeriodsByKey.get(`${affectation.classId}:${affectation.subjectId}`) ?? affectation.subjectHoursPerWeek ?? 0,
         }));
       const modifications = reequilibrerAffectations(affectationsAEquilibrer, enseignantsEligibles);
+      for (const modification of modifications) {
+        const affectation = affectationsAEquilibrer.find((a) => a.id === modification.id);
+        if (!affectation) continue;
+        for (const enseignant of enseignantsEligibles) {
+          if (enseignant.teacherId === modification.ancienTeacherId) {
+            enseignant.chargeActuelleHeures -= affectation.weeklyPeriods;
+          }
+          if (enseignant.teacherId === modification.nouveauTeacherId) {
+            enseignant.chargeActuelleHeures += affectation.weeklyPeriods;
+          }
+        }
+      }
       rebalancedCount = await this.generatorRepository.updateAssignmentsInTransaction(modifications.map(modification => ({
         id: modification.id,
         teacherId: modification.nouveauTeacherId,
@@ -94,6 +114,7 @@ export class GenererAffectationsUseCase {
         classId: issue.classId,
         subjectId: issue.subjectId,
         reason: issue.raison,
+        details: issue.details,
       })),
     });
 

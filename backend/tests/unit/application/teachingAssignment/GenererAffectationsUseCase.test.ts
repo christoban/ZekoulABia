@@ -15,7 +15,7 @@ class FakeGeneratorRepository implements TeachingAssignmentGeneratorRepository {
   };
   created: AssignmentACreerPayload[] = [];
   updated: { id: string; teacherId: string }[] = [];
-  persistedIssues: { classId: string; subjectId: string; reason: string }[] = [];
+  persistedIssues: { classId: string; subjectId: string; reason: string; details?: Record<string, unknown> }[] = [];
 
   async loadGenerationData(): Promise<DonneesGenerationAffectations> {
     return this.data;
@@ -60,7 +60,7 @@ describe('GenererAffectationsUseCase', () => {
       ],
       affectations: [
         // t1 a déjà 12h de maths
-        { id: 'a1', classId: 'c1', subjectId: 's1', teacherId: 't1' },
+        { id: 'a1', classId: 'c1', subjectId: 's1', teacherId: 't1', source: 'GENERATED' },
       ],
     };
 
@@ -91,7 +91,7 @@ describe('GenererAffectationsUseCase', () => {
     const resultat = await new GenererAffectationsUseCase(repo).execute({ schoolId: 's1', academicYearId: 'ay1' });
 
     expect(resultat.createdCount).toBe(0);
-    expect(repo.persistedIssues).toEqual([{ classId: 'c1', subjectId: 's1', reason: 'NO_QUALIFIED_TEACHER' }]);
+    expect(repo.persistedIssues).toEqual([{ classId: 'c1', subjectId: 's1', reason: 'NO_QUALIFIED_TEACHER', details: { weeklyPeriods: 2, candidats: [] } }]);
   });
 
   it('rééquilibre une affectation existante vers l’enseignant le moins chargé', async () => {
@@ -103,7 +103,7 @@ describe('GenererAffectationsUseCase', () => {
         { teacherId: 't1', subjectId: 's1', estAP: false },
         { teacherId: 't2', subjectId: 's1', estAP: false },
       ],
-      affectations: [{ id: 'a1', classId: 'c1', subjectId: 's1', teacherId: 't1' }],
+      affectations: [{ id: 'a1', classId: 'c1', subjectId: 's1', teacherId: 't1', source: 'GENERATED' }],
     };
 
     const resultat = await new GenererAffectationsUseCase(repo).execute({ schoolId: 's1', academicYearId: 'ay1', rebalanceExisting: true });
@@ -112,13 +112,60 @@ describe('GenererAffectationsUseCase', () => {
     expect(repo.updated).toEqual([{ id: 'a1', teacherId: 't2' }]);
   });
 
+  it('ne rééquilibre que les affectations générées', async () => {
+    const repo = new FakeGeneratorRepository();
+    repo.data = {
+      classes: [{ id: 'c1', name: '6e A', level: '6e', serie: null, filiere: 'FR_GENERAL', academicYearId: 'ay1' }],
+      matieres: [
+        { classId: 'c1', className: '6e A', subjectId: 's1', subjectName: 'Mathématiques', weeklyPeriods: 4 },
+        { classId: 'c2', className: '6e B', subjectId: 's1', subjectName: 'Mathématiques', weeklyPeriods: 4 },
+      ],
+      enseignants: [
+        { teacherId: 't1', subjectId: 's1', estAP: false },
+        { teacherId: 't2', subjectId: 's1', estAP: false },
+      ],
+      affectations: [
+        { id: 'manual', classId: 'c1', subjectId: 's1', teacherId: 't1', source: 'MANUAL' },
+        { id: 'generated', classId: 'c2', subjectId: 's1', teacherId: 't2', source: 'GENERATED' },
+      ],
+    };
+
+    const resultat = await new GenererAffectationsUseCase(repo).execute({ schoolId: 's1', academicYearId: 'ay1', rebalanceExisting: true });
+
+    expect(resultat.rebalancedCount).toBe(1);
+    expect(repo.updated).toEqual([{ id: 'generated', teacherId: 't1' }]);
+  });
+
+  it('utilise la charge après rééquilibrage pour respecter la capacité', async () => {
+    const repo = new FakeGeneratorRepository();
+    repo.data = {
+      classes: [{ id: 'c1', name: '6e A', level: '6e', serie: null, filiere: 'FR_GENERAL', academicYearId: 'ay1' }],
+      matieres: [
+        { classId: 'c1', className: '6e A', subjectId: 's1', subjectName: 'Mathématiques', weeklyPeriods: 4 },
+        { classId: 'c1', className: '6e A', subjectId: 's2', subjectName: 'Français', weeklyPeriods: 2 },
+      ],
+      enseignants: [
+        { teacherId: 't1', subjectId: 's1', estAP: false, capaciteHeures: 5 },
+        { teacherId: 't2', subjectId: 's1', estAP: false, capaciteHeures: 5 },
+        { teacherId: 't1', subjectId: 's2', estAP: false, capaciteHeures: 5 },
+        { teacherId: 't2', subjectId: 's2', estAP: false, capaciteHeures: 5 },
+      ],
+      affectations: [{ id: 'a1', classId: 'c1', subjectId: 's1', teacherId: 't1', source: 'GENERATED' }],
+    };
+
+    await new GenererAffectationsUseCase(repo).execute({ schoolId: 's1', academicYearId: 'ay1', rebalanceExisting: true });
+
+    expect(repo.updated).toEqual([{ id: 'a1', teacherId: 't2' }]);
+    expect(repo.created).toEqual([{ classId: 'c1', subjectId: 's2', teacherId: 't1', schoolId: 's1', academicYearId: 'ay1' }]);
+  });
+
   it('ne crée rien quand tout est déjà affecté', async () => {
     const repo = new FakeGeneratorRepository();
     repo.data = {
       classes: [{ id: 'c1', name: '6e A', level: '6e', serie: null, filiere: 'FR_GENERAL', academicYearId: 'ay1' }],
       matieres: [{ classId: 'c1', className: '6e A', subjectId: 's1', subjectName: 'Mathématiques', weeklyPeriods: 4 }],
       enseignants: [{ teacherId: 't1', subjectId: 's1', estAP: false }],
-      affectations: [{ id: 'a1', classId: 'c1', subjectId: 's1', teacherId: 't1' }],
+      affectations: [{ id: 'a1', classId: 'c1', subjectId: 's1', teacherId: 't1', source: 'GENERATED' }],
     };
 
     const uc = new GenererAffectationsUseCase(repo);
