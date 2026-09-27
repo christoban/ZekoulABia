@@ -13,6 +13,7 @@ import type { LucideIcon } from 'lucide-react'
 import DemoModal from './DemoModal'
 import AnimatedBackground from './AnimatedBackground'
 import LanguageSwitch from '@/components/LanguageSwitch'
+import ThemeToggle from '@/components/ThemeToggle'
 import { useLanguage } from '@/lib/i18n'
 
 // Lookup tables for data-driven emoji-as-icon fields (same order FR/EN — see textsFR/textsEN below)
@@ -34,6 +35,7 @@ const textsFR = {
     plans: 'Plans',
     contact: 'Contact',
     demo: 'Demander une démo',
+    demoShort: 'Démo',
     login: 'Se connecter',
   },
   hero: {
@@ -155,6 +157,7 @@ const textsEN = {
     plans: 'Plans',
     contact: 'Contact',
     demo: 'Request a demo',
+    demoShort: 'Demo',
     login: 'Log in',
   },
   hero: {
@@ -476,7 +479,7 @@ export default function LandingPage() {
       {/* ══════════════════════════════════════════════════
           NAVBAR — hauteur 72px, padding horizontal 56px
       ══════════════════════════════════════════════════ */}
-      <nav className="px-3 md:px-6 lg:px-10 gap-1 md:gap-3 lg:gap-7" style={{
+      <nav className="px-2 md:px-6 lg:px-10 gap-1 md:gap-3 lg:gap-7" style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
         minHeight: 56, background: 'var(--surface)',
         borderBottom: '1px solid var(--border)',
@@ -487,7 +490,7 @@ export default function LandingPage() {
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0, minWidth: 0 }}>
           <img src="/logo.svg" alt="ZekoulABia" style={{ width: 28, height: 28, flexShrink: 0 }} />
-          <span className="truncate" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>ZekoulABia</span>
+          <span className="truncate hidden sm:inline" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>ZekoulABia</span>
           <span className="hidden xl:inline-block" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text3)', fontSize: 11, fontWeight: 700, borderRadius: 16, padding: '1px 8px', marginLeft: 3, whiteSpace: 'nowrap' }}>
             {tx.nav.badge}
           </span>
@@ -510,8 +513,9 @@ export default function LandingPage() {
           ))}
         </div>
 
-        {/* Right actions */}
+        {/* Right actions — visibles desktop ET mobile (mêmes classes responsive que la nav) */}
         <div className="gap-2 md:gap-3" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, marginLeft: 'auto' }}>
+          <ThemeToggle />
           <span className="hidden sm:inline-flex"><LanguageSwitch compact /></span>
           <button
             type="button"
@@ -520,7 +524,11 @@ export default function LandingPage() {
           >
             {tx.nav.login}
           </button>
-          <button onClick={openDemo} style={{ ...btnPrimary, padding: '7px 18px', fontSize: 13, fontWeight: 800, borderRadius: 8 }}>{tx.nav.demo}</button>
+          <button onClick={openDemo} style={{ ...btnPrimary, padding: '7px 18px', fontSize: 13, fontWeight: 800, borderRadius: 8 }}>
+            {/* Libellé long trop large pour la nav mobile (~165px) : version courte sous sm */}
+            <span className="hidden sm:inline">{tx.nav.demo}</span>
+            <span className="sm:hidden">{tx.nav.demoShort}</span>
+          </button>
         </div>
       </nav>
 
