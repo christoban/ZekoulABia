@@ -187,3 +187,4 @@ def ocr_extract(req: OcrRequest):
     confiance_moyenne = (sum(l.confidence for l in lignes) / len(lignes)) if lignes else 0.0
 
     return OcrResponse(text=texte_complet, confidence=confiance_moyenne, lines=lignes)
+// retest après fix workflow
