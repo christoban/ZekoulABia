@@ -8,6 +8,10 @@ const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:5000";
 const NGROK_HOSTNAME = process.env.NGROK_HOSTNAME
 
 const nextConfig: NextConfig = {
+  // Build conteneur minimal : .next/standalone/server.js remplace `next start`
+  // (pas besoin de node_modules complet dans l'image)
+  output: "standalone",
+
   // Masque le badge d'indicateur de route affiché en permanence en bas de l'écran en dev
   // (infos de rendu statique/dynamique) — Next.js continue quand même de signaler les vraies
   // erreurs de compilation/exécution.

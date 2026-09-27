@@ -1,0 +1,16 @@
+node_modules
+.next
+.git
+.env*
+Dockerfile
+.dockerignore
+
+# artefacts PWA régénérés par le build (cf. .gitignore) : évite d'embarquer
+# un service worker périmé construit sur la machine hôte
+public/sw.js
+public/sw.js.map
+public/swe-worker-*.js
+public/worker-*.js
+public/worker-*.js.map
+public/workbox-*.js
+public/workbox-*.js.map
