@@ -490,7 +490,7 @@ export default function LandingPage() {
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0, minWidth: 0 }}>
           <img src="/logo.svg" alt="ZekoulABia" style={{ width: 28, height: 28, flexShrink: 0 }} />
-          <span className="truncate hidden sm:inline" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>ZekoulABia</span>
+          <span className="truncate text-[15px] sm:text-[18px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>ZekoulABia</span>
           <span className="hidden xl:inline-block" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text3)', fontSize: 11, fontWeight: 700, borderRadius: 16, padding: '1px 8px', marginLeft: 3, whiteSpace: 'nowrap' }}>
             {tx.nav.badge}
           </span>
@@ -520,11 +520,12 @@ export default function LandingPage() {
           <button
             type="button"
             onClick={() => router.push('/login')}
-            style={{ ...btnSecondary, padding: '7px 16px', fontSize: 13, fontWeight: 800, borderRadius: 8 }}
+            className="px-2 py-[7px] text-[12px] sm:px-4 sm:text-[13px]"
+            style={{ ...btnSecondary, fontWeight: 800, borderRadius: 8 }}
           >
             {tx.nav.login}
           </button>
-          <button onClick={openDemo} style={{ ...btnPrimary, padding: '7px 18px', fontSize: 13, fontWeight: 800, borderRadius: 8 }}>
+          <button onClick={openDemo} className="px-2 py-[7px] text-[12px] sm:px-[18px] sm:text-[13px]" style={{ ...btnPrimary, fontWeight: 800, borderRadius: 8 }}>
             {/* Libellé long trop large pour la nav mobile (~165px) : version courte sous sm */}
             <span className="hidden sm:inline">{tx.nav.demo}</span>
             <span className="sm:hidden">{tx.nav.demoShort}</span>
@@ -698,7 +699,9 @@ export default function LandingPage() {
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
           <h2 className="text-[22px] md:text-[28px] mb-7 md:mb-12" style={{ ...SH, fontSize: undefined, marginBottom: undefined }}>{tx.howItWorks.title}</h2>
 
-          <div className="flex-col md:flex-row gap-6 md:gap-0" style={{ display: 'flex', alignItems: 'flex-start' }}>
+          {/* md:items-start indispensable : alignItems inline s'applique à l'axe transversal,
+              qui est horizontal en flex-col (mobile) — sans lui les cartes restent collées à gauche. */}
+          <div className="flex-col md:flex-row gap-6 md:gap-0 md:items-start" style={{ display: 'flex' }}>
             {tx.howItWorks.steps.map((step, i) => {
               const Icon = HOWITWORKS_ICONS[i]
               return (
@@ -740,7 +743,7 @@ export default function LandingPage() {
                     padding: '7px 16px', fontSize: 11, fontWeight: 700, borderRadius: 20, cursor: 'pointer',
                     fontFamily: 'inherit', transition: 'all 150ms',
                     display: 'inline-flex', alignItems: 'center', gap: 6,
-                    background: tabRole === i ? 'var(--primary)' : 'white',
+                    background: tabRole === i ? 'var(--primary)' : 'var(--surface)',
                     color: tabRole === i ? 'white' : 'var(--text2)',
                     boxShadow: tabRole === i ? '0 3px 10px rgba(180,83,42,0.25)' : '0 1px 4px rgba(0,0,0,0.05)',
                     border: tabRole !== i ? '1px solid var(--border)' : '1px solid transparent',
@@ -847,7 +850,7 @@ export default function LandingPage() {
                 borderRadius: 8, overflow: 'hidden', transition: 'all 150ms',
                 border: faqOpen === i ? '1px solid var(--primary)' : '1px solid var(--border)',
                 borderLeft: faqOpen === i ? '3px solid var(--primary)' : '1px solid var(--border)',
-                background: faqOpen === i ? 'var(--bg2)' : 'white',
+                background: faqOpen === i ? 'var(--bg2)' : 'var(--surface)',
               }}>
                 <button onClick={() => setFaqOpen(faqOpen === i ? null : i)}
                   className="px-3 md:px-4 py-3 md:py-3.5"
