@@ -28,7 +28,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ml-service
-          file: backend/Dockerfile
+          file: ml-service/Dockerfile
           push: true
           tags: ${{ secrets.ACR_LOGIN_SERVER }}/ml-service:${{ github.sha }}
           cache-from: type=gha
@@ -39,4 +39,4 @@ jobs:
           az containerapp update \
             --name zekoulabia-ml \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --image ${{ secrets.ACR_LOGIN_SERVER }}/backend:${{ github.sha }}
+            --image ${{ secrets.ACR_LOGIN_SERVER }}/ml-service:${{ github.sha }}
