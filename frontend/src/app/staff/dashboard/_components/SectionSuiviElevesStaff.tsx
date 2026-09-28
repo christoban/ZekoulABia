@@ -106,7 +106,7 @@ export default function SectionSuiviElevesStaff({ sessionUser, onToast }: Props)
   }
 
   return (
-    <div className="px-4 py-4 md:px-7 md:py-6" style={{ height: '100%', overflowY: 'auto' }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
       <div style={{ marginBottom: 16 }}>
         <div style={sTitle}>{t('suivi.page_title')}</div>
         <div style={sSub}>{estCenseur ? t('suivi.censeur_subtitle') : t('suivi.conseiller_subtitle')}</div>

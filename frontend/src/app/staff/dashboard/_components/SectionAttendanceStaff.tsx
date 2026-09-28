@@ -95,10 +95,10 @@ export default function SectionAttendanceStaff({ onToast }: Props) {
   const lateCount    = records.filter(r => r.status === 'LATE').length
 
   return (
-    <div className="px-4 py-4 md:px-7 md:py-6" style={{ overflowY: 'auto', height: '100%' }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4" style={{ overflowY: 'auto', height: '100%' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
         <div>
           <div style={sTitle}>{t('attendance.title')}</div>
           <div style={sSub}>{t('attendance.subtitle')}</div>
@@ -121,7 +121,7 @@ export default function SectionAttendanceStaff({ onToast }: Props) {
         <>
           {/* KPIs globaux */}
           {stats && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 md:gap-3" style={{ marginBottom: 14 }}>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 md:gap-3">
               {[
                 { icon: <CheckCircle2 size={16} strokeWidth={2} />, bg: 'var(--green-light)', val: stats.attendanceRate, label: t('attendance.kpiRate'), color: 'var(--green)' },
                 { icon: <Users size={16} strokeWidth={2} />, bg: 'var(--blue-light)', val: String(stats.total),   label: t('attendance.kpiRecords'), color: 'var(--blue)' },
@@ -139,19 +139,21 @@ export default function SectionAttendanceStaff({ onToast }: Props) {
 
           {/* Filtres */}
           <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
-            <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center' }}>
-              <select value={classId} onChange={e => setClassId(e.target.value)} style={filterSt}>
-                <option value="">{t('attendance.filterAllClasses')}</option>
-                {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-              <input type="date" value={date} onChange={e => setDate(e.target.value)}
-                style={{ ...filterSt, cursor: 'pointer' }} />
-              <button style={{ ...btnPrim, display: 'inline-flex', alignItems: 'center', gap: 5 }} onClick={fetchRecords} disabled={loadingRecords}>
+            <div className="p-3 sm:px-4 sm:py-2.5 border-b border-[var(--border)] flex flex-col sm:flex-row gap-2.5 sm:items-center">
+              <div className="flex flex-1 flex-col sm:flex-row gap-2">
+                <select value={classId} onChange={e => setClassId(e.target.value)} style={{ ...filterSt, minHeight: 38 }} className="flex-1">
+                  <option value="">{t('attendance.filterAllClasses')}</option>
+                  {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                  style={{ ...filterSt, minHeight: 38, cursor: 'pointer' }} className="flex-1" />
+              </div>
+              <button style={{ ...btnPrim, minHeight: 38, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }} onClick={fetchRecords} disabled={loadingRecords}>
                 {loadingRecords ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : <Search size={13} strokeWidth={2} />} {t('attendance.filter')}
               </button>
               {records.length > 0 && (
-                <span style={{ marginLeft: 'auto', fontSize: 12.5, color: 'var(--text3)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <CheckCircle2 size={12} /> {presentCount} · <X size={12} /> {absentCount} · <AlarmClock size={12} /> {lateCount}
+                <span className="text-xs font-semibold text-[var(--text3)] flex items-center gap-1.5 sm:ml-auto">
+                  <CheckCircle2 size={12} className="text-success" /> {presentCount} · <X size={12} className="text-red-500" /> {absentCount} · <AlarmClock size={12} className="text-amber-500" /> {lateCount}
                 </span>
               )}
             </div>
@@ -177,56 +179,97 @@ export default function SectionAttendanceStaff({ onToast }: Props) {
             )}
 
             {!loadingRecords && !error && records.length > 0 && (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
-                  <thead>
-                    <tr>{[
-                      t('attendance.tableHeaderStudent'),
-                      t('attendance.tableHeaderClass'),
-                      t('attendance.tableHeaderDate'),
-                      t('attendance.tableHeaderPeriod'),
-                      t('attendance.tableHeaderStatus'),
-                      t('attendance.tableHeaderMarkedBy'),
-                      t('attendance.tableHeaderActions'),
-                    ].map(h => (
-                      <th key={h} style={thSt}>{h}</th>
-                    ))}</tr>
-                  </thead>
-                  <tbody>
-                    {records.map((r) => {
-                      const st = STATUS_STYLE[r.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }
-                      return (
-                        <tr key={r.id}
-                          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
-                          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
-                          <td style={{ ...tdSt, fontWeight: 700, color: 'var(--text)' }}>
+              <>
+                {/* Vue mobile par cartes */}
+                <div className="md:hidden divide-y divide-[var(--border)]">
+                  {records.map((r) => {
+                    const st = STATUS_STYLE[r.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }
+                    return (
+                      <div key={r.id} className="p-3.5 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="font-bold text-sm text-[var(--text)]">
                             {r.student ? `${r.student.firstName} ${r.student.lastName}` : '—'}
-                          </td>
-                          <td style={tdSt}>{r.class?.name ?? '—'}</td>
-                          <td style={tdSt}>{new Date(r.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}</td>
-                          <td style={tdSt}>{r.period}</td>
-                          <td style={tdSt}>
-                            <span style={{ padding: '2.5px 8px', borderRadius: 14, fontSize: 11.5, fontWeight: 700, background: st.bg, color: st.color }}>
-                              {t(`attendance.${r.status === 'PRESENT' ? 'presentLabel' : r.status === 'ABSENT' ? 'absentLabel' : r.status === 'ABSENT_JUSTIFIED' ? 'justifiedLabel' : 'lateLabel'}`)}
-                            </span>
-                          </td>
-                          <td style={tdSt}>{r.markedBy ? `${r.markedBy.firstName} ${r.markedBy.lastName}` : '—'}</td>
-                          <td style={tdSt}>
-                            {r.status === 'ABSENT' && (
-                              <button
-                                style={{ padding: '3.5px 9px', borderRadius: 6, fontSize: 11.5, fontWeight: 700, background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid rgba(217,119,6,0.25)', cursor: 'pointer', fontFamily: 'inherit' }}
-                                onClick={() => justify(r.id)}
-                                disabled={justifyingId === r.id}>
-                                {justifyingId === r.id ? <Loader2 size={11} strokeWidth={2} className="animate-spin" /> : t('attendance.justify')}
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                          </div>
+                          <span style={{ padding: '2.5px 8px', borderRadius: 14, fontSize: 11.5, fontWeight: 700, background: st.bg, color: st.color }}>
+                            {t(`attendance.${r.status === 'PRESENT' ? 'presentLabel' : r.status === 'ABSENT' ? 'absentLabel' : r.status === 'ABSENT_JUSTIFIED' ? 'justifiedLabel' : 'lateLabel'}`)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-[var(--text2)]">
+                          <span>{r.class?.name ?? '—'} · {r.period}</span>
+                          <span>{new Date(r.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}</span>
+                        </div>
+                        {r.markedBy && (
+                          <div className="text-[11px] text-[var(--text3)]">
+                            Saisi par {r.markedBy.firstName} {r.markedBy.lastName}
+                          </div>
+                        )}
+                        {r.status === 'ABSENT' && (
+                          <div className="pt-1">
+                            <button
+                              style={{ width: '100%', minHeight: 38, borderRadius: 6, fontSize: 12, fontWeight: 700, background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid rgba(217,119,6,0.25)', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                              onClick={() => justify(r.id)}
+                              disabled={justifyingId === r.id}>
+                              {justifyingId === r.id ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : t('attendance.justify')}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Table desktop */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
+                    <thead>
+                      <tr>{[
+                        t('attendance.tableHeaderStudent'),
+                        t('attendance.tableHeaderClass'),
+                        t('attendance.tableHeaderDate'),
+                        t('attendance.tableHeaderPeriod'),
+                        t('attendance.tableHeaderStatus'),
+                        t('attendance.tableHeaderMarkedBy'),
+                        t('attendance.tableHeaderActions'),
+                      ].map(h => (
+                        <th key={h} style={thSt}>{h}</th>
+                      ))}</tr>
+                    </thead>
+                    <tbody>
+                      {records.map((r) => {
+                        const st = STATUS_STYLE[r.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }
+                        return (
+                          <tr key={r.id}
+                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
+                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
+                            <td style={{ ...tdSt, fontWeight: 700, color: 'var(--text)' }}>
+                              {r.student ? `${r.student.firstName} ${r.student.lastName}` : '—'}
+                            </td>
+                            <td style={tdSt}>{r.class?.name ?? '—'}</td>
+                            <td style={tdSt}>{new Date(r.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}</td>
+                            <td style={tdSt}>{r.period}</td>
+                            <td style={tdSt}>
+                              <span style={{ padding: '2.5px 8px', borderRadius: 14, fontSize: 11.5, fontWeight: 700, background: st.bg, color: st.color }}>
+                                {t(`attendance.${r.status === 'PRESENT' ? 'presentLabel' : r.status === 'ABSENT' ? 'absentLabel' : r.status === 'ABSENT_JUSTIFIED' ? 'justifiedLabel' : 'lateLabel'}`)}
+                              </span>
+                            </td>
+                            <td style={tdSt}>{r.markedBy ? `${r.markedBy.firstName} ${r.markedBy.lastName}` : '—'}</td>
+                            <td style={tdSt}>
+                              {r.status === 'ABSENT' && (
+                                <button
+                                  style={{ padding: '3.5px 9px', borderRadius: 6, fontSize: 11.5, fontWeight: 700, background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid rgba(217,119,6,0.25)', cursor: 'pointer', fontFamily: 'inherit' }}
+                                  onClick={() => justify(r.id)}
+                                  disabled={justifyingId === r.id}>
+                                  {justifyingId === r.id ? <Loader2 size={11} strokeWidth={2} className="animate-spin" /> : t('attendance.justify')}
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         </>

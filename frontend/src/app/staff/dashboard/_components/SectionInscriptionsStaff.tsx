@@ -75,17 +75,9 @@ export default function SectionInscriptionsStaff({ onToast }: Props) {
 
   return (
     <div style={{ height: '100%', overflowY: 'auto', width: '100%' }}>
-      <div style={{ padding: 24, maxWidth: 1280, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 80 }}>
+      <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4 max-w-7xl mx-auto pb-20">
       {/* En-tête officiel selon blueprint §3.3 */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 16,
-        }}
-      >
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[var(--border)]">
         <div>
           <h1
             style={{
@@ -107,12 +99,13 @@ export default function SectionInscriptionsStaff({ onToast }: Props) {
         </div>
 
         {/* Boutons d'actions */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="flex gap-2 flex-wrap items-center">
           {onglet === 'NOUVEAU' ? (
             <button
               type="button"
               onClick={() => setOnglet('BOARD')}
               style={{
+                minHeight: 38,
                 padding: '8px 14px',
                 borderRadius: 8,
                 border: '1.5px solid var(--border, #e5e7eb)',

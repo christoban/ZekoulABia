@@ -1,5 +1,6 @@
 'use client'
 import { useCallback, useState } from 'react'
+import { Clock, MapPin, User as UserIcon } from 'lucide-react'
 import type { ChildWithStats } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
@@ -78,6 +79,13 @@ export default function SectionParentTimetable({ onToast, userId }: Props) {
   const t = useT('parent')
   const [selectedChild, setSelectedChild] = useState(0)
 
+  // Jour sélectionné sur mobile (par défaut aujourd'hui si lun-ven, sinon 0 = lundi)
+  const currentDayIdx = () => {
+    const d = new Date().getDay()
+    return (d >= 1 && d <= 5) ? d - 1 : 0
+  }
+  const [selectedDay, setSelectedDay] = useState(currentDayIdx)
+
   const cacheKey = userId ? `parent:timetable:${userId}` : ''
   const fetchFn = useCallback(async (): Promise<TimetableData> => {
     const childrenRes = await fetchApi('/api/v2/parent/children', { credentials: 'include' }).then(r => r.json())
@@ -125,11 +133,12 @@ export default function SectionParentTimetable({ onToast, userId }: Props) {
 
   if (error) {
     return (
-      <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto' }}>
+      <div className="px-3.5 py-3.5 sm:px-6 sm:py-5" style={{ height: '100%', overflowY: 'auto' }}>
         <div style={{ padding: 20, textAlign: 'center' }}>
           <div style={{ color: 'var(--red)', fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>{error}</div>
           <button onClick={refetch}
-            style={{ padding: '5px 12px', borderRadius: 7, fontSize: 11.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
+            className="h-10 sm:h-9 px-4"
+            style={{ borderRadius: 7, fontSize: 11.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
             {t('retry')}
           </button>
         </div>
@@ -144,26 +153,135 @@ export default function SectionParentTimetable({ onToast, userId }: Props) {
   const DAYS = t('timetable.days').split(',')
 
   return (
-    <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto' }}>
-      <div style={{ marginBottom: fromCache ? 6 : 14 }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
+      <div style={{ marginBottom: fromCache ? 4 : 8 }}>
         <div style={sTitle}>{t('timetable.title')}</div>
         <div style={sSub}>{className} · {getWeekRange()}</div>
       </div>
 
       {fromCache && <CacheBadge cachedAt={cachedAt} label={t('cacheBadge')} />}
 
+      {/* Sélecteur d'enfant tactile scrollable */}
       {children.length > 1 && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          {children.map((c, i) => (
-            <button key={c.studentId} onClick={() => setSelectedChild(i)}
-              style={{ padding: '5px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: '1.5px solid', transition: 'all 0.12s', background: selectedChild === i ? 'var(--green-light)' : 'var(--surface)', borderColor: selectedChild === i ? 'var(--green)' : 'var(--border2)', color: selectedChild === i ? 'var(--green)' : 'var(--text2)' }}>
-              {c.prenom} {c.nom}
-            </button>
-          ))}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+          {children.map((c, i) => {
+            const active = selectedChild === i
+            return (
+              <button
+                key={c.studentId}
+                onClick={() => setSelectedChild(i)}
+                className="h-10 sm:h-9 px-3.5 rounded-lg text-xs font-bold transition-all shrink-0 cursor-pointer"
+                style={{
+                  border: '1.5px solid',
+                  borderColor: active ? 'var(--green)' : 'var(--border2)',
+                  background: active ? 'var(--green-light)' : 'var(--surface)',
+                  color: active ? 'var(--green)' : 'var(--text2)',
+                }}
+              >
+                {c.prenom} {c.nom}
+              </button>
+            )
+          })}
         </div>
       )}
 
-      <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
+      {/* ── VUE MOBILE: Sélecteur de jour en pilules + Chronologie verticale ── */}
+      <div className="md:hidden space-y-3">
+        {/* Pilules des jours de la semaine */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+          {DAYS.map((dayName, di) => {
+            const isSelected = selectedDay === di
+            return (
+              <button
+                key={di}
+                onClick={() => setSelectedDay(di)}
+                className="flex-1 min-w-[58px] h-10 rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center cursor-pointer"
+                style={{
+                  background: isSelected ? 'var(--primary)' : 'var(--surface)',
+                  color: isSelected ? 'white' : 'var(--text2)',
+                  border: `1.5px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}`,
+                  boxShadow: isSelected ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
+                }}
+              >
+                <span>{dayName.slice(0, 3)}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Timeline des créneaux pour le jour sélectionné */}
+        <div className="space-y-2">
+          {TIMES.map((time, ti) => {
+            const cell = slots[`${selectedDay}-${ti}`]
+            const visibleCell = cell ? normalizeTimetableCellSlots(cell) : []
+            const hasSlots = visibleCell.length > 0
+
+            return (
+              <div
+                key={ti}
+                className="flex gap-2.5 p-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] items-stretch"
+              >
+                {/* Badge horaire tactile */}
+                <div className="w-16 shrink-0 flex flex-col justify-center items-center rounded-lg bg-[var(--bg)] border border-[var(--border)] px-1 py-1.5 text-center">
+                  <span className="text-[11.5px] font-extrabold text-[var(--text)] flex items-center gap-1">
+                    <Clock size={11} className="text-[var(--text3)]" />
+                    {time}
+                  </span>
+                  <span className="text-[9.5px] font-semibold text-[var(--text3)] mt-0.5">
+                    {TIMES_END[ti]}
+                  </span>
+                </div>
+
+                {/* Contenu du créneau */}
+                <div className="flex-1 flex flex-col justify-center min-w-0">
+                  {hasSlots ? (
+                    <div className="space-y-1.5">
+                      {visibleCell.map((slot, sIdx) => {
+                        const isFree = slot.kind === 'FREE'
+                        return (
+                          <div
+                            key={sIdx}
+                            className="p-2 rounded-lg border-l-4"
+                            style={{
+                              background: isFree ? 'var(--blue-light)' : `${slot.color}15`,
+                              borderLeftColor: isFree ? 'var(--blue)' : slot.color,
+                            }}
+                          >
+                            <div className="text-[12.5px] font-bold truncate" style={{ color: isFree ? 'var(--blue)' : slot.color }}>
+                              {isFree ? t('timetable.freeTime') : slot.subject}
+                            </div>
+                            {!isFree && (slot.teacher || slot.room) && (
+                              <div className="flex items-center gap-3 mt-1 text-[11px] text-[var(--text3)]">
+                                {slot.teacher && (
+                                  <span className="flex items-center gap-1 truncate">
+                                    <UserIcon size={11} /> {slot.teacher}
+                                  </span>
+                                )}
+                                {slot.room && (
+                                  <span className="flex items-center gap-1 shrink-0 font-medium">
+                                    <MapPin size={11} /> {slot.room}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-[var(--text3)] italic py-2 px-1">
+                      {t('timetable.freeTime')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── VUE DESKTOP: Grille complète 5 jours × 7 créneaux (intacte) ── */}
+      <div className="hidden md:block" style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 680 }}>
             <thead>

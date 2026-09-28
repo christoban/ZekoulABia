@@ -6,7 +6,7 @@ import PushNotificationToggle from '@/components/PushNotificationToggle'
 export default function SectionParentSettings() {
   const t = useT('parent')
   return (
-    <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16, height: '100%' }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 flex flex-col gap-4 h-full" style={{ overflowY: 'auto' }}>
       <PushNotificationToggle />
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>

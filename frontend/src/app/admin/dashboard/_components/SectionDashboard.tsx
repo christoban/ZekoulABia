@@ -71,11 +71,11 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
   }, [stats?.recentActivity, activityRoleFilter])
 
   return (
-    <div className="px-4 py-4 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
       {/* Header & Bandeau Tour de Contrôle */}
-      <div className="space-y-3 mb-5">
+      <div className="space-y-3 mb-4">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <div>
             <div className="text-[15px] md:text-[17px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
@@ -90,7 +90,7 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
           </div>
           <button
             onClick={() => { fetchStats(); onToast(t('dashboard.refreshing'), 'info') }}
-            className="inline-flex items-center gap-[6px] cursor-pointer font-nunito flex-shrink-0 rounded-full md:rounded-[8px] px-[14px] py-[9px] md:px-[12px] md:py-[6px] text-[12.5px] md:text-[13px] font-semibold md:font-extrabold border-0 md:border md:border-[1.5px] md:border-[var(--border2)] bg-[var(--bg2)] md:bg-[var(--surface)]"
+            className="min-h-[38px] inline-flex items-center gap-[6px] cursor-pointer font-nunito flex-shrink-0 rounded-full md:rounded-[8px] px-[14px] py-[9px] md:px-[12px] md:py-[6px] text-[12.5px] md:text-[13px] font-semibold md:font-extrabold border-0 md:border md:border-[1.5px] md:border-[var(--border2)] bg-[var(--bg2)] md:bg-[var(--surface)]"
             style={{ color: 'var(--text2)' }}
           ><RefreshCw size={13} strokeWidth={2} />{t('dashboard.refresh')}</button>
         </div>

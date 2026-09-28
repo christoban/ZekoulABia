@@ -99,7 +99,7 @@ export default function SectionAdminAttendance({ onToast }: Props) {
   const lateCount    = records.filter(r => r.status === 'LATE').length
 
   return (
-    <div className="px-4 py-4 md:px-6 md:py-5" style={{ overflowY: 'auto', height: '100%' }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4" style={{ overflowY: 'auto', height: '100%' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
@@ -113,7 +113,7 @@ export default function SectionAdminAttendance({ onToast }: Props) {
           )}
         </div>
         <button
-          className="inline-flex items-center gap-[5px] cursor-pointer font-nunito flex-shrink-0 rounded-full md:rounded-[8px] px-[12px] py-[6px] md:px-[13px] md:py-[6px] text-[11.5px] md:text-[13px] font-semibold md:font-bold border-0 md:border md:border-[1.5px] md:border-[var(--border2)] bg-[var(--bg2)] md:bg-[var(--surface)]"
+          className="min-h-[38px] inline-flex items-center gap-[5px] cursor-pointer font-nunito flex-shrink-0 rounded-full md:rounded-[8px] px-[12px] py-[6px] md:px-[13px] md:py-[6px] text-[11.5px] md:text-[13px] font-semibold md:font-bold border-0 md:border md:border-[1.5px] md:border-[var(--border2)] bg-[var(--bg2)] md:bg-[var(--surface)]"
           style={{ color: 'var(--text2)' }}
           onClick={() => { fetchStats(); fetchRecords() }}><RefreshCw size={13} /> Rafraîchir</button>
       </div>
@@ -187,13 +187,14 @@ export default function SectionAdminAttendance({ onToast }: Props) {
                         </div>
                         <span style={{ padding: '2.5px 7.5px', borderRadius: 14, fontSize: 10.5, fontWeight: 700, background: st.bg, color: st.color, display: 'inline-flex', alignItems: 'center', gap: 3.5, flexShrink: 0 }}><st.icon size={11} /> {st.label}</span>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 7 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
                         <span style={{ fontSize: 11, color: 'var(--text3)' }}>{r.markedBy ? `${r.markedBy.firstName} ${r.markedBy.lastName}` : '—'}</span>
                         {r.status === 'ABSENT' && (
                           <button
-                            style={{ padding: '3.5px 8.5px', borderRadius: 6, fontSize: 11.5, fontWeight: 700, background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid rgba(217,119,6,0.25)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                            className="min-h-[38px] px-3 text-xs font-bold"
+                            style={{ borderRadius: 8, background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid rgba(217,119,6,0.25)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4 }}
                             onClick={() => justify(r.id)} disabled={justifyingId === r.id}>
-                            {justifyingId === r.id ? <Loader2 size={11} className="animate-spin" /> : <><ClipboardList size={11} /> Justifier</>}
+                            {justifyingId === r.id ? <Loader2 size={12} className="animate-spin" /> : <><ClipboardList size={12} /> Justifier</>}
                           </button>
                         )}
                       </div>

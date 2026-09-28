@@ -76,44 +76,48 @@ export default function SectionParentAttendance({ onToast, userId }: Props) {
   }
 
   return (
-    <div style={{ padding: '16px 20px', overflowY: 'auto', height: '100%' }}>
-      <div style={{ marginBottom: fromCache ? 6 : 14 }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3 sm:space-y-4" style={{ overflowY: 'auto', height: '100%' }}>
+      <div style={{ marginBottom: fromCache ? 6 : 12 }}>
         <div style={sTitle}>{t('attendance.title')}</div>
         <div style={sSub}>{t('attendance.subtitleExtended')}</div>
       </div>
 
       {fromCache && <CacheBadge cachedAt={cachedAt} label={t('cacheBadge')} />}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
         {list.map((child) => (
-          <div key={child.studentId} style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
-            <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)', display: 'inline-flex', alignItems: 'center', gap: 6 }}><User size={14} strokeWidth={2} /> {child.prenom} {child.nom}</span>
-              <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 700, background: 'var(--blue-light)', color: 'var(--blue)' }}>{child.classeNom || '—'}</span>
+          <div key={child.studentId} className="rounded-xl border overflow-hidden shadow-xs" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+            <div className="px-3.5 py-2.5 sm:px-4 sm:py-3 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
+              <span className="text-xs sm:text-sm font-bold truncate inline-flex items-center gap-2" style={{ color: 'var(--text)' }}>
+                <User size={14} strokeWidth={2} className="shrink-0" /> {child.prenom} {child.nom}
+              </span>
+              <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 700, background: 'var(--blue-light)', color: 'var(--blue)' }} className="shrink-0">
+                {child.classeNom || '—'}
+              </span>
             </div>
-            <div style={{ padding: '12px 14px' }}>
+            <div className="p-3.5 sm:p-4 space-y-3">
               {[
                 { label: t('attendance.rate'), val: child.tauxPresence, color: child.tauxPresence >= 90 ? 'var(--green)' : 'var(--amber)' },
                 { label: t('attendance.punctuality'), val: child.tauxPonctualite, color: child.tauxPonctualite >= 90 ? 'var(--green)' : 'var(--amber)' },
               ].map((stat, j) => (
-                <div key={j} style={{ marginBottom: j === 0 ? 10 : 0 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 600, color: 'var(--text2)', marginBottom: 4 }}>
+                <div key={j} className="space-y-1">
+                  <div className="flex justify-between text-xs font-semibold" style={{ color: 'var(--text2)' }}>
                     <span>{stat.label}</span>
                     <span style={{ color: stat.color, fontWeight: 800 }}>{stat.val}%</span>
                   </div>
-                  <div style={{ height: 6, background: 'var(--border)', borderRadius: 6, overflow: 'hidden' }}>
+                  <div style={{ height: 6, background: 'var(--bg2)', borderRadius: 6, overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${stat.val}%`, background: stat.color, borderRadius: 6, transition: 'width 0.6s' }} />
                   </div>
                 </div>
               ))}
-              <div style={{ display: 'flex', gap: 8, marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
                 {[
                   { label: t('attendance.absentDays'), val: child.joursAbsent, bg: 'var(--red-light)', c: 'var(--red)' },
                   { label: t('attendance.thisMonth'), val: '30 j', bg: 'var(--bg2)', c: 'var(--text2)' },
                 ].map((s, j) => (
-                  <div key={j} style={{ flex: 1, background: s.bg, borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 16, fontWeight: 800, color: s.c }}>{s.val}</div>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: s.c, opacity: 0.8, marginTop: 2 }}>{s.label}</div>
+                  <div key={j} className="rounded-lg p-2.5 text-center" style={{ background: s.bg }}>
+                    <div className="text-base sm:text-lg font-black" style={{ color: s.c }}>{s.val}</div>
+                    <div className="text-[10.5px] font-bold mt-0.5 truncate" style={{ color: s.c, opacity: 0.85 }}>{s.label}</div>
                   </div>
                 ))}
               </div>

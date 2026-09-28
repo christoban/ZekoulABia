@@ -407,7 +407,7 @@ export default function SectionAcademicYear({ onToast }: Props) {
   const currentSeq    = currentPeriod?.sequences.find(s => s.isCurrent)
 
   return (
-    <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto' }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
       {/* Header */}
@@ -418,7 +418,7 @@ export default function SectionAcademicYear({ onToast }: Props) {
         </div>
         <button className="hidden md:inline-block" style={btnPrim} onClick={openIntelligentCreate}>🚀 Proposer & Ouvrir l'Année N+1</button>
         <button
-          className="md:hidden inline-flex items-center rounded-full px-[14px] py-[9px] text-[12px] border-0 flex-shrink-0"
+          className="md:hidden inline-flex items-center rounded-full px-3.5 py-2 text-[12px] min-h-[38px] border-0 flex-shrink-0 shadow-sm"
           style={{ background: 'linear-gradient(135deg,var(--amber),var(--amber-dark, #d97706))', color: 'white', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
           onClick={openIntelligentCreate}>🚀 Proposer N+1</button>
       </div>

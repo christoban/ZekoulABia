@@ -139,6 +139,13 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
     )
   }
 
+  // Jour sélectionné sur mobile (par défaut aujourd'hui si lun-ven, sinon 0 = lundi)
+  const currentDayIdx = () => {
+    const d = new Date().getDay()
+    return (d >= 1 && d <= 5) ? d - 1 : 0
+  }
+  const [selectedDay, setSelectedDay] = useState(currentDayIdx)
+
   const getWeekRange = () => {
     const now = new Date()
     const monday = new Date(now)
@@ -150,24 +157,30 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
   }
 
   return (
-    <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
         <div>
           <div style={sTitle}>{t('timetable.title')}</div>
           <div style={sSub}>{getWeekRange()}</div>
         </div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: 'var(--green)' }}>
-            <div style={{ width: 10, height: 10, borderRadius: 3, background: 'var(--green-light)', border: '1.5px solid var(--green)' }} />
-            {t('timetable.my_courses')}
-          </span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: 'var(--text3)' }}>
-            <div style={{ width: 10, height: 10, borderRadius: 3, background: 'var(--bg2)', border: '1.5px solid var(--border2)' }} />
-            {t('timetable.free')}
-          </span>
-          <button onClick={openCatchupModal}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--green)', border: '1px solid rgba(5,150,105,0.35)', cursor: 'pointer', fontFamily: 'inherit' }}>
-            <Calendar size={13} strokeWidth={2} />{t('timetable.catchup_request')}
+        <div className="flex items-center justify-between sm:justify-end gap-2.5 flex-wrap">
+          <div className="flex items-center gap-3">
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, fontWeight: 700, color: 'var(--green)' }}>
+              <div style={{ width: 9, height: 9, borderRadius: 2.5, background: 'var(--green-light)', border: '1.5px solid var(--green)' }} />
+              {t('timetable.my_courses')}
+            </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, fontWeight: 700, color: 'var(--text3)' }}>
+              <div style={{ width: 9, height: 9, borderRadius: 2.5, background: 'var(--bg2)', border: '1.5px solid var(--border2)' }} />
+              {t('timetable.free')}
+            </span>
+          </div>
+          <button
+            onClick={openCatchupModal}
+            className="h-9 px-3 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer ml-auto sm:ml-0"
+            style={{ background: 'var(--surface)', color: 'var(--green)', border: '1px solid rgba(5,150,105,0.35)', fontFamily: 'inherit' }}
+          >
+            <Calendar size={13} strokeWidth={2} />
+            <span>{t('timetable.catchup_request')}</span>
           </button>
         </div>
       </div>
@@ -219,62 +232,158 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
           {t('timetable.empty')}
         </div>
       ) : (
-        <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 680 }}>
-              <thead>
-                <tr>
-                  <th style={{ ...thSt, width: 85 }}>{t('timetable.header_schedule')}</th>
-                  {days.map(d => <th key={d} style={thSt}>{d}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {grid.map((row) => (
-                  <tr key={row.start}>
-                    <td style={{ padding: '6px 8px', background: 'var(--bg2)', fontSize: 11.5, fontWeight: 700, color: 'var(--text3)', textAlign: 'center', border: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
-                      {row.start}<br /><span style={{ fontSize: 10, color: 'var(--text3)' }}>{row.end}</span>
-                    </td>
-                     {[0, 1, 2, 3, 4].map((day) => {
-                         const cell = slots[`${day}-${row.start}`]
-                         const visibleCell = cell ? normalizeTimetableCellSlots(cell) : []
-                         return (
-                           <td key={day} style={{ padding: 0, border: '1px solid var(--border)', verticalAlign: 'top', minWidth: 120, height: 52 }}>
-                             {visibleCell.length > 0 ? (
-                               <div style={{ height: '100%' }}>
-                                 {visibleCell.map((slot, index) => (
-                                 <div
-                                   key={`${slot.groupId ?? 'class'}-${slot.subject}-${index}`}
-                                   style={{
-                                     padding: '6px 8px', cursor: 'pointer', marginBottom: index < visibleCell.length - 1 ? 2 : 0,
-                                     background: slot.kind === 'FREE' ? 'var(--blue-light)' : 'linear-gradient(135deg,rgba(5,150,105,0.09),rgba(5,150,105,0.04))',
-                                      borderLeft: slot.kind === 'FREE' ? '2.5px solid var(--blue)' : '2.5px solid var(--green)',
-                                      ...(slot.kind === 'FREE' ? { display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, width: '100%', minHeight: '52px', boxSizing: 'border-box' } : {}),
-                                   }}
-                                   onClick={() => onToast(`${slot.subject} — ${slot.classe}`, 'info')}>
-                                   {slot.kind === 'FREE' ? (
-                                     <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--blue)' }}>{t('timetable.freeTime')}</div>
-                                   ) : (
-                                     <>
-                                       <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--green2)', lineHeight: 1.2 }}>{slot.subject}</div>
-                                       <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{slot.classe}</div>
-                                       {slot.room && <div style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 2 }}>{t('timetable.roomLabel')} {slot.room}</div>}
-                                     </>
-                                   )}
-                                 </div>
-                               ))}
-                             </div>
-                           ) : (
-                             <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--border2)', fontSize: 16 }}>·</div>
-                           )}
-                         </td>
-                       )
-                     })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <>
+          {/* ── VUE MOBILE: Sélecteur de jour en pilules + Chronologie verticale ── */}
+          <div className="md:hidden space-y-3">
+            {/* Pilules des jours */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+              {days.map((dayName, di) => {
+                const isSelected = selectedDay === di
+                return (
+                  <button
+                    key={di}
+                    onClick={() => setSelectedDay(di)}
+                    className="flex-1 min-w-[58px] h-10 rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center cursor-pointer"
+                    style={{
+                      background: isSelected ? 'var(--primary)' : 'var(--surface)',
+                      color: isSelected ? 'white' : 'var(--text2)',
+                      border: `1.5px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}`,
+                      boxShadow: isSelected ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
+                    }}
+                  >
+                    <span>{dayName.slice(0, 3)}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Timeline des créneaux pour le jour sélectionné */}
+            <div className="space-y-2">
+              {grid.map((row) => {
+                const cell = slots[`${selectedDay}-${row.start}`]
+                const visibleCell = cell ? normalizeTimetableCellSlots(cell) : []
+                const hasSlots = visibleCell.length > 0
+
+                return (
+                  <div
+                    key={row.start}
+                    className="flex gap-2.5 p-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] items-stretch"
+                  >
+                    {/* Badge horaire tactile */}
+                    <div className="w-16 shrink-0 flex flex-col justify-center items-center rounded-lg bg-[var(--bg)] border border-[var(--border)] px-1 py-1.5 text-center">
+                      <span className="text-[11.5px] font-extrabold text-[var(--text)]">
+                        {row.start}
+                      </span>
+                      <span className="text-[9.5px] font-semibold text-[var(--text3)] mt-0.5">
+                        {row.end}
+                      </span>
+                    </div>
+
+                    {/* Contenu du créneau */}
+                    <div className="flex-1 flex flex-col justify-center min-w-0">
+                      {hasSlots ? (
+                        <div className="space-y-1.5">
+                          {visibleCell.map((slot, index) => {
+                            const isFree = slot.kind === 'FREE'
+                            return (
+                              <div
+                                key={`${slot.groupId ?? 'class'}-${slot.subject}-${index}`}
+                                className="p-2.5 rounded-lg border-l-4"
+                                style={{
+                                  background: isFree ? 'var(--blue-light)' : 'linear-gradient(135deg,rgba(5,150,105,0.09),rgba(5,150,105,0.04))',
+                                  borderLeftColor: isFree ? 'var(--blue)' : 'var(--green)',
+                                }}
+                                onClick={() => onToast(`${slot.subject} — ${slot.classe}`, 'info')}
+                              >
+                                {isFree ? (
+                                  <div className="text-[12.5px] font-bold text-[var(--blue)]">
+                                    {t('timetable.freeTime')}
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="text-[13px] font-bold text-[var(--green2)] truncate">
+                                      {slot.subject}
+                                    </div>
+                                    <div className="flex items-center gap-3 mt-1 text-[11px] text-[var(--text3)] font-semibold">
+                                      <span>{slot.classe}</span>
+                                      {slot.room && <span>· {t('timetable.roomLabel')} {slot.room}</span>}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-[var(--text3)] italic py-2 px-1">
+                          {t('timetable.freeTime')}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </div>
-        </div>
+
+          {/* ── VUE DESKTOP: Grille complète classique ── */}
+          <div className="hidden md:block" style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 680 }}>
+                <thead>
+                  <tr>
+                    <th style={{ ...thSt, width: 85 }}>{t('timetable.header_schedule')}</th>
+                    {days.map(d => <th key={d} style={thSt}>{d}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {grid.map((row) => (
+                    <tr key={row.start}>
+                      <td style={{ padding: '6px 8px', background: 'var(--bg2)', fontSize: 11.5, fontWeight: 700, color: 'var(--text3)', textAlign: 'center', border: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
+                        {row.start}<br /><span style={{ fontSize: 10, color: 'var(--text3)' }}>{row.end}</span>
+                      </td>
+                       {[0, 1, 2, 3, 4].map((day) => {
+                           const cell = slots[`${day}-${row.start}`]
+                           const visibleCell = cell ? normalizeTimetableCellSlots(cell) : []
+                           return (
+                             <td key={day} style={{ padding: 0, border: '1px solid var(--border)', verticalAlign: 'top', minWidth: 120, height: 52 }}>
+                               {visibleCell.length > 0 ? (
+                                 <div style={{ height: '100%' }}>
+                                   {visibleCell.map((slot, index) => (
+                                   <div
+                                     key={`${slot.groupId ?? 'class'}-${slot.subject}-${index}`}
+                                     style={{
+                                       padding: '6px 8px', cursor: 'pointer', marginBottom: index < visibleCell.length - 1 ? 2 : 0,
+                                       background: slot.kind === 'FREE' ? 'var(--blue-light)' : 'linear-gradient(135deg,rgba(5,150,105,0.09),rgba(5,150,105,0.04))',
+                                        borderLeft: slot.kind === 'FREE' ? '2.5px solid var(--blue)' : '2.5px solid var(--green)',
+                                        ...(slot.kind === 'FREE' ? { display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, width: '100%', minHeight: '52px', boxSizing: 'border-box' } : {}),
+                                     }}
+                                     onClick={() => onToast(`${slot.subject} — ${slot.classe}`, 'info')}>
+                                     {slot.kind === 'FREE' ? (
+                                       <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--blue)' }}>{t('timetable.freeTime')}</div>
+                                     ) : (
+                                       <>
+                                         <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--green2)', lineHeight: 1.2 }}>{slot.subject}</div>
+                                         <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{slot.classe}</div>
+                                         {slot.room && <div style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 2 }}>{t('timetable.roomLabel')} {slot.room}</div>}
+                                       </>
+                                     )}
+                                   </div>
+                                 ))}
+                               </div>
+                             ) : (
+                               <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--border2)', fontSize: 16 }}>·</div>
+                             )}
+                           </td>
+                         )
+                       })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )

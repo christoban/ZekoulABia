@@ -216,8 +216,8 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
   }
 
   return (
-    <div className="px-4 py-4 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
+      <div className="flex items-center justify-between mb-2">
         <div>
           <div style={sTitle}>Présences</div>
           <div style={sSub}>Saisie par classe · {selectedDate}</div>
@@ -225,29 +225,54 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
       </div>
 
       {!isOnline && (
-        <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 8, padding: '9px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 8, padding: '9px 14px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ display: 'flex', alignItems: 'center' }}><WifiOff size={15} strokeWidth={2} /></span>
           <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--amber)' }}>Mode hors-ligne — les présences seront synchronisées à la reconnexion</span>
         </div>
       )}
 
-      {/* Filtres */}
-      <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1.5px solid var(--border)', padding: '10px 16px', marginBottom: 14, display: 'flex', gap: 7, alignItems: 'center', flexWrap: 'wrap' }}>
-        <select style={filterSt} value={selectedClass} onChange={e => setSelectedClass(e.target.value)}>
+      {/* Filtres responsives */}
+      <div className="p-3 sm:p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] flex flex-col sm:flex-row gap-2.5 sm:gap-3 items-stretch sm:items-center">
+        <select
+          className="w-full sm:w-auto h-10 sm:h-9"
+          style={filterSt}
+          value={selectedClass}
+          onChange={e => setSelectedClass(e.target.value)}
+        >
           <option value="">Sélectionne une classe</option>
           {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <select style={filterSt} value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)}>
+
+        <select
+          className="w-full sm:w-auto h-10 sm:h-9"
+          style={filterSt}
+          value={selectedSubject}
+          onChange={e => setSelectedSubject(e.target.value)}
+        >
           <option value="">Matière (optionnelle)</option>
           {subjects.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
-        <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)}
-          style={{ ...filterSt, fontFamily: 'inherit' }} />
-        <button style={btnPrim} onClick={loadAttendance} disabled={loading}>Charger</button>
+
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={e => setSelectedDate(e.target.value)}
+          className="w-full sm:w-auto h-10 sm:h-9"
+          style={{ ...filterSt, fontFamily: 'inherit' }}
+        />
+
+        <button
+          className="w-full sm:w-auto h-10 sm:h-9 px-4 shrink-0"
+          style={btnPrim}
+          onClick={loadAttendance}
+          disabled={loading}
+        >
+          Charger
+        </button>
       </div>
 
       {rosterLabel && (
-        <div style={{ background: 'var(--blue-light)', border: '1.5px solid var(--blue)', borderRadius: 8, padding: '9px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ background: 'var(--blue-light)', border: '1.5px solid var(--blue)', borderRadius: 8, padding: '9px 14px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ display: 'flex', alignItems: 'center' }}><Target size={15} strokeWidth={2} /></span>
           <span style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--blue)' }}>{rosterLabel}</span>
         </div>
@@ -256,33 +281,109 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
       {students.length > 0 && (
         <>
           {/* Stats rapides */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
             {[
               { label: 'Présents', count: counts.P, bg: 'var(--green-light)', color: 'var(--green)' },
               { label: 'Absents',  count: counts.A, bg: 'var(--red-light)', color: 'var(--red)' },
               { label: 'Retards',  count: counts.R, bg: 'var(--amber-light)', color: 'var(--amber)' },
               { label: 'Excusés',  count: counts.E, bg: 'var(--blue-light)', color: 'var(--blue)' },
             ].map((s, i) => (
-              <div key={i} style={{ flex: 1, background: s.bg, borderRadius: 8, padding: '8px 12px', textAlign: 'center' }}>
-                <div style={{ fontSize: 20, fontWeight: 900, color: s.color }}>{s.count}</div>
+              <div key={i} style={{ background: s.bg, borderRadius: 8, padding: '8px 12px', textAlign: 'center' }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: s.color }}>{s.count}</div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: s.color, marginTop: 2 }}>{s.label}</div>
               </div>
             ))}
           </div>
 
-          {/* Table présences */}
-          <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1.5px solid var(--border)', overflow: 'hidden' }}>
-            <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--border)' }}>
+          {/* Action "Tous présents" */}
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <button
+              className="h-10 sm:h-9 px-3.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+              style={{ color: 'var(--green)', border: '1.5px solid rgba(142,42,58,0.3)', background: 'var(--green-light)', fontFamily: 'inherit' }}
+              onClick={() => {
+                const all: Record<string, AttStatus> = {}
+                students.forEach(s => { all[s.id] = 'PRESENT' })
+                setStatuses(all)
+              }}
+            >
+              <Check size={14} strokeWidth={2.5} />
+              <span>Tous présents</span>
+            </button>
+            <span className="text-xs text-[var(--text3)] font-semibold">
+              {students.length} élèves
+            </span>
+          </div>
+
+          {/* ── VUE MOBILE: Cartes tactiles pour chaque élève ── */}
+          <div className="md:hidden space-y-2.5">
+            {students.map((student, i) => {
+              const shortStatus = ATT_SHORT[statuses[student.id] || ''] || null
+              return (
+                <div
+                  key={student.id}
+                  className="p-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] space-y-2"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-6 h-6 rounded-md bg-[var(--bg2)] text-[11px] font-bold text-[var(--text3)] flex items-center justify-center shrink-0">
+                        {i + 1}
+                      </span>
+                      <span className="text-[13px] font-bold text-[var(--text)] truncate">
+                        {student.name}
+                      </span>
+                    </div>
+                    {rosterLabel && student.className && (
+                      <span className="text-[11px] font-semibold text-[var(--text3)] shrink-0">
+                        {student.className}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* 4 boutons tactiles larges */}
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {(['P', 'A', 'R', 'E'] as const).map(s => {
+                      const sel = shortStatus === s
+                      const st = ATT_STYLE[s]
+                      const mapping: Record<string, AttStatus> = { P: 'PRESENT', A: 'ABSENT', R: 'LATE', E: 'EXCUSED' }
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => toggle(student.id, sel ? null : (mapping[s] as AttStatus))}
+                          className="h-10 rounded-lg text-xs font-bold flex flex-col items-center justify-center transition-all cursor-pointer"
+                          style={{
+                            border: `1.5px solid ${sel ? st.selBorder : 'var(--border2)'}`,
+                            background: sel ? st.selBg : 'var(--bg)',
+                            color: sel ? st.selColor : 'var(--text3)',
+                            boxShadow: sel ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
+                          }}
+                        >
+                          <span className="text-xs font-black">{s}</span>
+                          <span className="text-[9.5px] font-semibold opacity-90 truncate">{attTitle(s).slice(0, 5)}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+
+            {/* Bouton d'enregistrement mobile */}
+            <div className="pt-2 pb-1">
               <button
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 800, color: 'var(--green)', border: '1.5px solid rgba(142,42,58,0.3)', background: 'var(--green-light)', cursor: 'pointer', padding: '5px 11px', borderRadius: 7, fontFamily: 'inherit' }}
-                onClick={() => {
-                  const all: Record<string, AttStatus> = {}
-                  students.forEach(s => { all[s.id] = 'PRESENT' })
-                  setStatuses(all)
-                }}>
-                <Check size={13} strokeWidth={2.5} /> Tous présents
+                className="w-full h-11 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                style={{ background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))' }}
+                onClick={saveAttendance}
+                disabled={loading}
+              >
+                {loading ? <Save size={15} strokeWidth={2} /> : isOnline ? <CheckCircle2 size={15} strokeWidth={2} /> : <WifiOff size={15} strokeWidth={2} />}
+                <span>{loading ? 'Sauvegarde...' : isOnline ? 'Enregistrer les présences' : 'Mettre en file d\'attente'}</span>
               </button>
             </div>
+          </div>
+
+          {/* ── VUE DESKTOP: Tableau classique intact ── */}
+          <div className="hidden md:block" style={{ background: 'var(--surface)', borderRadius: 12, border: '1.5px solid var(--border)', overflow: 'hidden' }}>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 500 }}>
                 <thead>
@@ -322,8 +423,7 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
                                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                                   cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800,
                                   border: `1.5px solid ${sel ? st.selBorder : 'var(--border2)'}`,
-                                   background: sel ? st.selBg : 'var(--surface)',
-
+                                  background: sel ? st.selBg : 'var(--surface)',
                                   color: sel ? st.selColor : 'var(--text3)',
                                   transition: 'all 0.1s'
                                 }}>

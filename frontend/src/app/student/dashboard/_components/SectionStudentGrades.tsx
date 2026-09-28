@@ -141,76 +141,135 @@ export default function SectionStudentGrades({ onToast, user }: Props) {
   void mBg; void mC
 
   return (
-    <div className="px-4 py-4 md:px-6 md:py-5" style={{ overflowY: 'auto', height: '100%' }}>
-      <div style={{ marginBottom: fromCache ? 8 : 16 }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3 sm:space-y-4" style={{ overflowY: 'auto', height: '100%' }}>
+      <div style={{ marginBottom: fromCache ? 6 : 12 }}>
         <div style={sTitle}>{t('grades.title')}</div>
         <div style={sSub}>{t('grades.subtitle')}</div>
       </div>
 
       {fromCache && <CacheBadge cachedAt={cachedAt} />}
 
-      <div style={{ background: 'linear-gradient(135deg,var(--sidebar),var(--sidebar2))', borderRadius: 10, padding: '10px 16px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 16 }}>
-        <div style={{ textAlign: 'center', flexShrink: 0 }}>
-          <div style={{ fontSize: 24, fontWeight: 900, color: 'white', lineHeight: 1 }}>{displayAvg.toFixed(1)}</div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>{t('grades.average_label')}</div>
+      {/* Résumé de performance globale */}
+      <div
+        className="rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 shadow-sm"
+        style={{ background: 'linear-gradient(135deg,var(--sidebar),var(--sidebar2))' }}
+      >
+        <div className="flex items-center gap-4 sm:flex-col sm:items-center shrink-0">
+          <div style={{ fontSize: 28, fontWeight: 900, color: 'white', lineHeight: 1 }}>{displayAvg.toFixed(1)}</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{t('grades.average_label')}</div>
         </div>
-        <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+
+        <div className="hidden sm:block w-px h-10 bg-white/10 shrink-0" />
+
+        <div className="grid grid-cols-3 gap-2 sm:flex sm:gap-6 w-full border-t sm:border-t-0 pt-2.5 sm:pt-0 border-white/10">
           {[
             { label: t('grades.rank_label'), val: rank ? `${rank.pos}e / ${rank.total}` : '—' },
             { label: t('grades.mention_label'), val: mentionFull },
             { label: t('grades.subjects_above_10'), val: `${subjectsAbove10}/${subjectRows.length}` },
           ].map((s, i) => (
-            <div key={i}>
-              <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.4)', fontWeight: 700 }}>{s.label}</div>
-              <div style={{ fontSize: 13.5, fontWeight: 900, color: 'white', marginTop: 2 }}>{s.val}</div>
+            <div key={i} className="min-w-0">
+              <div className="text-[10px] sm:text-xs font-bold truncate text-white/50">{s.label}</div>
+              <div className="text-xs sm:text-sm font-extrabold text-white mt-0.5 truncate">{s.val}</div>
             </div>
           ))}
         </div>
       </div>
 
-      <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1.5px solid var(--border)', overflow: 'hidden' }}>
-        {subjectRows.length === 0 ? (
-          <div style={{ padding: 36, textAlign: 'center', color: 'var(--text3)', fontSize: 13, fontWeight: 600 }}>{t('grades.empty')}</div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
-              <thead>
-                <tr>{[
-                  t('grades.table_header_subject'),
-                  t('grades.table_header_coeff'),
-                  t('grades.table_header_grade'),
-                  t('grades.table_header_mention'),
-                ].map(h => (
-                  <th key={h} style={thSt}>{h}</th>
-                ))}</tr>
-              </thead>
-              <tbody>
-                {subjectRows.map((sub) => {
-                  const subMention = getMention(sub.note)
-                  const [smBg, smC] = MENTION_COLOR(subMention)
-                  return (
-                    <tr key={sub.subjectId}
-                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
-                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
-                      <td style={{ ...tdSt, fontWeight: 700, color: 'var(--text)' }}>{sub.name}</td>
-                      <td style={tdSt}>
-                        <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '2.5px 7px', borderRadius: 14, fontSize: 11, fontWeight: 800 }}>×{sub.coeff}</span>
-                      </td>
-                      <td style={tdSt}>
-                        <span style={{ fontSize: 15, fontWeight: 900, color: NOTE_COLOR(sub.note) }}>{sub.note.toFixed(1)}</span>
-                      </td>
-                      <td style={tdSt}>
-                        <span style={{ padding: '2.5px 8px', borderRadius: 14, fontSize: 11, fontWeight: 700, background: smBg, color: smC }}>{subMention}</span>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+      {/* Conteneur des notes */}
+      {subjectRows.length === 0 ? (
+        <div className="rounded-xl border p-8 text-center" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <div className="text-xs font-semibold" style={{ color: 'var(--text3)' }}>{t('grades.empty')}</div>
+        </div>
+      ) : (
+        <>
+          {/* Vue Mobile (md:hidden) : Cartes de notes tactiles */}
+          <div className="md:hidden space-y-2.5">
+            {subjectRows.map((sub) => {
+              const subMention = getMention(sub.note)
+              const [smBg, smC] = MENTION_COLOR(subMention)
+              const pct = Math.min(100, Math.max(0, (sub.note / 20) * 100))
+              return (
+                <div
+                  key={sub.subjectId}
+                  className="rounded-xl border p-3 shadow-xs space-y-2"
+                  style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-extrabold truncate" style={{ color: 'var(--text)' }}>
+                        {sub.name}
+                      </div>
+                      <div className="mt-1">
+                        <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '2px 6px', borderRadius: 10, fontSize: 10.5, fontWeight: 800 }}>
+                          Coef ×{sub.coeff}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-lg font-black leading-none" style={{ color: NOTE_COLOR(sub.note) }}>
+                        {sub.note.toFixed(1)}
+                        <span className="text-[10px] font-bold text-[var(--text3)] ml-0.5">/20</span>
+                      </div>
+                      <div className="mt-1">
+                        <span style={{ padding: '2px 7px', borderRadius: 12, fontSize: 10.5, fontWeight: 800, background: smBg, color: smC }}>
+                          {subMention}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Jauge visuelle de progression */}
+                  <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg2)' }}>
+                    <div
+                      className="h-full rounded-full transition-all duration-300"
+                      style={{ width: `${pct}%`, background: NOTE_COLOR(sub.note) }}
+                    />
+                  </div>
+                </div>
+              )
+            })}
           </div>
-        )}
-      </div>
+
+          {/* Vue Desktop (hidden md:block) : Tableau complet */}
+          <div className="hidden md:block rounded-xl border overflow-hidden" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
+                <thead>
+                  <tr>{[
+                    t('grades.table_header_subject'),
+                    t('grades.table_header_coeff'),
+                    t('grades.table_header_grade'),
+                    t('grades.table_header_mention'),
+                  ].map(h => (
+                    <th key={h} style={thSt}>{h}</th>
+                  ))}</tr>
+                </thead>
+                <tbody>
+                  {subjectRows.map((sub) => {
+                    const subMention = getMention(sub.note)
+                    const [smBg, smC] = MENTION_COLOR(subMention)
+                    return (
+                      <tr key={sub.subjectId}
+                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
+                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
+                        <td style={{ ...tdSt, fontWeight: 700, color: 'var(--text)' }}>{sub.name}</td>
+                        <td style={tdSt}>
+                          <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '2.5px 7px', borderRadius: 14, fontSize: 11, fontWeight: 800 }}>×{sub.coeff}</span>
+                        </td>
+                        <td style={tdSt}>
+                          <span style={{ fontSize: 15, fontWeight: 900, color: NOTE_COLOR(sub.note) }}>{sub.note.toFixed(1)}</span>
+                        </td>
+                        <td style={tdSt}>
+                          <span style={{ padding: '2.5px 8px', borderRadius: 14, fontSize: 11, fontWeight: 700, background: smBg, color: smC }}>{subMention}</span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

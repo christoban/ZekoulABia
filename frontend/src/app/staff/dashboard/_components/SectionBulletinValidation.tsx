@@ -80,9 +80,9 @@ export default function SectionBulletinValidation({ onToast }: Props) {
   const currentSessions = activeTab === 'SUBMITTED' ? submitted : validated
 
   return (
-    <div className="px-4 py-4 md:px-7 md:py-6" style={{ overflowY: 'auto', height: '100%' }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4" style={{ overflowY: 'auto', height: '100%' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+      <div className="flex items-center justify-between gap-2.5">
         <div>
           <div style={sTitle}>{t('bulletinValidation.title') || 'Validation des bulletins'}</div>
           <div style={sSub}>{loading ? '…' : `${submitted.length} en attente · ${validated.length} validé(s)`}</div>
@@ -91,14 +91,14 @@ export default function SectionBulletinValidation({ onToast }: Props) {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+      <div className="flex gap-2">
         <button onClick={() => setActiveTab('SUBMITTED')}
-          style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
+          style={{ minHeight: 38, padding: '7px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
             background: activeTab === 'SUBMITTED' ? 'var(--amber)' : 'var(--surface)', color: activeTab === 'SUBMITTED' ? 'white' : 'var(--text2)' }}>
           En attente ({submitted.length})
         </button>
         <button onClick={() => setActiveTab('VALIDATED')}
-          style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
+          style={{ minHeight: 38, padding: '7px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
             background: activeTab === 'VALIDATED' ? 'var(--green)' : 'var(--surface)', color: activeTab === 'VALIDATED' ? 'white' : 'var(--text2)' }}>
           Validés ({validated.length})
         </button>
@@ -135,36 +135,36 @@ export default function SectionBulletinValidation({ onToast }: Props) {
             const st = STATUS_STYLE[s.status] ?? STATUS_STYLE.SUBMITTED
             const isLoading = actionLoading.has(s.id)
             return (
-              <div key={s.id} className="rounded-xl p-3 md:px-4 md:py-3.5"
+              <div key={s.id} className="rounded-xl p-3.5 space-y-2.5"
                 style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--text)' }}>{s.class.name}</div>
                   <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 800, background: st.bg, color: st.color }}>
                     {s.status === 'SUBMITTED' ? 'En attente' : 'Validé'}
                   </span>
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 3 }}>{s.academicPeriod.name}</div>
+                <div style={{ fontSize: 12, color: 'var(--text3)' }}>{s.academicPeriod.name}</div>
                 {s.submittedBy && (
-                  <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 8 }}>
+                  <div style={{ fontSize: 11.5, color: 'var(--text3)' }}>
                     Soumis par {s.submittedBy.firstName} {s.submittedBy.lastName}
                   </div>
                 )}
-                <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                <div className="pt-1">
                   {s.status === 'SUBMITTED' && (
                     <button
-                      style={{ padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'var(--green-light)', color: 'var(--green)', border: '1px solid rgba(142,42,58,0.25)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                      style={{ width: '100%', minHeight: 38, borderRadius: 7, fontSize: 12.5, fontWeight: 700, background: 'var(--green-light)', color: 'var(--green)', border: '1px solid rgba(142,42,58,0.25)', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                       onClick={() => handleValidate(s.id)}
                       disabled={isLoading}>
-                      {isLoading ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
+                      {isLoading ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={14} />}
                       {isLoading ? '…' : 'Valider'}
                     </button>
                   )}
                   {s.status === 'VALIDATED' && (
                     <button
-                      style={{ padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                      style={{ width: '100%', minHeight: 38, borderRadius: 7, fontSize: 12.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                       onClick={() => handlePublish(s.id)}
                       disabled={isLoading}>
-                      {isLoading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                      {isLoading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={14} />}
                       {isLoading ? '…' : 'Publier'}
                     </button>
                   )}

@@ -354,8 +354,8 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
   }
 
   return (
-    <div className="px-4 py-4 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
+      <div className="flex items-center justify-between mb-2">
         <div>
           <div style={sTitle}>{t('grades_section.title')}</div>
           <div style={sSub}>{t('grades_section.subtitle')}</div>
@@ -363,7 +363,7 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
       </div>
 
       {!isOnline && (
-        <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 8, padding: '8px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 8, padding: '8px 14px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ display: 'flex', alignItems: 'center' }}><WifiOff size={15} strokeWidth={2} /></span>
           <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--amber)' }}>{t('grades_section.offline_banner')}</span>
         </div>
@@ -371,26 +371,34 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
 
       {/* Prompt restauration brouillon */}
       {showDraftPrompt && localDraft && (
-        <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 10, padding: '10px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 10, padding: '10px 14px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <span style={{ display: 'flex', alignItems: 'center' }}><Save size={18} strokeWidth={2} /></span>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: '1 1 200px' }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--amber)' }}>{t('grades_section.draft_prompt_title')}</div>
             <div style={{ fontSize: 11.5, color: 'var(--amber)', marginTop: 1 }}>{t('grades_section.draft_prompt_desc')}</div>
           </div>
-          <button onClick={() => { setNotes(localDraft.notes); setObservations(localDraft.observations); setShowDraftPrompt(false) }}
-            style={{ padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 800, background: 'var(--amber)', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-            {t('grades_section.draft_prompt_restore')}
-          </button>
-          <button onClick={() => setShowDraftPrompt(false)}
-            style={{ padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
-            {t('grades_section.draft_prompt_ignore')}
-          </button>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => { setNotes(localDraft.notes); setObservations(localDraft.observations); setShowDraftPrompt(false) }}
+              className="flex-1 sm:flex-initial h-9 px-3 rounded-lg text-xs font-bold"
+              style={{ background: 'var(--amber)', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              {t('grades_section.draft_prompt_restore')}
+            </button>
+            <button
+              onClick={() => setShowDraftPrompt(false)}
+              className="flex-1 sm:flex-initial h-9 px-3 rounded-lg text-xs font-bold"
+              style={{ background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              {t('grades_section.draft_prompt_ignore')}
+            </button>
+          </div>
         </div>
       )}
 
       {grades.length > 0 && (
-        <div style={{ background: 'var(--bg2)', borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, fontWeight: 700, color: 'var(--text2)', marginBottom: 6 }}>
+        <div style={{ background: 'var(--bg2)', borderRadius: 10, padding: '10px 14px', marginBottom: 10 }}>
+          <div className="flex flex-col sm:flex-row sm:justify-between text-xs font-bold text-[var(--text2)] gap-1 mb-1.5">
             <span>{classes.find((c: any) => c.id === selectedClass)?.name || ''} — {subjects.find((s: any) => s.id === selectedSubject)?.name || ''}</span>
             <span style={{ color: 'var(--green)' }}>{t('grades_section.progress_text').replace('{validated}', String(validatedCount)).replace('{total}', String(grades.length)).replace('{pct}', String(grades.length ? Math.round(validatedCount / grades.length * 100) : 0))}</span>
           </div>
@@ -402,45 +410,80 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
 
       {/* Filtres + table */}
       <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1.5px solid var(--border)', overflow: 'hidden', marginBottom: 14 }}>
-        <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <select style={filterSt} value={selectedClass} onChange={e => setSelectedClass(e.target.value)}>
+        <div className="p-3 sm:p-3.5 border-b border-[var(--border)] flex flex-col sm:flex-row gap-2 sm:gap-2.5 items-stretch sm:items-center flex-wrap">
+          <select
+            className="w-full sm:w-auto h-10 sm:h-9"
+            style={filterSt}
+            value={selectedClass}
+            onChange={e => setSelectedClass(e.target.value)}
+          >
             <option value="">{t('grades_section.filter_class')}</option>
             {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-          <select style={filterSt} value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)}>
+
+          <select
+            className="w-full sm:w-auto h-10 sm:h-9"
+            style={filterSt}
+            value={selectedSubject}
+            onChange={e => setSelectedSubject(e.target.value)}
+          >
             <option value="">{t('grades_section.filter_subject')}</option>
             {subjects.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
-          <select style={filterSt} value={selectedSequence} onChange={e => setSelectedSequence(e.target.value)}>
+
+          <select
+            className="w-full sm:w-auto h-10 sm:h-9"
+            style={filterSt}
+            value={selectedSequence}
+            onChange={e => setSelectedSequence(e.target.value)}
+          >
             <option value="">{t('grades_section.filter_sequence')}</option>
             {sequences.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
-          <button style={btnPrim} onClick={loadGrades} disabled={loading}>{t('grades_section.load')}</button>
-          <div style={{ flex: 1 }} />
+
           <button
-            style={{ ...btnSec, fontSize: 12.5, display: 'inline-flex', alignItems: 'center', gap: 5 }}
-            onClick={downloadTemplate}
-            title={t('grades_section.template_tooltip')}>
-            <Download size={13} strokeWidth={2} />{t('grades_section.download_template')}
+            className="w-full sm:w-auto h-10 sm:h-9 px-4 shrink-0 font-bold"
+            style={btnPrim}
+            onClick={loadGrades}
+            disabled={loading}
+          >
+            {t('grades_section.load')}
           </button>
-          <label style={{ ...btnSec, fontSize: 12.5, display: 'inline-flex', alignItems: 'center', gap: 5, cursor: importing ? 'not-allowed' : 'pointer', opacity: importing ? 0.6 : 1 }}>
-            {importing ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : <Upload size={13} strokeWidth={2} />}
-            {importing ? t('grades_section.import_loading') : t('grades_section.import_excel')}
-            <input
-              type="file"
-              accept=".xlsx,.xls"
-              style={{ display: 'none' }}
-              disabled={importing}
-              onChange={e => {
-                const file = e.target.files?.[0]
-                if (file) { importFromExcel(file); e.target.value = '' }
-              }}
-            />
-          </label>
+
+          <div className="hidden sm:block flex-1" />
+
+          <div className="flex gap-2 w-full sm:w-auto pt-1 sm:pt-0">
+            <button
+              className="flex-1 sm:flex-initial h-10 sm:h-9 px-3 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1.5"
+              style={btnSec}
+              onClick={downloadTemplate}
+              title={t('grades_section.template_tooltip')}
+            >
+              <Download size={13} strokeWidth={2} />
+              <span>{t('grades_section.download_template')}</span>
+            </button>
+            <label
+              className="flex-1 sm:flex-initial h-10 sm:h-9 px-3 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1.5"
+              style={{ ...btnSec, cursor: importing ? 'not-allowed' : 'pointer', opacity: importing ? 0.6 : 1 }}
+            >
+              {importing ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : <Upload size={13} strokeWidth={2} />}
+              <span>{importing ? t('grades_section.import_loading') : t('grades_section.import_excel')}</span>
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                style={{ display: 'none' }}
+                disabled={importing}
+                onChange={e => {
+                  const file = e.target.files?.[0]
+                  if (file) { importFromExcel(file); e.target.value = '' }
+                }}
+              />
+            </label>
+          </div>
         </div>
 
         {rosterLabel && (
-          <div style={{ background: 'var(--blue-light)', border: '1.5px solid var(--blue)', borderRadius: 8, padding: '8px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ background: 'var(--blue-light)', border: '1.5px solid var(--blue)', borderRadius: 8, padding: '8px 14px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ display: 'flex', alignItems: 'center' }}><Target size={15} strokeWidth={2} /></span>
             <span style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--blue)' }}>{rosterLabel}</span>
           </div>
@@ -489,7 +532,97 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
 
         {grades.length > 0 && (
           <>
-            <div style={{ overflowX: 'auto' }}>
+            {/* ── VUE MOBILE: Cartes de saisie des notes tactiles ── */}
+            <div className="md:hidden divide-y divide-[var(--border)]">
+              {grades.map((g: any, i: number) => {
+                const sid = g.studentId || g.student?.id
+                const name = g.student ? `${g.student.firstName} ${g.student.lastName}` : t('grades_section.unknown_student')
+                const status = g.validationStatus || 'DRAFT'
+                const sColors: Record<string, { bg: string; color: string }> = {
+                  DRAFT: { bg: 'var(--bg2)', color: 'var(--text2)' },
+                  SUBMITTED: { bg: 'var(--amber-light)', color: 'var(--amber)' },
+                  VALIDATED: { bg: 'var(--green-light)', color: 'var(--green)' },
+                  REJECTED: { bg: 'var(--red-light)', color: 'var(--red)' },
+                  LOCKED: { bg: 'var(--blue-light)', color: 'var(--blue)' },
+                }
+                const sc = sColors[status] || sColors.DRAFT
+                const isEditable = status === 'DRAFT' || status === 'REJECTED'
+                const currentScore = notes[sid] ?? 0
+
+                return (
+                  <div key={sid} className="p-3.5 space-y-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-6 h-6 rounded-md bg-[var(--bg2)] text-[11px] font-bold text-[var(--text3)] flex items-center justify-center shrink-0">
+                          {i + 1}
+                        </span>
+                        <div className="min-w-0">
+                          <div className="text-[13px] font-bold text-[var(--text)] truncate">
+                            {name}
+                          </div>
+                          {rosterLabel && g.student?.className && (
+                            <div className="text-[11px] font-semibold text-[var(--text3)]">
+                              {g.student.className}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: 10.5, fontWeight: 700, background: sc.bg, color: sc.color, whiteSpace: 'nowrap' }}>
+                        {status === 'DRAFT' ? t('grades_section.status_draft') : status === 'SUBMITTED' ? t('grades_section.status_submitted') : status === 'VALIDATED' ? t('grades_section.status_validated') : status === 'REJECTED' ? t('grades_section.status_rejected') : status === 'LOCKED' ? t('grades_section.status_locked') : status}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <input
+                          type="number"
+                          min={0}
+                          max={20}
+                          step={0.25}
+                          value={notes[sid] ?? 0}
+                          onChange={e => {
+                            const a = { ...notes }
+                            a[sid] = Number(e.target.value)
+                            setNotes(a)
+                          }}
+                          disabled={!isEditable}
+                          className="h-11 w-20 rounded-lg text-center text-base font-black border"
+                          style={{
+                            borderColor: 'var(--border2)',
+                            background: !isEditable ? 'var(--bg2)' : 'var(--surface)',
+                            color: currentScore < 10 ? 'var(--red)' : currentScore >= 16 ? 'var(--green)' : 'var(--text)',
+                            fontFamily: 'inherit',
+                          }}
+                        />
+                        <span className="text-xs font-bold text-[var(--text3)]">/ 20</span>
+                      </div>
+
+                      <input
+                        type="text"
+                        value={observations[sid] || ''}
+                        placeholder={t('grades_section.observation_placeholder')}
+                        onChange={e => {
+                          const a = { ...observations }
+                          a[sid] = e.target.value
+                          setObservations(a)
+                        }}
+                        disabled={!isEditable}
+                        className="h-11 flex-1 px-3 text-xs rounded-lg border outline-none min-w-0"
+                        style={{
+                          borderColor: 'var(--border2)',
+                          background: !isEditable ? 'var(--bg2)' : 'var(--surface)',
+                          color: 'var(--text)',
+                          fontFamily: 'inherit',
+                        }}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* ── VUE DESKTOP: Table complète conservée intacte ── */}
+            <div className="hidden md:block" style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
                 <thead>
                   <tr>{[t('grades_section.table_num'), t('grades_section.table_student'), t('grades_section.table_grade'), t('grades_section.table_observation'), t('grades_section.table_status')].map(h => (
@@ -553,20 +686,31 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
               </table>
             </div>
 
-            <div style={{ padding: '10px 14px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-              <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 600 }}>
+            {/* Actions de sauvegarde & soumission */}
+            <div className="p-3 sm:p-3.5 border-t border-[var(--border)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <span className="text-xs text-[var(--text3)] font-semibold">
                 {t('grades_section.summary_draft').replace('{count}', String(draftCount))}{rejectedCount > 0 ? ` · ${t('grades_section.summary_rejected').replace('{count}', String(rejectedCount))}` : ''} · {t('grades_section.summary_submitted').replace('{count}', String(grades.filter((g: any) => g.validationStatus === 'SUBMITTED').length))}
               </span>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div className="flex gap-2 w-full sm:w-auto">
                 {modifiableCount > 0 ? (
                   <>
-                    <button style={{ ...btnSec, display: 'inline-flex', alignItems: 'center', gap: 5 }} onClick={saveDraft} disabled={saving}>
+                    <button
+                      className="flex-1 sm:flex-initial h-11 sm:h-9 px-4 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-2 cursor-pointer"
+                      style={btnSec}
+                      onClick={saveDraft}
+                      disabled={saving}
+                    >
                       {saving ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : <Save size={13} strokeWidth={2} />}
-                      {saving ? '...' : t('grades_section.draft_save')}
+                      <span>{saving ? '...' : t('grades_section.draft_save')}</span>
                     </button>
-                    <button style={{ ...btnPrim, display: 'inline-flex', alignItems: 'center', gap: 5, opacity: !isOnline ? 0.5 : 1, cursor: !isOnline ? 'not-allowed' : 'pointer' }} onClick={submitGrades} disabled={saving || !isOnline}>
+                    <button
+                      className="flex-1 sm:flex-initial h-11 sm:h-9 px-4 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-2 text-white cursor-pointer"
+                      style={{ ...btnPrim, opacity: !isOnline ? 0.5 : 1, cursor: !isOnline ? 'not-allowed' : 'pointer' }}
+                      onClick={submitGrades}
+                      disabled={saving || !isOnline}
+                    >
                       {!isOnline ? <WifiOff size={13} strokeWidth={2} /> : <Upload size={13} strokeWidth={2} />}
-                      {saving ? '...' : isOnline ? t('grades_section.submit_online') : t('grades_section.submit_offline')}
+                      <span>{saving ? '...' : isOnline ? t('grades_section.submit_online') : t('grades_section.submit_offline')}</span>
                     </button>
                   </>
                 ) : (
@@ -588,7 +732,37 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
             <X size={14} strokeWidth={2} color="var(--red)" />
             <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--red)' }}>{t('grades_section.rejected_title').replace('{count}', String(rejectedGrades.length))}</span>
           </div>
-          <div style={{ overflowX: 'auto' }}>
+          {/* Vue mobile: Cartes notes rejetées */}
+          <div className="md:hidden divide-y divide-[rgba(220,38,38,0.15)]">
+            {rejectedGrades.map((g: any) => (
+              <div key={g.id} className="p-3.5 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="text-[13px] font-bold text-[var(--text)]">{g.student?.firstName} {g.student?.lastName}</div>
+                    <div className="text-xs font-black text-[var(--red)] mt-0.5">{g.sequenceScore ?? '?'}/20</div>
+                  </div>
+                  <button
+                    className="h-9 px-3 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shrink-0"
+                    style={{ background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid rgba(217,119,6,0.3)', fontFamily: 'inherit' }}
+                    onClick={() => {
+                      setSelectedClass(g.classId || '')
+                      setSelectedSubject(g.subjectId || '')
+                      setSelectedSequence(g.sequenceId || '')
+                      loadGrades()
+                    }}>
+                    <Pencil size={12} strokeWidth={2} />
+                    <span>{t('grades_section.rejected_correct')}</span>
+                  </button>
+                </div>
+                <div className="text-xs text-[var(--red)] font-semibold bg-[rgba(220,38,38,0.06)] p-2 rounded-lg">
+                  {g.rejectionReason || t('grades_section.rejected_no_reason')}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Vue desktop: Table */}
+          <div className="hidden md:block" style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
               <thead><tr>{[t('grades_section.rejected_table_student'), t('grades_section.rejected_table_grade'), t('grades_section.rejected_table_reason'), t('grades_section.rejected_table_actions')].map(h => <th key={h} style={thSt}>{h}</th>)}</tr></thead>
               <tbody>

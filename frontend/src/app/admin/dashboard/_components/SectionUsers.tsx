@@ -1067,7 +1067,7 @@ export default function SectionUsers({ onToast, onNav }: Props) {
   const isEleveMaternellePrimaire = createForm.role === 'STUDENT' && (selectedClassCycle === 'maternelle' || selectedClassCycle === 'primaire')
 
   return (
-    <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto' }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
         <div>
@@ -1083,17 +1083,17 @@ export default function SectionUsers({ onToast, onNav }: Props) {
         {/* Mobile — CTA principal + "..." */}
         <div className="flex md:hidden items-center gap-[6px] flex-shrink-0">
           <button onClick={openCreateUser}
-            className="inline-flex items-center gap-[4px] rounded-full px-[11px] py-[6px] text-[11.5px] whitespace-nowrap border-0"
+            className="inline-flex items-center gap-[4px] rounded-full px-3 py-2 text-[12px] min-h-[38px] whitespace-nowrap border-0 shadow-sm"
             style={{ background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800 }}>
             {t('users.btn_create')}
           </button>
           <div ref={userActionsRef} className="relative flex-shrink-0">
             <button onClick={() => setUserActionsOpen(o => !o)} aria-label="Menu"
-              style={{ width: 30, height: 30, borderRadius: 15, border: 'none', background: 'var(--bg2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-              <MoreVertical size={15} strokeWidth={2} color="var(--text2)" />
+              style={{ width: 38, height: 38, borderRadius: 19, border: 'none', background: 'var(--bg2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              <MoreVertical size={16} strokeWidth={2} color="var(--text2)" />
             </button>
             {userActionsOpen && (
-              <div style={{ position: 'absolute', top: 36, right: 0, width: 170, background: 'var(--surface)', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.08)', padding: 6, zIndex: 20 }}>
+              <div style={{ position: 'absolute', top: 42, right: 0, width: 170, background: 'var(--surface)', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.08)', padding: 6, zIndex: 20 }}>
                 <div onClick={() => { setUserActionsOpen(false); setInviteOpen(true) }}
                   style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, cursor: 'pointer' }}>
                   <UserPlus size={15} color="var(--text2)" strokeWidth={2} />
@@ -1242,8 +1242,8 @@ export default function SectionUsers({ onToast, onNav }: Props) {
                 <div key={user.id} className="rounded-[14px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: 14, position: 'relative' }}>
                   <div style={{ position: 'absolute', top: 14, right: 14 }}>
                     <button onClick={() => setOpenDD(openDD === user.id ? null : user.id)}
-                      style={{ width: 28, height: 28, borderRadius: 14, background: 'none', border: '1px solid var(--border2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text3)' }}>
-                      <MoreHorizontal size={14} strokeWidth={2} />
+                      style={{ width: 36, height: 36, borderRadius: 18, background: 'none', border: '1px solid var(--border2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text3)' }}>
+                      <MoreHorizontal size={16} strokeWidth={2} />
                     </button>
                     {openDD === user.id && (
                       <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 4px)', background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.1)', minWidth: 180, zIndex: 100, overflow: 'hidden' }}>

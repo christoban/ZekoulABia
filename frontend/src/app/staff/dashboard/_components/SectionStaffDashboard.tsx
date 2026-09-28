@@ -147,7 +147,7 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
   ].filter(Boolean) as { icon: LucideIcon; bg: string; val: string; label: string; trend: string; tBg: string; tC: string; nav: StaffSection }[]
 
   return (
-    <div className="px-4 py-4 md:px-7 md:py-6 overflow-y-auto h-full space-y-4 md:space-y-5">
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 overflow-y-auto h-full space-y-3.5 sm:space-y-4">
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
       {/* En-tête */}
@@ -164,7 +164,7 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
           )}
         </div>
         <button
-          className="px-3 py-1.5 md:px-3.5 md:py-2 rounded-lg text-xs md:text-[13px] font-bold inline-flex items-center gap-1.5 cursor-pointer font-inherit transition-all"
+          className="min-h-[38px] px-3 py-1.5 md:px-3.5 md:py-2 rounded-lg text-xs md:text-[13px] font-bold inline-flex items-center gap-1.5 cursor-pointer font-inherit transition-all"
           style={{ border: '1.5px solid var(--border2)', background: 'var(--surface)', color: 'var(--text2)' }}
           onClick={() => { refetch(); onToast(t('dashboard.refreshing'), 'info') }}
         >

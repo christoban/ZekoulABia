@@ -1,5 +1,5 @@
 'use client'
-import { useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import type { UserInfo } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
@@ -102,6 +102,9 @@ export default function SectionStudentTimetable({ onToast, user }: Props) {
     return `${t('timetable.week_prefix')} ${fmt(monday)} au ${fmt(friday)}`
   }
 
+  const currentDayIdx = (new Date().getDay() + 6) % 7
+  const [selectedDay, setSelectedDay] = useState(currentDayIdx >= 0 && currentDayIdx <= 4 ? currentDayIdx : 0)
+
   if (!user || loading) {
     return (
       <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -137,16 +140,124 @@ export default function SectionStudentTimetable({ onToast, user }: Props) {
   const slots = data?.slots ?? {}
   const className = data?.className ?? ''
 
+  // Préparation des créneaux du jour sélectionné pour la vue mobile
+  const selectedDaySlots = TIMES.map((time, ti) => {
+    const cell = slots[`${selectedDay}-${ti}`]
+    const visibleCell = cell ? normalizeTimetableCellSlots(cell) : []
+    return { time, timeEnd: TIMES_END[ti], slots: visibleCell }
+  }).filter(item => item.slots.length > 0)
+
   return (
-    <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto' }}>
-      <div style={{ marginBottom: fromCache ? 6 : 14 }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
+      <div style={{ marginBottom: fromCache ? 6 : 12 }}>
         <div style={sTitle}>{t('timetable.title')}</div>
         <div style={sSub}>{className} · {getWeekRange()}</div>
       </div>
 
       {fromCache && <CacheBadge cachedAt={cachedAt} />}
 
-      <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
+      {/* ========================================================
+          VUE MOBILE (md:hidden) : Sélecteur de jour + Déroulé chronologique
+         ======================================================== */}
+      <div className="md:hidden space-y-3">
+        {/* Pilules de sélection du jour de la semaine */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+          {DAYS.map((d, di) => {
+            const isSelected = selectedDay === di
+            const isToday = currentDayIdx === di
+            return (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setSelectedDay(di)}
+                className={`flex-1 min-w-[70px] py-2 px-2.5 rounded-xl text-xs font-bold transition-all border text-center cursor-pointer ${
+                  isSelected
+                    ? 'text-white shadow-xs'
+                    : 'text-[var(--text2)] border-[var(--border)] hover:bg-[var(--bg2)]'
+                }`}
+                style={{
+                  background: isSelected ? 'var(--sidebar)' : 'var(--surface)',
+                  borderColor: isSelected ? 'var(--sidebar)' : 'var(--border)',
+                }}
+              >
+                <div>{d}</div>
+                {isToday && (
+                  <div className="text-[9px] font-extrabold mt-0.5 opacity-80 uppercase tracking-wider">
+                    Auj.
+                  </div>
+                )}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Liste des cours du jour sélectionné */}
+        {selectedDaySlots.length === 0 ? (
+          <div className="rounded-xl border p-8 text-center" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+            <div className="text-xs font-semibold" style={{ color: 'var(--text3)' }}>
+              Aucun cours programmé ce jour.
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {selectedDaySlots.map((item, idx) => (
+              <div key={idx} className="space-y-2">
+                {item.slots.map((slot, sIdx) => {
+                  const isFree = slot.kind === 'FREE'
+                  return (
+                    <div
+                      key={sIdx}
+                      className="rounded-xl border p-3 flex gap-3 items-center shadow-xs"
+                      style={{
+                        background: 'var(--surface)',
+                        borderColor: 'var(--border)',
+                        borderLeftWidth: 4,
+                        borderLeftColor: isFree ? 'var(--blue)' : slot.color,
+                      }}
+                    >
+                      {/* Horaire */}
+                      <div className="text-center shrink-0 pr-3 border-r" style={{ borderColor: 'var(--border)' }}>
+                        <div className="text-xs font-black" style={{ color: 'var(--text)' }}>{item.time}</div>
+                        <div className="text-[10px] font-semibold text-[var(--text3)] mt-0.5">{item.timeEnd}</div>
+                      </div>
+
+                      {/* Détails du cours */}
+                      <div className="min-w-0 flex-1">
+                        {isFree ? (
+                          <div className="text-xs font-bold text-[var(--blue)]">
+                            {t('timetable.freeTime')}
+                          </div>
+                        ) : (
+                          <>
+                            <div className="text-xs sm:text-sm font-extrabold truncate" style={{ color: slot.color }}>
+                              {slot.subject}
+                            </div>
+                            {slot.teacher && (
+                              <div className="text-[11px] font-medium text-[var(--text3)] truncate mt-0.5">
+                                {slot.teacher}
+                              </div>
+                            )}
+                            {slot.room && (
+                              <div className="text-[10px] font-bold text-[var(--text2)] mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md" style={{ background: 'var(--bg2)' }}>
+                                {t('timetable.roomLabel')} {slot.room}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ========================================================
+          VUE DESKTOP (hidden md:block) : Tableau complet hebdomadaire
+         ======================================================== */}
+      <div className="hidden md:block rounded-xl border overflow-hidden" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 680 }}>
             <thead>

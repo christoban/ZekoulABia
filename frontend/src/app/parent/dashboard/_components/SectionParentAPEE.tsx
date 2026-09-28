@@ -62,8 +62,8 @@ export default function SectionParentAPEE({ onToast }: Props) {
   if (error === 'OFFLINE_NO_CACHE') return <OfflineEmptyState />
 
   return (
-    <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto' }}>
-      <div style={{ marginBottom: 16 }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
+      <div style={{ marginBottom: 8 }}>
         <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>{t('apee.title')}</div>
         <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 500, marginTop: 2 }}>{t('apee.subtitle')}</div>
         {fromCache && cachedAt && (
@@ -74,7 +74,7 @@ export default function SectionParentAPEE({ onToast }: Props) {
       </div>
 
       {solde && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5 mb-3 sm:mb-4">
           {[
             { label: t('apee.totalCollectes'), value: fmtCFA(solde.totalCollectes), color: 'var(--green)' },
             { label: t('apee.totalDepenses'), value: fmtCFA(solde.totalDepenses), color: 'var(--red)' },
@@ -95,12 +95,12 @@ export default function SectionParentAPEE({ onToast }: Props) {
         ) : transactions.length === 0 ? (
           <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)', fontSize: 12.5 }}>{t('apee.noTransactions')}</div>
         ) : (
-          <div>
+          <div className="divide-y divide-[var(--border)]">
             {transactions.map((tx) => (
-              <div key={tx.id} style={{ padding: '9px 14px', borderBottom: '1px solid var(--bg2)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <HandCoins size={14} color="var(--text3)" style={{ flexShrink: 0 }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+              <div key={tx.id} className="p-3 sm:p-3.5 flex items-start gap-2.5">
+                <HandCoins size={15} color="var(--text3)" className="shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span style={chipStyle(tx.type === 'COLLECTE' ? 'var(--green-light)' : 'var(--red-light)', tx.type === 'COLLECTE' ? 'var(--green)' : 'var(--red)')}>
                       {tx.type === 'COLLECTE' ? t('apee.typeCollecte') : t('apee.typeDepense')}
                     </span>
@@ -111,7 +111,7 @@ export default function SectionParentAPEE({ onToast }: Props) {
                       <span style={chipStyle('var(--amber-light)', 'var(--amber)')}><Clock size={11} /> {t('apee.pending')}</span>
                     )}
                   </div>
-                  <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 3 }}>
+                  <div className="text-[11.5px] text-[var(--text3)] mt-1 truncate">
                     {tx.categorie || '—'} {tx.description ? `· ${tx.description}` : ''} · {new Date(tx.date).toLocaleDateString('fr-FR')}
                   </div>
                 </div>
@@ -123,4 +123,5 @@ export default function SectionParentAPEE({ onToast }: Props) {
     </div>
   )
 }
+
 

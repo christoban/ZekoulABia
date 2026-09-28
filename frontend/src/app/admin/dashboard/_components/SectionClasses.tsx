@@ -595,7 +595,7 @@ export default function SectionClasses({ onToast, onNav }: Props) {
   }
 
   return (
-    <div className="h-full overflow-y-auto p-4 md:p-5 space-y-4 max-w-7xl mx-auto pb-12 font-nunito">
+    <div className="h-full overflow-y-auto px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4 max-w-7xl mx-auto pb-12 font-nunito">
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
       <div className="pb-1.5 border-b border-[var(--border)]" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -609,7 +609,7 @@ export default function SectionClasses({ onToast, onNav }: Props) {
         </div>
         <button className="hidden md:inline-block" style={btnPrim} onClick={() => setCreateOpen(true)}>{t('classes.btn_create')}</button>
         <button
-          className="md:hidden inline-flex items-center gap-[6px] rounded-lg px-[13px] py-[8px] text-[13px] border-0 flex-shrink-0"
+          className="md:hidden min-h-[38px] inline-flex items-center gap-[6px] rounded-lg px-[13px] py-[8px] text-[13px] border-0 flex-shrink-0"
           style={{ background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800 }}
           onClick={() => setCreateOpen(true)}>{t('classes.btn_create')}</button>
       </div>
@@ -645,7 +645,7 @@ export default function SectionClasses({ onToast, onNav }: Props) {
           {classes.map(cls => {
             const badge = getLevelBadge(cls.name)
             const ppName = cls.professorPrincipal ? `${cls.professorPrincipal.firstName} ${cls.professorPrincipal.lastName}` : t('classes.pp_not_assigned')
-            const cardBtnMobile: React.CSSProperties = { flex: 1, fontSize: 13, fontWeight: 800, color: 'var(--text2)', background: 'var(--bg2)', border: 'none', borderRadius: 9, padding: '8px 0', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }
+            const cardBtnMobile: React.CSSProperties = { flex: 1, minHeight: '38px', fontSize: 13, fontWeight: 800, color: 'var(--text2)', background: 'var(--bg2)', border: 'none', borderRadius: 9, padding: '9px 0', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }
             return (
               <div key={cls.id} className="rounded-[16px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)]" style={{ background: 'var(--surface)', padding: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>

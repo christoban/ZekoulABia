@@ -230,9 +230,9 @@ export default function SectionAppreciationsPP({ user: _user, classeId }: Props)
   }, [myClassId, currentPeriodId])
 
   return (
-    <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto' }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <PenLine size={18} strokeWidth={2} />{t('pp.title')}
@@ -244,7 +244,7 @@ export default function SectionAppreciationsPP({ user: _user, classeId }: Props)
         <button
           onClick={handleBulkSave}
           disabled={bulkSaving || reportCards.length === 0}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 38, padding: '7px 14px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
             background: bulkSaving ? 'var(--border)' : 'var(--sidebar)', color: bulkSaving ? 'var(--text3)' : 'white', transition: 'all 0.15s' }}>
           {bulkSaving ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : <Save size={13} strokeWidth={2} />}
           {bulkSaving ? t('pp.save_progress').replace('{progress}', String(bulkProgress)) : t('pp.save_all')}
@@ -253,19 +253,19 @@ export default function SectionAppreciationsPP({ user: _user, classeId }: Props)
 
       {/* Barre progression bulk */}
       {bulkSaving && (
-        <div style={{ background: 'var(--border)', borderRadius: 4, height: 4, marginBottom: 14, overflow: 'hidden' }}>
+        <div style={{ background: 'var(--border)', borderRadius: 4, height: 4, overflow: 'hidden' }}>
           <div style={{ height: '100%', background: 'var(--sidebar)', width: `${bulkProgress}%`, transition: 'width 0.3s' }} />
         </div>
       )}
 
       {/* Sélecteur période */}
       {periods.length > 0 && (
-        <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+        <div className="flex gap-1.5 overflow-x-auto pb-1">
           {periods.map(p => (
             <button key={p.id} onClick={() => setSelectedPeriodId(p.id)}
-              style={{ padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
+              style={{ minHeight: 34, padding: '6px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
                 background: selectedPeriodId === p.id ? 'var(--sidebar)' : 'var(--bg2)',
-                color: selectedPeriodId === p.id ? 'white' : 'var(--text2)' }}>
+                color: selectedPeriodId === p.id ? 'white' : 'var(--text2)', flexShrink: 0 }}>
               {p.name}
             </button>
           ))}

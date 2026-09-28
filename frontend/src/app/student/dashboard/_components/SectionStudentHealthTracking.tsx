@@ -59,12 +59,12 @@ export default function SectionStudentHealthTracking({ user }: Props) {
 
   if (!data) {
     return (
-      <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto' }}>
-        <div style={{ marginBottom: 16 }}>
+      <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
+        <div style={{ marginBottom: 12 }}>
           <div style={sTitle}>{t('health_tracking.title')}</div>
           <div style={sSub}>{t('health_tracking.subtitle')}</div>
         </div>
-        <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', padding: 32, textAlign: 'center', maxWidth: 420 }}>
+        <div className="rounded-xl border p-8 text-center w-full max-w-md" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><HeartPulse size={34} color="var(--text3)" /></div>
           <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>{t('health_tracking.empty_title')}</div>
           <div style={{ fontSize: 12.5, color: 'var(--text3)', fontWeight: 500 }}>{t('health_tracking.empty_sub')}</div>
@@ -78,19 +78,19 @@ export default function SectionStudentHealthTracking({ user }: Props) {
   const levelLabel = data.alertLevel === 'critical' ? t('health_tracking.level_critical') : data.alertLevel === 'warning' ? t('health_tracking.level_warning') : t('health_tracking.level_good')
 
   return (
-    <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto' }}>
-      <div style={{ marginBottom: 16 }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
+      <div style={{ marginBottom: fromCache ? 6 : 12 }}>
         <div style={sTitle}>{t('health_tracking.title')}</div>
         <div style={sSub}>{t('health_tracking.subtitle')}</div>
         {fromCache && cachedAt && (
-          <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 6, padding: '3px 8px', fontSize: 11.5, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 8 }}>
+          <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 8 }}>
             <Package size={13} strokeWidth={2} /> {tcommon('cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}
           </div>
         )}
       </div>
 
       {data.convocation && (
-        <div style={{ background: 'var(--blue-light)', border: '1px solid var(--blue)', borderRadius: 10, padding: '10px 14px', marginBottom: 14, maxWidth: 460 }}>
+        <div className="rounded-xl border p-3.5 sm:p-4 w-full max-w-lg shadow-xs" style={{ background: 'var(--blue-light)', borderColor: 'var(--blue)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 800, color: 'var(--blue)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>
             <UserCheck size={13} strokeWidth={2} /> {t('health_tracking.convocation_title')}
           </div>
@@ -98,7 +98,7 @@ export default function SectionStudentHealthTracking({ user }: Props) {
         </div>
       )}
 
-      <div style={{ background: 'var(--surface)', borderRadius: 12, border: `1px solid ${data.alertLevel === 'critical' ? 'var(--red)' : 'var(--border)'}`, padding: 18, maxWidth: 460 }}>
+      <div className="rounded-2xl border p-4 sm:p-5 w-full max-w-lg shadow-xs" style={{ background: 'var(--surface)', borderColor: data.alertLevel === 'critical' ? 'var(--red)' : 'var(--border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: data.conseil ? 14 : 0 }}>
           <div style={{ width: 54, height: 54, borderRadius: '50%', background: bg, border: `2.5px solid ${color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 900, color, flexShrink: 0 }}>
             {data.healthScore}
@@ -110,7 +110,7 @@ export default function SectionStudentHealthTracking({ user }: Props) {
         </div>
 
         {data.conseil ? (
-          <div style={{ background: 'var(--bg2)', borderRadius: 8, padding: '10px 12px' }}>
+          <div className="rounded-xl p-3 sm:p-3.5" style={{ background: 'var(--bg2)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>
               <Sparkles size={12} strokeWidth={2} /> {t('health_tracking.advice_title')}
             </div>

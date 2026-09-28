@@ -149,9 +149,9 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
   const totalPartial = invoices.filter(i => i.status === 'PARTIAL').reduce((s, i) => s + i.amount, 0)
 
   return (
-    <div>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4" style={{ overflowY: 'auto', height: '100%' }}>
       {/* ── Onglets ── */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 16, borderBottom: '1px solid var(--border)', paddingBottom: 8 }}>
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-[var(--border)]" style={{ scrollbarWidth: 'none' }}>
         <button
           style={{
             ...btnSec,
@@ -159,6 +159,7 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
             color: tab === 'invoices' ? 'var(--green)' : 'var(--text2)',
             borderColor: tab === 'invoices' ? 'var(--green)' : 'var(--border2)',
           }}
+          className="min-h-[38px] whitespace-nowrap px-3 py-2 text-xs font-bold"
           onClick={() => setTab('invoices')}
         >
           {t('finance.tabInvoices') || 'Factures & Paiements'}
@@ -172,6 +173,7 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
               color: tab === 'plans' ? 'var(--green)' : 'var(--text2)',
               borderColor: tab === 'plans' ? 'var(--green)' : 'var(--border2)',
             }}
+            className="min-h-[38px] whitespace-nowrap px-3 py-2 text-xs font-bold"
             onClick={() => setTab('plans')}
           >
             {t('finance.tabPlans') || 'Plans de frais'}
@@ -186,6 +188,7 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
               color: tab === 'apee' ? 'var(--green)' : 'var(--text2)',
               borderColor: tab === 'apee' ? 'var(--green)' : 'var(--border2)',
             }}
+            className="min-h-[38px] whitespace-nowrap px-3 py-2 text-xs font-bold"
             onClick={() => setTab('apee')}
           >
             {t('finance.tabAPEE') || 'Transparence APEE'}
@@ -210,24 +213,34 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
       /* ── Onglet Factures & Paiements ── */
       ) : tab === 'invoices' ? (
         <>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <div>
               <div style={sTitle}>{t('finance.title')}</div>
               <div style={sSub}>{t('finance.subtitle')}</div>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div className="flex items-center gap-2">
               {hasMF && (
-                <button style={btnPrim} onClick={() => { setDepenseOpen(true); setDepenseError(null); setDepenseForm(EMPTY_DEP) }}>
+                <button
+                  style={btnPrim}
+                  className="min-h-[38px] flex-1 sm:flex-initial"
+                  onClick={() => { setDepenseOpen(true); setDepenseError(null); setDepenseForm(EMPTY_DEP) }}
+                >
                   {t('finance.recordExpense')}
                 </button>
               )}
-              <button style={btnSec} onClick={() => fetchInvoices(page)}>{t('finance.refresh')}</button>
+              <button
+                style={btnSec}
+                className="min-h-[38px] flex-1 sm:flex-initial"
+                onClick={() => fetchInvoices(page)}
+              >
+                {t('finance.refresh')}
+              </button>
             </div>
           </div>
 
       {/* KPIs */}
       {!loading && !error && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 14 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 mb-3.5">
           {[
             { label: t('finance.kpiTotalUnpaid'),  val: fmtCFA(totalPending), bg: 'var(--red-light)', color: 'var(--red)' },
             { label: t('finance.kpiPartialPayments'),   val: fmtCFA(totalPartial), bg: 'var(--amber-light)', color: 'var(--amber)' },
@@ -242,20 +255,20 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
       )}
 
       {/* Filtres */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={filterSt}>
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={filterSt} className="min-h-[38px] text-xs">
           <option value="">{t('finance.filterAllStatuses')}</option>
           <option value="PENDING">{t('finance.filterUnpaid')}</option>
           <option value="PARTIAL">{t('finance.filterPartial')}</option>
           <option value="PAID">{t('finance.filterPaid')}</option>
           <option value="OVERDUE">{t('finance.filterOverdue')}</option>
         </select>
-        <span style={{ fontSize: 12, color: 'var(--text3)', marginLeft: 'auto' }}>
+        <span style={{ fontSize: 12, color: 'var(--text3)' }}>
           {t('finance.pageInfo', { page: pag.page, pages: pag.pages, total: pag.total })}
         </span>
       </div>
 
-      {/* Table */}
+      {/* Liste des factures (Mobile Cards + Desktop Table) */}
       <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: 50 }}>
@@ -275,7 +288,65 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
           </div>
         ) : (
           <>
-            <div style={{ overflowX: 'auto' }}>
+            {/* Vue Mobile : Cartes factures */}
+            <div className="md:hidden divide-y divide-[var(--border)]">
+              {invoices.map(inv => {
+                const totalPaid = inv.payments.filter(p => p.status === 'COMPLETED').reduce((s, p) => s + p.amount, 0)
+                const stCfg = INV_STATUS[inv.status] || { bg: 'var(--bg2)', color: 'var(--text2)' }
+                return (
+                  <div key={inv.id} className="p-3.5 space-y-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="font-bold text-sm text-[var(--text)]">
+                        {inv.student.lastName} {inv.student.firstName}
+                      </div>
+                      <span style={{ background: stCfg.bg, color: stCfg.color, padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 700 }}>
+                        {t(`finance.status${inv.status === 'PENDING' ? 'Unpaid' : inv.status === 'PARTIAL' ? 'Partial' : inv.status === 'PAID' ? 'Paid' : inv.status === 'OVERDUE' ? 'Overdue' : 'Cancelled'}`)}
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-[var(--text2)]">
+                      {inv.feePlan?.name ?? '—'}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-[var(--bg)] text-xs">
+                      <div>
+                        <span className="text-[10px] text-[var(--text3)] uppercase font-bold block">{t('finance.tableHeaderAmount')}</span>
+                        <span className="font-bold text-[var(--text)]">{fmtCFA(inv.amount)}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-[var(--text3)] uppercase font-bold block">{t('finance.tableHeaderPaid')}</span>
+                        <span className="font-bold text-[var(--green)]">{fmtCFA(totalPaid)}</span>
+                      </div>
+                    </div>
+
+                    {inv.status !== 'PAID' && (
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          style={{ ...btnSecSm, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                          className="flex-1 min-h-[38px] text-xs font-semibold"
+                          disabled={payingId === inv.id}
+                          onClick={() => initiateMobileMoney(inv)}
+                        >
+                          {payingId === inv.id ? <Loader2 size={13} className="animate-spin" /> : <Smartphone size={13} />}
+                          Mobile Money
+                        </button>
+                        <button
+                          style={btnSecSm}
+                          className="min-h-[38px] px-3 text-xs font-semibold"
+                          disabled={sendingId === inv.id}
+                          onClick={() => sendSmsReminder(inv)}
+                        >
+                          {sendingId === inv.id ? <Loader2 size={13} className="animate-spin" /> : 'SMS'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Vue Desktop : Tableau classique */}
+            <div className="hidden md:block overflow-x-auto">
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>

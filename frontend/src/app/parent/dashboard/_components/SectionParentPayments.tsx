@@ -137,15 +137,20 @@ export default function SectionParentPayments({ onToast }: Props) {
   }, 0)
 
   return (
-    <div className="px-4 py-4 md:px-6 md:py-5" style={{ overflowY: 'auto', height: '100%' }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3 sm:space-y-4" style={{ overflowY: 'auto', height: '100%' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-4 mb-2 sm:mb-4">
         <div>
           <div style={sTitle}>{t('payments.title')}</div>
           <div style={sSub}>{t('payments.subtitle')}</div>
         </div>
         {children.length > 0 && (
-          <select value={childFilter} onChange={e => setChildFilter(e.target.value)} style={sSelect}>
+          <select
+            value={childFilter}
+            onChange={e => setChildFilter(e.target.value)}
+            className="w-full sm:w-auto h-10 sm:h-9"
+            style={sSelect}
+          >
             <option value="">{t('payments.allChildren')}</option>
             {children.map(c => <option key={c.studentId} value={c.studentId}>{c.prenom} {c.nom}</option>)}
           </select>
@@ -164,7 +169,8 @@ export default function SectionParentPayments({ onToast }: Props) {
               </div>
             </div>
             <button onClick={() => setGuideOpen(o => !o)}
-              style={{ padding: '4px 10px', borderRadius: 7, fontSize: 11.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--blue)', border: '1px solid var(--blue)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+              className="h-8 px-3"
+              style={{ borderRadius: 7, fontSize: 11.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--blue)', border: '1px solid var(--blue)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
               {guideOpen ? t('minesecGuide.hide') : t('minesecGuide.show')}
             </button>
           </div>
@@ -187,12 +193,14 @@ export default function SectionParentPayments({ onToast }: Props) {
 
               <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
                 <a href="https://cartescolaire.cm/pay-fees" target="_blank" rel="noopener noreferrer"
-                  style={{ padding: '5px 11px', borderRadius: 7, fontSize: 11.5, fontWeight: 700, background: 'var(--blue)', color: 'white', textDecoration: 'none' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><CreditCard size={12} strokeWidth={2} /> {t('minesecGuide.payLink')}</span>
+                  className="h-8 px-3 inline-flex items-center gap-1.5"
+                  style={{ borderRadius: 7, fontSize: 11.5, fontWeight: 700, background: 'var(--blue)', color: 'white', textDecoration: 'none' }}>
+                  <CreditCard size={12} strokeWidth={2} /> {t('minesecGuide.payLink')}
                 </a>
                 <a href="https://cartescolaire.cm/verify-payment" target="_blank" rel="noopener noreferrer"
-                  style={{ padding: '5px 11px', borderRadius: 7, fontSize: 11.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--blue)', border: '1px solid var(--blue)', textDecoration: 'none' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Search size={12} strokeWidth={2} /> {t('minesecGuide.verifyLink')}</span>
+                  className="h-8 px-3 inline-flex items-center gap-1.5"
+                  style={{ borderRadius: 7, fontSize: 11.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--blue)', border: '1px solid var(--blue)', textDecoration: 'none' }}>
+                  <Search size={12} strokeWidth={2} /> {t('minesecGuide.verifyLink')}
                 </a>
               </div>
             </div>
@@ -215,7 +223,7 @@ export default function SectionParentPayments({ onToast }: Props) {
         </div>
       )}
 
-      {/* Table */}
+      {/* Liste des factures */}
       <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
         {loading ? (
           <div style={{ padding: '30px 20px', textAlign: 'center', color: 'var(--text3)', fontSize: 12.5 }}>{tc('status.loading')}</div>
@@ -227,53 +235,115 @@ export default function SectionParentPayments({ onToast }: Props) {
             <div style={{ fontSize: 17 }}>{t('payments.noInvoices')}</div>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 650 }}>
-              <thead>
-                <tr>{[tf('table_headers.student'), t('payments.libelle'), tf('table_headers.amount'), tf('table_headers.paid'), t('payments.remaining'), tf('table_headers.status'), tf('table_headers.actions')].map(h => (
-                  <th key={h} style={thSt}>{h}</th>
-                ))}</tr>
-              </thead>
-              <tbody>
-                {invoices.map(inv => {
-                  const INV_STATUS = invStatus(tf)
-                  const st = INV_STATUS[inv.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)', label: inv.status }
-                  const paid = inv.payments.filter(p => p.status === 'PAID').reduce((s, p) => s + p.amount, 0)
-                  const remaining = Math.max(0, inv.amount - paid)
-                  const canPay = (inv.status === 'PENDING' || inv.status === 'OVERDUE' || inv.status === 'PARTIAL') && remaining > 0
-                  return (
-                    <tr key={inv.id}
-                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
-                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
-                      <td style={{ ...tdSt, fontWeight: 700, color: 'var(--text)' }}>
-                        {inv.student.firstName} {inv.student.lastName}
-                      </td>
-                      <td style={{ ...tdSt, fontSize: 12 }}>{inv.feePlan?.name ?? inv.description ?? '—'}</td>
-                      <td style={{ ...tdSt, fontWeight: 700 }}>{fmtCFA(inv.amount)}</td>
-                      <td style={tdSt}>
-                        <span style={{ fontWeight: 700, color: paid > 0 ? 'var(--green)' : 'var(--text3)' }}>
+          <>
+            {/* Vue mobile: Cartes tactiles compactes */}
+            <div className="md:hidden divide-y divide-[var(--border)]">
+              {invoices.map(inv => {
+                const INV_STATUS = invStatus(tf)
+                const st = INV_STATUS[inv.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)', label: inv.status }
+                const paid = inv.payments.filter(p => p.status === 'PAID').reduce((s, p) => s + p.amount, 0)
+                const remaining = Math.max(0, inv.amount - paid)
+                const canPay = (inv.status === 'PENDING' || inv.status === 'OVERDUE' || inv.status === 'PARTIAL') && remaining > 0
+
+                return (
+                  <div key={inv.id} className="p-3.5 space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="text-[13px] font-bold text-[var(--text)]">
+                          {inv.student.firstName} {inv.student.lastName}
+                        </div>
+                        <div className="text-[11.5px] text-[var(--text2)] mt-0.5">
+                          {inv.feePlan?.name ?? inv.description ?? 'Facture'}
+                        </div>
+                      </div>
+                      <span style={{ padding: '3px 8px', borderRadius: 12, fontSize: 10.5, fontWeight: 700, background: st.bg, color: st.color, whiteSpace: 'nowrap' }}>
+                        {st.label}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 p-2.5 rounded-lg bg-[var(--bg)] border border-[var(--border)] text-center">
+                      <div>
+                        <div className="text-[10px] uppercase font-bold text-[var(--text3)]">{tf('table_headers.amount')}</div>
+                        <div className="text-[11.5px] font-bold text-[var(--text)] mt-0.5">{fmtCFA(inv.amount)}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase font-bold text-[var(--text3)]">{tf('table_headers.paid')}</div>
+                        <div className="text-[11.5px] font-bold mt-0.5" style={{ color: paid > 0 ? 'var(--green)' : 'var(--text3)' }}>
                           {paid > 0 ? fmtCFA(paid) : '—'}
-                        </span>
-                      </td>
-                      <td style={tdSt}>
-                        <span style={{ fontWeight: 700, color: remaining > 0 ? 'var(--red)' : 'var(--green)' }}>
-                          {remaining > 0 ? fmtCFA(remaining) : <Check size={14} strokeWidth={2.5} />}
-                        </span>
-                      </td>
-                      <td style={tdSt}>
-                        <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 700, background: st.bg, color: st.color }}>{st.label}</span>
-                      </td>
-                      <td style={tdSt}>
-                        {canPay && (
-                          <button style={{ ...btnPay, display: 'inline-flex', alignItems: 'center', gap: 5 }} onClick={() => openModal(inv)}><Smartphone size={12} strokeWidth={2} /> {t('payments.payButton')}</button>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase font-bold text-[var(--text3)]">{t('payments.remaining')}</div>
+                        <div className="text-[11.5px] font-bold mt-0.5" style={{ color: remaining > 0 ? 'var(--red)' : 'var(--green)' }}>
+                          {remaining > 0 ? fmtCFA(remaining) : 'Soldé'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {canPay && (
+                      <button
+                        onClick={() => openModal(inv)}
+                        className="w-full h-10 rounded-lg text-xs font-bold text-white flex items-center justify-center gap-2"
+                        style={{ background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))' }}
+                      >
+                        <Smartphone size={14} strokeWidth={2} />
+                        {t('payments.payButton')} ({fmtCFA(remaining)})
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Vue desktop: Tableau complet */}
+            <div className="hidden md:block" style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 650 }}>
+                <thead>
+                  <tr>{[tf('table_headers.student'), t('payments.libelle'), tf('table_headers.amount'), tf('table_headers.paid'), t('payments.remaining'), tf('table_headers.status'), tf('table_headers.actions')].map(h => (
+                    <th key={h} style={thSt}>{h}</th>
+                  ))}</tr>
+                </thead>
+                <tbody>
+                  {invoices.map(inv => {
+                    const INV_STATUS = invStatus(tf)
+                    const st = INV_STATUS[inv.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)', label: inv.status }
+                    const paid = inv.payments.filter(p => p.status === 'PAID').reduce((s, p) => s + p.amount, 0)
+                    const remaining = Math.max(0, inv.amount - paid)
+                    const canPay = (inv.status === 'PENDING' || inv.status === 'OVERDUE' || inv.status === 'PARTIAL') && remaining > 0
+                    return (
+                      <tr key={inv.id}
+                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
+                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
+                        <td style={{ ...tdSt, fontWeight: 700, color: 'var(--text)' }}>
+                          {inv.student.firstName} {inv.student.lastName}
+                        </td>
+                        <td style={{ ...tdSt, fontSize: 12 }}>{inv.feePlan?.name ?? inv.description ?? '—'}</td>
+                        <td style={{ ...tdSt, fontWeight: 700 }}>{fmtCFA(inv.amount)}</td>
+                        <td style={tdSt}>
+                          <span style={{ fontWeight: 700, color: paid > 0 ? 'var(--green)' : 'var(--text3)' }}>
+                            {paid > 0 ? fmtCFA(paid) : '—'}
+                          </span>
+                        </td>
+                        <td style={tdSt}>
+                          <span style={{ fontWeight: 700, color: remaining > 0 ? 'var(--red)' : 'var(--green)' }}>
+                            {remaining > 0 ? fmtCFA(remaining) : <Check size={14} strokeWidth={2.5} />}
+                          </span>
+                        </td>
+                        <td style={tdSt}>
+                          <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 700, background: st.bg, color: st.color }}>{st.label}</span>
+                        </td>
+                        <td style={tdSt}>
+                          {canPay && (
+                            <button style={{ ...btnPay, display: 'inline-flex', alignItems: 'center', gap: 5 }} onClick={() => openModal(inv)}><Smartphone size={12} strokeWidth={2} /> {t('payments.payButton')}</button>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
@@ -297,6 +367,7 @@ export default function SectionParentPayments({ onToast }: Props) {
             <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
               {(['MTN_MOMO', 'ORANGE_MONEY'] as const).map(m => (
                 <button key={m} onClick={() => setModal(s => ({ ...s, method: m }))}
+                   className="h-10 sm:h-9"
                    style={{ flex: 1, padding: '7px 10px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: '1.5px solid', borderColor: modal.method === m ? 'var(--green)' : 'var(--border)', background: modal.method === m ? 'var(--green-light)' : 'var(--surface)', color: modal.method === m ? 'var(--green)' : 'var(--text3)', transition: 'all 0.12s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
 
                   <Circle size={8} fill={m === 'MTN_MOMO' ? 'var(--amber)' : 'var(--orange)'} stroke="none" />
@@ -307,7 +378,8 @@ export default function SectionParentPayments({ onToast }: Props) {
 
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', marginBottom: 4 }}>{t('payments.phoneLabel')}</div>
             <input
-              style={{ width: '100%', padding: '7px 10px', borderRadius: 8, fontSize: 12.5, border: '1.5px solid var(--border)', fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 12, outline: 'none' }}
+              className="h-11 sm:h-9"
+              style={{ width: '100%', padding: '7px 10px', borderRadius: 8, fontSize: 13, border: '1.5px solid var(--border)', fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 12, outline: 'none' }}
               type="tel" placeholder={t('payments.phonePlaceholder')} value={modal.phone}
               onChange={e => setModal(m => ({ ...m, phone: e.target.value }))} />
 
@@ -317,10 +389,12 @@ export default function SectionParentPayments({ onToast }: Props) {
 
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => setModal(m => ({ ...m, open: false }))} disabled={modal.loading}
+                className="h-11 sm:h-9"
                 style={{ flex: 1, padding: '7px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }}>
                 {tc('actions.cancel')}
               </button>
               <button onClick={submitPayment} disabled={modal.loading}
+                className="h-11 sm:h-9"
                 style={{ flex: 2, padding: '7px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: modal.loading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: modal.loading ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 {modal.loading ? t('payments.initiating') : <><Smartphone size={13} strokeWidth={2} /> {t('payments.confirmPayment')}</>}
               </button>
@@ -338,3 +412,4 @@ const sSelect: React.CSSProperties = { padding: '5px 10px', borderRadius: 8, fon
 const thSt: React.CSSProperties = { padding: '7px 11px', textAlign: 'left', fontSize: 10.5, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }
 const tdSt: React.CSSProperties = { padding: '8px 11px', fontSize: 12.5, color: 'var(--text2)', borderBottom: '1px solid var(--bg)', verticalAlign: 'middle' }
 const btnPay: React.CSSProperties = { padding: '4px 10px', borderRadius: 7, fontSize: 11.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+

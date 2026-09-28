@@ -93,17 +93,17 @@ export default function SectionDepartementAP({ user: _user, departementId, depar
 
   const tabBtn = (tabId: Tab, label: string, Icon: typeof BarChart3) => (
     <button onClick={() => setTab(tabId)}
-      style={{ padding: '6px 14px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', border: 'none',
+      style={{ minHeight: 38, padding: '7px 14px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', border: 'none',
         background: tab === tabId ? 'var(--sidebar)' : 'var(--bg2)', color: tab === tabId ? 'white' : 'var(--text2)', transition: 'all 0.15s',
-        display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-      <Icon size={13} strokeWidth={2} />{label}
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexShrink: 0 }}>
+      <Icon size={14} strokeWidth={2} />{label}
     </button>
   )
 
   return (
-    <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto' }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
       {/* Header */}
-      <div style={{ marginBottom: 16 }}>
+      <div>
         <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Target size={18} strokeWidth={2} />{t('department.title').replace('{name}', departementNom)}
         </div>
@@ -118,14 +118,14 @@ export default function SectionDepartementAP({ user: _user, departementId, depar
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+      <div className="flex gap-2 overflow-x-auto pb-1">
         {tabBtn('performances', t('department.tab_performances'), BarChart3)}
         {tabBtn('horaires', t('department.tab_horaires'), Clock)}
         {tabBtn('progression', t('department.tab_progression'), TrendingUp)}
       </div>
 
       {error && (
-        <div style={{ padding: '10px 14px', background: 'var(--red-light)', borderRadius: 8, color: 'var(--red)', fontSize: 12.5, fontWeight: 600, marginBottom: 14 }}>{error}</div>
+        <div style={{ padding: '10px 14px', background: 'var(--red-light)', borderRadius: 8, color: 'var(--red)', fontSize: 12.5, fontWeight: 600 }}>{error}</div>
       )}
 
       {/* Onglet Performances */}
@@ -144,46 +144,72 @@ export default function SectionDepartementAP({ user: _user, departementId, depar
               <div style={{ fontSize: 11.5, color: 'var(--border2)', marginTop: 4 }}>{t('department.performance_empty_hint')}</div>
             </div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 500 }}>
-                <thead>
-                  <tr style={{ background: 'var(--bg2)' }}>
-                    {[t('department.perf_table_teacher'), t('department.perf_table_subject'), t('department.perf_table_class'), t('department.perf_table_average'), t('department.perf_table_students')].map(h => (
-                      <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {perf.map((row, i) => {
-                    const moy = row.moyenne
-                    const moyBg = moy === null ? 'var(--bg2)' : moy >= 12 ? 'var(--green-light)' : moy >= 8 ? 'var(--amber-light)' : 'var(--red-light)'
-                    const moyColor = moy === null ? 'var(--text3)' : moy >= 12 ? 'var(--green)' : moy >= 8 ? 'var(--amber)' : 'var(--red)'
-                    return (
-                      <tr key={i} style={{ borderTop: '1px solid var(--bg)', background: i % 2 === 0 ? 'var(--surface)' : 'var(--bg)' }}>
-                        <td style={{ padding: '8px 12px', fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>{row.teacherName}</td>
-                        <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>{row.subjectName}</td>
-                        <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>{row.className}</td>
-                        <td style={{ padding: '8px 12px' }}>
-                          <span style={{ background: moyBg, color: moyColor, padding: '2px 8px', borderRadius: 12, fontSize: 11.5, fontWeight: 800 }}>
-                            {moy !== null ? moy.toFixed(2) : '—'}
-                          </span>
-                        </td>
-                        <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>{row.nbEleves}</td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <>
+              {/* Vue mobile par cartes */}
+              <div className="md:hidden divide-y divide-[var(--border)]">
+                {perf.map((row, i) => {
+                  const moy = row.moyenne
+                  const moyBg = moy === null ? 'var(--bg2)' : moy >= 12 ? 'var(--green-light)' : moy >= 8 ? 'var(--amber-light)' : 'var(--red-light)'
+                  const moyColor = moy === null ? 'var(--text3)' : moy >= 12 ? 'var(--green)' : moy >= 8 ? 'var(--amber)' : 'var(--red)'
+                  return (
+                    <div key={i} className="p-3.5 space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-bold text-[var(--text)]">{row.teacherName}</span>
+                        <span style={{ background: moyBg, color: moyColor, padding: '2px 8px', borderRadius: 12, fontSize: 12, fontWeight: 800 }}>
+                          {moy !== null ? `${moy.toFixed(2)}/20` : '—'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-[var(--text2)]">
+                        <span>{row.subjectName} · <strong>{row.className}</strong></span>
+                        <span className="text-[var(--text3)]">{row.nbEleves} élèves</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Table desktop */}
+              <div className="hidden md:block overflow-x-auto">
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 500 }}>
+                  <thead>
+                    <tr style={{ background: 'var(--bg2)' }}>
+                      {[t('department.perf_table_teacher'), t('department.perf_table_subject'), t('department.perf_table_class'), t('department.perf_table_average'), t('department.perf_table_students')].map(h => (
+                        <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {perf.map((row, i) => {
+                      const moy = row.moyenne
+                      const moyBg = moy === null ? 'var(--bg2)' : moy >= 12 ? 'var(--green-light)' : moy >= 8 ? 'var(--amber-light)' : 'var(--red-light)'
+                      const moyColor = moy === null ? 'var(--text3)' : moy >= 12 ? 'var(--green)' : moy >= 8 ? 'var(--amber)' : 'var(--red)'
+                      return (
+                        <tr key={i} style={{ borderTop: '1px solid var(--bg)', background: i % 2 === 0 ? 'var(--surface)' : 'var(--bg)' }}>
+                          <td style={{ padding: '8px 12px', fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>{row.teacherName}</td>
+                          <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>{row.subjectName}</td>
+                          <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>{row.className}</td>
+                          <td style={{ padding: '8px 12px' }}>
+                            <span style={{ background: moyBg, color: moyColor, padding: '2px 8px', borderRadius: 12, fontSize: 11.5, fontWeight: 800 }}>
+                              {moy !== null ? moy.toFixed(2) : '—'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>{row.nbEleves}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       )}
 
       {/* Onglet Volume horaire */}
       {tab === 'horaires' && (
-        <div>
+        <div className="space-y-3">
           {/* Alerte limite légale */}
-          <div style={{ padding: '8px 12px', background: 'var(--amber-light)', border: '1px solid var(--amber-light)', borderRadius: 8, marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{ padding: '8px 12px', background: 'var(--amber-light)', border: '1px solid var(--amber-light)', borderRadius: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
             <span style={{ display: 'flex', flexShrink: 0 }}><AlertTriangle size={15} strokeWidth={2} /></span>
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--amber)' }}>{t('department.hours_legal_warn')} — <span style={{ fontWeight: 500 }}>{t('department.hours_legal_hint')}</span></div>
@@ -202,41 +228,68 @@ export default function SectionDepartementAP({ user: _user, departementId, depar
                 <div style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600 }}>{t('department.hours_empty')}</div>
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
-                  <thead>
-                    <tr style={{ background: 'var(--bg2)' }}>
-                      {[t('department.hours_table_teacher'), t('department.hours_table_subject'), t('department.hours_table_hours'), t('department.hours_table_status')].map(h => (
-                        <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {horaires.map((row, i) => (
-                      <tr key={i} style={{ borderTop: '1px solid var(--bg)', background: row.isOverLimit ? 'var(--red-light)' : i % 2 === 0 ? 'var(--surface)' : 'var(--bg)' }}>
-                        <td style={{ padding: '8px 12px', fontSize: 12.5, fontWeight: 700, color: row.isOverLimit ? 'var(--red)' : 'var(--text)' }}>{row.teacherName}</td>
-                        <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>{row.subjectName}</td>
-                        <td style={{ padding: '8px 12px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ fontSize: 13, fontWeight: 800, color: row.isOverLimit ? 'var(--red)' : 'var(--text)' }}>
-                              {row.totalHours.toFixed(1)}h
-                            </span>
-                            <div style={{ flex: 1, background: 'var(--bg2)', borderRadius: 3, height: 4, maxWidth: 80, overflow: 'hidden' }}>
-                              <div style={{ height: '100%', borderRadius: 3, width: `${Math.min((row.totalHours / 20) * 100, 100)}%`, background: row.isOverLimit ? 'var(--red)' : 'var(--green)' }} />
-                            </div>
-                          </div>
-                        </td>
-                        <td style={{ padding: '8px 12px' }}>
-                          {row.isOverLimit
-                            ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--red-light)', color: 'var(--red)', padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 800 }}><Circle size={6} fill="var(--red)" stroke="none" />{t('department.hours_over')}</span>
-                            : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--green-light)', color: 'var(--green)', padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 800 }}><CheckCircle2 size={11} strokeWidth={2} />{t('department.hours_ok')}</span>
-                          }
-                        </td>
+              <>
+                {/* Vue mobile par cartes */}
+                <div className="md:hidden divide-y divide-[var(--border)]">
+                  {horaires.map((row, i) => (
+                    <div key={i} className="p-3.5 space-y-2" style={{ background: row.isOverLimit ? 'var(--red-light)' : undefined }}>
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <div className="text-sm font-bold" style={{ color: row.isOverLimit ? 'var(--red)' : 'var(--text)' }}>{row.teacherName}</div>
+                          <div className="text-xs text-[var(--text2)]">{row.subjectName}</div>
+                        </div>
+                        {row.isOverLimit
+                          ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--red-light)', color: 'var(--red)', padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 800 }}><Circle size={6} fill="var(--red)" stroke="none" />{t('department.hours_over')}</span>
+                          : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--green-light)', color: 'var(--green)', padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 800 }}><CheckCircle2 size={11} strokeWidth={2} />{t('department.hours_ok')}</span>
+                        }
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-black" style={{ color: row.isOverLimit ? 'var(--red)' : 'var(--text)' }}>{row.totalHours.toFixed(1)}h</span>
+                        <div className="flex-1 bg-[var(--bg2)] rounded-full h-1.5 overflow-hidden">
+                          <div style={{ height: '100%', width: `${Math.min((row.totalHours / 20) * 100, 100)}%`, background: row.isOverLimit ? 'var(--red)' : 'var(--green)' }} />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Table desktop */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
+                    <thead>
+                      <tr style={{ background: 'var(--bg2)' }}>
+                        {[t('department.hours_table_teacher'), t('department.hours_table_subject'), t('department.hours_table_hours'), t('department.hours_table_status')].map(h => (
+                          <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {horaires.map((row, i) => (
+                        <tr key={i} style={{ borderTop: '1px solid var(--bg)', background: row.isOverLimit ? 'var(--red-light)' : i % 2 === 0 ? 'var(--surface)' : 'var(--bg)' }}>
+                          <td style={{ padding: '8px 12px', fontSize: 12.5, fontWeight: 700, color: row.isOverLimit ? 'var(--red)' : 'var(--text)' }}>{row.teacherName}</td>
+                          <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>{row.subjectName}</td>
+                          <td style={{ padding: '8px 12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ fontSize: 13, fontWeight: 800, color: row.isOverLimit ? 'var(--red)' : 'var(--text)' }}>
+                                {row.totalHours.toFixed(1)}h
+                              </span>
+                              <div style={{ flex: 1, background: 'var(--bg2)', borderRadius: 3, height: 4, maxWidth: 80, overflow: 'hidden' }}>
+                                <div style={{ height: '100%', borderRadius: 3, width: `${Math.min((row.totalHours / 20) * 100, 100)}%`, background: row.isOverLimit ? 'var(--red)' : 'var(--green)' }} />
+                              </div>
+                            </div>
+                          </td>
+                          <td style={{ padding: '8px 12px' }}>
+                            {row.isOverLimit
+                              ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--red-light)', color: 'var(--red)', padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 800 }}><Circle size={6} fill="var(--red)" stroke="none" />{t('department.hours_over')}</span>
+                              : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--green-light)', color: 'var(--green)', padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 800 }}><CheckCircle2 size={11} strokeWidth={2} />{t('department.hours_ok')}</span>
+                            }
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         </div>

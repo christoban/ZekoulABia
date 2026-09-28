@@ -68,8 +68,8 @@ export default function SectionParentLibrary({ userId }: Props) {
   const overdue = loanList.filter(l => l.status === 'OVERDUE').length
 
   return (
-    <div style={{ padding: '16px 20px', overflowY: 'auto', height: '100%' }}>
-      <div style={{ marginBottom: 16 }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3 sm:space-y-4" style={{ overflowY: 'auto', height: '100%' }}>
+      <div style={{ marginBottom: 8 }}>
         <div style={sTitle}>{t('library.title')}</div>
         <div style={sSub}>{t('library.subtitle')}</div>
         {fromCache && cachedAt && (
@@ -80,30 +80,44 @@ export default function SectionParentLibrary({ userId }: Props) {
       </div>
 
       {children.length > 1 && (
-        <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
           <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>{t('library.childFilter')}</span>
-          <select
-            value={selectedChild}
-            onChange={e => setSelected(e.target.value)}
-            style={{ background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 8, padding: '5px 10px', fontSize: 12.5, fontWeight: 700, color: 'var(--text)', outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}>
-            {children.map(c => (
-              <option key={c.studentId} value={c.studentId}>{c.prenom} {c.nom}</option>
-            ))}
-          </select>
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+            {children.map(c => {
+              const active = selectedChild === c.studentId
+              return (
+                <button
+                  key={c.studentId}
+                  onClick={() => setSelected(c.studentId)}
+                  className="h-10 sm:h-9 px-3.5 rounded-lg text-xs font-bold transition-all shrink-0 cursor-pointer"
+                  style={{
+                    border: '1.5px solid',
+                    borderColor: active ? 'var(--green)' : 'var(--border2)',
+                    background: active ? 'var(--green-light)' : 'var(--surface)',
+                    color: active ? 'var(--green)' : 'var(--text2)',
+                  }}
+                >
+                  {c.prenom} {c.nom}
+                </button>
+              )
+            })}
+          </div>
         </div>
       )}
 
       {!loading && !error && loanList.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 16 }}>
+        <div className="grid grid-cols-3 gap-2 sm:gap-2.5 mb-3 sm:mb-4">
           {[
             { icon: BookOpen, bg: 'var(--blue-light)', val: loanList.length, label: t('library.totalLoans'), color: 'var(--blue)' },
             { icon: BookOpen, bg: 'var(--green-light)', val: active,        label: t('library.active'),    color: 'var(--green)' },
             { icon: AlarmClock, bg: 'var(--red-light)', val: overdue,       label: t('library.overdue'),   color: 'var(--red)' },
           ].map((k, i) => (
-            <div key={i} style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', padding: '10px 14px' }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: k.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 6 }}><k.icon size={15} strokeWidth={2} /></div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: k.color }}>{k.val}</div>
-              <div style={{ fontSize: 11.5, color: 'var(--text3)', fontWeight: 600, marginTop: 2 }}>{k.label}</div>
+            <div key={i} style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', padding: '10px 12px' }}>
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: k.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 6 }}>
+                <k.icon size={14} strokeWidth={2} style={{ color: k.color }} />
+              </div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: k.color }}>{k.val}</div>
+              <div className="text-[11px] text-[var(--text3)] font-semibold mt-0.5 truncate">{k.label}</div>
             </div>
           ))}
         </div>
@@ -132,7 +146,45 @@ export default function SectionParentLibrary({ userId }: Props) {
 
       {!loading && !error && loanList.length > 0 && (
         <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
+          {/* Vue mobile: Cartes tactiles */}
+          <div className="md:hidden divide-y divide-[var(--border)]">
+            {loanList.map(l => {
+              const LOAN_BADGE = loanBadge(t)
+              const badge = LOAN_BADGE[l.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)', label: l.status }
+              const isOverdue = l.status === 'ACTIVE' && l.dueDate && new Date(l.dueDate) < new Date()
+              return (
+                <div key={l.id} className="p-3.5 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[13px] font-bold text-[var(--text)] line-clamp-2">{l.book.title}</div>
+                      {l.book.author && <div className="text-[11.5px] text-[var(--text3)] mt-0.5">{l.book.author}</div>}
+                    </div>
+                    <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: 10.5, fontWeight: 700, background: isOverdue ? 'var(--red-light)' : badge.bg, color: isOverdue ? 'var(--red)' : badge.color, display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
+                      {isOverdue ? <><AlarmClock size={11} strokeWidth={2} /> {t('library.overdueBadge')}</> : badge.label}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11.5px] text-[var(--text2)] pt-1 border-t border-[var(--border)]">
+                    <div>
+                      <span className="text-[var(--text3)]">{t('library.borrowedOn')} : </span>
+                      <span className="font-semibold">{new Date(l.borrowedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+                    </div>
+                    {l.dueDate && (
+                      <div>
+                        <span className="text-[var(--text3)]">{t('library.dueDate')} : </span>
+                        <span className="font-semibold" style={{ color: isOverdue ? 'var(--red)' : 'inherit' }}>
+                          {new Date(l.dueDate).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Vue desktop: Table */}
+          <div className="hidden md:block" style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 550 }}>
               <thead>
                 <tr>{[t('library.titleCol'), t('library.category'), t('library.borrowedOn'), t('library.dueDate'), t('library.status')].map(h => (
@@ -182,4 +234,5 @@ const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral
 const sSub: React.CSSProperties = { fontSize: 12, color: 'var(--text3)', marginTop: 2 }
 const thSt: React.CSSProperties = { padding: '7px 11px', textAlign: 'left', fontSize: 10.5, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }
 const tdSt: React.CSSProperties = { padding: '8px 11px', fontSize: 12.5, color: 'var(--text2)', borderBottom: '1px solid var(--bg)', verticalAlign: 'middle' }
+
 

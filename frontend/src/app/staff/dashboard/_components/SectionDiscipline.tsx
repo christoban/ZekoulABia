@@ -279,48 +279,48 @@ export default function SectionDiscipline({ onToast }: Props) {
   const needsDates = form.type === 'TEMP_EXCLUSION' || form.type === 'PERMANENT_EXCLUSION'
 
   return (
-    <div className="px-4 py-4 md:px-7 md:py-6" style={{ overflowY: 'auto', height: '100%' }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4" style={{ overflowY: 'auto', height: '100%' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div style={sTitle}>{t('title')}</div>
           <div style={sSub}>{view === 'sanctions' ? (loading ? t('loading') : t('count_summary', { count: records.length, byStatus: statusFilter ? ` par statut ${statusFilter}` : '' })) : t('council.subtitle')}</div>
         </div>
         {view === 'sanctions' ? (
-          <button style={btnPrim} onClick={() => setForm(f => ({ ...f, open: true }))}>{t('actions.new_sanction')}</button>
+          <button style={{ ...btnPrim, minHeight: 38 }} onClick={() => setForm(f => ({ ...f, open: true }))}>{t('actions.new_sanction')}</button>
         ) : (
-          <button style={btnPrim} onClick={() => setConvokeForm(f => ({ ...f, open: true }))}>
+          <button style={{ ...btnPrim, minHeight: 38 }} onClick={() => setConvokeForm(f => ({ ...f, open: true }))}>
             <Gavel size={14} strokeWidth={2} style={{ marginRight: 5, verticalAlign: -2 }} />{t('council.actions.convoke')}
           </button>
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-        <button style={view === 'sanctions' ? tabActiveSt : tabSt} onClick={() => setView('sanctions')}>{t('tabs.sanctions')}</button>
-        <button style={view === 'council' ? tabActiveSt : tabSt} onClick={() => setView('council')}>{t('tabs.council')}</button>
+      <div className="flex gap-2">
+        <button style={{ ...(view === 'sanctions' ? tabActiveSt : tabSt), minHeight: 38 }} onClick={() => setView('sanctions')}>{t('tabs.sanctions')}</button>
+        <button style={{ ...(view === 'council' ? tabActiveSt : tabSt), minHeight: 38 }} onClick={() => setView('council')}>{t('tabs.council')}</button>
       </div>
 
       {view === 'sanctions' && (<>
       {!isOnline && (
-        <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 10, padding: '8px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 10, padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ display: 'flex', alignItems: 'center' }}><WifiOff size={16} strokeWidth={2} /></span>
           <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--amber)' }}>{t('offline_hint')}</span>
         </div>
       )}
       {/* Filtres */}
-      <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', padding: '8px 14px', display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14, flexWrap: 'wrap' }}>
-        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} style={filterSt}>
+      <div className="p-3 sm:px-4 sm:py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] flex flex-col sm:flex-row gap-2 sm:items-center">
+        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} style={{ ...filterSt, minHeight: 38 }} className="flex-1">
           <option value="">{t('filter_labels.all_types')}</option>
           {Object.keys(TYPE_STYLE).map(k => <option key={k} value={k}>{t(`sanction_types.${k}`)}</option>)}
         </select>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={filterSt}>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ ...filterSt, minHeight: 38 }} className="flex-1">
           <option value="">{t('filter_labels.all_statuses')}</option>
           <option value="ACTIVE">{t('filter_labels.ACTIVE')}</option>
           <option value="LIFTED">{t('filter_labels.LIFTED')}</option>
           <option value="APPEALED">{t('filter_labels.APPEALED')}</option>
         </select>
-        <button style={btnSec} onClick={fetchRecords}>{t('actions.filter')}</button>
+        <button style={{ ...btnSec, minHeight: 38 }} onClick={fetchRecords}>{t('actions.filter')}</button>
       </div>
 
       {loading && (
@@ -346,7 +346,52 @@ export default function SectionDiscipline({ onToast }: Props) {
 
       {!loading && !error && records.length > 0 && (
         <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
+          {/* Vue mobile par cartes */}
+          <div className="md:hidden divide-y divide-[var(--border)]">
+            {records.map((r) => {
+              const tl = TYPE_STYLE[r.type] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }
+              const sb = STATUS_BADGE[r.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }
+              return (
+                <div key={r.id} className="p-3.5 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="font-bold text-sm text-[var(--text)]">
+                      {r.student.firstName} {r.student.lastName}
+                    </div>
+                    <span style={{ padding: '3px 8px', borderRadius: 12, fontSize: 11, fontWeight: 800, background: sb.bg, color: sb.color }}>
+                      {t(`status_badges.${r.status}`)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span style={{ padding: '2px 7px', borderRadius: 10, fontSize: 11, fontWeight: 800, background: tl.bg, color: tl.color }}>
+                      {t(`sanction_types.${r.type}`)}
+                    </span>
+                    <span className="text-xs text-[var(--text3)]">
+                      {new Date(r.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                    </span>
+                  </div>
+                  <div className="text-xs text-[var(--text2)] line-clamp-2">
+                    {r.reason}
+                  </div>
+                  <div className="text-[11px] text-[var(--text3)]">
+                    Décidée par {r.decidedBy.firstName} {r.decidedBy.lastName}
+                  </div>
+                  {r.status === 'ACTIVE' && (
+                    <div className="pt-1">
+                      <button
+                        style={{ width: '100%', minHeight: 38, borderRadius: 6, fontSize: 12, fontWeight: 800, background: 'var(--green-light)', color: 'var(--green)', border: '1px solid rgba(142,42,58,0.25)', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                        onClick={() => liftSanction(r.id, `${r.student.firstName} ${r.student.lastName}`)}
+                        disabled={liftingId === r.id}>
+                        {liftingId === r.id ? <Loader2 size={13} className="animate-spin" /> : t('actions.lift')}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Table desktop */}
+          <div className="hidden md:block overflow-x-auto">
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
               <thead>
                 <tr>{[
@@ -423,7 +468,54 @@ export default function SectionDiscipline({ onToast }: Props) {
             </div>
           ) : (
             <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
-              <div style={{ overflowX: 'auto' }}>
+              {/* Vue mobile par cartes de conseil */}
+              <div className="md:hidden divide-y divide-[var(--border)]">
+                {councilSessions.map(s => {
+                  const delayOk = new Date(s.scheduledAt).getTime() - Date.now() <= 0
+                  return (
+                    <div key={s.id} className="p-3.5 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="font-bold text-sm text-[var(--text)]">
+                          {s.student.firstName} {s.student.lastName}
+                        </div>
+                        <span style={{ padding: '3px 8px', borderRadius: 12, fontSize: 11, fontWeight: 800, ...(s.status === 'TENU' ? { background: 'var(--green-light)', color: 'var(--green)' } : { background: 'var(--amber-light)', color: 'var(--amber)' }) }}>
+                          {t(`council.status.${s.status}`)}
+                        </span>
+                      </div>
+                      <div className="text-xs text-[var(--text2)]">
+                        <strong>Motif :</strong> {s.motif}
+                      </div>
+                      <div className="text-xs text-[var(--text3)]">
+                        Prévu le : {new Date(s.scheduledAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                      {s.decision && (
+                        <div className="text-xs text-[var(--text)]">
+                          <strong>Décision :</strong> {t(`sanction_types.${s.decision}`)}
+                        </div>
+                      )}
+                      <div className="pt-1 flex gap-2">
+                        {s.status === 'CONVOQUE' && (
+                          <button
+                            style={{ flex: 1, minHeight: 38, borderRadius: 6, fontSize: 12, fontWeight: 800, background: delayOk ? 'var(--purple-light)' : 'var(--bg2)', color: delayOk ? 'var(--purple)' : 'var(--text3)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            title={delayOk ? '' : t('council.hint_delay_not_elapsed')}
+                            onClick={() => setTenirForm(f => ({ ...f, open: true, sessionId: s.id }))}>
+                            {t('council.actions.hold')}
+                          </button>
+                        )}
+                        {s.status === 'TENU' && (
+                          <button style={{ flex: 1, minHeight: 38, borderRadius: 6, fontSize: 12, fontWeight: 800, background: 'var(--bg2)', color: 'var(--text2)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                            onClick={() => downloadPV(s.id)}>
+                            <Download size={13} /> {t('council.actions.download_pv')}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Table desktop */}
+              <div className="hidden md:block overflow-x-auto">
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
                   <thead>
                     <tr>{[

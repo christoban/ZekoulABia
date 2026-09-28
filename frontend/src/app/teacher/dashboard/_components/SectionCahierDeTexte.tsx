@@ -32,19 +32,19 @@ type Tab = 'saisie' | 'historique'
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const SEL: React.CSSProperties = {
-  width: '100%', padding: '7px 11px', borderRadius: 7, border: '1px solid var(--border)',
-  fontSize: 12.5, fontWeight: 600, fontFamily: 'inherit', color: 'var(--text)',
+  width: '100%', minHeight: 40, padding: '8px 12px', borderRadius: 7, border: '1px solid var(--border)',
+  fontSize: 13, fontWeight: 600, fontFamily: 'inherit', color: 'var(--text)',
   background: 'var(--surface)', outline: 'none', boxSizing: 'border-box', appearance: 'none',
   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a89478' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
-  backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center',
+  backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center',
 }
 const LBL: React.CSSProperties = {
   fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase',
-  letterSpacing: '0.5px', marginBottom: 3, display: 'block',
+  letterSpacing: '0.5px', marginBottom: 4, display: 'block',
 }
 const AREA: React.CSSProperties = {
-  width: '100%', padding: '7px 11px', borderRadius: 7, border: '1px solid var(--border)',
-  fontSize: 12.5, fontWeight: 500, fontFamily: 'inherit', color: 'var(--text)',
+  width: '100%', padding: '9px 12px', borderRadius: 7, border: '1px solid var(--border)',
+  fontSize: 13, fontWeight: 500, fontFamily: 'inherit', color: 'var(--text)',
   background: 'var(--surface)', outline: 'none', boxSizing: 'border-box', resize: 'vertical',
 }
 
@@ -281,22 +281,22 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
 
   const tabBtn = (tabId: Tab, label: string, Icon: typeof Calendar) => (
     <button key={tabId} onClick={() => setTab(tabId)} style={{
-      padding: '6px 14px', borderRadius: 7, fontSize: 12.5, fontWeight: 700,
+      minHeight: 38, padding: '7px 14px', borderRadius: 7, fontSize: 12.5, fontWeight: 700,
       fontFamily: 'inherit', cursor: 'pointer', border: 'none',
       background: tab === tabId ? 'var(--sidebar)' : 'var(--bg2)',
       color: tab === tabId ? 'white' : 'var(--text2)', transition: 'all 0.15s',
-      display: 'inline-flex', alignItems: 'center', gap: 5,
-    }}><Icon size={13} strokeWidth={2} />{label}</button>
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+    }}><Icon size={14} strokeWidth={2} />{label}</button>
   )
 
   return (
-    <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto', boxSizing: 'border-box', background: 'var(--bg)' }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5" style={{ height: '100%', overflowY: 'auto', boxSizing: 'border-box', background: 'var(--bg)' }}>
 
       {/* Indicateur hors-ligne */}
       {!isOnline && (
         <div style={{
           background: 'var(--orange-light)', border: '1px solid var(--orange)', borderRadius: 8,
-          padding: '7px 12px', marginBottom: 12, fontSize: 12, color: 'var(--orange)', fontWeight: 700,
+          padding: '8px 12px', marginBottom: 12, fontSize: 12, color: 'var(--orange)', fontWeight: 700,
           display: 'flex', alignItems: 'center', gap: 7,
         }}>
           <WifiOff size={15} strokeWidth={2} />
@@ -306,7 +306,7 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
 
       {/* Titre */}
       <div style={{ marginBottom: 16 }}>
-        <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>
+        <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
           {t('cahier_de_texte.title')}
         </div>
         <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 500, marginTop: 2 }}>
@@ -315,14 +315,14 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+      <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
         {tabBtn('saisie', t('cahier_de_texte.tab_new_entry'), Pencil)}
         {tabBtn('historique', t('cahier_de_texte.tab_history'), ClipboardList)}
       </div>
 
       {/* ── Onglet Saisie ── */}
       {tab === 'saisie' && (
-        <div style={{ maxWidth: 480, width: '100%' }}>
+        <div className="w-full max-w-xl">
 
           {/* Bannière slot du jour */}
           {slotBanner && (
@@ -454,16 +454,16 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
               onClick={handleScanClick}
               disabled={scanning}
               style={{
-                width: '100%', padding: '8px 12px', borderRadius: 8,
+                width: '100%', minHeight: 42, padding: '9px 12px', borderRadius: 8,
                 border: '1px dashed var(--border2)', background: 'transparent',
-                color: 'var(--text3)', fontSize: 12, fontWeight: 700,
+                color: 'var(--text3)', fontSize: 12.5, fontWeight: 700,
                 fontFamily: 'inherit', cursor: scanning ? 'not-allowed' : 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}
             >
               {scanning
-                ? <><Loader2 size={14} strokeWidth={2} className="animate-spin" /> {t('cahier_de_texte.scan_scanning')}</>
-                : <><Camera size={14} strokeWidth={2} /> {t('cahier_de_texte.scan_idle')}</>
+                ? <><Loader2 size={15} strokeWidth={2} className="animate-spin" /> {t('cahier_de_texte.scan_scanning')}</>
+                : <><Camera size={15} strokeWidth={2} /> {t('cahier_de_texte.scan_idle')}</>
               }
             </button>
             <input ref={cameraRef} type="file" accept="image/*" capture="environment"
@@ -471,20 +471,20 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
           </div>
 
           {/* ── Bouton Enregistrer — sticky ── */}
-          <div style={{ position: 'sticky', bottom: 0, background: 'var(--bg)', paddingTop: 8, paddingBottom: 16 }}>
+          <div style={{ position: 'sticky', bottom: 0, background: 'var(--bg)', paddingTop: 10, paddingBottom: 16 }}>
             <button
               onClick={handleSave}
               disabled={saving || !isFormValid}
               style={{
-                width: '100%', padding: '10px 16px', borderRadius: 8,
+                width: '100%', minHeight: 44, padding: '11px 16px', borderRadius: 8,
                 background: (saving || !isFormValid) ? 'var(--border)' : 'var(--sidebar)',
-                color: 'white', border: 'none', fontSize: 13, fontWeight: 700,
+                color: 'white', border: 'none', fontSize: 13.5, fontWeight: 700,
                 fontFamily: 'inherit', cursor: (saving || !isFormValid) ? 'not-allowed' : 'pointer',
                 transition: 'background 0.15s',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}
             >
-              {saving ? <Save size={15} strokeWidth={2} /> : !isOnline ? <WifiOff size={15} strokeWidth={2} /> : <Check size={15} strokeWidth={2} />}
+              {saving ? <Save size={16} strokeWidth={2} /> : !isOnline ? <WifiOff size={16} strokeWidth={2} /> : <Check size={16} strokeWidth={2} />}
               {saving ? t('cahier_de_texte.save_saving') : !isOnline ? t('cahier_de_texte.save_offline') : t('cahier_de_texte.save_online')}
             </button>
           </div>
@@ -493,8 +493,8 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
 
       {/* ── Onglet Historique ── */}
       {tab === 'historique' && (
-        <div style={{ maxWidth: 480, width: '100%' }}>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'flex-end' }}>
+        <div className="w-full max-w-2xl">
+          <div className="flex gap-2 mb-3 items-end">
             <div style={{ flex: 1 }}>
               <label style={LBL}>{t('cahier_de_texte.history_filter_label')}</label>
               <select value={filterClass} onChange={e => setFilterClass(e.target.value)} style={SEL}>
@@ -503,10 +503,10 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
               </select>
             </div>
             <button onClick={loadEntries} style={{
-              padding: '7px 12px', borderRadius: 7, background: 'var(--sidebar)', color: 'white',
+              height: 40, padding: '0 14px', borderRadius: 7, background: 'var(--sidebar)', color: 'white',
               border: 'none', fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', flexShrink: 0,
-              display: 'flex', alignItems: 'center',
-            }}><RotateCcw size={14} strokeWidth={2} /></button>
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}><RotateCcw size={15} strokeWidth={2} /></button>
           </div>
 
           {/* ── CAS 3 : Entrées hors-ligne en attente ── */}

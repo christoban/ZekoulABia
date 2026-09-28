@@ -251,63 +251,114 @@ export default function SectionElevesFamillesStaff({ onToast }: Props) {
             <p className="text-xs mt-1">Modifiez vos critères de recherche ou sélectionnez une autre classe.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs md:text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-[var(--border)] bg-[var(--bg)]/50 text-[var(--text3)] text-[11px] font-bold uppercase tracking-wider">
-                  <th className="p-3">Matricule & Identité</th>
-                  <th className="p-3">Sexe</th>
-                  <th className="p-3">Parent / Tuteur</th>
-                  <th className="p-3">Contact</th>
-                  <th className="p-3">Accès numérique</th>
-                  <th className="p-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border)]">
-                {filteredStudents.map(student => (
-                  <tr
-                    key={student.id}
-                    className="hover:bg-[var(--bg)]/60 transition-colors cursor-pointer"
-                    onClick={() => setSelectedStudent(student)}
-                  >
-                    <td className="p-3">
-                      <div className="font-bold text-[var(--text)]">{student.name}</div>
-                      <div className="text-[11px] font-mono text-[var(--text3)]">{student.matricule}</div>
-                    </td>
-                    <td className="p-3 text-[var(--text2)] font-semibold">
-                      {student.gender === 'M' ? 'M' : 'F'}
-                    </td>
-                    <td className="p-3">
-                      <div className="font-semibold text-[var(--text2)]">{student.parentName}</div>
-                    </td>
-                    <td className="p-3">
-                      <div className="flex items-center gap-1.5 text-[var(--text2)]">
-                        <Phone size={12} className="text-[var(--text3)]" />
-                        <span>{student.parentPhone || '—'}</span>
+          <>
+            {/* Vue mobile par cartes */}
+            <div className="md:hidden divide-y divide-[var(--border)]">
+              {filteredStudents.map(student => (
+                <div
+                  key={student.id}
+                  className="p-3.5 space-y-2.5 cursor-pointer hover:bg-[var(--bg)]/50 transition-colors"
+                  onClick={() => setSelectedStudent(student)}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-bold text-sm text-[var(--text)]">{student.name}</div>
+                      <div className="text-xs font-mono text-[var(--text3)] mt-0.5">{student.matricule} · Sexe : {student.gender === 'M' ? 'M' : 'F'}</div>
+                    </div>
+                    {getProfileBadge(student.accessProfile)}
+                  </div>
+
+                  <div className="text-xs space-y-1 bg-[var(--bg)]/50 p-2.5 rounded-lg border border-[var(--border)]">
+                    <div className="text-[var(--text2)] font-semibold">
+                      Parent : <strong>{student.parentName || 'Non renseigné'}</strong>
+                    </div>
+                    {student.parentPhone && (
+                      <div className="flex items-center gap-2 pt-0.5" onClick={e => e.stopPropagation()}>
+                        <Phone size={12} className="text-[var(--primary)]" />
+                        <a href={`tel:${student.parentPhone}`} className="text-[var(--primary)] font-bold hover:underline">
+                          {student.parentPhone}
+                        </a>
                       </div>
-                      {student.parentEmail && (
-                        <div className="flex items-center gap-1.5 text-[11px] text-[var(--text3)]">
-                          <Mail size={11} />
-                          <span className="truncate max-w-[140px]">{student.parentEmail}</span>
-                        </div>
-                      )}
-                    </td>
-                    <td className="p-3">
-                      {getProfileBadge(student.accessProfile)}
-                    </td>
-                    <td className="p-3 text-right" onClick={e => e.stopPropagation()}>
-                      <button
-                        onClick={() => setSelectedStudent(student)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold border border-[var(--border)] bg-[var(--surface)] text-[var(--primary)] hover:border-[var(--primary)] transition-all"
-                      >
-                        <Eye size={12} /> Fiche & Documents
-                      </button>
-                    </td>
+                    )}
+                    {student.parentEmail && (
+                      <div className="flex items-center gap-1.5 text-[var(--text3)] text-[11px]">
+                        <Mail size={11} />
+                        <span className="truncate">{student.parentEmail}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-0.5" onClick={e => e.stopPropagation()}>
+                    <button
+                      onClick={() => setSelectedStudent(student)}
+                      className="w-full min-h-[38px] flex items-center justify-center gap-1.5 rounded-lg text-xs font-bold border border-[var(--border)] bg-[var(--surface)] text-[var(--primary)] hover:border-[var(--primary)] transition-all"
+                    >
+                      <Eye size={13} /> Fiche & Documents officiels
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Table desktop */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-xs md:text-sm border-collapse">
+                <thead>
+                  <tr className="border-b border-[var(--border)] bg-[var(--bg)]/50 text-[var(--text3)] text-[11px] font-bold uppercase tracking-wider">
+                    <th className="p-3">Matricule & Identité</th>
+                    <th className="p-3">Sexe</th>
+                    <th className="p-3">Parent / Tuteur</th>
+                    <th className="p-3">Contact</th>
+                    <th className="p-3">Accès numérique</th>
+                    <th className="p-3 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-[var(--border)]">
+                  {filteredStudents.map(student => (
+                    <tr
+                      key={student.id}
+                      className="hover:bg-[var(--bg)]/60 transition-colors cursor-pointer"
+                      onClick={() => setSelectedStudent(student)}
+                    >
+                      <td className="p-3">
+                        <div className="font-bold text-[var(--text)]">{student.name}</div>
+                        <div className="text-[11px] font-mono text-[var(--text3)]">{student.matricule}</div>
+                      </td>
+                      <td className="p-3 text-[var(--text2)] font-semibold">
+                        {student.gender === 'M' ? 'M' : 'F'}
+                      </td>
+                      <td className="p-3">
+                        <div className="font-semibold text-[var(--text2)]">{student.parentName}</div>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-1.5 text-[var(--text2)]">
+                          <Phone size={12} className="text-[var(--text3)]" />
+                          <span>{student.parentPhone || '—'}</span>
+                        </div>
+                        {student.parentEmail && (
+                          <div className="flex items-center gap-1.5 text-[11px] text-[var(--text3)]">
+                            <Mail size={11} />
+                            <span className="truncate max-w-[140px]">{student.parentEmail}</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        {getProfileBadge(student.accessProfile)}
+                      </td>
+                      <td className="p-3 text-right" onClick={e => e.stopPropagation()}>
+                        <button
+                          onClick={() => setSelectedStudent(student)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold border border-[var(--border)] bg-[var(--surface)] text-[var(--primary)] hover:border-[var(--primary)] transition-all"
+                        >
+                          <Eye size={12} /> Fiche & Documents
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

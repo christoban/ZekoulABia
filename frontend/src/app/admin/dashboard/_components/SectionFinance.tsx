@@ -160,7 +160,7 @@ export default function SectionFinance({ onToast, onNav }: Props) {
     .slice(0, 10)
 
   return (
-    <div className="px-4 py-4 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
       {/* Header */}
@@ -200,7 +200,7 @@ export default function SectionFinance({ onToast, onNav }: Props) {
           <button
             key={tabKey}
             onClick={() => setTab(tabKey)}
-            className="px-2.5 md:px-3 py-1 md:py-1.5 text-[11.5px] md:text-[13px] whitespace-nowrap flex-shrink-0"
+            className="min-h-[36px] px-2.5 md:px-3 py-1 md:py-1.5 text-[11.5px] md:text-[13px] whitespace-nowrap flex-shrink-0"
             style={{
               borderRadius: 7,
               fontWeight: 700,
@@ -332,47 +332,80 @@ export default function SectionFinance({ onToast, onNav }: Props) {
                 Aucune écriture financière récente enregistrée.
               </p>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-                  <thead>
-                    <tr style={{ background: 'var(--bg2)', borderBottom: '1px solid var(--border)' }}>
-                      <th style={{ padding: '6px 10px', textAlign: 'left' }}>Élève</th>
-                      <th style={{ padding: '6px 10px', textAlign: 'left' }}>Motif</th>
-                      <th style={{ padding: '6px 10px', textAlign: 'right' }}>Montant</th>
-                      <th style={{ padding: '6px 10px', textAlign: 'center' }}>Méthode</th>
-                      <th style={{ padding: '6px 10px', textAlign: 'right' }}>Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentPayments.map((p) => (
-                      <tr key={p.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                        <td style={{ padding: '8px 10px', fontWeight: 600, color: 'var(--text)' }}>{p.studentName}</td>
-                        <td style={{ padding: '8px 10px', color: 'var(--text2)' }}>{p.feePlanName}</td>
-                        <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: 'var(--green)' }}>
-                          {fmtCFA(p.amount)}
-                        </td>
-                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                          <span
-                            style={{
-                              padding: '2px 8px',
-                              borderRadius: 8,
-                              fontSize: 11,
-                              fontWeight: 600,
-                              background: p.method === 'CASH' ? 'var(--green-light)' : 'var(--blue-light)',
-                              color: p.method === 'CASH' ? 'var(--green)' : 'var(--blue)',
-                            }}
-                          >
-                            {p.method === 'CASH' ? 'Espèces' : p.method || 'Mobile'}
-                          </span>
-                        </td>
-                        <td style={{ padding: '8px 10px', textAlign: 'right', color: 'var(--text3)' }}>
-                          {p.paidAt ? new Date(p.paidAt).toLocaleDateString('fr-FR') : '—'}
-                        </td>
+              <>
+                {/* Vue Mobile : Cartes des opérations récentes */}
+                <div className="md:hidden divide-y divide-[var(--border)]">
+                  {recentPayments.map((p) => (
+                    <div key={p.id} className="py-2.5 space-y-1 text-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-bold text-[var(--text)]">{p.studentName}</span>
+                        <span className="font-extrabold text-[var(--green)]">{fmtCFA(p.amount)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-[var(--text2)]">
+                        <span>{p.feePlanName}</span>
+                        <span
+                          style={{
+                            padding: '1.5px 6px',
+                            borderRadius: 6,
+                            fontSize: 10,
+                            fontWeight: 700,
+                            background: p.method === 'CASH' ? 'var(--green-light)' : 'var(--blue-light)',
+                            color: p.method === 'CASH' ? 'var(--green)' : 'var(--blue)',
+                          }}
+                        >
+                          {p.method === 'CASH' ? 'Espèces' : p.method || 'Mobile'}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-[var(--text3)] text-right">
+                        {p.paidAt ? new Date(p.paidAt).toLocaleDateString('fr-FR') : '—'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Vue Desktop : Tableau */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                    <thead>
+                      <tr style={{ background: 'var(--bg2)', borderBottom: '1px solid var(--border)' }}>
+                        <th style={{ padding: '6px 10px', textAlign: 'left' }}>Élève</th>
+                        <th style={{ padding: '6px 10px', textAlign: 'left' }}>Motif</th>
+                        <th style={{ padding: '6px 10px', textAlign: 'right' }}>Montant</th>
+                        <th style={{ padding: '6px 10px', textAlign: 'center' }}>Méthode</th>
+                        <th style={{ padding: '6px 10px', textAlign: 'right' }}>Date</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {recentPayments.map((p) => (
+                        <tr key={p.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                          <td style={{ padding: '8px 10px', fontWeight: 600, color: 'var(--text)' }}>{p.studentName}</td>
+                          <td style={{ padding: '8px 10px', color: 'var(--text2)' }}>{p.feePlanName}</td>
+                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: 'var(--green)' }}>
+                            {fmtCFA(p.amount)}
+                          </td>
+                          <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                            <span
+                              style={{
+                                padding: '2px 8px',
+                                borderRadius: 8,
+                                fontSize: 11,
+                                fontWeight: 600,
+                                background: p.method === 'CASH' ? 'var(--green-light)' : 'var(--blue-light)',
+                                color: p.method === 'CASH' ? 'var(--green)' : 'var(--blue)',
+                              }}
+                            >
+                              {p.method === 'CASH' ? 'Espèces' : p.method || 'Mobile'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '8px 10px', textAlign: 'right', color: 'var(--text3)' }}>
+                            {p.paidAt ? new Date(p.paidAt).toLocaleDateString('fr-FR') : '—'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -527,52 +560,92 @@ export default function SectionFinance({ onToast, onNav }: Props) {
             </select>
           </div>
 
-          {/* Tableau factures */}
-          <div style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
-              <thead>
-                <tr style={{ background: 'var(--bg2)', borderBottom: '1px solid var(--border)' }}>
-                  <th style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--text2)' }}>Élève</th>
-                  <th style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--text2)' }}>Plan de frais</th>
-                  <th style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--text2)', textAlign: 'right' }}>Montant</th>
-                  <th style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--text2)', textAlign: 'center' }}>Statut</th>
-                  <th style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--text2)', textAlign: 'right' }}>Échéance</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoices.map((inv) => {
-                  const st = getInvStatus(inv.status)
-                  return (
-                    <tr key={inv.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                      <td style={{ padding: '10px 12px', fontWeight: 600, color: 'var(--text)' }}>
+          {/* Tableau factures (Mobile Cards + Desktop Table) */}
+          <div style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', background: 'var(--surface)' }}>
+            {/* Vue Mobile : Cartes factures */}
+            <div className="md:hidden divide-y divide-[var(--border)]">
+              {invoices.map((inv) => {
+                const st = getInvStatus(inv.status)
+                return (
+                  <div key={inv.id} className="p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-bold text-sm text-[var(--text)]">
                         {inv.student.firstName} {inv.student.lastName}
-                      </td>
-                      <td style={{ padding: '10px 12px', color: 'var(--text2)' }}>{inv.feePlan?.name ?? '—'}</td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--text)' }}>
-                        {fmtCFA(inv.amount)}
-                      </td>
-                      <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                        <span
-                          style={{
-                            padding: '3px 8px',
-                            borderRadius: 12,
-                            fontSize: 11,
-                            fontWeight: 700,
-                            background: st.bg,
-                            color: st.color,
-                          }}
-                        >
-                          {st.label}
-                        </span>
-                      </td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--text3)' }}>
-                        {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString('fr-FR') : '—'}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+                      </span>
+                      <span
+                        style={{
+                          padding: '2px 8px',
+                          borderRadius: 12,
+                          fontSize: 10.5,
+                          fontWeight: 700,
+                          background: st.bg,
+                          color: st.color,
+                        }}
+                      >
+                        {st.label}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-[var(--text2)]">
+                      <span>{inv.feePlan?.name ?? '—'}</span>
+                      <span className="font-extrabold text-[var(--text)] text-sm">{fmtCFA(inv.amount)}</span>
+                    </div>
+                    {inv.dueDate && (
+                      <div className="text-[11px] text-[var(--text3)] text-right">
+                        Échéance : {new Date(inv.dueDate).toLocaleDateString('fr-FR')}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Vue Desktop : Tableau */}
+            <div className="hidden md:block overflow-x-auto">
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ background: 'var(--bg2)', borderBottom: '1px solid var(--border)' }}>
+                    <th style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--text2)' }}>Élève</th>
+                    <th style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--text2)' }}>Plan de frais</th>
+                    <th style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--text2)', textAlign: 'right' }}>Montant</th>
+                    <th style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--text2)', textAlign: 'center' }}>Statut</th>
+                    <th style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--text2)', textAlign: 'right' }}>Échéance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoices.map((inv) => {
+                    const st = getInvStatus(inv.status)
+                    return (
+                      <tr key={inv.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td style={{ padding: '10px 12px', fontWeight: 600, color: 'var(--text)' }}>
+                          {inv.student.firstName} {inv.student.lastName}
+                        </td>
+                        <td style={{ padding: '10px 12px', color: 'var(--text2)' }}>{inv.feePlan?.name ?? '—'}</td>
+                        <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--text)' }}>
+                          {fmtCFA(inv.amount)}
+                        </td>
+                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                          <span
+                            style={{
+                              padding: '3px 8px',
+                              borderRadius: 12,
+                              fontSize: 11,
+                              fontWeight: 700,
+                              background: st.bg,
+                              color: st.color,
+                            }}
+                          >
+                            {st.label}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--text3)' }}>
+                          {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString('fr-FR') : '—'}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Pagination */}

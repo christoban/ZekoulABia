@@ -38,31 +38,36 @@ export default function SoldeAlertBanner({ onNav }: { onNav: (section: string) =
   const detail = alertes.map((a) => `${a.nomComplet} (${fmtCFA(a.montantDu)})`).join(', ')
 
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px',
-      background: 'var(--amber-light)', borderBottom: '1px solid var(--amber)',
-      flexShrink: 0,
-    }}>
-      <AlertTriangle size={15} color="var(--amber)" style={{ flexShrink: 0 }} />
-      <div style={{ flex: 1, minWidth: 0, fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>
+    <div
+      className="px-3.5 py-2.5 sm:px-4 sm:py-2 flex items-center gap-2.5 shrink-0"
+      style={{
+        background: 'var(--amber-light)',
+        borderBottom: '1px solid var(--amber)',
+      }}
+    >
+      <AlertTriangle size={16} color="var(--amber)" className="shrink-0" />
+      <div className="flex-1 min-w-0 text-xs text-[var(--text)] font-semibold line-clamp-2">
         {t('balanceAlert.message', { total: fmtCFA(total), detail })}
       </div>
       <button
         onClick={() => onNav('payments')}
+        className="h-8 px-3 rounded-lg flex items-center gap-1.5 shrink-0 text-xs font-bold cursor-pointer"
         style={{
-          flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px',
-          background: 'var(--amber)', color: 'white', border: 'none', borderRadius: 6,
-          fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+          background: 'var(--amber)',
+          color: 'white',
+          border: 'none',
+          fontFamily: 'inherit',
         }}
       >
-        {t('balanceAlert.action')} <ArrowRight size={12} />
+        <span>{t('balanceAlert.action')}</span>
+        <ArrowRight size={13} />
       </button>
       <button
         onClick={() => setDismissed(true)}
         aria-label={t('balanceAlert.dismiss')}
-        style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', padding: 3, display: 'flex' }}
+        className="shrink-0 p-1.5 rounded-md text-[var(--text3)] hover:text-[var(--text)] cursor-pointer flex items-center justify-center"
       >
-        <X size={14} />
+        <X size={15} />
       </button>
     </div>
   )

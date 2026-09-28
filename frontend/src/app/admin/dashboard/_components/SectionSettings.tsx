@@ -488,7 +488,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
   const subdomainValid   = /^[a-z0-9-]+$/.test(subdomainInput.trim()) && subdomainInput.trim().length >= 3
 
   return (
-    <div className="px-4 py-4 md:px-7 md:py-6" style={{ height: '100%', overflowY: 'auto' }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
       <style>{`@keyframes edu-settings-spin { to { transform: rotate(360deg); } }`}</style>
       <div className="mb-[12px] md:mb-[16px]" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
@@ -518,7 +518,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
             const active = activeTab === i
             return (
               <button key={i} onClick={() => setActiveTab(i)}
-                className="relative flex-shrink-0 rounded-full px-3 py-1.5 whitespace-nowrap border-0"
+                className="relative flex-shrink-0 rounded-full px-3 py-1.5 min-h-[38px] whitespace-nowrap border-0"
                 style={{ background: 'transparent', cursor: 'pointer', fontFamily: 'inherit' }}>
                 {active && (
                   <motion.div layoutId="settings-tab-pill" className="absolute inset-0 rounded-full"

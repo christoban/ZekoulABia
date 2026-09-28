@@ -107,40 +107,41 @@ export default function SectionStudentAttendance({ onToast, user }: Props) {
   const rateNum = stats ? Number(stats.attendanceRate.replace('%', '')) : 0
 
   return (
-    <div style={{ padding: '16px 20px', overflowY: 'auto', height: '100%' }}>
-      <div style={{ marginBottom: fromCache ? 6 : 14 }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3 sm:space-y-4" style={{ overflowY: 'auto', height: '100%' }}>
+      <div style={{ marginBottom: fromCache ? 6 : 12 }}>
         <div style={sTitle}>{t('attendance.title')}</div>
         <div style={sSub}>{t('attendance.subtitle')}</div>
       </div>
 
       {fromCache && <CacheBadge cachedAt={cachedAt} />}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 16 }}>
+      {/* Cartes statistiques (2 colonnes sur mobile, 4 sur desktop) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5">
         {[
           { icon: CheckCircle2, bg: 'var(--green-light)', val: `${rateNum}%`, label: t('attendance.rate_label'), color: 'var(--green)' },
           { icon: X,  bg: 'var(--red-light)', val: String(stats?.absent || 0), label: t('attendance.absences_label'), color: 'var(--red)' },
           { icon: '~',  bg: 'var(--amber-light)', val: String(stats?.late || 0), label: t('attendance.late_label'), color: 'var(--amber)' },
           { icon: 'E',  bg: 'var(--blue-light)', val: String(stats?.excused || 0), label: t('attendance.excused_label'), color: 'var(--blue)' },
         ].map((s, i) => (
-          <div key={i} style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', padding: '12px 14px' }}>
-            <div style={{ width: 34, height: 34, borderRadius: 8, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 900, color: s.color, marginBottom: 8 }}>
-              {typeof s.icon === 'string' ? s.icon : <s.icon size={16} strokeWidth={2.5} />}
+          <div key={i} className="rounded-xl border p-3 sm:p-3.5" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 900, color: s.color, marginBottom: 8 }}>
+              {typeof s.icon === 'string' ? s.icon : <s.icon size={15} strokeWidth={2.5} />}
             </div>
-            <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)', lineHeight: 1 }}>{s.val}</div>
-            <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 4, fontWeight: 600 }}>{s.label}</div>
+            <div className="text-base sm:text-lg font-black leading-none" style={{ color: 'var(--text)' }}>{s.val}</div>
+            <div className="text-[11px] font-semibold mt-1 truncate" style={{ color: 'var(--text3)' }}>{s.label}</div>
           </div>
         ))}
       </div>
 
       {weekly.length > 0 && (
-        <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', padding: '12px 16px' }}>
+        <div className="rounded-xl border p-3.5 sm:p-4" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
           <div style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}><BarChart3 size={15} strokeWidth={2} /> {t('attendance.weekly_evolution')}</div>
           {weekly.map((w, i) => {
             const total = w.present + w.absent + w.late + w.excused
             const pct = total > 0 ? Math.round((w.present + w.late) / total * 100) : 100
             return (
               <div key={i} style={{ marginBottom: 10 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 700, color: 'var(--text2)', marginBottom: 4 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, fontWeight: 700, color: 'var(--text2)', marginBottom: 4 }} className="flex-wrap gap-1">
                   <span>{w.week}</span>
                   <span style={{ color: pct >= 100 ? 'var(--green)' : 'var(--red)', fontWeight: 800 }}>
                     {pct >= 100 ? t('attendance.week_present') : t('attendance.week_absent').replace('{pct}', String(100 - pct))}
@@ -157,9 +158,9 @@ export default function SectionStudentAttendance({ onToast, user }: Props) {
       )}
 
       {!stats && weekly.length === 0 && (
-        <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: 36, textAlign: 'center' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><ClipboardList size={36} strokeWidth={2} /></div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{t('attendance.empty_title')}</div>
+        <div className="rounded-xl border p-8 text-center" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><ClipboardList size={34} strokeWidth={2} /></div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{t('attendance.empty_title')}</div>
           <div style={{ fontSize: 12, color: 'var(--text3)' }}>{t('attendance.empty_subtitle')}</div>
         </div>
       )}

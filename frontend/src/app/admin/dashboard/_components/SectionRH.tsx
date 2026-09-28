@@ -369,7 +369,7 @@ export default function SectionRH({ onToast }: { onToast: OnToast }) {
   )
 
   return (
-    <div className="px-4 py-4 md:px-6 md:py-5 space-y-3 md:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
       <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
         <div className="flex items-center gap-2">
           <Users className="w-5 h-5 text-[var(--sidebar)]" />
@@ -398,7 +398,7 @@ export default function SectionRH({ onToast }: { onToast: OnToast }) {
             const active = tab === tb.key
             return (
               <button key={tb.key} onClick={() => setTab(tb.key)}
-                className="relative flex-shrink-0 rounded-[8px] px-[11px] py-[6px] whitespace-nowrap border-0"
+                className="relative flex-shrink-0 rounded-[8px] px-3 py-2 min-h-[38px] whitespace-nowrap border-0"
                 style={{ background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                 {active && (
                   <motion.div layoutId="rh-tab-pill" className="absolute inset-0 rounded-[8px]"
@@ -672,8 +672,8 @@ export default function SectionRH({ onToast }: { onToast: OnToast }) {
                     </div>
                     <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 6 }}>{req.motif ?? '—'}</div>
                     <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-                      <button style={{ ...chipStyle('var(--green-light)', 'var(--green)'), border: 'none', cursor: 'pointer' }} onClick={() => handleApproveLeave(req.id, 'APPROVED')}>{t('rh.approve')}</button>
-                      <button style={{ ...chipStyle('var(--red-light)', 'var(--red)'), border: 'none', cursor: 'pointer' }} onClick={() => handleApproveLeave(req.id, 'REJECTED')}>{t('rh.reject')}</button>
+                      <button className="min-h-[38px] px-3.5" style={{ ...chipStyle('var(--green-light)', 'var(--green)'), border: 'none', cursor: 'pointer' }} onClick={() => handleApproveLeave(req.id, 'APPROVED')}>{t('rh.approve')}</button>
+                      <button className="min-h-[38px] px-3.5" style={{ ...chipStyle('var(--red-light)', 'var(--red)'), border: 'none', cursor: 'pointer' }} onClick={() => handleApproveLeave(req.id, 'REJECTED')}>{t('rh.reject')}</button>
                     </div>
                   </div>
                 ))}
@@ -707,7 +707,7 @@ export default function SectionRH({ onToast }: { onToast: OnToast }) {
           <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
             <div className="px-[12px] py-[10px] md:px-[16px] md:py-[11px]" style={{ borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div className="text-[13px] md:text-[14px]" style={{ fontWeight: 800, color: 'var(--text)' }}>{t('rh.dailyAttendance')}</div>
-              <button style={{ ...chipStyle('var(--blue-light)', 'var(--blue)'), border: 'none', cursor: 'pointer' }} onClick={saveAttendance}>{t('rh.saveAttendance')}</button>
+              <button className="min-h-[38px] px-3.5" style={{ ...chipStyle('var(--blue-light)', 'var(--blue)'), border: 'none', cursor: 'pointer' }} onClick={saveAttendance}>{t('rh.saveAttendance')}</button>
             </div>
             <div style={{ padding: '12px 14px', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
               <div>
@@ -856,7 +856,7 @@ export default function SectionRH({ onToast }: { onToast: OnToast }) {
                   </div>
                 </>
               )}
-              <button onClick={generateDoc} style={{ ...chipStyle('var(--sidebar)', 'white'), border: 'none', cursor: 'pointer', justifyContent: 'center' }}>{t('rh.generate')}</button>
+              <button className="min-h-[38px] px-4" onClick={generateDoc} style={{ ...chipStyle('var(--sidebar)', 'white'), border: 'none', cursor: 'pointer', justifyContent: 'center' }}>{t('rh.generate')}</button>
             </div>
           </div>
 

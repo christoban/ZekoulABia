@@ -68,19 +68,19 @@ export default function SectionMesActionsSuivi({ onToast }: Props) {
 
   if (loading) {
     return (
-      <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: 12.5, color: 'var(--text3)', fontWeight: 600 }}>{t('at_risk.loading')}</div>
+      <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 flex items-center justify-center" style={{ height: '100%', overflowY: 'auto' }}>
+        <div style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600 }}>{t('at_risk.loading')}</div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto' }}>
+      <div className="px-3.5 py-3.5 sm:px-6 sm:py-5" style={{ height: '100%', overflowY: 'auto' }}>
         <div style={{ padding: 16, textAlign: 'center' }}>
-          <div style={{ color: 'var(--red)', fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>{t('at_risk.load_error')}</div>
+          <div style={{ color: 'var(--red)', fontSize: 13, fontWeight: 700, marginBottom: 10 }}>{t('at_risk.load_error')}</div>
           <button onClick={refetch}
-            style={{ padding: '6px 14px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{ minHeight: 38, padding: '7px 16px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
             {t('at_risk.retry')}
           </button>
         </div>
@@ -89,8 +89,8 @@ export default function SectionMesActionsSuivi({ onToast }: Props) {
   }
 
   return (
-    <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto' }}>
-      <div style={{ marginBottom: 16 }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
+      <div>
         <div style={sTitle}>{t('suivi.page_title')}</div>
         <div style={sSub}>{t('suivi.page_subtitle')}</div>
       </div>

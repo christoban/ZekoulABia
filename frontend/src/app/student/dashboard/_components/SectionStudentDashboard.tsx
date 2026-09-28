@@ -176,43 +176,53 @@ export default function SectionStudentDashboard({ onNav, onToast, user }: Props)
   }
 
   return (
-    <div style={{ padding: '16px 20px', overflowY: 'auto', height: '100%' }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3 sm:space-y-4" style={{ overflowY: 'auto', height: '100%' }}>
       <Lv2ChoiceBanner onToast={onToast} />
       <OrientationCheckpointBanner onToast={onToast} />
-      <div style={{ background: 'linear-gradient(135deg,var(--sidebar),var(--sidebar2))', borderRadius: 12, padding: '16px 20px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' }}>
+      
+      {/* Carte d'accueil et profil élève */}
+      <div
+        className="rounded-2xl p-4 sm:p-5 relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 shadow-sm"
+        style={{ background: 'linear-gradient(135deg,var(--sidebar),var(--sidebar2))' }}
+      >
         <div style={{ position: 'absolute', right: -50, top: -50, width: 200, height: 200, borderRadius: '50%', background: 'rgba(74,222,128,0.05)', pointerEvents: 'none' }} />
-        <div>
+        <div className="min-w-0">
           <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'white', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Hand size={18} strokeWidth={2} />
-            {t('dashboard.greeting').replace('{name}', user?.firstName || tcommon('user.studentFallback'))}
+            <Hand size={18} strokeWidth={2} className="shrink-0" />
+            <span className="truncate">{t('dashboard.greeting').replace('{name}', user?.firstName || tcommon('user.studentFallback'))}</span>
           </div>
-          <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>
+          <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }} className="truncate">
             {className} · {t('dashboard.matricule_label')} {matricule}
           </div>
           {fromCache && cachedAt && (
-            <div style={{ background: 'rgba(217,119,6,0.25)', border: '1px solid rgba(217,119,6,0.5)', borderRadius: 6, padding: '3px 8px', fontSize: 11.5, fontWeight: 600, color: 'white', display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
+            <div style={{ background: 'rgba(217,119,6,0.25)', border: '1px solid rgba(217,119,6,0.5)', borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 600, color: 'white', display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
               <Package size={13} strokeWidth={2} /> {tcommon('cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}
             </div>
           )}
-          <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ background: mBg, color: mC, padding: '3px 10px', borderRadius: 16, fontSize: 12, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+          <div className="flex gap-2 flex-wrap items-center mt-2.5">
+            <span style={{ background: mBg, color: mC, padding: '3px 10px', borderRadius: 16, fontSize: 11.5, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
               <Trophy size={13} strokeWidth={2} /> {rankDisplay}
             </span>
-            <span style={{ background: hBg, color: hC, padding: '3px 10px', borderRadius: 16, fontSize: 12, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ background: hBg, color: hC, padding: '3px 10px', borderRadius: 16, fontSize: 11.5, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
               {(() => { const HIcon = HEALTH_ICON[hLabel]; return <HIcon size={13} strokeWidth={2} /> })()} {t(hLabel)}
             </span>
           </div>
         </div>
-        <div style={{ textAlign: 'center', flexShrink: 0 }}>
-          <div style={{ fontSize: 28, fontWeight: 900, color: 'white', lineHeight: 1 }}>{displayAvg.toFixed(1)}</div>
-          <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>{t('dashboard.average_label')}</div>
-          <div style={{ marginTop: 6, background: mBg, color: mC, padding: '3px 10px', borderRadius: 16, fontSize: 11.5, fontWeight: 800, display: 'inline-block' }}>
+
+        {/* Moyenne générale en valeur clé */}
+        <div className="flex sm:flex-col items-center justify-between sm:justify-center border-t sm:border-t-0 pt-2.5 sm:pt-0 border-white/10 shrink-0">
+          <div className="text-left sm:text-center">
+            <div style={{ fontSize: 28, fontWeight: 900, color: 'white', lineHeight: 1 }}>{displayAvg.toFixed(1)}</div>
+            <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>{t('dashboard.average_label')}</div>
+          </div>
+          <div style={{ background: mBg, color: mC, padding: '3px 10px', borderRadius: 16, fontSize: 11.5, fontWeight: 800 }} className="sm:mt-2">
             {({ TB: t('grades.mention_tb'), B: t('grades.mention_b'), AB: t('grades.mention_ab'), P: t('grades.mention_p'), I: t('grades.mention_i') } as Record<string, string>)[mention] ?? t('grades.mention_i')}
           </div>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 16 }}>
+      {/* Cartes statistiques KPIs (2 colonnes sur mobile, 4 sur desktop) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
         {[
           { icon: FileText, bg: 'var(--green-light)', val: `${displayAvg.toFixed(1)}/20`, label: t('dashboard.general_avg_label'),  trend: mention,    tBg: mBg, tC: mC },
           { icon: Trophy, bg: 'var(--blue-light)', val: rank ? `${rank.pos}e` : '—', label: rank ? t('dashboard.rank_label').replace('{total}', String(rank.total)) : t('dashboard.rank_short'), trend: t('dashboard.trend_this_term'), tBg: 'var(--blue-light)', tC: 'var(--blue)' },
@@ -220,33 +230,40 @@ export default function SectionStudentDashboard({ onNav, onToast, user }: Props)
           { icon: BookOpen, bg: 'var(--purple-light)', val: String(subjectCount || '...'),  label: t('dashboard.subjects_label'), trend: t('dashboard.trend_year'), tBg: 'var(--purple-light)', tC: 'var(--purple)' },
         ].map((k, i) => (
           <div key={i}
-            style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', padding: '12px 14px', cursor: 'pointer', transition: 'all 0.15s' }}
-            onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { transform: 'translateY(-1px)', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' })}
-            onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { transform: 'none', boxShadow: 'none' })}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
-              <div style={{ width: 34, height: 34, borderRadius: 8, background: k.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><k.icon size={16} strokeWidth={2} /></div>
-              <span style={{ fontSize: 10.5, fontWeight: 800, padding: '2px 7px', borderRadius: 12, background: k.tBg, color: k.tC, whiteSpace: 'nowrap' }}>{k.trend}</span>
+            className="rounded-xl border p-3 sm:p-3.5 transition-all"
+            style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+          >
+            <div className="flex items-start justify-between gap-1 mb-2">
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: k.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="shrink-0">
+                <k.icon size={15} strokeWidth={2} />
+              </div>
+              <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full truncate" style={{ background: k.tBg, color: k.tC }}>{k.trend}</span>
             </div>
-            <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)', lineHeight: 1 }}>{k.val}</div>
-            <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 4, fontWeight: 600 }}>{k.label}</div>
+            <div className="text-base sm:text-lg font-black leading-tight" style={{ color: 'var(--text)' }}>{k.val}</div>
+            <div className="text-[11px] font-semibold mt-1 truncate" style={{ color: 'var(--text3)' }}>{k.label}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
-        <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
-          <span style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text)' }}>{t('dashboard.today_title')}</span>
+      {/* Cours d'aujourd'hui */}
+      <div className="rounded-xl border overflow-hidden" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+        <div className="px-3.5 py-2.5 sm:px-4 sm:py-3 border-b" style={{ borderColor: 'var(--border)' }}>
+          <span className="text-xs sm:text-sm font-extrabold" style={{ color: 'var(--text)' }}>{t('dashboard.today_title')}</span>
         </div>
-        <div style={{ padding: '10px 14px', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div className="p-3 sm:p-3.5">
           {todaySlots.length === 0 ? (
-            <div style={{ padding: 16, textAlign: 'center', color: 'var(--text3)', fontSize: 12.5, fontWeight: 600, width: '100%' }}>{t('dashboard.today_empty')}</div>
-          ) : todaySlots.map((c, i) => (
-            <div key={i} style={{ flex: 1, minWidth: 160, background: 'var(--bg)', borderRadius: 8, padding: '8px 12px', borderLeft: `3px solid ${c.color || 'var(--green)'}` }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text3)', marginBottom: 3 }}>{c.time}</div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>{c.subject}</div>
-              <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 2 }}>{c.teacher}{c.salle ? ` · ${c.salle}` : ''}</div>
+            <div className="py-6 text-center text-xs font-semibold" style={{ color: 'var(--text3)' }}>{t('dashboard.today_empty')}</div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+              {todaySlots.map((c, i) => (
+                <div key={i} className="rounded-lg p-2.5 sm:p-3" style={{ background: 'var(--bg)', borderLeft: `3.5px solid ${c.color || 'var(--green)'}` }}>
+                  <div className="text-[11px] font-extrabold mb-1" style={{ color: 'var(--text3)' }}>{c.time}</div>
+                  <div className="text-xs sm:text-sm font-bold truncate" style={{ color: 'var(--text)' }}>{c.subject}</div>
+                  <div className="text-[11px] mt-1 truncate" style={{ color: 'var(--text3)' }}>{c.teacher}{c.salle ? ` · ${c.salle}` : ''}</div>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>

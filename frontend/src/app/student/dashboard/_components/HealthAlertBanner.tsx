@@ -48,13 +48,10 @@ export default function HealthAlertBanner({ onNav }: { onNav: (section: string) 
       </div>
       <button
         onClick={() => onNav('health-tracking')}
-        style={{
-          flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px',
-          background: color, color: 'white', border: 'none', borderRadius: 6,
-          fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-        }}
+        className="shrink-0 h-8 px-3 rounded-lg font-bold text-xs inline-flex items-center gap-1.5 border-0 text-white cursor-pointer active:scale-95 transition-transform"
+        style={{ background: color }}
       >
-        {t('healthAlert.action')} <ArrowRight size={12} />
+        <span>{t('healthAlert.action')}</span> <ArrowRight size={13} />
       </button>
       <button
         onClick={() => setDismissed(true)}

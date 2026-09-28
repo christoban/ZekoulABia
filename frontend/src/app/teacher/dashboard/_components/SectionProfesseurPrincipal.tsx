@@ -76,21 +76,21 @@ export default function SectionProfesseurPrincipal({ user: _user, classeId, clas
     <button
       onClick={() => setTab(tabId)}
       style={{
-        padding: '6px 14px', borderRadius: 7, fontSize: 12.5, fontWeight: 700,
+        minHeight: 38, padding: '7px 14px', borderRadius: 7, fontSize: 12.5, fontWeight: 700,
         fontFamily: 'inherit', cursor: 'pointer', border: 'none',
         background: tab === tabId ? 'var(--sidebar)' : 'var(--bg2)',
         color: tab === tabId ? 'white' : 'var(--text2)',
         transition: 'all 0.15s',
-        display: 'inline-flex', alignItems: 'center', gap: 5,
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
       }}>
-      <Icon size={13} strokeWidth={2} />{label}
+      <Icon size={14} strokeWidth={2} />{label}
     </button>
   )
 
   return (
-    <div style={{ padding: '16px 20px', height: '100%', overflowY: 'auto' }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
       {/* Header */}
-      <div style={{ marginBottom: 16 }}>
+      <div>
         <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <ClipboardList size={18} strokeWidth={2} />{t('pp.class_title').replace('{name}', classeNom)}
         </div>
@@ -105,7 +105,7 @@ export default function SectionProfesseurPrincipal({ user: _user, classeId, clas
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+      <div className="flex gap-2 overflow-x-auto pb-1">
         {tabBtn('eleves',   t('pp.tab_students'), BarChart3)}
         {tabBtn('presences',t('pp.tab_attendance'), CheckCircle2)}
       </div>
@@ -126,105 +126,169 @@ export default function SectionProfesseurPrincipal({ user: _user, classeId, clas
               <div style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600 }}>Aucune note saisie pour cette classe</div>
             </div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 500 }}>
-                <thead>
-                  <tr style={{ background: 'var(--bg2)' }}>
-                    {['Rang', 'Élève', 'Moyenne /20', 'Présence', 'Niveau'].map(h => (
-                      <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {students.map((s, i) => {
-                    const badge = BADGE(s.moyenne)
-                    return (
-                      <tr key={s.id} style={{ borderTop: '1px solid var(--bg)', background: i % 2 === 0 ? 'var(--surface)' : 'var(--bg)' }}>
-                        <td style={{ padding: '8px 12px', fontSize: 12, fontWeight: 800, color: 'var(--text3)' }}>#{s.rang}</td>
-                        <td style={{ padding: '8px 12px', fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>{s.lastName} {s.firstName}</td>
-                        <td style={{ padding: '8px 12px' }}>
-                          <span style={{ background: badge.bg, color: badge.color, padding: '2px 8px', borderRadius: 12, fontSize: 11.5, fontWeight: 800 }}>
-                            {badge.label}
+            <>
+              {/* Vue mobile par cartes */}
+              <div className="md:hidden divide-y divide-[var(--border)]">
+                {students.map((s) => {
+                  const badge = BADGE(s.moyenne)
+                  return (
+                    <div key={s.id} className="p-3.5 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-[var(--text3)]">#{s.rang}</span>
+                          <span className="text-sm font-bold text-[var(--text)]">{s.lastName} {s.firstName}</span>
+                        </div>
+                        <span style={{ background: badge.bg, color: badge.color, padding: '2px 8px', borderRadius: 12, fontSize: 12, fontWeight: 800 }}>
+                          {badge.label}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-[var(--text2)] pt-1">
+                        <span>Présence : <strong className="text-[var(--text)]">{s.tauxPresence}%</strong></span>
+                        {s.moyenne !== null && (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 5,
+                            background: s.moyenne >= 12 ? 'var(--green-light)' : s.moyenne >= 8 ? 'var(--amber-light)' : 'var(--red-light)',
+                            color: s.moyenne >= 12 ? 'var(--green)' : s.moyenne >= 8 ? 'var(--amber)' : 'var(--red)' }}>
+                            {s.moyenne >= 12 ? <CheckCircle2 size={11} strokeWidth={2} /> : s.moyenne >= 8 ? <AlertTriangle size={11} strokeWidth={2} /> : <Circle size={7} fill="var(--red)" stroke="none" />}
+                            {s.moyenne >= 12 ? 'Admis' : s.moyenne >= 8 ? 'Passable' : 'En difficulté'}
                           </span>
-                        </td>
-                        <td style={{ padding: '8px 12px', fontSize: 12.5, color: 'var(--text2)', fontWeight: 600 }}>
-                          {s.tauxPresence}%
-                        </td>
-                        <td style={{ padding: '8px 12px' }}>
-                          {s.moyenne !== null && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 5,
-                              background: s.moyenne >= 12 ? 'var(--green-light)' : s.moyenne >= 8 ? 'var(--amber-light)' : 'var(--red-light)',
-                              color: s.moyenne >= 12 ? 'var(--green)' : s.moyenne >= 8 ? 'var(--amber)' : 'var(--red)' }}>
-                              {s.moyenne >= 12 ? <CheckCircle2 size={11} strokeWidth={2} /> : s.moyenne >= 8 ? <AlertTriangle size={11} strokeWidth={2} /> : <Circle size={7} fill="var(--red)" stroke="none" />}
-                              {s.moyenne >= 12 ? 'Admis' : s.moyenne >= 8 ? 'Passable' : 'En difficulté'}
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Table desktop */}
+              <div className="hidden md:block overflow-x-auto">
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 500 }}>
+                  <thead>
+                    <tr style={{ background: 'var(--bg2)' }}>
+                      {['Rang', 'Élève', 'Moyenne /20', 'Présence', 'Niveau'].map(h => (
+                        <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {students.map((s, i) => {
+                      const badge = BADGE(s.moyenne)
+                      return (
+                        <tr key={s.id} style={{ borderTop: '1px solid var(--bg)', background: i % 2 === 0 ? 'var(--surface)' : 'var(--bg)' }}>
+                          <td style={{ padding: '8px 12px', fontSize: 12, fontWeight: 800, color: 'var(--text3)' }}>#{s.rang}</td>
+                          <td style={{ padding: '8px 12px', fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>{s.lastName} {s.firstName}</td>
+                          <td style={{ padding: '8px 12px' }}>
+                            <span style={{ background: badge.bg, color: badge.color, padding: '2px 8px', borderRadius: 12, fontSize: 11.5, fontWeight: 800 }}>
+                              {badge.label}
                             </span>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          </td>
+                          <td style={{ padding: '8px 12px', fontSize: 12.5, color: 'var(--text2)', fontWeight: 600 }}>
+                            {s.tauxPresence}%
+                          </td>
+                          <td style={{ padding: '8px 12px' }}>
+                            {s.moyenne !== null && (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 5,
+                                background: s.moyenne >= 12 ? 'var(--green-light)' : s.moyenne >= 8 ? 'var(--amber-light)' : 'var(--red-light)',
+                                color: s.moyenne >= 12 ? 'var(--green)' : s.moyenne >= 8 ? 'var(--amber)' : 'var(--red)' }}>
+                                {s.moyenne >= 12 ? <CheckCircle2 size={11} strokeWidth={2} /> : s.moyenne >= 8 ? <AlertTriangle size={11} strokeWidth={2} /> : <Circle size={7} fill="var(--red)" stroke="none" />}
+                                {s.moyenne >= 12 ? 'Admis' : s.moyenne >= 8 ? 'Passable' : 'En difficulté'}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       )}
 
       {tab === 'presences' && (
         <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
-          <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', flex: 1 }}>Présences — {classeNom}</span>
-            {(['semaine', 'mois'] as DateFilter[]).map(f => (
-              <button key={f} onClick={() => setDateFilter(f)}
-                style={{ padding: '4px 10px', borderRadius: 6, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
-                  background: dateFilter === f ? 'var(--sidebar)' : 'var(--bg2)', color: dateFilter === f ? 'white' : 'var(--text2)' }}>
-                {f === 'semaine' ? '7 derniers jours' : '30 derniers jours'}
-              </button>
-            ))}
+          <div className="p-3 sm:px-3.5 sm:py-2.5 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-2">
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Présences — {classeNom}</span>
+            <div className="flex gap-1.5">
+              {(['semaine', 'mois'] as DateFilter[]).map(f => (
+                <button key={f} onClick={() => setDateFilter(f)}
+                  style={{ minHeight: 32, padding: '4px 10px', borderRadius: 6, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
+                    background: dateFilter === f ? 'var(--sidebar)' : 'var(--bg2)', color: dateFilter === f ? 'white' : 'var(--text2)' }}>
+                  {f === 'semaine' ? '7 derniers jours' : '30 derniers jours'}
+                </button>
+              ))}
+            </div>
           </div>
           {loading ? (
             <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)', fontSize: 12.5 }}>Chargement...</div>
           ) : attendances.length === 0 ? (
             <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)', fontSize: 12.5 }}>Aucune présence enregistrée sur cette période</div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
-                <thead>
-                  <tr style={{ background: 'var(--bg2)' }}>
-                    {['Date', 'Élève', 'Statut'].map(h => (
-                      <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {attendances.map((a, i) => {
-                    const statusStyle: Record<string, { bg: string; color: string; label: string; Icon?: typeof CheckCircle2; dot?: boolean }> = {
-                      PRESENT:          { bg: 'var(--green-light)', color: 'var(--green)', label: 'Présent', Icon: CheckCircle2 },
-                      ABSENT:           { bg: 'var(--red-light)', color: 'var(--red)', label: 'Absent', dot: true },
-                      ABSENT_JUSTIFIED: { bg: 'var(--amber-light)', color: 'var(--amber)', label: 'Justifié', Icon: ClipboardList },
-                      LATE:             { bg: 'var(--blue-light)', color: 'var(--blue)', label: 'Retard', Icon: AlarmClock },
-                    }
-                    const s = statusStyle[a.status] ?? { bg: 'var(--bg2)', color: 'var(--text3)', label: a.status }
-                    return (
-                      <tr key={a.id} style={{ borderTop: '1px solid var(--bg)', background: i % 2 === 0 ? 'var(--surface)' : 'var(--bg)' }}>
-                        <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>
-                          {new Date(a.date).toLocaleDateString('fr-FR')}
-                        </td>
-                        <td style={{ padding: '8px 12px', fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>
-                          {a.studentName ?? a.studentId}
-                        </td>
-                        <td style={{ padding: '8px 12px' }}>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: s.bg, color: s.color, padding: '2px 8px', borderRadius: 12, fontSize: 11.5, fontWeight: 700 }}>
-                            {s.dot ? <Circle size={7} fill="var(--red)" stroke="none" /> : s.Icon ? <s.Icon size={12} strokeWidth={2} /> : null}
-                            {s.label}
-                          </span>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <>
+              {/* Vue mobile par cartes */}
+              <div className="md:hidden divide-y divide-[var(--border)]">
+                {attendances.map((a) => {
+                  const statusStyle: Record<string, { bg: string; color: string; label: string; Icon?: typeof CheckCircle2; dot?: boolean }> = {
+                    PRESENT:          { bg: 'var(--green-light)', color: 'var(--green)', label: 'Présent', Icon: CheckCircle2 },
+                    ABSENT:           { bg: 'var(--red-light)', color: 'var(--red)', label: 'Absent', dot: true },
+                    ABSENT_JUSTIFIED: { bg: 'var(--amber-light)', color: 'var(--amber)', label: 'Justifié', Icon: ClipboardList },
+                    LATE:             { bg: 'var(--blue-light)', color: 'var(--blue)', label: 'Retard', Icon: AlarmClock },
+                  }
+                  const s = statusStyle[a.status] ?? { bg: 'var(--bg2)', color: 'var(--text3)', label: a.status }
+                  return (
+                    <div key={a.id} className="p-3 flex items-center justify-between gap-2">
+                      <div>
+                        <div className="text-sm font-bold text-[var(--text)]">{a.studentName ?? a.studentId}</div>
+                        <div className="text-xs text-[var(--text3)] mt-0.5">{new Date(a.date).toLocaleDateString('fr-FR')}</div>
+                      </div>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: s.bg, color: s.color, padding: '3px 8px', borderRadius: 12, fontSize: 11.5, fontWeight: 700 }}>
+                        {s.dot ? <Circle size={7} fill="var(--red)" stroke="none" /> : s.Icon ? <s.Icon size={12} strokeWidth={2} /> : null}
+                        {s.label}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Table desktop */}
+              <div className="hidden md:block overflow-x-auto">
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
+                  <thead>
+                    <tr style={{ background: 'var(--bg2)' }}>
+                      {['Date', 'Élève', 'Statut'].map(h => (
+                        <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attendances.map((a, i) => {
+                      const statusStyle: Record<string, { bg: string; color: string; label: string; Icon?: typeof CheckCircle2; dot?: boolean }> = {
+                        PRESENT:          { bg: 'var(--green-light)', color: 'var(--green)', label: 'Présent', Icon: CheckCircle2 },
+                        ABSENT:           { bg: 'var(--red-light)', color: 'var(--red)', label: 'Absent', dot: true },
+                        ABSENT_JUSTIFIED: { bg: 'var(--amber-light)', color: 'var(--amber)', label: 'Justifié', Icon: ClipboardList },
+                        LATE:             { bg: 'var(--blue-light)', color: 'var(--blue)', label: 'Retard', Icon: AlarmClock },
+                      }
+                      const s = statusStyle[a.status] ?? { bg: 'var(--bg2)', color: 'var(--text3)', label: a.status }
+                      return (
+                        <tr key={a.id} style={{ borderTop: '1px solid var(--bg)', background: i % 2 === 0 ? 'var(--surface)' : 'var(--bg)' }}>
+                          <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>
+                            {new Date(a.date).toLocaleDateString('fr-FR')}
+                          </td>
+                          <td style={{ padding: '8px 12px', fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>
+                            {a.studentName ?? a.studentId}
+                          </td>
+                          <td style={{ padding: '8px 12px' }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: s.bg, color: s.color, padding: '2px 8px', borderRadius: 12, fontSize: 11.5, fontWeight: 700 }}>
+                              {s.dot ? <Circle size={7} fill="var(--red)" stroke="none" /> : s.Icon ? <s.Icon size={12} strokeWidth={2} /> : null}
+                              {s.label}
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       )}

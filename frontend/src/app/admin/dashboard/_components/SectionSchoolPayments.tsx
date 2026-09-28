@@ -90,7 +90,7 @@ export default function SectionSchoolPayments({ onToast }: Props) {
   }
 
   return (
-    <div className="px-4 py-5 md:px-8 md:py-7" style={{ height: '100%', overflowY: 'auto' }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
       <div className="mb-[16px] md:mb-[20px]">
         <h2 className="text-[15px] md:text-[17px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Wallet size={20} strokeWidth={2} /> {t('page.section_titles.school-payments')}
@@ -102,7 +102,7 @@ export default function SectionSchoolPayments({ onToast }: Props) {
       <div className="gap-[8px] md:gap-[12px] mb-[16px] md:mb-[20px]" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
         <label className="text-[12.5px] md:text-[13px]" style={{ fontWeight: 600, color: 'var(--text2)' }}>{t('lv2_choice.academic_year')}</label>
         <select value={anneeScolaire} onChange={e => setAnneeScolaire(e.target.value)}
-          className="rounded-[10px] md:rounded-[6px] px-[10px] md:px-[12px] py-[6px] md:py-[7px] text-[12.5px] md:text-[14px] border-0 md:border md:border-[var(--border)] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none bg-[var(--surface)] md:bg-[var(--bg)]"
+          className="rounded-[10px] md:rounded-[6px] px-[10px] md:px-[12px] py-[6px] md:py-[7px] min-h-[38px] text-[12.5px] md:text-[14px] border-0 md:border md:border-[var(--border)] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none bg-[var(--surface)] md:bg-[var(--bg)]"
           style={{ color: 'var(--text)' }}>
           <option value="">—</option>
           {years.map(y => <option key={y.id} value={y.label}>{y.label}</option>)}
@@ -185,10 +185,10 @@ export default function SectionSchoolPayments({ onToast }: Props) {
           {/* Actions */}
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={loadOverview}
-              className="text-[12.5px] md:text-[14px] py-[10px] md:py-[8px] px-[10px] md:px-[18px] rounded-[10px] md:rounded-[8px]"
+              className="text-[12.5px] md:text-[14px] py-[10px] md:py-[8px] px-[10px] md:px-[18px] min-h-[38px] rounded-[10px] md:rounded-[8px]"
               style={{ ...btnSec, padding: undefined, fontSize: undefined, borderRadius: undefined, flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><RefreshCw size={14} strokeWidth={2} /> {t('matricules.sync_btn')}</button>
             <button onClick={generateForSchool} disabled={generatingSchool}
-              className="text-[12.5px] md:text-[14px] py-[10px] md:py-[8px] px-[10px] md:px-[18px] rounded-[10px] md:rounded-[8px]"
+              className="text-[12.5px] md:text-[14px] py-[10px] md:py-[8px] px-[10px] md:px-[18px] min-h-[38px] rounded-[10px] md:rounded-[8px]"
               style={{ ...btnPri, padding: undefined, fontSize: undefined, borderRadius: undefined, flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
               {generatingSchool ? '...' : <><Settings size={14} strokeWidth={2} /> {t('matricules.generate_school_btn')}</>}
             </button>

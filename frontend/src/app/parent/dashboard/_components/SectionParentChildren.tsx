@@ -115,8 +115,8 @@ export default function SectionParentChildren({ onNav, onToast, userId }: Props)
   }
 
   return (
-    <div style={{ padding: '16px 20px', overflowY: 'auto', height: '100%' }}>
-      <div style={{ marginBottom: fromCache ? 6 : 16 }}>
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3 sm:space-y-4" style={{ overflowY: 'auto', height: '100%' }}>
+      <div style={{ marginBottom: fromCache ? 6 : 12 }}>
         <div style={sTitle}>{t('children.title')}</div>
         <div style={sSub}>{t('children.subtitleCount').replace('{count}', String(list.length))}</div>
       </div>
@@ -125,48 +125,55 @@ export default function SectionParentChildren({ onNav, onToast, userId }: Props)
 
       <OrientationCheckpointParentView children={list.map(c => ({ studentId: c.studentId, prenom: c.prenom, nom: c.nom }))} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 14 }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
         {list.map((child, i) => {
           const avg = child.dernieereMoyenne ?? 0
           const avgColor = avg >= 14 ? 'var(--green)' : avg >= 10 ? 'var(--blue)' : 'var(--red)'
           return (
             <div key={child.studentId}
-              style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden', transition: 'all 0.15s' }}
-              onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { transform: 'translateY(-1px)', boxShadow: '0 4px 14px rgba(0,0,0,0.06)' })}
-              onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { transform: 'none', boxShadow: 'none' })}>
+              className="rounded-xl border overflow-hidden shadow-xs transition-all"
+              style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
 
-              <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 38, height: 38, borderRadius: 10, background: `linear-gradient(135deg,${i === 0 ? 'var(--blue),var(--purple)' : 'var(--primary),var(--accent)'})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
-                  {child.prenom[0]}{child.nom[0]}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--font-spectral),Spectral,serif' }}>{child.prenom} {child.nom}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 1 }}>{t('children.studentLabel').replace('{className}', child.classeNom || '—')}</div>
+              <div className="p-3.5 sm:p-4 border-b flex items-center justify-between gap-3" style={{ borderColor: 'var(--border)' }}>
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div style={{ width: 38, height: 38, borderRadius: 10, background: `linear-gradient(135deg,${i === 0 ? 'var(--blue),var(--purple)' : 'var(--primary),var(--accent)'})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 14 }} className="shrink-0">
+                    {child.prenom[0]}{child.nom[0]}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm sm:text-base font-bold truncate" style={{ color: 'var(--text)', fontFamily: 'var(--font-spectral),Spectral,serif' }}>
+                      {child.prenom} {child.nom}
+                    </div>
+                    <div className="text-[11.5px] truncate mt-0.5" style={{ color: 'var(--text3)' }}>
+                      {t('children.studentLabel').replace('{className}', child.classeNom || '—')}
+                    </div>
+                  </div>
                 </div>
                 {child.indiceSante !== undefined && child.indiceSante !== null && (
-                  <HealthBadge score={child.indiceSante} />
+                  <div className="shrink-0">
+                    <HealthBadge score={child.indiceSante} />
+                  </div>
                 )}
               </div>
 
-              <div style={{ padding: '12px 16px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 12 }}>
+              <div className="p-3.5 sm:p-4 space-y-3">
+                <div className="grid grid-cols-3 gap-2">
                   {[
                     { label: t('children.latestAverage'), val: `${avg.toFixed(1)}/20`, color: avgColor },
                     { label: t('children.attendanceRate'), val: `${child.tauxPresence}%`, color: child.tauxPresence >= 90 ? 'var(--green)' : 'var(--amber)' },
                     { label: t('children.punctuality'), val: `${child.tauxPonctualite}%`, color: child.tauxPonctualite >= 90 ? 'var(--green)' : 'var(--amber)' },
                   ].map((stat, j) => (
-                    <div key={j} style={{ background: 'var(--bg2)', borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: stat.color }}>{stat.val}</div>
-                      <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, marginTop: 2 }}>{stat.label}</div>
+                    <div key={j} className="rounded-lg p-2 text-center" style={{ background: 'var(--bg2)' }}>
+                      <div className="text-sm sm:text-base font-extrabold" style={{ color: stat.color }}>{stat.val}</div>
+                      <div className="text-[10px] sm:text-[11px] font-semibold mt-1 truncate" style={{ color: 'var(--text3)' }}>{stat.label}</div>
                     </div>
                   ))}
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <span style={{ fontSize: 12.5, color: 'var(--text2)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                    <Trophy size={13} strokeWidth={2} /> {t('children.mention')} <strong style={{ color: 'var(--text)' }}>{child.derniereeMention || '—'}</strong>
+                <div className="flex items-center justify-between text-xs pt-1">
+                  <span style={{ color: 'var(--text2)', fontWeight: 600 }} className="inline-flex items-center gap-1.5 truncate">
+                    <Trophy size={13} strokeWidth={2} className="shrink-0" /> {t('children.mention')} <strong style={{ color: 'var(--text)' }}>{child.derniereeMention || '—'}</strong>
                   </span>
-                  <span style={{ fontSize: 12, color: 'var(--text3)' }}>
+                  <span className="shrink-0" style={{ color: 'var(--text3)' }}>
                     {t('children.absenceDays').replace('{count}', String(child.joursAbsent))}
                   </span>
                 </div>
@@ -176,26 +183,34 @@ export default function SectionParentChildren({ onNav, onToast, userId }: Props)
                   if (!conseil?.conseil) return null
                   const color = conseil.alertLevel === 'critical' ? 'var(--red)' : conseil.alertLevel === 'warning' ? 'var(--amber)' : 'var(--green)'
                   return (
-                    <div style={{ background: 'var(--bg2)', borderRadius: 8, padding: '10px 12px', marginBottom: 12, borderLeft: `2.5px solid ${color}` }}>
+                    <div className="rounded-lg p-2.5 sm:p-3" style={{ background: 'var(--bg2)', borderLeft: `3px solid ${color}` }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
                         <Sparkles size={12} strokeWidth={2} /> {t('children.aiAdviceTitle')}
                       </div>
-                      <div style={{ fontSize: 12.5, color: 'var(--text2)', fontWeight: 500, lineHeight: 1.4 }}>{conseil.conseil}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 500, lineHeight: 1.4 }}>{conseil.conseil}</div>
                     </div>
                   )
                 })()}
 
-                <div style={{ display: 'flex', gap: 8 }}>
+                {/* Boutons d'action tactiles */}
+                <div className="grid grid-cols-3 gap-2 pt-1">
                   {[
-                    { label: t('children.actionGrades'),  icon: FileText,    action: () => onNav('grades'),    prim: true  },
+                    { label: t('children.actionGrades'),      icon: FileText,     action: () => onNav('grades'),     prim: true  },
                     { label: t('children.actionAttendance'),  icon: CheckCircle2, action: () => onNav('attendance'), prim: false },
-                    { label: t('children.actionPayments'),  icon: Smartphone,  action: () => onNav('payments'),  prim: false },
+                    { label: t('children.actionPayments'),    icon: Smartphone,   action: () => onNav('payments'),   prim: false },
                   ].map((btn, j) => (
-                    <button key={j} onClick={btn.action}
-                      style={{ flex: 1, padding: '6px 10px', borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: btn.prim ? 'none' : '1px solid var(--border2)', background: btn.prim ? 'linear-gradient(135deg,var(--primary),var(--primary-hover))' : 'var(--surface)', color: btn.prim ? 'white' : 'var(--text2)', transition: 'all 0.12s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}
-                      onMouseEnter={e => { if (!btn.prim) Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--green)', color: 'var(--green)' }) }}
-                      onMouseLeave={e => { if (!btn.prim) Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--border2)', color: 'var(--text2)' }) }}>
-                      <btn.icon size={13} strokeWidth={2} /> {btn.label}
+                    <button
+                      key={j}
+                      onClick={btn.action}
+                      className="h-10 sm:h-9 px-2 rounded-xl text-[11px] sm:text-xs font-bold cursor-pointer transition-transform active:scale-[0.98] flex items-center justify-center gap-1.5 shadow-xs border"
+                      style={{
+                        background: btn.prim ? 'linear-gradient(135deg,var(--primary),var(--primary-hover))' : 'var(--surface)',
+                        borderColor: btn.prim ? 'transparent' : 'var(--border2)',
+                        color: btn.prim ? 'white' : 'var(--text2)',
+                      }}
+                    >
+                      <btn.icon size={13} strokeWidth={2} className="shrink-0" />
+                      <span className="truncate">{btn.label}</span>
                     </button>
                   ))}
                 </div>
