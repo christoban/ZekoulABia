@@ -56,6 +56,72 @@ export class PrismaImportUtilisateursRepository implements ImportUtilisateursRep
     return existingParent?.id ?? null;
   }
 
+  async findParentParEmailOuTel(schoolId: string, email?: string, phone?: string): Promise<string | null> {
+    if (!email && !phone) return null;
+    const existingParent = await this.prisma.user.findFirst({
+      where: {
+        schoolId,
+        role: 'PARENT',
+        OR: [
+          ...(email ? [{ email }] : []),
+          ...(phone ? [{ phone }] : []),
+        ],
+      },
+      select: { id: true },
+    });
+    return existingParent?.id ?? null;
+  }
+
+  async findStudentParEmailOuTel(
+    schoolId: string,
+    email?: string,
+    phone?: string,
+  ): Promise<{ userId: string; studentProfileId: string } | null> {
+    if (!email && !phone) return null;
+    const studentUser = await this.prisma.user.findFirst({
+      where: {
+        schoolId,
+        role: 'STUDENT',
+        OR: [
+          ...(email ? [{ email }] : []),
+          ...(phone ? [{ phone }] : []),
+        ],
+      },
+      select: {
+        id: true,
+        studentProfile: {
+          select: { id: true },
+        },
+      },
+    });
+    if (!studentUser || !studentUser.studentProfile) return null;
+    return {
+      userId: studentUser.id,
+      studentProfileId: studentUser.studentProfile.id,
+    };
+  }
+
+  async lierParentStudent(parentUserId: string, studentProfileId: string): Promise<void> {
+    const parentProfile = await this.prisma.parentProfile.findFirst({
+      where: { userId: parentUserId },
+      select: { id: true },
+    });
+    if (!parentProfile) return;
+    await this.prisma.parentStudent.upsert({
+      where: {
+        parentProfileId_studentProfileId: {
+          parentProfileId: parentProfile.id,
+          studentProfileId,
+        },
+      },
+      create: {
+        parentProfileId: parentProfile.id,
+        studentProfileId,
+      },
+      update: {},
+    });
+  }
+
   async findStudentProfileId(userId: string): Promise<string | null> {
     const profile = await this.prisma.studentProfile.findUnique({
       where: { userId },

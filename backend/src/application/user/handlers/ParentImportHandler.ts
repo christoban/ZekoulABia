@@ -51,28 +51,36 @@ export async function traiterLigneParent(
     warnings.push({ ligne, avertissement: 'Aucun enfant trouvé pour les matricules ou emails fournis' });
   }
 
-  const parentUser = User.create({
-    schoolId,
-    role: 'PARENT',
-    email,
-    phone,
-    firstName: row.prenom.trim(),
-    lastName: row.nom.trim(),
-    mustChangePassword: true,
-  });
+  const existingParentId = await importRepository.findParentParEmailOuTel(schoolId, email, phone);
 
-  const temporaryPassword = generateTemporaryPassword();
-  const generatedPasswordHash = await bcrypt.hash(temporaryPassword, 10);
-  await userRepository.saveAvecProfil(parentUser, {
-    passwordHash: generatedPasswordHash,
-    parentOfStudentIds: studentProfileIds,
-  });
+  if (existingParentId) {
+    for (const studentProfileId of studentProfileIds) {
+      await importRepository.lierParentStudent(existingParentId, studentProfileId);
+    }
+  } else {
+    const parentUser = User.create({
+      schoolId,
+      role: 'PARENT',
+      email,
+      phone,
+      firstName: row.prenom.trim(),
+      lastName: row.nom.trim(),
+      mustChangePassword: true,
+    });
 
-  if (deps.credentialsNotifier) {
-    try {
-      await deps.credentialsNotifier.sendCredentials({ schoolId, email: email ?? null, phone: phone ?? null, temporaryPassword, roleLabel: 'Parent', loginIdentifier: email || phone || '', schoolName });
-    } catch (error) {
-      console.error('[Credentials] Échec envoi import parent:', error instanceof Error ? error.message : String(error));
+    const temporaryPassword = generateTemporaryPassword();
+    const generatedPasswordHash = await bcrypt.hash(temporaryPassword, 10);
+    await userRepository.saveAvecProfil(parentUser, {
+      passwordHash: generatedPasswordHash,
+      parentOfStudentIds: studentProfileIds,
+    });
+
+    if (deps.credentialsNotifier) {
+      try {
+        await deps.credentialsNotifier.sendCredentials({ schoolId, email: email ?? null, phone: phone ?? null, temporaryPassword, roleLabel: 'Parent', loginIdentifier: email || phone || '', schoolName });
+      } catch (error) {
+        console.error('[Credentials] Échec envoi import parent:', error instanceof Error ? error.message : String(error));
+      }
     }
   }
 }

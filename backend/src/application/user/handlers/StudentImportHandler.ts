@@ -59,17 +59,19 @@ export async function traiterLigneStudent(
   const gender = parserSexe(row.sexe);
 
   let parentUserId: string | undefined;
-  if (row.emailParent?.trim()) {
-    const parentEmail = row.emailParent.trim().toLowerCase();
-    const existingParentId = await deps.importRepository.findParentParEmail(schoolId, parentEmail);
+  const parentEmail = row.emailParent?.trim().toLowerCase();
+  const parentPhone = row.telephoneParent?.trim();
+
+  if (parentEmail || parentPhone) {
+    const existingParentId = await deps.importRepository.findParentParEmailOuTel(schoolId, parentEmail, parentPhone);
     if (existingParentId) {
       parentUserId = existingParentId;
     } else {
       const parentUser = User.create({
         schoolId,
         role: 'PARENT',
-        email: parentEmail,
-        phone: row.telephoneParent?.trim() || undefined,
+        email: parentEmail || undefined,
+        phone: parentPhone || undefined,
         firstName: row.prenomParent?.trim() || `Parent de ${row.prenom.trim()}`,
         lastName: row.nomParent?.trim() || row.nom.trim(),
         mustChangePassword: true,
@@ -80,7 +82,7 @@ export async function traiterLigneStudent(
       });
       if (deps.credentialsNotifier) {
         try {
-          await deps.credentialsNotifier.sendCredentials({ schoolId, email: parentEmail, phone: row.telephoneParent?.trim() || null, temporaryPassword: parentTemporaryPassword, roleLabel: 'Parent', loginIdentifier: parentEmail, schoolName });
+          await deps.credentialsNotifier.sendCredentials({ schoolId, email: parentEmail ?? null, phone: parentPhone ?? null, temporaryPassword: parentTemporaryPassword, roleLabel: 'Parent', loginIdentifier: parentEmail || parentPhone || '', schoolName });
         } catch (error) {
           console.error('[Credentials] Échec envoi parent importé:', error instanceof Error ? error.message : String(error));
         }
@@ -89,35 +91,51 @@ export async function traiterLigneStudent(
     }
   }
 
-  const studentUser = User.create({
-    schoolId,
-    role: 'STUDENT',
-    email,
-    phone,
-    firstName: row.prenom.trim(),
-    lastName: row.nom.trim(),
-    mustChangePassword: true,
-  });
+  let targetUserId: string | undefined;
+  let importedProfileId: string | undefined;
 
-  const temporaryPassword = generateTemporaryPassword();
-  await deps.userRepository.saveAvecProfil(studentUser, {
-    passwordHash: await bcrypt.hash(temporaryPassword, 10),
-    classeId,
-    dateOfBirth,
-    gender,
-    parentOfStudentIds: parentUserId ? [parentUserId] : [],
-  });
-  if (deps.credentialsNotifier) {
-    try {
-      await deps.credentialsNotifier.sendCredentials({ schoolId, email: email ?? null, phone: phone ?? null, temporaryPassword, roleLabel: 'Élève', loginIdentifier: email || phone || '', schoolName });
-    } catch (error) {
-      console.error('[Credentials] Échec envoi élève importé:', error instanceof Error ? error.message : String(error));
+  // Vérifier si l'élève existe déjà dans l'établissement
+  const existingStudent = await deps.importRepository.findStudentParEmailOuTel(schoolId, email, phone);
+
+  if (existingStudent) {
+    targetUserId = existingStudent.userId;
+    importedProfileId = existingStudent.studentProfileId;
+    // Si l'élève existe déjà, garantir la liaison parent
+    if (parentUserId) {
+      await deps.importRepository.lierParentStudent(parentUserId, existingStudent.studentProfileId);
+    }
+  } else {
+    // Si l'élève est nouveau, le créer avec sa relation parent
+    const studentUser = User.create({
+      schoolId,
+      role: 'STUDENT',
+      email,
+      phone,
+      firstName: row.prenom.trim(),
+      lastName: row.nom.trim(),
+      mustChangePassword: true,
+    });
+    targetUserId = studentUser.id;
+
+    const temporaryPassword = generateTemporaryPassword();
+    await deps.userRepository.saveAvecProfil(studentUser, {
+      passwordHash: await bcrypt.hash(temporaryPassword, 10),
+      classeId,
+      dateOfBirth,
+      gender,
+      parentOfStudentIds: parentUserId ? [parentUserId] : [],
+    });
+    if (deps.credentialsNotifier) {
+      try {
+        await deps.credentialsNotifier.sendCredentials({ schoolId, email: email ?? null, phone: phone ?? null, temporaryPassword, roleLabel: 'Élève', loginIdentifier: email || phone || '', schoolName });
+      } catch (error) {
+        console.error('[Credentials] Échec envoi élève importé:', error instanceof Error ? error.message : String(error));
+      }
     }
   }
 
   const pebsVal = row.pebs?.trim().toUpperCase() ?? '';
   const lv2Val = row.lv2?.trim() ?? '';
-  let importedProfileId: string | undefined;
   const syncRepos = {
     anneeRepository: deps.anneeRepository,
     groupSetRepository: deps.groupSetRepository,
@@ -127,7 +145,9 @@ export async function traiterLigneStudent(
 
   // Écrire PEBS et LV2 dans un seul appel (atomicité native — single UPDATE SQL)
   if (pebsVal || lv2Val) {
-    importedProfileId = await deps.importRepository.findStudentProfileId(studentUser.id) ?? undefined;
+    if (!importedProfileId && targetUserId) {
+      importedProfileId = await deps.importRepository.findStudentProfileId(targetUserId) ?? undefined;
+    }
 
     let resolvedPebs: PebsFiliere | null = null;
     let resolvedLv2: string | null = null;
@@ -148,7 +168,9 @@ export async function traiterLigneStudent(
     }
 
     // Un seul UPDATEMany = atomicité garantie (pas de transaction nécessaire)
-    await deps.importRepository.updatePeBSAndLv2(studentUser.id, resolvedPebs, resolvedLv2);
+    if (targetUserId) {
+      await deps.importRepository.updatePeBSAndLv2(targetUserId, resolvedPebs, resolvedLv2);
+    }
 
     // Sync StudentGroupMembership (opérations idempotentes, hors écriture principale)
     if (resolvedPebs && importedProfileId) {

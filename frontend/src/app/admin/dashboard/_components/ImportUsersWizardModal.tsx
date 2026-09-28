@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import * as XLSX from 'xlsx'
-import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, GraduationCap, Presentation, School, UserRound, UsersRound, X } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, GraduationCap, Loader2, Presentation, School, UserRound, UsersRound, X } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import ImportValidationGrid, { type ImportRow, type ValidatedRow } from './ImportValidationGrid'
@@ -52,13 +52,14 @@ export default function ImportUsersWizardModal({ onClose, onToast, onSuccess, is
   const [validation, setValidation] = useState<Validation | null>(null)
   const [summary, setSummary] = useState<Summary | null>(null)
   const [loading, setLoading] = useState(false)
+  const [loadingMsg, setLoadingMsg] = useState('')
 
   const visibleTargets = isSecretary
     ? TARGETS.filter(t => t.type === 'STUDENT' || t.type === 'PARENT')
     : TARGETS
 
   const selectedTarget = TARGETS.find(target => target.type === targetType)
-  const reset = () => { setStep(0); setTargetType(null); setPreview(null); setRows([]); setMapping({}); setValidation(null); setSummary(null); setLoading(false) }
+  const reset = () => { setStep(0); setTargetType(null); setPreview(null); setRows([]); setMapping({}); setValidation(null); setSummary(null); setLoading(false); setLoadingMsg('') }
   const messageFrom = (payload: { message?: string }, fallback: string) => payload.message || fallback
 
   const downloadTemplate = async () => {
@@ -81,6 +82,7 @@ export default function ImportUsersWizardModal({ onClose, onToast, onSuccess, is
     const extension = file.name.toLowerCase().slice(file.name.lastIndexOf('.'))
     if (extension !== '.xlsx' && extension !== '.xls') { onToast(t('users.import_modal.errors.unsupported_format'), 'error'); return }
     setLoading(true)
+    setLoadingMsg('Analyse et lecture du fichier Excel...')
     try {
       const formData = new FormData()
       formData.append('file', file)
@@ -94,12 +96,13 @@ export default function ImportUsersWizardModal({ onClose, onToast, onSuccess, is
       setPreview(payload.data)
       setMapping(payload.data.autoMapping)
       setRows(parsedRows)
-    } catch (error) { onToast(error instanceof Error ? error.message : t('users.i18n_ext.toast.importError'), 'error') } finally { setLoading(false) }
+    } catch (error) { onToast(error instanceof Error ? error.message : t('users.i18n_ext.toast.importError'), 'error') } finally { setLoading(false); setLoadingMsg('') }
   }
 
   const validateRows = async (rowsToValidate = rows) => {
     if (!targetType || rowsToValidate.length === 0) return
     setLoading(true)
+    setLoadingMsg('Validation des données et vérification des doublons...')
     try {
       const response = await fetchApi('/api/v2/users/import/validate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ targetType, rows: rowsToValidate, columnMapping: mapping }) })
       const payload = await response.json() as ApiResponse<Validation>
@@ -107,12 +110,13 @@ export default function ImportUsersWizardModal({ onClose, onToast, onSuccess, is
       setRows(rowsToValidate)
       setValidation(payload.data)
       setStep(3)
-    } catch (error) { onToast(error instanceof Error ? error.message : t('users.i18n_ext.toast.importError'), 'error') } finally { setLoading(false) }
+    } catch (error) { onToast(error instanceof Error ? error.message : t('users.i18n_ext.toast.importError'), 'error') } finally { setLoading(false); setLoadingMsg('') }
   }
 
   const confirmImport = async () => {
     if (!targetType || !validation) return
     setLoading(true)
+    setLoadingMsg(`Traitement en cours (${validation.validCount} enregistrements) — Création des comptes, affectations et rattachements parents/enfants...`)
     try {
       const confirmedRows = validation.validatedRows.filter(row => row.status !== 'ERROR').map(row => row.rawRow)
       const response = await fetchApi('/api/v2/users/import/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ targetType, confirmedRows, columnMapping: mapping }) })
@@ -121,7 +125,7 @@ export default function ImportUsersWizardModal({ onClose, onToast, onSuccess, is
       setSummary(payload.data)
       setStep(4)
       onSuccess()
-    } catch (error) { onToast(error instanceof Error ? error.message : t('users.i18n_ext.toast.importError'), 'error') } finally { setLoading(false) }
+    } catch (error) { onToast(error instanceof Error ? error.message : t('users.i18n_ext.toast.importError'), 'error') } finally { setLoading(false); setLoadingMsg('') }
   }
 
   const canConfirm = Boolean(validation && validation.errorCount === 0 && validation.validatedRows.some(row => row.status !== 'ERROR'))
@@ -129,7 +133,17 @@ export default function ImportUsersWizardModal({ onClose, onToast, onSuccess, is
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 1000, padding: 12, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div onClick={event => event.stopPropagation()} className="p-4 sm:p-7 rounded-2xl w-[980px] max-w-full max-h-[92vh] overflow-y-auto" style={{ background: 'var(--surface)', boxShadow: '0 32px 80px rgba(0,0,0,0.22)' }}>
+      <div onClick={event => event.stopPropagation()} className="p-4 sm:p-7 rounded-2xl w-[980px] max-w-full max-h-[92vh] overflow-y-auto" style={{ background: 'var(--surface)', boxShadow: '0 32px 80px rgba(0,0,0,0.22)', position: 'relative' }}>
+        {loading && (
+          <div style={{ position: 'absolute', inset: 0, zIndex: 50, background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(4px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, borderRadius: 16 }}>
+            <Loader2 size={48} className="animate-spin" style={{ color: 'var(--primary)', marginBottom: 16 }} />
+            <h3 style={{ margin: 0, color: 'var(--text)', fontSize: 18, fontWeight: 800 }}>Opération en cours...</h3>
+            <p style={{ margin: '8px 0 0', color: 'var(--text2)', fontSize: 13.5, textAlign: 'center', maxWidth: 460, lineHeight: 1.5 }}>
+              {loadingMsg || 'Veuillez patienter pendant le traitement des données et la création des comptes...'}
+            </p>
+          </div>
+        )}
+
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
           <div><h2 className="text-base sm:text-xl font-bold font-spectral" style={{ margin: 0, color: 'var(--text)' }}>{title}</h2><p style={{ margin: '4px 0 0', color: 'var(--text3)', fontSize: 13 }}>{t(`users.import_modal.step${step}_desc`)}</p></div>
           <button type="button" onClick={onClose} aria-label={t('users.import_modal.btn_close')} style={{ border: 'none', cursor: 'pointer', borderRadius: 9, padding: 8, background: 'var(--bg2)', color: 'var(--text2)', flexShrink: 0 }}><X size={18} /></button>

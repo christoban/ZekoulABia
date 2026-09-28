@@ -43,6 +43,9 @@ export interface ImportUtilisateursRepository {
   chargerContexte(schoolId: string): Promise<ImportContexte>;
 
   findParentParEmail(schoolId: string, email: string): Promise<string | null>;
+  findParentParEmailOuTel(schoolId: string, email?: string, phone?: string): Promise<string | null>;
+  findStudentParEmailOuTel(schoolId: string, email?: string, phone?: string): Promise<{ userId: string; studentProfileId: string } | null>;
+  lierParentStudent(parentUserId: string, studentProfileId: string): Promise<void>;
   findStudentProfileId(userId: string): Promise<string | null>;
   updatePeBSFiliere(userId: string, pebsFiliere: PebsFiliere): Promise<void>;
   updateLv2Subject(userId: string, lv2SubjectId: string): Promise<void>;

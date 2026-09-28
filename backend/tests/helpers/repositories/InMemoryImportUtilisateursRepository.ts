@@ -84,6 +84,22 @@ export class InMemoryImportUtilisateursRepository implements ImportUtilisateursR
     return this.parentsByEmail.get(`${schoolId}:${email.toLowerCase()}`) ?? null;
   }
 
+  async findParentParEmailOuTel(schoolId: string, email?: string, _phone?: string): Promise<string | null> {
+    if (!email) return null;
+    return this.parentsByEmail.get(`${schoolId}:${email.toLowerCase()}`) ?? null;
+  }
+
+  async findStudentParEmailOuTel(schoolId: string, email?: string, _phone?: string): Promise<{ userId: string; studentProfileId: string } | null> {
+    if (!email) return null;
+    const found = this.students.find(s => s.schoolId === schoolId && s.email === email.toLowerCase());
+    if (!found) return null;
+    return { userId: found.studentProfileId, studentProfileId: found.studentProfileId };
+  }
+
+  async lierParentStudent(_parentUserId: string, _studentProfileId: string): Promise<void> {
+    // No-op for mock memory test
+  }
+
   async findStudentProfileId(userId: string): Promise<string | null> { return this.studentProfileIds.get(userId) ?? null; }
   async updatePeBSFiliere(userId: string, pebsFiliere: string): Promise<void> { this.pebsUpdates.push({ userId, pebsFiliere }); }
   async updateLv2Subject(userId: string, lv2SubjectId: string): Promise<void> { this.lv2Updates.push({ userId, lv2SubjectId }); }
