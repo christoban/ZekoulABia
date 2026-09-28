@@ -118,7 +118,9 @@ export default function ImportUsersWizardModal({ onClose, onToast, onSuccess, is
     setLoading(true)
     setLoadingMsg(`Traitement en cours (${validation.validCount} enregistrements) — Création des comptes, affectations et rattachements parents/enfants...`)
     try {
-      const confirmedRows = validation.validatedRows.filter(row => row.status !== 'ERROR').map(row => row.rawRow)
+      const confirmedRows = validation.validatedRows
+        .filter(row => row.status !== 'ERROR')
+        .map((row, index) => rows[index] ?? row.rawRow)
       const response = await fetchApi('/api/v2/users/import/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ targetType, confirmedRows, columnMapping: mapping }) })
       const payload = await response.json() as ApiResponse<Summary>
       if (!response.ok) throw new Error(messageFrom(payload, t('users.i18n_ext.toast.importError')))

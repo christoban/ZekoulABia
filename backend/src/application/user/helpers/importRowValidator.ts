@@ -55,7 +55,8 @@ function validateSexe(sexe: string): boolean {
 export function validerLignesImport(
   targetType: ImportTargetType,
   rows: Record<string, string>[],
-  contexte: ImportContexteValidation
+  contexte: ImportContexteValidation,
+  rawRows?: Record<string, string>[]
 ): ImportValidateResponse {
   const validatedRows: RowValidationResult[] = [];
   let validCount = 0;
@@ -79,7 +80,9 @@ export function validerLignesImport(
   const seenPhones = new Set<string>();
 
   for (let i = 0; i < rows.length; i++) {
-    const rawRow = rows[i];
+    const normRow = rows[i];
+    const originalRaw = rawRows && rawRows[i] ? rawRows[i] : {};
+    const enrichedRawRow = { ...normRow, ...originalRaw };
     const ligne = i + 1;
     const errors: RowValidationIssue[] = [];
     const warnings: RowValidationIssue[] = [];
@@ -87,19 +90,19 @@ export function validerLignesImport(
 
     switch (targetType) {
       case 'STUDENT':
-        validerStudent(rawRow, ligne, errors, warnings, resolvedInfo, contexte, classNames, classByName, lv2Names, seenEmails, seenMatricules, seenPhones);
+        validerStudent(normRow, ligne, errors, warnings, resolvedInfo, contexte, classNames, classByName, lv2Names, seenEmails, seenMatricules, seenPhones);
         break;
       case 'TEACHER':
-        validerTeacher(rawRow, ligne, errors, warnings, resolvedInfo, contexte, classNames, classByName, subjectNames, apNames, seenEmails, seenPhones);
+        validerTeacher(normRow, ligne, errors, warnings, resolvedInfo, contexte, classNames, classByName, subjectNames, apNames, seenEmails, seenPhones);
         break;
       case 'STAFF':
-        validerStaff(rawRow, ligne, errors, warnings, resolvedInfo, contexte, seenEmails, seenPhones);
+        validerStaff(normRow, ligne, errors, warnings, resolvedInfo, contexte, seenEmails, seenPhones);
         break;
       case 'PARENT':
-        validerParent(rawRow, ligne, errors, warnings, resolvedInfo, contexte, existingStudents, seenEmails, seenPhones);
+        validerParent(normRow, ligne, errors, warnings, resolvedInfo, contexte, existingStudents, seenEmails, seenPhones);
         break;
       case 'CLASSE':
-        validerClasse(rawRow, ligne, errors, warnings, resolvedInfo, contexte, seenMatricules);
+        validerClasse(normRow, ligne, errors, warnings, resolvedInfo, contexte, seenMatricules);
         break;
     }
 
@@ -116,8 +119,8 @@ export function validerLignesImport(
 
     validatedRows.push({
       ligne,
-      rawRow,
-      normalizedRow: rawRow,
+      rawRow: enrichedRawRow,
+      normalizedRow: normRow,
       status,
       errors,
       warnings,

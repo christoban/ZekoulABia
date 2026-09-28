@@ -48,7 +48,12 @@ export default function ImportValidationGrid({ headers, rows, columnMapping, onR
   }
 
   const updateCell = (rowIndex: number, header: string, value: string) => {
-    const updatedRow = { ...(editedRows[rowIndex] ?? rows[rowIndex].rawRow), [header]: value }
+    const targetField = columnMapping[header]
+    const updatedRow = {
+      ...(editedRows[rowIndex] ?? rows[rowIndex].rawRow),
+      [header]: value,
+      ...(targetField ? { [targetField]: value } : {}),
+    }
     const nextEditedRows = { ...editedRows, [rowIndex]: updatedRow }
     setEditedRows(nextEditedRows)
     onRowsChange(rows.map((row, index) => nextEditedRows[index] ?? row.rawRow))
@@ -75,7 +80,7 @@ export default function ImportValidationGrid({ headers, rows, columnMapping, onR
               {headers.map(header => {
                 const issues = issuesFor(row, header)
                 const isEditing = editing?.row === rowIndex && editing.header === header
-                const value = editedRows[rowIndex]?.[header] ?? row.rawRow[header] ?? ''
+                const value = editedRows[rowIndex]?.[header] ?? row.rawRow[header] ?? (columnMapping[header] ? row.rawRow[columnMapping[header]] : undefined) ?? ''
                 return (
                   <td key={header} title={issues.map(issue => issue.message).join('\n')} style={{ padding: '6px 8px', minWidth: 120, verticalAlign: 'top' }}>
                     {isEditing ? (

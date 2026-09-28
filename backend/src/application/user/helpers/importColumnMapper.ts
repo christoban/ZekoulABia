@@ -186,10 +186,16 @@ export function normalizeRowKeys(
   columnMapping: ImportColumnMapping
 ): Record<string, string> {
   const normalized: Record<string, string> = {};
+  const allTargetFields = new Set(FIELD_DEFINITIONS.map((f) => f.targetField));
+
   for (const [sourceKey, value] of Object.entries(row)) {
     const targetField = columnMapping[sourceKey];
     if (targetField) {
       normalized[targetField] = value;
+    } else if (allTargetFields.has(sourceKey)) {
+      if (normalized[sourceKey] === undefined) {
+        normalized[sourceKey] = value;
+      }
     }
   }
   return normalized;

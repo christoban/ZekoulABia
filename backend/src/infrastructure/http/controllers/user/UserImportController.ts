@@ -153,7 +153,7 @@ export class UserImportController {
       const normalizedRows = columnMapping ? rows.map((r) => normalizeRowKeys(r, columnMapping)) : rows;
 
       const contexte = await this.importRepository.chargerContexteValidation(user.schoolId);
-      const result = validerLignesImport(targetType, normalizedRows, contexte);
+      const result = validerLignesImport(targetType, normalizedRows, contexte, rows);
 
       const response: ImportValidateResponse = {
         total: result.total,
