@@ -226,15 +226,15 @@ export default function LightweightRichEditor({
 
   return (
     <div
-      className="border rounded-lg bg-[var(--surface)] overflow-hidden transition-colors focus-within:border-primary focus-within:ring-1 focus-within:ring-primary"
+      className="border rounded-lg bg-[var(--surface)] overflow-hidden transition-colors focus-within:border-[var(--primary)] focus-within:ring-1 focus-within:ring-[var(--primary)]"
       style={{
-        borderColor: 'var(--border, #d8cfbe)',
+        borderColor: 'var(--border)',
       }}
     >
       {/* Barre d'outils de formatage visuel */}
       <div
-        className="flex items-center gap-1 p-1.5 border-b bg-[var(--bg2, #f5f0e6)] flex-wrap"
-        style={{ borderColor: 'var(--border, #d8cfbe)' }}
+        className="flex items-center gap-1 p-1.5 border-b bg-[var(--bg2)] flex-wrap"
+        style={{ borderColor: 'var(--border)' }}
       >
         <button
           type="button"
@@ -242,8 +242,8 @@ export default function LightweightRichEditor({
           title="Gras (Ctrl+B)"
           className={`p-1.5 rounded transition-colors text-xs font-bold flex items-center justify-center ${
             activeFormats.bold
-              ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-xs'
-              : 'text-neutral-700 hover:bg-neutral-200/70 dark:text-neutral-300 dark:hover:bg-neutral-800'
+              ? 'bg-[var(--primary)] text-white shadow-xs'
+              : 'text-[var(--text2)] hover:bg-[var(--surface)] hover:text-[var(--text)]'
           }`}
         >
           <Bold size={14} />
@@ -255,8 +255,8 @@ export default function LightweightRichEditor({
           title="Italique (Ctrl+I)"
           className={`p-1.5 rounded transition-colors text-xs flex items-center justify-center ${
             activeFormats.italic
-              ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-xs'
-              : 'text-neutral-700 hover:bg-neutral-200/70 dark:text-neutral-300 dark:hover:bg-neutral-800'
+              ? 'bg-[var(--primary)] text-white shadow-xs'
+              : 'text-[var(--text2)] hover:bg-[var(--surface)] hover:text-[var(--text)]'
           }`}
         >
           <Italic size={14} />
@@ -268,14 +268,14 @@ export default function LightweightRichEditor({
           title="Souligné (Ctrl+U)"
           className={`p-1.5 rounded transition-colors text-xs flex items-center justify-center ${
             activeFormats.underline
-              ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-xs'
-              : 'text-neutral-700 hover:bg-neutral-200/70 dark:text-neutral-300 dark:hover:bg-neutral-800'
+              ? 'bg-[var(--primary)] text-white shadow-xs'
+              : 'text-[var(--text2)] hover:bg-[var(--surface)] hover:text-[var(--text)]'
           }`}
         >
           <Underline size={14} />
         </button>
 
-        <div className="w-px h-4 bg-neutral-300 dark:bg-neutral-700 mx-1" />
+        <div className="w-px h-4 bg-[var(--border)] mx-1" />
 
         <button
           type="button"
@@ -283,8 +283,8 @@ export default function LightweightRichEditor({
           title="Liste à puces"
           className={`p-1.5 rounded transition-colors text-xs flex items-center justify-center ${
             activeFormats.ul
-              ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-xs'
-              : 'text-neutral-700 hover:bg-neutral-200/70 dark:text-neutral-300 dark:hover:bg-neutral-800'
+              ? 'bg-[var(--primary)] text-white shadow-xs'
+              : 'text-[var(--text2)] hover:bg-[var(--surface)] hover:text-[var(--text)]'
           }`}
         >
           <List size={14} />
@@ -296,8 +296,8 @@ export default function LightweightRichEditor({
           title="Liste numérotée"
           className={`p-1.5 rounded transition-colors text-xs flex items-center justify-center ${
             activeFormats.ol
-              ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-xs'
-              : 'text-neutral-700 hover:bg-neutral-200/70 dark:text-neutral-300 dark:hover:bg-neutral-800'
+              ? 'bg-[var(--primary)] text-white shadow-xs'
+              : 'text-[var(--text2)] hover:bg-[var(--surface)] hover:text-[var(--text)]'
           }`}
         >
           <ListOrdered size={14} />
@@ -309,8 +309,8 @@ export default function LightweightRichEditor({
           title={activeFormats.link ? 'Retirer le lien' : 'Insérer un lien web'}
           className={`p-1.5 rounded transition-colors text-xs flex items-center justify-center ${
             activeFormats.link
-              ? 'bg-success text-white shadow-xs'
-              : 'text-neutral-700 hover:bg-neutral-200/70 dark:text-neutral-300 dark:hover:bg-neutral-800'
+              ? 'bg-[var(--primary)] text-white shadow-xs'
+              : 'text-[var(--text2)] hover:bg-[var(--surface)] hover:text-[var(--text)]'
           }`}
         >
           {activeFormats.link ? <Unlink size={14} /> : <Link2 size={14} />}
@@ -327,10 +327,12 @@ export default function LightweightRichEditor({
         onMouseUp={updateActiveStates}
         onPaste={handlePaste}
         data-placeholder={placeholder}
-        className="w-full p-3.5 text-sm text-[#1a1209] dark:text-neutral-100 outline-none leading-relaxed overflow-y-auto whitespace-pre-wrap babillard-rich-editor"
+        className="w-full p-3.5 text-sm outline-none leading-relaxed overflow-y-auto whitespace-pre-wrap babillard-rich-editor"
         style={{
           minHeight,
           fontFamily: 'inherit',
+          color: 'var(--text)',
+          backgroundColor: 'var(--surface)',
         }}
       />
     </div>

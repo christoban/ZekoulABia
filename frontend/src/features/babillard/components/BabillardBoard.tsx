@@ -22,6 +22,7 @@ import { Publication, BABILLARD_CATEGORIES, CategorieDetails } from '../types';
 import AnnonceCardRenderer from '../renderers/AnnonceCardRenderer';
 import { BabillardReaderModal } from './BabillardReaderModal';
 import BabillardPublishModal from './BabillardPublishModal';
+import { BabillardCategoryFilter } from './BabillardCategoryFilter';
 
 interface BabillardBoardProps {
   role?: string;
@@ -205,6 +206,15 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
     return pubRoles.includes(role.toUpperCase());
   }, [role]);
 
+  // Category counts
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { ALL: publications.length };
+    publications.forEach((p) => {
+      counts[p.categorie] = (counts[p.categorie] || 0) + 1;
+    });
+    return counts;
+  }, [publications]);
+
   // Filtering publications by search and category
   const filteredPublications = useMemo(() => {
     return publications.filter((pub) => {
@@ -347,19 +357,19 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
         <div
           className={`fixed top-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md border text-sm font-medium animate-in fade-in slide-in-from-top-4 duration-200 ${
             toastMessage.type === 'success'
-              ? 'bg-success/90 text-success border-success/30'
-              : 'bg-rose-950/90 text-rose-100 border-rose-500/30'
+              ? 'bg-[var(--surface)] text-[var(--success)] border-[var(--success)]/30'
+              : 'bg-[var(--surface)] text-[var(--red)] border-[var(--red)]/30'
           }`}
         >
           {toastMessage.type === 'success' ? (
-            <CheckCircle2 className="w-5 h-5 text-success shrink-0" />
+            <CheckCircle2 className="w-5 h-5 text-[var(--success)] shrink-0" />
           ) : (
-            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+            <AlertCircle className="w-5 h-5 text-[var(--red)] shrink-0" />
           )}
-          <span>{toastMessage.text}</span>
+          <span className="text-[var(--text)]">{toastMessage.text}</span>
           <button
             onClick={() => setToastMessage(null)}
-            className="p-1 hover:bg-white/10 rounded-md ml-2"
+            className="p-1 hover:bg-[var(--bg2)] rounded-md ml-2 text-[var(--text2)]"
           >
             <X className="w-4 h-4" />
           </button>
@@ -373,7 +383,7 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
          ======================================================== */}
       {/* Mobile Top Bar (sm:hidden) */}
       <div className="w-full max-w-7xl sm:hidden flex items-center justify-between gap-2 mb-3">
-        <h1 className="font-spectral text-xl font-extrabold text-neutral-900 dark:text-white">
+        <h1 className="font-spectral text-xl font-extrabold text-[var(--text)]">
           Babillard
         </h1>
 
@@ -383,7 +393,7 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
               setEditingPublication(null);
               setIsPublishModalOpen(true);
             }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-success active:scale-95 text-white font-bold text-xs shadow-sm transition"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[38px] rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] active:scale-95 text-white font-bold text-xs shadow-sm transition"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Publier</span>
@@ -392,29 +402,29 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
       </div>
 
       {/* Desktop Header Banner (hidden on mobile < 640px) */}
-      <header className="hidden sm:flex w-full max-w-7xl mb-6 items-center justify-between gap-4 p-5 rounded-2xl bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border border-amber-900/15 dark:border-white/10 shadow-sm">
+      <header className="hidden sm:flex w-full max-w-7xl mb-6 items-center justify-between gap-4 p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-success text-success dark:bg-success shadow-md">
+          <div className="p-2.5 rounded-xl bg-[var(--primary-light)] text-[var(--primary)] shadow-xs">
             <Megaphone className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="font-spectral text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
+            <h1 className="font-spectral text-2xl font-bold tracking-tight text-[var(--text)]">
               {title}
             </h1>
-            <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-0.5">
+            <p className="text-xs sm:text-sm text-[var(--text2)] mt-0.5">
               {subtitle}
             </p>
           </div>
         </div>
 
-        {/* Action Button: Publish (Green/Emerald per C rule) */}
+        {/* Action Button: Publish */}
         {peutPublier && (
           <button
             onClick={() => {
               setEditingPublication(null);
               setIsPublishModalOpen(true);
             }}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-success hover:bg-success active:scale-95 text-white font-bold text-sm shadow-md transition duration-150"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[38px] rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] active:scale-95 text-white font-bold text-sm shadow-md transition duration-150"
           >
             <Plus className="w-4 h-4" />
             <span>Publier un communiqué</span>
@@ -438,36 +448,36 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
       <div className="w-full max-w-7xl mb-6 flex flex-col gap-3">
         {/* Tabs Row (Scrollable horizontally on mobile with counters) */}
         <div
-          className="flex items-center gap-1.5 p-1 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md rounded-xl border border-neutral-300 dark:border-neutral-700 shadow-xs overflow-x-auto scrollbar-none"
+          className="flex items-center gap-1.5 p-1 bg-[var(--surface)] rounded-xl border border-[var(--border)] shadow-xs overflow-x-auto scrollbar-none"
           style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' }}
         >
           <button
             onClick={() => handleTabChange('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+            className={`px-3 py-1.5 min-h-[38px] rounded-lg text-xs font-bold transition whitespace-nowrap ${
               activeTab === 'all'
-                ? 'bg-success text-white shadow-xs'
-                : 'text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                ? 'bg-[var(--primary)] text-white shadow-xs'
+                : 'text-[var(--text2)] hover:bg-[var(--bg2)] hover:text-[var(--text)]'
             }`}
           >
             Tous ({tabCounts.all})
           </button>
           <button
             onClick={() => handleTabChange('pinned')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[38px] rounded-lg text-xs font-bold transition whitespace-nowrap ${
               activeTab === 'pinned'
-                ? 'bg-success text-white shadow-xs'
-                : 'text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                ? 'bg-[var(--primary)] text-white shadow-xs'
+                : 'text-[var(--text2)] hover:bg-[var(--bg2)] hover:text-[var(--text)]'
             }`}
           >
-            <Pin className="w-3 h-3 fill-current text-orange-500" />
+            <Pin className={`w-3 h-3 ${activeTab === 'pinned' ? 'fill-current text-[var(--accent)]' : 'fill-current text-orange-500'}`} />
             <span>À la une</span> ({tabCounts.pinned})
           </button>
           <button
             onClick={() => handleTabChange('unread')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[38px] rounded-lg text-xs font-bold transition whitespace-nowrap ${
               activeTab === 'unread'
-                ? 'bg-success text-white shadow-xs'
-                : 'text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                ? 'bg-[var(--primary)] text-white shadow-xs'
+                : 'text-[var(--text2)] hover:bg-[var(--bg2)] hover:text-[var(--text)]'
             }`}
           >
             <BookOpen className="w-3 h-3" />
@@ -475,10 +485,10 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
           </button>
           <button
             onClick={() => handleTabChange('for_me')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[38px] rounded-lg text-xs font-bold transition whitespace-nowrap ${
               activeTab === 'for_me'
-                ? 'bg-success text-white shadow-xs'
-                : 'text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                ? 'bg-[var(--primary)] text-white shadow-xs'
+                : 'text-[var(--text2)] hover:bg-[var(--bg2)] hover:text-[var(--text)]'
             }`}
           >
             <UserCheck className="w-3 h-3" />
@@ -486,10 +496,10 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
           </button>
           <button
             onClick={() => handleTabChange('archives')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[38px] rounded-lg text-xs font-bold transition whitespace-nowrap ${
               activeTab === 'archives'
-                ? 'bg-success text-white shadow-xs'
-                : 'text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                ? 'bg-[var(--primary)] text-white shadow-xs'
+                : 'text-[var(--text2)] hover:bg-[var(--bg2)] hover:text-[var(--text)]'
             }`}
           >
             <Archive className="w-3 h-3" />
@@ -497,36 +507,29 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
           </button>
         </div>
 
-        {/* B1: Single row for Category & Search on mobile and desktop */}
+        {/* B1: Single row for Category Filter & Search */}
         <div className="flex items-center gap-2 w-full">
-          {/* Category Dropdown */}
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="w-36 sm:w-48 px-3 py-2 bg-white dark:bg-neutral-800 rounded-xl border-2 border-neutral-300 dark:border-neutral-600 text-xs font-bold text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer shadow-xs truncate"
-          >
-            <option value="ALL">Toutes catégories</option>
-            {(Object.entries(BABILLARD_CATEGORIES) as [string, CategorieDetails][]).map(([key, cat]) => (
-              <option key={key} value={key}>
-                {cat.label}
-              </option>
-            ))}
-          </select>
+          {/* Category Custom Dropdown / Volet */}
+          <BabillardCategoryFilter
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+            categoryCounts={categoryCounts}
+          />
 
           {/* B2: Search Input with clear magnifying glass icon */}
-          <div className="relative flex-1">
+          <div className="relative flex-1 min-w-0">
             <input
               type="text"
               placeholder="Rechercher un communiqué..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 bg-white dark:bg-neutral-800 rounded-xl border-2 border-neutral-300 dark:border-neutral-600 text-xs font-semibold text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary shadow-xs"
+              className="w-full pl-9 pr-8 py-2 bg-[var(--surface)] rounded-xl border border-[var(--border)] text-xs font-semibold text-[var(--text)] placeholder-[var(--text3)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] shadow-xs"
             />
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-600 dark:text-neutral-300 pointer-events-none z-10" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text3)] pointer-events-none z-10" />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 z-10 p-0.5"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text3)] hover:text-[var(--text)] z-10 p-0.5"
                 title="Effacer la recherche"
               >
                 <X size={15} />
@@ -540,18 +543,19 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
           C: CADRE MATÉRIALISÉ DU PANNEAU DE LIÈGE
          ======================================================== */}
       <main
-        className="w-full max-w-7xl rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 pb-2.5 sm:pb-5 border-[5px] sm:border-[7px] border-[#9c7a4a] shadow-xl shrink-0 h-auto"
+        className="w-full max-w-7xl rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 pb-2.5 sm:pb-5 border-[5px] sm:border-[7px] shadow-xl shrink-0 h-auto"
         style={{
-          backgroundColor: '#f5efe0',
-          backgroundImage: 'radial-gradient(#b89e72 0.75px, transparent 0.75px)',
+          backgroundColor: 'var(--cork-panel-bg)',
+          borderColor: 'var(--cork-panel-border)',
+          backgroundImage: 'radial-gradient(var(--cork-panel-dots) 0.75px, transparent 0.75px)',
           backgroundSize: '14px 14px',
           boxShadow: 'inset 0 2px 10px rgba(0, 0, 0, 0.12), 0 8px 24px -4px rgba(0, 0, 0, 0.15)',
         }}
       >
         {loading ? (
           <div className="flex flex-col items-center justify-center p-16">
-            <Loader2 className="w-8 h-8 animate-spin text-success mb-3" />
-            <p className="text-xs sm:text-sm font-semibold text-[#2b2118]">
+            <Loader2 className="w-8 h-8 animate-spin text-[var(--primary)] mb-3" />
+            <p className="text-xs sm:text-sm font-semibold text-[var(--cork-panel-text)]">
               Synchronisation du babillard officiel...
             </p>
           </div>
@@ -562,18 +566,18 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
               className="relative p-6 sm:p-10 max-w-md w-full text-center rounded-lg shadow-md"
               style={{
                 backgroundColor: 'var(--paper, #fcfbf9)',
-                color: 'var(--foreground, #1a1209)',
-                border: '1px solid var(--paper-edge, #e2dacb)',
+                color: 'var(--paper-text, var(--text))',
+                border: '1px solid var(--paper-edge, var(--border))',
                 transform: 'rotate(-0.5deg)',
               }}
             >
-              <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center mx-auto mb-3">
+              <div className="w-10 h-10 rounded-full bg-[var(--primary-light)] text-[var(--primary)] flex items-center justify-center mx-auto mb-3">
                 <Sparkles className="w-5 h-5" />
               </div>
-              <h3 className="font-spectral text-lg font-bold text-neutral-900 mb-1">
+              <h3 className="font-spectral text-lg font-bold text-[var(--paper-text, var(--text))] mb-1">
                 Babillard vide
               </h3>
-              <p className="text-xs text-neutral-600 leading-relaxed mb-4">
+              <p className="text-xs text-[var(--paper-text-muted, var(--text2))] leading-relaxed mb-4">
                 {activeTab === 'archives'
                   ? 'Aucune archive n’est enregistrée sur le babillard.'
                   : activeTab === 'unread'
@@ -583,7 +587,7 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
               {peutPublier && activeTab === 'all' && (
                 <button
                   onClick={() => setIsPublishModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-success hover:bg-success text-white rounded-lg text-xs font-bold shadow-sm transition"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white rounded-lg text-xs font-bold shadow-sm transition"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Rédiger une publication
@@ -596,11 +600,11 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
             {/* B3: Pinned Section ("À la une") with 2-col first card on desktop */}
             {pinnedList.length > 0 && (
               <section aria-labelledby="pinned-section-title">
-                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-[#8c6b45]/40">
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-[var(--border)]">
                   <Pin className="w-4 h-4 text-orange-600 fill-current shrink-0" />
                   <h2
                     id="pinned-section-title"
-                    className="font-spectral text-base sm:text-lg font-bold tracking-tight text-[#2b2118]"
+                    className="font-spectral text-base sm:text-lg font-bold tracking-tight text-[var(--cork-panel-title)]"
                   >
                     À la une de l’établissement
                   </h2>
@@ -634,39 +638,39 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
             {/* Standard Publications Section */}
             {standardList.length > 0 && (
               <section aria-labelledby="general-section-title">
-                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-[#8c6b45]/40">
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-[var(--border)]">
                   {activeTab === 'unread' ? (
                     <>
-                      <BookOpen className="w-4 h-4 text-[#2b2118] shrink-0" />
-                      <h2 id="general-section-title" className="font-spectral text-base sm:text-lg font-bold tracking-tight text-[#2b2118]">
+                      <BookOpen className="w-4 h-4 text-[var(--cork-panel-title)] shrink-0" />
+                      <h2 id="general-section-title" className="font-spectral text-base sm:text-lg font-bold tracking-tight text-[var(--cork-panel-title)]">
                         Communiqués non lus ({standardList.length})
                       </h2>
                     </>
                   ) : activeTab === 'for_me' ? (
                     <>
-                      <UserCheck className="w-4 h-4 text-[#2b2118] shrink-0" />
-                      <h2 id="general-section-title" className="font-spectral text-base sm:text-lg font-bold tracking-tight text-[#2b2118]">
+                      <UserCheck className="w-4 h-4 text-[var(--cork-panel-title)] shrink-0" />
+                      <h2 id="general-section-title" className="font-spectral text-base sm:text-lg font-bold tracking-tight text-[var(--cork-panel-title)]">
                         Publications pour moi ({standardList.length})
                       </h2>
                     </>
                   ) : activeTab === 'archives' ? (
                     <>
-                      <Archive className="w-4 h-4 text-[#2b2118] shrink-0" />
-                      <h2 id="general-section-title" className="font-spectral text-base sm:text-lg font-bold tracking-tight text-[#2b2118]">
+                      <Archive className="w-4 h-4 text-[var(--cork-panel-title)] shrink-0" />
+                      <h2 id="general-section-title" className="font-spectral text-base sm:text-lg font-bold tracking-tight text-[var(--cork-panel-title)]">
                         Archives du babillard ({standardList.length})
                       </h2>
                     </>
                   ) : pinnedList.length > 0 ? (
                     <>
-                      <Clock className="w-4 h-4 text-[#2b2118] shrink-0" />
-                      <h2 id="general-section-title" className="font-spectral text-base sm:text-lg font-bold tracking-tight text-[#2b2118]">
+                      <Clock className="w-4 h-4 text-[var(--cork-panel-title)] shrink-0" />
+                      <h2 id="general-section-title" className="font-spectral text-base sm:text-lg font-bold tracking-tight text-[var(--cork-panel-title)]">
                         Autres publications
                       </h2>
                     </>
                   ) : (
                     <>
-                      <Clock className="w-4 h-4 text-[#2b2118] shrink-0" />
-                      <h2 id="general-section-title" className="font-spectral text-base sm:text-lg font-bold tracking-tight text-[#2b2118]">
+                      <Clock className="w-4 h-4 text-[var(--cork-panel-title)] shrink-0" />
+                      <h2 id="general-section-title" className="font-spectral text-base sm:text-lg font-bold tracking-tight text-[var(--cork-panel-title)]">
                         Toutes les publications ({standardList.length})
                       </h2>
                     </>

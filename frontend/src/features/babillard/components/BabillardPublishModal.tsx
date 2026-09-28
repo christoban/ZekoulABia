@@ -266,26 +266,26 @@ export default function BabillardPublishModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-xs overflow-y-auto">
-      <div className="relative w-full max-w-[1240px] bg-[#fcfbf9] text-[#1a1209] rounded-xl shadow-2xl border border-[#e2dacb] flex flex-col max-h-[94vh] overflow-hidden">
+      <div className="relative w-full max-w-[1240px] bg-[var(--surface)] text-[var(--text)] rounded-xl shadow-2xl border border-[var(--border)] flex flex-col max-h-[94vh] overflow-hidden">
         {/* En-tête du modal */}
-        <div className="px-5 py-3.5 border-b border-[#e2dacb] bg-[var(--bg)] flex items-center justify-between gap-3">
+        <div className="px-5 py-3.5 border-b border-[var(--border)] bg-[var(--bg2)] flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <h2 className="font-spectral font-bold text-lg sm:text-xl text-[#1a1209]">
+            <h2 className="font-spectral font-bold text-lg sm:text-xl text-[var(--text)]">
               {initialData?.id ? 'Modifier le communiqué' : 'Publier un communiqué officiel'}
             </h2>
             {/* Bascule mobile formulaire / aperçu */}
-            <div className="flex sm:hidden rounded bg-[#ede6da] p-0.5 text-xs font-semibold">
+            <div className="flex sm:hidden rounded bg-[var(--bg)] p-0.5 text-xs font-semibold border border-[var(--border)]">
               <button
                 type="button"
                 onClick={() => setMobileTab('form')}
-                className={`px-2.5 py-1 rounded ${mobileTab === 'form' ? 'bg-white shadow-xs text-black' : 'text-[#6b5d4b]'}`}
+                className={`px-2.5 py-1 rounded transition-colors ${mobileTab === 'form' ? 'bg-[var(--surface)] shadow-xs text-[var(--text)] font-bold' : 'text-[var(--text2)]'}`}
               >
                 Saisie
               </button>
               <button
                 type="button"
                 onClick={() => setMobileTab('preview')}
-                className={`px-2.5 py-1 rounded ${mobileTab === 'preview' ? 'bg-white shadow-xs text-black' : 'text-[#6b5d4b]'}`}
+                className={`px-2.5 py-1 rounded transition-colors ${mobileTab === 'preview' ? 'bg-[var(--surface)] shadow-xs text-[var(--text)] font-bold' : 'text-[var(--text2)]'}`}
               >
                 Aperçu direct
               </button>
@@ -295,7 +295,7 @@ export default function BabillardPublishModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-[#e8e0d4] text-[#786c5a] hover:text-[#1a1209] transition-colors"
+            className="p-1.5 rounded-full hover:bg-[var(--bg)] text-[var(--text3)] hover:text-[var(--text)] transition-colors"
             aria-label="Fermer"
           >
             <X size={18} />
@@ -303,7 +303,7 @@ export default function BabillardPublishModal({
         </div>
 
         {serverError && (
-          <div className="mx-5 mt-3 p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg flex items-center gap-2">
+          <div className="mx-5 mt-3 p-3 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs rounded-lg flex items-center gap-2">
             <AlertCircle size={15} />
             <span>{serverError}</span>
           </div>
@@ -315,9 +315,9 @@ export default function BabillardPublishModal({
           <div className={`space-y-4 lg:col-span-7 ${mobileTab === 'preview' ? 'hidden lg:block' : 'block'}`}>
             {/* 1. Titre avec validation inline (B4, B5) */}
             <div>
-              <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-[#5a4d3d] mb-1">
+              <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-[var(--text)] mb-1">
                 <label htmlFor="pub-titre">Titre du communiqué *</label>
-                <span className={`text-[11px] ${titre.length > 120 ? 'text-red-600 font-bold' : 'text-[#8a7c6a]'}`}>
+                <span className={`text-[11px] ${titre.length > 120 ? 'text-red-500 font-bold' : 'text-[var(--text3)]'}`}>
                   {titre.length} / 120
                 </span>
               </div>
@@ -334,12 +334,12 @@ export default function BabillardPublishModal({
                   if (titreError && e.target.value.trim()) setTitreError(null);
                 }}
                 placeholder="Ex : Rentrée scolaire 2026/2027"
-                className={`w-full px-3 py-2 rounded-lg border bg-white text-sm text-[#1a1209] focus:outline-none transition-colors ${
-                  titreError ? 'border-red-500 ring-1 ring-red-500' : 'border-[#d8cfbe] focus:border-primary'
+                className={`w-full px-3 py-2 rounded-lg border bg-[var(--bg)] text-sm text-[var(--text)] placeholder-[var(--text3)] focus:outline-none transition-colors ${
+                  titreError ? 'border-red-500 ring-1 ring-red-500' : 'border-[var(--border)] focus:border-primary'
                 }`}
               />
               {titreError && (
-                <p id="pub-titre-error" className="mt-1 text-xs text-red-600 font-medium flex items-center gap-1">
+                <p id="pub-titre-error" className="mt-1 text-xs text-red-500 font-medium flex items-center gap-1">
                   <AlertCircle size={12} /> {titreError}
                 </p>
               )}
@@ -348,14 +348,14 @@ export default function BabillardPublishModal({
             {/* 2 & 3. Catégorie et Priorité */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs sm:text-sm font-bold text-[#5a4d3d] mb-1">Catégorie</label>
+                <label className="block text-xs sm:text-sm font-bold text-[var(--text)] mb-1">Catégorie</label>
                 <select
                   value={categorie}
                   onChange={(e) => setCategorie(e.target.value as PublicationCategorie)}
-                  className="w-full px-3 py-2 rounded-lg border border-[#d8cfbe] bg-white text-xs text-[#1a1209] focus:outline-none focus:border-primary"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-xs text-[var(--text)] focus:outline-none focus:border-primary"
                 >
                   {Object.entries(CATEGORIE_CONFIG).map(([k, v]) => (
-                    <option key={k} value={k}>
+                    <option key={k} value={k} className="bg-[var(--surface)] text-[var(--text)]">
                       {v.label}
                     </option>
                   ))}
@@ -363,8 +363,8 @@ export default function BabillardPublishModal({
               </div>
 
               <div>
-                <label className="block text-xs sm:text-sm font-bold text-[#5a4d3d] mb-1">Priorité</label>
-                <div className="grid grid-cols-3 gap-1 bg-[#ede6da] p-1 rounded-lg text-xs font-semibold text-center">
+                <label className="block text-xs sm:text-sm font-bold text-[var(--text)] mb-1">Priorité</label>
+                <div className="grid grid-cols-3 gap-1 bg-[var(--bg)] border border-[var(--border)] p-1 rounded-lg text-xs font-semibold text-center">
                   {(['NORMALE', 'IMPORTANTE', 'URGENTE'] as const).map((p) => (
                     <button
                       key={p}
@@ -377,7 +377,7 @@ export default function BabillardPublishModal({
                             : p === 'IMPORTANTE'
                             ? 'bg-orange-500 text-white font-bold shadow-xs'
                             : 'bg-primary text-white font-bold shadow-xs'
-                          : 'text-[#6b5d4b] hover:text-[#1a1209]'
+                          : 'text-[var(--text2)] hover:text-[var(--text)]'
                       }`}
                     >
                       {p === 'NORMALE' ? 'Normale' : p === 'IMPORTANTE' ? 'Importante' : 'Urgente'}
@@ -389,7 +389,7 @@ export default function BabillardPublishModal({
 
             {/* 4. Contenu du message avec validation inline (A1, B4) */}
             <div ref={editorRef}>
-              <label className="block text-xs sm:text-sm font-bold text-[#5a4d3d] mb-1">Message officiel *</label>
+              <label className="block text-xs sm:text-sm font-bold text-[var(--text)] mb-1">Message officiel *</label>
               <LightweightRichEditor
                 value={corps}
                 onChange={(val) => {
@@ -398,7 +398,7 @@ export default function BabillardPublishModal({
                 }}
               />
               {corpsError && (
-                <p className="mt-1 text-xs text-red-600 font-medium flex items-center gap-1">
+                <p className="mt-1 text-xs text-red-500 font-medium flex items-center gap-1">
                   <AlertCircle size={12} /> {corpsError}
                 </p>
               )}
@@ -406,12 +406,12 @@ export default function BabillardPublishModal({
 
             {/* 5. Documents joints */}
             <div>
-              <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-[#5a4d3d] mb-1">
+              <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-[var(--text)] mb-1">
                 <span>Documents joints (PDF ou Images, max 10 Mo)</span>
-                <span className="text-[11px] text-[#8a7c6a]">{piecesJointes.length}/5 documents</span>
+                <span className="text-[11px] text-[var(--text3)]">{piecesJointes.length}/5 documents</span>
               </div>
 
-              <div className="border-2 border-dashed border-[#d8cfbe] rounded-lg p-3.5 bg-[var(--bg)] text-center">
+              <div className="border-2 border-dashed border-[var(--border)] rounded-lg p-3.5 bg-[var(--bg2)] text-center">
                 <input
                   type="file"
                   id="pub-file"
@@ -422,12 +422,12 @@ export default function BabillardPublishModal({
                 />
                 <label
                   htmlFor="pub-file"
-                  className="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-[#d8cfbe] text-xs font-semibold text-[#1a1209] hover:bg-[#ede6da] transition-colors"
+                  className="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--surface)] border border-[var(--border)] text-xs font-semibold text-[var(--text)] hover:bg-[var(--bg)] transition-colors"
                 >
                   <UploadCloud size={15} />
                   {uploading ? 'Téléversement en cours...' : 'Ajouter un document'}
                 </label>
-                <div className="text-[11px] text-[#8a7c6a] mt-1.5">
+                <div className="text-[11px] text-[var(--text3)] mt-1.5">
                   Glissez un fichier ou cliquez ci-dessus. Formats : PDF, JPG, PNG, WebP.
                 </div>
               </div>
@@ -438,19 +438,19 @@ export default function BabillardPublishModal({
                   {piecesJointes.map((pj) => (
                     <div
                       key={pj.id}
-                      className="flex items-center justify-between px-3 py-2 rounded bg-white border border-[#e2dacb] text-xs"
+                      className="flex items-center justify-between px-3 py-2 rounded bg-[var(--surface)] border border-[var(--border)] text-xs text-[var(--text)]"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <FileText size={15} className="text-[#8a7c6a] shrink-0" />
+                        <FileText size={15} className="text-[var(--text3)] shrink-0" />
                         <span className="truncate font-medium">{pj.nomOriginal}</span>
-                        <span className="text-[11px] text-[#8a7c6a]">
+                        <span className="text-[11px] text-[var(--text3)]">
                           ({(pj.taille / 1024).toFixed(0)} Ko)
                         </span>
                       </div>
                       <button
                         type="button"
                         onClick={() => removePieceJointe(pj.id)}
-                        className="text-red-600 hover:text-red-800 p-1"
+                        className="text-red-500 hover:text-red-600 p-1 transition-colors"
                         title="Retirer"
                       >
                         <Trash2 size={14} />
@@ -462,13 +462,13 @@ export default function BabillardPublishModal({
             </div>
 
             {/* 6. Public cible */}
-            <div className="p-3.5 rounded-lg bg-[#f5f0e6] border border-[#e6dfd3] space-y-3">
+            <div className="p-3.5 rounded-lg bg-[var(--bg2)] border border-[var(--border)] space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs sm:text-sm font-bold text-[#5a4d3d]">Public cible *</span>
+                <span className="text-xs sm:text-sm font-bold text-[var(--text)]">Public cible *</span>
                 <button
                   type="button"
                   onClick={selectAllRoles}
-                  className="text-xs font-semibold text-success hover:underline"
+                  className="text-xs font-semibold text-primary hover:underline"
                 >
                   Tous les rôles
                 </button>
@@ -484,8 +484,8 @@ export default function BabillardPublishModal({
                       onClick={() => toggleRole(r)}
                       className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${
                         isSel
-                          ? 'bg-success text-white border-success shadow-xs'
-                          : 'bg-white text-[#5a4d3d] border-[#d8cfbe] hover:bg-[#ede6da]'
+                          ? 'bg-primary text-white border-primary shadow-xs'
+                          : 'bg-[var(--surface)] text-[var(--text)] border-[var(--border)] hover:bg-[var(--bg)]'
                       }`}
                     >
                       {ROLE_LABELS_FR[r]}
@@ -494,14 +494,14 @@ export default function BabillardPublishModal({
                 })}
               </div>
               {rolesError && (
-                <p className="text-xs text-red-600 font-medium flex items-center gap-1">
+                <p className="text-xs text-red-500 font-medium flex items-center gap-1">
                   <AlertCircle size={12} /> {rolesError}
                 </p>
               )}
 
               {/* Si Élèves ou Parents ciblés : option ciblage par classes */}
               {(roles.includes('STUDENT') || roles.includes('PARENT')) && (
-                <div className="pt-2 border-t border-[#e2dacb] text-xs">
+                <div className="pt-2 border-t border-[var(--border)] text-xs text-[var(--text)]">
                   <div className="flex items-center gap-4 mb-2">
                     <label className="flex items-center gap-1.5 cursor-pointer font-medium">
                       <input
@@ -524,11 +524,11 @@ export default function BabillardPublishModal({
                   </div>
 
                   {!targetAllClasses && (
-                    <div className="max-h-28 overflow-y-auto p-2 bg-white rounded border border-[#d8cfbe] grid grid-cols-2 sm:grid-cols-3 gap-1">
+                    <div className="max-h-28 overflow-y-auto p-2 bg-[var(--surface)] rounded border border-[var(--border)] grid grid-cols-2 sm:grid-cols-3 gap-1">
                       {availableClasses.map((cls) => {
                         const isChecked = selectedClasses.includes(cls.id);
                         return (
-                          <label key={cls.id} className="flex items-center gap-1.5 text-[11.5px] cursor-pointer">
+                          <label key={cls.id} className="flex items-center gap-1.5 text-[11.5px] cursor-pointer text-[var(--text)]">
                             <input
                               type="checkbox"
                               checked={isChecked}
@@ -551,13 +551,13 @@ export default function BabillardPublishModal({
             </div>
 
             {/* 7. Options de visibilité & Programmation future */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-lg bg-[var(--bg)] border border-[#e6dfd3] text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-lg bg-[var(--bg2)] border border-[var(--border)] text-xs text-[var(--text)]">
               <div>
-                <label className="block font-bold text-[#5a4d3d] mb-1">Durée d'affichage</label>
+                <label className="block font-bold text-[var(--text)] mb-1">Durée d'affichage</label>
                 <select
                   value={duree}
                   onChange={(e) => setDuree(e.target.value)}
-                  className="w-full px-2.5 py-1.5 rounded border border-[#d8cfbe] bg-white text-xs text-[#1a1209]"
+                  className="w-full px-2.5 py-1.5 rounded border border-[var(--border)] bg-[var(--surface)] text-xs text-[var(--text)]"
                 >
                   <option value="PERMANENT">Permanent (Pas d'expiration)</option>
                   <option value="J3">3 jours</option>
@@ -568,7 +568,7 @@ export default function BabillardPublishModal({
               </div>
 
               <div>
-                <label className="block font-bold text-[#5a4d3d] mb-1 flex items-center gap-1">
+                <label className="block font-bold text-[var(--text)] mb-1 flex items-center gap-1">
                   <Clock size={12} />
                   Publication programmée
                 </label>
@@ -576,9 +576,9 @@ export default function BabillardPublishModal({
                   type="datetime-local"
                   value={programmeeLe}
                   onChange={(e) => setProgrammeeLe(e.target.value)}
-                  className="w-full px-2.5 py-1.5 rounded border border-[#d8cfbe] bg-white text-xs text-[#1a1209]"
+                  className="w-full px-2.5 py-1.5 rounded border border-[var(--border)] bg-[var(--surface)] text-xs text-[var(--text)]"
                 />
-                <span className="text-[10.5px] text-[#8a7c6a]">Laisser vide pour diffusion immédiate.</span>
+                <span className="text-[10.5px] text-[var(--text3)]">Laisser vide pour diffusion immédiate.</span>
               </div>
 
               <div className="sm:col-span-2 flex items-center gap-2 pt-1">
@@ -589,8 +589,8 @@ export default function BabillardPublishModal({
                   onChange={(e) => setEpinglee(e.target.checked)}
                   className="cursor-pointer"
                 />
-                <label htmlFor="pub-pin" className="cursor-pointer font-semibold text-[#3b3226] flex items-center gap-1">
-                  <Pin size={13} className="text-orange-600" />
+                <label htmlFor="pub-pin" className="cursor-pointer font-semibold text-[var(--text)] flex items-center gap-1">
+                  <Pin size={13} className="text-orange-500" />
                   Épingler « À la une » en tête du babillard (max 3)
                 </label>
               </div>
@@ -600,16 +600,16 @@ export default function BabillardPublishModal({
           {/* Colonne droite : Aperçu en temps réel STICKY sur grand écran (B7) */}
           <div className={`lg:col-span-5 ${mobileTab === 'form' ? 'hidden lg:block' : 'block'}`}>
             <div className="lg:sticky lg:top-4">
-              <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-[#5a4d3d] mb-2">
+              <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-[var(--text)] mb-2">
                 <span className="flex items-center gap-1.5">
                   <Eye size={14} />
                   Aperçu tel qu'il apparaîtra sur le babillard
                 </span>
-                <span className="text-[11px] text-[#8a7c6a] font-semibold">Rendu réel</span>
+                <span className="text-[11px] text-[var(--text3)] font-semibold">Rendu réel</span>
               </div>
 
               <div
-                className="p-4 sm:p-5 rounded-xl border border-[#d8cfbe] flex items-center justify-center min-h-[420px]"
+                className="p-4 sm:p-5 rounded-xl border border-[var(--border)] flex items-center justify-center min-h-[420px]"
                 style={{
                   background: 'var(--board-bg, #ece5d8)',
                   backgroundImage: 'var(--board-texture)',
@@ -634,14 +634,14 @@ export default function BabillardPublishModal({
             - Desktop : Annuler gauche, Brouillon + Diffuser droite
             - Mobile : Diffuser pleine largeur en haut, Brouillon dessous (Annuler masqué)
            ======================================================== */}
-        <div className="px-5 py-3.5 border-t border-[#e2dacb] bg-[var(--bg)]">
+        <div className="px-5 py-3.5 border-t border-[var(--border)] bg-[var(--surface)]">
           {/* Mobile layout (sm:hidden) */}
           <div className="flex sm:hidden flex-col gap-2 w-full">
             <button
               type="button"
               disabled={submitting || uploading}
               onClick={() => handleFormSubmit(false)}
-              className="w-full py-2.5 rounded-lg bg-success text-white text-sm font-bold hover:bg-success disabled:opacity-50 transition-colors shadow-sm text-center"
+              className="w-full py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-50 transition-colors shadow-sm text-center"
             >
               {submitting ? 'Diffusion...' : 'Diffuser le communiqué'}
             </button>
@@ -649,7 +649,7 @@ export default function BabillardPublishModal({
               type="button"
               disabled={submitting}
               onClick={() => handleFormSubmit(true)}
-              className="w-full py-2 rounded-lg border border-[#d8cfbe] bg-white text-xs font-semibold text-[#3b3226] hover:bg-[#ede6da] disabled:opacity-50 transition-colors text-center"
+              className="w-full py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-xs font-semibold text-[var(--text)] hover:bg-[var(--bg2)] disabled:opacity-50 transition-colors text-center"
             >
               Enregistrer comme brouillon
             </button>
@@ -660,7 +660,7 @@ export default function BabillardPublishModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-3.5 py-1.5 rounded-lg border border-[#d8cfbe] bg-white text-xs font-semibold text-[#5a4d3d] hover:bg-[#ede6da] transition-colors"
+              className="px-3.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs font-semibold text-[var(--text2)] hover:bg-[var(--bg)] hover:text-[var(--text)] transition-colors"
             >
               Annuler
             </button>
@@ -670,7 +670,7 @@ export default function BabillardPublishModal({
                 type="button"
                 disabled={submitting}
                 onClick={() => handleFormSubmit(true)}
-                className="px-3.5 py-1.5 rounded-lg border border-[#d8cfbe] bg-white text-xs font-semibold text-[#3b3226] hover:bg-[#ede6da] disabled:opacity-50 transition-colors"
+                className="px-3.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs font-semibold text-[var(--text)] hover:bg-[var(--bg)] disabled:opacity-50 transition-colors"
               >
                 Enregistrer comme brouillon
               </button>
@@ -678,7 +678,7 @@ export default function BabillardPublishModal({
                 type="button"
                 disabled={submitting || uploading}
                 onClick={() => handleFormSubmit(false)}
-                className="px-4 py-1.5 rounded-lg bg-success text-white text-xs font-bold hover:bg-success disabled:opacity-50 transition-colors shadow-sm"
+                className="px-4 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 disabled:opacity-50 transition-colors shadow-sm"
               >
                 {submitting ? 'Diffusion...' : 'Diffuser le communiqué'}
               </button>
@@ -690,11 +690,11 @@ export default function BabillardPublishModal({
       {/* Boîte modale de confirmation de diffusion avec estimation de l'audience */}
       {showConfirmation && (
         <div className="fixed inset-0 z-60 bg-black/75 flex items-center justify-center p-4">
-          <div className="w-full max-w-[420px] bg-white rounded-xl shadow-2xl border border-neutral-300 p-5 text-neutral-900">
-            <h3 className="font-spectral font-bold text-lg mb-2">Confirmer la diffusion</h3>
-            <p className="text-xs text-neutral-600 leading-relaxed mb-4">
+          <div className="w-full max-w-[420px] bg-[var(--surface)] text-[var(--text)] rounded-xl shadow-2xl border border-[var(--border)] p-5">
+            <h3 className="font-spectral font-bold text-lg mb-2 text-[var(--text)]">Confirmer la diffusion</h3>
+            <p className="text-xs text-[var(--text2)] leading-relaxed mb-4">
               Vous allez diffuser ce communiqué officiel à destination de :{' '}
-              <strong>
+              <strong className="text-[var(--text)]">
                 {roles.length >= 5 ? 'Tous les rôles' : roles.map((r) => ROLE_LABELS_FR[r] ?? r).join(', ')}
               </strong>
               {!targetAllClasses && selectedClasses.length > 0 && (
@@ -702,11 +702,11 @@ export default function BabillardPublishModal({
               )}.
             </p>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-200">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border)]">
               <button
                 type="button"
                 onClick={() => setShowConfirmation(false)}
-                className="px-3 py-1.5 rounded-lg border border-neutral-300 text-xs font-semibold text-neutral-700 hover:bg-neutral-100"
+                className="px-3 py-1.5 rounded-lg border border-[var(--border)] text-xs font-semibold text-[var(--text2)] hover:bg-[var(--bg)] hover:text-[var(--text)] transition-colors"
               >
                 Retour
               </button>
@@ -714,7 +714,7 @@ export default function BabillardPublishModal({
                 type="button"
                 disabled={submitting}
                 onClick={() => executeSave(false)}
-                className="px-4 py-1.5 rounded-lg bg-success text-white text-xs font-bold hover:bg-success shadow-sm"
+                className="px-4 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 shadow-sm transition-colors"
               >
                 {submitting ? 'Validation...' : 'Confirmer et diffuser'}
               </button>

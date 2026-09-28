@@ -155,10 +155,10 @@ export default function PublicationCard({
       }}
       className="babillard-sheet group relative flex flex-col cursor-pointer transition-all duration-200 outline-none select-none"
       style={{
-        background: 'var(--paper, #fcfbf9)',
-        color: '#1a1209',
-        borderRadius: 6,
-        border: '1px solid var(--paper-edge, #e6dfd3)',
+        background: 'var(--paper)',
+        color: 'var(--paper-text)',
+        borderRadius: 8,
+        border: '1px solid var(--paper-edge)',
         boxShadow: 'var(--paper-shadow)',
         transform: `rotate(${rotationDeg}deg)`,
         paddingTop: 18,
@@ -221,7 +221,7 @@ export default function PublicationCard({
 
         {/* Date formatée avec white-space: nowrap pour ne jamais se couper */}
         <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-          <time className="text-[12px] text-[#786c5a] font-medium whitespace-nowrap">
+          <time className="text-[12px] font-medium whitespace-nowrap" style={{ color: 'var(--paper-text-sub)' }}>
             {dateFormatee}
           </time>
 
@@ -234,19 +234,27 @@ export default function PublicationCard({
               <button
                 type="button"
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="p-1 rounded text-[#786c5a] hover:text-[#1a1209] hover:bg-[#ece5d8] transition-colors"
+                className="p-1 rounded transition-colors hover:bg-[var(--paper-footer-bg)]"
+                style={{ color: 'var(--paper-text-sub)' }}
                 title="Options"
               >
                 <MoreVertical size={16} />
               </button>
 
               {menuOpen && (
-                <div className="absolute right-0 top-full mt-1 w-44 rounded-lg bg-white shadow-xl border border-[#e6dfd3] py-1 text-xs text-[#1a1209] z-50">
+                <div
+                  className="absolute right-0 top-full mt-1 w-44 rounded-lg shadow-xl py-1 text-xs z-50"
+                  style={{
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text)',
+                  }}
+                >
                   {togglePinAction && (
                     <button
                       type="button"
                       onClick={() => { setMenuOpen(false); togglePinAction(); }}
-                      className="w-full px-3 py-2 text-left flex items-center gap-2 hover:bg-[var(--bg)]"
+                      className="w-full px-3 py-2 text-left flex items-center gap-2 hover:bg-[var(--bg2)] text-[var(--text)]"
                     >
                       {isPinned ? <PinOff size={13} /> : <Pin size={13} />}
                       {isPinned ? 'Désépingler' : 'Épingler à la une'}
@@ -256,7 +264,7 @@ export default function PublicationCard({
                     <button
                       type="button"
                       onClick={() => { setMenuOpen(false); onEdit(); }}
-                      className="w-full px-3 py-2 text-left flex items-center gap-2 hover:bg-[var(--bg)]"
+                      className="w-full px-3 py-2 text-left flex items-center gap-2 hover:bg-[var(--bg2)] text-[var(--text)]"
                     >
                       <Edit2 size={13} />
                       Modifier
@@ -266,7 +274,7 @@ export default function PublicationCard({
                     <button
                       type="button"
                       onClick={() => { setMenuOpen(false); onDelete(); }}
-                      className="w-full px-3 py-2 text-left flex items-center gap-2 text-rose-600 hover:bg-rose-50"
+                      className="w-full px-3 py-2 text-left flex items-center gap-2 text-[var(--red)] hover:bg-[var(--red-light)]"
                     >
                       <Trash2 size={13} />
                       Supprimer
@@ -281,7 +289,7 @@ export default function PublicationCard({
 
       {/* Titre en police Spectral éditoriale */}
       <div className="px-4 sm:px-5 pt-2 pb-1">
-        <h3 className="font-spectral font-bold text-[18px] sm:text-[19px] leading-[1.3] text-[#1a1209] tracking-tight line-clamp-2">
+        <h3 className="font-spectral font-bold text-[18px] sm:text-[19px] leading-[1.3] tracking-tight line-clamp-2" style={{ color: 'var(--paper-text)' }}>
           {publication.titre || 'Sans titre'}
         </h3>
       </div>
@@ -289,7 +297,8 @@ export default function PublicationCard({
       {/* Extrait en corps 16px avec styles gras/italique/souligné préservés (3 lignes max) */}
       <div className="px-4 sm:px-5 pt-1 pb-3 flex-1">
         <div
-          className="babillard-card-excerpt text-[15px] sm:text-[16px] leading-[1.6] text-[#4a3f35] line-clamp-3 font-normal"
+          className="babillard-card-excerpt text-[15px] sm:text-[16px] leading-[1.6] line-clamp-3 font-normal"
+          style={{ color: 'var(--paper-text-muted)' }}
           dangerouslySetInnerHTML={{ __html: extraitHtml }}
         />
       </div>
@@ -298,8 +307,13 @@ export default function PublicationCard({
       {premierePieceJointe && (
         <div className="px-4 sm:px-5 pb-3">
           <div
-            className="relative rounded overflow-hidden border border-[#e6dfd3] bg-[#f5f0e6] flex flex-col items-center justify-center text-[#786c5a]"
-            style={{ height: 170 }}
+            className="relative rounded overflow-hidden flex flex-col items-center justify-center"
+            style={{
+              height: 170,
+              border: '1px solid var(--paper-edge)',
+              background: 'var(--paper-footer-bg)',
+              color: 'var(--paper-text-sub)',
+            }}
           >
             {premierePieceJointe.mime.startsWith('image/') ? (
               <img
@@ -310,12 +324,12 @@ export default function PublicationCard({
               />
             ) : (
               <div className="flex flex-col items-center justify-center p-4 text-center">
-                <FileText size={38} className="text-[#9a8c78] mb-1.5" />
-                <span className="text-xs font-semibold line-clamp-1 max-w-[200px] text-[#4a3f35]">
+                <FileText size={38} className="mb-1.5 opacity-60" />
+                <span className="text-xs font-semibold line-clamp-1 max-w-[200px]" style={{ color: 'var(--paper-text)' }}>
                   {premierePieceJointe.nomOriginal}
                 </span>
                 {premierePieceJointe.nbPages && (
-                  <span className="text-[11px] text-[#786c5a] mt-0.5">
+                  <span className="text-[11px] mt-0.5" style={{ color: 'var(--paper-text-sub)' }}>
                     Document officiel · {premierePieceJointe.nbPages} page{premierePieceJointe.nbPages > 1 ? 's' : ''}
                   </span>
                 )}
@@ -333,19 +347,30 @@ export default function PublicationCard({
       )}
 
       {/* Pied de la feuille épinglée (13px minimum, jamais de 'Direction' en dur) */}
-      <div className="px-4 sm:px-5 py-2.5 mt-auto border-t border-[#f0e9dc] bg-[#faf7f2]/60 flex items-center justify-between gap-3 text-[13px] text-[#5a4d3d]">
-        <div className="truncate font-semibold text-[#2d241e]" title={auteurLibelle}>
+      <div
+        className="px-4 sm:px-5 py-2.5 mt-auto flex items-center justify-between gap-3 text-[13px]"
+        style={{
+          borderTop: '1px solid var(--paper-footer-border)',
+          background: 'var(--paper-footer-bg)',
+          color: 'var(--paper-text-muted)',
+        }}
+      >
+        <div className="truncate font-semibold" style={{ color: 'var(--paper-text)' }} title={auteurLibelle}>
           {auteurLibelle}
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0 text-[12.5px] text-[#6b5d4b]">
+        <div className="flex items-center gap-2 flex-shrink-0 text-[12.5px]" style={{ color: 'var(--paper-text-sub)' }}>
           <span className="truncate max-w-[150px]" title={formatAudience()}>
             {formatAudience()}
           </span>
 
           {stats && (
             <span
-              className="inline-flex items-center gap-1 bg-[#ede6da] px-1.5 py-0.5 rounded text-[11px] font-medium text-[#4a3f35]"
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium"
+              style={{
+                background: 'var(--bg2)',
+                color: 'var(--paper-text-muted)',
+              }}
               title="Lectures uniques / Destinataires éligibles"
             >
               <Eye size={11} />

@@ -92,19 +92,26 @@
   --orange: #ea580c;
   --orange-light: #ffedd5;
 
-  /* Babillard Officiel */
-  --board-bg: #ece5d8;
-  --board-texture: radial-gradient(#dfd5c3 1px, transparent 1px);
-  --cork-panel-bg: #f5efe0;
-  --cork-panel-border: #9c7a4a;
-  --cork-panel-dots: #b89e72;
-  --paper: #fcfbf9;
-  --paper-edge: #e6dfd3;
+  /* Babillard Officiel (Thème clair Cacao + Terracotta + Or) */
+  --board-bg: #F4ECE3;
+  --board-texture: radial-gradient(#E5D8CC 1.2px, transparent 1.2px);
+  --cork-panel-bg: #EFE4D6;
+  --cork-panel-border: #8D5B3A;
+  --cork-panel-dots: #D6C2A8;
+  --cork-panel-title: #2A1A15;
+  --cork-panel-text: #76645D;
+  --paper: #FFFFFF;
+  --paper-edge: #E5D8CC;
+  --paper-text: #2A1A15;
+  --paper-text-muted: #5C4B44;
+  --paper-text-sub: #76645D;
+  --paper-footer-bg: #FBF7F2;
+  --paper-footer-border: #F0E6DC;
   --paper-shadow: 0 4px 12px rgba(45, 35, 20, 0.08), 0 1px 3px rgba(45, 35, 20, 0.06);
   --paper-shadow-hover: 0 8px 24px rgba(45, 35, 20, 0.14), 0 2px 6px rgba(45, 35, 20, 0.08);
-  --pin-red: #ef4444;
-  --pin-orange: #f97316;
-  --pin-green: var(--green);
+  --pin-red: #D9481F;
+  --pin-orange: #EA580C;
+  --pin-green: #2F8F5B;
 
   /* Shadows */
   --shadow-sm: 0 1px 3px rgba(40,30,15,0.06);
@@ -174,14 +181,21 @@
   --orange: #f97316;
   --orange-light: #431407;
 
-  /* Babillard Officiel Dark — Le panneau physique reste crème dans les deux thèmes */
-  --board-bg: #141210;
-  --board-texture: radial-gradient(#262422 1px, transparent 1px);
-  --cork-panel-bg: #f5efe0;
-  --cork-panel-border: #9c7a4a;
-  --cork-panel-dots: #b89e72;
-  --paper: #fcfbf9;
-  --paper-edge: #d8d0c0;
+  /* Babillard Officiel (Thème sombre Cacao profond + Terracotta + Or) */
+  --board-bg: #16100C;
+  --board-texture: radial-gradient(#2B1D17 1.2px, transparent 1.2px);
+  --cork-panel-bg: #231812;
+  --cork-panel-border: #4D3022;
+  --cork-panel-dots: #35231A;
+  --cork-panel-title: #F3E9E1;
+  --cork-panel-text: #B8A49B;
+  --paper: #281B15;
+  --paper-edge: #443027;
+  --paper-text: #F3E9E1;
+  --paper-text-muted: #CDB7AA;
+  --paper-text-sub: #9E8C84;
+  --paper-footer-bg: #201510;
+  --paper-footer-border: #3A2419;
   --paper-shadow: 0 4px 16px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
   --paper-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.6), 0 3px 8px rgba(0, 0, 0, 0.4);
 
@@ -366,7 +380,7 @@ body {
 /* ── BABILLARD RICH EDITOR & DOCUMENT RENDERING ── */
 .babillard-rich-editor:empty:before {
   content: attr(data-placeholder);
-  color: #9c8e7d;
+  color: var(--text3);
   pointer-events: none;
   display: block;
 }
@@ -391,7 +405,7 @@ body {
   margin-bottom: 0.25rem;
 }
 .babillard-prose a {
-  color: var(--primary-hover);
+  color: var(--primary);
   text-decoration: underline;
 }
 
@@ -411,7 +425,7 @@ body {
 .babillard-card-excerpt b,
 .babillard-body-content strong,
 .babillard-body-content b {
-  color: #1a1209;
+  color: inherit;
 }
 
 .babillard-rich-editor em,
