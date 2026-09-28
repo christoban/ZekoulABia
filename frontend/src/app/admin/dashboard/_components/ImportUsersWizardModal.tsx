@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import * as XLSX from 'xlsx'
 import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, GraduationCap, Loader2, Presentation, School, UserRound, UsersRound, X } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
@@ -29,7 +29,7 @@ const TARGETS = [
 ]
 
 const summaryKeys: Record<TargetType, (keyof Summary)[]> = {
-  STUDENT: ['elevesCrees'], TEACHER: ['enseignantsCrees', 'professeursPrincipauxAssignes', 'affectationsPedagogiquesPreremplies'],
+  STUDENT: ['elevesCrees', 'parentsCrees'], TEACHER: ['enseignantsCrees', 'professeursPrincipauxAssignes', 'affectationsPedagogiquesPreremplies'],
   STAFF: ['staffCrees'], PARENT: ['parentsCrees'], CLASSE: ['classesCrees'],
 }
 
@@ -44,6 +44,7 @@ function readRows(file: File): Promise<ImportRow[]> {
 
 export default function ImportUsersWizardModal({ onClose, onToast, onSuccess, isSecretary = false }: Props) {
   const t = useT('admin')
+  const scrollRef = useRef<HTMLDivElement>(null)
   const [step, setStep] = useState(0)
   const [targetType, setTargetType] = useState<TargetType | null>(null)
   const [preview, setPreview] = useState<Preview | null>(null)
@@ -126,6 +127,8 @@ export default function ImportUsersWizardModal({ onClose, onToast, onSuccess, is
       if (!response.ok) throw new Error(messageFrom(payload, t('users.i18n_ext.toast.importError')))
       setSummary(payload.data)
       setStep(4)
+      scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+      onToast(t('users.import_modal.result_success', { count: payload.data.success }) || `${payload.data.success} compte(s) créé(s) avec succès !`, 'success')
       onSuccess()
     } catch (error) { onToast(error instanceof Error ? error.message : t('users.i18n_ext.toast.importError'), 'error') } finally { setLoading(false); setLoadingMsg('') }
   }
@@ -147,7 +150,7 @@ export default function ImportUsersWizardModal({ onClose, onToast, onSuccess, is
         </div>
       )}
 
-      <div onClick={event => event.stopPropagation()} className="p-4 sm:p-7 rounded-2xl w-[980px] max-w-full max-h-[92vh] overflow-y-auto" style={{ background: 'var(--surface)', boxShadow: '0 32px 80px rgba(0,0,0,0.22)', position: 'relative' }}>
+      <div ref={scrollRef} onClick={event => event.stopPropagation()} className="p-4 sm:p-7 rounded-2xl w-[980px] max-w-full max-h-[92vh] overflow-y-auto" style={{ background: 'var(--surface)', boxShadow: '0 32px 80px rgba(0,0,0,0.22)', position: 'relative' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
           <div><h2 className="text-base sm:text-xl font-bold font-spectral" style={{ margin: 0, color: 'var(--text)' }}>{title}</h2><p style={{ margin: '4px 0 0', color: 'var(--text3)', fontSize: 13 }}>{t(`users.import_modal.step${step}_desc`)}</p></div>
           <button type="button" onClick={onClose} aria-label={t('users.import_modal.btn_close')} style={{ border: 'none', cursor: 'pointer', borderRadius: 9, padding: 8, background: 'var(--bg2)', color: 'var(--text2)', flexShrink: 0 }}><X size={18} /></button>
