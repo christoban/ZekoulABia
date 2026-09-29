@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { LayoutDashboard, Users, FileText, Banknote, Menu } from 'lucide-react'
+import { LayoutDashboard, Users, FileText, Banknote, Menu, Calendar } from 'lucide-react'
 import type { ParentSection } from '../_types'
 import { useT } from '@/lib/i18n'
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount'
@@ -50,7 +50,7 @@ export default function ParentBottomNav({ current, onChange, onOpenMenu }: Props
       matchSections: ['timetable'],
       labelKey: 'sidebar.timetable',
       fallbackLabel: 'Emploi',
-      icon: Users,
+      icon: Calendar,
     },
     {
       id: 'payments',
@@ -84,7 +84,8 @@ export default function ParentBottomNav({ current, onChange, onOpenMenu }: Props
         {items.map(item => {
           const isActive = !item.isMenuTrigger && (item.targetSection === current || item.matchSections.includes(current))
           const Icon = item.icon
-          const label = t(item.labelKey) || item.fallbackLabel
+          const rawLabel = t(item.labelKey)
+          const label = (rawLabel && rawLabel !== item.labelKey) ? rawLabel : item.fallbackLabel
 
           return (
             <button

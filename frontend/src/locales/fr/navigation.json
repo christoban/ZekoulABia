@@ -71,7 +71,9 @@
     "syncOffline": "Synchronisation hors ligne",
     "orgPedagogy": "Organisation pédagogique",
     "importEleves": "Import élèves",
-    "studentAssignments": "Affectations élèves"
+    "studentAssignments": "Affectations élèves",
+    "children": "Enfants",
+    "menu": "Plus"
   },
   "group": {
     "admin": "Administration & Comptes",

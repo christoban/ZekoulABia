@@ -71,7 +71,9 @@
     "syncOffline": "Offline sync",
     "orgPedagogy": "Pedagogical Organization",
     "importEleves": "Student Import",
-    "studentAssignments": "Student Assignments"
+    "studentAssignments": "Student Assignments",
+    "children": "Children",
+    "menu": "More"
   },
   "group": {
     "admin": "Administration & Accounts",
