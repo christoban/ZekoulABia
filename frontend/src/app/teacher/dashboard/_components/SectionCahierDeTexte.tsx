@@ -32,15 +32,15 @@ type Tab = 'saisie' | 'historique'
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const SEL: React.CSSProperties = {
-  width: '100%', minHeight: 40, padding: '8px 12px', borderRadius: 7, border: '1px solid var(--border)',
-  fontSize: 13, fontWeight: 600, fontFamily: 'inherit', color: 'var(--text)',
+  width: '100%', minHeight: 36, padding: '6px 26px 6px 10px', borderRadius: 8, border: '1px solid var(--border)',
+  fontSize: 12, fontWeight: 600, fontFamily: 'inherit', color: 'var(--text)',
   background: 'var(--surface)', outline: 'none', boxSizing: 'border-box', appearance: 'none',
-  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a89478' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
-  backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center',
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238c6b45' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
+  backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center',
 }
 const LBL: React.CSSProperties = {
-  fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase',
-  letterSpacing: '0.5px', marginBottom: 4, display: 'block',
+  fontSize: 11, fontWeight: 700, color: 'var(--text2)',
+  letterSpacing: '0.3px', marginBottom: 3, display: 'block',
 }
 const AREA: React.CSSProperties = {
   width: '100%', padding: '9px 12px', borderRadius: 7, border: '1px solid var(--border)',
@@ -351,25 +351,26 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
           )}
 
           {/* ── CAS 1 : Formulaire principal — toujours visible en premier ── */}
-          <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
 
-            {/* Classe */}
-            <div>
-              <label style={LBL}>{t('cahier_de_texte.class_label')}</label>
-              <select value={selectedClass} onChange={e => setSelectedClass(e.target.value)} style={SEL}>
-                <option value="">{t('cahier_de_texte.class_placeholder')}</option>
-                {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
+            {/* Classe & Matière sur 2 colonnes (mobile: 1 col, sm: 2 cols) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <label style={LBL}>{t('cahier_de_texte.class_label')}</label>
+                <select value={selectedClass} onChange={e => setSelectedClass(e.target.value)} style={SEL}>
+                  <option value="">{t('cahier_de_texte.class_placeholder')}</option>
+                  {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
 
-            {/* Matière */}
-            <div>
-              <label style={LBL}>{t('cahier_de_texte.subject_label')}</label>
-              <select value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)}
-                style={{ ...SEL, opacity: !selectedClass ? 0.5 : 1 }} disabled={!selectedClass}>
-                <option value="">{t('cahier_de_texte.subject_placeholder')}</option>
-                {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              <div>
+                <label style={LBL}>{t('cahier_de_texte.subject_label')}</label>
+                <select value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)}
+                  style={{ ...SEL, opacity: !selectedClass ? 0.5 : 1 }} disabled={!selectedClass}>
+                  <option value="">{t('cahier_de_texte.subject_placeholder')}</option>
+                  {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
             </div>
 
             {/* ── CAS 2 : Chapitre si programme, texte libre sinon ── */}
@@ -503,10 +504,10 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
               </select>
             </div>
             <button onClick={loadEntries} style={{
-              height: 40, padding: '0 14px', borderRadius: 7, background: 'var(--sidebar)', color: 'white',
-              border: 'none', fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', flexShrink: 0,
+              height: 36, padding: '0 12px', borderRadius: 8, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white',
+              border: 'none', fontSize: 12, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', flexShrink: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}><RotateCcw size={15} strokeWidth={2} /></button>
+            }}><RotateCcw size={14} strokeWidth={2} /></button>
           </div>
 
           {/* ── CAS 3 : Entrées hors-ligne en attente ── */}

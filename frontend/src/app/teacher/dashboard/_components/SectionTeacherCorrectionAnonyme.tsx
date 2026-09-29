@@ -170,7 +170,7 @@ export default function SectionTeacherCorrectionAnonyme({
                 setSessionId(e.target.value)
                 setLines([])
               }}
-              style={{ width: '100%', minHeight: 40, padding: '7px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}
+              style={{ width: '100%', minHeight: 36, padding: '6px 26px 6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: 12, fontWeight: 600, outline: 'none', fontFamily: 'inherit', appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238c6b45' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
             >
               <option value="">— Session à corriger —</option>
               {mySessions.map((s) => (

@@ -409,52 +409,53 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
       )}
 
       {/* Filtres + table */}
-      <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1.5px solid var(--border)', overflow: 'hidden', marginBottom: 14 }}>
-        <div className="p-3 sm:p-3.5 border-b border-[var(--border)] flex flex-col sm:flex-row gap-2 sm:gap-2.5 items-stretch sm:items-center flex-wrap">
-          <select
-            className="w-full sm:w-auto h-10 sm:h-9"
-            style={filterSt}
-            value={selectedClass}
-            onChange={e => setSelectedClass(e.target.value)}
-          >
-            <option value="">{t('grades_section.filter_class')}</option>
-            {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+      <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden', marginBottom: 14 }}>
+        <div className="p-2.5 sm:p-3 border-b border-[var(--border)] flex flex-col sm:flex-row gap-2 sm:gap-2.5 items-stretch sm:items-center flex-wrap">
+          {/* Grille compacte des filtres : 2 colonnes sur mobile, flex en ligne sur desktop */}
+          <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 sm:gap-2.5 flex-1 items-center">
+            <select
+              className="w-full sm:w-auto h-9"
+              style={filterSt}
+              value={selectedClass}
+              onChange={e => setSelectedClass(e.target.value)}
+            >
+              <option value="">{t('grades_section.filter_class')}</option>
+              {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
 
-          <select
-            className="w-full sm:w-auto h-10 sm:h-9"
-            style={filterSt}
-            value={selectedSubject}
-            onChange={e => setSelectedSubject(e.target.value)}
-          >
-            <option value="">{t('grades_section.filter_subject')}</option>
-            {subjects.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
+            <select
+              className="w-full sm:w-auto h-9"
+              style={filterSt}
+              value={selectedSubject}
+              onChange={e => setSelectedSubject(e.target.value)}
+            >
+              <option value="">{t('grades_section.filter_subject')}</option>
+              {subjects.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
 
-          <select
-            className="w-full sm:w-auto h-10 sm:h-9"
-            style={filterSt}
-            value={selectedSequence}
-            onChange={e => setSelectedSequence(e.target.value)}
-          >
-            <option value="">{t('grades_section.filter_sequence')}</option>
-            {sequences.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
+            <select
+              className="w-full sm:w-auto h-9"
+              style={filterSt}
+              value={selectedSequence}
+              onChange={e => setSelectedSequence(e.target.value)}
+            >
+              <option value="">{t('grades_section.filter_sequence')}</option>
+              {sequences.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
 
-          <button
-            className="w-full sm:w-auto h-10 sm:h-9 px-4 shrink-0 font-bold"
-            style={btnPrim}
-            onClick={loadGrades}
-            disabled={loading}
-          >
-            {t('grades_section.load')}
-          </button>
-
-          <div className="hidden sm:block flex-1" />
-
-          <div className="flex gap-2 w-full sm:w-auto pt-1 sm:pt-0">
             <button
-              className="flex-1 sm:flex-initial h-10 sm:h-9 px-3 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1.5"
+              className="w-full sm:w-auto h-9 px-4 shrink-0 inline-flex items-center justify-center font-bold"
+              style={btnPrim}
+              onClick={loadGrades}
+              disabled={loading}
+            >
+              {t('grades_section.load')}
+            </button>
+          </div>
+
+          <div className="flex gap-2 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-[var(--border)]">
+            <button
+              className="flex-1 sm:flex-initial h-8.5 px-2.5 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1.5"
               style={btnSec}
               onClick={downloadTemplate}
               title={t('grades_section.template_tooltip')}
@@ -463,7 +464,7 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
               <span>{t('grades_section.download_template')}</span>
             </button>
             <label
-              className="flex-1 sm:flex-initial h-10 sm:h-9 px-3 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1.5"
+              className="flex-1 sm:flex-initial h-8.5 px-2.5 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1.5"
               style={{ ...btnSec, cursor: importing ? 'not-allowed' : 'pointer', opacity: importing ? 0.6 : 1 }}
             >
               {importing ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : <Upload size={13} strokeWidth={2} />}
@@ -798,6 +799,6 @@ const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral
 const sSub: React.CSSProperties = { fontSize: 12, color: 'var(--text3)', marginTop: 2 }
 const btnPrim: React.CSSProperties = { padding: '6px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
 const btnSec: React.CSSProperties = { padding: '6px 12px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
-const filterSt: React.CSSProperties = { background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '6px 10px', fontSize: 12.5, fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }
+const filterSt: React.CSSProperties = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '5px 24px 5px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text)', cursor: 'pointer', outline: 'none', fontFamily: 'inherit', appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238c6b45' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }
 const thSt: React.CSSProperties = { padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }
 const tdSt: React.CSSProperties = { padding: '8.5px 12px', fontSize: 12.5, color: 'var(--text2)', borderBottom: '1px solid var(--bg)', verticalAlign: 'middle' }

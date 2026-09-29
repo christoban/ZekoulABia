@@ -231,10 +231,10 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
         </div>
       )}
 
-      {/* Filtres responsives */}
-      <div className="p-3 sm:p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] flex flex-col sm:flex-row gap-2.5 sm:gap-3 items-stretch sm:items-center">
+      {/* Filtres responsives compacts */}
+      <div className="p-2.5 sm:p-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] grid grid-cols-2 sm:flex sm:flex-row gap-2 sm:gap-2.5 items-stretch sm:items-center">
         <select
-          className="w-full sm:w-auto h-10 sm:h-9"
+          className="w-full sm:w-auto h-9"
           style={filterSt}
           value={selectedClass}
           onChange={e => setSelectedClass(e.target.value)}
@@ -244,7 +244,7 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
         </select>
 
         <select
-          className="w-full sm:w-auto h-10 sm:h-9"
+          className="w-full sm:w-auto h-9"
           style={filterSt}
           value={selectedSubject}
           onChange={e => setSelectedSubject(e.target.value)}
@@ -257,12 +257,12 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
           type="date"
           value={selectedDate}
           onChange={e => setSelectedDate(e.target.value)}
-          className="w-full sm:w-auto h-10 sm:h-9"
-          style={{ ...filterSt, fontFamily: 'inherit' }}
+          className="w-full sm:w-auto h-9"
+          style={{ ...filterSt, backgroundImage: 'none', paddingRight: 10, fontFamily: 'inherit' }}
         />
 
         <button
-          className="w-full sm:w-auto h-10 sm:h-9 px-4 shrink-0"
+          className="w-full sm:w-auto h-9 px-4 shrink-0 inline-flex items-center justify-center font-bold"
           style={btnPrim}
           onClick={loadAttendance}
           disabled={loading}
@@ -462,6 +462,6 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
 const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)' }
 const sSub: React.CSSProperties = { fontSize: 12, color: 'var(--text3)', marginTop: 2 }
 const btnPrim: React.CSSProperties = { padding: '6px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
-const filterSt: React.CSSProperties = { background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '6px 10px', fontSize: 12.5, fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }
+const filterSt: React.CSSProperties = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '5px 24px 5px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text)', cursor: 'pointer', outline: 'none', fontFamily: 'inherit', appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238c6b45' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }
 const thSt: React.CSSProperties = { padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }
 const tdSt: React.CSSProperties = { padding: '8.5px 12px', fontSize: 12.5, color: 'var(--text2)', borderBottom: '1px solid var(--bg)', verticalAlign: 'middle' }
