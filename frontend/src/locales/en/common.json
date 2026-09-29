@@ -2,7 +2,8 @@
   "cacheBadge": "Data from {date} — offline",
   "theme": {
     "toLight": "Switch to light mode",
-    "toDark": "Switch to dark mode"
+    "toDark": "Switch to dark mode",
+    "toggle": "Theme"
   },
   "app": {
     "name": "ZekoulABia",

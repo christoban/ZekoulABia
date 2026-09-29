@@ -2,7 +2,8 @@
   "cacheBadge": "Données du {date} — hors-ligne",
   "theme": {
     "toLight": "Passer en mode clair",
-    "toDark": "Passer en mode sombre"
+    "toDark": "Passer en mode sombre",
+    "toggle": "Thème"
   },
   "app": {
     "name": "ZekoulABia",
