@@ -4,6 +4,7 @@ import type { SchoolRepository } from '@domain/ports/repositories/SchoolReposito
 import type { AnneeAcademiqueRepository } from '@domain/ports/repositories/AnneeAcademiqueRepository';
 import type { BulletinRepository } from '@domain/ports/repositories/BulletinRepository';
 import type { StudentDocumentRepository } from '@domain/ports/repositories/StudentDocumentRepository';
+import type { ParentRepository } from '@domain/ports/repositories/ParentRepository';
 import {
   generateCertificatPdf,
   generateCarteScolairepdf,
@@ -24,6 +25,7 @@ export class StudentDocumentController {
     private readonly anneeRepository: AnneeAcademiqueRepository,
     private readonly bulletinRepository: BulletinRepository,
     private readonly documentRepository: StudentDocumentRepository,
+    private readonly parentRepository?: ParentRepository,
   ) {}
 
   private async fetchStudent(userId: string, schoolId: string) {
@@ -41,11 +43,31 @@ export class StudentDocumentController {
     return this.anneeRepository.findCourante(schoolId);
   }
 
+  // ─── GET /api/v2/students/my/certificat (Accès direct élève connecté) ──
+  getMyCertificat = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    req.params.id = req.user.userId;
+    return this.getCertificat(req, res, next);
+  };
+
+  // ─── GET /api/v2/students/my/carte (Accès direct élève connecté) ──────
+  getMyCarte = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    req.params.id = req.user.userId;
+    return this.getCarte(req, res, next);
+  };
+
   // ─── GET /api/v2/students/:id/certificat ─────────────────────
   getCertificat = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const user = req.user;
       const studentUserId = req.params.id as string;
+
+      if (user.role === 'PARENT' && this.parentRepository) {
+        const aAcces = await this.parentRepository.aAccesEleve(user.userId, studentUserId);
+        if (!aAcces) {
+          res.status(403).json({ success: false, message: 'Accès non autorisé : cet élève ne fait pas partie de vos enfants' });
+          return;
+        }
+      }
 
       const student = await this.fetchStudent(studentUserId, user.schoolId);
       if (!student) {
@@ -111,6 +133,14 @@ export class StudentDocumentController {
     try {
       const user = req.user;
       const studentUserId = req.params.id as string;
+
+      if (user.role === 'PARENT' && this.parentRepository) {
+        const aAcces = await this.parentRepository.aAccesEleve(user.userId, studentUserId);
+        if (!aAcces) {
+          res.status(403).json({ success: false, message: 'Accès non autorisé : cet élève ne fait pas partie de vos enfants' });
+          return;
+        }
+      }
 
       const student = await this.fetchStudent(studentUserId, user.schoolId);
       if (!student) {

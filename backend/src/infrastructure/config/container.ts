@@ -1183,6 +1183,7 @@ export function creerContainer() {
       obtenirEnfants: obtenirEnfantsUseCase,
       verifierAcces: verifierAccesUseCase,
       obtenirAlertesSolde: obtenirAlertesSoldeUseCase,
+      parentRepository,
     },
     schoolSettings: {
       obtenir: obtenirParametresUseCase,

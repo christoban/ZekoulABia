@@ -5,18 +5,33 @@ import type { StudentDocumentController } from '@infrastructure/http/controllers
 export function creerStudentDocumentRoutes(controller: StudentDocumentController): Router {
   const router = Router();
 
-  // Documents individuels — ADMIN ou STAFF
+  // Documents de l'élève connecté — STUDENT
+  router.get(
+    '/students/me/certificat',
+    requireAuth,
+    requireRole('STUDENT'),
+    controller.getMyCertificat
+  );
+
+  router.get(
+    '/students/me/carte',
+    requireAuth,
+    requireRole('STUDENT'),
+    controller.getMyCarte
+  );
+
+  // Documents individuels — ADMIN, STAFF ou PARENT (enfant rattaché)
   router.get(
     '/students/:id/certificat',
     requireAuth,
-    requireRole('ADMIN', 'STAFF'),
+    requireRole('ADMIN', 'STAFF', 'PARENT'),
     controller.getCertificat
   );
 
   router.get(
     '/students/:id/carte',
     requireAuth,
-    requireRole('ADMIN', 'STAFF'),
+    requireRole('ADMIN', 'STAFF', 'PARENT'),
     controller.getCarte
   );
 

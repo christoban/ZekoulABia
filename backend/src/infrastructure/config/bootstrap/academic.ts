@@ -141,6 +141,7 @@ export function registerAcademicRoutes(app: Application, prismaParam: typeof pri
     c.studentDocument.anneeRepository,
     c.studentDocument.bulletinRepository,
     c.studentDocument.documentRepository,
+    c.parent.parentRepository,
   );
   app.use('/api/v2', creerStudentDocumentRoutes(studentDocumentController));
 
