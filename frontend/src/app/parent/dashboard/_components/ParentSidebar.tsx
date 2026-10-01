@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LogOut, Users, FileText, ClipboardCheck, Calendar, Smartphone, BookOpen, Settings, HandCoins, X, Megaphone, MessageCircle, Camera, BookMarked, FileCheck } from 'lucide-react'
+import { LogOut, Users, FileText, ClipboardCheck, Calendar, Smartphone, BookOpen, Settings, HandCoins, X, Megaphone, MessageCircle, Camera, BookMarked, FileCheck, HeartPulse, TrendingUp, User } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useT } from '@/lib/i18n'
@@ -47,17 +47,20 @@ export default function ParentSidebar({ current, onChange, onLogout, user, schoo
   const NAV_GROUPS: NavGroup[] = [
     {
       items: [
-        { id: 'children', icon: Users, label: tnav('sidebar.myChildren') },
+        { id: 'children',      icon: Users, label: tnav('sidebar.myChildren') },
+        { id: 'child-profile', icon: User,  label: tnav('sidebar.parent_childProfile') },
       ]
     },
     {
       label: tnav('group.academic'),
       items: [
-        { id: 'grades',     icon: FileText, label: tnav('sidebar.grades') },
-        { id: 'attendance', icon: ClipboardCheck, label: tnav('sidebar.attendance') },
-        { id: 'homework',   icon: BookMarked, label: tnav('sidebar.parent_homework') },
-        { id: 'timetable',  icon: Calendar, label: tnav('sidebar.timetable') },
-        { id: 'documents',  icon: FileCheck, label: tnav('sidebar.parent_documents') },
+        { id: 'grades',            icon: FileText,       label: tnav('sidebar.grades') },
+        { id: 'academic-profile',  icon: TrendingUp,     label: tnav('sidebar.parent_academicProfile') },
+        { id: 'health-tracking',   icon: HeartPulse,     label: tnav('sidebar.parent_healthTracking') },
+        { id: 'attendance',        icon: ClipboardCheck, label: tnav('sidebar.attendance') },
+        { id: 'homework',          icon: BookMarked,     label: tnav('sidebar.parent_homework') },
+        { id: 'timetable',         icon: Calendar,       label: tnav('sidebar.timetable') },
+        { id: 'documents',         icon: FileCheck,      label: tnav('sidebar.parent_documents') },
       ]
     },
     {

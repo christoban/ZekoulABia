@@ -1,6 +1,6 @@
 'use client'
 import { useCallback, useState } from 'react'
-import { Users, Package, Trophy, FileText, CheckCircle2, Smartphone, Sparkles, BookOpen, Calendar, FileCheck, User } from 'lucide-react'
+import { Users, Package, Trophy, FileText, CheckCircle2, Smartphone, Sparkles, BookOpen, Calendar, FileCheck, User, HeartPulse, TrendingUp } from 'lucide-react'
 import type { ChildWithStats } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
@@ -17,7 +17,7 @@ interface Props {
 
 interface HealthTrackingChild { studentId: string; conseil: string | null; alertLevel: 'critical' | 'warning' | 'good' }
 
-function HealthBadge({ score }: { score: number }) {
+function HealthBadge({ score, onClick }: { score: number; onClick?: () => void }) {
   const t = useT('parent')
   const labels = [
     { min: 86, key: 'progression' },
@@ -31,7 +31,13 @@ function HealthBadge({ score }: { score: number }) {
   const color = found.key === 'progression' ? 'var(--green)' : found.key === 'stable' ? 'var(--blue)' : found.key === 'moyen' ? 'var(--amber)' : found.key === 'eleve' ? 'var(--orange)' : 'var(--red)'
   const bg = found.key === 'progression' ? 'var(--green-light)' : found.key === 'stable' ? 'var(--blue-light)' : found.key === 'moyen' ? 'var(--amber-light)' : found.key === 'eleve' ? 'var(--orange-light)' : 'var(--red-light)'
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+    <div
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      title="Consulter le suivi scolaire et la note de santé sur 100"
+      className={onClick ? 'cursor-pointer transition-transform hover:scale-105 active:scale-95' : ''}
+      style={{ display: 'flex', alignItems: 'center', gap: 7 }}
+    >
       <div style={{ width: 34, height: 34, borderRadius: '50%', background: bg, border: `1.5px solid ${color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color, flexShrink: 0 }}>
         {score}
       </div>
@@ -154,21 +160,21 @@ export default function SectionParentChildren({ onNav, onToast, userId }: Props)
 
                 <div className="flex items-center gap-2 shrink-0">
                   <button
-                    onClick={() => setSelectedChildModal(child)}
-                    title="Consulter le dossier officiel de l'enfant"
-                    className="h-8 px-2.5 rounded-lg text-xs font-bold border flex items-center gap-1.5 transition-colors cursor-pointer"
+                    onClick={() => onNav('child-profile')}
+                    title="Consulter et administrer le dossier officiel de l'enfant"
+                    className="h-8 px-2.5 rounded-lg text-xs font-bold border flex items-center gap-1.5 transition-all cursor-pointer hover:bg-[var(--bg2)] shadow-2xs"
                     style={{
-                      background: 'var(--bg2)',
-                      borderColor: 'var(--border)',
-                      color: 'var(--text2)',
+                      background: 'var(--surface)',
+                      borderColor: 'var(--border2)',
+                      color: 'var(--text)',
                     }}
                   >
                     <User size={12} style={{ color: 'var(--primary)' }} />
-                    <span className="hidden sm:inline">Dossier</span>
+                    <span className="hidden sm:inline">Dossier scolaire</span>
                   </button>
 
                   {child.indiceSante !== undefined && child.indiceSante !== null && (
-                    <HealthBadge score={child.indiceSante} />
+                    <HealthBadge score={child.indiceSante} onClick={() => onNav('health-tracking')} />
                   )}
                 </div>
               </div>
@@ -185,6 +191,28 @@ export default function SectionParentChildren({ onNav, onToast, userId }: Props)
                       <div className="text-[10px] sm:text-[11px] font-semibold mt-1 truncate" style={{ color: 'var(--text3)' }}>{stat.label}</div>
                     </div>
                   ))}
+                </div>
+
+                {/* Raccourcis pédagogiques & algorithmes (Évolution temporelle & Note sur 100) */}
+                <div className="grid grid-cols-2 gap-2 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => onNav('academic-profile')}
+                    className="h-8 px-2.5 rounded-lg text-xs font-bold border flex items-center justify-center gap-1.5 cursor-pointer transition-all hover:bg-[var(--bg2)]"
+                    style={{ background: 'var(--surface)', borderColor: 'var(--border2)', color: 'var(--text)' }}
+                  >
+                    <TrendingUp size={13} className="text-[var(--primary)] shrink-0" />
+                    <span className="truncate">Évolution & Profil</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onNav('health-tracking')}
+                    className="h-8 px-2.5 rounded-lg text-xs font-bold border flex items-center justify-center gap-1.5 cursor-pointer transition-all hover:bg-[var(--bg2)]"
+                    style={{ background: 'var(--surface)', borderColor: 'var(--border2)', color: 'var(--text)' }}
+                  >
+                    <HeartPulse size={13} className="text-[var(--green)] shrink-0" />
+                    <span className="truncate">Santé scolaire sur 100</span>
+                  </button>
                 </div>
 
                 <div className="flex items-center justify-between text-xs pt-1">

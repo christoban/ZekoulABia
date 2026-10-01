@@ -16,6 +16,10 @@ export interface EnfantAvecStats {
   derniereeMention?: string;   // Mention du dernier bulletin
   dernieereMoyenne?: number;   // Moyenne du dernier bulletin
   indiceSante?: number;        // healthScore 0-100
+  phone?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  photoUrl?: string;
 }
 
 export interface ParentRepository {

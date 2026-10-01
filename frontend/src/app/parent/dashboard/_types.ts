@@ -1,4 +1,4 @@
-export type ParentSection = 'children' | 'grades' | 'attendance' | 'homework' | 'documents' | 'payments' | 'timetable' | 'settings' | 'library' | 'apee' | 'notifications' | 'babillard' | 'messagerie'
+export type ParentSection = 'children' | 'child-profile' | 'grades' | 'attendance' | 'homework' | 'documents' | 'health-tracking' | 'academic-profile' | 'payments' | 'timetable' | 'settings' | 'library' | 'apee' | 'notifications' | 'babillard' | 'messagerie'
 
 export interface Toast {
   id: number
@@ -29,6 +29,10 @@ export interface ChildWithStats {
   derniereeMention?: string
   dernieereMoyenne?: number
   indiceSante?: number
+  phone?: string | null
+  dateOfBirth?: string | null
+  gender?: string | null
+  photoUrl?: string | null
 }
 
 export interface ReportCard {

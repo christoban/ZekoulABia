@@ -13,6 +13,7 @@ import {
   AlertCircle,
   RefreshCw,
   Info,
+  Calendar,
 } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
@@ -27,17 +28,21 @@ interface Props {
 }
 
 export default function ChildProfileModal({ child, onClose, onToast, onUpdated }: Props) {
-  const t = useT('parent')
   const tc = useT('common')
 
   const isJunior = isFirstCycleOrPrimary(child.classeNom)
 
-  const [phone, setPhone] = useState('')
+  // Initialisation des champs éditables
+  const initialDob = child.dateOfBirth ? child.dateOfBirth.slice(0, 10) : ''
+  const [phone, setPhone] = useState(child.phone || '')
+  const [dateOfBirth, setDateOfBirth] = useState(initialDob)
+  const [gender, setGender] = useState(child.gender || '')
+
   const [saving, setSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  const handleSaveContact = async (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isJunior) return
     setSaving(true)
@@ -45,17 +50,23 @@ export default function ChildProfileModal({ child, onClose, onToast, onUpdated }
     setSaveError(null)
 
     try {
-      const res = await fetchApi(`/api/v2/users/${child.studentId}`, {
-        method: 'PUT',
+      const payload: { phone?: string; dateOfBirth?: string; gender?: string } = {
+        phone: phone.trim(),
+        dateOfBirth: dateOfBirth || undefined,
+        gender: gender || undefined,
+      }
+
+      const res = await fetchApi(`/api/v2/parent/children/${child.studentId}/profile`, {
+        method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phone.trim() }),
+        body: JSON.stringify(payload),
       })
       const d = await res.json()
-      if (!res.ok) throw new Error(d.message || tc('errors.generic_error'))
+      if (!res.ok || !d.success) throw new Error(d.message || tc('errors.generic_error'))
 
       setSaveSuccess(true)
-      onToast('Coordonnées de votre enfant mises à jour avec succès', 'success')
+      onToast('Dossier de votre enfant mis à jour avec succès', 'success')
       onUpdated?.()
       setTimeout(() => setSaveSuccess(false), 3000)
     } catch (err) {
@@ -123,7 +134,7 @@ export default function ChildProfileModal({ child, onClose, onToast, onUpdated }
               <Shield size={16} className="shrink-0 mt-0.5" />
               <div className="text-xs leading-relaxed">
                 <span className="font-extrabold block mb-0.5">Tutelle parentale directe · Premier cycle / Primaire</span>
-                En tant que parent ou tuteur légal, vous gérez les coordonnées et contacts de votre enfant inscrits dans l&apos;établissement.
+                En tant que parent ou tuteur légal, vous administrez les coordonnées officielles et informations déclaratives de votre enfant.
               </div>
             </div>
           ) : (
@@ -131,7 +142,7 @@ export default function ChildProfileModal({ child, onClose, onToast, onUpdated }
               <Info size={16} className="shrink-0 mt-0.5" />
               <div className="text-xs leading-relaxed">
                 <span className="font-extrabold block mb-0.5">Consultation du dossier · Second cycle</span>
-                Votre enfant est scolarisé au second cycle. Son dossier est consultable ci-dessous ; la mise à jour de ses coordonnées directes est gérée par l&apos;élève ou par le secrétariat.
+                Votre enfant est scolarisé au second cycle. Son dossier officiel est consultable ci-dessous en toute transparence ; la mise à jour de ses coordonnées directes est gérée par l&apos;élève ou par le secrétariat.
               </div>
             </div>
           )}
@@ -167,17 +178,17 @@ export default function ChildProfileModal({ child, onClose, onToast, onUpdated }
             </div>
           </div>
 
-          {/* 2. Coordonnées & Édition conditionnelle */}
+          {/* 2. Coordonnées & Informations modifiables */}
           <div className="p-3.5 rounded-xl border bg-[var(--bg)] border-[var(--border)] space-y-3">
             <div className="flex items-center gap-2 border-b pb-2 border-[var(--border)]">
               <Smartphone size={13} className="text-[var(--primary)]" />
               <span className="text-[11px] font-black uppercase tracking-wider text-[var(--text3)]">
-                Coordonnées de l&apos;élève
+                {isJunior ? 'Informations administrables par le parent' : 'Coordonnées de l\'élève'}
               </span>
             </div>
 
             {isJunior ? (
-              <form onSubmit={handleSaveContact} className="space-y-3 pt-1">
+              <form onSubmit={handleSaveProfile} className="space-y-3 pt-1">
                 <div>
                   <label className="text-[11px] font-bold text-[var(--text2)] block mb-1">
                     Numéro de téléphone ou contact d&apos;urgence pour cet enfant
@@ -194,6 +205,35 @@ export default function ChildProfileModal({ child, onClose, onToast, onUpdated }
                   </span>
                 </div>
 
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-bold text-[var(--text2)] block mb-1">
+                      Date de naissance
+                    </label>
+                    <input
+                      type="date"
+                      value={dateOfBirth}
+                      onChange={(e) => setDateOfBirth(e.target.value)}
+                      className="w-full h-9 px-3 rounded-lg border text-xs outline-none bg-[var(--surface)] text-[var(--text)] border-[var(--border)]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-[var(--text2)] block mb-1">
+                      Genre / Sexe
+                    </label>
+                    <select
+                      value={gender}
+                      onChange={(e) => setGender(e.target.value)}
+                      className="w-full h-9 px-3 rounded-lg border text-xs outline-none bg-[var(--surface)] text-[var(--text)] border-[var(--border)]"
+                    >
+                      <option value="">Non renseigné</option>
+                      <option value="M">Masculin (Garçon)</option>
+                      <option value="F">Féminin (Fille)</option>
+                    </select>
+                  </div>
+                </div>
+
                 {saveError && (
                   <div className="p-2 rounded-lg bg-[var(--red-light)] text-[var(--red)] text-xs flex items-center gap-2">
                     <AlertCircle size={14} />
@@ -204,7 +244,7 @@ export default function ChildProfileModal({ child, onClose, onToast, onUpdated }
                 {saveSuccess && (
                   <div className="p-2 rounded-lg bg-[var(--green-light)] text-[var(--green)] text-xs flex items-center gap-2">
                     <CheckCircle2 size={14} />
-                    <span>Coordonnées enregistrées</span>
+                    <span>Dossier enregistré avec succès</span>
                   </div>
                 )}
 
@@ -216,13 +256,27 @@ export default function ChildProfileModal({ child, onClose, onToast, onUpdated }
                     style={{ background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))' }}
                   >
                     {saving ? <RefreshCw size={12} className="animate-spin" /> : <Save size={12} />}
-                    {saving ? 'Enregistrement…' : 'Enregistrer'}
+                    {saving ? 'Enregistrement…' : 'Enregistrer les modifications'}
                   </button>
                 </div>
               </form>
             ) : (
-              <div className="text-xs text-[var(--text3)] pt-1">
-                Les coordonnées directes de cet élève du second cycle sont gérées directement par l&apos;élève depuis son espace ou par le secrétariat.
+              <div className="space-y-2 text-xs">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-[10.5px] font-bold text-[var(--text3)] block">Téléphone contact</span>
+                    <span className="font-bold text-[var(--text)] mt-0.5 block">{child.phone || 'Non renseigné'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10.5px] font-bold text-[var(--text3)] block">Date de naissance</span>
+                    <span className="font-bold text-[var(--text)] mt-0.5 block">
+                      {child.dateOfBirth ? new Date(child.dateOfBirth).toLocaleDateString('fr-FR') : 'Non renseignée'}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-[11px] text-[var(--text3)] pt-2 border-t border-[var(--border)]">
+                  Les coordonnées directes de cet élève du second cycle sont gérées directement par l&apos;élève depuis son espace ou par le secrétariat.
+                </div>
               </div>
             )}
           </div>

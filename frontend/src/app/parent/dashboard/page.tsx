@@ -18,6 +18,9 @@ import SectionParentSettings from './_components/SectionParentSettings'
 import SectionParentLibrary from './_components/SectionParentLibrary'
 import SectionParentHomework from './_components/SectionParentHomework'
 import SectionParentDocuments from './_components/SectionParentDocuments'
+import SectionParentHealthTracking from './_components/SectionParentHealthTracking'
+import SectionParentAcademicProfile from './_components/SectionParentAcademicProfile'
+import SectionParentChildProfile from './_components/SectionParentChildProfile'
 import type { ParentSection, Toast, UserInfo } from './_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { OfflineIndicator } from '@/components/OfflineIndicator'
@@ -38,7 +41,7 @@ interface SessionUser {
   permissions?: string[]
 }
 
-const PARENT_SECTIONS: ParentSection[] = ['children', 'grades', 'attendance', 'homework', 'documents', 'payments', 'timetable', 'settings', 'library', 'apee', 'notifications', 'babillard', 'messagerie']
+const PARENT_SECTIONS: ParentSection[] = ['children', 'child-profile', 'grades', 'attendance', 'homework', 'documents', 'health-tracking', 'academic-profile', 'payments', 'timetable', 'settings', 'library', 'apee', 'notifications', 'babillard', 'messagerie']
 const PARENT_ASSISTANT_SUGGESTIONS = [
   'Quelles sont les dernières notes de mon enfant ?',
   'Mon enfant a-t-il des factures impayées ?',
@@ -54,10 +57,13 @@ export default function ParentDashboard() {
   const router = useRouter()
   const TITLES: Record<ParentSection, string> = {
     children:   tnav('pageTitle.parent_children'),
+    'child-profile': tnav('pageTitle.parent_childProfile'),
     grades:     tnav('pageTitle.parent_grades'),
     attendance: tnav('pageTitle.parent_attendance'),
     homework:   tnav('pageTitle.parent_homework'),
     documents:  tnav('pageTitle.parent_documents'),
+    'health-tracking':  tnav('pageTitle.parent_healthTracking'),
+    'academic-profile': tnav('pageTitle.parent_academicProfile'),
     payments:   tnav('pageTitle.parent_payments'),
     apee:       tnav('pageTitle.parent_apee'),
     notifications: tnav('pageTitle.parent_notifications'),
@@ -183,7 +189,10 @@ export default function ParentDashboard() {
 
         <main className="pb-[calc(60px+env(safe-area-inset-bottom,0px))] md:pb-0" style={{ flex: 1, overflow: 'hidden', background: 'var(--bg)' }}>
           {section === 'children'   && <SectionParentChildren onNav={s => setSection(s as ParentSection)} {...sProps} userId={user?.id} />}
+          {section === 'child-profile' && <SectionParentChildProfile userId={user?.id} onNav={s => setSection(s as ParentSection)} onToast={showToast} />}
           {section === 'grades'     && <SectionParentGrades {...sProps} userId={user?.id} />}
+          {section === 'academic-profile' && <SectionParentAcademicProfile userId={user?.id} onNav={s => setSection(s as ParentSection)} />}
+          {section === 'health-tracking'  && <SectionParentHealthTracking userId={user?.id} onNav={s => setSection(s as ParentSection)} />}
           {section === 'attendance' && <SectionParentAttendance {...sProps} userId={user?.id} />}
           {section === 'homework'   && <SectionParentHomework userId={user?.id} onToast={showToast} />}
           {section === 'documents'  && <SectionParentDocuments userId={user?.id} onToast={showToast} />}

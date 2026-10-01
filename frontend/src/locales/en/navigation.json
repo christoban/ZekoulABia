@@ -75,6 +75,11 @@
     "children": "Children",
     "homework": "Homework & Notebook",
     "documents": "My Documents",
+    "parent_homework": "Homework & Assignments",
+    "parent_documents": "School Documents",
+    "parent_healthTracking": "School & Health Tracking",
+    "parent_academicProfile": "Academic Profile",
+    "parent_childProfile": "Child's School Profile",
     "menu": "More"
   },
   "group": {
@@ -188,6 +193,9 @@
     "parent_documents": "School Documents",
     "parent_settings": "Settings",
     "parent_library": "Reading",
+    "parent_healthTracking": "Child Health & Academic Tracking",
+    "parent_academicProfile": "Academic Profile & Progress",
+    "parent_childProfile": "Child's School Profile & Records",
     "student_dashboard": "Dashboard",
     "student_grades": "My grades",
     "student_bulletins": "My report cards",

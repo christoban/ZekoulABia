@@ -46,7 +46,7 @@ export class PrismaParentRepository implements ParentRepository {
           include: {
             studentProfile: {
               include: {
-                user: { select: { firstName: true, lastName: true } },
+                user: { select: { firstName: true, lastName: true, phone: true } },
                  enrollmentsYearScoped: {
                    where: { status: 'ACTIVE', academicYear: { isCurrent: true } },
                    select: { class: { select: { id: true, name: true, serie: true } } },
@@ -119,6 +119,10 @@ export class PrismaParentRepository implements ParentRepository {
           derniereeMention: dernierBulletin?.mention ?? undefined,
           dernieereMoyenne: dernierBulletin?.generalAverage ?? undefined,
           indiceSante: profil.healthScore ?? undefined,
+          phone: profil.user.phone ?? undefined,
+          dateOfBirth: profil.dateOfBirth ? profil.dateOfBirth.toISOString() : undefined,
+          gender: profil.gender ?? undefined,
+          photoUrl: profil.photoUrl ?? undefined,
         } satisfies EnfantAvecStats;
       })
     );

@@ -75,6 +75,11 @@
     "children": "Enfants",
     "homework": "Cahier & Devoirs",
     "documents": "Mes Documents",
+    "parent_homework": "Cahier & Devoirs",
+    "parent_documents": "Documents scolaires",
+    "parent_healthTracking": "Suivi scolaire & Santé",
+    "parent_academicProfile": "Profil académique",
+    "parent_childProfile": "Dossier scolaire de l'enfant",
     "menu": "Plus"
   },
   "group": {
@@ -188,6 +193,9 @@
     "parent_documents": "Documents scolaires",
     "parent_settings": "Paramètres",
     "parent_library": "Lectures",
+    "parent_healthTracking": "Suivi scolaire & Santé de l'enfant",
+    "parent_academicProfile": "Profil académique & Évolution",
+    "parent_childProfile": "Dossier & Profil Scolaire de l'Enfant",
     "student_dashboard": "Tableau de bord",
     "student_grades": "Mes notes",
     "student_bulletins": "Mes bulletins",
