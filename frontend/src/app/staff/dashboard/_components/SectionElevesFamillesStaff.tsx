@@ -4,9 +4,10 @@ import { useState, useEffect, useMemo } from 'react'
 import {
   Users, Search, Filter, IdCard, FileText, Phone, Mail,
   Printer, X, Eye, ShieldCheck, Smartphone, CheckCircle2,
-  Calendar, School, ArrowRight, UserCheck, Loader2, Download
+  Calendar, School, ArrowRight, UserCheck, Loader2, Download, Camera
 } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
+import StudentPhotoStudioModal from './StudentPhotoStudioModal'
 
 type ClassItem = {
   id: string
@@ -24,6 +25,8 @@ type StudentItem = {
   gender?: string
   dateOfBirth?: string
   className?: string
+  photoUrl?: string | null
+  avatarUrl?: string | null
   parentName?: string
   parentPhone?: string
   parentEmail?: string
@@ -44,6 +47,7 @@ export default function SectionElevesFamillesStaff({ onToast }: Props) {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [selectedStudent, setSelectedStudent] = useState<StudentItem | null>(null)
+  const [photoStudioStudent, setPhotoStudioStudent] = useState<StudentItem | null>(null)
   const [filterProfile, setFilterProfile] = useState<string>('ALL')
 
   // 1. Charger les classes
@@ -69,19 +73,18 @@ export default function SectionElevesFamillesStaff({ onToast }: Props) {
     return () => { mounted = false }
   }, [onToast])
 
-  // 2. Charger les élèves de la classe sélectionnée
+  // 2. Charger les élèves de la classe sélectionnée via l'annuaire complet
   useEffect(() => {
     if (!selectedClassId) return
     let mounted = true
     setLoading(true)
-    fetchApi(`/api/v2/classes/${selectedClassId}/students`, { credentials: 'include' })
+    fetchApi(`/api/v2/classes/${selectedClassId}/students-directory`, { credentials: 'include' })
       .then(r => r.json())
       .then(d => {
         if (!mounted) return
-        const rawList = Array.isArray(d?.data) ? d.data : Array.isArray(d) ? d : []
+        const rawList = Array.isArray(d?.data) ? d.data : []
         const currentClassName = classes.find(c => c.id === selectedClassId)?.name || 'Classe'
         
-        // Déduire le profil d'accès numérique de manière déterministe
         const mapped: StudentItem[] = rawList.map((s: Record<string, unknown>, idx: number) => {
           const fn = String(s.firstName ?? '')
           const ln = String(s.lastName ?? s.name ?? '')
@@ -102,10 +105,12 @@ export default function SectionElevesFamillesStaff({ onToast }: Props) {
             name: `${fn} ${ln}`.trim(),
             matricule: String(s.matricule ?? `MAT-${1000 + idx}`),
             gender: String(s.gender ?? (idx % 2 === 0 ? 'M' : 'F')),
-            dateOfBirth: typeof s.dateNaissance === 'string' ? s.dateNaissance : '2012-05-14',
+            dateOfBirth: typeof s.dateOfBirth === 'string' ? s.dateOfBirth : (typeof s.dateNaissance === 'string' ? s.dateNaissance : '—'),
+            photoUrl: (s.photoUrl as string) || null,
+            avatarUrl: (s.avatarUrl as string) || null,
             className: currentClassName,
             parentName: typeof s.parentName === 'string' ? s.parentName : 'Famille ' + (ln || 'Parent'),
-            parentPhone: pPhone || '690000000',
+            parentPhone: pPhone || '',
             parentEmail: pEmail,
             parentHasDevice: pHasDev,
             accessProfile: profile,
@@ -115,7 +120,32 @@ export default function SectionElevesFamillesStaff({ onToast }: Props) {
         setStudents(mapped)
       })
       .catch(() => {
-        if (mounted) onToast('Erreur chargement élèves', 'error')
+        // Fallback gracieux sur l'ancienne route
+        fetchApi(`/api/v2/classes/${selectedClassId}/students`, { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => {
+            if (!mounted) return
+            const rawList = Array.isArray(d?.data) ? d.data : []
+            const currentClassName = classes.find(c => c.id === selectedClassId)?.name || 'Classe'
+            setStudents(rawList.map((s: any, idx: number) => ({
+              id: s.id ?? `stud-${idx}`,
+              userId: s.userId ?? s.id,
+              firstName: s.firstName ?? '',
+              lastName: s.lastName ?? '',
+              name: `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim(),
+              matricule: s.matricule || `MAT-${1000 + idx}`,
+              gender: s.gender || 'M',
+              className: currentClassName,
+              photoUrl: s.photoUrl || null,
+              parentName: s.parentName || 'Parent',
+              parentPhone: s.parentPhone || '',
+              parentEmail: s.parentEmail || '',
+              accessProfile: 'NON_CONNECTE' as const,
+            })))
+          })
+          .catch(() => {
+            if (mounted) onToast('Erreur chargement élèves', 'error')
+          })
       })
       .finally(() => {
         if (mounted) setLoading(false)
@@ -260,10 +290,35 @@ export default function SectionElevesFamillesStaff({ onToast }: Props) {
                   className="p-3.5 space-y-2.5 cursor-pointer hover:bg-[var(--bg)]/50 transition-colors"
                   onClick={() => setSelectedStudent(student)}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="font-bold text-sm text-[var(--text)]">{student.name}</div>
-                      <div className="text-xs font-mono text-[var(--text3)] mt-0.5">{student.matricule} · Sexe : {student.gender === 'M' ? 'M' : 'F'}</div>
+                  <div className="flex items-start justify-between gap-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {/* Photo miniature */}
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setPhotoStudioStudent(student)
+                        }}
+                        className="w-10 h-12 rounded-lg border overflow-hidden shrink-0 flex items-center justify-center relative group shadow-xs cursor-pointer"
+                        style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
+                        title="Cliquer pour capturer/modifier la photo officielle"
+                      >
+                        {student.photoUrl ? (
+                          <img src={student.photoUrl} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center text-[9px] font-bold text-[var(--text3)]">
+                            <Camera size={14} className="mb-0.5 text-amber-500" />
+                            <span>Sans</span>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+                          <Camera size={12} />
+                        </div>
+                      </div>
+
+                      <div className="min-w-0">
+                        <div className="font-bold text-sm text-[var(--text)] truncate">{student.name}</div>
+                        <div className="text-xs font-mono text-[var(--text3)] mt-0.5">{student.matricule} · Sexe : {student.gender === 'M' ? 'M' : 'F'}</div>
+                      </div>
                     </div>
                     {getProfileBadge(student.accessProfile)}
                   </div>
@@ -288,12 +343,18 @@ export default function SectionElevesFamillesStaff({ onToast }: Props) {
                     )}
                   </div>
 
-                  <div className="pt-0.5" onClick={e => e.stopPropagation()}>
+                  <div className="grid grid-cols-2 gap-2 pt-0.5" onClick={e => e.stopPropagation()}>
+                    <button
+                      onClick={() => setPhotoStudioStudent(student)}
+                      className="min-h-[38px] flex items-center justify-center gap-1.5 rounded-lg text-xs font-bold border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] hover:border-[var(--blue)] transition-all"
+                    >
+                      <Camera size={13} className="text-[var(--blue)]" /> Photo
+                    </button>
                     <button
                       onClick={() => setSelectedStudent(student)}
-                      className="w-full min-h-[38px] flex items-center justify-center gap-1.5 rounded-lg text-xs font-bold border border-[var(--border)] bg-[var(--surface)] text-[var(--primary)] hover:border-[var(--primary)] transition-all"
+                      className="min-h-[38px] flex items-center justify-center gap-1.5 rounded-lg text-xs font-bold border border-[var(--border)] bg-[var(--surface)] text-[var(--primary)] hover:border-[var(--primary)] transition-all"
                     >
-                      <Eye size={13} /> Fiche & Documents officiels
+                      <Eye size={13} /> Documents
                     </button>
                   </div>
                 </div>
@@ -305,6 +366,7 @@ export default function SectionElevesFamillesStaff({ onToast }: Props) {
               <table className="w-full text-left text-xs md:text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-[var(--border)] bg-[var(--bg)]/50 text-[var(--text3)] text-[11px] font-bold uppercase tracking-wider">
+                    <th className="p-3 w-12">Photo</th>
                     <th className="p-3">Matricule & Identité</th>
                     <th className="p-3">Sexe</th>
                     <th className="p-3">Parent / Tuteur</th>
@@ -320,6 +382,23 @@ export default function SectionElevesFamillesStaff({ onToast }: Props) {
                       className="hover:bg-[var(--bg)]/60 transition-colors cursor-pointer"
                       onClick={() => setSelectedStudent(student)}
                     >
+                      <td className="p-3" onClick={e => e.stopPropagation()}>
+                        <div
+                          onClick={() => setPhotoStudioStudent(student)}
+                          className="w-8 h-10 rounded-md border overflow-hidden shrink-0 flex items-center justify-center relative group shadow-2xs cursor-pointer"
+                          style={{ background: 'var(--bg)', borderColor: 'var(--border)' }}
+                          title={student.photoUrl ? 'Cliquer pour modifier la photo' : 'Aucune photo - Cliquer pour prendre une photo'}
+                        >
+                          {student.photoUrl ? (
+                            <img src={student.photoUrl} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <Camera size={14} className="text-amber-500 opacity-80 group-hover:scale-110 transition-transform" />
+                          )}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+                            <Camera size={11} />
+                          </div>
+                        </div>
+                      </td>
                       <td className="p-3">
                         <div className="font-bold text-[var(--text)]">{student.name}</div>
                         <div className="text-[11px] font-mono text-[var(--text3)]">{student.matricule}</div>
@@ -346,12 +425,23 @@ export default function SectionElevesFamillesStaff({ onToast }: Props) {
                         {getProfileBadge(student.accessProfile)}
                       </td>
                       <td className="p-3 text-right" onClick={e => e.stopPropagation()}>
-                        <button
-                          onClick={() => setSelectedStudent(student)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold border border-[var(--border)] bg-[var(--surface)] text-[var(--primary)] hover:border-[var(--primary)] transition-all"
-                        >
-                          <Eye size={12} /> Fiche & Documents
-                        </button>
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            onClick={() => setPhotoStudioStudent(student)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold border border-[var(--border)] bg-[var(--surface)] text-[var(--text2)] hover:text-[var(--text)] hover:border-[var(--blue)] transition-all"
+                            title="Ouvrir le studio photo pour cet élève"
+                          >
+                            <Camera size={12} className="text-[var(--blue)]" />
+                            <span>Photo</span>
+                          </button>
+                          <button
+                            onClick={() => setSelectedStudent(student)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold border border-[var(--border)] bg-[var(--surface)] text-[var(--primary)] hover:border-[var(--primary)] transition-all"
+                          >
+                            <Eye size={12} />
+                            <span>Fiche</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -368,11 +458,31 @@ export default function SectionElevesFamillesStaff({ onToast }: Props) {
           <div className="w-full max-w-md bg-[var(--surface)] h-full shadow-2xl flex flex-col border-l border-[var(--border)] overflow-hidden">
             {/* Header Drawer */}
             <div className="p-4 border-b border-[var(--border)] flex items-center justify-between bg-[var(--bg)]/50">
-              <div className="flex items-center gap-2">
-                <IdCard className="text-[var(--primary)]" size={20} />
+              <div className="flex items-center gap-3">
+                <div
+                  onClick={() => setPhotoStudioStudent(selectedStudent)}
+                  className="w-12 h-14 rounded-lg border overflow-hidden shrink-0 flex items-center justify-center relative group shadow-xs cursor-pointer"
+                  style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+                  title="Modifier la photo d'identité officielle"
+                >
+                  {selectedStudent.photoUrl ? (
+                    <img src={selectedStudent.photoUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <Camera size={18} className="text-amber-500" />
+                  )}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+                    <Camera size={14} />
+                  </div>
+                </div>
                 <div>
                   <h2 className="text-base font-black text-[var(--text)] leading-tight">{selectedStudent.name}</h2>
                   <p className="text-xs text-[var(--text3)] font-mono">{selectedStudent.matricule} · {selectedStudent.className}</p>
+                  <button
+                    onClick={() => setPhotoStudioStudent(selectedStudent)}
+                    className="text-[11px] font-bold text-[var(--blue)] border-0 bg-transparent p-0 cursor-pointer hover:underline mt-0.5 inline-flex items-center gap-1"
+                  >
+                    <Camera size={11} /> {selectedStudent.photoUrl ? 'Modifier photo officielle' : 'Prendre photo d\'identité'}
+                  </button>
                 </div>
               </div>
               <button
@@ -488,6 +598,21 @@ export default function SectionElevesFamillesStaff({ onToast }: Props) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modale Studio Photo du Secrétariat */}
+      {photoStudioStudent && (
+        <StudentPhotoStudioModal
+          student={photoStudioStudent}
+          onClose={() => setPhotoStudioStudent(null)}
+          onSuccess={(newPhotoUrl) => {
+            setStudents(prev => prev.map(s => s.id === photoStudioStudent.id ? { ...s, photoUrl: newPhotoUrl } : s))
+            if (selectedStudent && selectedStudent.id === photoStudioStudent.id) {
+              setSelectedStudent(prev => prev ? { ...prev, photoUrl: newPhotoUrl } : null)
+            }
+          }}
+          onToast={onToast}
+        />
       )}
       </div>
     </div>

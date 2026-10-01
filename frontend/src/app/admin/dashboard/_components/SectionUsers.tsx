@@ -8,8 +8,9 @@ import {
   Search, Eye, Wallet, Wrench, BookOpen, Compass, Package, School, KeyRound,
   X, GraduationCap, Presentation, Download, FileText, FolderOpen, AlertTriangle,
   UserCheck, Star, Pencil, RefreshCw, Trash2, ClipboardList, IdCard, Upload,
-  Loader2, CheckCircle2, MoreHorizontal, MoreVertical, UserPlus, type LucideIcon,
+  Loader2, CheckCircle2, MoreHorizontal, MoreVertical, UserPlus, Camera, type LucideIcon,
 } from 'lucide-react'
+import StudentPhotoStudioModal from '@/app/staff/dashboard/_components/StudentPhotoStudioModal'
 
 import type { AdminSection } from '../_types'
 
@@ -63,10 +64,18 @@ interface UserItem {
   lastName: string
   email: string | null
   role: string
+  avatarUrl?: string | null
   isActive: boolean
   lastLogin: string | null
   createdAt: string
-  studentProfile: { class: { name: string } | null; dateOfBirth: string | null; gender: string | null } | null
+  studentProfile: {
+    id?: string
+    class: { name: string } | null
+    dateOfBirth: string | null
+    gender: string | null
+    photoUrl?: string | null
+    matricule?: string | null
+  } | null
   staffProfile: { title: string } | null
   classesProfessorPrincipal?: { id: string; name: string }[]
 }
@@ -786,6 +795,26 @@ export default function SectionUsers({ onToast, onNav }: Props) {
   const [docModal, setDocModal]     = useState(EMPTY_DOC_MODAL)
   const [createOpen, setCreateOpen] = useState(false)
   const [createForm, setCreateForm] = useState(EMPTY_CREATE_USER)
+  const [studioStudent, setStudioStudent] = useState<{
+    id: string
+    name?: string
+    matricule?: string | null
+    photoUrl?: string | null
+  } | null>(null)
+
+  const handlePhotoUpdated = (newPhotoUrl: string | null) => {
+    if (!studioStudent) return
+    setUsers(prev => prev.map(u => {
+      if (u.studentProfile?.id === studioStudent.id || u.id === studioStudent.id) {
+        return {
+          ...u,
+          studentProfile: u.studentProfile ? { ...u.studentProfile, photoUrl: newPhotoUrl } : null,
+        }
+      }
+      return u
+    }))
+    onToast('Photo officielle enregistrée avec succès', 'success')
+  }
 
   const [availClasses, setAvailClasses] = useState<ClassItem[]>([])
   const [availSubjects, setAvailSubjects] = useState<SubjectItem2[]>([])
@@ -1250,6 +1279,20 @@ export default function SectionUsers({ onToast, onNav }: Props) {
                         {[
                           { icon: Pencil, label: t('users.action_menu.edit'), danger: false, onClick: () => openModUser(user) },
                           ...(user.role === 'STUDENT' ? [
+                            {
+                              icon: Camera,
+                              label: 'Studio photo officiel',
+                              danger: false,
+                              onClick: () => {
+                                setOpenDD(null)
+                                setStudioStudent({
+                                  id: user.studentProfile?.id || user.id,
+                                  name: `${user.firstName} ${user.lastName}`,
+                                  matricule: user.studentProfile?.matricule,
+                                  photoUrl: user.studentProfile?.photoUrl,
+                                })
+                              },
+                            },
                             { icon: RefreshCw, label: t('users.action_menu.change_class'), danger: false, onClick: () => openTransfer(user) },
                             { icon: FileText, label: t('users.action_menu.generate_doc'), danger: false, onClick: () => openDocModal(user) },
                           ] : []),
@@ -1268,8 +1311,16 @@ export default function SectionUsers({ onToast, onNav }: Props) {
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                    <div className="w-[36px] h-[36px] rounded-[10px] text-[13px] font-bold flex-shrink-0" style={{ background: avatarColorFor(user.id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {initials}
+                    <div className="w-[36px] h-[36px] rounded-[10px] text-[13px] font-bold flex-shrink-0 overflow-hidden relative" style={{ background: avatarColorFor(user.id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {user.studentProfile?.photoUrl || user.avatarUrl ? (
+                        <img
+                          src={user.studentProfile?.photoUrl || user.avatarUrl!}
+                          alt={`${user.firstName} ${user.lastName}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        initials
+                      )}
                     </div>
                     <div style={{ flex: 1, minWidth: 0, paddingRight: 30 }}>
                       <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 13.5 }}>{user.firstName} {user.lastName}</div>
@@ -1327,8 +1378,24 @@ export default function SectionUsers({ onToast, onNav }: Props) {
                       onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
                       <td style={tdStyle}>
-                        <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 13 }}>{user.firstName} {user.lastName}</div>
-                        <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 1 }}>{user.email ?? '—'}</div>
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center text-xs font-bold text-white relative shadow-2xs"
+                               style={{ background: avatarColorFor(user.id) }}>
+                            {user.studentProfile?.photoUrl || user.avatarUrl ? (
+                              <img
+                                src={user.studentProfile?.photoUrl || user.avatarUrl!}
+                                alt={`${user.firstName} ${user.lastName}`}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase()
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 13 }}>{user.firstName} {user.lastName}</div>
+                            <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 1 }}>{user.email ?? '—'}</div>
+                          </div>
+                        </div>
                       </td>
                       <td style={tdStyle}><span style={badge(rl.bg, rl.color)}>{rl.label}</span></td>
                       <td style={tdStyle}>
@@ -1366,6 +1433,20 @@ export default function SectionUsers({ onToast, onNav }: Props) {
                               {[
                                 { icon: Pencil, label: t('users.action_menu.edit'), danger: false, onClick: () => openModUser(user) },
                                 ...(user.role === 'STUDENT' ? [
+                                  {
+                                    icon: Camera,
+                                    label: 'Studio photo officiel',
+                                    danger: false,
+                                    onClick: () => {
+                                      setOpenDD(null)
+                                      setStudioStudent({
+                                        id: user.studentProfile?.id || user.id,
+                                        name: `${user.firstName} ${user.lastName}`,
+                                        matricule: user.studentProfile?.matricule,
+                                        photoUrl: user.studentProfile?.photoUrl,
+                                      })
+                                    },
+                                  },
                                   { icon: RefreshCw, label: t('users.action_menu.change_class'), danger: false, onClick: () => openTransfer(user) },
                                   { icon: FileText, label: t('users.action_menu.generate_doc'), danger: false, onClick: () => openDocModal(user) },
                                 ] : []),
@@ -1653,6 +1734,15 @@ export default function SectionUsers({ onToast, onNav }: Props) {
             </div>
           </div>
         </>
+      )}
+      {/* Studio Photo Officiel Élève */}
+      {studioStudent && (
+        <StudentPhotoStudioModal
+          student={studioStudent}
+          onClose={() => setStudioStudent(null)}
+          onSuccess={handlePhotoUpdated}
+          onToast={(msg, type) => onToast(msg, type === 'warning' ? 'info' : type)}
+        />
       )}
     </div>
   )

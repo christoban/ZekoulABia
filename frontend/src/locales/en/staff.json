@@ -993,5 +993,16 @@
     "type_attendance": "Attendance",
     "type_grade": "Grades",
     "action_count": "{count} action(s) pending"
+  },
+  "photoStudio": {
+    "title": "Photo Studio · Official Student File",
+    "webcamTab": "Live Webcam",
+    "uploadTab": "Image File",
+    "captureInstant": "Take snapshot",
+    "captureTimer": "3s timer",
+    "retake": "Retake",
+    "validate": "Confirm for file",
+    "centerFace": "Center face",
+    "deleteCurrent": "Delete current photo"
   }
 }

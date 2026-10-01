@@ -995,5 +995,16 @@
     "type_attendance": "Présences",
     "type_grade": "Notes",
     "action_count": "{count} action(s) en attente"
+  },
+  "photoStudio": {
+    "title": "Studio Photo · Dossier Officiel",
+    "webcamTab": "Webcam Direct",
+    "uploadTab": "Fichier Image",
+    "captureInstant": "Prendre le cliché",
+    "captureTimer": "Minuteur 3s",
+    "retake": "Reprendre",
+    "validate": "Valider pour le dossier",
+    "centerFace": "Centrer le visage",
+    "deleteCurrent": "Supprimer la photo actuelle"
   }
 }
