@@ -4,14 +4,14 @@ import { Compass } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 
+import { resolveOrientationEligibility } from '@/lib/orientationEligibility'
+
 type SuggestedTrack = { track: string; score: number; justification: string }
 interface Recommandation {
   status: string; suggestedTracks: SuggestedTrack[] | null
   finalTrack: string | null; studentChosenTrack: string | null
 }
-interface Child { studentId: string; prenom: string; nom: string }
-
-const CHECKPOINTS = ['FIN_TROISIEME', 'FIN_SECONDE_C'] as const
+interface Child { studentId: string; prenom: string; nom: string; classeNom?: string }
 
 const STATUS_LABEL_KEY: Record<string, string> = {
   CALCULEE: 'orientationCheckpoint.status_calculee',
@@ -22,7 +22,7 @@ const STATUS_LABEL_KEY: Record<string, string> = {
 }
 
 // Miroir lecture seule de l'écran élève (A.6 point 5) — le parent voit où en est le processus
-// d'orientation de chaque enfant, mais ne peut jamais choisir à sa place.
+// d'orientation de chaque enfant éligible (3e ou 2nde C), mais ne peut jamais choisir à sa place.
 export default function OrientationCheckpointParentView({ children }: { children: Child[] }) {
   const t = useT('parent')
   const [entries, setEntries] = useState<Array<{ child: Child; checkpointType: string; reco: Recommandation }>>([])
@@ -33,13 +33,16 @@ export default function OrientationCheckpointParentView({ children }: { children
     (async () => {
       const found: Array<{ child: Child; checkpointType: string; reco: Recommandation }> = []
       for (const child of children) {
-        for (const cp of CHECKPOINTS) {
-          try {
-            const res = await fetchApi(`/api/v2/orientation/ma-recommandation/${cp}?studentId=${child.studentId}`, { credentials: 'include' })
-            const json = await res.json()
-            if (json.success && json.data) found.push({ child, checkpointType: cp, reco: json.data })
-          } catch { /* silencieux */ }
+        const elig = resolveOrientationEligibility(child.classeNom)
+        if (!elig.isEligible || (elig.checkpointKey !== 'FIN_TROISIEME' && elig.checkpointKey !== 'FIN_SECONDE_C')) {
+          continue
         }
+        const cp = elig.checkpointKey
+        try {
+          const res = await fetchApi(`/api/v2/orientation/ma-recommandation/${cp}?studentId=${child.studentId}`, { credentials: 'include' })
+          const json = await res.json()
+          if (json.success && json.data) found.push({ child, checkpointType: cp, reco: json.data })
+        } catch { /* silencieux */ }
       }
       setEntries(found)
       setLoading(false)

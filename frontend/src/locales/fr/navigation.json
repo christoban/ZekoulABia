@@ -73,6 +73,8 @@
     "importEleves": "Import élèves",
     "studentAssignments": "Affectations élèves",
     "children": "Enfants",
+    "homework": "Cahier & Devoirs",
+    "documents": "Mes Documents",
     "menu": "Plus"
   },
   "group": {
@@ -182,6 +184,8 @@
     "parent_apee": "Transparence APEE",
     "parent_notifications": "Centre de notifications",
     "parent_timetable": "Emploi du temps",
+    "parent_homework": "Cahier de textes & Devoirs",
+    "parent_documents": "Documents scolaires",
     "parent_settings": "Paramètres",
     "parent_library": "Lectures",
     "student_dashboard": "Tableau de bord",

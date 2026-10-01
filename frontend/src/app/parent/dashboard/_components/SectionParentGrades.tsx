@@ -1,6 +1,7 @@
 'use client'
-import { useCallback, useState } from 'react'
-import { ScrollText, Loader2, Download, WifiOff, Package } from 'lucide-react'
+
+import { useCallback, useState, useEffect } from 'react'
+import { ScrollText, Loader2, Download, WifiOff, Package, User, Award, BookOpen } from 'lucide-react'
 import type { ChildWithStats, ReportCard } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
@@ -13,22 +14,63 @@ interface Props {
   userId?: string
 }
 
-interface GradesData { children: ChildWithStats[]; bulletins: ReportCard[] }
+interface GradesData {
+  children: ChildWithStats[]
+  bulletins: ReportCard[]
+}
+
+interface SequenceItem {
+  id: string
+  name: string
+  isCurrent: boolean
+}
+
+interface ContinuousGradeItem {
+  id: string
+  value: number | null
+  coefficient: number
+  appreciation?: string | null
+  subject?: { name: string } | null
+}
 
 const MENTION_COLOR = (m: string | null): [string, string] => {
   const map: Record<string, [string, string]> = {
-    TB: ['var(--green-light)', 'var(--green)'], B: ['var(--blue-light)', 'var(--blue)'],
-    AB: ['var(--amber-light)', 'var(--amber)'], P: ['var(--orange-light)', 'var(--orange)'], I: ['var(--red-light)', 'var(--red)'],
+    TB: ['var(--green-light)', 'var(--green)'],
+    B: ['var(--blue-light)', 'var(--blue)'],
+    AB: ['var(--amber-light)', 'var(--amber)'],
+    P: ['var(--orange-light)', 'var(--orange)'],
+    I: ['var(--red-light)', 'var(--red)'],
   }
   return map[m ?? ''] ?? ['var(--bg2)', 'var(--text2)']
 }
 
-function CacheBadge({ cachedAt, label }: { cachedAt: number | null; label: string }) {
+function CacheBadge({ cachedAt }: { cachedAt: number | null }) {
+  const t = useT('common')
   if (!cachedAt) return null
-  const date = new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
+  const date = new Date(cachedAt).toLocaleString('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
   return (
-    <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 8, padding: '5px 12px', fontSize: 13, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 16 }}>
-      <Package size={14} strokeWidth={2} /> {label.replace('{date}', date)}
+    <div
+      style={{
+        background: 'var(--amber-light)',
+        border: '1px solid var(--amber)',
+        borderRadius: 8,
+        padding: '4px 10px',
+        fontSize: 12,
+        fontWeight: 600,
+        color: 'var(--amber)',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        marginBottom: 12,
+      }}
+    >
+      <Package size={13} strokeWidth={2} />
+      <span>{t('cacheBadge', { date })}</span>
     </div>
   )
 }
@@ -36,31 +78,103 @@ function CacheBadge({ cachedAt, label }: { cachedAt: number | null; label: strin
 export default function SectionParentGrades({ onToast, userId }: Props) {
   const t = useT('parent')
   const isOnline = useOnlineStatus()
-  const [selectedChild, setSelectedChild] = useState(0)
+  const [selectedChildIndex, setSelectedChildIndex] = useState(0)
+  const [activeTab, setActiveTab] = useState<'continuous' | 'bulletins'>('continuous')
   const [downloading, setDownloading] = useState<string | null>(null)
 
+  // Séquences
+  const [sequences, setSequences] = useState<SequenceItem[]>([])
+  const [selectedSequenceId, setSelectedSequenceId] = useState<string>('')
+
+  // 1. Fetch enfants et bulletins
   const cacheKey = userId ? `parent:grades:${userId}` : ''
   const fetchFn = useCallback(async (): Promise<GradesData> => {
-    const childrenRes = await fetchApi('/api/v2/parent/children', { credentials: 'include' }).then(r => r.json())
+    const childrenRes = await fetchApi('/api/v2/parent/children', { credentials: 'include' }).then((r) => r.json())
     if (!childrenRes.success) throw new Error(t('errorLoad'))
-    const rcRes = await fetchApi('/api/v2/report-cards', { credentials: 'include' }).then(r => r.json())
-    return { children: childrenRes.data, bulletins: rcRes.reportCards ?? [] }
+    const rcRes = await fetchApi('/api/v2/report-cards', { credentials: 'include' }).then((r) => r.json())
+    return { children: childrenRes.data ?? [], bulletins: rcRes.reportCards ?? [] }
   }, [userId, t])
 
   const { data, loading, error, fromCache, cachedAt, refetch } = useCachedFetch<GradesData>(cacheKey, fetchFn)
 
   const children = data?.children ?? []
   const bulletins = data?.bulletins ?? []
-  const selectedChildData = children[selectedChild]
-  const selectedName = selectedChildData ? `${selectedChildData.prenom} ${selectedChildData.nom}` : ''
-  const filteredBulletins = bulletins.filter(b => b.student?.id === selectedChildData?.studentId)
+  const selectedChild = children[selectedChildIndex] ?? null
+  const selectedStudentId = selectedChild?.studentId
+  const selectedName = selectedChild ? `${selectedChild.prenom} ${selectedChild.nom}` : ''
+  const filteredBulletins = bulletins.filter((b) => b.student?.id === selectedStudentId)
+
+  // 2. Charger les séquences académiques
+  useEffect(() => {
+    let mounted = true
+    fetchApi('/api/v2/academic-years', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((ayRes) => {
+        if (!mounted || !ayRes.success || !ayRes.data?.length) return
+        const curYear = ayRes.data.find((y: any) => y.isCurrent) ?? ayRes.data[0]
+        if (!curYear?.periods) return
+
+        const allSeqs: SequenceItem[] = []
+        for (const period of curYear.periods) {
+          for (const s of period.sequences ?? []) {
+            allSeqs.push({ id: s.id, name: s.name, isCurrent: Boolean(s.isCurrent) })
+          }
+        }
+        setSequences(allSeqs)
+        if (allSeqs.length > 0 && !selectedSequenceId) {
+          const active = allSeqs.find((s) => s.isCurrent) ?? allSeqs[allSeqs.length - 1]
+          setSelectedSequenceId(active.id)
+        }
+      })
+      .catch(() => {})
+    return () => {
+      mounted = false
+    }
+  }, [selectedSequenceId])
+
+  // 3. Charger les notes séquentielles de l'enfant
+  const cacheKeySeqGrades =
+    selectedStudentId && selectedSequenceId ? `parent:grades:seq:${selectedStudentId}:${selectedSequenceId}` : ''
+
+  const fetchSeqGradesFn = useCallback(async (): Promise<{ grades: ContinuousGradeItem[]; avg: number | null }> => {
+    if (!selectedStudentId || !selectedSequenceId) return { grades: [], avg: null }
+    const classId = selectedChild?.classeId
+    const [gradesRes, avgRes] = await Promise.all([
+      fetchApi(`/api/v2/grades?studentId=${selectedStudentId}&sequenceId=${selectedSequenceId}`, {
+        credentials: 'include',
+      }).then((r) => r.json()).catch(() => ({})),
+      classId
+        ? fetchApi(`/api/v2/grades/average/${selectedStudentId}?classId=${classId}&sequenceId=${selectedSequenceId}`, {
+            credentials: 'include',
+          }).then((r) => r.json()).catch(() => null)
+        : Promise.resolve(null),
+    ])
+    return {
+      grades: gradesRes.items ?? gradesRes.grades ?? [],
+      avg: avgRes?.average ?? null,
+    }
+  }, [selectedStudentId, selectedSequenceId, selectedChild?.classeId])
+
+  const { data: seqData, loading: seqLoading } = useCachedFetch<{ grades: ContinuousGradeItem[]; avg: number | null }>(
+    cacheKeySeqGrades,
+    fetchSeqGradesFn
+  )
+
+  const continuousGrades = seqData?.grades ?? []
+  const continuousAverage = seqData?.avg ?? null
 
   const downloadPdf = async (id: string, label: string) => {
-    if (!isOnline) { onToast(t('grades.downloadUnavailable'), 'warning'); return }
+    if (!isOnline) {
+      onToast(t('grades.downloadUnavailable'), 'warning')
+      return
+    }
     setDownloading(id)
     try {
       const res = await fetchApi(`/api/v2/report-cards/${id}/pdf`, { credentials: 'include' })
-      if (!res.ok) { onToast(t('grades.downloadError'), 'error'); return }
+      if (!res.ok) {
+        onToast(t('grades.downloadError'), 'error')
+        return
+      }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -80,7 +194,7 @@ export default function SectionParentGrades({ onToast, userId }: Props) {
 
   if (loading) {
     return (
-      <div className="px-4 py-4 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="px-4 py-4 md:px-6 md:py-5 flex items-center justify-center h-full">
         <div style={{ fontSize: 12.5, color: 'var(--text3)', fontWeight: 600 }}>{t('loading')}</div>
       </div>
     )
@@ -90,11 +204,23 @@ export default function SectionParentGrades({ onToast, userId }: Props) {
 
   if (error) {
     return (
-      <div className="px-4 py-4 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
+      <div className="px-4 py-4 md:px-6 md:py-5 h-full overflow-y-auto">
         <div style={{ padding: 20, textAlign: 'center' }}>
           <div style={{ color: 'var(--red)', fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>{error}</div>
-          <button onClick={refetch}
-            style={{ padding: '6px 13px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button
+            onClick={refetch}
+            style={{
+              padding: '6px 13px',
+              borderRadius: 7,
+              fontSize: 12,
+              fontWeight: 700,
+              background: 'var(--surface)',
+              color: 'var(--text2)',
+              border: '1.5px solid var(--border2)',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
             {t('retry')}
           </button>
         </div>
@@ -103,160 +229,394 @@ export default function SectionParentGrades({ onToast, userId }: Props) {
   }
 
   return (
-    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3 sm:space-y-4" style={{ overflowY: 'auto', height: '100%' }}>
-      <div style={{ marginBottom: fromCache ? 6 : 12 }}>
-        <div style={sTitle}>{t('grades.title')}</div>
-        <div style={sSub}>{t('grades.subtitle')}</div>
-      </div>
-
-      {fromCache && <CacheBadge cachedAt={cachedAt} label={t('cacheBadge')} />}
-
-      {/* Sélecteur d'enfant interactif */}
-      {children.length > 0 && (
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-          {children.map((c, i) => {
-            const isSelected = selectedChild === i
-            return (
-              <button
-                key={c.studentId}
-                type="button"
-                onClick={() => setSelectedChild(i)}
-                className={`flex-1 sm:flex-none min-w-[100px] h-9 px-3 rounded-xl text-xs font-bold transition-all border text-center cursor-pointer shadow-xs ${
-                  isSelected
-                    ? 'text-white border-transparent'
-                    : 'text-[var(--text2)] border-[var(--border)] hover:bg-[var(--bg2)]'
-                }`}
-                style={{
-                  background: isSelected ? 'var(--sidebar)' : 'var(--surface)',
-                }}
-              >
-                {c.prenom} {c.nom}
-              </button>
-            )
-          })}
+    <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-4 h-full overflow-y-auto">
+      {/* En-tête */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-4">
+        <div>
+          <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
+            {t('grades.title')}
+          </div>
+          <div style={{ fontSize: 12.5, color: 'var(--text3)', marginTop: 2 }}>
+            {t('grades.subtitle')}
+          </div>
         </div>
-      )}
 
-      {filteredBulletins.length === 0 ? (
-        <div className="rounded-xl border p-8 text-center" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><ScrollText size={36} strokeWidth={2} /></div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>{t('grades.emptyTitle')}</div>
-          <div style={{ fontSize: 12, color: 'var(--text3)' }}>{selectedName ? t('grades.emptyForChild').replace('{name}', selectedName) : t('grades.emptyDesc')}</div>
-        </div>
-      ) : (
-        <>
-          {/* Vue Mobile (md:hidden) : Cartes de bulletins tactiles */}
-          <div className="md:hidden space-y-3">
-            {filteredBulletins.map((b) => {
-              const [mBg, mC] = MENTION_COLOR(b.mention)
-              const avg = b.generalAverage
-              const avgColor = avg !== null ? (avg >= 14 ? 'var(--green)' : avg >= 10 ? 'var(--blue)' : 'var(--red)') : 'var(--text3)'
+        {/* Sélecteur d'enfant */}
+        {children.length > 1 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+            {children.map((c, i) => {
+              const isSelected = selectedChildIndex === i
               return (
-                <div
-                  key={b.id}
-                  className="rounded-xl border p-3.5 shadow-xs space-y-3"
-                  style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+                <button
+                  key={c.studentId}
+                  type="button"
+                  onClick={() => setSelectedChildIndex(i)}
+                  className={`flex-1 sm:flex-none min-w-[100px] h-9 px-3 rounded-xl text-xs font-bold transition-all border text-center cursor-pointer shadow-xs whitespace-nowrap ${
+                    isSelected ? 'text-white border-transparent' : 'text-[var(--text2)] border-[var(--border)] hover:bg-[var(--bg2)]'
+                  }`}
+                  style={{
+                    background: isSelected ? 'var(--sidebar)' : 'var(--surface)',
+                  }}
                 >
-                  <div className="flex items-start justify-between gap-2 border-b pb-2.5" style={{ borderColor: 'var(--border)' }}>
-                    <div>
-                      <div className="text-xs font-extrabold" style={{ color: 'var(--text)', fontFamily: 'var(--font-spectral),Spectral,serif' }}>
-                        {b.academicPeriod?.name || 'Période'}
-                      </div>
-                      {b.rank !== null && (
-                        <div className="text-[11px] font-semibold text-[var(--text3)] mt-0.5">
-                          Rang : {b.rank}e {b.totalStudents ? `/ ${b.totalStudents}` : ''}
-                        </div>
-                      )}
-                    </div>
-                    {b.mention && (
-                      <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 800, background: mBg, color: mC }}>
-                        {b.mention}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-[10.5px] font-bold text-[var(--text3)]">{t('grades.average')}</div>
-                      <div className="text-xl font-black leading-none mt-1" style={{ color: avgColor }}>
-                        {avg !== null ? `${avg.toFixed(1)}/20` : '—'}
-                      </div>
-                    </div>
-
-                    <button
-                      title={!isOnline ? t('grades.downloadUnavailable') : undefined}
-                      className="h-10 px-3.5 rounded-xl font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-xs border transition-transform active:scale-[0.98]"
-                      style={{
-                        background: isOnline ? 'var(--surface)' : 'var(--bg2)',
-                        color: isOnline ? 'var(--green)' : 'var(--text3)',
-                        borderColor: isOnline ? 'var(--green)' : 'var(--border2)',
-                        opacity: downloading === b.id ? 0.6 : 1,
-                      }}
-                      onClick={() => downloadPdf(b.id, b.academicPeriod?.name || 'bulletin')}
-                      disabled={downloading === b.id || !isOnline}
-                    >
-                      {downloading === b.id ? (
-                        <><Loader2 size={13} strokeWidth={2} className="animate-spin" /> {t('grades.downloading')}</>
-                      ) : isOnline ? (
-                        <><Download size={13} strokeWidth={2} /> {t('grades.downloadPdf')}</>
-                      ) : (
-                        <WifiOff size={13} strokeWidth={2} />
-                      )}
-                    </button>
-                  </div>
-                </div>
+                  <User size={12} className="inline mr-1" />
+                  {c.prenom} {c.nom}
+                </button>
               )
             })}
           </div>
+        )}
+      </div>
 
-          {/* Vue Desktop (hidden md:block) : Tableau complet */}
-          <div className="hidden md:block rounded-xl border overflow-hidden" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
-                <thead>
-                  <tr>{[t('grades.period'), t('grades.average'), t('grades.rank'), t('grades.mention'), t('grades.actions')].map(h => (
-                    <th key={h} style={thSt}>{h}</th>
-                  ))}</tr>
-                </thead>
-                <tbody>
-                  {filteredBulletins.map((b) => {
-                    const [mBg, mC] = MENTION_COLOR(b.mention)
-                    const avg = b.generalAverage
-                    return (
-                      <tr key={b.id}
-                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
-                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
-                        <td style={{ ...tdSt, fontWeight: 700, color: 'var(--text)' }}>{b.academicPeriod?.name || 'Période'}</td>
-                        <td style={{ ...tdSt, fontWeight: 900, fontSize: 14.5, color: avg !== null ? (avg >= 14 ? 'var(--green)' : avg >= 10 ? 'var(--blue)' : 'var(--red)') : 'var(--text3)' }}>{avg !== null ? `${avg}/20` : '—'}</td>
-                        <td style={tdSt}>{b.rank !== null ? `${b.rank}e` : '—'} {b.totalStudents ? `/ ${b.totalStudents}` : ''}</td>
-                        <td style={tdSt}>
-                          {b.mention && (
-                            <span style={{ padding: '2.5px 8px', borderRadius: 14, fontSize: 11, fontWeight: 700, background: mBg, color: mC }}>{b.mention}</span>
-                          )}
-                        </td>
-                        <td style={tdSt}>
-                          <button
-                            title={!isOnline ? t('grades.downloadUnavailable') : undefined}
-                            style={{ padding: '5px 10px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: isOnline ? 'var(--surface)' : 'var(--bg2)', color: isOnline ? 'var(--green)' : 'var(--text3)', border: `1.5px solid ${isOnline ? 'var(--green)' : 'var(--border2)'}`, cursor: isOnline ? 'pointer' : 'not-allowed', fontFamily: 'inherit', opacity: downloading === b.id ? 0.6 : 1, display: 'inline-flex', alignItems: 'center', gap: 5 }}
-                            onClick={() => downloadPdf(b.id, b.academicPeriod?.name || 'bulletin')}
-                            disabled={downloading === b.id || !isOnline}>
-                            {downloading === b.id ? <><Loader2 size={13} strokeWidth={2} className="animate-spin" /> {t('grades.downloading')}</> : isOnline ? <><Download size={13} strokeWidth={2} /> {t('grades.downloadPdf')}</> : <WifiOff size={13} strokeWidth={2} />}
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+      {fromCache && <CacheBadge cachedAt={cachedAt} />}
+
+      {/* Onglets : Évaluations continues vs Bulletins officiels */}
+      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--surface)] border border-[var(--border)] w-fit">
+        <button
+          onClick={() => setActiveTab('continuous')}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer border-none flex items-center gap-1.5 ${
+            activeTab === 'continuous'
+              ? 'bg-[var(--primary)] text-white shadow-2xs'
+              : 'bg-transparent text-[var(--text2)] hover:text-[var(--text)]'
+          }`}
+        >
+          <BookOpen size={13} />
+          <span>{t('continuousGrades.title')}</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('bulletins')}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer border-none flex items-center gap-1.5 ${
+            activeTab === 'bulletins'
+              ? 'bg-[var(--primary)] text-white shadow-2xs'
+              : 'bg-transparent text-[var(--text2)] hover:text-[var(--text)]'
+          }`}
+        >
+          <ScrollText size={13} />
+          <span>Bulletins officiels ({filteredBulletins.length})</span>
+        </button>
+      </div>
+
+      {/* VUE 1 : ÉVALUATIONS CONTINUES & SÉQUENCES */}
+      {activeTab === 'continuous' && (
+        <div className="space-y-3 sm:space-y-4">
+          {/* Barre de sélection de séquence & Moyenne */}
+          <div
+            className="p-3.5 sm:p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
+            style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-[var(--text2)]">{t('continuousGrades.sequenceFilter')} :</span>
+              {sequences.length > 0 ? (
+                <select
+                  value={selectedSequenceId}
+                  onChange={(e) => setSelectedSequenceId(e.target.value)}
+                  className="h-8 px-2.5 rounded-lg text-xs font-bold border cursor-pointer focus:outline-none"
+                  style={{ background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                >
+                  {sequences.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} {s.isCurrent ? '· En cours' : ''}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span className="text-xs text-[var(--text3)]">Chargement des séquences…</span>
+              )}
             </div>
+
+            {continuousAverage !== null && (
+              <div className="flex items-center gap-2 self-start sm:self-center">
+                <span className="text-xs font-bold text-[var(--text3)]">{t('continuousGrades.average')} :</span>
+                <span
+                  className="text-base sm:text-lg font-black"
+                  style={{
+                    color:
+                      continuousAverage >= 14
+                        ? 'var(--green)'
+                        : continuousAverage >= 10
+                        ? 'var(--blue)'
+                        : 'var(--red)',
+                  }}
+                >
+                  {continuousAverage.toFixed(2)}/20
+                </span>
+              </div>
+            )}
           </div>
+
+          {/* Tableau / Cartes des notes séquentielles */}
+          {seqLoading ? (
+            <div className="py-12 text-center text-xs text-[var(--text3)] font-semibold">{t('loading')}</div>
+          ) : continuousGrades.length === 0 ? (
+            <div
+              className="p-8 rounded-2xl border text-center space-y-2 shadow-xs"
+              style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+            >
+              <Award size={36} className="mx-auto text-[var(--text3)]" />
+              <div className="text-sm font-bold text-[var(--text)]">{t('continuousGrades.empty')}</div>
+            </div>
+          ) : (
+            <div
+              className="rounded-2xl border overflow-hidden shadow-xs"
+              style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+            >
+              <div className="overflow-x-auto">
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
+                  <thead>
+                    <tr>
+                      <th style={thSt}>{t('continuousGrades.subject')}</th>
+                      <th style={thSt}>{t('continuousGrades.coef')}</th>
+                      <th style={thSt}>{t('continuousGrades.note')}</th>
+                      <th style={thSt}>{t('continuousGrades.appreciation')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {continuousGrades.map((g) => {
+                      const noteVal = g.value
+                      const color =
+                        noteVal !== null
+                          ? noteVal >= 14
+                            ? 'var(--green)'
+                            : noteVal >= 10
+                            ? 'var(--blue)'
+                            : 'var(--red)'
+                          : 'var(--text3)'
+
+                      return (
+                        <tr
+                          key={g.id}
+                          className="hover:bg-[var(--bg2)] transition-colors"
+                          style={{ borderBottom: '1px solid var(--border)' }}
+                        >
+                          <td style={{ ...tdSt, fontWeight: 700, color: 'var(--text)' }}>
+                            {g.subject?.name || 'Matière'}
+                          </td>
+                          <td style={tdSt}>×{g.coefficient}</td>
+                          <td style={{ ...tdSt, fontWeight: 900, fontSize: 14, color }}>
+                            {noteVal !== null ? `${noteVal.toFixed(1)}/20` : '—'}
+                          </td>
+                          <td style={{ ...tdSt, fontSize: 12, color: 'var(--text2)', fontStyle: 'italic' }}>
+                            {g.appreciation || '—'}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* VUE 2 : BULLETINS OFFICIELS EN PDF */}
+      {activeTab === 'bulletins' && (
+        <>
+          {filteredBulletins.length === 0 ? (
+            <div
+              className="rounded-xl border p-8 text-center"
+              style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+            >
+              <ScrollText size={36} strokeWidth={2} className="mx-auto mb-3 text-[var(--text3)]" />
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
+                {t('grades.emptyTitle')}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text3)' }}>
+                {selectedName ? t('grades.emptyForChild').replace('{name}', selectedName) : t('grades.emptyDesc')}
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Vue Mobile : Cartes tactiles */}
+              <div className="md:hidden space-y-3">
+                {filteredBulletins.map((b) => {
+                  const [mBg, mC] = MENTION_COLOR(b.mention)
+                  const avg = b.generalAverage
+                  const avgColor =
+                    avg !== null
+                      ? avg >= 14
+                        ? 'var(--green)'
+                        : avg >= 10
+                        ? 'var(--blue)'
+                        : 'var(--red)'
+                      : 'var(--text3)'
+
+                  return (
+                    <div
+                      key={b.id}
+                      className="rounded-xl border p-3.5 shadow-xs space-y-3"
+                      style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+                    >
+                      <div className="flex items-start justify-between gap-2 border-b pb-2.5" style={{ borderColor: 'var(--border)' }}>
+                        <div>
+                          <div
+                            className="text-xs font-extrabold"
+                            style={{ color: 'var(--text)', fontFamily: 'var(--font-spectral),Spectral,serif' }}
+                          >
+                            {b.academicPeriod?.name || 'Période'}
+                          </div>
+                          {b.rank !== null && (
+                            <div className="text-[11px] font-semibold text-[var(--text3)] mt-0.5">
+                              Rang : {b.rank}e {b.totalStudents ? `/ ${b.totalStudents}` : ''}
+                            </div>
+                          )}
+                        </div>
+                        {b.mention && (
+                          <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 800, background: mBg, color: mC }}>
+                            {b.mention}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-[10.5px] font-bold text-[var(--text3)]">{t('grades.average')}</div>
+                          <div className="text-xl font-black leading-none mt-1" style={{ color: avgColor }}>
+                            {avg !== null ? `${avg.toFixed(1)}/20` : '—'}
+                          </div>
+                        </div>
+
+                        <button
+                          title={!isOnline ? t('grades.downloadUnavailable') : undefined}
+                          className="h-10 px-3.5 rounded-xl font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-xs border transition-transform active:scale-[0.98]"
+                          style={{
+                            background: isOnline ? 'var(--surface)' : 'var(--bg2)',
+                            color: isOnline ? 'var(--green)' : 'var(--text3)',
+                            borderColor: isOnline ? 'var(--green)' : 'var(--border2)',
+                            opacity: downloading === b.id ? 0.6 : 1,
+                          }}
+                          onClick={() => downloadPdf(b.id, b.academicPeriod?.name || 'bulletin')}
+                          disabled={downloading === b.id || !isOnline}
+                        >
+                          {downloading === b.id ? (
+                            <>
+                              <Loader2 size={13} strokeWidth={2} className="animate-spin" /> {t('grades.downloading')}
+                            </>
+                          ) : isOnline ? (
+                            <>
+                              <Download size={13} strokeWidth={2} /> {t('grades.downloadPdf')}
+                            </>
+                          ) : (
+                            <WifiOff size={13} strokeWidth={2} />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Vue Desktop : Tableau complet */}
+              <div
+                className="hidden md:block rounded-xl border overflow-hidden shadow-xs"
+                style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+              >
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
+                    <thead>
+                      <tr>
+                        {[t('grades.period'), t('grades.average'), t('grades.rank'), t('grades.mention'), t('grades.actions')].map((h) => (
+                          <th key={h} style={thSt}>
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredBulletins.map((b) => {
+                        const [mBg, mC] = MENTION_COLOR(b.mention)
+                        const avg = b.generalAverage
+                        return (
+                          <tr
+                            key={b.id}
+                            className="hover:bg-[var(--bg2)] transition-colors"
+                            style={{ borderBottom: '1px solid var(--border)' }}
+                          >
+                            <td style={{ ...tdSt, fontWeight: 700, color: 'var(--text)' }}>{b.academicPeriod?.name || 'Période'}</td>
+                            <td
+                              style={{
+                                ...tdSt,
+                                fontWeight: 900,
+                                fontSize: 14.5,
+                                color: avg !== null ? (avg >= 14 ? 'var(--green)' : avg >= 10 ? 'var(--blue)' : 'var(--red)') : 'var(--text3)',
+                              }}
+                            >
+                              {avg !== null ? `${avg}/20` : '—'}
+                            </td>
+                            <td style={tdSt}>
+                              {b.rank !== null ? `${b.rank}e` : '—'} {b.totalStudents ? `/ ${b.totalStudents}` : ''}
+                            </td>
+                            <td style={tdSt}>
+                              {b.mention && (
+                                <span style={{ padding: '2.5px 8px', borderRadius: 14, fontSize: 11, fontWeight: 700, background: mBg, color: mC }}>
+                                  {b.mention}
+                                </span>
+                              )}
+                            </td>
+                            <td style={tdSt}>
+                              <button
+                                title={!isOnline ? t('grades.downloadUnavailable') : undefined}
+                                style={{
+                                  padding: '5px 10px',
+                                  borderRadius: 7,
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  background: isOnline ? 'var(--surface)' : 'var(--bg2)',
+                                  color: isOnline ? 'var(--green)' : 'var(--text3)',
+                                  border: `1.5px solid ${isOnline ? 'var(--green)' : 'var(--border2)'}`,
+                                  cursor: isOnline ? 'pointer' : 'not-allowed',
+                                  fontFamily: 'inherit',
+                                  opacity: downloading === b.id ? 0.6 : 1,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 5,
+                                }}
+                                onClick={() => downloadPdf(b.id, b.academicPeriod?.name || 'bulletin')}
+                                disabled={downloading === b.id || !isOnline}
+                              >
+                                {downloading === b.id ? (
+                                  <>
+                                    <Loader2 size={13} strokeWidth={2} className="animate-spin" /> {t('grades.downloading')}
+                                  </>
+                                ) : isOnline ? (
+                                  <>
+                                    <Download size={13} strokeWidth={2} /> {t('grades.downloadPdf')}
+                                  </>
+                                ) : (
+                                  <WifiOff size={13} strokeWidth={2} />
+                                )}
+                              </button>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
         </>
       )}
     </div>
   )
 }
 
-const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)' }
-const sSub: React.CSSProperties = { fontSize: 12, color: 'var(--text3)', marginTop: 2 }
-const thSt: React.CSSProperties = { padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }
-const tdSt: React.CSSProperties = { padding: '8.5px 12px', fontSize: 12.5, color: 'var(--text2)', borderBottom: '1px solid var(--bg)', verticalAlign: 'middle' }
+const thSt: React.CSSProperties = {
+  padding: '8px 12px',
+  textAlign: 'left',
+  fontSize: 11,
+  fontWeight: 800,
+  color: 'var(--text3)',
+  background: 'var(--bg2)',
+  borderBottom: '1px solid var(--border)',
+  textTransform: 'uppercase',
+  letterSpacing: '0.5px',
+  whiteSpace: 'nowrap',
+}
+
+const tdSt: React.CSSProperties = {
+  padding: '8.5px 12px',
+  fontSize: 12.5,
+  color: 'var(--text2)',
+  verticalAlign: 'middle',
+}

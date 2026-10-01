@@ -73,6 +73,8 @@
     "importEleves": "Student Import",
     "studentAssignments": "Student Assignments",
     "children": "Children",
+    "homework": "Homework & Notebook",
+    "documents": "My Documents",
     "menu": "More"
   },
   "group": {
@@ -182,6 +184,8 @@
     "parent_apee": "APEE Transparency",
     "parent_notifications": "Notification Center",
     "parent_timetable": "Timetable",
+    "parent_homework": "Homework & Assignments",
+    "parent_documents": "School Documents",
     "parent_settings": "Settings",
     "parent_library": "Reading",
     "student_dashboard": "Dashboard",

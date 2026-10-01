@@ -1,12 +1,13 @@
 'use client'
-import { useCallback } from 'react'
-import { Users, Package, Trophy, FileText, CheckCircle2, Smartphone, Sparkles } from 'lucide-react'
+import { useCallback, useState } from 'react'
+import { Users, Package, Trophy, FileText, CheckCircle2, Smartphone, Sparkles, BookOpen, Calendar, FileCheck, User } from 'lucide-react'
 import type { ChildWithStats } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
 import OfflineEmptyState from '@/components/OfflineEmptyState'
 import { useT } from '@/lib/i18n'
 import OrientationCheckpointParentView from './OrientationCheckpointParentView'
+import ChildProfileModal from './ChildProfileModal'
 
 interface Props {
   onNav: (s: string) => void
@@ -54,6 +55,7 @@ function CacheBadge({ cachedAt, label }: { cachedAt: number | null; label: strin
 
 export default function SectionParentChildren({ onNav, onToast, userId }: Props) {
   const t = useT('parent')
+  const [selectedChildModal, setSelectedChildModal] = useState<ChildWithStats | null>(null)
   const cacheKey = userId ? `parent:children:${userId}` : ''
   const fetchFn = useCallback(async () => {
     const res = await fetchApi('/api/v2/parent/children', { credentials: 'include' }).then(r => r.json())
@@ -123,7 +125,7 @@ export default function SectionParentChildren({ onNav, onToast, userId }: Props)
 
       {fromCache && <CacheBadge cachedAt={cachedAt} label={t('cacheBadge')} />}
 
-      <OrientationCheckpointParentView children={list.map(c => ({ studentId: c.studentId, prenom: c.prenom, nom: c.nom }))} />
+      <OrientationCheckpointParentView children={list.map(c => ({ studentId: c.studentId, prenom: c.prenom, nom: c.nom, classeNom: c.classeNom }))} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
         {list.map((child, i) => {
@@ -145,14 +147,30 @@ export default function SectionParentChildren({ onNav, onToast, userId }: Props)
                     </div>
                     <div className="text-[11.5px] truncate mt-0.5" style={{ color: 'var(--text3)' }}>
                       {t('children.studentLabel').replace('{className}', child.classeNom || '—')}
+                      {child.matricule ? ` · ${child.matricule}` : ''}
                     </div>
                   </div>
                 </div>
-                {child.indiceSante !== undefined && child.indiceSante !== null && (
-                  <div className="shrink-0">
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => setSelectedChildModal(child)}
+                    title="Consulter le dossier officiel de l'enfant"
+                    className="h-8 px-2.5 rounded-lg text-xs font-bold border flex items-center gap-1.5 transition-colors cursor-pointer"
+                    style={{
+                      background: 'var(--bg2)',
+                      borderColor: 'var(--border)',
+                      color: 'var(--text2)',
+                    }}
+                  >
+                    <User size={12} style={{ color: 'var(--primary)' }} />
+                    <span className="hidden sm:inline">Dossier</span>
+                  </button>
+
+                  {child.indiceSante !== undefined && child.indiceSante !== null && (
                     <HealthBadge score={child.indiceSante} />
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
 
               <div className="p-3.5 sm:p-4 space-y-3">
@@ -192,17 +210,20 @@ export default function SectionParentChildren({ onNav, onToast, userId }: Props)
                   )
                 })()}
 
-                {/* Boutons d'action tactiles */}
+                {/* Boutons d'action tactiles enrichis */}
                 <div className="grid grid-cols-3 gap-2 pt-1">
                   {[
-                    { label: t('children.actionGrades'),      icon: FileText,     action: () => onNav('grades'),     prim: true  },
-                    { label: t('children.actionAttendance'),  icon: CheckCircle2, action: () => onNav('attendance'), prim: false },
-                    { label: t('children.actionPayments'),    icon: Smartphone,   action: () => onNav('payments'),   prim: false },
+                    { label: t('children.actionGrades'),     icon: FileText,     action: () => onNav('grades'),    prim: true  },
+                    { label: t('children.actionAttendance'), icon: CheckCircle2, action: () => onNav('attendance'),prim: false },
+                    { label: 'Devoirs',                     icon: BookOpen,     action: () => onNav('homework'),  prim: false },
+                    { label: 'Emploi du temps',             icon: Calendar,     action: () => onNav('timetable'), prim: false },
+                    { label: t('children.actionPayments'),   icon: Smartphone,   action: () => onNav('payments'),  prim: false },
+                    { label: 'Documents',                   icon: FileCheck,    action: () => onNav('documents'), prim: false },
                   ].map((btn, j) => (
                     <button
                       key={j}
                       onClick={btn.action}
-                      className="h-10 sm:h-9 px-2 rounded-xl text-[11px] sm:text-xs font-bold cursor-pointer transition-transform active:scale-[0.98] flex items-center justify-center gap-1.5 shadow-xs border"
+                      className="h-10 sm:h-9 px-2 rounded-xl text-[10.5px] sm:text-xs font-bold cursor-pointer transition-transform active:scale-[0.98] flex items-center justify-center gap-1.5 shadow-xs border"
                       style={{
                         background: btn.prim ? 'linear-gradient(135deg,var(--primary),var(--primary-hover))' : 'var(--surface)',
                         borderColor: btn.prim ? 'transparent' : 'var(--border2)',
@@ -219,6 +240,15 @@ export default function SectionParentChildren({ onNav, onToast, userId }: Props)
           )
         })}
       </div>
+
+      {selectedChildModal && (
+        <ChildProfileModal
+          child={selectedChildModal}
+          onClose={() => setSelectedChildModal(null)}
+          onToast={onToast}
+          onUpdated={refetch}
+        />
+      )}
     </div>
   )
 }

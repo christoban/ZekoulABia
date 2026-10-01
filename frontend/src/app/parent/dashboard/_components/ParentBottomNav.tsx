@@ -39,7 +39,7 @@ export default function ParentBottomNav({ current, onChange, onOpenMenu }: Props
     {
       id: 'grades',
       targetSection: 'grades',
-      matchSections: ['grades', 'attendance'],
+      matchSections: ['grades', 'attendance', 'homework', 'documents'],
       labelKey: 'sidebar.grades',
       fallbackLabel: 'Notes',
       icon: FileText,
