@@ -116,6 +116,15 @@ export default function TeacherDashboard() {
         setSection(targetSection as TeacherSection)
       }
     } catch { /* silencieux — données absentes ou corrompues */ }
+
+    const handleUserUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent
+      if (customEvent.detail) {
+        setUser(prev => prev ? { ...prev, ...customEvent.detail } : customEvent.detail)
+      }
+    }
+    window.addEventListener('zekoulabia:user-updated', handleUserUpdated)
+    return () => window.removeEventListener('zekoulabia:user-updated', handleUserUpdated)
   }, [])
 
   // Infos école + utilisateur + compteur notes en attente — fetch en arrière-plan

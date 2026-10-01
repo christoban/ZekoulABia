@@ -20,6 +20,7 @@ export interface UserInfo {
   lastName: string
   email: string
   role: string
+  avatarUrl?: string | null
   teacherProfile?: {
     id: string
     specialization: string[]

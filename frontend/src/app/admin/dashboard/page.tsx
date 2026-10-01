@@ -66,7 +66,7 @@ const PLACEHOLDERS: Partial<Record<AdminSection, { icon: string; desc: string }>
 
 interface SchoolInfo { id?: string; name: string; logoUrl: string | null; subdomain?: string; city?: string; phone?: string; email?: string; isPrimaire?: boolean | null }
 interface AdminBadges { users?: string; classes?: string; grades?: string; finance?: string; 'eleve-onboarding'?: string }
-interface SessionUser { id?: string; userId?: string; nomComplet?: string; firstName?: string; role?: string }
+interface SessionUser { id?: string; userId?: string; nomComplet?: string; firstName?: string; role?: string; avatarUrl?: string | null }
 
 export default function AdminDashboard() {
   const t = useT('admin')
@@ -103,6 +103,14 @@ export default function AdminDashboard() {
       const raw = localStorage.getItem('zekoulabia_user')
       if (raw) setSessionUser(JSON.parse(raw) as SessionUser)
     } catch { /* ignore */ }
+
+    const handleUserUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent
+      if (customEvent.detail) {
+        setSessionUser(prev => prev ? { ...prev, ...customEvent.detail } : customEvent.detail)
+      }
+    }
+    window.addEventListener('zekoulabia:user-updated', handleUserUpdated)
 
     fetchApi('/api/v2/school/me')
       .then(r => {
@@ -180,6 +188,8 @@ export default function AdminDashboard() {
       .then(r => r.json())
       .then(d => { if (d.success) setHasPendingGroupTransfers((d.data || []).length > 0) })
       .catch(() => {})
+
+    return () => window.removeEventListener('zekoulabia:user-updated', handleUserUpdated)
   }, [router, showToast])
 
   useEffect(() => {

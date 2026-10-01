@@ -16,6 +16,8 @@ import NotificationCenter from '@/components/NotificationCenter'
 import SectionParentTimetable from './_components/SectionParentTimetable'
 import SectionParentSettings from './_components/SectionParentSettings'
 import SectionParentLibrary from './_components/SectionParentLibrary'
+import SectionParentHomework from './_components/SectionParentHomework'
+import SectionParentDocuments from './_components/SectionParentDocuments'
 import type { ParentSection, Toast, UserInfo } from './_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { OfflineIndicator } from '@/components/OfflineIndicator'
@@ -36,7 +38,7 @@ interface SessionUser {
   permissions?: string[]
 }
 
-const PARENT_SECTIONS: ParentSection[] = ['children', 'grades', 'attendance', 'payments', 'timetable', 'settings', 'library', 'apee', 'notifications', 'babillard', 'messagerie']
+const PARENT_SECTIONS: ParentSection[] = ['children', 'grades', 'attendance', 'homework', 'documents', 'payments', 'timetable', 'settings', 'library', 'apee', 'notifications', 'babillard', 'messagerie']
 const PARENT_ASSISTANT_SUGGESTIONS = [
   'Quelles sont les dernières notes de mon enfant ?',
   'Mon enfant a-t-il des factures impayées ?',
@@ -54,6 +56,8 @@ export default function ParentDashboard() {
     children:   tnav('pageTitle.parent_children'),
     grades:     tnav('pageTitle.parent_grades'),
     attendance: tnav('pageTitle.parent_attendance'),
+    homework:   tnav('pageTitle.parent_homework'),
+    documents:  tnav('pageTitle.parent_documents'),
     payments:   tnav('pageTitle.parent_payments'),
     apee:       tnav('pageTitle.parent_apee'),
     notifications: tnav('pageTitle.parent_notifications'),
@@ -90,6 +94,15 @@ export default function ParentDashboard() {
         setSection(targetSection as ParentSection)
       }
     } catch { /* silencieux — données absentes ou corrompues */ }
+
+    const handleUserUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent
+      if (customEvent.detail) {
+        setUser(prev => prev ? { ...prev, ...customEvent.detail } : customEvent.detail)
+      }
+    }
+    window.addEventListener('zekoulabia:user-updated', handleUserUpdated)
+    return () => window.removeEventListener('zekoulabia:user-updated', handleUserUpdated)
   }, [])
 
   // Infos école + utilisateur — fetch en arrière-plan
@@ -117,11 +130,14 @@ export default function ParentDashboard() {
         const childrenRes = await fetchApi('/api/v2/parent/children', { credentials: 'include' }).then(r => r.json())
         if (!childrenRes.success) return
         const children = childrenRes.data
-        const now = Date.now()
         await putCachedData(`parent:children:${uid}`, children)
         await putCachedData(`parent:attendance:${uid}`, children)
-        const rcRes = await fetchApi('/api/v2/report-cards', { credentials: 'include' }).then(r => r.json())
-        await putCachedData(`parent:grades:${uid}`, { children, bulletins: rcRes.reportCards ?? [] })
+        const rcRes = await fetchApi('/api/v2/report-cards', { credentials: 'include' }).then(r => r.json()).catch(() => null)
+        await putCachedData(`parent:grades:${uid}`, { children, bulletins: rcRes?.reportCards ?? [] })
+        const invRes = await fetchApi('/api/v2/parent/invoices?limit=50', { credentials: 'include' }).then(r => r.json()).catch(() => null)
+        if (invRes?.data) {
+          await putCachedData(`parent:invoices:${uid}:all`, invRes.data)
+        }
       } catch { /* silent */ }
     })()
   }, [user])
@@ -169,11 +185,13 @@ export default function ParentDashboard() {
           {section === 'children'   && <SectionParentChildren onNav={s => setSection(s as ParentSection)} {...sProps} userId={user?.id} />}
           {section === 'grades'     && <SectionParentGrades {...sProps} userId={user?.id} />}
           {section === 'attendance' && <SectionParentAttendance {...sProps} userId={user?.id} />}
-          {section === 'payments'   && <SectionParentPayments {...sProps} />}
+          {section === 'homework'   && <SectionParentHomework userId={user?.id} onToast={showToast} />}
+          {section === 'documents'  && <SectionParentDocuments userId={user?.id} onToast={showToast} />}
+          {section === 'payments'   && <SectionParentPayments {...sProps} userId={user?.id} />}
           {section === 'apee'       && <SectionParentAPEE {...sProps} />}
           {section === 'notifications' && <NotificationCenter onNav={s => setSection(s as ParentSection)} />}
           {section === 'timetable'  && <SectionParentTimetable {...sProps} userId={user?.id} />}
-          {section === 'settings'   && <SectionParentSettings />}
+          {section === 'settings'   && <SectionParentSettings user={user} onToast={showToast} onChangePassword={() => setChangePwdOpen(true)} />}
           {section === 'library'    && <SectionParentLibrary userId={user?.id} />}
           {section === 'babillard' && <Babillard role={user?.role ?? 'PARENT'} title={tnav('sidebar.babillard')} subtitle={tnav('group.communication')} currentUserId={user?.id} />}
           {section === 'messagerie' && <Messagerie />}

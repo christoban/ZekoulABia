@@ -1,4 +1,19 @@
-export type StudentSection = 'dashboard' | 'grades' | 'bulletins' | 'timetable' | 'attendance' | 'library' | 'health-tracking' | 'notifications' | 'babillard' | 'messagerie' | 'academic-profile'
+export type StudentSection =
+  | 'dashboard'
+  | 'grades'
+  | 'bulletins'
+  | 'timetable'
+  | 'attendance'
+  | 'library'
+  | 'health-tracking'
+  | 'notifications'
+  | 'babillard'
+  | 'messagerie'
+  | 'academic-profile'
+  | 'homework'
+  | 'orientation'
+  | 'documents'
+  | 'profile'
 
 export interface Toast {
   id: number
@@ -12,12 +27,21 @@ export interface UserInfo {
   lastName: string
   email: string
   role: string
-   studentProfile?: {
-     id: string
-     class: {
-       id: string
-       name: string
-     }
-     groupIds?: string[]
-   } | null
+  avatarUrl?: string | null
+  studentProfile?: {
+    id: string
+    matricule?: string | null
+    numeroInterne?: string | null
+    healthScore?: number | null
+    pebsFiliere?: string | null
+    lv2Subject?: { id: string; name: string } | null
+    class: {
+      id: string
+      name: string
+      level?: string | null
+      serie?: string | null
+      filiere?: string | null
+    }
+    groupIds?: string[]
+  } | null
 }

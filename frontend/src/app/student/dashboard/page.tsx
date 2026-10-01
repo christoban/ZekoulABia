@@ -14,7 +14,11 @@ import SectionStudentTimetable from './_components/SectionStudentTimetable'
 import SectionStudentAttendance from './_components/SectionStudentAttendance'
 import SectionStudentLibrary from './_components/SectionStudentLibrary'
 import SectionStudentHealthTracking from './_components/SectionStudentHealthTracking'
+import SectionStudentHomework from './_components/SectionStudentHomework'
+import SectionStudentOrientation from './_components/SectionStudentOrientation'
+import SectionStudentDocuments from './_components/SectionStudentDocuments'
 import SectionProfilAcademique from '@/features/student/SectionProfilAcademique'
+import SectionStudentProfile from './_components/SectionStudentProfile'
 import HealthAlertBanner from './_components/HealthAlertBanner'
 import type { StudentSection, Toast, UserInfo } from './_types'
 import { fetchApi } from '@/lib/fetchApi'
@@ -36,10 +40,27 @@ interface SessionUser {
   permissions?: string[]
 }
 
-const STUDENT_SECTIONS: StudentSection[] = ['dashboard', 'grades', 'bulletins', 'timetable', 'attendance', 'library', 'health-tracking', 'notifications', 'babillard', 'messagerie', 'academic-profile']
+const STUDENT_SECTIONS: StudentSection[] = [
+  'dashboard',
+  'grades',
+  'bulletins',
+  'timetable',
+  'attendance',
+  'library',
+  'health-tracking',
+  'notifications',
+  'babillard',
+  'messagerie',
+  'academic-profile',
+  'homework',
+  'orientation',
+  'documents',
+  'profile',
+]
 const STUDENT_ASSISTANT_SUGGESTIONS = [
   'Quelles sont mes dernières notes ?',
   'Quel est mon taux de présence ce mois-ci ?',
+  'Quels devoirs ai-je pour demain ?',
   'Quels livres ai-je empruntés ?',
 ]
 
@@ -60,6 +81,10 @@ export default function StudentDashboard() {
     babillard:  tnav('sidebar.babillard'),
     messagerie: tnav('sidebar.messagerie'),
     'academic-profile': tnav('pageTitle.student_academicProfile'),
+    homework:   tnav('sidebar.homework') || 'Cahier de Texte & Devoirs',
+    orientation: tnav('sidebar.orientation') || 'Mon Orientation',
+    documents:  tnav('sidebar.documents') || 'Mes Documents',
+    profile:    'Mon Dossier & Profil Scolaire',
   }
   const [section, setSection] = useState<StudentSection>('dashboard')
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
@@ -195,6 +220,10 @@ export default function StudentDashboard() {
           {section === 'babillard' && <Babillard role={user?.role ?? 'STUDENT'} title={tnav('sidebar.babillard')} subtitle={tnav('group.communication')} currentUserId={user?.id} />}
           {section === 'messagerie' && <Messagerie />}
           {section === 'academic-profile' && <SectionProfilAcademique studentId={user?.id ?? ''} />}
+          {section === 'homework' && <SectionStudentHomework user={user} onToast={showToast} />}
+          {section === 'orientation' && <SectionStudentOrientation user={user} onToast={showToast} />}
+          {section === 'documents' && <SectionStudentDocuments user={user} onToast={showToast} onNav={s => setSection(s as StudentSection)} />}
+          {section === 'profile' && <SectionStudentProfile onToast={showToast} />}
         </main>
       </div>
 

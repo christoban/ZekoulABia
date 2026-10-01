@@ -18,6 +18,7 @@ export interface SessionUser {
   lastName?: string
   schoolId?: string
   staffTitle?: string
+  avatarUrl?: string | null
   permissions: string[]
 }
 
