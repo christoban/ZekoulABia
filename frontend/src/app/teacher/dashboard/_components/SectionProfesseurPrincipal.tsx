@@ -1,6 +1,6 @@
 'use client'
-import { useState, useCallback } from 'react'
-import { Inbox, CheckCircle2, AlertTriangle, Circle, BarChart3, ClipboardList, AlarmClock, Package } from 'lucide-react'
+import { useState, useCallback, useEffect } from 'react'
+import { Inbox, CheckCircle2, AlertTriangle, Circle, BarChart3, ClipboardList, AlarmClock, Package, Award, Download, Loader2 } from 'lucide-react'
 import type { UserInfo } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
@@ -10,6 +10,8 @@ interface Props {
   user: UserInfo
   classeId: string
   classeNom: string
+  classesList?: { id: string; name: string }[]
+  onSelectClasse?: (id: string) => void
 }
 
 interface StudentRow {
@@ -39,11 +41,50 @@ const BADGE = (moy: number | null) => {
   return { bg: 'var(--red-light)', color: 'var(--red)', label: String(moy.toFixed(2)) }
 }
 
-export default function SectionProfesseurPrincipal({ user: _user, classeId, classeNom }: Props) {
+export default function SectionProfesseurPrincipal({ user: _user, classeId, classeNom, classesList, onSelectClasse }: Props) {
   const t = useT('teacher')
   const tcommon = useT('common')
   const [tab, setTab] = useState<Tab>('eleves')
   const [dateFilter, setDateFilter] = useState<DateFilter>('semaine')
+  const [downloadingTH, setDownloadingTH] = useState(false)
+  const [periods, setPeriods] = useState<{ id: string; name: string }[]>([])
+  const [selectedPeriodId, setSelectedPeriodId] = useState<string>('')
+
+  useEffect(() => {
+    fetchApi('/api/v2/academic-years?isCurrent=true', { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => {
+        const years = Array.isArray(d.data) ? d.data : Array.isArray(d) ? d : []
+        const current = years[0]
+        if (current?.periods?.length) {
+          setPeriods(current.periods)
+          setSelectedPeriodId(current.periods[0].id)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  const downloadTableauHonneur = async () => {
+    if (!selectedPeriodId) return
+    setDownloadingTH(true)
+    try {
+      const res = await fetchApi(`/api/v2/classes/${classeId}/tableau-honneur?periodId=${selectedPeriodId}&top=20`, { credentials: 'include' })
+      if (!res.ok) throw new Error('Erreur lors du téléchargement du tableau d\'honneur')
+      const blob = await res.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `tableau-honneur-${classeNom.replace(/\s+/g, '_')}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(url)
+    } catch {
+      // repli gracieux
+    } finally {
+      setDownloadingTH(false)
+    }
+  }
 
   const fetchStudentsFn = useCallback(async (): Promise<StudentRow[]> => {
     const res = await fetchApi(`/api/v2/classes/${classeId}/students`, { credentials: 'include' })
@@ -89,17 +130,62 @@ export default function SectionProfesseurPrincipal({ user: _user, classeId, clas
 
   return (
     <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
+      {/* Sélecteur multi-classes PP si concerné */}
+      {classesList && classesList.length > 1 && (
+        <div className="flex items-center gap-2 p-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] overflow-x-auto">
+          <span className="text-xs font-bold text-[var(--text3)] px-2 whitespace-nowrap">Mes classes PP :</span>
+          {classesList.map(c => (
+            <button
+              key={c.id}
+              onClick={() => onSelectClasse?.(c.id)}
+              className={`px-3 py-1.5 rounded-md text-xs font-extrabold cursor-pointer border transition-all ${
+                c.id === classeId
+                  ? 'bg-[var(--green)] text-white border-[var(--green)]'
+                  : 'bg-[var(--bg)] text-[var(--text2)] border-[var(--border)] hover:text-[var(--text)]'
+              }`}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Header */}
-      <div>
-        <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <ClipboardList size={18} strokeWidth={2} />{t('pp.class_title').replace('{name}', classeNom)}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <ClipboardList size={18} strokeWidth={2} />{t('pp.class_title').replace('{name}', classeNom)}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 500, marginTop: 2 }}>
+            {t('pp.view_title')}
+          </div>
+          {fromCache && cachedAt && (
+            <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 6, padding: '4px 10px', fontSize: 11.5, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 8 }}>
+              <Package size={13} strokeWidth={2} /> {tcommon('cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}
+            </div>
+          )}
         </div>
-        <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 500, marginTop: 2 }}>
-          {t('pp.view_title')}
-        </div>
-        {fromCache && cachedAt && (
-          <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 6, padding: '4px 10px', fontSize: 11.5, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 8 }}>
-            <Package size={13} strokeWidth={2} /> {tcommon('cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}
+
+        {/* Bouton Télécharger Tableau d'honneur PDF */}
+        {periods.length > 0 && (
+          <div className="flex items-center gap-2">
+            <select
+              value={selectedPeriodId}
+              onChange={e => setSelectedPeriodId(e.target.value)}
+              className="text-xs font-semibold px-2.5 py-1.5 rounded-md border border-[var(--border)] bg-[var(--surface)] text-[var(--text)]"
+            >
+              {periods.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <button
+              onClick={downloadTableauHonneur}
+              disabled={downloadingTH}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold bg-[var(--green-light)] text-[var(--green)] border border-[var(--green)]/30 hover:bg-[var(--green)]/20 cursor-pointer disabled:opacity-50"
+            >
+              {downloadingTH ? <Loader2 size={13} className="animate-spin" /> : <Award size={13} />}
+              <span>Tableau d'Honneur (PDF)</span>
+            </button>
           </div>
         )}
       </div>

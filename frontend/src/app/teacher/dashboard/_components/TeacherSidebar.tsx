@@ -51,10 +51,6 @@ function buildNav(user: UserInfo | null | undefined, pendingGrades: number | und
       ],
     },
     {
-      label: tnav('group.ressources'),
-      items: [{ id: 'resources', icon: FolderOpen, label: tnav('sidebar.pedagogicalResources') }],
-    },
-    {
       label: tnav('group.communication'),
       items: [
         { id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard') },
@@ -73,11 +69,13 @@ function buildNav(user: UserInfo | null | undefined, pendingGrades: number | und
 
   const ppClasses = user?.classesProfessorPrincipal ?? []
   if (ppClasses.length > 0) {
-    const cls = ppClasses[0]!
+    const classLabel = ppClasses.length === 1
+      ? `${tnav('sidebar.myClass')} · ${ppClasses[0]!.name}`
+      : `${tnav('sidebar.myClass')} (${ppClasses.length})`
     groups.push({
       label: tnav('group.pp'),
       items: [
-        { id: 'pp-classe',        icon: ClipboardList, label: `${tnav('sidebar.myClass')} · ${cls.name}` },
+        { id: 'pp-classe',        icon: ClipboardList, label: classLabel },
         { id: 'pp-appreciations', icon: PenLine,  label: tnav('sidebar.appreciations') },
       ],
     })

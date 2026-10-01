@@ -1,6 +1,6 @@
 export type TeacherSection =
   | 'dashboard' | 'classes' | 'attendance' | 'grades'
-  | 'bulletins' | 'timetable' | 'resources' | 'sync'
+  | 'bulletins' | 'timetable' | 'sync'
   | 'pp-classe' | 'pp-appreciations'
   | 'ap-departement'
   | 'cahier-de-texte'

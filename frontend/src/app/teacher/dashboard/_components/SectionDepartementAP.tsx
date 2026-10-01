@@ -10,6 +10,8 @@ interface Props {
   user: UserInfo
   departementId: string
   departementNom: string
+  departmentsList?: { id: string; name: string; color: string; subjects?: { id: string; name: string }[] }[]
+  onSelectDept?: (id: string) => void
 }
 
 interface PerfRow {
@@ -35,7 +37,7 @@ interface ProgAlerte {
   attenduPct: number; retardPct: number; niveau: 'CRITIQUE' | 'MODERE'
 }
 
-export default function SectionDepartementAP({ user: _user, departementId, departementNom }: Props) {
+export default function SectionDepartementAP({ user, departementId, departementNom, departmentsList, onSelectDept }: Props) {
   const t = useT('teacher')
   const tcommon = useT('common')
   const [tab, setTab] = useState<Tab>('performances')
@@ -80,10 +82,18 @@ export default function SectionDepartementAP({ user: _user, departementId, depar
     const res = await fetchApi(`/api/v2/pedagogie/alertes-retard`, { credentials: 'include' })
     const d = await res.json()
     if (!d.success) throw new Error(t('department.error_progression'))
-    return d.data ?? []
-  }, [t])
+    const allAlertes: ProgAlerte[] = d.data ?? []
+
+    // Scope strict du département : ne garder que les alertes pour les matières gérées par ce département
+    const currentDept = departmentsList?.find(dept => dept.id === departementId) || user?.headedDepartments?.find(dept => dept.id === departementId)
+    const allowedSubjectNames = new Set((currentDept?.subjects ?? []).map(s => s.name.toLowerCase().trim()))
+    if (allowedSubjectNames.size > 0) {
+      return allAlertes.filter(a => allowedSubjectNames.has((a.subjectName || '').toLowerCase().trim()))
+    }
+    return allAlertes
+  }, [t, departementId, departmentsList, user?.headedDepartments])
   const { data: alertesData, loading: alertesLoading, fromCache: alFromCache, cachedAt: alCachedAt } =
-    useCachedFetch<ProgAlerte[]>(tab === 'progression' ? 'teacher:dept-progression' : '', fetchAlertesFn)
+    useCachedFetch<ProgAlerte[]>(tab === 'progression' ? `teacher:dept-progression:${departementId}` : '', fetchAlertesFn)
   const alertes = alertesData ?? []
 
   const loading = tab === 'performances' ? perfLoading : tab === 'horaires' ? horairesLoading : alertesLoading
@@ -102,6 +112,27 @@ export default function SectionDepartementAP({ user: _user, departementId, depar
 
   return (
     <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
+      {/* Sélecteur multi-départements AP si l'animateur en dirige plusieurs */}
+      {departmentsList && departmentsList.length > 1 && (
+        <div className="flex items-center gap-2 p-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] overflow-x-auto">
+          <span className="text-xs font-bold text-[var(--text3)] px-2 whitespace-nowrap">Mes départements :</span>
+          {departmentsList.map(d => (
+            <button
+              key={d.id}
+              onClick={() => onSelectDept?.(d.id)}
+              className={`px-3 py-1.5 rounded-md text-xs font-extrabold cursor-pointer border transition-all ${
+                d.id === departementId
+                  ? 'text-white border-transparent'
+                  : 'bg-[var(--bg)] text-[var(--text2)] border-[var(--border)] hover:text-[var(--text)]'
+              }`}
+              style={d.id === departementId ? { background: d.color || 'var(--sidebar)' } : {}}
+            >
+              {d.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>

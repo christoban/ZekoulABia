@@ -1,6 +1,6 @@
 'use client'
 import { useCallback } from 'react'
-import { School, GraduationCap, FileText, CheckCircle2, Award, Target, MapPin, Siren, Hand, RefreshCw, Calendar, Bell, AlertTriangle, PenLine, ClipboardList, Package } from 'lucide-react'
+import { School, GraduationCap, FileText, CheckCircle2, Award, Target, MapPin, Siren, Hand, RefreshCw, Calendar, Bell, AlertTriangle, PenLine, ClipboardList, Package, NotebookPen } from 'lucide-react'
 import type { UserInfo } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
@@ -60,7 +60,9 @@ export default function SectionTeacherDashboard({ onNav, onToast, user }: Props)
           .map((s: any) => ({
             time: `${s.startTime}–${s.endTime}`,
             classe: tt.class?.name || '',
+            classId: tt.class?.id || '',
             subject: s.subject?.name || '',
+            subjectId: s.subject?.id || '',
             salle: s.room || '',
             eleves: 0,
           }))
@@ -221,16 +223,42 @@ export default function SectionTeacherDashboard({ onNav, onToast, user }: Props)
               <div style={{ padding: 16, textAlign: 'center', color: 'var(--text3)', fontSize: 13, fontWeight: 600 }}>{t('dashboard.no_today_courses')}</div>
             ) : todaySlots.map((c, i) => (
               <div key={i}
-                style={{ background: 'var(--bg)', borderRadius: 10, border: '1px solid var(--border)', padding: '10px 12px', cursor: 'pointer', transition: 'all 0.12s' }}
-                onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--border2)', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' })}
-                onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--border)', boxShadow: 'none' })}>
+                style={{ background: 'var(--bg)', borderRadius: 10, border: '1px solid var(--border)', padding: '10px 12px', transition: 'all 0.12s' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
                   <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text3)' }}>{c.time}</span>
                   <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 20, background: 'var(--blue-light)', color: 'var(--blue)' }}>{c.classe}</span>
                 </div>
                 <div style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text)', marginBottom: 4 }}>{c.subject}</div>
-                <div style={{ display: 'flex', gap: 12, fontSize: 11.5, color: 'var(--text3)', fontWeight: 600 }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} strokeWidth={2} /> {c.salle || t('dashboard.room_undefined')}</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, paddingTop: 6, borderTop: '1px solid var(--border)' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: 'var(--text3)', fontWeight: 600 }}>
+                    <MapPin size={12} strokeWidth={2} /> {c.salle || t('dashboard.room_undefined')}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => {
+                        if (c.classId) sessionStorage.setItem('zekoulabia_prefill_class', c.classId)
+                        if (c.subjectId) sessionStorage.setItem('zekoulabia_prefill_subject', c.subjectId)
+                        onNav('attendance')
+                      }}
+                      title="Faire l'appel pour ce cours"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold bg-[var(--green-light)] text-[var(--green)] border border-[var(--green)]/30 hover:bg-[var(--green)]/20 cursor-pointer"
+                    >
+                      <CheckCircle2 size={11} strokeWidth={2.5} />
+                      <span>Appel</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (c.classId) sessionStorage.setItem('zekoulabia_prefill_class', c.classId)
+                        if (c.subjectId) sessionStorage.setItem('zekoulabia_prefill_subject', c.subjectId)
+                        onNav('cahier-de-texte')
+                      }}
+                      title="Remplir le cahier de texte"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold bg-[var(--blue-light)] text-[var(--blue)] border border-[var(--blue)]/30 hover:bg-[var(--blue)]/20 cursor-pointer"
+                    >
+                      <NotebookPen size={11} strokeWidth={2.5} />
+                      <span>Cahier</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

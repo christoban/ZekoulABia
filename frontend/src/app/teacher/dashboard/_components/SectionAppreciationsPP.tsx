@@ -9,6 +9,9 @@ import { useT } from '@/lib/i18n'
 interface Props {
   user: UserInfo
   classeId: string
+  classeNom?: string
+  classesList?: { id: string; name: string }[]
+  onSelectClasse?: (id: string) => void
 }
 
 interface Period {
@@ -43,7 +46,7 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced
 }
 
-export default function SectionAppreciationsPP({ user: _user, classeId }: Props) {
+export default function SectionAppreciationsPP({ user: _user, classeId, classeNom, classesList, onSelectClasse }: Props) {
   const t = useT('teacher')
   const [periods, setPeriods] = useState<Period[]>([])
   const [selectedPeriodId, setSelectedPeriodId] = useState<string>('')
@@ -231,11 +234,31 @@ export default function SectionAppreciationsPP({ user: _user, classeId }: Props)
 
   return (
     <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
+      {/* Sélecteur multi-classes PP si concerné */}
+      {classesList && classesList.length > 1 && (
+        <div className="flex items-center gap-2 p-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] overflow-x-auto">
+          <span className="text-xs font-bold text-[var(--text3)] px-2 whitespace-nowrap">Mes classes PP :</span>
+          {classesList.map(c => (
+            <button
+              key={c.id}
+              onClick={() => onSelectClasse?.(c.id)}
+              className={`px-3 py-1.5 rounded-md text-xs font-extrabold cursor-pointer border transition-all ${
+                c.id === classeId
+                  ? 'bg-[var(--green)] text-white border-[var(--green)]'
+                  : 'bg-[var(--bg)] text-[var(--text2)] border-[var(--border)] hover:text-[var(--text)]'
+              }`}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <PenLine size={18} strokeWidth={2} />{t('pp.title')}
+            <PenLine size={18} strokeWidth={2} />{t('pp.title')} {classeNom ? `· ${classeNom}` : ''}
           </div>
           <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 500, marginTop: 2 }}>
             {t('pp.subtitle')}

@@ -37,9 +37,16 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
   const tcommon = useT('common')
   const attTitle = (code: string) => t(ATT_TITLE_KEY[code] || code)
   const [classes, setClasses] = useState<any[]>([])
+  const defaultPeriod = (): 'MORNING' | 'AFTERNOON' => {
+    const hour = new Date().getHours()
+    const minutes = new Date().getMinutes()
+    return (hour > 12 || (hour === 12 && minutes >= 30)) ? 'AFTERNOON' : 'MORNING'
+  }
+
   const [subjects, setSubjects] = useState<any[]>([])
   const [selectedClass, setSelectedClass] = useState('')
   const [selectedSubject, setSelectedSubject] = useState('')
+  const [selectedPeriod, setSelectedPeriod] = useState<'MORNING' | 'AFTERNOON'>(defaultPeriod())
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [students, setStudents] = useState<any[]>([])
   const [statuses, setStatuses] = useState<Record<string, AttStatus>>({})
@@ -50,6 +57,20 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
   const { isOnline, addToQueue } = useSyncQueue()
 
   useEffect(() => {
+    // Vérifier si un cours du jour a été cliqué depuis le tableau de bord (action rapide)
+    try {
+      const prefillClass = sessionStorage.getItem('zekoulabia_prefill_class')
+      const prefillSubject = sessionStorage.getItem('zekoulabia_prefill_subject')
+      if (prefillClass) {
+        setSelectedClass(prefillClass)
+        sessionStorage.removeItem('zekoulabia_prefill_class')
+      }
+      if (prefillSubject) {
+        setSelectedSubject(prefillSubject)
+        sessionStorage.removeItem('zekoulabia_prefill_subject')
+      }
+    } catch { /* ignore */ }
+
     if (navigator.onLine) {
       Promise.all([
         fetchApi('/api/v2/classes', { credentials: 'include' }).then(r => r.json()),
@@ -158,13 +179,13 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
       classId: selectedClass,
       subjectId: selectedSubject || undefined,
       date: selectedDate,
-      period: 'MORNING',
+      period: selectedPeriod,
       presences,
     }
 
     if (!isOnline) {
       await addToQueue({ type: 'ATTENDANCE', endpoint: '/api/v2/attendance', method: 'POST', payload })
-      onToast('Présences mises en file d\'attente — synchronisation à la reconnexion', 'warning')
+      onToast(t('attendance.toast_offline_cache'), 'warning')
       return
     }
 
@@ -177,12 +198,12 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
         body: JSON.stringify(payload),
       }).then(r => r.json())
       if (res.success) {
-        onToast('Présences enregistrées', 'success')
+        onToast(t('attendance.toast_saved'), 'success')
       } else {
-        onToast(res.message || 'Erreur de sauvegarde', 'error')
+        onToast(res.message || t('attendance.toast_error'), 'error')
       }
     } catch (err: any) {
-      onToast(err.message || 'Erreur réseau', 'error')
+      onToast(err.message || t('attendance.toast_error'), 'error')
     } finally {
       setLoading(false)
     }
@@ -196,7 +217,7 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
   if (loading && !students.length) {
     return (
       <div className="px-4 py-4 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: 12.5, color: 'var(--text3)', fontWeight: 600 }}>Chargement...</div>
+        <div style={{ fontSize: 12.5, color: 'var(--text3)', fontWeight: 600 }}>{tcommon('status.loading')}</div>
       </div>
     )
   }
@@ -208,7 +229,7 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
           <div style={{ color: 'var(--red)', fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>{error}</div>
           <button onClick={loadAttendance}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 13px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
-            <RefreshCw size={13} strokeWidth={2} /> Réessayer
+            <RefreshCw size={13} strokeWidth={2} /> {tcommon('actions.retry')}
           </button>
         </div>
       </div>
@@ -219,15 +240,15 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
     <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
       <div className="flex items-center justify-between mb-2">
         <div>
-          <div style={sTitle}>Présences</div>
-          <div style={sSub}>Saisie par classe · {selectedDate}</div>
+          <div style={sTitle}>{t('attendance.title')}</div>
+          <div style={sSub}>{t('attendance.subtitle')} · {selectedDate} ({selectedPeriod === 'MORNING' ? 'Matin' : 'Après-midi'})</div>
         </div>
       </div>
 
       {!isOnline && (
         <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 8, padding: '9px 14px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ display: 'flex', alignItems: 'center' }}><WifiOff size={15} strokeWidth={2} /></span>
-          <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--amber)' }}>Mode hors-ligne — les présences seront synchronisées à la reconnexion</span>
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--amber)' }}>{t('attendance.offline_banner')}</span>
         </div>
       )}
 
@@ -251,6 +272,16 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
         >
           <option value="">Matière (optionnelle)</option>
           {subjects.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </select>
+
+        <select
+          className="w-full sm:w-auto h-9"
+          style={filterSt}
+          value={selectedPeriod}
+          onChange={e => setSelectedPeriod(e.target.value as 'MORNING' | 'AFTERNOON')}
+        >
+          <option value="MORNING">Matin (07h-12h)</option>
+          <option value="AFTERNOON">Après-midi (13h-18h)</option>
         </select>
 
         <input

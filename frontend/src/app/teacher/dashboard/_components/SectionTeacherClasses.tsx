@@ -4,6 +4,7 @@ import type { UserInfo } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { Package } from 'lucide-react'
 
 interface Props {
@@ -39,15 +40,31 @@ export default function SectionTeacherClasses({ onNav, onToast, user }: Props) {
     const statsMap: Record<string, ClassStats> = {}
     const gradeMap: Record<string, { total: number; submitted: number; draft: number }> = {}
     await Promise.all(classList.map(async (cls) => {
+      let attendanceRate: string | null = null
+      let average: number | null = null
+
       try {
-        const res = await fetchApi(`/api/v2/attendance/stats?classId=${cls.id}`, { credentials: 'include' })
-        const d = await res.json()
-        statsMap[cls.id] = {
-          classId: cls.id,
-          average: null,
-          attendanceRate: res.ok && d.stats?.attendanceRate ? d.stats.attendanceRate : null,
+        const [resAtt, resStudents] = await Promise.all([
+          fetchApi(`/api/v2/attendance/stats?classId=${cls.id}`, { credentials: 'include' }).then(r => r.json()).catch(() => null),
+          fetchApi(`/api/v2/classes/${cls.id}/students`, { credentials: 'include' }).then(r => r.json()).catch(() => null),
+        ])
+
+        if (resAtt?.stats?.attendanceRate) {
+          attendanceRate = resAtt.stats.attendanceRate
         }
-      } catch { statsMap[cls.id] = { classId: cls.id, average: null, attendanceRate: null } }
+
+        if (resStudents?.success && Array.isArray(resStudents.data)) {
+          const validMoys = resStudents.data
+            .map((s: any) => s.moyenne)
+            .filter((m: any) => typeof m === 'number' && !isNaN(m))
+          if (validMoys.length > 0) {
+            average = Math.round((validMoys.reduce((acc: number, v: number) => acc + v, 0) / validMoys.length) * 10) / 10
+          }
+        }
+      } catch { /* ignore */ }
+
+      statsMap[cls.id] = { classId: cls.id, average, attendanceRate }
+
       try {
         const gr = await fetchApi(`/api/v2/grades/status/${cls.id}`, { credentials: 'include' })
         const gd = await gr.json()
@@ -62,9 +79,25 @@ export default function SectionTeacherClasses({ onNav, onToast, user }: Props) {
     }))
     setStats(statsMap)
     setGradeStats(gradeMap)
+    await putCachedData('teacher:classes-detail-stats', { stats: statsMap, gradeStats: gradeMap }).catch(() => {})
   }
 
-  useEffect(() => { if (classes.length > 0 && !fromCache) fetchStats(classes) }, [classes, fromCache]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (classes.length > 0) {
+      if (!fromCache) {
+        fetchStats(classes)
+      } else {
+        getCachedData<{ stats: Record<string, ClassStats>; gradeStats: Record<string, any> }>('teacher:classes-detail-stats')
+          .then(cached => {
+            if (cached?.data) {
+              setStats(cached.data.stats || {})
+              setGradeStats(cached.data.gradeStats || {})
+            }
+          })
+          .catch(() => {})
+      }
+    }
+  }, [classes, fromCache]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const totalStudents = classes.reduce((sum: number, c: any) => sum + (c._count?.students || 0), 0)
 

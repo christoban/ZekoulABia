@@ -1,10 +1,11 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
-import { Calendar, RefreshCw, Coffee, Utensils, User as UserIcon, BookOpen, Layers } from 'lucide-react'
+import { Calendar, RefreshCw, Coffee, Utensils, User as UserIcon, BookOpen, Layers, Package } from 'lucide-react'
 import type { UserInfo } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { normalizeTimetableCellSlots } from '@/lib/timetableSlotGrouping'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void
@@ -74,6 +75,8 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [fromCache, setFromCache] = useState(false)
+  const [cachedAt, setCachedAt] = useState<number | null>(null)
   const [catchup, setCatchup] = useState(EMPTY_CATCHUP)
   const [catchupClasses, setCatchupClasses] = useState<{ id: string; name: string }[]>([])
 
@@ -82,6 +85,32 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
   const fetchData = async () => {
     setLoading(true)
     setError(null)
+
+    const cacheKeyTt = `teacher:timetables:${userId || 'all'}`
+    const cacheKeyGrid = 'teacher:timetable-grid-config'
+
+    // Repli hors-ligne préalable
+    if (!navigator.onLine) {
+      try {
+        const [cachedTt, cachedGrid] = await Promise.all([
+          getCachedData<any[]>(cacheKeyTt),
+          getCachedData<any>(cacheKeyGrid),
+        ])
+        if (cachedTt?.data) {
+          setTimetablesData(cachedTt.data)
+          setFromCache(true)
+          setCachedAt(cachedTt.cachedAt)
+          if (cachedGrid?.data) {
+            if (Array.isArray(cachedGrid.data.squelette) && cachedGrid.data.squelette.length > 0) setSquelette(cachedGrid.data.squelette)
+            if (Array.isArray(cachedGrid.data.config?.joursActifs) && cachedGrid.data.config.joursActifs.length > 0) setJoursActifs(cachedGrid.data.config.joursActifs)
+            if (cachedGrid.data.squeletteParJour) setSqueletteParJour(cachedGrid.data.squeletteParJour)
+          }
+          setLoading(false)
+          return
+        }
+      } catch { /* ignore */ }
+    }
+
     try {
       const [res, gridRes] = await Promise.all([
         fetchApi('/api/v2/timetables', { credentials: 'include' }).then(r => r.json()),
@@ -90,9 +119,12 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
 
       if (res.success) {
         setTimetablesData(res.data || [])
+        setFromCache(false)
+        await putCachedData(cacheKeyTt, res.data || [])
 
         // Grille officielle de l'établissement
         if (gridRes?.success && gridRes.data) {
+          await putCachedData(cacheKeyGrid, gridRes.data)
           if (Array.isArray(gridRes.data.squelette) && gridRes.data.squelette.length > 0) {
             setSquelette(gridRes.data.squelette)
           }
@@ -104,9 +136,26 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
           }
         }
       } else {
-        setError(t('timetable.error_loading'))
+        throw new Error(t('timetable.error_loading'))
       }
     } catch (err: any) {
+      // Repli cache si erreur réseau
+      try {
+        const cachedTt = await getCachedData<any[]>(cacheKeyTt)
+        const cachedGrid = await getCachedData<any>(cacheKeyGrid)
+        if (cachedTt?.data) {
+          setTimetablesData(cachedTt.data)
+          setFromCache(true)
+          setCachedAt(cachedTt.cachedAt)
+          if (cachedGrid?.data) {
+            if (Array.isArray(cachedGrid.data.squelette) && cachedGrid.data.squelette.length > 0) setSquelette(cachedGrid.data.squelette)
+            if (Array.isArray(cachedGrid.data.config?.joursActifs) && cachedGrid.data.config.joursActifs.length > 0) setJoursActifs(cachedGrid.data.config.joursActifs)
+            if (cachedGrid.data.squeletteParJour) setSqueletteParJour(cachedGrid.data.squeletteParJour)
+          }
+          setLoading(false)
+          return
+        }
+      } catch { /* ignore */ }
       setError(err.message || t('timetable.error_network'))
     } finally {
       setLoading(false)
@@ -302,6 +351,11 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
         <div>
           <div style={sTitle}>{t('timetable.title')}</div>
           <div style={sSub}>{getWeekRange()} · <span className="font-semibold text-[var(--primary)]">{currentViewTitle}</span></div>
+          {fromCache && cachedAt && (
+            <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
+              <Package size={12} strokeWidth={2} /> {tcommon('cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center justify-between sm:justify-end gap-2.5 flex-wrap">

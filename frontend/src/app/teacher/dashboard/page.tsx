@@ -44,7 +44,7 @@ interface SessionUser {
 }
 
 const TEACHER_SECTIONS: TeacherSection[] = [
-  'dashboard', 'classes', 'attendance', 'grades', 'bulletins', 'timetable', 'resources', 'sync',
+  'dashboard', 'classes', 'attendance', 'grades', 'bulletins', 'timetable', 'sync',
   'pp-classe', 'pp-appreciations', 'ap-departement', 'cahier-de-texte', 'at-risk', 'mon-suivi',
   'correction-anonyme',
   'mon-profil-rh', 'notifications', 'babillard', 'messagerie',
@@ -59,7 +59,6 @@ let toastId = 0
 
 const PLACEHOLDERS: Partial<Record<TeacherSection, { icon: LucideIcon }>> = {
   bulletins: { icon: FileText },
-  resources: { icon: FolderOpen },
 }
 
 export default function TeacherDashboard() {
@@ -73,7 +72,6 @@ export default function TeacherDashboard() {
     grades: tnav('pageTitle.teacher_grades'),
     bulletins: tnav('pageTitle.teacher_bulletins'),
     timetable: tnav('pageTitle.teacher_timetable'),
-    resources: tnav('pageTitle.teacher_resources'),
     sync: tnav('pageTitle.teacher_sync'),
     'pp-classe': tnav('pageTitle.teacher_ppClasse'),
     'pp-appreciations': tnav('pageTitle.teacher_ppAppreciations'),
@@ -94,7 +92,18 @@ export default function TeacherDashboard() {
   const [user, setUser] = useState<UserInfo | null>(null)
   const [pendingGrades, setPendingGrades] = useState<number>(0)
   const [changePwdOpen, setChangePwdOpen] = useState(false)
+  const [selectedPPClassId, setSelectedPPClassId] = useState<string>('')
+  const [selectedAPDeptId, setSelectedAPDeptId] = useState<string>('')
   const { pendingCount } = useSyncQueue()
+
+  useEffect(() => {
+    if (user?.classesProfessorPrincipal?.length && (!selectedPPClassId || !user.classesProfessorPrincipal.some(c => c.id === selectedPPClassId))) {
+      setSelectedPPClassId(user.classesProfessorPrincipal[0].id)
+    }
+    if (user?.headedDepartments?.length && (!selectedAPDeptId || !user.headedDepartments.some(d => d.id === selectedAPDeptId))) {
+      setSelectedAPDeptId(user.headedDepartments[0].id)
+    }
+  }, [user, selectedPPClassId, selectedAPDeptId])
 
   // Lecture session depuis localStorage (stockée au login) — identique à admin/staff
   useEffect(() => {
@@ -194,16 +203,43 @@ export default function TeacherDashboard() {
           {section === 'timetable' && <SectionTeacherTimetable {...sProps} />}
           {section === 'sync' && <SectionOfflineStatus onToast={showToast} namespace="teacher" />}
           {section === 'pp-classe' && (() => {
-            const cls = user?.classesProfessorPrincipal?.[0]
-            return cls ? <SectionProfesseurPrincipal user={user!} classeId={cls.id} classeNom={cls.name} /> : null
+            const ppList = user?.classesProfessorPrincipal ?? []
+            const activeCls = ppList.find(c => c.id === selectedPPClassId) || ppList[0]
+            return activeCls ? (
+              <SectionProfesseurPrincipal
+                user={user!}
+                classeId={activeCls.id}
+                classeNom={activeCls.name}
+                classesList={ppList}
+                onSelectClasse={setSelectedPPClassId}
+              />
+            ) : null
           })()}
           {section === 'pp-appreciations' && (() => {
-            const cls = user?.classesProfessorPrincipal?.[0]
-            return cls ? <SectionAppreciationsPP user={user!} classeId={cls.id} /> : null
+            const ppList = user?.classesProfessorPrincipal ?? []
+            const activeCls = ppList.find(c => c.id === selectedPPClassId) || ppList[0]
+            return activeCls ? (
+              <SectionAppreciationsPP
+                user={user!}
+                classeId={activeCls.id}
+                classeNom={activeCls.name}
+                classesList={ppList}
+                onSelectClasse={setSelectedPPClassId}
+              />
+            ) : null
           })()}
           {section === 'ap-departement' && (() => {
-            const dept = user?.headedDepartments?.[0]
-            return dept ? <SectionDepartementAP user={user!} departementId={dept.id} departementNom={dept.name} /> : null
+            const deptList = user?.headedDepartments ?? []
+            const activeDept = deptList.find(d => d.id === selectedAPDeptId) || deptList[0]
+            return activeDept ? (
+              <SectionDepartementAP
+                user={user!}
+                departementId={activeDept.id}
+                departementNom={activeDept.name}
+                departmentsList={deptList}
+                onSelectDept={setSelectedAPDeptId}
+              />
+            ) : null
           })()}
           {section === 'cahier-de-texte' && <SectionCahierDeTexte user={user} onToast={showToast} />}
           {section === 'at-risk' && user && <SectionTeacherAtRisk currentUserId={user.id} onToast={showToast} />}

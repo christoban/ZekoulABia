@@ -86,22 +86,39 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
   const [filterClass,    setFilterClass]    = useState('')
   const [pendingEntries, setPendingEntries] = useState<PendingAction[]>([])
 
-  // ── Init : classes + slot du jour ──────────────────────────────────────────
+  // ── Init : classes + slot du jour + pré-sélection rapide ─────────────────
   useEffect(() => {
+    let hasQuickPrefill = false
+    try {
+      const prefillClass = sessionStorage.getItem('zekoulabia_prefill_class')
+      const prefillSubject = sessionStorage.getItem('zekoulabia_prefill_subject')
+      if (prefillClass) {
+        setSelectedClass(prefillClass)
+        sessionStorage.removeItem('zekoulabia_prefill_class')
+        hasQuickPrefill = true
+      }
+      if (prefillSubject) {
+        setPrefillSubjectId(prefillSubject)
+        sessionStorage.removeItem('zekoulabia_prefill_subject')
+      }
+    } catch { /* ignore */ }
+
     fetchApi('/api/v2/classes', { credentials: 'include' })
       .then(r => r.json()).then(d => { if (d.success) setClasses(d.data ?? []) }).catch(() => {})
 
-    fetchApi('/api/v2/pedagogie/today-slot', { credentials: 'include' })
-      .then(r => r.json())
-      .then(d => {
-        if (d.success && d.data) {
-          const { classId, className, subjectId, subjectName, startTime, endTime } = d.data
-          setSelectedClass(classId)
-          setPrefillSubjectId(subjectId)
-          setSlotBanner(t('cahier_de_texte.slot_banner').replace('{info}', `${className ?? ''} — ${subjectName ?? ''} (${startTime}–${endTime})`))
-        }
-      }).catch(() => {})
-  }, [])
+    if (!hasQuickPrefill) {
+      fetchApi('/api/v2/pedagogie/today-slot', { credentials: 'include' })
+        .then(r => r.json())
+        .then(d => {
+          if (d.success && d.data) {
+            const { classId, className, subjectId, subjectName, startTime, endTime } = d.data
+            setSelectedClass(classId)
+            setPrefillSubjectId(subjectId)
+            setSlotBanner(t('cahier_de_texte.slot_banner').replace('{info}', `${className ?? ''} — ${subjectName ?? ''} (${startTime}–${endTime})`))
+          }
+        }).catch(() => {})
+    }
+  }, [t])
 
   // ── Matières selon la classe ────────────────────────────────────────────────
   useEffect(() => {
