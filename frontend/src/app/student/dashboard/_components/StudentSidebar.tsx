@@ -1,10 +1,13 @@
 'use client'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LogOut, LayoutDashboard, FileText, ScrollText, Calendar, ClipboardCheck, BookOpen, HeartPulse, X, Megaphone, MessageCircle, BarChart3 } from 'lucide-react'
+import { LogOut, LayoutDashboard, FileText, ScrollText, Calendar, ClipboardCheck, BookOpen, HeartPulse, X, Megaphone, MessageCircle, BarChart3, NotebookPen, Compass, FileBadge, Camera, UserCheck } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useT } from '@/lib/i18n'
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount'
+import ChangeAvatarModal from '@/components/ChangeAvatarModal'
+import { resolveOrientationEligibility } from '@/lib/orientationEligibility'
 import type { StudentSection, UserInfo } from '../_types'
 
 interface NavItem {
@@ -40,6 +43,12 @@ export default function StudentSidebar({ current, onChange, schoolName, logoUrl,
   const tcommon = useT('common')
   const messagesNonLus = useUnreadMessagesCount()
 
+  const orientationElig = resolveOrientationEligibility(
+    user?.studentProfile?.class?.name,
+    user?.studentProfile?.class?.level,
+    user?.studentProfile?.class?.serie
+  )
+
   const NAV: NavGroup[] = [
     {
       items: [
@@ -47,36 +56,62 @@ export default function StudentSidebar({ current, onChange, schoolName, logoUrl,
       ]
     },
     {
-      label: tnav('group.results'),
-      items: [
-        { id: 'grades',    icon: FileText, label: tnav('sidebar.myGrades') },
-        { id: 'bulletins', icon: ScrollText, label: tnav('sidebar.bulletins') },
-        { id: 'health-tracking', icon: HeartPulse, label: tnav('sidebar.myHealthTracking') },
-        { id: 'academic-profile', icon: BarChart3, label: tnav('sidebar.academicProfile') },
-      ]
-    },
-    {
       label: tnav('group.schoolAgenda'),
       items: [
-        { id: 'timetable',  icon: Calendar, label: tnav('sidebar.timetable') },
+        { id: 'homework',   icon: NotebookPen, label: tnav('sidebar.homework') || 'Cahier & Devoirs' },
+        { id: 'timetable',  icon: Calendar,    label: tnav('sidebar.timetable') },
         { id: 'attendance', icon: ClipboardCheck, label: tnav('sidebar.myAttendance') },
       ]
     },
-    // notifications retiré — redondant avec la cloche (permanente sur tous les écrans), qui
-    // offre désormais un lien « Voir tout » vers cette même page.
+    {
+      label: tnav('group.results'),
+      items: [
+        { id: 'grades',           icon: FileText,   label: tnav('sidebar.myGrades') },
+        { id: 'bulletins',        icon: ScrollText, label: tnav('sidebar.bulletins') },
+        { id: 'academic-profile', icon: BarChart3,  label: tnav('sidebar.academicProfile') },
+        ...(orientationElig.isEligible ? [
+          { id: 'orientation' as const, icon: Compass, label: tnav('sidebar.orientation') || 'Orientation' }
+        ] : []),
+        { id: 'health-tracking',  icon: HeartPulse, label: tnav('sidebar.myHealthTracking') },
+      ]
+    },
     {
       label: tnav('group.services'),
       items: [
-        { id: 'library', icon: BookOpen, label: tnav('sidebar.myLibrary') },
-        { id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard') },
+        { id: 'profile',    icon: UserCheck, label: 'Mon Dossier & Profil' },
+        { id: 'documents',  icon: FileBadge, label: tnav('sidebar.documents') || 'Mes Documents' },
+        { id: 'library',    icon: BookOpen,  label: tnav('sidebar.myLibrary') },
+        { id: 'babillard',  icon: Megaphone, label: tnav('sidebar.babillard') },
         { id: 'messagerie', icon: MessageCircle, label: tnav('sidebar.messagerie'), ...(messagesNonLus > 0 ? { badge: String(messagesNonLus), badgeColor: 'red' as const } : {}) },
       ]
     },
   ]
 
+  const [currentAvatar, setCurrentAvatar] = useState<string | null>(user?.avatarUrl ?? null)
+  const [avatarModalOpen, setAvatarModalOpen] = useState(false)
+
+  useEffect(() => {
+    if (user?.avatarUrl !== undefined) {
+      setCurrentAvatar(user.avatarUrl)
+    }
+  }, [user?.avatarUrl])
+
+  useEffect(() => {
+    const handleUserUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent
+      if (customEvent.detail?.avatarUrl !== undefined) {
+        setCurrentAvatar(customEvent.detail.avatarUrl)
+      }
+    }
+    window.addEventListener('zekoulabia:user-updated', handleUserUpdated)
+    return () => window.removeEventListener('zekoulabia:user-updated', handleUserUpdated)
+  }, [])
+
   const displayName = schoolName || tcommon('brand.fallbackSchool')
   const initials = displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((w: string) => w[0].toUpperCase()).join('')
   const className = user?.studentProfile?.class?.name || ''
+  const userDisplayName = user ? `${user.firstName} ${user.lastName}` : tcommon('user.loading')
+  const userInitials = user ? (user.firstName[0] || '') + (user.lastName[0] || '') : '??'
 
   const handleChange = (id: StudentSection) => { onChange(id); onMobileClose?.() }
 
@@ -147,13 +182,33 @@ export default function StudentSidebar({ current, onChange, schoolName, logoUrl,
       </div>
 
       <div className="hidden md:block border-t border-white/[0.07]" style={{ padding: '8px 10px' }}>
-        <div className="flex items-center gap-2.5 rounded-[8px] hover:bg-white/[0.06]" style={{ padding: '6px 8px' }}>
-          <div className="w-7 h-7 rounded-[6px] bg-gradient-to-br from-[var(--purple)] to-[var(--blue)] flex items-center justify-center text-white font-black text-[11px] flex-shrink-0">
-            {user ? (user.firstName[0] || '') + (user.lastName[0] || '') : '??'}
-          </div>
+        <div className="flex items-center gap-2.5 rounded-[8px] hover:bg-white/[0.06] transition-colors" style={{ padding: '6px 8px' }}>
+          <button
+            type="button"
+            onClick={() => setAvatarModalOpen(true)}
+            title="Modifier ma photo de profil"
+            className="relative group w-8 h-8 rounded-full overflow-hidden border border-white/20 flex-shrink-0 cursor-pointer p-0 bg-transparent flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-purple-400"
+          >
+            {currentAvatar ? (
+              <img
+                src={currentAvatar}
+                alt={userDisplayName}
+                className="w-full h-full object-cover rounded-full"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-[var(--purple)] to-[var(--blue)] flex items-center justify-center text-white font-black text-[11px]">
+                {userInitials}
+              </div>
+            )}
+            <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-full">
+              <Camera size={13} className="text-white" />
+            </div>
+          </button>
           <div className="min-w-0 flex-1">
-            <div className="text-[12px] font-bold text-white truncate">{user ? `${user.firstName} ${user.lastName}` : tcommon('user.loading')}</div>
-            <div className="text-[10px] text-white/35">{tcommon('user.studentFallback')}{className ? ` · ${className}` : ''}</div>
+            <div className="text-[12px] font-bold text-white truncate">{userDisplayName}</div>
+            <div className="text-[10px] text-white/40 truncate">
+              {tcommon('user.studentFallback')}{className ? ` · ${className}` : ''}
+            </div>
           </div>
           {onLogout && (
             <button onClick={onLogout} title={tcommon('user.logoutTitle')}
@@ -186,6 +241,17 @@ export default function StudentSidebar({ current, onChange, schoolName, logoUrl,
           </div>
         )}
       </AnimatePresence>
+
+      {/* Modal Changement Photo de Profil */}
+      {avatarModalOpen && (
+        <ChangeAvatarModal
+          currentAvatarUrl={currentAvatar}
+          userName={userDisplayName}
+          onClose={() => setAvatarModalOpen(false)}
+          onSuccess={(url) => setCurrentAvatar(url)}
+          onToast={() => {}}
+        />
+      )}
     </>
   )
 }

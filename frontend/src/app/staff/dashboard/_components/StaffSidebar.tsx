@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LogOut, LayoutDashboard, GraduationCap, ClipboardCheck,
@@ -8,13 +8,14 @@ import {
   Compass, IdCard, ShieldAlert,
   Megaphone, MessageCircle,
   ScanSearch, Users, Settings, ChevronDown, ChevronRight,
-  BarChart3, UserPlus, Award, RefreshCw,
+  BarChart3, UserPlus, Award, RefreshCw, Camera,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useT, useLanguage } from '@/lib/i18n'
 import { logoutUser } from '@/lib/userAuth'
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount'
+import ChangeAvatarModal from '@/components/ChangeAvatarModal'
 import type { StaffSection, SessionUser } from '../_types'
 import { getStaffDisplayTitle } from '../_types'
 
@@ -69,6 +70,26 @@ export default function StaffSidebar({
   const displayRoleTitle = getStaffDisplayTitle(sessionUser, lang)
   const messagesNonLus = useUnreadMessagesCount()
   const can = (s: StaffSection) => allowedSections.has(s)
+
+  const [currentAvatar, setCurrentAvatar] = useState<string | null>(sessionUser?.avatarUrl ?? null)
+  const [avatarModalOpen, setAvatarModalOpen] = useState(false)
+
+  useEffect(() => {
+    if (sessionUser?.avatarUrl !== undefined) {
+      setCurrentAvatar(sessionUser.avatarUrl)
+    }
+  }, [sessionUser?.avatarUrl])
+
+  useEffect(() => {
+    const handleUserUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent
+      if (customEvent.detail?.avatarUrl !== undefined) {
+        setCurrentAvatar(customEvent.detail.avatarUrl)
+      }
+    }
+    window.addEventListener('zekoulabia:user-updated', handleUserUpdated)
+    return () => window.removeEventListener('zekoulabia:user-updated', handleUserUpdated)
+  }, [])
 
   // Admissions & Concours (Secrétaire / Bursar / Intendant)
   const admissionsItems: NavItem[] = []
@@ -352,18 +373,36 @@ export default function StaffSidebar({
 
       {/* User — desktop uniquement (comme AdminSidebar) */}
       <div className="hidden md:block border-t border-white/[0.07]" style={{ padding: '9px 12px', flexShrink: 0 }}>
-        <div className="flex items-center gap-2.5 rounded-[8px] hover:bg-white/[0.06]" style={{ padding: '6px 8px' }}>
-          <div className="w-7 h-7 rounded-[6px] bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center text-white font-black text-[11px] flex-shrink-0">
-            {initials}
-          </div>
+        <div className="flex items-center gap-2.5 rounded-[8px] hover:bg-white/[0.06] transition-colors" style={{ padding: '6px 8px' }}>
+          <button
+            type="button"
+            onClick={() => setAvatarModalOpen(true)}
+            title="Modifier ma photo de profil"
+            className="relative group w-8 h-8 rounded-full overflow-hidden border border-white/20 flex-shrink-0 cursor-pointer p-0 bg-transparent flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-400"
+          >
+            {currentAvatar ? (
+              <img
+                src={currentAvatar}
+                alt={userFallback}
+                className="w-full h-full object-cover rounded-full"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center text-white font-black text-[11px]">
+                {initials}
+              </div>
+            )}
+            <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-full">
+              <Camera size={13} className="text-white" />
+            </div>
+          </button>
           <div className="min-w-0 flex-1">
             <div className="text-[12px] font-bold text-white truncate">{userFallback}</div>
-            <div className="text-[10px] text-white/35">{displayRoleTitle}</div>
+            <div className="text-[10px] text-white/35 truncate">{displayRoleTitle}</div>
           </div>
           <button onClick={logoutUser} title={tcommon('user.logoutTitle')}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', flexShrink: 0, padding: 3, borderRadius: 4 }}
             onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'rgba(239,68,68,0.8)'}
-            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)'}>
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(239,68,68,0.3)'}>
             <LogOut size={14} />
           </button>
         </div>
@@ -391,6 +430,17 @@ export default function StaffSidebar({
           </div>
         )}
       </AnimatePresence>
+
+      {/* Modal Changement Photo de Profil */}
+      {avatarModalOpen && (
+        <ChangeAvatarModal
+          currentAvatarUrl={currentAvatar}
+          userName={userFallback}
+          onClose={() => setAvatarModalOpen(false)}
+          onSuccess={(url) => setCurrentAvatar(url)}
+          onToast={() => {}}
+        />
+      )}
     </>
   )
 }

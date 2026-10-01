@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { KeyRound, MoreVertical, Bell, Menu, Sun, Moon, LogOut } from 'lucide-react'
+import { KeyRound, MoreVertical, Bell, Menu, Sun, Moon, LogOut, Camera } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { useTheme } from 'next-themes'
 import ThemeToggle from '@/components/ThemeToggle'
@@ -10,6 +10,7 @@ import OfflineSyncButtonPopover from '@/components/OfflineSyncButtonPopover'
 import { useNotifications } from '@/hooks/NotificationContext'
 import CalendarTopbarButton from '@/components/CalendarTopbarButton'
 import LanguageSwitch from '@/components/LanguageSwitch'
+import ChangeAvatarModal from '@/components/ChangeAvatarModal'
 import type { StaffSection, SessionUser } from '../_types'
 
 const SECTION_KEY: Record<string, string> = {
@@ -54,9 +55,28 @@ export default function StaffTopbar({
   const [notifOpen, setNotifOpen] = useState(false)
   const [kebabOpen, setKebabOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [avatarModalOpen, setAvatarModalOpen] = useState(false)
+  const [currentAvatar, setCurrentAvatar] = useState<string | null>(sessionUser?.avatarUrl || null)
   const notifRef = useRef<HTMLDivElement>(null)
   const kebabRef = useRef<HTMLDivElement>(null)
   const profileRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (sessionUser?.avatarUrl !== undefined) {
+      setCurrentAvatar(sessionUser.avatarUrl)
+    }
+  }, [sessionUser?.avatarUrl])
+
+  useEffect(() => {
+    const handleUserUpdate = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail
+      if (detail && 'avatarUrl' in detail) {
+        setCurrentAvatar(detail.avatarUrl)
+      }
+    }
+    window.addEventListener('zekoulabia:user-updated', handleUserUpdate)
+    return () => window.removeEventListener('zekoulabia:user-updated', handleUserUpdate)
+  }, [])
 
   const toggleNotif = () => {
     if (!notifOpen) registerSeen()
@@ -234,14 +254,33 @@ export default function StaffTopbar({
       {sessionUser && (
         <div ref={profileRef} className="relative flex-shrink-0 md:hidden" style={{ marginLeft: 2 }}>
           <button onClick={toggleProfile} aria-label={userDisplayName}
-            style={{ width: 34, height: 34, borderRadius: 17, border: 'none', background: 'linear-gradient(135deg,var(--primary),var(--blue,#2563eb))', color: '#fff', fontSize: 12.5, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            {userInitials}
+            className="w-8 h-8 rounded-full border-0 bg-transparent flex items-center justify-center cursor-pointer p-0 overflow-hidden">
+            {currentAvatar ? (
+              <img src={currentAvatar} alt={userDisplayName} className="w-full h-full object-cover rounded-full" />
+            ) : (
+              <div
+                className="w-full h-full rounded-full flex items-center justify-center text-white text-xs font-bold"
+                style={{ background: 'linear-gradient(135deg,var(--primary),var(--blue,#2563eb))' }}
+              >
+                {userInitials}
+              </div>
+            )}
           </button>
           {profileOpen && (
             <div style={{ position: 'absolute', top: 48, right: 0, width: 220, background: 'var(--surface)', borderRadius: 14, boxShadow: '0 8px 24px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.08)', padding: 8, zIndex: 20 }}>
               <div style={{ padding: '8px 10px 10px', borderBottom: '1px solid var(--border)', marginBottom: 4 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{userDisplayName}</div>
                 <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{tcommon('user.roleLabel')}</div>
+              </div>
+              <div
+                onClick={() => {
+                  setProfileOpen(false)
+                  setAvatarModalOpen(true)
+                }}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 10, cursor: 'pointer' }}
+              >
+                <Camera size={18} color="var(--primary)" strokeWidth={2} />
+                <span style={{ fontSize: 13.5, color: 'var(--text)', fontWeight: 600 }}>{tcommon('user.profilePhoto') || 'Photo de profil'}</span>
               </div>
               {onNav && (
                 <div onClick={() => { setProfileOpen(false); onNav('mon-profil-rh') }}
@@ -259,6 +298,16 @@ export default function StaffTopbar({
             </div>
           )}
         </div>
+      )}
+
+      {avatarModalOpen && (
+        <ChangeAvatarModal
+          currentAvatarUrl={currentAvatar}
+          userName={userDisplayName}
+          onClose={() => setAvatarModalOpen(false)}
+          onSuccess={(url) => setCurrentAvatar(url)}
+          onToast={() => {}}
+        />
       )}
 
     </header>

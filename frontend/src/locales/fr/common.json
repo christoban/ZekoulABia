@@ -106,7 +106,8 @@
     "staffFallback": "Membre du personnel",
     "parentFallback": "Parent",
     "studentFallback": "Élève",
-    "loading": "Chargement..."
+    "loading": "Chargement...",
+    "profilePhoto": "Photo de profil"
   },
   "brand": {
     "fallbackSchool": "Mon établissement",

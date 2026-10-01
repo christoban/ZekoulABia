@@ -6,12 +6,13 @@ import {
   ScrollText, Calendar, GraduationCap, NotebookPen, Briefcase, CalendarDays,
   Smartphone, IdCard, Wallet, Banknote, ClipboardEdit, UserPlus, BarChart3, ClipboardList,
   Globe, Languages, Bot, Megaphone, Settings, CalendarClock, X, ArrowRightLeft, Trash2,
-  MessageCircle, ListChecks, ChevronDown, ChevronRight,
+  MessageCircle, ListChecks, ChevronDown, ChevronRight, Camera,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useT } from '@/lib/i18n'
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount'
+import ChangeAvatarModal from '@/components/ChangeAvatarModal'
 import type { AdminSection } from '../_types'
 
 interface NavItem {
@@ -47,6 +48,7 @@ interface SessionUser {
   nomComplet?: string
   firstName?: string
   role?: string
+  avatarUrl?: string | null
 }
 
 interface Props {
@@ -100,6 +102,26 @@ export default function AdminSidebar({
 
   const userDisplayName = sessionUser?.nomComplet ?? sessionUser?.firstName ?? tcommon('user.fallbackName')
   const userInitials = userDisplayName.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0, 2)
+
+  const [currentAvatar, setCurrentAvatar] = useState<string | null>(sessionUser?.avatarUrl ?? null)
+  const [avatarModalOpen, setAvatarModalOpen] = useState(false)
+
+  useEffect(() => {
+    if (sessionUser?.avatarUrl !== undefined) {
+      setCurrentAvatar(sessionUser.avatarUrl)
+    }
+  }, [sessionUser?.avatarUrl])
+
+  useEffect(() => {
+    const handleUserUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent
+      if (customEvent.detail?.avatarUrl !== undefined) {
+        setCurrentAvatar(customEvent.detail.avatarUrl)
+      }
+    }
+    window.addEventListener('zekoulabia:user-updated', handleUserUpdated)
+    return () => window.removeEventListener('zekoulabia:user-updated', handleUserUpdated)
+  }, [])
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(DEFAULT_OPEN_GROUPS)
 
@@ -386,10 +408,28 @@ export default function AdminSidebar({
 
       {/* User */}
       <div className="hidden md:block border-t border-white/[0.07]" style={{ padding: '9px 12px', flexShrink: 0 }}>
-        <div className="flex items-center gap-2.5 rounded-[8px] hover:bg-white/[0.06]" style={{ padding: '6px 8px' }}>
-          <div className="w-7 h-7 rounded-[6px] bg-gradient-to-br from-[var(--amber)] to-[var(--red)] flex items-center justify-center text-white font-black text-[11px] flex-shrink-0">
-            {userInitials}
-          </div>
+        <div className="flex items-center gap-2.5 rounded-[8px] hover:bg-white/[0.06] transition-colors" style={{ padding: '6px 8px' }}>
+          <button
+            type="button"
+            onClick={() => setAvatarModalOpen(true)}
+            title="Modifier ma photo de profil"
+            className="relative group w-8 h-8 rounded-full overflow-hidden border border-white/20 flex-shrink-0 cursor-pointer p-0 bg-transparent flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-400"
+          >
+            {currentAvatar ? (
+              <img
+                src={currentAvatar}
+                alt={userDisplayName}
+                className="w-full h-full object-cover rounded-full"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-[var(--amber)] to-[var(--red)] flex items-center justify-center text-white font-black text-[11px]">
+                {userInitials}
+              </div>
+            )}
+            <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-full">
+              <Camera size={13} className="text-white" />
+            </div>
+          </button>
           <div className="min-w-0 flex-1">
             <div className="text-[12px] font-bold text-white truncate">{userDisplayName}</div>
             <div className="text-[10px] text-white/35">{tcommon('user.roleLabel')}</div>
@@ -427,6 +467,17 @@ export default function AdminSidebar({
           </div>
         )}
       </AnimatePresence>
+
+      {/* Modal Changement Photo de Profil */}
+      {avatarModalOpen && (
+        <ChangeAvatarModal
+          currentAvatarUrl={currentAvatar}
+          userName={userDisplayName}
+          onClose={() => setAvatarModalOpen(false)}
+          onSuccess={(url) => setCurrentAvatar(url)}
+          onToast={() => {}}
+        />
+      )}
     </>
   )
 }
