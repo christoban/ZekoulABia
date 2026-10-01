@@ -1,5 +1,5 @@
 'use client'
-import { useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { UserInfo } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
@@ -50,35 +50,58 @@ function CacheBadge({ cachedAt }: { cachedAt: number | null }) {
   )
 }
 
+interface SequenceItem {
+  id: string
+  name: string
+  isCurrent: boolean
+}
+
 export default function SectionStudentGrades({ onToast, user }: Props) {
   const t = useT('student')
   const tcommon = useT('common')
-  const cacheKey = user ? `student:grades:${user.id}` : ''
+  const [sequences, setSequences] = useState<SequenceItem[]>([])
+  const [selectedSequenceId, setSelectedSequenceId] = useState<string>('')
+
+  // Charger la liste des séquences de l'année scolaire
+  useEffect(() => {
+    let mounted = true
+    fetchApi('/api/v2/academic-years', { credentials: 'include' })
+      .then(r => r.json())
+      .then(ayRes => {
+        if (!mounted || !ayRes.success || !ayRes.data?.length) return
+        const curYear = ayRes.data.find((y: any) => y.isCurrent) ?? ayRes.data[0]
+        if (!curYear?.periods) return
+
+        const allSeqs: SequenceItem[] = []
+        for (const period of curYear.periods) {
+          for (const s of (period.sequences ?? [])) {
+            allSeqs.push({ id: s.id, name: s.name, isCurrent: Boolean(s.isCurrent) })
+          }
+        }
+
+        setSequences(allSeqs)
+        if (allSeqs.length > 0 && !selectedSequenceId) {
+          const active = allSeqs.find(s => s.isCurrent) ?? allSeqs[allSeqs.length - 1]
+          setSelectedSequenceId(active.id)
+        }
+      })
+      .catch(() => {})
+    return () => { mounted = false }
+  }, [])
+
+  const cacheKey = user && selectedSequenceId ? `student:grades:${user.id}:${selectedSequenceId}` : ''
 
   const fetchFn = useCallback(async (): Promise<GradesData> => {
+    if (!selectedSequenceId) {
+      return { grades: [], avg: null, rank: null }
+    }
     const classId = user!.studentProfile?.class?.id
     const userId = user!.id
 
-    const ayRes = await fetchApi('/api/v2/academic-years', { credentials: 'include' }).then(r => r.json())
-    let sequenceId = ''
-    if (ayRes.success && ayRes.data?.length) {
-      // Préférer l'année courante, sinon la première disponible
-      const curYear = ayRes.data.find((y: any) => y.isCurrent) ?? ayRes.data[0]
-      if (curYear) {
-        const periods = curYear.periods ?? []
-        const curPeriod = periods.find((p: any) => p.isCurrent) ?? periods[0]
-        if (curPeriod) {
-          const seqs = curPeriod.sequences ?? []
-          const curSeq = seqs.find((s: any) => s.isCurrent) ?? seqs[seqs.length - 1]
-          if (curSeq) sequenceId = curSeq.id
-        }
-      }
-    }
-
     const [gradesRes, avgRes] = await Promise.all([
-      fetchApi(`/api/v2/grades?sequenceId=${sequenceId}`, { credentials: 'include' }).then(r => r.json()),
-      classId && sequenceId
-        ? fetchApi(`/api/v2/grades/average/${userId}?classId=${classId}&sequenceId=${sequenceId}`, { credentials: 'include' }).then(r => r.json())
+      fetchApi(`/api/v2/grades?sequenceId=${selectedSequenceId}`, { credentials: 'include' }).then(r => r.json()).catch(() => ({})),
+      classId
+        ? fetchApi(`/api/v2/grades/average/${userId}?classId=${classId}&sequenceId=${selectedSequenceId}`, { credentials: 'include' }).then(r => r.json()).catch(() => null)
         : Promise.resolve(null),
     ])
 
@@ -87,11 +110,11 @@ export default function SectionStudentGrades({ onToast, user }: Props) {
       avg: avgRes?.average ?? null,
       rank: avgRes?.rank != null ? { pos: avgRes.rank, total: avgRes.totalStudents || 0 } : null,
     }
-  }, [user])
+  }, [user, selectedSequenceId])
 
   const { data, loading, error, fromCache, cachedAt, refetch } = useCachedFetch<GradesData>(cacheKey, fetchFn)
 
-  if (!user || loading) {
+  if (!user || (loading && !data)) {
     return (
       <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600 }}>{tcommon('status.loading')}</div>
@@ -148,6 +171,36 @@ export default function SectionStudentGrades({ onToast, user }: Props) {
       </div>
 
       {fromCache && <CacheBadge cachedAt={cachedAt} />}
+
+      {/* Sélecteur de Séquence interactif */}
+      {sequences.length > 0 && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+          {sequences.map((seq: SequenceItem) => {
+            const isSelected = seq.id === selectedSequenceId
+            return (
+              <button
+                key={seq.id}
+                onClick={() => setSelectedSequenceId(seq.id)}
+                className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer inline-flex items-center gap-1.5"
+                style={{
+                  background: isSelected ? 'var(--sidebar)' : 'var(--surface)',
+                  color: isSelected ? '#ffffff' : 'var(--text2)',
+                  borderColor: isSelected ? 'var(--sidebar)' : 'var(--border)',
+                }}
+              >
+                <span>{seq.name}</span>
+                {seq.isCurrent && (
+                  <span
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ background: isSelected ? '#4ade80' : 'var(--accent)' }}
+                    title="Séquence en cours"
+                  />
+                )}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {/* Résumé de performance globale */}
       <div

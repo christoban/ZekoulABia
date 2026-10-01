@@ -161,5 +161,42 @@
     "trend_up": "Improving",
     "trend_down": "Declining",
     "trend_stable": "Stable"
+  },
+  "homework": {
+    "title": "Notebook & Homework",
+    "subtitle": "Track completed lessons and pending assignments",
+    "tab_pending": "Pending Homework",
+    "tab_all": "Full Notebook",
+    "all_subjects": "All subjects",
+    "empty_pending": "Great job! No pending homework at the moment.",
+    "empty_all": "No session entered in the notebook yet.",
+    "status_done": "Done",
+    "action_mark_done": "Mark as done",
+    "assignment_label": "Assignment to prepare",
+    "toast_done": "Homework marked as completed!",
+    "view_all": "View all",
+    "empty_short": "No pending homework"
+  },
+  "orientation": {
+    "title": "My Orientation Project",
+    "subtitle": "Council recommendations, track selection and study projections"
+  },
+  "documents": {
+    "title": "My Official Documents",
+    "subtitle": "Official certified school records with tamper-proof QR Code",
+    "student_card_title": "Student Identity Card",
+    "certificate_title": "School Attendance Certificate",
+    "offline_toast": "Download requires an internet connection",
+    "success_toast": "Document downloaded successfully!",
+    "error_toast": "Failed to generate document"
+  },
+  "profileCompleteness": {
+    "title_autonomous": "Your profile is incomplete",
+    "title_parent_managed": "Student file to be completed",
+    "action_edit": "Complete my profile"
+  },
+  "editProfile": {
+    "modal_title": "Edit my personal information",
+    "toast_success": "Profile updated successfully!"
   }
 }

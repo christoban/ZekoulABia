@@ -1,12 +1,14 @@
 'use client'
-import { useCallback } from 'react'
-import { Hand, Trophy, TrendingUp, CheckCircle2, AlertTriangle, Siren, FileText, BookOpen, Package, type LucideIcon } from 'lucide-react'
+import { useState, useCallback } from 'react'
+import { Hand, Trophy, TrendingUp, CheckCircle2, AlertTriangle, Siren, FileText, BookOpen, Package, UserPen, type LucideIcon } from 'lucide-react'
 import type { UserInfo } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
 import Lv2ChoiceBanner from './Lv2ChoiceBanner'
 import OrientationCheckpointBanner from './OrientationCheckpointBanner'
+import ProfileIncompleteBanner, { type CompletenessData } from './ProfileIncompleteBanner'
+import EditStudentProfileModal from './EditStudentProfileModal'
 import { groupTimetableSlotsForStudent } from '@/lib/timetableSlotGrouping'
 
 interface Props {
@@ -55,25 +57,41 @@ interface StudentDashData {
   rank: { pos: number; total: number } | null
   attendanceRate: number
   subjectCount: number
+  healthScore: number | null
   todaySlots: { time: string; subject: string; teacher: string; salle: string; color: string }[]
+  upcomingHomework: { id: string; subject: string; task: string; dueDate: string | null }[]
 }
 
 export default function SectionStudentDashboard({ onNav, onToast, user }: Props) {
   const t = useT('student')
   const tcommon = useT('common')
+  const [editProfileData, setEditProfileData] = useState<CompletenessData | null>(null)
 
   const fetchDataFn = useCallback(async (): Promise<StudentDashData> => {
-    const result: StudentDashData = { avgGrade: null, rank: null, attendanceRate: 0, subjectCount: 0, todaySlots: [] }
+    const result: StudentDashData = {
+      avgGrade: null,
+      rank: null,
+      attendanceRate: 0,
+      subjectCount: 0,
+      healthScore: user?.studentProfile?.healthScore ?? null,
+      todaySlots: [],
+      upcomingHomework: [],
+    }
     if (!user) return result
 
     const classId = user.studentProfile?.class?.id
     const userId = user.id
 
-    const [statsRes, ayRes, attRes] = await Promise.all([
-      fetchApi('/api/v2/dashboard/stats', { credentials: 'include' }).then(r => r.json()),
-      fetchApi('/api/v2/academic-years', { credentials: 'include' }).then(r => r.json()),
-      fetchApi('/api/v2/attendance/stats', { credentials: 'include' }).then(r => r.json()),
+    const [statsRes, ayRes, attRes, healthRes] = await Promise.all([
+      fetchApi('/api/v2/dashboard/stats', { credentials: 'include' }).then(r => r.json()).catch(() => ({})),
+      fetchApi('/api/v2/academic-years', { credentials: 'include' }).then(r => r.json()).catch(() => ({})),
+      fetchApi('/api/v2/attendance/stats', { credentials: 'include' }).then(r => r.json()).catch(() => ({})),
+      fetchApi('/api/v2/ai/health-tracking', { credentials: 'include' }).then(r => r.json()).catch(() => ({})),
     ])
+
+    if (healthRes.children?.[0]?.healthScore !== undefined) {
+      result.healthScore = healthRes.children[0].healthScore
+    }
 
     if (statsRes.stats?.avgGrade && statsRes.stats.avgGrade !== 'N/A') {
       result.avgGrade = Number(statsRes.stats.avgGrade)
@@ -94,22 +112,32 @@ export default function SectionStudentDashboard({ onNav, onToast, user }: Props)
       }
     }
 
-    if (classId && userId && sequenceId) {
-      const [avgRes, ttRes, gradesRes] = await Promise.all([
-        fetchApi(`/api/v2/grades/average/${userId}?classId=${classId}&sequenceId=${sequenceId}`, { credentials: 'include' }).then(r => r.json()),
-        fetchApi(`/api/v2/timetables?classId=${classId}`, { credentials: 'include' }).then(r => r.json()),
-        fetchApi(`/api/v2/grades?sequenceId=${sequenceId}`, { credentials: 'include' }).then(r => r.json()),
-      ])
+    if (classId && userId) {
+      const promises: Promise<any>[] = [
+        fetchApi(`/api/v2/timetables?classId=${classId}`, { credentials: 'include' }).then(r => r.json()).catch(() => ({})),
+        fetchApi(`/api/v2/pedagogie/cahier-de-texte?classId=${classId}&limit=10`, { credentials: 'include' }).then(r => r.json()).catch(() => ({})),
+      ]
 
-      if (avgRes.average !== undefined) result.avgGrade = avgRes.average
-      if (avgRes.rank !== undefined) result.rank = { pos: avgRes.rank, total: avgRes.totalStudents || 0 }
+      if (sequenceId) {
+        promises.push(
+          fetchApi(`/api/v2/grades/average/${userId}?classId=${classId}&sequenceId=${sequenceId}`, { credentials: 'include' }).then(r => r.json()).catch(() => ({})),
+          fetchApi(`/api/v2/grades?sequenceId=${sequenceId}`, { credentials: 'include' }).then(r => r.json()).catch(() => ({}))
+        )
+      }
 
-      if (ttRes.success) {
-        // getDay() : 0=Dimanche, 1=Lundi … → converti en 0=Lundi … 5=Samedi, la convention
-        // unique de TimetableSlot.dayOfWeek. Dimanche (6) ne matche aucun créneau.
+      const responses = await Promise.all(promises)
+      const ttRes = responses[0]
+      const cahierRes = responses[1]
+      const avgRes = sequenceId ? responses[2] : null
+      const gradesRes = sequenceId ? responses[3] : null
+
+      if (avgRes?.average !== undefined) result.avgGrade = avgRes.average
+      if (avgRes?.rank !== undefined) result.rank = { pos: avgRes.rank, total: avgRes.totalStudents || 0 }
+
+      if (ttRes?.success) {
         const todayIdx = (new Date().getDay() + 6) % 7
         const groupIds = user.studentProfile?.groupIds ?? []
-        const rawTodaySlots = ttRes.data.flatMap((tt: { slots?: Array<{ dayOfWeek: number; startTime: string; endTime: string; groupId?: string | null; subject?: { name?: string | null } | null; teacher?: { firstName: string; lastName: string } | null; room?: string | null }> }) =>
+        const rawTodaySlots = (ttRes.data || []).flatMap((tt: { slots?: Array<{ dayOfWeek: number; startTime: string; endTime: string; groupId?: string | null; subject?: { name?: string | null } | null; teacher?: { firstName: string; lastName: string } | null; room?: string | null }> }) =>
           (tt.slots || []).filter(slot => slot.dayOfWeek === todayIdx),
         )
         result.todaySlots = [...groupTimetableSlotsForStudent<{ dayOfWeek: number; startTime: string; endTime: string; groupId?: string | null; subject?: { name?: string | null } | null; teacher?: { firstName: string; lastName: string } | null; room?: string | null }>(rawTodaySlots, groupIds).values()]
@@ -124,7 +152,19 @@ export default function SectionStudentDashboard({ onNav, onToast, user }: Props)
           .slice(0, 3)
       }
 
-      if (gradesRes.grades) {
+      if (cahierRes?.success && Array.isArray(cahierRes.data)) {
+        result.upcomingHomework = cahierRes.data
+          .filter((entry: any) => Boolean(entry.devoirsDonnes))
+          .slice(0, 3)
+          .map((entry: any) => ({
+            id: entry.id,
+            subject: entry.matiere?.name || entry.subject?.name || 'Cours',
+            task: entry.devoirsDonnes,
+            dueDate: entry.dateDevoir || null,
+          }))
+      }
+
+      if (gradesRes?.grades) {
         const uniqueSubjects = new Set(gradesRes.grades.map((g: any) => g.subjectId))
         result.subjectCount = uniqueSubjects.size
       }
@@ -143,15 +183,17 @@ export default function SectionStudentDashboard({ onNav, onToast, user }: Props)
   const attendanceRate = data?.attendanceRate ?? 0
   const subjectCount = data?.subjectCount ?? 0
   const todaySlots = data?.todaySlots ?? []
+  const upcomingHomework = data?.upcomingHomework ?? []
 
   const displayAvg = avgGrade ?? 0
   const mention = getMention(displayAvg)
   const [mBg, mC] = MENTION_COLOR(mention)
-  const matricule = user ? `MAT-${user.id.substring(0, 6).toUpperCase()}` : ''
-  const indiceSante = Math.round(displayAvg * 3 + attendanceRate * 0.5)
+  const matricule = user?.studentProfile?.matricule || user?.studentProfile?.numeroInterne || (user ? user.id.substring(0, 8).toUpperCase() : '')
+  const indiceSante = data?.healthScore ?? user?.studentProfile?.healthScore ?? 75
   const [hBg, hC, hLabel] = HEALTH_LABEL(indiceSante)
   const rankDisplay = rank ? `${rank.pos}e / ${rank.total}` : '—'
   const className = user?.studentProfile?.class?.name || ''
+  const lv2Name = user?.studentProfile?.lv2Subject?.name || null
 
   if (loading) {
     return (
@@ -177,8 +219,9 @@ export default function SectionStudentDashboard({ onNav, onToast, user }: Props)
 
   return (
     <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3 sm:space-y-4" style={{ overflowY: 'auto', height: '100%' }}>
+      <ProfileIncompleteBanner onOpenEdit={setEditProfileData} />
       <Lv2ChoiceBanner onToast={onToast} />
-      <OrientationCheckpointBanner onToast={onToast} />
+      <OrientationCheckpointBanner onToast={onToast} user={user} />
       
       {/* Carte d'accueil et profil élève */}
       <div
@@ -206,6 +249,11 @@ export default function SectionStudentDashboard({ onNav, onToast, user }: Props)
             <span style={{ background: hBg, color: hC, padding: '3px 10px', borderRadius: 16, fontSize: 11.5, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
               {(() => { const HIcon = HEALTH_ICON[hLabel]; return <HIcon size={13} strokeWidth={2} /> })()} {t(hLabel)}
             </span>
+            {lv2Name && (
+              <span style={{ background: 'rgba(255,255,255,0.15)', color: 'white', padding: '3px 10px', borderRadius: 16, fontSize: 11.5, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                LV2 : {lv2Name}
+              </span>
+            )}
           </div>
         </div>
 
@@ -245,27 +293,87 @@ export default function SectionStudentDashboard({ onNav, onToast, user }: Props)
         ))}
       </div>
 
-      {/* Cours d'aujourd'hui */}
-      <div className="rounded-xl border overflow-hidden" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-        <div className="px-3.5 py-2.5 sm:px-4 sm:py-3 border-b" style={{ borderColor: 'var(--border)' }}>
-          <span className="text-xs sm:text-sm font-extrabold" style={{ color: 'var(--text)' }}>{t('dashboard.today_title')}</span>
+      {/* Grille : Cours d'aujourd'hui & Devoirs récents */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+        {/* Cours d'aujourd'hui */}
+        <div className="rounded-xl border overflow-hidden" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <div className="px-3.5 py-2.5 sm:px-4 sm:py-3 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
+            <span className="text-xs sm:text-sm font-extrabold" style={{ color: 'var(--text)' }}>{t('dashboard.today_title')}</span>
+            <button
+              onClick={() => onNav('timetable')}
+              className="text-[11px] font-bold border-none bg-transparent cursor-pointer p-0 hover:underline"
+              style={{ color: 'var(--accent)' }}
+            >
+              {t('sidebar.timetable')} →
+            </button>
+          </div>
+          <div className="p-3 sm:p-3.5">
+            {todaySlots.length === 0 ? (
+              <div className="py-6 text-center text-xs font-semibold" style={{ color: 'var(--text3)' }}>{t('dashboard.today_empty')}</div>
+            ) : (
+              <div className="grid grid-cols-1 gap-2.5">
+                {todaySlots.map((c, i) => (
+                  <div key={i} className="rounded-lg p-2.5 sm:p-3" style={{ background: 'var(--bg)', borderLeft: `3.5px solid ${c.color || 'var(--green)'}` }}>
+                    <div className="text-[11px] font-extrabold mb-1" style={{ color: 'var(--text3)' }}>{c.time}</div>
+                    <div className="text-xs sm:text-sm font-bold truncate" style={{ color: 'var(--text)' }}>{c.subject}</div>
+                    <div className="text-[11px] mt-1 truncate" style={{ color: 'var(--text3)' }}>{c.teacher}{c.salle ? ` · ${c.salle}` : ''}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-        <div className="p-3 sm:p-3.5">
-          {todaySlots.length === 0 ? (
-            <div className="py-6 text-center text-xs font-semibold" style={{ color: 'var(--text3)' }}>{t('dashboard.today_empty')}</div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-              {todaySlots.map((c, i) => (
-                <div key={i} className="rounded-lg p-2.5 sm:p-3" style={{ background: 'var(--bg)', borderLeft: `3.5px solid ${c.color || 'var(--green)'}` }}>
-                  <div className="text-[11px] font-extrabold mb-1" style={{ color: 'var(--text3)' }}>{c.time}</div>
-                  <div className="text-xs sm:text-sm font-bold truncate" style={{ color: 'var(--text)' }}>{c.subject}</div>
-                  <div className="text-[11px] mt-1 truncate" style={{ color: 'var(--text3)' }}>{c.teacher}{c.salle ? ` · ${c.salle}` : ''}</div>
-                </div>
-              ))}
-            </div>
-          )}
+
+        {/* Devoirs & Travaux à faire */}
+        <div className="rounded-xl border overflow-hidden" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <div className="px-3.5 py-2.5 sm:px-4 sm:py-3 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
+            <span className="text-xs sm:text-sm font-extrabold" style={{ color: 'var(--text)' }}>
+              {t('homework.title') || 'Devoirs & Travaux'}
+            </span>
+            <button
+              onClick={() => onNav('homework')}
+              className="text-[11px] font-bold border-none bg-transparent cursor-pointer p-0 hover:underline"
+              style={{ color: 'var(--accent)' }}
+            >
+              {t('homework.view_all') || 'Voir tout'} →
+            </button>
+          </div>
+          <div className="p-3 sm:p-3.5">
+            {upcomingHomework.length === 0 ? (
+              <div className="py-6 text-center text-xs font-semibold" style={{ color: 'var(--text3)' }}>
+                {t('homework.empty_short') || 'Aucun devoir en attente'}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-2.5">
+                {upcomingHomework.map((hw) => (
+                  <div key={hw.id} className="rounded-lg p-2.5 sm:p-3" style={{ background: 'var(--bg)', borderLeft: '3.5px solid var(--amber)' }}>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-[11px] font-extrabold" style={{ color: 'var(--amber)' }}>{hw.subject}</span>
+                      {hw.dueDate && (
+                        <span className="text-[10.5px] font-semibold" style={{ color: 'var(--text3)' }}>
+                          Pour le {new Date(hw.dueDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs font-semibold line-clamp-2" style={{ color: 'var(--text)' }}>
+                      {hw.task}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {editProfileData && (
+        <EditStudentProfileModal
+          initialData={editProfileData}
+          onClose={() => setEditProfileData(null)}
+          onToast={onToast}
+          onUpdated={fetchData}
+        />
+      )}
     </div>
   )
 }

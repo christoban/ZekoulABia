@@ -161,5 +161,42 @@
     "trend_up": "En hausse",
     "trend_down": "En baisse",
     "trend_stable": "Stable"
+  },
+  "homework": {
+    "title": "Cahier de Texte & Devoirs",
+    "subtitle": "Suivi des cours dispensés et devoirs à faire",
+    "tab_pending": "Devoirs à faire",
+    "tab_all": "Tout le cahier",
+    "all_subjects": "Toutes les matières",
+    "empty_pending": "Bravo ! Aucun devoir en attente pour le moment.",
+    "empty_all": "Aucune séance renseignée dans le cahier de texte.",
+    "status_done": "Fait",
+    "action_mark_done": "Marquer fait",
+    "assignment_label": "Travail à préparer",
+    "toast_done": "Devoir marqué comme terminé !",
+    "view_all": "Voir tout",
+    "empty_short": "Aucun devoir en attente"
+  },
+  "orientation": {
+    "title": "Mon Projet d'Orientation",
+    "subtitle": "Avis du conseil, choix de filières et projection d'études"
+  },
+  "documents": {
+    "title": "Mes Documents Officiels",
+    "subtitle": "Pièces scolaires officielles certifiées avec QR Code infalsifiable",
+    "student_card_title": "Carte d'Identité Scolaire",
+    "certificate_title": "Certificat de Scolarité",
+    "offline_toast": "Le téléchargement nécessite une connexion internet",
+    "success_toast": "Document téléchargé avec succès !",
+    "error_toast": "Impossible de générer le document"
+  },
+  "profileCompleteness": {
+    "title_autonomous": "Votre profil est incomplet",
+    "title_parent_managed": "Dossier élève à compléter",
+    "action_edit": "Compléter mon profil"
+  },
+  "editProfile": {
+    "modal_title": "Modifier mes informations personnelles",
+    "toast_success": "Profil mis à jour avec succès !"
   }
 }

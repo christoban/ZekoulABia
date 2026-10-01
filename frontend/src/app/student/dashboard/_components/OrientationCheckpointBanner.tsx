@@ -3,9 +3,12 @@ import { useState, useEffect, useCallback } from 'react'
 import { Compass, Clock } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
+import { resolveOrientationEligibility } from '@/lib/orientationEligibility'
+import type { UserInfo } from '../_types'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void
+  user?: UserInfo | null
 }
 
 type SuggestedTrack = { track: string; score: number; justification: string }
@@ -15,40 +18,50 @@ interface Recommandation {
   responseDeadline: string | null; finalTrack: string | null
 }
 
-const CHECKPOINTS = ['FIN_TROISIEME', 'FIN_SECONDE_C'] as const
-
-export default function OrientationCheckpointBanner({ onToast }: Props) {
+export default function OrientationCheckpointBanner({ onToast, user }: Props) {
   const t = useT('student')
   const [loading, setLoading] = useState(true)
   const [proposition, setProposition] = useState<{ checkpointType: string; reco: Recommandation } | null>(null)
   const [selectedTrack, setSelectedTrack] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  // Formulaire d'aspiration (optionnel, disponible en tout temps)
+  // Éligibilité stricte basée sur la classe de l'élève
+  const eligibility = resolveOrientationEligibility(
+    user?.studentProfile?.class?.name,
+    user?.studentProfile?.class?.level,
+    user?.studentProfile?.class?.serie
+  )
+
+  // Formulaire d'aspiration (optionnel, disponible uniquement si éligible aux examens 3e ou 2nde C)
   const [aspirationOpen, setAspirationOpen] = useState(false)
-  const [aspirationCheckpoint, setAspirationCheckpoint] = useState<'FIN_TROISIEME' | 'FIN_SECONDE_C'>('FIN_TROISIEME')
   const [desiredTrack, setDesiredTrack] = useState('')
   const [careerInterest, setCareerInterest] = useState('')
   const [savingAspiration, setSavingAspiration] = useState(false)
   const [aspirationSaved, setAspirationSaved] = useState(false)
 
+  const activeCheckpoint = eligibility.checkpointKey === 'FIN_TROISIEME' || eligibility.checkpointKey === 'FIN_SECONDE_C'
+    ? eligibility.checkpointKey
+    : null
+
   const load = useCallback(async () => {
+    if (!activeCheckpoint) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
     try {
-      for (const cp of CHECKPOINTS) {
-        const res = await fetchApi(`/api/v2/orientation/ma-recommandation/${cp}`, { credentials: 'include' })
-        const json = await res.json()
-        if (json.success && json.data?.status === 'PROPOSEE_A_L_ELEVE') {
-          setProposition({ checkpointType: cp, reco: json.data })
-          setSelectedTrack(json.data.suggestedTracks?.[0]?.track ?? '')
-          setLoading(false)
-          return
-        }
+      const res = await fetchApi(`/api/v2/orientation/ma-recommandation/${activeCheckpoint}`, { credentials: 'include' })
+      const json = await res.json()
+      if (json.success && json.data?.status === 'PROPOSEE_A_L_ELEVE') {
+        setProposition({ checkpointType: activeCheckpoint, reco: json.data })
+        setSelectedTrack(json.data.suggestedTracks?.[0]?.track ?? '')
+        setLoading(false)
+        return
       }
       setProposition(null)
     } catch { /* silencieux — pas de proposition active par défaut */ }
     finally { setLoading(false) }
-  }, [])
+  }, [activeCheckpoint])
 
   useEffect(() => { load() }, [load])
 
@@ -75,11 +88,12 @@ export default function OrientationCheckpointBanner({ onToast }: Props) {
   }
 
   const handleSaveAspiration = async () => {
+    if (!activeCheckpoint) return
     setSavingAspiration(true)
     try {
       const res = await fetchApi('/api/v2/orientation/aspirations', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ checkpointType: aspirationCheckpoint, desiredTrack: desiredTrack || undefined, careerInterest: careerInterest || undefined }),
+        body: JSON.stringify({ checkpointType: activeCheckpoint, desiredTrack: desiredTrack || undefined, careerInterest: careerInterest || undefined }),
       })
       const json = await res.json()
       if (json.success) {
@@ -95,7 +109,8 @@ export default function OrientationCheckpointBanner({ onToast }: Props) {
     }
   }
 
-  if (loading) return null
+  // Si l'élève n'est dans aucune classe à palier (ou LV2 déjà gérée par Lv2ChoiceBanner) : RIEN À AFFICHER
+  if (loading || !activeCheckpoint) return null
 
   if (proposition) {
     const deadline = proposition.reco.responseDeadline ? new Date(proposition.reco.responseDeadline) : null
@@ -103,7 +118,9 @@ export default function OrientationCheckpointBanner({ onToast }: Props) {
       <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
           <Compass size={16} strokeWidth={2} />
-          <span style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text)' }}>{t('orientationCheckpoint.banner_title')}</span>
+          <span style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text)' }}>
+            {activeCheckpoint === 'FIN_TROISIEME' ? 'Orientation Fin de 3ème · Avis du Conseil' : 'Orientation Fin de Seconde C · Avis du Conseil'}
+          </span>
         </div>
         <div style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 600, marginBottom: 10 }}>
           {t('orientationCheckpoint.banner_subtitle')}
@@ -121,7 +138,6 @@ export default function OrientationCheckpointBanner({ onToast }: Props) {
                 padding: '8px 12px', borderRadius: 8, minWidth: 130, cursor: 'pointer', fontFamily: 'inherit',
                 border: `1.5px solid ${selectedTrack === st.track ? 'var(--amber)' : 'var(--border)'}`,
                  background: selectedTrack === st.track ? 'var(--amber-light)' : 'var(--surface)',
-
               }}>
               <span style={{ fontSize: 15, fontWeight: 900, color: 'var(--text)' }}>{st.track}</span>
               <span style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.4 }}>{st.justification}</span>
@@ -136,13 +152,17 @@ export default function OrientationCheckpointBanner({ onToast }: Props) {
     )
   }
 
-  // Pas de proposition en attente — formulaire d'aspiration optionnel
+  // Pas de proposition en attente — formulaire d'aspiration contextuel pour sa classe
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
       <button onClick={() => setAspirationOpen(o => !o)}
         style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', width: '100%', textAlign: 'left' }}>
         <Compass size={16} strokeWidth={2} color="var(--text3)" />
-        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{t('orientationCheckpoint.aspiration_prompt')}</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+          {activeCheckpoint === 'FIN_TROISIEME'
+            ? 'Exprimer vos vœux d’orientation pour la classe de Seconde'
+            : 'Exprimer vos vœux de filière pour la classe de Première'}
+        </span>
       </button>
       {aspirationOpen && (
         <div style={{ marginTop: 10 }}>
@@ -150,16 +170,15 @@ export default function OrientationCheckpointBanner({ onToast }: Props) {
             <div style={{ fontSize: 12.5, color: 'var(--green)', fontWeight: 700 }}>{t('orientationCheckpoint.aspiration_confirmed')}</div>
           ) : (
             <>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
-                <select value={aspirationCheckpoint} onChange={e => setAspirationCheckpoint(e.target.value as any)}
-                  style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 12, fontWeight: 600 }}>
-                  <option value="FIN_TROISIEME">{t('orientationCheckpoint.checkpoint_3e')}</option>
-                  <option value="FIN_SECONDE_C">{t('orientationCheckpoint.checkpoint_2ndeC')}</option>
-                </select>
-                <input value={desiredTrack} onChange={e => setDesiredTrack(e.target.value)} placeholder={t('orientationCheckpoint.desired_track_placeholder')}
-                  style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 12, minWidth: 140 }} />
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--primary)', background: 'var(--bg2)', padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)' }}>
+                  {activeCheckpoint === 'FIN_TROISIEME' ? 'Palier 3ème vers Seconde (A/C/TI)' : 'Palier 2nde C vers 1ère (C/D/TI)'}
+                </span>
+                <input value={desiredTrack} onChange={e => setDesiredTrack(e.target.value)}
+                  placeholder={activeCheckpoint === 'FIN_TROISIEME' ? 'Filière souhaitée (ex: Seconde C, Seconde A4)' : 'Filière souhaitée (ex: Première C, Première D)'}
+                  style={{ flex: 1, minWidth: 200, padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 12 }} />
               </div>
-              <input value={careerInterest} onChange={e => setCareerInterest(e.target.value)} placeholder={t('orientationCheckpoint.career_interest_placeholder')}
+              <input value={careerInterest} onChange={e => setCareerInterest(e.target.value)} placeholder="Projet professionnel ou métier envisagé (ex: Ingénieur, Médecine, Droit...)"
                 style={{ width: '100%', boxSizing: 'border-box', padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 12, marginBottom: 10 }} />
               <button onClick={handleSaveAspiration} disabled={savingAspiration}
                 style={{ padding: '6px 14px', borderRadius: 7, border: 'none', background: 'var(--green)', color: 'white', fontWeight: 700, fontSize: 12, cursor: savingAspiration ? 'wait' : 'pointer' }}>

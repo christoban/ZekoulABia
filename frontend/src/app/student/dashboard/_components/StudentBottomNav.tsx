@@ -39,7 +39,7 @@ export default function StudentBottomNav({ current, onChange, onOpenMenu }: Prop
     {
       id: 'grades',
       targetSection: 'grades',
-      matchSections: ['grades', 'bulletins', 'academic-profile'],
+      matchSections: ['grades', 'bulletins', 'academic-profile', 'orientation'],
       labelKey: 'sidebar.grades',
       fallbackLabel: 'Notes',
       icon: FileText,
@@ -47,9 +47,9 @@ export default function StudentBottomNav({ current, onChange, onOpenMenu }: Prop
     {
       id: 'timetable',
       targetSection: 'timetable',
-      matchSections: ['timetable', 'attendance'],
+      matchSections: ['timetable', 'attendance', 'homework'],
       labelKey: 'sidebar.timetable',
-      fallbackLabel: 'Emploi',
+      fallbackLabel: 'Agenda',
       icon: Calendar,
     },
     {
