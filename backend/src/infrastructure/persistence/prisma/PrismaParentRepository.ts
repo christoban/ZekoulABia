@@ -107,9 +107,10 @@ export class PrismaParentRepository implements ParentRepository {
           studentId,
           prenom: profil.user.firstName,
           nom: profil.user.lastName,
-           classeId: classeActuelle?.id,
-           groupIds: profil.groupMemberships.map(membership => membership.groupId),
-           classeNom: classeActuelle
+          matricule: profil.matricule ?? undefined,
+          classeId: classeActuelle?.id,
+          groupIds: profil.groupMemberships.map(membership => membership.groupId),
+          classeNom: classeActuelle
             ? `${classeActuelle.name}${classeActuelle.serie ? ' ' + classeActuelle.serie : ''}`
             : undefined,
           tauxPresence,

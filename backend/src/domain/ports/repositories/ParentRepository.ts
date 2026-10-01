@@ -6,6 +6,7 @@ export interface EnfantAvecStats {
   studentId: string;
   prenom: string;
   nom: string;
+  matricule?: string;
   classeNom?: string;
   classeId?: string;
   groupIds?: string[];
