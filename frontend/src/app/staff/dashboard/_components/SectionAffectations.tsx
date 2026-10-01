@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
-import { CheckCircle2, AlertTriangle, ClipboardList, BookOpen, Loader2, Check, GraduationCap, WifiOff, Sparkles, ChevronDown, ChevronUp } from 'lucide-react'
+import { CheckCircle2, AlertTriangle, ClipboardList, BookOpen, Loader2, Check, GraduationCap, WifiOff, Sparkles, ChevronDown, ChevronUp, Package } from 'lucide-react'
+import { putCachedData, getCachedData } from '@/lib/offline/db'
 
 interface ClassItem { id: string; name: string; level: string | null; academicYearId: string }
 interface AssignmentRow {
@@ -61,29 +62,68 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
   const [clearing, setClearing] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [generatingAll, setGeneratingAll] = useState(false)
+  const [fromCache, setFromCache] = useState(false)
+  const [cachedAt, setCachedAt] = useState<number | null>(null)
   const { isOnline, addToQueue } = useSyncQueue()
 
   useEffect(() => {
+    let mounted = true
+
+    // Lecture optimiste du cache local Dexie
+    getCachedData<ClassItem[]>('staff:classes').then(cached => {
+      if (mounted && cached?.data && Array.isArray(cached.data)) {
+        setClasses(cached.data)
+      }
+    }).catch(() => {})
+
     fetchApi('/api/v2/classes', { credentials: 'include' })
       .then(r => r.json())
       .then(d => {
+        if (!mounted) return
         const list = Array.isArray(d?.data) ? d.data : Array.isArray(d) ? d : []
-        setClasses(list.map((c: any) => ({ id: c.id, name: c.name, level: c.level, academicYearId: c.academicYearId })))
+        const formatted = list.map((c: any) => ({ id: c.id, name: c.name, level: c.level, academicYearId: c.academicYearId }))
+        if (formatted.length > 0) {
+          setClasses(formatted)
+          void putCachedData('staff:classes', formatted)
+        }
       })
       .catch(() => {})
-      .finally(() => setLoadingClasses(false))
+      .finally(() => { if (mounted) setLoadingClasses(false) })
+
+    return () => { mounted = false }
   }, [])
 
-  const loadAssignments = useCallback((cid: string) => {
+  const loadAssignments = useCallback(async (cid: string) => {
     if (!cid) { setRows([]); setMeta(null); return }
     setLoadingRows(true)
-    fetchApi(`/api/v2/teaching-assignments?classId=${cid}`, { credentials: 'include' })
-      .then(r => r.json())
-      .then(d => {
-        if (d.success) { setRows(d.data); setMeta(d.meta) }
-      })
-      .catch(() => onToast('Erreur lors du chargement des affectations', 'error'))
-      .finally(() => setLoadingRows(false))
+    try {
+      const res = await fetchApi(`/api/v2/teaching-assignments?classId=${cid}`, { credentials: 'include' })
+      const d = await res.json()
+      if (d.success) {
+        setRows(d.data)
+        setMeta(d.meta)
+        setFromCache(false)
+        setCachedAt(null)
+        void putCachedData(`staff:teaching-assignments:${cid}`, { rows: d.data, meta: d.meta })
+      }
+    } catch {
+      // Repli sur le cache local Dexie
+      try {
+        const cached = await getCachedData<{ rows: AssignmentRow[]; meta: { total: number; assigned: number } }>(`staff:teaching-assignments:${cid}`)
+        if (cached?.data?.rows) {
+          setRows(cached.data.rows)
+          setMeta(cached.data.meta)
+          setFromCache(true)
+          setCachedAt(cached.cachedAt)
+        } else {
+          onToast('Erreur lors du chargement des affectations', 'error')
+        }
+      } catch {
+        onToast('Erreur lors du chargement des affectations', 'error')
+      }
+    } finally {
+      setLoadingRows(false)
+    }
   }, [onToast])
 
   const handleClassChange = (cid: string) => {
@@ -256,6 +296,11 @@ export default function SectionAffectations({ onToast }: { onToast: (msg: string
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>
+        )}
+        {fromCache && cachedAt && (
+          <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 8 }}>
+            <Package size={12} strokeWidth={2} /> Données du {new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} — hors-ligne
+          </div>
         )}
       </div>
       {classId && selectedClass && (

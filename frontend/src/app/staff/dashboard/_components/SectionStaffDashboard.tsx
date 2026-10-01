@@ -42,12 +42,27 @@ interface AdmissionsSummary {
   enAttenteDirection: number
 }
 
+interface CenseurSummary {
+  activeClassesCount: number
+  classesWithoutPPCount: number
+  unassignedSubjectsCount: number
+  openCouncilsCount: number
+  activeAnonymatSessionsCount: number
+  studentsAtRiskCount: number
+  gridConfigured: boolean
+}
+
 export default function SectionStaffDashboard({ sessionUser, allowedSections, onNav, onToast }: Props) {
   const t = useT('staff')
   const { lang } = useLanguage()
   const displayRoleTitle = getStaffDisplayTitle(sessionUser, lang)
   const can = (s: StaffSection) => allowedSections.has(s)
   const isSecretary = can('inscriptions') || (sessionUser?.staffTitle?.toLowerCase().includes('secr') ?? false)
+  const isCenseur = !isSecretary && (
+    can('timetable') || can('classes') || can('affectations') ||
+    (sessionUser?.staffTitle?.toLowerCase().includes('censeur') ?? false) ||
+    (sessionUser?.staffTitle?.toLowerCase().includes('vice') ?? false)
+  )
 
   // 1. KPIs standards (Conseils, Finance, Présence, Bibliothèque)
   const fetchKpis = useCallback(async (): Promise<KpiData> => {
@@ -71,14 +86,82 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
   const { data, loading, fromCache, cachedAt, refetch } = useCachedFetch<KpiData>('staff-dashboard-kpis', fetchKpis)
   const kpi: KpiData = data ?? { openCouncils: 0, pendingInvoices: 0, attendanceRate: null, overdueBooks: 0 }
 
-  // 2. Admissions & Concours summary (spécifique Secrétariat)
+  // 2. Synthèse Cockpit Censeur (Direction des Études)
+  const fetchCenseurSummary = useCallback(async (): Promise<CenseurSummary> => {
+    const results = await Promise.allSettled([
+      fetchApi('/api/v2/classes', { credentials: 'include' }).then(r => r.json()),
+      fetchApi('/api/v2/teaching-assignments/issues', { credentials: 'include' }).then(r => r.json()),
+      fetchApi('/api/v2/class-councils', { credentials: 'include' }).then(r => r.json()),
+      fetchApi('/api/v2/assessments/sessions', { credentials: 'include' }).then(r => r.json()),
+      fetchApi('/api/v2/ai/students-health', { credentials: 'include' }).then(r => r.json()),
+      fetchApi('/api/v2/timetable-grid-config', { credentials: 'include' }).then(r => r.json()),
+    ])
+
+    const [classesRes, issuesRes, councilRes, assessRes, healthRes, gridRes] = results
+
+    let activeClassesCount = 0
+    let classesWithoutPPCount = 0
+    if (classesRes.status === 'fulfilled' && classesRes.value) {
+      const clsList = Array.isArray(classesRes.value.data) ? classesRes.value.data : Array.isArray(classesRes.value) ? classesRes.value : []
+      activeClassesCount = clsList.length
+      classesWithoutPPCount = clsList.filter((c: Record<string, unknown>) => !c.mainTeacher).length
+    }
+
+    let unassignedSubjectsCount = 0
+    if (issuesRes.status === 'fulfilled' && issuesRes.value?.data && Array.isArray(issuesRes.value.data)) {
+      unassignedSubjectsCount = issuesRes.value.data.filter((i: Record<string, unknown>) => i.status !== 'RESOLVED').length
+    }
+
+    let openCouncilsCount = 0
+    if (councilRes.status === 'fulfilled' && Array.isArray(councilRes.value?.sessions)) {
+      openCouncilsCount = councilRes.value.sessions.filter((s: Record<string, unknown>) => s.status !== 'LOCKED').length
+    }
+
+    let activeAnonymatSessionsCount = 0
+    if (assessRes.status === 'fulfilled' && Array.isArray(assessRes.value?.data)) {
+      activeAnonymatSessionsCount = assessRes.value.data.filter((s: Record<string, unknown>) => s.isAnonymized || (s.anonymatStatus && s.anonymatStatus !== 'NONE')).length
+    }
+
+    let studentsAtRiskCount = 0
+    if (healthRes.status === 'fulfilled' && healthRes.value?.summary) {
+      studentsAtRiskCount = (Number(healthRes.value.summary.critical) || 0) + (Number(healthRes.value.summary.warning) || 0)
+    }
+
+    const gridConfigured = gridRes.status === 'fulfilled' && gridRes.value?.success && !!gridRes.value?.data?.config
+
+    return {
+      activeClassesCount,
+      classesWithoutPPCount,
+      unassignedSubjectsCount,
+      openCouncilsCount,
+      activeAnonymatSessionsCount,
+      studentsAtRiskCount,
+      gridConfigured,
+    }
+  }, [])
+
+  const { data: censeurData, refetch: refetchCenseur } = useCachedFetch<CenseurSummary>(
+    isCenseur ? 'staff:censeur-summary' : '',
+    fetchCenseurSummary
+  )
+  const censeur: CenseurSummary = censeurData ?? {
+    activeClassesCount: 0,
+    classesWithoutPPCount: 0,
+    unassignedSubjectsCount: 0,
+    openCouncilsCount: 0,
+    activeAnonymatSessionsCount: 0,
+    studentsAtRiskCount: 0,
+    gridConfigured: true,
+  }
+
+  // 3. Admissions & Concours summary (spécifique Secrétariat — zéro mock en dur)
   const [admissions, setAdmissions] = useState<AdmissionsSummary>({
     activeEvent: null,
-    aCompleter: 2,
+    aCompleter: 0,
     admisAFinaliser: 0,
-    brouillons: 1,
-    chezLaFamille: 3,
-    enAttenteDirection: 4,
+    brouillons: 0,
+    chezLaFamille: 0,
+    enAttenteDirection: 0,
   })
 
   useEffect(() => {
@@ -96,10 +179,10 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
           setAdmissions(prev => ({
             ...prev,
             activeEvent: {
-              title: String(examEvent.name ?? "Concours d'entrée en 6e"),
+              title: String(examEvent.name ?? "Session de concours"),
               phase: String(examEvent.currentPhase ?? 'INSCRIPTION'),
-              candidatsCount: Number(examEvent.candidatsCount ?? 38),
-              placesCount: Number(examEvent.placesCount ?? 60),
+              candidatsCount: Number(examEvent.candidatsCount || 0),
+              placesCount: Number(examEvent.placesCount || 0),
             }
           }))
         }
@@ -140,10 +223,10 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
   const nomAffiche = sessionUser?.firstName ?? 'Staff'
 
   const kpiCards = [
-    can('council')    && { icon: GraduationCap, bg: 'var(--purple-light)', val: String(kpi.openCouncils),   label: t('dashboard.openCouncils'),     trend: t('dashboard.toProcess'),         tBg: 'var(--purple-light)', tC: 'var(--purple)', nav: 'council' as StaffSection },
-    can('finance')    && { icon: Banknote, bg: 'var(--blue-light)', val: String(kpi.pendingInvoices),label: t('dashboard.pendingPayments'), trend: 'Finances',       tBg: 'var(--blue-light)', tC: 'var(--blue)', nav: 'finance' as StaffSection },
+    can('council')    && !isCenseur && { icon: GraduationCap, bg: 'var(--purple-light)', val: String(kpi.openCouncils),   label: t('dashboard.openCouncils'),     trend: t('dashboard.toProcess'),         tBg: 'var(--purple-light)', tC: 'var(--purple)', nav: 'council' as StaffSection },
+    can('finance')    && !isCenseur && { icon: Banknote, bg: 'var(--blue-light)', val: String(kpi.pendingInvoices),label: t('dashboard.pendingPayments'), trend: 'Finances',       tBg: 'var(--blue-light)', tC: 'var(--blue)', nav: 'finance' as StaffSection },
     can('attendance') && { icon: CheckCircle2, bg: 'var(--green-light)', val: kpi.attendanceRate ?? '—',  label: t('dashboard.attendanceRate'),     trend: t('dashboard.today'),        tBg: 'var(--green-light)', tC: 'var(--green)', nav: 'attendance' as StaffSection },
-    can('library')    && { icon: BookOpen, bg: 'var(--red-light)', val: String(kpi.overdueBooks),  label: t('dashboard.overdueBooks'),     trend: kpi.overdueBooks > 0 ? t('dashboard.urgent') : t('dashboard.upToDate'), tBg: kpi.overdueBooks > 0 ? 'var(--red-light)' : 'var(--green-light)', tC: kpi.overdueBooks > 0 ? 'var(--red)' : 'var(--green)', nav: 'library' as StaffSection },
+    can('library')    && !isCenseur && { icon: BookOpen, bg: 'var(--red-light)', val: String(kpi.overdueBooks),  label: t('dashboard.overdueBooks'),     trend: kpi.overdueBooks > 0 ? t('dashboard.urgent') : t('dashboard.upToDate'), tBg: kpi.overdueBooks > 0 ? 'var(--red-light)' : 'var(--green-light)', tC: kpi.overdueBooks > 0 ? 'var(--red)' : 'var(--green)', nav: 'library' as StaffSection },
   ].filter(Boolean) as { icon: LucideIcon; bg: string; val: string; label: string; trend: string; tBg: string; tC: string; nav: StaffSection }[]
 
   return (
@@ -303,35 +386,53 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between p-2.5 rounded-lg border border-orange-500/20 bg-orange-500/5 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-orange-500 dark:bg-orange-400" />
-                    <span className="font-semibold text-[var(--text)]">2 dossiers renvoyés par la direction requièrent des compléments</span>
+                {admissions.aCompleter > 0 && (
+                  <div className="flex items-center justify-between p-2.5 rounded-lg border border-orange-500/20 bg-orange-500/5 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-orange-500 dark:bg-orange-400" />
+                      <span className="font-semibold text-[var(--text)]">
+                        {admissions.aCompleter} dossier{admissions.aCompleter > 1 ? 's' : ''} renvoyé{admissions.aCompleter > 1 ? 's' : ''} par la direction requièrent des compléments
+                      </span>
+                    </div>
+                    <button onClick={() => onNav('inscriptions')} className="font-bold text-orange-600 dark:text-orange-400 hover:underline">
+                      Examiner &rarr;
+                    </button>
                   </div>
-                  <button onClick={() => onNav('inscriptions')} className="font-bold text-orange-600 dark:text-orange-400 hover:underline">
-                    Examiner &rarr;
-                  </button>
-                </div>
+                )}
 
-                <div className="flex items-center justify-between p-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg)]/50 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-amber-500 dark:bg-amber-400" />
-                    <span className="text-[var(--text2)]">3 invitations parents expirent dans moins de 48h</span>
+                {admissions.chezLaFamille > 0 && (
+                  <div className="flex items-center justify-between p-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg)]/50 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-amber-500 dark:bg-amber-400" />
+                      <span className="text-[var(--text2)]">
+                        {admissions.chezLaFamille} dossier{admissions.chezLaFamille > 1 ? 's' : ''} chez les familles en cours de complétion
+                      </span>
+                    </div>
+                    <button onClick={() => onNav('inscriptions')} className="font-bold text-[var(--primary)] hover:underline">
+                      Relancer &rarr;
+                    </button>
                   </div>
-                  <button onClick={() => onNav('inscriptions')} className="font-bold text-[var(--primary)] hover:underline">
-                    Relancer &rarr;
-                  </button>
-                </div>
+                )}
 
-                <div className="flex items-center justify-between p-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg)]/50 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400" />
-                    <span className="text-[var(--text2)]">1 dossier hors concours en attente de pièces d&apos;identité</span>
+                {admissions.enAttenteDirection > 0 && (
+                  <div className="flex items-center justify-between p-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg)]/50 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400" />
+                      <span className="text-[var(--text2)]">
+                        {admissions.enAttenteDirection} dossier{admissions.enAttenteDirection > 1 ? 's' : ''} soumis en attente d&apos;approbation
+                      </span>
+                    </div>
+                    <button onClick={() => onNav('inscriptions')} className="font-bold text-[var(--primary)] hover:underline">
+                      Examiner &rarr;
+                    </button>
                   </div>
-                  <button onClick={() => onNav('inscriptions')} className="font-bold text-[var(--primary)] hover:underline">
-                    Compléter &rarr;
-                  </button>
-                </div>
+                )}
+
+                {admissions.aCompleter === 0 && admissions.chezLaFamille === 0 && admissions.enAttenteDirection === 0 && (
+                  <div className="p-3 text-center text-xs text-[var(--text3)]">
+                    Aucun dossier en attente de traitement prioritaire.
+                  </div>
+                )}
               </div>
             </div>
 
@@ -370,6 +471,288 @@ export default function SectionStaffDashboard({ sessionUser, allowedSections, on
                 >
                    <span className="flex items-center gap-2"><MessageCircle size={14} className="text-purple-500 dark:text-purple-400" /> Messagerie</span>
 
+                  <ArrowRight size={13} className="text-[var(--text3)]" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SECTION COCKPIT CENSEUR (DIRECTION DES ÉTUDES & PÉDAGOGIE) */}
+      {!loading && isCenseur && (
+        <div className="space-y-4">
+          {/* Bandeau d'état de la rentrée pédagogique */}
+          {!censeur.gridConfigured ? (
+            <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-300 flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle size={22} />
+                </div>
+                <div>
+                  <span className="font-extrabold text-sm md:text-base text-[var(--text)]">
+                    Configuration de la grille horaire requise
+                  </span>
+                  <p className="text-xs text-[var(--text3)] mt-0.5">
+                    Définissez les créneaux, pauses et volumes horaires journaliers pour activer la génération automatique des emplois du temps.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => onNav('configuration')}
+                className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[var(--primary)] text-white hover:opacity-95 transition-all flex-shrink-0"
+              >
+                Configurer la grille &rarr;
+              </button>
+            </div>
+          ) : (
+            <div className="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] flex items-center justify-between text-xs text-[var(--text3)]">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-success flex-shrink-0" />
+                <span className="font-semibold text-[var(--text)]">
+                  {t('dashboard.censeurTitle')} : structure académique active et opérationnelle.
+                </span>
+              </div>
+              <button onClick={() => onNav('timetable')} className="font-bold text-[var(--primary)] hover:underline">
+                Ouvrir l&apos;emploi du temps &rarr;
+              </button>
+            </div>
+          )}
+
+          {/* 6 Cartes d'indicateurs pédagogiques clés */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
+            {/* 1. Classes actives */}
+            <div
+              onClick={() => onNav('classes')}
+              className="p-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] cursor-pointer hover:shadow-md transition-all flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between text-blue-600 dark:text-blue-400 mb-1">
+                <span className="text-xs font-bold">{t('dashboard.activeClasses')}</span>
+                <BookOpen size={15} />
+              </div>
+              <div className="text-2xl font-black text-[var(--text)]">{censeur.activeClassesCount}</div>
+              <div className="text-[11px] text-[var(--text3)] mt-1 leading-tight">
+                {t('dashboard.activeClassesDesc', { count: censeur.activeClassesCount })}
+              </div>
+            </div>
+
+            {/* 2. Classes sans PP */}
+            <div
+              onClick={() => onNav('classes')}
+              className={`p-3 rounded-xl border transition-all cursor-pointer hover:shadow-md flex flex-col justify-between ${
+                censeur.classesWithoutPPCount > 0
+                  ? 'border-amber-500/40 bg-amber-500/10'
+                  : 'border-[var(--border)] bg-[var(--surface)]'
+              }`}
+            >
+              <div className={`flex items-center justify-between mb-1 ${censeur.classesWithoutPPCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-success'}`}>
+                <span className="text-xs font-bold">{t('dashboard.classesWithoutPP')}</span>
+                <Users size={15} />
+              </div>
+              <div className={`text-2xl font-black ${censeur.classesWithoutPPCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-[var(--text)]'}`}>
+                {censeur.classesWithoutPPCount}
+              </div>
+              <div className="text-[11px] text-[var(--text3)] mt-1 leading-tight">
+                {t('dashboard.classesWithoutPPDesc', { count: censeur.classesWithoutPPCount })}
+              </div>
+            </div>
+
+            {/* 3. Matières non affectées */}
+            <div
+              onClick={() => onNav('affectations')}
+              className={`p-3 rounded-xl border transition-all cursor-pointer hover:shadow-md flex flex-col justify-between ${
+                censeur.unassignedSubjectsCount > 0
+                  ? 'border-red-500/40 bg-red-500/10'
+                  : 'border-[var(--border)] bg-[var(--surface)]'
+              }`}
+            >
+              <div className={`flex items-center justify-between mb-1 ${censeur.unassignedSubjectsCount > 0 ? 'text-red-600 dark:text-red-400' : 'text-success'}`}>
+                <span className="text-xs font-bold">{t('dashboard.unassignedSubjects')}</span>
+                <AlertTriangle size={15} />
+              </div>
+              <div className={`text-2xl font-black ${censeur.unassignedSubjectsCount > 0 ? 'text-red-600 dark:text-red-400' : 'text-[var(--text)]'}`}>
+                {censeur.unassignedSubjectsCount}
+              </div>
+              <div className="text-[11px] text-[var(--text3)] mt-1 leading-tight">
+                {t('dashboard.unassignedSubjectsDesc', { count: censeur.unassignedSubjectsCount })}
+              </div>
+            </div>
+
+            {/* 4. Conseils de classe */}
+            <div
+              onClick={() => onNav('council')}
+              className="p-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] cursor-pointer hover:shadow-md transition-all flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between text-purple-600 dark:text-purple-400 mb-1">
+                <span className="text-xs font-bold">{t('dashboard.councilsOpen')}</span>
+                <GraduationCap size={15} />
+              </div>
+              <div className="text-2xl font-black text-[var(--text)]">{censeur.openCouncilsCount}</div>
+              <div className="text-[11px] text-[var(--text3)] mt-1 leading-tight">
+                {t('dashboard.councilsOpenDesc', { count: censeur.openCouncilsCount })}
+              </div>
+            </div>
+
+            {/* 5. Anonymat examens */}
+            <div
+              onClick={() => onNav('anonymat')}
+              className="p-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] cursor-pointer hover:shadow-md transition-all flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between text-indigo-600 dark:text-indigo-400 mb-1">
+                <span className="text-xs font-bold">{t('dashboard.examsAnonymat')}</span>
+                <UserCheck size={15} />
+              </div>
+              <div className="text-2xl font-black text-[var(--text)]">{censeur.activeAnonymatSessionsCount}</div>
+              <div className="text-[11px] text-[var(--text3)] mt-1 leading-tight">
+                {t('dashboard.examsAnonymatDesc', { count: censeur.activeAnonymatSessionsCount })}
+              </div>
+            </div>
+
+            {/* 6. Vigilance élèves */}
+            <div
+              onClick={() => onNav('suivi-eleves')}
+              className={`p-3 rounded-xl border transition-all cursor-pointer hover:shadow-md flex flex-col justify-between ${
+                censeur.studentsAtRiskCount > 0
+                  ? 'border-orange-500/40 bg-orange-500/10'
+                  : 'border-[var(--border)] bg-[var(--surface)]'
+              }`}
+            >
+              <div className={`flex items-center justify-between mb-1 ${censeur.studentsAtRiskCount > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-success'}`}>
+                <span className="text-xs font-bold">{t('dashboard.academicVigilance')}</span>
+                <AlertCircle size={15} />
+              </div>
+              <div className={`text-2xl font-black ${censeur.studentsAtRiskCount > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-[var(--text)]'}`}>
+                {censeur.studentsAtRiskCount}
+              </div>
+              <div className="text-[11px] text-[var(--text3)] mt-1 leading-tight">
+                {t('dashboard.academicVigilanceDesc', { count: censeur.studentsAtRiskCount })}
+              </div>
+            </div>
+          </div>
+
+          {/* 2 Colonnes: Priorités Pédagogiques (2/3) + Raccourcis Direction des Études (1/3) */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5">
+            {/* Colonne gauche : Priorités académiques */}
+            <div className="md:col-span-8 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
+                <div className="flex items-center gap-2">
+                  <AlertCircle size={16} className="text-primary" />
+                  <span className="font-extrabold text-sm text-[var(--text)]">{t('dashboard.censeurPriorities')}</span>
+                </div>
+                <span className="text-[11px] text-[var(--text3)] font-semibold">{t('dashboard.censeurPrioritiesSubtitle')}</span>
+              </div>
+
+              <div className="space-y-2">
+                {censeur.unassignedSubjectsCount > 0 && (
+                  <div className="flex items-center justify-between p-2.5 rounded-lg border border-red-500/20 bg-red-500/5 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-red-500 dark:bg-red-400" />
+                      <span className="font-semibold text-[var(--text)]">
+                        {censeur.unassignedSubjectsCount} matière{censeur.unassignedSubjectsCount > 1 ? 's' : ''} sans enseignant affecté nécessitent votre arbitrage
+                      </span>
+                    </div>
+                    <button onClick={() => onNav('affectations')} className="font-bold text-red-600 dark:text-red-400 hover:underline">
+                      Affecter &rarr;
+                    </button>
+                  </div>
+                )}
+
+                {censeur.classesWithoutPPCount > 0 && (
+                  <div className="flex items-center justify-between p-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-amber-500 dark:bg-amber-400" />
+                      <span className="text-[var(--text2)]">
+                        {censeur.classesWithoutPPCount} classe{censeur.classesWithoutPPCount > 1 ? 's' : ''} sans Professeur Principal désigné
+                      </span>
+                    </div>
+                    <button onClick={() => onNav('classes')} className="font-bold text-amber-600 dark:text-amber-400 hover:underline">
+                      Désigner &rarr;
+                    </button>
+                  </div>
+                )}
+
+                {censeur.openCouncilsCount > 0 && (
+                  <div className="flex items-center justify-between p-2.5 rounded-lg border border-purple-500/20 bg-purple-500/5 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-purple-500 dark:bg-purple-400" />
+                      <span className="text-[var(--text2)]">
+                        {censeur.openCouncilsCount} session{censeur.openCouncilsCount > 1 ? 's' : ''} de conseil de classe à délibérer
+                      </span>
+                    </div>
+                    <button onClick={() => onNav('council')} className="font-bold text-purple-600 dark:text-purple-400 hover:underline">
+                      Délibérer &rarr;
+                    </button>
+                  </div>
+                )}
+
+                {censeur.studentsAtRiskCount > 0 && (
+                  <div className="flex items-center justify-between p-2.5 rounded-lg border border-orange-500/20 bg-orange-500/5 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-orange-500 dark:bg-orange-400" />
+                      <span className="text-[var(--text2)]">
+                        {censeur.studentsAtRiskCount} élève{censeur.studentsAtRiskCount > 1 ? 's' : ''} signalé{censeur.studentsAtRiskCount > 1 ? 's' : ''} en risque ou décrochage scolaire
+                      </span>
+                    </div>
+                    <button onClick={() => onNav('suivi-eleves')} className="font-bold text-orange-600 dark:text-orange-400 hover:underline">
+                      Consulter &rarr;
+                    </button>
+                  </div>
+                )}
+
+                {censeur.unassignedSubjectsCount === 0 && censeur.classesWithoutPPCount === 0 && censeur.openCouncilsCount === 0 && censeur.studentsAtRiskCount === 0 && (
+                  <div className="p-3 text-center text-xs text-[var(--text3)]">
+                    Structure pédagogique équilibrée. Aucun arbitrage urgent requis.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Colonne droite : Raccourcis Censeur */}
+            <div className="md:col-span-4 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] space-y-3">
+              <span className="font-extrabold text-sm text-[var(--text)] block pb-2 border-b border-[var(--border)]">
+                {t('dashboard.censeurShortcuts')}
+              </span>
+              <div className="space-y-1.5 text-xs font-semibold">
+                <button
+                  onClick={() => onNav('timetable')}
+                  className="w-full flex items-center justify-between p-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/40 hover:border-[var(--primary)] transition-all"
+                >
+                  <span className="flex items-center gap-2"><Clock size={14} className="text-blue-500 dark:text-blue-400" /> {t('dashboard.manageTimetables')}</span>
+                  <ArrowRight size={13} className="text-[var(--text3)]" />
+                </button>
+                <button
+                  onClick={() => onNav('affectations')}
+                  className="w-full flex items-center justify-between p-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/40 hover:border-[var(--primary)] transition-all"
+                >
+                  <span className="flex items-center gap-2"><Users size={14} className="text-primary" /> {t('dashboard.manageAssignments')}</span>
+                  <ArrowRight size={13} className="text-[var(--text3)]" />
+                </button>
+                <button
+                  onClick={() => onNav('council')}
+                  className="w-full flex items-center justify-between p-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/40 hover:border-[var(--primary)] transition-all"
+                >
+                  <span className="flex items-center gap-2"><GraduationCap size={14} className="text-purple-500 dark:text-purple-400" /> {t('dashboard.manageCouncils')}</span>
+                  <ArrowRight size={13} className="text-[var(--text3)]" />
+                </button>
+                <button
+                  onClick={() => onNav('anonymat')}
+                  className="w-full flex items-center justify-between p-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/40 hover:border-[var(--primary)] transition-all"
+                >
+                  <span className="flex items-center gap-2"><UserCheck size={14} className="text-indigo-500 dark:text-indigo-400" /> {t('dashboard.manageAnonymat')}</span>
+                  <ArrowRight size={13} className="text-[var(--text3)]" />
+                </button>
+                <button
+                  onClick={() => onNav('classes')}
+                  className="w-full flex items-center justify-between p-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/40 hover:border-[var(--primary)] transition-all"
+                >
+                  <span className="flex items-center gap-2"><BookOpen size={14} className="text-emerald-500 dark:text-emerald-400" /> {t('dashboard.manageClasses')}</span>
+                  <ArrowRight size={13} className="text-[var(--text3)]" />
+                </button>
+                <button
+                  onClick={() => onNav('suivi-eleves')}
+                  className="w-full flex items-center justify-between p-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/40 hover:border-[var(--primary)] transition-all"
+                >
+                  <span className="flex items-center gap-2"><AlertCircle size={14} className="text-orange-500 dark:text-orange-400" /> {t('dashboard.studentFollowUp')}</span>
                   <ArrowRight size={13} className="text-[var(--text3)]" />
                 </button>
               </div>

@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
-import { AlertTriangle, WifiOff } from 'lucide-react'
+import { AlertTriangle, WifiOff, Package } from 'lucide-react'
+import { putCachedData, getCachedData } from '@/lib/offline/db'
 
 const JOURS = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI']
 const JOURS_LABELS: Record<string, string> = {
@@ -91,21 +92,40 @@ export default function SectionGrilleHoraire({ onToast }: { onToast: (msg: strin
   const [saving, setSaving] = useState(false)
   const [existingTimetables, setExistingTimetables] = useState(0)
   const [isConfigured, setIsConfigured] = useState(false)
+  const [fromCache, setFromCache] = useState(false)
+  const [cachedAt, setCachedAt] = useState<number | null>(null)
   const { isOnline, addToQueue } = useSyncQueue()
 
-  // Charger la config existante
+  // Charger la config existante (avec repli Offline-First Dexie)
   useEffect(() => {
+    let mounted = true
+
+    // Lecture optimiste du cache local
+    getCachedData<{ config: GridForm; timetablesCount?: number }>('staff:timetable-grid-config').then(cached => {
+      if (mounted && cached?.data?.config) {
+        setForm({ ...DEFAULT, ...cached.data.config, periodesCoursParJour: cached.data.config.periodesCoursParJour ?? {} })
+        setIsConfigured(true)
+        setFromCache(true)
+        setCachedAt(cached.cachedAt)
+      }
+    }).catch(() => {})
+
     fetchApi('/api/v2/timetable-grid-config', { credentials: 'include' })
       .then(r => r.json())
       .then(d => {
+        if (!mounted) return
         if (d.success && d.data) {
-           setForm({ ...DEFAULT, ...d.data.config, periodesCoursParJour: d.data.config.periodesCoursParJour ?? {} })
-
+          setForm({ ...DEFAULT, ...d.data.config, periodesCoursParJour: d.data.config.periodesCoursParJour ?? {} })
           setIsConfigured(true)
+          setFromCache(false)
+          setCachedAt(null)
+          void putCachedData('staff:timetable-grid-config', d.data)
         }
       })
       .catch(() => {})
-      .finally(() => setLoading(false))
+      .finally(() => { if (mounted) setLoading(false) })
+
+    return () => { mounted = false }
   }, [])
 
   const squelette = useMemo(() => {
@@ -177,6 +197,11 @@ export default function SectionGrilleHoraire({ onToast }: { onToast: (msg: strin
         <div style={{ fontSize: 12.5, color: 'var(--text3)' }}>
           {t('grilleHoraire.subtitle')}
         </div>
+        {fromCache && cachedAt && (
+          <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
+            <Package size={12} strokeWidth={2} /> Données du {new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} — hors-ligne
+          </div>
+        )}
       </div>
 
       {!isOnline && (

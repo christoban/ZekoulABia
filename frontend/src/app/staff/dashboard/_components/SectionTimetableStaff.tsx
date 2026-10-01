@@ -3,7 +3,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { groupTimetableSlotsForDisplay, timetableCellKey } from '@/lib/timetableSlotGrouping'
-import { AlertTriangle, Calendar, CalendarDays, Coffee, Eye, Loader2, Trash2, UtensilsCrossed } from 'lucide-react'
+import { AlertTriangle, Calendar, CalendarDays, Coffee, Eye, Loader2, Trash2, UtensilsCrossed, Package, WifiOff } from 'lucide-react'
+import { putCachedData, getCachedData } from '@/lib/offline/db'
 import SectionTimetableStaffActions from './SectionTimetableStaffActions'
 import TimetableProposalPreview, { type ProposalPreviewGroupSession, type ProposalPreviewMissingHours, type ProposalPreviewSession } from './TimetableProposalPreview'
 
@@ -151,30 +152,65 @@ export default function SectionTimetable({ onToast }: Props) {
   // Matières LV2 (isLV2=true) — pour proposer la case "Créneau LV2" au bon moment
   const [lv2SubjectIds, setLv2SubjectIds] = useState<Set<string>>(new Set())
   const [modalIsLV2Slot, setModalIsLV2Slot] = useState(false)
+  const [fromCache, setFromCache] = useState(false)
+  const [cachedAt, setCachedAt] = useState<number | null>(null)
 
-  // Charger classes et config grille au montage
+  // Charger classes et config grille au montage (avec repli Offline-First Dexie)
   useEffect(() => {
-    Promise.all([
-      fetchApi('/api/v2/classes', { credentials: 'include' }).then(r => r.json()),
-      fetchApi('/api/v2/timetable-grid-config', { credentials: 'include' }).then(r => r.json()),
-      fetchApi('/api/v2/subjects', { credentials: 'include' }).then(r => r.json()).catch(() => null),
-    ]).then(([classData, configData, subjectData]) => {
-      const list = Array.isArray(classData?.data) ? classData.data : Array.isArray(classData) ? classData : []
-      setClasses(list)
-      if (configData?.data) {
-         setGridConfig(configData.data.config)
-         setSquelette(configData.data.squelette)
-         setSqueletteParJour(configData.data.squeletteParJour ?? {})
+    let mounted = true
 
+    // Lecture optimiste du cache local immédiat
+    Promise.all([
+      getCachedData<ClassItem[]>('staff:classes'),
+      getCachedData<{ config: GridConfig; squelette: PeriodeGrille[]; squeletteParJour: Record<string, PeriodeGrille[]> }>('staff:timetable-grid-config'),
+      getCachedData<string[]>('staff:subjects-lv2'),
+    ]).then(([cachedClasses, cachedConfig, cachedLv2]) => {
+      if (!mounted) return
+      if (cachedClasses?.data && Array.isArray(cachedClasses.data)) {
+        setClasses(cachedClasses.data)
       }
-      if (Array.isArray(subjectData?.data)) {
-        setLv2SubjectIds(new Set(subjectData.data.filter((s: any) => s.isLV2).map((s: any) => s.id)))
+      if (cachedConfig?.data?.config) {
+        setGridConfig(cachedConfig.data.config)
+        setSquelette(cachedConfig.data.squelette ?? [])
+        setSqueletteParJour(cachedConfig.data.squeletteParJour ?? {})
+      }
+      if (cachedLv2?.data && Array.isArray(cachedLv2.data)) {
+        setLv2SubjectIds(new Set(cachedLv2.data))
       }
     }).catch(() => {})
-      .finally(() => setLoadingClasses(false))
+
+    // Synchronisation réseau
+    Promise.all([
+      fetchApi('/api/v2/classes', { credentials: 'include' }).then(r => r.json()).catch(() => null),
+      fetchApi('/api/v2/timetable-grid-config', { credentials: 'include' }).then(r => r.json()).catch(() => null),
+      fetchApi('/api/v2/subjects', { credentials: 'include' }).then(r => r.json()).catch(() => null),
+    ]).then(([classData, configData, subjectData]) => {
+      if (!mounted) return
+      if (classData) {
+        const list = Array.isArray(classData?.data) ? classData.data : Array.isArray(classData) ? classData : []
+        if (list.length > 0) {
+          setClasses(list)
+          void putCachedData('staff:classes', list)
+        }
+      }
+      if (configData?.data) {
+        setGridConfig(configData.data.config)
+        setSquelette(configData.data.squelette)
+        setSqueletteParJour(configData.data.squeletteParJour ?? {})
+        void putCachedData('staff:timetable-grid-config', configData.data)
+      }
+      if (Array.isArray(subjectData?.data)) {
+        const lv2Ids = subjectData.data.filter((s: { isLV2?: boolean; id: string }) => s.isLV2).map((s: { id: string }) => s.id)
+        setLv2SubjectIds(new Set(lv2Ids))
+        void putCachedData('staff:subjects-lv2', lv2Ids)
+      }
+    }).catch(() => {})
+      .finally(() => { if (mounted) setLoadingClasses(false) })
+
+    return () => { mounted = false }
   }, [])
 
-  // Charger EDT + affectations quand classId change
+  // Charger EDT + affectations quand classId change (avec repli Offline-First Dexie)
   const fetchTimetable = useCallback(async (cid?: string) => {
     const id = cid ?? classId
     if (!id) return
@@ -188,14 +224,36 @@ export default function SectionTimetable({ onToast }: Props) {
       const assData = await assRes.json()
       if (!tmRes.ok) throw new Error(tmData.message || t('timetable.loading'))
       const list: Timetable[] = tmData.data || []
-      setTimetable(list[0] ?? null)
-      setAssignments(assData.data || [])
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur de chargement')
+      const currentTimetable = list[0] ?? null
+      const currentAssignments = assData.data || []
+      setTimetable(currentTimetable)
+      setAssignments(currentAssignments)
+      setFromCache(false)
+      setCachedAt(null)
+      void putCachedData(`staff:timetable:${id}`, currentTimetable)
+      void putCachedData(`staff:teaching-assignments:${id}`, currentAssignments)
+    } catch {
+      // Repli sur le cache local Dexie
+      try {
+        const [cachedTm, cachedAss] = await Promise.all([
+          getCachedData<Timetable>(`staff:timetable:${id}`),
+          getCachedData<Assignment[]>(`staff:teaching-assignments:${id}`),
+        ])
+        if (cachedTm?.data) {
+          setTimetable(cachedTm.data)
+          setAssignments(cachedAss?.data ?? [])
+          setFromCache(true)
+          setCachedAt(cachedTm.cachedAt)
+        } else {
+          setError(t('timetable.loadingError') || 'Impossible de charger l\'emploi du temps en mode hors-ligne.')
+        }
+      } catch {
+        setError('Erreur de chargement')
+      }
     } finally {
       setLoading(false)
     }
-  }, [classId])
+  }, [classId, t])
 
   const handleClassChange = (newClassId: string) => {
     setClassId(newClassId)
@@ -621,6 +679,11 @@ if (data.code === 'CONFLIT_HORAIRE') { setConflictMsg(data.message ?? 'Erreur');
               ? t('timetable.subtitleFilled', { className: timetable.class.name, filled: remplis, total: totalCours, pct, status: timetable.status === 'PUBLISHED' ? t('timetable.statusPublished') : timetable.status === 'SUBMITTED' ? t('timetable.statusSubmitted') : t('timetable.statusDraft') })
               : gridConfig ? t('timetable.selectClass') : t('timetable.gridNotConfigured')}
           </div>
+          {fromCache && cachedAt && (
+            <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
+              <Package size={12} strokeWidth={2} /> Données du {new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} — hors-ligne
+            </div>
+          )}
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <select value={classId} onChange={e => handleClassChange(e.target.value)} style={selectSt} disabled={loadingClasses}>
