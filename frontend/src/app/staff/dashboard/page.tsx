@@ -60,6 +60,17 @@ export default function StaffDashboard() {
   const router = useRouter()
   const tnav = useT('navigation')
   const [section, setSection]           = useState<StaffSection>('dashboard')
+  const [visitedSections, setVisitedSections] = useState<Set<StaffSection>>(() => new Set(['dashboard']))
+
+  useEffect(() => {
+    setVisitedSections(prev => {
+      if (prev.has(section)) return prev
+      const next = new Set(prev)
+      next.add(section)
+      return next
+    })
+  }, [section])
+
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [toasts, setToasts]             = useState<Toast[]>([])
   const [sessionUser, setSessionUser]   = useState<SessionUser | null>(null)
@@ -199,93 +210,151 @@ export default function StaffDashboard() {
 
         <main className="pb-[calc(68px+env(safe-area-inset-bottom,0px))] md:pb-0" style={{ flex: 1, overflow: 'hidden', background: 'var(--bg)' }}>
 
-          {section === 'dashboard' && (
+          <div style={{ display: section === 'dashboard' ? 'contents' : 'none' }}>
             <SectionStaffDashboard
               sessionUser={sessionUser}
               allowedSections={allowedSections}
               onNav={navTo}
               onToast={showToast}
             />
+          </div>
+
+          {visitedSections.has('inscriptions') && can('inscriptions') && (
+            <div style={{ display: section === 'inscriptions' ? 'contents' : 'none' }}>
+              <SectionInscriptionsStaff onToast={showToast} />
+            </div>
           )}
 
-          {section === 'inscriptions' && can('inscriptions') && (
-            <SectionInscriptionsStaff onToast={showToast} />
+          {visitedSections.has('concours') && can('concours') && (
+            <div style={{ display: section === 'concours' ? 'contents' : 'none' }}>
+              <SectionConcoursStaff onToast={showToast} />
+            </div>
           )}
 
-          {section === 'concours' && can('concours') && (
-            <SectionConcoursStaff onToast={showToast} />
+          {visitedSections.has('eleves-familles') && can('eleves-familles') && (
+            <div style={{ display: section === 'eleves-familles' ? 'contents' : 'none' }}>
+              <SectionElevesFamillesStaff onToast={showToast} />
+            </div>
           )}
 
-          {section === 'eleves-familles' && can('eleves-familles') && (
-            <SectionElevesFamillesStaff onToast={showToast} />
+          {visitedSections.has('council') && can('council') && (
+            <div style={{ display: section === 'council' ? 'contents' : 'none' }}>
+              <SectionCouncil onToast={showToast} />
+            </div>
           )}
 
-          {section === 'council' && can('council') && (
-            <SectionCouncil onToast={showToast} />
+          {visitedSections.has('anonymat') && can('anonymat') && (
+            <div style={{ display: section === 'anonymat' ? 'contents' : 'none' }}>
+              <SectionAnonymatStaff onToast={showToast} />
+            </div>
           )}
 
-          {section === 'anonymat' && can('anonymat') && (
-            <SectionAnonymatStaff onToast={showToast} />
+          {visitedSections.has('attendance') && can('attendance') && (
+            <div style={{ display: section === 'attendance' ? 'contents' : 'none' }}>
+              <SectionAttendanceStaff onToast={showToast} />
+            </div>
           )}
 
-          {section === 'attendance' && can('attendance') && (
-            <SectionAttendanceStaff onToast={showToast} />
+          {visitedSections.has('eleves-affectations') && can('eleves-affectations') && (
+            <div style={{ display: section === 'eleves-affectations' ? 'contents' : 'none' }}>
+              <SectionElevesAffectationsStaff onToast={showToast} />
+            </div>
           )}
 
-          {section === 'eleves-affectations' && can('eleves-affectations') && (
-            <SectionElevesAffectationsStaff onToast={showToast} />
+          {visitedSections.has('timetable') && can('timetable') && (
+            <div style={{ display: section === 'timetable' ? 'contents' : 'none' }}>
+              <SectionTimetableStaff onToast={showToast} />
+            </div>
           )}
 
-          {section === 'timetable' && can('timetable') && (
-            <SectionTimetableStaff onToast={showToast} />
+          {visitedSections.has('finance') && can('finance') && (
+            <div style={{ display: section === 'finance' ? 'contents' : 'none' }}>
+              <SectionFinanceStaff onToast={showToast} sessionUser={sessionUser} />
+            </div>
           )}
 
-          {section === 'finance' && can('finance') && (
-            <SectionFinanceStaff onToast={showToast} sessionUser={sessionUser} />
+          {visitedSections.has('apee') && can('apee') && (
+            <div style={{ display: section === 'apee' ? 'contents' : 'none' }}>
+              <SectionAPEEStaff onToast={showToast} />
+            </div>
           )}
 
-          {section === 'apee' && can('apee') && (
-            <SectionAPEEStaff onToast={showToast} />
+          {visitedSections.has('discipline') && can('discipline') && (
+            <div style={{ display: section === 'discipline' ? 'contents' : 'none' }}>
+              <SectionDiscipline onToast={showToast} />
+            </div>
           )}
 
-          {section === 'discipline' && can('discipline') && (
-            <SectionDiscipline onToast={showToast} />
+          {visitedSections.has('library') && can('library') && (
+            <div style={{ display: section === 'library' ? 'contents' : 'none' }}>
+              <SectionLibrary onToast={showToast} />
+            </div>
           )}
 
-          {section === 'library' && can('library') && (
-            <SectionLibrary onToast={showToast} />
+          {visitedSections.has('orientation') && can('orientation') && (
+            <div style={{ display: section === 'orientation' ? 'contents' : 'none' }}>
+              <SectionOrientation onToast={showToast} />
+            </div>
           )}
 
-          {section === 'orientation' && can('orientation') && (
-            <SectionOrientation onToast={showToast} />
+          {visitedSections.has('departements') && can('departements') && (
+            <div style={{ display: section === 'departements' ? 'contents' : 'none' }}>
+              <SectionDepartementsStaff onToast={showToast} />
+            </div>
           )}
 
-          {section === 'departements' && can('departements') && (
-            <SectionDepartementsStaff onToast={showToast} />
+          {visitedSections.has('suivi-eleves') && can('suivi-eleves') && (
+            <div style={{ display: section === 'suivi-eleves' ? 'contents' : 'none' }}>
+              <SectionSuiviElevesStaff sessionUser={sessionUser} onToast={showToast} />
+            </div>
           )}
 
-          {section === 'suivi-eleves' && can('suivi-eleves') && (
-            <SectionSuiviElevesStaff sessionUser={sessionUser} onToast={showToast} />
+          {visitedSections.has('configuration') && (
+            <div style={{ display: (section === 'configuration' || ['import-eleves', 'classes', 'grille-horaire', 'affectations', 'cautions'].includes(section)) ? 'contents' : 'none' }}>
+              <SectionConfigurationStaff
+                onToast={showToast}
+                allowedSections={allowedSections}
+                initialTab={['import-eleves', 'classes', 'grille-horaire', 'affectations', 'cautions'].includes(section) ? section : undefined}
+              />
+            </div>
           )}
 
-          {(section === 'configuration' || ['import-eleves', 'classes', 'grille-horaire', 'affectations', 'cautions'].includes(section)) && (
-            <SectionConfigurationStaff
-              onToast={showToast}
-              allowedSections={allowedSections}
-              initialTab={['import-eleves', 'classes', 'grille-horaire', 'affectations', 'cautions'].includes(section) ? section : undefined}
-            />
+          {visitedSections.has('rapports') && can('rapports') && (
+            <div style={{ display: section === 'rapports' ? 'contents' : 'none' }}>
+              <SectionRapportsStaff />
+            </div>
           )}
 
-          {section === 'rapports' && can('rapports') && (
-            <SectionRapportsStaff />
+          {visitedSections.has('mon-profil-rh') && (
+            <div style={{ display: section === 'mon-profil-rh' ? 'contents' : 'none' }}>
+              <SectionMonProfilRH onToast={showToast} />
+            </div>
           )}
-
-          {section === 'mon-profil-rh' && <SectionMonProfilRH onToast={showToast} />}
-          {section === 'notifications' && <NotificationCenter onNav={s => setSection(s as StaffSection)} />}
-          {section === 'sync-offline' && <SectionOfflineStatus onToast={showToast} namespace="staff" />}
-          {section === 'babillard' && <Babillard role={sessionUser?.role ?? 'STAFF'} title={tnav('sidebar.babillard')} subtitle={tnav('group.communication')} currentUserId={sessionUser?.userId} />}
-          {section === 'messagerie' && <Messagerie />}
-          {section === 'moderation-messagerie' && <SectionModerationMessagerie onToast={showToast} />}
+          {visitedSections.has('notifications') && (
+            <div style={{ display: section === 'notifications' ? 'contents' : 'none' }}>
+              <NotificationCenter onNav={s => setSection(s as StaffSection)} />
+            </div>
+          )}
+          {visitedSections.has('sync-offline') && (
+            <div style={{ display: section === 'sync-offline' ? 'contents' : 'none' }}>
+              <SectionOfflineStatus onToast={showToast} namespace="staff" />
+            </div>
+          )}
+          {visitedSections.has('babillard') && (
+            <div style={{ display: section === 'babillard' ? 'contents' : 'none' }}>
+              <Babillard role={sessionUser?.role ?? 'STAFF'} title={tnav('sidebar.babillard')} subtitle={tnav('group.communication')} currentUserId={sessionUser?.userId} />
+            </div>
+          )}
+          {visitedSections.has('messagerie') && (
+            <div style={{ display: section === 'messagerie' ? 'contents' : 'none' }}>
+              <Messagerie />
+            </div>
+          )}
+          {visitedSections.has('moderation-messagerie') && (
+            <div style={{ display: section === 'moderation-messagerie' ? 'contents' : 'none' }}>
+              <SectionModerationMessagerie onToast={showToast} />
+            </div>
+          )}
 
         </main>
       </div>

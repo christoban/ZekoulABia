@@ -84,6 +84,17 @@ function toSchoolRow(s: { id: string; name: string; subdomain: string; type: str
 
 export default function SuperAdminDashboard() {
   const [section, setSection] = useState<Section>('overview')
+  const [visitedSections, setVisitedSections] = useState<Set<Section>>(() => new Set(['overview']))
+
+  useEffect(() => {
+    setVisitedSections(prev => {
+      if (prev.has(section)) return prev
+      const next = new Set(prev)
+      next.add(section)
+      return next
+    })
+  }, [section])
+
   const [schoolTab, setSchoolTab] = useState<SchoolTab>('all')
   const [modal, setModal] = useState<ModalId>(null)
   const [slideOver, setSlideOver] = useState(false)
@@ -265,7 +276,7 @@ export default function SuperAdminDashboard() {
       />
 
       <main style={{ flex: 1, overflow: 'hidden' }}>
-        {section === 'overview' && (
+        <div style={{ display: section === 'overview' ? 'block' : 'none' }}>
           <SectionOverview
             kpi={kpiData}
             activity={overviewActivity}
@@ -273,36 +284,44 @@ export default function SuperAdminDashboard() {
             onGoToSchools={goToSchools}
             onGoToLogs={() => setSection('logs')}
           />
+        </div>
+
+        {visitedSections.has('schools') && (
+          <div style={{ display: section === 'schools' ? 'block' : 'none' }}>
+            <SectionSchools
+              schools={filteredSchools}
+              loading={schoolsLoading}
+              activeTab={schoolTab}
+              onTabChange={handleTabChange}
+              searchTerm={searchTerm}
+              onSearchChange={handleSearchChange}
+              onInvite={() => { setSelectedSchoolId(null); setModal('invite') }}
+              onApprove={openApprove}
+              onReject={openReject}
+              onSuspend={openSuspend}
+              onDelete={openDelete}
+              onViewDetails={handleViewDetails}
+              onToast={showToast}
+              onRefresh={handleActionDone}
+              onConfirmAction={(target) => {
+                setConfirmActionTarget(target)
+                setModal('confirmAction')
+              }}
+            />
+          </div>
         )}
 
-        {section === 'schools' && (
-          <SectionSchools
-            schools={filteredSchools}
-            loading={schoolsLoading}
-            activeTab={schoolTab}
-            onTabChange={handleTabChange}
-            searchTerm={searchTerm}
-            onSearchChange={handleSearchChange}
-            onInvite={() => { setSelectedSchoolId(null); setModal('invite') }}
-            onApprove={openApprove}
-            onReject={openReject}
-            onSuspend={openSuspend}
-            onDelete={openDelete}
-            onViewDetails={handleViewDetails}
-            onToast={showToast}
-            onRefresh={handleActionDone}
-            onConfirmAction={(target) => {
-              setConfirmActionTarget(target)
-              setModal('confirmAction')
-            }}
-          />
+        {visitedSections.has('referentiels') && (
+          <div style={{ display: section === 'referentiels' ? 'block' : 'none' }}>
+            <SectionReferentielsHub onToast={showToast} />
+          </div>
         )}
 
-        {section === 'referentiels' && (
-          <SectionReferentielsHub onToast={showToast} />
+        {visitedSections.has('logs') && (
+          <div style={{ display: section === 'logs' ? 'block' : 'none' }}>
+            <SectionLogs logs={logs} loading={logsLoading} onChangePwd={() => setModal('changePwd')} mfaEnabled={mfaEnabled} />
+          </div>
         )}
-
-        {section === 'logs' && <SectionLogs logs={logs} loading={logsLoading} onChangePwd={() => setModal('changePwd')} mfaEnabled={mfaEnabled} />}
       </main>
 
       <MasterModals

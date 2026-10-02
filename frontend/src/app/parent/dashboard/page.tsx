@@ -74,6 +74,17 @@ export default function ParentDashboard() {
     messagerie: tnav('sidebar.messagerie'),
   }
   const [section, setSection] = useState<ParentSection>('children')
+  const [visitedSections, setVisitedSections] = useState<Set<ParentSection>>(() => new Set(['children']))
+
+  useEffect(() => {
+    setVisitedSections(prev => {
+      if (prev.has(section)) return prev
+      const next = new Set(prev)
+      next.add(section)
+      return next
+    })
+  }, [section])
+
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [toasts, setToasts] = useState<Toast[]>([])
   const [user, setUser] = useState<UserInfo | null>(null)
@@ -188,22 +199,84 @@ export default function ParentDashboard() {
         <SoldeAlertBanner onNav={s => setSection(s as ParentSection)} />
 
         <main className="pb-[calc(60px+env(safe-area-inset-bottom,0px))] md:pb-0" style={{ flex: 1, overflow: 'hidden', background: 'var(--bg)' }}>
-          {section === 'children'   && <SectionParentChildren onNav={s => setSection(s as ParentSection)} {...sProps} userId={user?.id} />}
-          {section === 'child-profile' && <SectionParentChildProfile userId={user?.id} onNav={s => setSection(s as ParentSection)} onToast={showToast} />}
-          {section === 'grades'     && <SectionParentGrades {...sProps} userId={user?.id} />}
-          {section === 'academic-profile' && <SectionParentAcademicProfile userId={user?.id} onNav={s => setSection(s as ParentSection)} />}
-          {section === 'health-tracking'  && <SectionParentHealthTracking userId={user?.id} onNav={s => setSection(s as ParentSection)} />}
-          {section === 'attendance' && <SectionParentAttendance {...sProps} userId={user?.id} />}
-          {section === 'homework'   && <SectionParentHomework userId={user?.id} onToast={showToast} />}
-          {section === 'documents'  && <SectionParentDocuments userId={user?.id} onToast={showToast} />}
-          {section === 'payments'   && <SectionParentPayments {...sProps} userId={user?.id} />}
-          {section === 'apee'       && <SectionParentAPEE {...sProps} />}
-          {section === 'notifications' && <NotificationCenter onNav={s => setSection(s as ParentSection)} />}
-          {section === 'timetable'  && <SectionParentTimetable {...sProps} userId={user?.id} />}
-          {section === 'settings'   && <SectionParentSettings user={user} onToast={showToast} onChangePassword={() => setChangePwdOpen(true)} />}
-          {section === 'library'    && <SectionParentLibrary userId={user?.id} />}
-          {section === 'babillard' && <Babillard role={user?.role ?? 'PARENT'} title={tnav('sidebar.babillard')} subtitle={tnav('group.communication')} currentUserId={user?.id} />}
-          {section === 'messagerie' && <Messagerie />}
+          <div style={{ display: section === 'children' ? 'contents' : 'none' }}>
+            <SectionParentChildren onNav={s => setSection(s as ParentSection)} {...sProps} userId={user?.id} />
+          </div>
+          {visitedSections.has('child-profile') && (
+            <div style={{ display: section === 'child-profile' ? 'contents' : 'none' }}>
+              <SectionParentChildProfile userId={user?.id} onNav={s => setSection(s as ParentSection)} onToast={showToast} />
+            </div>
+          )}
+          {visitedSections.has('grades') && (
+            <div style={{ display: section === 'grades' ? 'contents' : 'none' }}>
+              <SectionParentGrades {...sProps} userId={user?.id} />
+            </div>
+          )}
+          {visitedSections.has('academic-profile') && (
+            <div style={{ display: section === 'academic-profile' ? 'contents' : 'none' }}>
+              <SectionParentAcademicProfile userId={user?.id} onNav={s => setSection(s as ParentSection)} />
+            </div>
+          )}
+          {visitedSections.has('health-tracking') && (
+            <div style={{ display: section === 'health-tracking' ? 'contents' : 'none' }}>
+              <SectionParentHealthTracking userId={user?.id} onNav={s => setSection(s as ParentSection)} />
+            </div>
+          )}
+          {visitedSections.has('attendance') && (
+            <div style={{ display: section === 'attendance' ? 'contents' : 'none' }}>
+              <SectionParentAttendance {...sProps} userId={user?.id} />
+            </div>
+          )}
+          {visitedSections.has('homework') && (
+            <div style={{ display: section === 'homework' ? 'contents' : 'none' }}>
+              <SectionParentHomework userId={user?.id} onToast={showToast} />
+            </div>
+          )}
+          {visitedSections.has('documents') && (
+            <div style={{ display: section === 'documents' ? 'contents' : 'none' }}>
+              <SectionParentDocuments userId={user?.id} onToast={showToast} />
+            </div>
+          )}
+          {visitedSections.has('payments') && (
+            <div style={{ display: section === 'payments' ? 'contents' : 'none' }}>
+              <SectionParentPayments {...sProps} userId={user?.id} />
+            </div>
+          )}
+          {visitedSections.has('apee') && (
+            <div style={{ display: section === 'apee' ? 'contents' : 'none' }}>
+              <SectionParentAPEE {...sProps} />
+            </div>
+          )}
+          {visitedSections.has('notifications') && (
+            <div style={{ display: section === 'notifications' ? 'contents' : 'none' }}>
+              <NotificationCenter onNav={s => setSection(s as ParentSection)} />
+            </div>
+          )}
+          {visitedSections.has('timetable') && (
+            <div style={{ display: section === 'timetable' ? 'contents' : 'none' }}>
+              <SectionParentTimetable {...sProps} userId={user?.id} />
+            </div>
+          )}
+          {visitedSections.has('settings') && (
+            <div style={{ display: section === 'settings' ? 'contents' : 'none' }}>
+              <SectionParentSettings user={user} onToast={showToast} onChangePassword={() => setChangePwdOpen(true)} />
+            </div>
+          )}
+          {visitedSections.has('library') && (
+            <div style={{ display: section === 'library' ? 'contents' : 'none' }}>
+              <SectionParentLibrary userId={user?.id} />
+            </div>
+          )}
+          {visitedSections.has('babillard') && (
+            <div style={{ display: section === 'babillard' ? 'contents' : 'none' }}>
+              <Babillard role={user?.role ?? 'PARENT'} title={tnav('sidebar.babillard')} subtitle={tnav('group.communication')} currentUserId={user?.id} />
+            </div>
+          )}
+          {visitedSections.has('messagerie') && (
+            <div style={{ display: section === 'messagerie' ? 'contents' : 'none' }}>
+              <Messagerie />
+            </div>
+          )}
         </main>
       </div>
 

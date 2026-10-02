@@ -87,6 +87,17 @@ export default function StudentDashboard() {
     profile:    'Mon Dossier & Profil Scolaire',
   }
   const [section, setSection] = useState<StudentSection>('dashboard')
+  const [visitedSections, setVisitedSections] = useState<Set<StudentSection>>(() => new Set(['dashboard']))
+
+  useEffect(() => {
+    setVisitedSections(prev => {
+      if (prev.has(section)) return prev
+      const next = new Set(prev)
+      next.add(section)
+      return next
+    })
+  }, [section])
+
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [toasts, setToasts] = useState<Toast[]>([])
   const [schoolInfo, setSchoolInfo] = useState<{ name: string; logoUrl: string | null } | null>(null)
@@ -209,21 +220,79 @@ export default function StudentDashboard() {
         <HealthAlertBanner onNav={s => setSection(s as StudentSection)} />
 
         <main className="pb-[calc(60px+env(safe-area-inset-bottom,0px))] md:pb-0" style={{ flex: 1, overflow: 'hidden', background: 'var(--bg)' }}>
-          {section === 'dashboard'  && <SectionStudentDashboard onNav={s => setSection(s as StudentSection)} {...sProps} />}
-          {section === 'grades'     && <SectionStudentGrades {...sProps} />}
-          {section === 'bulletins'  && <SectionStudentBulletins {...sProps} />}
-          {section === 'timetable'  && <SectionStudentTimetable {...sProps} />}
-          {section === 'attendance' && <SectionStudentAttendance {...sProps} />}
-          {section === 'library'    && <SectionStudentLibrary />}
-          {section === 'health-tracking' && <SectionStudentHealthTracking user={user} />}
-          {section === 'notifications' && <NotificationCenter onNav={(s: string) => setSection(s as StudentSection)} />}
-          {section === 'babillard' && <Babillard role={user?.role ?? 'STUDENT'} title={tnav('sidebar.babillard')} subtitle={tnav('group.communication')} currentUserId={user?.id} />}
-          {section === 'messagerie' && <Messagerie />}
-          {section === 'academic-profile' && <SectionProfilAcademique studentId={user?.id ?? ''} />}
-          {section === 'homework' && <SectionStudentHomework user={user} onToast={showToast} />}
-          {section === 'orientation' && <SectionStudentOrientation user={user} onToast={showToast} />}
-          {section === 'documents' && <SectionStudentDocuments user={user} onToast={showToast} onNav={s => setSection(s as StudentSection)} />}
-          {section === 'profile' && <SectionStudentProfile onToast={showToast} />}
+          <div style={{ display: section === 'dashboard' ? 'contents' : 'none' }}>
+            <SectionStudentDashboard onNav={s => setSection(s as StudentSection)} {...sProps} />
+          </div>
+          {visitedSections.has('grades') && (
+            <div style={{ display: section === 'grades' ? 'contents' : 'none' }}>
+              <SectionStudentGrades {...sProps} />
+            </div>
+          )}
+          {visitedSections.has('bulletins') && (
+            <div style={{ display: section === 'bulletins' ? 'contents' : 'none' }}>
+              <SectionStudentBulletins {...sProps} />
+            </div>
+          )}
+          {visitedSections.has('timetable') && (
+            <div style={{ display: section === 'timetable' ? 'contents' : 'none' }}>
+              <SectionStudentTimetable {...sProps} />
+            </div>
+          )}
+          {visitedSections.has('attendance') && (
+            <div style={{ display: section === 'attendance' ? 'contents' : 'none' }}>
+              <SectionStudentAttendance {...sProps} />
+            </div>
+          )}
+          {visitedSections.has('library') && (
+            <div style={{ display: section === 'library' ? 'contents' : 'none' }}>
+              <SectionStudentLibrary />
+            </div>
+          )}
+          {visitedSections.has('health-tracking') && (
+            <div style={{ display: section === 'health-tracking' ? 'contents' : 'none' }}>
+              <SectionStudentHealthTracking user={user} />
+            </div>
+          )}
+          {visitedSections.has('notifications') && (
+            <div style={{ display: section === 'notifications' ? 'contents' : 'none' }}>
+              <NotificationCenter onNav={(s: string) => setSection(s as StudentSection)} />
+            </div>
+          )}
+          {visitedSections.has('babillard') && (
+            <div style={{ display: section === 'babillard' ? 'contents' : 'none' }}>
+              <Babillard role={user?.role ?? 'STUDENT'} title={tnav('sidebar.babillard')} subtitle={tnav('group.communication')} currentUserId={user?.id} />
+            </div>
+          )}
+          {visitedSections.has('messagerie') && (
+            <div style={{ display: section === 'messagerie' ? 'contents' : 'none' }}>
+              <Messagerie />
+            </div>
+          )}
+          {visitedSections.has('academic-profile') && (
+            <div style={{ display: section === 'academic-profile' ? 'contents' : 'none' }}>
+              <SectionProfilAcademique studentId={user?.id ?? ''} />
+            </div>
+          )}
+          {visitedSections.has('homework') && (
+            <div style={{ display: section === 'homework' ? 'contents' : 'none' }}>
+              <SectionStudentHomework user={user} onToast={showToast} />
+            </div>
+          )}
+          {visitedSections.has('orientation') && (
+            <div style={{ display: section === 'orientation' ? 'contents' : 'none' }}>
+              <SectionStudentOrientation user={user} onToast={showToast} />
+            </div>
+          )}
+          {visitedSections.has('documents') && (
+            <div style={{ display: section === 'documents' ? 'contents' : 'none' }}>
+              <SectionStudentDocuments user={user} onToast={showToast} onNav={s => setSection(s as StudentSection)} />
+            </div>
+          )}
+          {visitedSections.has('profile') && (
+            <div style={{ display: section === 'profile' ? 'contents' : 'none' }}>
+              <SectionStudentProfile onToast={showToast} />
+            </div>
+          )}
         </main>
       </div>
 

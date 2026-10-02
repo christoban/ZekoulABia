@@ -86,6 +86,17 @@ export default function TeacherDashboard() {
     messagerie: tnav('sidebar.messagerie'),
   }
   const [section, setSection] = useState<TeacherSection>('dashboard')
+  const [visitedSections, setVisitedSections] = useState<Set<TeacherSection>>(() => new Set(['dashboard']))
+
+  useEffect(() => {
+    setVisitedSections(prev => {
+      if (prev.has(section)) return prev
+      const next = new Set(prev)
+      next.add(section)
+      return next
+    })
+  }, [section])
+
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [toasts, setToasts] = useState<Toast[]>([])
   const [schoolInfo, setSchoolInfo] = useState<{ name: string; logoUrl: string | null } | null>(null)
@@ -195,60 +206,125 @@ export default function TeacherDashboard() {
 
         {/* Contenu */}
         <main className="pb-[calc(60px+env(safe-area-inset-bottom,0px))] md:pb-0" style={{ flex: 1, overflow: 'hidden', background: 'var(--bg)' }}>
-          {section === 'dashboard' && <SectionTeacherDashboard onNav={s => setSection(s as TeacherSection)} {...sProps} />}
-          {section === 'classes' && <SectionTeacherClasses onNav={s => setSection(s as TeacherSection)} {...sProps} />}
-          {section === 'attendance' && <SectionTeacherAttendance {...sProps} />}
-          {section === 'grades' && <SectionTeacherGrades {...sProps} />}
-
-          {section === 'timetable' && <SectionTeacherTimetable {...sProps} />}
-          {section === 'sync' && <SectionOfflineStatus onToast={showToast} namespace="teacher" />}
-          {section === 'pp-classe' && (() => {
-            const ppList = user?.classesProfessorPrincipal ?? []
-            const activeCls = ppList.find(c => c.id === selectedPPClassId) || ppList[0]
-            return activeCls ? (
-              <SectionProfesseurPrincipal
-                user={user!}
-                classeId={activeCls.id}
-                classeNom={activeCls.name}
-                classesList={ppList}
-                onSelectClasse={setSelectedPPClassId}
-              />
-            ) : null
-          })()}
-          {section === 'pp-appreciations' && (() => {
-            const ppList = user?.classesProfessorPrincipal ?? []
-            const activeCls = ppList.find(c => c.id === selectedPPClassId) || ppList[0]
-            return activeCls ? (
-              <SectionAppreciationsPP
-                user={user!}
-                classeId={activeCls.id}
-                classeNom={activeCls.name}
-                classesList={ppList}
-                onSelectClasse={setSelectedPPClassId}
-              />
-            ) : null
-          })()}
-          {section === 'ap-departement' && (() => {
-            const deptList = user?.headedDepartments ?? []
-            const activeDept = deptList.find(d => d.id === selectedAPDeptId) || deptList[0]
-            return activeDept ? (
-              <SectionDepartementAP
-                user={user!}
-                departementId={activeDept.id}
-                departementNom={activeDept.name}
-                departmentsList={deptList}
-                onSelectDept={setSelectedAPDeptId}
-              />
-            ) : null
-          })()}
-          {section === 'cahier-de-texte' && <SectionCahierDeTexte user={user} onToast={showToast} />}
-          {section === 'at-risk' && user && <SectionTeacherAtRisk currentUserId={user.id} onToast={showToast} />}
-          {section === 'mon-suivi' && <SectionMesActionsSuivi onToast={showToast} />}
-          {section === 'correction-anonyme' && <SectionTeacherCorrectionAnonyme onToast={showToast} />}
-          {section === 'mon-profil-rh' && <SectionMonProfilRH onToast={showToast} />}
-          {section === 'notifications' && <NotificationCenter onNav={s => setSection(s as TeacherSection)} />}
-          {section === 'babillard' && <Babillard role={user?.role ?? 'TEACHER'} title={tnav('sidebar.babillard')} subtitle={tcommon('brand.roleTeacher')} currentUserId={user?.id} />}
-          {section === 'messagerie' && <Messagerie />}
+          <div style={{ display: section === 'dashboard' ? 'contents' : 'none' }}>
+            <SectionTeacherDashboard onNav={s => setSection(s as TeacherSection)} {...sProps} />
+          </div>
+          {visitedSections.has('classes') && (
+            <div style={{ display: section === 'classes' ? 'contents' : 'none' }}>
+              <SectionTeacherClasses onNav={s => setSection(s as TeacherSection)} {...sProps} />
+            </div>
+          )}
+          {visitedSections.has('attendance') && (
+            <div style={{ display: section === 'attendance' ? 'contents' : 'none' }}>
+              <SectionTeacherAttendance {...sProps} />
+            </div>
+          )}
+          {visitedSections.has('grades') && (
+            <div style={{ display: section === 'grades' ? 'contents' : 'none' }}>
+              <SectionTeacherGrades {...sProps} />
+            </div>
+          )}
+          {visitedSections.has('timetable') && (
+            <div style={{ display: section === 'timetable' ? 'contents' : 'none' }}>
+              <SectionTeacherTimetable {...sProps} />
+            </div>
+          )}
+          {visitedSections.has('sync') && (
+            <div style={{ display: section === 'sync' ? 'contents' : 'none' }}>
+              <SectionOfflineStatus onToast={showToast} namespace="teacher" />
+            </div>
+          )}
+          {visitedSections.has('pp-classe') && (
+            <div style={{ display: section === 'pp-classe' ? 'contents' : 'none' }}>
+              {(() => {
+                const ppList = user?.classesProfessorPrincipal ?? []
+                const activeCls = ppList.find(c => c.id === selectedPPClassId) || ppList[0]
+                return activeCls ? (
+                  <SectionProfesseurPrincipal
+                    user={user!}
+                    classeId={activeCls.id}
+                    classeNom={activeCls.name}
+                    classesList={ppList}
+                    onSelectClasse={setSelectedPPClassId}
+                  />
+                ) : null
+              })()}
+            </div>
+          )}
+          {visitedSections.has('pp-appreciations') && (
+            <div style={{ display: section === 'pp-appreciations' ? 'contents' : 'none' }}>
+              {(() => {
+                const ppList = user?.classesProfessorPrincipal ?? []
+                const activeCls = ppList.find(c => c.id === selectedPPClassId) || ppList[0]
+                return activeCls ? (
+                  <SectionAppreciationsPP
+                    user={user!}
+                    classeId={activeCls.id}
+                    classeNom={activeCls.name}
+                    classesList={ppList}
+                    onSelectClasse={setSelectedPPClassId}
+                  />
+                ) : null
+              })()}
+            </div>
+          )}
+          {visitedSections.has('ap-departement') && (
+            <div style={{ display: section === 'ap-departement' ? 'contents' : 'none' }}>
+              {(() => {
+                const deptList = user?.headedDepartments ?? []
+                const activeDept = deptList.find(d => d.id === selectedAPDeptId) || deptList[0]
+                return activeDept ? (
+                  <SectionDepartementAP
+                    user={user!}
+                    departementId={activeDept.id}
+                    departementNom={activeDept.name}
+                    departmentsList={deptList}
+                    onSelectDept={setSelectedAPDeptId}
+                  />
+                ) : null
+              })()}
+            </div>
+          )}
+          {visitedSections.has('cahier-de-texte') && (
+            <div style={{ display: section === 'cahier-de-texte' ? 'contents' : 'none' }}>
+              <SectionCahierDeTexte user={user} onToast={showToast} />
+            </div>
+          )}
+          {visitedSections.has('at-risk') && user && (
+            <div style={{ display: section === 'at-risk' ? 'contents' : 'none' }}>
+              <SectionTeacherAtRisk currentUserId={user.id} onToast={showToast} />
+            </div>
+          )}
+          {visitedSections.has('mon-suivi') && (
+            <div style={{ display: section === 'mon-suivi' ? 'contents' : 'none' }}>
+              <SectionMesActionsSuivi onToast={showToast} />
+            </div>
+          )}
+          {visitedSections.has('correction-anonyme') && (
+            <div style={{ display: section === 'correction-anonyme' ? 'contents' : 'none' }}>
+              <SectionTeacherCorrectionAnonyme onToast={showToast} />
+            </div>
+          )}
+          {visitedSections.has('mon-profil-rh') && (
+            <div style={{ display: section === 'mon-profil-rh' ? 'contents' : 'none' }}>
+              <SectionMonProfilRH onToast={showToast} />
+            </div>
+          )}
+          {visitedSections.has('notifications') && (
+            <div style={{ display: section === 'notifications' ? 'contents' : 'none' }}>
+              <NotificationCenter onNav={s => setSection(s as TeacherSection)} />
+            </div>
+          )}
+          {visitedSections.has('babillard') && (
+            <div style={{ display: section === 'babillard' ? 'contents' : 'none' }}>
+              <Babillard role={user?.role ?? 'TEACHER'} title={tnav('sidebar.babillard')} subtitle={tcommon('brand.roleTeacher')} currentUserId={user?.id} />
+            </div>
+          )}
+          {visitedSections.has('messagerie') && (
+            <div style={{ display: section === 'messagerie' ? 'contents' : 'none' }}>
+              <Messagerie />
+            </div>
+          )}
           {Object.entries(PLACEHOLDERS).map(([key, val]) =>
             section === key ? (
               <div key={key} style={{ padding: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>

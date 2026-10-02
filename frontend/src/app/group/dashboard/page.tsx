@@ -101,13 +101,13 @@ export default function GroupDashboardPage() {
       </div>
 
       <div style={{ padding: '32px', maxWidth: 1100, margin: '0 auto' }}>
-        {tab === 'overview' && (
-          <>
-            {kpis && <SectionGroupOverview kpis={kpis} />}
-            <SectionGroupSchools schools={schools} />
-          </>
-        )}
-        {tab === 'transfers' && <SectionGroupTransfers schools={schools} />}
+        <div style={{ display: tab === 'overview' ? 'block' : 'none' }}>
+          {kpis && <SectionGroupOverview kpis={kpis} />}
+          <SectionGroupSchools schools={schools} />
+        </div>
+        <div style={{ display: tab === 'transfers' ? 'block' : 'none' }}>
+          <SectionGroupTransfers schools={schools} />
+        </div>
       </div>
     </div>
   )
