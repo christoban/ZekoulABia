@@ -386,6 +386,28 @@
       "teacher": "Enseignant",
       "parent": "Parent",
       "student": "Élève"
-    }
+    },
+    "mode_announcements": "Annonces uniquement",
+    "mode_open": "Discussion ouverte",
+    "mode_announcements_desc": "Annonces réservées aux enseignants",
+    "mode_open_desc": "Discussion ouverte aux élèves",
+    "badge_announcements": "Annonces",
+    "badge_open": "Ouvert",
+    "btn_open_discussion": "Ouvrir discussion",
+    "btn_lock_announcements": "Verrouiller",
+    "btn_allow_students_desc": "Permettre aux élèves d'écrire",
+    "btn_lock_students_desc": "Verrouiller le groupe aux annonces",
+    "student_announcements_notice": "Seuls les enseignants et la direction peuvent envoyer des messages dans ce groupe.",
+    "role_teacher": "Enseignant",
+    "role_staff": "Direction",
+    "role_student": "Élève",
+    "section_groups": "Groupes",
+    "section_messages": "Messages",
+    "search_contact_hint": "Tapez au moins 2 caractères...",
+    "no_search_results": "Aucun contact trouvé",
+    "channels_accessible": "Canaux de groupe",
+    "members": "Membres",
+    "write_private": "Écrire en privé",
+    "dm_short": "MP"
   }
 }

@@ -1,14 +1,18 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { ArrowLeft, Search, Send, User } from 'lucide-react'
+import { useEffect, useState, useRef, useCallback } from 'react'
+import { ArrowLeft, Search, Send, User, Users, GraduationCap } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
-import type { ContactUser } from './types'
+import type { ContactUser, ConversationSummary } from './types'
 
 interface Props {
   onCreated: (conversationId: string) => void
   onCancel: () => void
+  /** Les conversations déjà chargées — pour afficher les canaux de groupe accessibles */
+  conversations?: ConversationSummary[]
+  /** Quand on clique sur un canal de groupe, on ouvre directement la conversation */
+  onSelectConversation?: (id: string) => void
 }
 
 /** Couleur déterministe basée sur l'id */
@@ -28,27 +32,55 @@ function avatarColor(id: string): string {
   return colors[Math.abs(hash) % colors.length]
 }
 
-export default function NouveauMessagePrive({ onCreated, onCancel }: Props) {
+export default function NouveauMessagePrive({ onCreated, onCancel, conversations, onSelectConversation }: Props) {
   const t = useT('common')
-  const [contacts, setContacts] = useState<ContactUser[]>([])
-  const [loading, setLoading] = useState(true)
   const [recherche, setRecherche] = useState('')
+  const [resultats, setResultats] = useState<ContactUser[]>([])
+  const [loading, setLoading] = useState(false)
   const [destinataire, setDestinataire] = useState<ContactUser | null>(null)
   const [contenu, setContenu] = useState('')
   const [envoi, setEnvoi] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
+  const [aEffectueRecherche, setAEffectueRecherche] = useState(false)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  useEffect(() => {
-    let monte = true
-    fetchApi('/api/v2/messagerie/contacts')
-      .then((r) => r.json())
-      .then((d) => { if (monte && d.success) setContacts(d.data ?? []) })
-      .catch(() => {})
-      .finally(() => { if (monte) setLoading(false) })
-    return () => { monte = false }
+  // Canaux de groupe accessibles (extraits des conversations déjà chargées)
+  const canaux = (conversations ?? []).filter(
+    (c) => c.type === 'CLASS_CHANNEL' || c.type === 'PARENT_CHANNEL'
+  )
+
+  // Recherche textuelle côté serveur avec debounce
+  const rechercherContacts = useCallback(async (q: string) => {
+    const terme = q.trim()
+    if (terme.length < 2) {
+      setResultats([])
+      setAEffectueRecherche(false)
+      return
+    }
+    setLoading(true)
+    try {
+      const res = await fetchApi(`/api/v2/messagerie/contacts?q=${encodeURIComponent(terme)}`)
+      const data = await res.json()
+      if (data.success) {
+        setResultats(data.data ?? [])
+      }
+    } catch { /* silencieux */ }
+    finally {
+      setLoading(false)
+      setAEffectueRecherche(true)
+    }
   }, [])
 
-  const filtres = contacts.filter((c) => `${c.firstName} ${c.lastName}`.toLowerCase().includes(recherche.toLowerCase()))
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    if (recherche.trim().length < 2) {
+      setResultats([])
+      setAEffectueRecherche(false)
+      return
+    }
+    debounceRef.current = setTimeout(() => rechercherContacts(recherche), 300)
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [recherche, rechercherContacts])
 
   const handleEnvoyer = async () => {
     if (!destinataire || !contenu.trim() || envoi) return
@@ -117,6 +149,7 @@ export default function NouveauMessagePrive({ onCreated, onCancel }: Props) {
                 value={recherche}
                 onChange={(event) => setRecherche(event.target.value)}
                 placeholder={t('messagerie.search_contact') ?? 'Rechercher un contact...'}
+                autoFocus
                 style={{
                   width: '100%', padding: '9px 12px 9px 34px', borderRadius: 12,
                   border: '1.5px solid var(--border)', background: 'var(--bg)',
@@ -125,59 +158,129 @@ export default function NouveauMessagePrive({ onCreated, onCancel }: Props) {
                 }}
               />
             </div>
+            {recherche.trim().length > 0 && recherche.trim().length < 2 && (
+              <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4, paddingLeft: 4 }}>
+                {t('messagerie.search_contact_hint') ?? 'Tapez au moins 2 caractères...'}
+              </div>
+            )}
           </div>
 
-          {/* Liste des contacts */}
+          {/* Liste scrollable */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '0 6px 8px' }}>
-            {loading ? (
-              <div style={{ padding: 32, textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
-                <div className="animate-pulse" style={{ width: 32, height: 32, margin: '0 auto 12px', borderRadius: '50%', background: 'var(--border)' }} />
-                {t('messagerie.loading') ?? 'Chargement...'}
-              </div>
-            ) : filtres.length === 0 ? (
+            {/* Section canaux de groupe (quand pas de recherche active) */}
+            {!recherche.trim() && canaux.length > 0 && (
+              <>
+                <div style={{
+                  padding: '6px 10px 4px', fontSize: 10.5, fontWeight: 700,
+                  textTransform: 'uppercase', letterSpacing: 0.8,
+                  color: 'var(--text3)',
+                }}>
+                  {t('messagerie.channels_accessible') ?? 'Canaux de groupe'}
+                </div>
+                {canaux.map((canal) => (
+                  <button
+                    key={canal.id}
+                    type="button"
+                    onClick={() => onSelectConversation?.(canal.id)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      width: '100%', textAlign: 'left',
+                      padding: '10px 10px', borderRadius: 14, border: 'none',
+                      background: 'transparent', cursor: 'pointer', marginBottom: 2,
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg2, rgba(0,0,0,0.04))' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                  >
+                    <div style={{
+                      width: 42, height: 42, borderRadius: 14, flexShrink: 0,
+                      background: 'var(--bg2)', border: '1.5px solid var(--border)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: 'var(--text3)',
+                    }}>
+                      {canal.type === 'CLASS_CHANNEL' ? <GraduationCap size={18} /> : <Users size={18} />}
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text)' }}>
+                        {canal.name ?? 'Canal'}
+                      </div>
+                      <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 1 }}>
+                        {canal.type === 'CLASS_CHANNEL'
+                          ? (t('messagerie.class_channel') ?? 'Canal de classe')
+                          : (t('messagerie.parent_channel') ?? 'Canal parents')}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </>
+            )}
+
+            {/* Résultats de recherche */}
+            {recherche.trim().length >= 2 && (
+              <>
+                {loading ? (
+                  <div style={{ padding: 32, textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
+                    <div className="animate-pulse" style={{ width: 32, height: 32, margin: '0 auto 12px', borderRadius: '50%', background: 'var(--border)' }} />
+                    {t('messagerie.loading') ?? 'Chargement...'}
+                  </div>
+                ) : resultats.length === 0 && aEffectueRecherche ? (
+                  <div style={{ padding: 32, textAlign: 'center', color: 'var(--text3)' }}>
+                    <User size={28} style={{ margin: '0 auto 8px', opacity: 0.4 }} />
+                    <div style={{ fontSize: 13 }}>
+                      {t('messagerie.no_search_results') ?? 'Aucun contact trouvé'}
+                    </div>
+                  </div>
+                ) : resultats.map((contact) => {
+                  const initiales = `${contact.firstName?.[0] ?? ''}${contact.lastName?.[0] ?? ''}`.toUpperCase()
+                  return (
+                    <button
+                      key={contact.id}
+                      type="button"
+                      onClick={() => setDestinataire(contact)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 12,
+                        width: '100%', textAlign: 'left',
+                        padding: '10px 10px', borderRadius: 14, border: 'none',
+                        background: 'transparent', cursor: 'pointer', marginBottom: 2,
+                        transition: 'background 0.15s',
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg2, rgba(0,0,0,0.04))' }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                    >
+                      {/* Avatar */}
+                      <div style={{
+                        width: 42, height: 42, borderRadius: 14, flexShrink: 0,
+                        background: avatarColor(contact.id),
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: 'white', fontWeight: 800, fontSize: 14, letterSpacing: 0.5,
+                      }}>
+                        {initiales}
+                      </div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text)' }}>
+                          {contact.firstName} {contact.lastName}
+                        </div>
+                        <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 1 }}>
+                          {contact.role === 'STAFF' && contact.staffTitle
+                            ? contact.staffTitle
+                            : (t(`messagerie.role_options.${contact.role.toLowerCase()}`) ?? contact.role)}
+                        </div>
+                      </div>
+                    </button>
+                  )
+                })}
+              </>
+            )}
+
+            {/* État initial : pas de recherche et pas de canaux */}
+            {!recherche.trim() && canaux.length === 0 && (
               <div style={{ padding: 32, textAlign: 'center', color: 'var(--text3)' }}>
-                <User size={28} style={{ margin: '0 auto 8px', opacity: 0.4 }} />
+                <Search size={28} style={{ margin: '0 auto 8px', opacity: 0.4 }} />
                 <div style={{ fontSize: 13 }}>
-                  {recherche ? 'Aucun résultat' : (t('messagerie.no_contact') ?? 'Aucun contact disponible.')}
+                  {t('messagerie.search_contact_hint') ?? 'Tapez au moins 2 caractères pour rechercher un contact'}
                 </div>
               </div>
-            ) : filtres.map((contact) => {
-              const initiales = `${contact.firstName?.[0] ?? ''}${contact.lastName?.[0] ?? ''}`.toUpperCase()
-              return (
-                <button
-                  key={contact.id}
-                  type="button"
-                  onClick={() => setDestinataire(contact)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    width: '100%', textAlign: 'left',
-                    padding: '10px 10px', borderRadius: 14, border: 'none',
-                    background: 'transparent', cursor: 'pointer', marginBottom: 2,
-                    transition: 'background 0.15s',
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg2, rgba(0,0,0,0.04))' }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
-                >
-                  {/* Avatar */}
-                  <div style={{
-                    width: 42, height: 42, borderRadius: 14, flexShrink: 0,
-                    background: avatarColor(contact.id),
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'white', fontWeight: 800, fontSize: 14, letterSpacing: 0.5,
-                  }}>
-                    {initiales}
-                  </div>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text)' }}>
-                      {contact.firstName} {contact.lastName}
-                    </div>
-                    <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 1 }}>
-                      {t(`messagerie.role_options.${contact.role.toLowerCase()}`) ?? contact.role}
-                    </div>
-                  </div>
-                </button>
-              )
-            })}
+            )}
           </div>
         </div>
       ) : (
@@ -204,7 +307,9 @@ export default function NouveauMessagePrive({ onCreated, onCancel }: Props) {
                     {destinataire.firstName} {destinataire.lastName}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text3)' }}>
-                    {t(`messagerie.role_options.${destinataire.role.toLowerCase()}`) ?? destinataire.role}
+                    {destinataire.role === 'STAFF' && destinataire.staffTitle
+                      ? destinataire.staffTitle
+                      : (t(`messagerie.role_options.${destinataire.role.toLowerCase()}`) ?? destinataire.role)}
                   </div>
                 </div>
               </div>

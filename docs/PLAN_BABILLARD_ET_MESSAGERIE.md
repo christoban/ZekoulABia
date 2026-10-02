@@ -218,16 +218,27 @@ enum ConversationType { PRIVATE, CLASS_CHANNEL, PARENT_CHANNEL, SYSTEM }
 enum ModerationStatus { PENDING, APPROVED, REJECTED }
 
 model Conversation {
-  id        String           @id @default(cuid())
-  schoolId  String
-  type      ConversationType @default(PRIVATE)
-  name      String?
-  classId   String?
-  createdAt DateTime         @default(now())
-  school    School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  messages  Message[]
+  id                String           @id @default(cuid())
+  schoolId          String
+  type              ConversationType @default(PRIVATE)
+  name              String?
+  classId           String?
+  level             String?          // Niveau scolaire pour les PARENT_CHANNEL (ex: '6e', '5e', 'Form 1')
+  announcementsOnly Boolean          @default(true) // Mode annonces par défaut (contrôlé par les enseignants/admins)
+  createdAt         DateTime         @default(now())
+  school            School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  messages          Message[]
   @@index([schoolId])
+  @@index([schoolId, level])
+  @@index([schoolId, classId])
 }
+
+// ⚠️ RÈGLES DE SÉCURITÉ SCOLAIRE :
+// 1. Les élèves (STUDENT) ne peuvent JAMAIS créer ni recevoir de messages privés (DM).
+// 2. Les canaux de classe sont en mode announcementsOnly: true par défaut. Seuls les enseignants et la direction peuvent y écrire.
+// 3. Les canaux PARENTS sont regroupés par NIVEAU scolaire (Parents — 6e, Parents — 5e, etc.) et non par classe individuelle.
+// 4. Membres obligatoires de tous les groupes : Administrateur, Censeur / Vice-Principal, Conseiller d'Orientation.
+// 5. Clic MP depuis le volet des membres d'un groupe : redirection ou création directe vers la conversation privée 1-à-1 (idempotente).
 
 model Message {
   id               String              @id @default(cuid())

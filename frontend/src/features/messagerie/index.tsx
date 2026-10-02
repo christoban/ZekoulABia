@@ -11,6 +11,10 @@ import FilConversation from './FilConversation'
 import NouveauMessagePrive from './NouveauMessagePrive'
 import type { ConversationSummary, CurrentUser } from './types'
 
+// Cache en mémoire persistant au sein de la session de navigation (évite les rechargements lors des changements d'onglet)
+let cachedConversationsStore: ConversationSummary[] | null = null
+let lastSelectedConversationId: string | null = null
+
 /**
  * Composant autonome, sans props requises — lit sa propre session depuis localStorage, comme
  * NotificationCenter. Évite de dépendre de la forme (différente selon les 5 dashboards) de
@@ -19,44 +23,82 @@ import type { ConversationSummary, CurrentUser } from './types'
  */
 export default function Messagerie() {
   const t = useT('common')
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
-  const [conversations, setConversations] = useState<ConversationSummary[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [vueMobile, setVueMobile] = useState<'liste' | 'fil'>('liste')
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const raw = localStorage.getItem('zekoulabia_user')
+        if (raw) {
+          const parsed = JSON.parse(raw) as { userId: string; role: string }
+          return { id: parsed.userId, role: parsed.role }
+        }
+      }
+    } catch { /* ignore */ }
+    return null
+  })
+  const [conversations, setConversations] = useState<ConversationSummary[]>(() => cachedConversationsStore ?? [])
+  const [loading, setLoading] = useState<boolean>(() => cachedConversationsStore === null)
+  const [selectedId, setSelectedId] = useState<string | null>(() => lastSelectedConversationId)
+  const [vueMobile, setVueMobile] = useState<'liste' | 'fil'>(() => (lastSelectedConversationId ? 'fil' : 'liste'))
   const [nouveauMessage, setNouveauMessage] = useState(false)
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem('zekoulabia_user')
-      if (raw) {
-        const parsed = JSON.parse(raw) as { userId: string; role: string }
-        setCurrentUser({ id: parsed.userId, role: parsed.role })
-      }
-    } catch { /* silencieux — la messagerie reste vide plutôt que casser le dashboard */ }
-  }, [])
+    if (!currentUser) {
+      try {
+        const raw = localStorage.getItem('zekoulabia_user')
+        if (raw) {
+          const parsed = JSON.parse(raw) as { userId: string; role: string }
+          setCurrentUser({ id: parsed.userId, role: parsed.role })
+        }
+      } catch { /* silencieux */ }
+    }
+  }, [currentUser])
 
-  const chargerConversations = useCallback(async () => {
+  const chargerConversations = useCallback(async (silencieux = false) => {
     if (!currentUser) return
     const cleCache = `messagerie:conversations:${currentUser.id}`
+
+    // Si on n'a encore aucune conversation en mémoire et que ce n'est pas silencieux, activer le loading
+    if (!silencieux && cachedConversationsStore === null) {
+      setLoading(true)
+    }
+
     try {
+      // 1. Lire d'abord IndexedDB en fallback ultra-rapide si la mémoire est vide
+      if (!cachedConversationsStore) {
+        const cache = await getCachedData<ConversationSummary[]>(cleCache)
+        if (cache?.data && cache.data.length > 0) {
+          cachedConversationsStore = cache.data
+          setConversations(cache.data)
+          setLoading(false)
+        }
+      }
+
+      // 2. Fetch réseau en arrière-plan (Stale-While-Revalidate)
       const res = await fetchApi('/api/v2/messagerie/conversations')
       const payload = await res.json()
-      if (payload.success) {
-        setConversations(payload.data ?? [])
-        await putCachedData(cleCache, payload.data ?? [])
+      if (payload.success && Array.isArray(payload.data)) {
+        cachedConversationsStore = payload.data
+        setConversations(payload.data)
+        await putCachedData(cleCache, payload.data)
       }
     } catch {
-      // Hors-ligne ou serveur injoignable — dernière liste connue plutôt qu'un écran vide,
-      // même garantie que le reste de l'app via useCachedFetch.
+      // Hors-ligne ou serveur injoignable : on s'assure d'avoir au moins le cache IndexedDB
       const cache = await getCachedData<ConversationSummary[]>(cleCache)
-      if (cache) setConversations(cache.data)
+      if (cache?.data) {
+        cachedConversationsStore = cache.data
+        setConversations(cache.data)
+      }
     } finally {
       setLoading(false)
     }
   }, [currentUser])
 
-  useEffect(() => { if (currentUser) chargerConversations() }, [currentUser, chargerConversations])
+  useEffect(() => {
+    if (currentUser) {
+      // Si on a déjà les conversations en mémoire, rafraîchir en tâche de fond 100% silencieuse
+      chargerConversations(cachedConversationsStore !== null)
+    }
+  }, [currentUser, chargerConversations])
 
   // Ouvre automatiquement la conversation demandée lors d'un clic sur une notification (in-app ou out-app)
   useEffect(() => {
@@ -141,10 +183,15 @@ export default function Messagerie() {
   }, [currentUser, selectedId, chargerConversations])
 
   const handleSelect = (id: string) => {
+    lastSelectedConversationId = id
     setSelectedId(id)
     setNouveauMessage(false)
     setVueMobile('fil')
-    setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, unreadCount: 0 } : c)))
+    setConversations((prev) => {
+      const updated = prev.map((c) => (c.id === id ? { ...c, unreadCount: 0 } : c))
+      cachedConversationsStore = updated
+      return updated
+    })
   }
 
   const handleCreated = (conversationId: string) => {
@@ -152,6 +199,76 @@ export default function Messagerie() {
     setSelectedId(conversationId)
     setVueMobile('fil')
     chargerConversations()
+  }
+
+  // Depuis la liste des membres d'un groupe : ouvre la conversation privée existante
+  // ou en crée une directement (style WhatsApp) sans forcer l'utilisateur à chercher le contact.
+  const handleStartPrivateChat = async (target: {
+    id: string
+    firstName?: string
+    lastName?: string
+    role?: string
+    staffTitle?: string | null
+  }) => {
+    // 1. Chercher si une conv PRIVATE existe déjà dans la liste
+    const existante = conversations.find(
+      (c) => c.type === 'PRIVATE' && c.participants.some((p) => p.id === target.id),
+    )
+    if (existante) {
+      handleSelect(existante.id)
+      return
+    }
+
+    // 2. Sinon : créer directement la conversation privée via l'API et l'ouvrir
+    try {
+      const res = await fetchApi('/api/v2/messagerie/conversations/privee', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ destinataireId: target.id }),
+      })
+      const payload = await res.json()
+      if (payload.success && payload.data?.id) {
+        // Insérer immédiatement la conversation dans l'état local pour ouvrir le fil à 0 ms
+        const convCreee: ConversationSummary = {
+          id: payload.data.id,
+          type: 'PRIVATE',
+          name: null,
+          classId: null,
+          announcementsOnly: false,
+          participants: [
+            ...(currentUser ? [{ id: currentUser.id, firstName: '', lastName: '', role: currentUser.role, staffTitle: null }] : []),
+            {
+              id: target.id,
+              firstName: target.firstName ?? 'Contact',
+              lastName: target.lastName ?? '',
+              role: target.role ?? 'USER',
+              staffTitle: target.staffTitle ?? null,
+            },
+          ],
+          lastMessage: null,
+          unreadCount: 0,
+        }
+
+        setConversations((prev) => {
+          const sansDoublon = prev.filter((c) => c.id !== payload.data.id)
+          const updated = [convCreee, ...sansDoublon]
+          cachedConversationsStore = updated
+          return updated
+        })
+
+        handleSelect(payload.data.id)
+
+        // Rafraîchir silencieusement en arrière-plan sans bloquer l'affichage
+        void chargerConversations(true)
+        return
+      }
+    } catch (err) {
+      console.error('Échec ouverture directe de la conversation privée:', err)
+    }
+
+    // Repli sûr en cas d'erreur API
+    setNouveauMessage(true)
+    setVueMobile('fil')
   }
 
   if (!currentUser) {
@@ -236,7 +353,12 @@ export default function Messagerie() {
         {/* Panneau fil / nouveau message */}
         <div className="messagerie-pane-fil" style={{ background: 'var(--bg)' }}>
           {nouveauMessage ? (
-            <NouveauMessagePrive onCreated={handleCreated} onCancel={() => { setNouveauMessage(false); setVueMobile('liste') }} />
+            <NouveauMessagePrive
+              onCreated={handleCreated}
+              onCancel={() => { setNouveauMessage(false); setVueMobile('liste') }}
+              conversations={conversations}
+              onSelectConversation={(id) => { setNouveauMessage(false); handleSelect(id) }}
+            />
           ) : conversationSelectionnee ? (
             <FilConversation
               conversationId={conversationSelectionnee.id}
@@ -244,6 +366,7 @@ export default function Messagerie() {
               currentUser={currentUser}
               onBack={() => setVueMobile('liste')}
               onMessageSent={chargerConversations}
+              onStartPrivateChat={handleStartPrivateChat}
             />
           ) : (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, color: 'var(--text3)', padding: 32 }}>

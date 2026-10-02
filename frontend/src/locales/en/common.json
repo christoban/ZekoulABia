@@ -386,6 +386,28 @@
       "teacher": "Teacher",
       "parent": "Parent",
       "student": "Student"
-    }
+    },
+    "mode_announcements": "Announcements only",
+    "mode_open": "Open discussion",
+    "mode_announcements_desc": "Announcements reserved for teachers",
+    "mode_open_desc": "Discussion open to students",
+    "badge_announcements": "Announcements",
+    "badge_open": "Open",
+    "btn_open_discussion": "Open discussion",
+    "btn_lock_announcements": "Lock group",
+    "btn_allow_students_desc": "Allow students to write",
+    "btn_lock_students_desc": "Lock group to announcements only",
+    "student_announcements_notice": "Only teachers and school staff can send messages in this group.",
+    "role_teacher": "Teacher",
+    "role_staff": "Staff",
+    "role_student": "Student",
+    "section_groups": "Groups",
+    "section_messages": "Messages",
+    "search_contact_hint": "Type at least 2 characters...",
+    "no_search_results": "No contacts found",
+    "channels_accessible": "Group channels",
+    "members": "Members",
+    "write_private": "Write privately",
+    "dm_short": "DM"
   }
 }

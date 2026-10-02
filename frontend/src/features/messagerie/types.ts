@@ -5,6 +5,7 @@ export interface ContactUser {
   firstName: string
   lastName: string
   role: string
+  staffTitle?: string | null
 }
 
 export interface ConversationSummary {
@@ -13,6 +14,7 @@ export interface ConversationSummary {
   name: string | null
   classId: string | null
   participants: ContactUser[]
+  announcementsOnly?: boolean
   lastMessage: { id: string; content: string; createdAt: string; senderId: string } | null
   unreadCount: number
 }
