@@ -7,6 +7,9 @@ import type { ModererMessageUseCase } from '@application/messagerie/ModererMessa
 import type { ListerMessagesEnAttenteModerationUseCase } from '@application/messagerie/ListerMessagesEnAttenteModerationUseCase';
 import type { ListerContactsMessagerieUseCase } from '@application/messagerie/ListerContactsMessagerieUseCase';
 import type { CompterMessagesNonLusUseCase } from '@application/messagerie/CompterMessagesNonLusUseCase';
+import type { ChangerParametresCanalUseCase } from '@application/messagerie/ChangerParametresCanalUseCase';
+import type { InitialiserCanauxManquantsUseCase } from '@application/messagerie/InitialiserCanauxManquantsUseCase';
+import type { CreerConversationPriveeUseCase } from '@application/messagerie/CreerConversationPriveeUseCase';
 
 export class MessagerieController {
   constructor(
@@ -18,7 +21,38 @@ export class MessagerieController {
     private readonly listerEnAttenteModeration: ListerMessagesEnAttenteModerationUseCase,
     private readonly listerContacts: ListerContactsMessagerieUseCase,
     private readonly compterMessagesNonLus: CompterMessagesNonLusUseCase,
+    private readonly changerParametresCanalUseCase: ChangerParametresCanalUseCase,
+    private readonly initialiserCanaux?: InitialiserCanauxManquantsUseCase,
+    private readonly creerConversationPrivee?: CreerConversationPriveeUseCase,
   ) {}
+
+  creerConversationPriveeDirecte = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = req.user!;
+      const { destinataireId } = req.body as { destinataireId?: string };
+      if (!destinataireId) {
+        res.status(400).json({ success: false, message: 'destinataireId est requis' });
+        return;
+      }
+      if (!this.creerConversationPrivee) {
+        res.status(500).json({ success: false, message: 'Service non disponible' });
+        return;
+      }
+      const conv = await this.creerConversationPrivee.execute({
+        schoolId: user.schoolId,
+        appelantId: user.userId,
+        appelantRole: user.role,
+        destinataireId,
+      });
+      res.json({ success: true, data: conv });
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(400).json({ success: false, message: error.message });
+        return;
+      }
+      next(error);
+    }
+  };
 
   envoyer = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -160,10 +194,12 @@ export class MessagerieController {
   contacts = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const user = req.user!;
+      const { q } = req.query as { q?: string };
       const contacts = await this.listerContacts.execute({
         schoolId: user.schoolId,
         appelantId: user.userId,
         appelantRole: user.role,
+        recherche: q,
       });
       res.json({ success: true, data: contacts });
     } catch (error) {
@@ -181,6 +217,56 @@ export class MessagerieController {
       });
       res.json({ success: true, data: resultat });
     } catch (error) {
+      next(error);
+    }
+  };
+
+  changerParametresCanal = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = req.user!;
+      const { announcementsOnly } = req.body as { announcementsOnly?: boolean };
+
+      if (typeof announcementsOnly !== 'boolean') {
+        res.status(400).json({ success: false, message: 'Le paramètre announcementsOnly doit être un booléen.' });
+        return;
+      }
+
+      const conversation = await this.changerParametresCanalUseCase.execute({
+        schoolId: user.schoolId,
+        appelantId: user.userId,
+        appelantRole: user.role,
+        conversationId: String(req.params['id']),
+        announcementsOnly,
+      });
+
+      res.json({ success: true, data: conversation });
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(400).json({ success: false, message: error.message });
+        return;
+      }
+      next(error);
+    }
+  };
+
+  initialiserCanauxManquants = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = req.user!;
+      if (user.role !== 'ADMIN' && user.role !== 'STAFF') {
+        res.status(403).json({ success: false, message: 'Réservé aux administrateurs.' });
+        return;
+      }
+      if (!this.initialiserCanaux) {
+        res.status(501).json({ success: false, message: 'Initialisation non configurée.' });
+        return;
+      }
+      const result = await this.initialiserCanaux.execute(user.schoolId);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(400).json({ success: false, message: error.message });
+        return;
+      }
       next(error);
     }
   };

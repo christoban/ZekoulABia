@@ -76,6 +76,9 @@ import { ModererMessageUseCase } from '@application/messagerie/ModererMessageUse
 import { ListerMessagesEnAttenteModerationUseCase } from '@application/messagerie/ListerMessagesEnAttenteModerationUseCase';
 import { ListerContactsMessagerieUseCase } from '@application/messagerie/ListerContactsMessagerieUseCase';
 import { CompterMessagesNonLusUseCase } from '@application/messagerie/CompterMessagesNonLusUseCase';
+import { ChangerParametresCanalUseCase } from '@application/messagerie/ChangerParametresCanalUseCase';
+import { InitialiserCanauxManquantsUseCase } from '@application/messagerie/InitialiserCanauxManquantsUseCase';
+import { CreerConversationPriveeUseCase } from '@application/messagerie/CreerConversationPriveeUseCase';
 import { SocketNotificationService } from '@infrastructure/services/notification/SocketNotificationService';
 import { RealtimeSocketAdapter } from '@infrastructure/socket/RealtimeSocketAdapter';
 
@@ -294,6 +297,11 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
   const listerEnAttenteModerationUseCase = new ListerMessagesEnAttenteModerationUseCase(messagerieRepository);
   const listerContactsMessagerieUseCase = new ListerContactsMessagerieUseCase(messagerieRepository);
   const compterMessagesNonLusUseCase = new CompterMessagesNonLusUseCase(messagerieRepository);
+  const changerParametresCanalUseCase = new ChangerParametresCanalUseCase(messagerieRepository, realtimeSocketAdapter);
+  const initialiserCanauxUseCase = new InitialiserCanauxManquantsUseCase(
+    messagerieRepository,
+    async (schoolId: string) => p.class.findMany({ where: { schoolId }, select: { id: true, name: true, schoolId: true } }),
+  );
   const messagerieController = new MessagerieController(
     envoyerMessageUseCase,
     listerConversationsUseCase,
@@ -303,6 +311,9 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
     listerEnAttenteModerationUseCase,
     listerContactsMessagerieUseCase,
     compterMessagesNonLusUseCase,
+    changerParametresCanalUseCase,
+    initialiserCanauxUseCase,
+    new CreerConversationPriveeUseCase(messagerieRepository),
   );
   app.use('/api/v2/messagerie', creerMessagerieRoutes(messagerieController));
 
