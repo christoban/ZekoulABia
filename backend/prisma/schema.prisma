@@ -1938,13 +1938,17 @@ model Conversation {
   schoolId     String
   type         ConversationType          @default(PRIVATE)
   name         String?
-  classId      String?
-  createdAt    DateTime                  @default(now())
-  school       School                    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  messages     Message[]
-  participants ConversationParticipant[]
+  classId           String?
+  level             String?
+  announcementsOnly Boolean                   @default(true)
+  createdAt         DateTime                  @default(now())
+  school            School                    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  messages          Message[]
+  participants      ConversationParticipant[]
 
   @@index([schoolId])
+  @@index([schoolId, level])
+  @@index([schoolId, classId])
 }
 
 model ConversationParticipant {
