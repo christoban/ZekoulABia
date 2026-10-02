@@ -21,7 +21,6 @@ const SECTION_KEY: Record<string, string> = {
   'moderation-messagerie': 'moderationMessagerie',
   'mon-profil-rh': 'monProfilRh',
   'sync-offline': 'syncOffline',
-  'bulletin-validation': 'bulletinValidation',
   'configuration': 'configuration',
   'eleves-familles': 'elevesFamilles',
 }
