@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { ArrowLeft, Send, Clock, Check, CheckCheck, AlertCircle, Smile, Lock, MessageCircle, Users, X, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Send, Clock, Check, CheckCheck, AlertCircle, Smile, Lock, MessageCircle, Users, X, ChevronRight, User } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
@@ -105,6 +105,27 @@ function roleLabel(role: string, staffTitle?: string | null): string {
   return labels[role] ?? role
 }
 
+function getRoleBadge(role?: string, staffTitle?: string | null): { label: string; bg: string; color: string } | null {
+  if (!role) return null
+  const r = role.toUpperCase()
+  if (r === 'TEACHER') {
+    return { label: 'Enseignant', bg: 'rgba(59, 130, 246, 0.16)', color: 'var(--blue, #2563eb)' }
+  }
+  if (r === 'ADMIN') {
+    return { label: 'Administration', bg: 'rgba(245, 158, 11, 0.16)', color: 'var(--amber, #d97706)' }
+  }
+  if (r === 'STAFF') {
+    return { label: staffTitle || 'Personnel administratif', bg: 'rgba(234, 88, 12, 0.16)', color: '#ea580c' }
+  }
+  if (r === 'PARENT') {
+    return { label: 'Parent', bg: 'rgba(139, 92, 246, 0.16)', color: '#8b5cf6' }
+  }
+  if (r === 'STUDENT') {
+    return { label: 'Élève', bg: 'rgba(16, 185, 129, 0.16)', color: 'var(--green, #10b981)' }
+  }
+  return { label: role, bg: 'rgba(107, 114, 128, 0.16)', color: 'var(--text3)' }
+}
+
 // Cache en mémoire des messages par conversation (persistant lors des changements d'onglets au sein de la session)
 const memoryMessagesCache = new Map<string, DisplayMessage[]>()
 
@@ -121,6 +142,7 @@ export default function FilConversation({ conversationId, conversation, currentU
   const [announcementsOnly, setAnnouncementsOnly] = useState<boolean>(conversation?.announcementsOnly ?? true)
   const [savingSettings, setSavingSettings] = useState(false)
   const [showMembers, setShowMembers] = useState(false)
+  const [showContactModal, setShowContactModal] = useState(false)
 
   useEffect(() => {
     if (conversation?.announcementsOnly !== undefined) {
@@ -141,6 +163,8 @@ export default function FilConversation({ conversationId, conversation, currentU
     (conversation?.type === 'CLASS_CHANNEL' || conversation?.type === 'PARENT_CHANNEL')
 
   const isGroupChannel = conversation?.type === 'CLASS_CHANNEL' || conversation?.type === 'PARENT_CHANNEL'
+  const otherParticipant = !isGroupChannel ? conversation?.participants?.find(p => p.id !== currentUser.id) : null
+  const otherBadge = otherParticipant ? getRoleBadge(otherParticipant.role, otherParticipant.staffTitle) : null
   // STUDENT n'a pas le droit d'initier un DM
   const peutEnvoyerDM = currentUser.role !== 'STUDENT'
 
@@ -475,14 +499,18 @@ export default function FilConversation({ conversationId, conversation, currentU
           {convInitiales}
         </div>
         <div
-          style={{ minWidth: 0, flex: 1, cursor: isGroupChannel ? 'pointer' : 'default' }}
-          onClick={() => { if (isGroupChannel) setShowMembers(true) }}
+          style={{ minWidth: 0, flex: 1, cursor: 'pointer' }}
+          onClick={() => {
+            if (isGroupChannel) setShowMembers(true)
+            else if (otherParticipant) setShowContactModal(true)
+          }}
+          title={isGroupChannel ? "Voir les membres du groupe" : "Voir le profil de l'utilisateur"}
         >
           <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}>
             {nomAffiche(conversation, currentUser.id)}
-            {isGroupChannel && <ChevronRight size={14} style={{ color: 'var(--text3)', flexShrink: 0 }} />}
+            <ChevronRight size={14} style={{ color: 'var(--text3)', flexShrink: 0 }} />
           </div>
-          <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 1 }}>
             {conversation?.type === 'CLASS_CHANNEL' && (
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: 3,
@@ -501,9 +529,16 @@ export default function FilConversation({ conversationId, conversation, currentU
                 {conversation.participants.length} membre{conversation.participants.length > 1 ? 's' : ''}
               </span>
             ) : null}
-            {!isGroupChannel && conversation?.participants?.length ? (
-              <span>{conversation.participants.length} participant{conversation.participants.length > 1 ? 's' : ''}</span>
-            ) : null}
+            {!isGroupChannel && otherParticipant && (
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                fontSize: 10.5, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
+                background: otherBadge?.bg ?? 'var(--bg2)',
+                color: otherBadge?.color ?? 'var(--text3)',
+              }}>
+                {otherBadge?.label ?? roleLabel(otherParticipant.role, otherParticipant.staffTitle)}
+              </span>
+            )}
           </div>
         </div>
 
@@ -568,16 +603,9 @@ export default function FilConversation({ conversationId, conversation, currentU
               const estMoi = message.senderId === currentUser.id
               const rejete = message.moderationStatus === 'REJECTED'
               const enAttente = message.moderationStatus === 'PENDING'
-              const senderName = !estMoi && message.sender ? `${message.sender.firstName} ${message.sender.lastName}` : null
-              const senderRole = message.sender?.role?.toUpperCase()
-              let roleBadge: { label: string; bg: string; color: string } | null = null
-              if (senderRole === 'TEACHER') {
-                roleBadge = { label: t('messagerie.role_teacher') ?? 'Enseignant', bg: 'rgba(59, 130, 246, 0.16)', color: 'var(--blue)' }
-              } else if (senderRole === 'ADMIN' || senderRole === 'STAFF') {
-                roleBadge = { label: t('messagerie.role_staff') ?? 'Direction', bg: 'rgba(245, 158, 11, 0.16)', color: 'var(--amber)' }
-              } else if (senderRole === 'STUDENT') {
-                roleBadge = { label: t('messagerie.role_student') ?? 'Élève', bg: 'rgba(16, 185, 129, 0.16)', color: 'var(--green)' }
-              }
+              const senderObj = message.sender || conversation?.participants?.find(p => p.id === message.senderId)
+              const senderName = !estMoi && senderObj ? `${senderObj.firstName} ${senderObj.lastName}`.trim() : null
+              const roleBadge = senderObj ? getRoleBadge(senderObj.role, senderObj.staffTitle) : null
 
               return (
                 <div key={message.id} style={{
@@ -786,6 +814,91 @@ export default function FilConversation({ conversationId, conversation, currentU
                   </div>
                 )
               })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Panel Profil du contact (pour conversation privée) */}
+      {showContactModal && otherParticipant && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 40,
+          background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(2px)',
+          display: 'flex', justifyContent: 'flex-end',
+        }}>
+          <div style={{
+            width: 320, maxWidth: '85vw', background: 'var(--surface)',
+            borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column',
+            animation: 'slideInRight 0.2s ease-out',
+          }}>
+            {/* Panel header */}
+            <div style={{
+              padding: '14px 16px', borderBottom: '1px solid var(--border)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <User size={18} style={{ color: 'var(--primary)' }} />
+                <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)' }}>
+                  Profil du contact
+                </span>
+              </div>
+              <button
+                type="button" onClick={() => setShowContactModal(false)}
+                style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text3)', padding: 4, borderRadius: 8 }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            {/* Contact Details */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', textAlign: 'center' }}>
+              <div style={{
+                width: 64, height: 64, borderRadius: 20, margin: '0 auto 14px',
+                background: avatarColor(otherParticipant.id),
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'white', fontWeight: 800, fontSize: 22,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+              }}>
+                {`${otherParticipant.firstName?.[0] ?? ''}${otherParticipant.lastName?.[0] ?? ''}`.toUpperCase()}
+              </div>
+              <div style={{ fontWeight: 800, fontSize: 16, color: 'var(--text)', marginBottom: 6 }}>
+                {otherParticipant.firstName} {otherParticipant.lastName}
+              </div>
+              {otherBadge && (
+                <div style={{ display: 'inline-flex', marginBottom: 20 }}>
+                  <span style={{
+                    fontSize: 11.5, fontWeight: 700, padding: '3px 10px', borderRadius: 8,
+                    background: otherBadge.bg, color: otherBadge.color,
+                  }}>
+                    {otherBadge.label}
+                  </span>
+                </div>
+              )}
+
+              <div style={{
+                background: 'var(--bg2)', borderRadius: 14, padding: '14px 16px',
+                textAlign: 'left', fontSize: 12.5, color: 'var(--text)',
+                display: 'flex', flexDirection: 'column', gap: 10,
+                border: '1px solid var(--border)',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: 'var(--text3)' }}>Rôle scolaire</span>
+                  <span style={{ fontWeight: 700 }}>{roleLabel(otherParticipant.role, null)}</span>
+                </div>
+                {otherParticipant.staffTitle && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: 'var(--text3)' }}>Fonction</span>
+                    <span style={{ fontWeight: 700 }}>{otherParticipant.staffTitle}</span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: 'var(--text3)' }}>Canal</span>
+                  <span style={{ fontWeight: 600 }}>Message privé direct</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: 'var(--text3)' }}>Statut</span>
+                  <span style={{ fontWeight: 700, color: 'var(--green)' }}>Actif dans l'école</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -53,6 +53,36 @@ function IconeType({ type }: { type: ConversationSummary['type'] }) {
   return <User size={14} />
 }
 
+function roleLabel(role: string, staffTitle?: string | null): string {
+  if (role === 'STAFF' && staffTitle) return staffTitle
+  const labels: Record<string, string> = {
+    ADMIN: 'Admin',
+    STAFF: 'Personnel',
+    TEACHER: 'Enseignant',
+    STUDENT: 'Élève',
+    PARENT: 'Parent',
+  }
+  return labels[role] ?? role
+}
+
+function getRoleBadgeStyle(role?: string): { bg: string; color: string } {
+  const r = (role ?? '').toUpperCase()
+  switch (r) {
+    case 'TEACHER':
+      return { bg: 'rgba(59, 130, 246, 0.16)', color: 'var(--blue, #2563eb)' }
+    case 'ADMIN':
+      return { bg: 'rgba(245, 158, 11, 0.16)', color: 'var(--amber, #d97706)' }
+    case 'STAFF':
+      return { bg: 'rgba(234, 88, 12, 0.16)', color: '#ea580c' }
+    case 'PARENT':
+      return { bg: 'rgba(139, 92, 246, 0.16)', color: '#8b5cf6' }
+    case 'STUDENT':
+      return { bg: 'rgba(16, 185, 129, 0.16)', color: 'var(--green, #10b981)' }
+    default:
+      return { bg: 'rgba(107, 114, 128, 0.16)', color: 'var(--text3, #6b7280)' }
+  }
+}
+
 function formatHeure(dateStr: string): string {
   try {
     const d = new Date(dateStr)
@@ -122,6 +152,36 @@ export default function ListeConversations({ conversations, loading, selectedId,
               }}>
                 {nomAffiche(conversation, currentUser.id)}
               </span>
+              {isPrivate && (() => {
+                const other = conversation.participants?.find((p) => p.id !== currentUser.id)
+                if (!other?.role) return null
+                const style = getRoleBadgeStyle(other.role)
+                return (
+                  <span
+                    title={other.role}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center',
+                      fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 6,
+                      background: style.bg, color: style.color,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {roleLabel(other.role, other.staffTitle)}
+                  </span>
+                )
+              })()}
+              {conversation.type === 'PARENT_CHANNEL' && (
+                <span
+                  style={{
+                    display: 'inline-flex', alignItems: 'center',
+                    fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 6,
+                    background: 'rgba(139, 92, 246, 0.16)', color: '#8b5cf6',
+                    flexShrink: 0,
+                  }}
+                >
+                  Parents
+                </span>
+              )}
               {conversation.type === 'CLASS_CHANNEL' && (
                 <span
                   title={conversation.announcementsOnly !== false ? (t('messagerie.mode_announcements') ?? 'Annonces uniquement') : (t('messagerie.mode_open') ?? 'Discussion ouverte')}

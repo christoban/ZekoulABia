@@ -14,7 +14,7 @@ export interface MessageData {
   content: string;
   moderationStatus: string;
   createdAt: Date;
-  sender?: { id: string; firstName: string; lastName: string; role: string };
+  sender?: { id: string; firstName: string; lastName: string; role: string; staffTitle?: string | null };
   readStatuses?: { userId: string; readAt: Date }[];
   isRead?: boolean;
 }

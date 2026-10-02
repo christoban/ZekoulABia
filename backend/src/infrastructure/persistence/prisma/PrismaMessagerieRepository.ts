@@ -771,7 +771,15 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
       content: m.content,
       moderationStatus: m.moderationStatus,
       createdAt: m.createdAt,
-      sender: m.sender,
+      sender: m.sender
+        ? {
+            id: m.sender.id,
+            firstName: m.sender.firstName,
+            lastName: m.sender.lastName,
+            role: m.sender.role,
+            staffTitle: m.sender.staffProfile?.title ?? null,
+          }
+        : undefined,
       readStatuses: m.readStatuses ?? [],
       isRead: Array.isArray(m.readStatuses) && m.readStatuses.some((r: any) => r.userId !== m.senderId),
     });
