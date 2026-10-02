@@ -2,7 +2,9 @@ export interface ConversationRef {
   id: string;
   type: string;
   classId: string | null;
+  level?: string | null;
   schoolId: string;
+  announcementsOnly: boolean;
 }
 
 export interface MessageData {
@@ -31,6 +33,14 @@ export interface VerifierAppartenanceParams {
   role: string;
 }
 
+export interface ContactResult {
+  id: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  staffTitle?: string | null;
+}
+
 export interface MessagerieRepository {
   // Helpers d'accès (règles de RBAC messagerie, partagées par plusieurs use cases)
   verifierAppartenanceConversation(params: VerifierAppartenanceParams): Promise<ConversationRef>;
@@ -54,6 +64,8 @@ export interface MessagerieRepository {
   // Canaux de classe / parents (idempotents)
   creerCanalClasse(schoolId: string, classId: string, className: string): Promise<ConversationRef>;
   creerCanalParents(schoolId: string, classId: string, className: string): Promise<ConversationRef>;
+  changerParametresCanal(conversationId: string, data: { announcementsOnly: boolean }): Promise<ConversationRef>;
+  trouverConversation(conversationId: string, schoolId: string): Promise<ConversationRef | null>;
 
   // Config / utilisateur
   trouverConfigModeration(schoolId: string): Promise<{ messageModeration: boolean } | null>;
@@ -86,6 +98,15 @@ export interface MessagerieRepository {
   marquerMessagesLus(messageIds: string[], userId: string): Promise<number>;
   marquerNotificationsConversationLues(params: { userId: string; schoolId: string; conversationId: string }): Promise<void>;
   listerContacts(where: Record<string, unknown>): Promise<unknown[]>;
+
+  /** Recherche textuelle de contacts filtrée par la matrice de communication (qui peut écrire à qui). */
+  rechercherContacts(cmd: {
+    schoolId: string;
+    appelantId: string;
+    appelantRole: string;
+    recherche: string;
+    limite?: number;
+  }): Promise<ContactResult[]>;
 
   // Participants / destinataires de notification
   listerParticipantsConversation(conversationId: string, excludeUserId: string): Promise<string[]>;

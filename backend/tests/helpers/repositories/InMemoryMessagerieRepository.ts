@@ -1,6 +1,7 @@
 import type {
   MessagerieRepository,
   ConversationRef,
+  ContactResult,
   MessageData,
   VerifierAppartenanceParams,
 } from '@domain/ports/repositories/MessagerieRepository';
@@ -38,22 +39,39 @@ export class InMemoryMessagerieRepository implements MessagerieRepository {
     this.messages.push(m);
     return m;
   }
-  async trouverConversationPriveeExistante(): Promise<ConversationRef | null> { return null; }
+  async trouverConversationPriveeExistante(schoolId: string, userA: string, userB: string): Promise<ConversationRef | null> {
+    for (const c of this.conversations) {
+      if (c.schoolId === schoolId && c.type === 'PRIVATE') {
+        const parts = this.participants.get(c.id) ?? [];
+        if (parts.includes(userA) && parts.includes(userB)) return c;
+      }
+    }
+    return null;
+  }
   async creerConversationPrivee(schoolId: string, userA: string, userB: string): Promise<ConversationRef> {
-    const c: ConversationRef = { id: `conv-${this.conversations.length + 1}`, type: 'PRIVATE', classId: null, schoolId };
+    const c: ConversationRef = { id: `conv-${this.conversations.length + 1}`, type: 'PRIVATE', classId: null, schoolId, announcementsOnly: false };
     this.conversations.push(c);
     this.participants.set(c.id, [userA, userB]);
     return c;
   }
   async creerCanalClasse(schoolId: string, classId: string, className: string): Promise<ConversationRef> {
-    const c: ConversationRef = { id: `conv-class-${classId}`, type: 'CLASS_CHANNEL', classId, schoolId };
+    const c: ConversationRef = { id: `conv-class-${classId}`, type: 'CLASS_CHANNEL', classId, schoolId, announcementsOnly: true };
     this.conversations.push(c);
     return c;
   }
   async creerCanalParents(schoolId: string, classId: string, className: string): Promise<ConversationRef> {
-    const c: ConversationRef = { id: `conv-parent-${classId}`, type: 'PARENT_CHANNEL', classId, schoolId };
+    const c: ConversationRef = { id: `conv-parent-${classId}`, type: 'PARENT_CHANNEL', classId, schoolId, announcementsOnly: true };
     this.conversations.push(c);
     return c;
+  }
+  async changerParametresCanal(conversationId: string, data: { announcementsOnly: boolean }): Promise<ConversationRef> {
+    const c = this.conversations.find((x) => x.id === conversationId);
+    if (!c) throw new Error('Conversation introuvable.');
+    c.announcementsOnly = data.announcementsOnly;
+    return c;
+  }
+  async trouverConversation(conversationId: string, schoolId: string): Promise<ConversationRef | null> {
+    return this.conversations.find((x) => x.id === conversationId && x.schoolId === schoolId) ?? null;
   }
   async trouverConfigModeration(): Promise<{ messageModeration: boolean } | null> { return null; }
   async trouverUtilisateurActif(id: string): Promise<{ id: string } | null> { return { id }; }
@@ -69,6 +87,7 @@ export class InMemoryMessagerieRepository implements MessagerieRepository {
   async marquerMessagesLus(): Promise<number> { return 0; }
   async marquerNotificationsConversationLues(): Promise<void> { /* in-memory noop */ }
   async listerContacts(): Promise<unknown[]> { return []; }
+  async rechercherContacts(): Promise<ContactResult[]> { return []; }
   async listerParticipantsConversation(): Promise<string[]> { return []; }
   async listerEnseignantsClasse(): Promise<string[]> { return []; }
   async trouverProfesseurPrincipalClasse(): Promise<string | null> { return null; }

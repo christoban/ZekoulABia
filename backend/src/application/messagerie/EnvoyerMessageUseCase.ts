@@ -39,6 +39,16 @@ export class EnvoyerMessageUseCase {
         })
       : await this.trouverOuCreerConversationPrivee(cmd);
 
+    const role = cmd.appelantRole.toUpperCase();
+    if (role === 'STUDENT') {
+      if (conversation.type === 'PRIVATE') {
+        throw new Error("Les élèves ne sont pas autorisés à envoyer des messages privés.");
+      }
+      if (conversation.type === 'CLASS_CHANNEL' && conversation.announcementsOnly) {
+        throw new Error("Ce canal est actuellement réservé aux annonces des enseignants.");
+      }
+    }
+
     let moderationStatus: 'APPROVED' | 'PENDING' = 'APPROVED';
     if (conversation.type === 'CLASS_CHANNEL' || conversation.type === 'PARENT_CHANNEL') {
       const config = await this.messagerieRepository.trouverConfigModeration(cmd.schoolId);
@@ -63,6 +73,9 @@ export class EnvoyerMessageUseCase {
   }
 
   private async trouverOuCreerConversationPrivee(cmd: EnvoyerMessageCommande) {
+    if (cmd.appelantRole.toUpperCase() === 'STUDENT') {
+      throw new Error("Les élèves ne sont pas autorisés à créer ou utiliser des conversations privées.");
+    }
     if (!cmd.destinataireId) {
       throw new Error('Indiquez une conversation existante ou un destinataire.');
     }

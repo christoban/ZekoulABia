@@ -8,3 +8,5 @@ export * from './ModererMessageUseCase';
 export * from './ListerMessagesEnAttenteModerationUseCase';
 export * from './ListerContactsMessagerieUseCase';
 export * from './CompterMessagesNonLusUseCase';
+export * from './ChangerParametresCanalUseCase';
+export * from './CreerConversationPriveeUseCase';
