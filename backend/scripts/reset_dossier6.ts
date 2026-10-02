@@ -67,13 +67,26 @@ async function main() {
     console.log(`   tour ${tour} : ${n} ligne(s) supprimée(s)`);
   }
 
-  // 2. Tables joignables qui bloquent la suppression des profils (RESTRICT sur
-  //    TeacherProfile / ParentProfile, et sans colonne schoolId).
-  const ts = await prisma.teacherSubject.deleteMany({ where: { teacherProfile: { user: { schoolId: id } } } });
-  const ps = await prisma.parentStudent.deleteMany({ where: { parentProfile: { user: { schoolId: id } } } });
-  total += ts.count + ps.count;
-  if (ts.count) console.log(`   ${ts.count} × teacherSubject`);
-  if (ps.count) console.log(`   ${ps.count} × parentStudent`);
+  // 2. Les 7 tables joignables (sans colonne schoolId) qui bloquent la suppression
+  //    des profils / comptes en RESTRICT : ClassCouncilDecision, Lv2ChoiceSubmission,
+  //    Message, MessageReadStatus, ParentStudent, ReportCardSubjectLine, TeacherSubject.
+  //    (ConversationParticipant et TimetableSlot ne sont pas là : CASCADE depuis
+  //    Conversation / Timetable, tous deux supprimés au tour 1.)
+  const jointes: Array<[string, Promise<{ count: number }>]> = [
+    ['messageReadStatus', prisma.messageReadStatus.deleteMany({ where: { message: { conversation: { schoolId: id } } } })],
+    ['message', prisma.message.deleteMany({ where: { conversation: { schoolId: id } } })],
+    ['conversationParticipant', prisma.conversationParticipant.deleteMany({ where: { conversation: { schoolId: id } } })],
+    ['classCouncilDecision', prisma.classCouncilDecision.deleteMany({ where: { session: { schoolId: id } } })],
+    ['reportCardSubjectLine', prisma.reportCardSubjectLine.deleteMany({ where: { reportCard: { schoolId: id } } })],
+    ['lv2ChoiceSubmission', prisma.lv2ChoiceSubmission.deleteMany({ where: { chosenSubject: { schoolId: id } } })],
+    ['teacherSubject', prisma.teacherSubject.deleteMany({ where: { teacherProfile: { user: { schoolId: id } } } })],
+    ['parentStudent', prisma.parentStudent.deleteMany({ where: { parentProfile: { user: { schoolId: id } } } })],
+  ];
+  for (const [label, p] of jointes) {
+    const r = await p;
+    total += r.count;
+    if (r.count) console.log(`   ${r.count} × ${label}`);
+  }
 
   // 3. Comptes puis établissement.
   const users = await prisma.user.deleteMany({ where: { schoolId: id } });

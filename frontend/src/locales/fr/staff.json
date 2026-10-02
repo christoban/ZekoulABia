@@ -135,6 +135,7 @@
     "gridNotConfigured": "Grille horaire non configurée",
     "gridNotConfiguredDesc": "<strong>Grille horaire non configurée.</strong> Rendez-vous dans <strong>Grille horaire</strong> pour définir les horaires de la journée scolaire avant de créer des emplois du temps.",
     "loading": "Chargement…",
+    "loadingError": "Impossible de charger l'emploi du temps en mode hors-ligne.",
     "selectClassOption": "Sélectionner une classe",
     "validateAndPublish": "Valider et publier",
     "submitForValidation": "Soumettre pour validation",
@@ -152,6 +153,7 @@
     "skeletonGenerated": "Squelette généré !",
     "generationError": "Erreur génération",
     "bulkProposeButton": "Proposer tous les EDT",
+    "bulkProposeError": "Impossible de lancer la génération de l'emploi du temps.",
     "bulkProposeConfirm": "Lancer la proposition pour toutes les classes ? Aucun emploi du temps ne sera appliqué automatiquement.",
     "bulkProposeRunning": "Analyse {current}/{total}",
     "bulkProposeProgress": "Analyse {current}/{total} — {className}",
@@ -584,6 +586,7 @@
   "finance": {
     "tabInvoices": "Factures & Paiements",
     "tabPlans": "Plans de frais",
+    "tabAPEE": "Transparence APEE",
     "plansTitle": "Plans de frais",
     "plansSubtitle": "Créez, gérez et facturez les tarifs de l'établissement",
     "createPlan": "Nouveau plan",

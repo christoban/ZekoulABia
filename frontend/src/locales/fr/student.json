@@ -1,5 +1,8 @@
 {
   "cacheBadge": "Données du {date} — hors-ligne",
+  "sidebar": {
+    "timetable": "Emploi du temps"
+  },
   "dashboard": {
     "greeting": "Bonjour, {name}",
     "matricule_label": "Matricule :",

@@ -1,5 +1,9 @@
 {
   "cacheBadge": "Données du {date} — hors-ligne",
+  "logout": "Se déconnecter",
+  "errors": {
+    "generic_error": "Une erreur est survenue"
+  },
   "theme": {
     "toLight": "Passer en mode clair",
     "toDark": "Passer en mode sombre",
@@ -41,7 +45,8 @@
     "invite": "Inviter",
     "more": "Plus",
     "less": "Moins",
-    "selectAll": "Tout sélectionner"
+    "selectAll": "Tout sélectionner",
+    "retry": "Réessayer"
   },
   "status": {
     "active": "Actif",
@@ -54,6 +59,7 @@
     "warning": "Attention",
     "info": "Information",
     "loading": "Chargement...",
+    "saving": "Enregistrement...",
     "noData": "Aucune donnée",
     "all": "Tout",
     "enabled": "Activé",
@@ -64,6 +70,8 @@
     "no": "Non",
     "ok": "OK",
     "name": "Nom",
+    "firstName": "Prénom",
+    "lastName": "Nom",
     "email": "Email",
     "phone": "Téléphone",
     "address": "Adresse",

@@ -81,7 +81,15 @@ async function upsertUser(
 ): Promise<U> {
   const u = await prisma.user.upsert({
     where: { schoolId_email: { schoolId, email } },
-    update: { firstName, lastName, role, phone, passwordHash, isActive: true, mustChangePassword: false },
+    update: {
+      firstName, lastName, role, phone, passwordHash,
+      isActive: true, mustChangePassword: false,
+      // État MFA remis à zéro : le seed est ainsi déterministe. ADMIN/STAFF/TEACHER
+      // restent néanmoins bloqués à l'étape « mfa_setup_required » (voir le rapport) :
+      // c'est le flux normal de l'application, on ne le contourne pas.
+      mfaEnabled: false, mfaSecret: null, mfaTempSecret: null,
+      mfaRecoveryCodeHashes: [], mfaRecoveryCodeGeneratedAt: null,
+    },
     create: { schoolId, email, firstName, lastName, role, phone, passwordHash, isActive: true, mustChangePassword: false },
     select: { id: true, email: true },
   });

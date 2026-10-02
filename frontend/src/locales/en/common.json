@@ -1,5 +1,9 @@
 {
   "cacheBadge": "Data from {date} — offline",
+  "logout": "Log out",
+  "errors": {
+    "generic_error": "An error occurred"
+  },
   "theme": {
     "toLight": "Switch to light mode",
     "toDark": "Switch to dark mode",
@@ -41,7 +45,8 @@
     "invite": "Invite",
     "more": "More",
     "less": "Less",
-    "selectAll": "Select All"
+    "selectAll": "Select All",
+    "retry": "Retry"
   },
   "status": {
     "active": "Active",
@@ -54,6 +59,7 @@
     "warning": "Warning",
     "info": "Info",
     "loading": "Loading...",
+    "saving": "Saving...",
     "noData": "No data",
     "all": "All",
     "enabled": "Enabled",
@@ -64,6 +70,8 @@
     "no": "No",
     "ok": "OK",
     "name": "Name",
+    "firstName": "First name",
+    "lastName": "Last name",
     "email": "Email",
     "phone": "Phone",
     "address": "Address",

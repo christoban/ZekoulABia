@@ -248,7 +248,7 @@ export default function SectionParentAttendance({ onToast, userId }: Props) {
             </div>
 
             <div className="text-right">
-              <div className="text-xs text-[var(--text3)] font-semibold">{t('attendance.absenceCount')}</div>
+              <div className="text-xs text-[var(--text3)] font-semibold">{t('attendance.absentDays')}</div>
               <div
                 className="text-base sm:text-lg font-black"
                 style={{ color: selectedChild.joursAbsent > 0 ? 'var(--red)' : 'var(--green)' }}

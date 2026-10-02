@@ -1,5 +1,8 @@
 {
   "cacheBadge": "Data from {date} — offline",
+  "sidebar": {
+    "timetable": "Timetable"
+  },
   "dashboard": {
     "greeting": "Hello, {name}",
     "matricule_label": "ID:",

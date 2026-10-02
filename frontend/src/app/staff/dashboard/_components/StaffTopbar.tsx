@@ -285,7 +285,7 @@ export default function StaffTopbar({
               {onNav && (
                 <div onClick={() => { setProfileOpen(false); onNav('mon-profil-rh') }}
                   style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 10, cursor: 'pointer' }}>
-                  <span style={{ fontSize: 14, color: 'var(--text)', fontWeight: 500 }}>{tnav('sidebar.monProfilRh') ?? 'Mon profil'}</span>
+                  <span style={{ fontSize: 14, color: 'var(--text)', fontWeight: 500 }}>{tnav('sidebar.monProfilRH') ?? 'Mon profil'}</span>
                 </div>
               )}
               {onLogout && (

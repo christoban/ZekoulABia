@@ -199,7 +199,8 @@
     "theme": "Theme",
     "notifications": "Notifications",
     "no_notifications": "No notifications",
-    "view_all_notifications": "View all"
+    "view_all_notifications": "View all",
+    "unread": "unread"
   },
   "dashboard": {
     "overview_title": "Overview",
@@ -949,6 +950,8 @@
       "governance_section": "Governance & Separation of Powers",
       "admin_inscriptions_label": "Mandatory Administrator validation",
       "admin_inscriptions_desc": "Applications finalized by the secretariat remain pending until principal approval",
+      "admin_direct_inscriptions_label": "The administrator can also enroll students directly",
+      "admin_direct_inscriptions_desc": "Allows the principal to create and validate an application file immediately, without going through the secretariat",
       "admin_finances_label": "Direct finance management by Admin",
       "admin_finances_desc": "Allows the principal to authorize and manage collections directly",
       "delays_section": "Delays and recipients",

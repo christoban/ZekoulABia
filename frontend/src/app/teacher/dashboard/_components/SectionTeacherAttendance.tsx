@@ -200,10 +200,10 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
       if (res.success) {
         onToast(t('attendance.toast_saved'), 'success')
       } else {
-        onToast(res.message || t('attendance.toast_error'), 'error')
+        onToast(res.message || t('attendance.toast_save_error'), 'error')
       }
     } catch (err: any) {
-      onToast(err.message || t('attendance.toast_error'), 'error')
+      onToast(err.message || t('attendance.toast_save_error'), 'error')
     } finally {
       setLoading(false)
     }

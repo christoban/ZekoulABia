@@ -105,7 +105,10 @@
   "topbar": {
     "adminTitle": "Administration",
     "invite": "Inviter",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "unread": "non lue(s)",
+    "no_notifications": "Aucune notification",
+    "view_all_notifications": "Voir toutes les notifications"
   },
   "pageTitle": {
     "admin_dashboard": "Tableau de bord",

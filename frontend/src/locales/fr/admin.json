@@ -199,7 +199,8 @@
     "theme": "Thème",
     "notifications": "Notifications",
     "no_notifications": "Aucune notification",
-    "view_all_notifications": "Voir tout"
+    "view_all_notifications": "Voir tout",
+    "unread": "non lue(s)"
   },
   "dashboard": {
     "overview_title": "Vue d'ensemble",
@@ -930,6 +931,8 @@
       "governance_section": "Gouvernance & Séparation des pouvoirs",
       "admin_inscriptions_label": "Validation obligatoire par l'Administrateur",
       "admin_inscriptions_desc": "Les dossiers finalisés par le secrétariat restent en attente jusqu'à validation par la direction",
+      "admin_direct_inscriptions_label": "L'administrateur peut aussi inscrire directement des élèves",
+      "admin_direct_inscriptions_desc": "Permet à la direction de créer et valider immédiatement un dossier sans passer par le secrétariat",
       "admin_finances_label": "Gestion directe des finances par l'Admin",
       "admin_finances_desc": "Permet au chef d'établissement d'ordonnancer et gérer directement les encaissements",
       "delays_section": "Délais et destinataires",

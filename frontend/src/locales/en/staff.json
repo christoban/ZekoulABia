@@ -135,6 +135,7 @@
     "gridNotConfigured": "Schedule grid not configured",
     "gridNotConfiguredDesc": "<strong>Schedule grid not configured.</strong> Go to <strong>Schedule Grid</strong> to define school day hours before creating timetables.",
     "loading": "Loading…",
+    "loadingError": "Could not load the timetable in offline mode.",
     "selectClassOption": "Select a class",
     "validateAndPublish": "Validate and Publish",
     "submitForValidation": "Submit for validation",
@@ -152,6 +153,7 @@
     "skeletonGenerated": "Skeleton generated!",
     "generationError": "Generation error",
     "bulkProposeButton": "Propose all timetables",
+    "bulkProposeError": "Could not start timetable generation.",
     "bulkProposeConfirm": "Run proposals for every class? No timetable will be applied automatically.",
     "bulkProposeRunning": "Analysing {current}/{total}",
     "bulkProposeProgress": "Analysing {current}/{total} — {className}",
@@ -582,6 +584,7 @@
   "finance": {
     "tabInvoices": "Invoices & Payments",
     "tabPlans": "Fee Plans",
+    "tabAPEE": "APEE Transparency",
     "plansTitle": "Fee Plans",
     "plansSubtitle": "Create, manage and bill school fee schedules",
     "createPlan": "New Fee Plan",
