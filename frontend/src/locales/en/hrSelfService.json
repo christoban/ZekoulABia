@@ -50,5 +50,8 @@
   "analyseNoResult": "No information detected — try a clearer image or enter it manually.",
   "applySuggestion": "Add to my diplomas",
   "suggestionApplied": "Suggestion added — you can edit it before saving",
-  "errorGeneric": "An error occurred"
+  "errorGeneric": "An error occurred",
+  "common": {
+    "loading": "Loading..."
+  }
 }

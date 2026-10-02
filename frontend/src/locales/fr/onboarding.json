@@ -87,7 +87,10 @@
       "emailNotice": "Vous recevrez un email à",
       "emailDelay": "sous 24 à 48 heures.",
       "loginHint": "Dès approbation, vous pourrez vous connecter avec votre email et mot de passe pour accéder à votre espace d'administration.",
-      "loginCta": "Aller à la connexion"
+      "loginCta": "Aller à la connexion",
+      "statsYear": "Année scolaire",
+      "statsClasses": "classes créées",
+      "statsSubjects": "matières configurées"
     },
     "step1": {
       "title": "Votre établissement",

@@ -87,7 +87,10 @@
       "emailNotice": "You will receive an email at",
       "emailDelay": "within 24 to 48 hours.",
       "loginHint": "Once approved, you can log in with your email and password to access your administration space.",
-      "loginCta": "Go to login"
+      "loginCta": "Go to login",
+      "statsYear": "Academic year",
+      "statsClasses": "classes created",
+      "statsSubjects": "subjects configured"
     },
     "step1": {
       "title": "Your School",

@@ -50,5 +50,8 @@
   "analyseNoResult": "Aucune information détectée — essayez une image plus nette ou saisissez manuellement.",
   "applySuggestion": "Ajouter à mes diplômes",
   "suggestionApplied": "Suggestion ajoutée — vous pouvez la modifier avant d'enregistrer",
-  "errorGeneric": "Une erreur est survenue"
+  "errorGeneric": "Une erreur est survenue",
+  "common": {
+    "loading": "Chargement..."
+  }
 }

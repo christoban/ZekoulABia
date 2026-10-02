@@ -53,7 +53,7 @@ const DEC_COLOR: Record<string, { color: string; bg: string }> = {
 export default function SectionAdminCouncil({ onToast, onNav }: Props) {
   const t = useT('grades')
   const DEC_LABEL: Record<string, string> = {
-    PASS: t('council.DEC_LABEL.PASS'), REPEAT: t('council.DEC_LABEL.REPEAT'), DELIBERATION: t('council.DEC_LABEL.DELIBERATION'),
+    PASS: t('council.decisions.PASS'), REPEAT: t('council.decisions.REPEAT'), DELIBERATION: t('council.decisions.DELIBERATION'),
   }
   const [sessions, setSessions]           = useState<CouncilSession[]>([])
   const [selected, setSelected]           = useState<SessionDetail | null>(null)
