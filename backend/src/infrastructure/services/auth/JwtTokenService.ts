@@ -22,13 +22,13 @@ const ACCESS_EXPIRY: Duree = process.env.NODE_ENV === 'development' ? '7d' : '12
  * prochaine ouverture en ligne redemande un login complet.
  */
 const REFRESH_EXPIRY_PAR_ROLE: Record<string, Duree> = {
-  ADMIN: '7d',
-  STAFF: '7d',
+  ADMIN: '30d',
+  STAFF: '30d',
   TEACHER: '30d',
   STUDENT: '30d',
   PARENT: '30d',
 };
-const REFRESH_EXPIRY_DEFAUT: Duree = '7d'; // repli prudent si un rôle futur n'est pas dans la table ci-dessus
+const REFRESH_EXPIRY_DEFAUT: Duree = '30d'; // repli prudent si un rôle futur n'est pas dans la table ci-dessus
 
 function dureeRefreshPourRole(role: string): Duree {
   return REFRESH_EXPIRY_PAR_ROLE[role.toUpperCase()] ?? REFRESH_EXPIRY_DEFAUT;

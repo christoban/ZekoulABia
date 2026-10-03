@@ -15,13 +15,13 @@ export const ACCESS_COOKIE_MAX_AGE_MS = process.env.NODE_ENV === 'development'
   : 12 * 60 * 60 * 1000;   // 12 heures en production
 
 const REFRESH_COOKIE_MAX_AGE_MS_PAR_ROLE: Record<string, number> = {
-  ADMIN: 7 * 24 * 60 * 60 * 1000,
-  STAFF: 7 * 24 * 60 * 60 * 1000,
+  ADMIN: 30 * 24 * 60 * 60 * 1000,
+  STAFF: 30 * 24 * 60 * 60 * 1000,
   TEACHER: 30 * 24 * 60 * 60 * 1000,
   STUDENT: 30 * 24 * 60 * 60 * 1000,
   PARENT: 30 * 24 * 60 * 60 * 1000,
 };
-const REFRESH_COOKIE_MAX_AGE_MS_DEFAUT = 7 * 24 * 60 * 60 * 1000;
+const REFRESH_COOKIE_MAX_AGE_MS_DEFAUT = 30 * 24 * 60 * 60 * 1000;
 
 export function dureeCookieRefreshMs(role: string): number {
   return REFRESH_COOKIE_MAX_AGE_MS_PAR_ROLE[role.toUpperCase()] ?? REFRESH_COOKIE_MAX_AGE_MS_DEFAUT;
