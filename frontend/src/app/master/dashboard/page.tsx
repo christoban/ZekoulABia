@@ -2,6 +2,8 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import MasterTopbar from './_components/MasterTopbar'
+import MasterBottomNav from './_components/MasterBottomNav'
+import MasterMobileMenuDrawer from './_components/MasterMobileMenuDrawer'
 import SectionOverview from './_components/SectionOverview'
 import SectionSchools from './_components/SectionSchools'
 import SectionReferentielsHub from './_components/SectionReferentielsHub'
@@ -98,6 +100,7 @@ export default function SuperAdminDashboard() {
   const [schoolTab, setSchoolTab] = useState<SchoolTab>('all')
   const [modal, setModal] = useState<ModalId>(null)
   const [slideOver, setSlideOver] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [toasts, setToasts] = useState<Toast[]>([])
   const [toastCb, setToastCb] = useState<{ msg: string; type: Toast['type'] } | null>(null)
 
@@ -273,10 +276,11 @@ export default function SuperAdminDashboard() {
         mfaEnabled={mfaEnabled}
         onNav={setSection}
         onLogout={handleLogout}
+        onOpenMenu={() => setMobileMenuOpen(true)}
       />
 
       <main style={{ flex: 1, overflow: 'hidden' }}>
-        <div style={{ display: section === 'overview' ? 'block' : 'none' }}>
+        <div style={{ display: section === 'overview' ? 'block' : 'none', height: '100%' }}>
           <SectionOverview
             kpi={kpiData}
             activity={overviewActivity}
@@ -287,7 +291,7 @@ export default function SuperAdminDashboard() {
         </div>
 
         {visitedSections.has('schools') && (
-          <div style={{ display: section === 'schools' ? 'block' : 'none' }}>
+          <div style={{ display: section === 'schools' ? 'block' : 'none', height: '100%' }}>
             <SectionSchools
               schools={filteredSchools}
               loading={schoolsLoading}
@@ -312,17 +316,42 @@ export default function SuperAdminDashboard() {
         )}
 
         {visitedSections.has('referentiels') && (
-          <div style={{ display: section === 'referentiels' ? 'block' : 'none' }}>
+          <div style={{ display: section === 'referentiels' ? 'block' : 'none', height: '100%' }}>
             <SectionReferentielsHub onToast={showToast} />
           </div>
         )}
 
         {visitedSections.has('logs') && (
-          <div style={{ display: section === 'logs' ? 'block' : 'none' }}>
+          <div style={{ display: section === 'logs' ? 'block' : 'none', height: '100%' }}>
             <SectionLogs logs={logs} loading={logsLoading} onChangePwd={() => setModal('changePwd')} mfaEnabled={mfaEnabled} />
           </div>
         )}
       </main>
+
+      {/* Mobile Bottom Navigation (< md) */}
+      <MasterBottomNav
+        currentSection={section}
+        onNav={setSection}
+        onOpenMenu={() => setMobileMenuOpen(true)}
+      />
+
+      {/* Mobile Drawer menu (< md) */}
+      <MasterMobileMenuDrawer
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        user={user}
+        mfaEnabled={mfaEnabled}
+        onLogout={handleLogout}
+        onChangePwd={() => {
+          setMobileMenuOpen(false)
+          setModal('changePwd')
+        }}
+        onInviteSchool={() => {
+          setMobileMenuOpen(false)
+          setSelectedSchoolId(null)
+          setModal('invite')
+        }}
+      />
 
       <MasterModals
         open={modal}

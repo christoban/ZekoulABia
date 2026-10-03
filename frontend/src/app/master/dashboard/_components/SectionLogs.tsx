@@ -635,7 +635,7 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
   const authLogs = initialLogs.filter(l => !l.action.startsWith('action:'))
 
   return (
-    <div style={{ padding: '16px 20px', overflowY: 'auto', height: '100%' }}>
+    <div className="pb-24 md:pb-6" style={{ padding: '16px', overflowY: 'auto', height: '100%', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
           <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: '#1a1209' }}>
@@ -645,8 +645,11 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
         </div>
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, background: 'var(--bg2)', padding: 4, borderRadius: 10, marginBottom: 16, width: 'fit-content' }}>
+      {/* Horizontally scrollable tabs on small screens */}
+      <div style={{
+        display: 'flex', gap: 4, background: 'var(--bg2)', padding: 4, borderRadius: 10, marginBottom: 16,
+        maxWidth: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none'
+      }}>
         {([
           { id: 'auth'        as const, label: 'Authentification', icon: KeyRound },
           { id: 'actions'     as const, label: 'Actions admin', icon: Zap },
@@ -662,6 +665,7 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
             boxShadow: tab === t.id ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
             transition: 'all 0.12s',
             display: 'inline-flex', alignItems: 'center', gap: 6,
+            flexShrink: 0, whiteSpace: 'nowrap'
           }}><t.icon size={15} />{t.label}</button>
         ))}
       </div>

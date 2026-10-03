@@ -28,7 +28,7 @@ export default function SchoolSlideOver({ open, schoolDetail, loading, onClose, 
       }} />
 
       <div style={{
-        position: 'fixed', top: 0, right: 0, bottom: 0, width: 460,
+        position: 'fixed', top: 0, right: 0, bottom: 0, width: '100%', maxWidth: 460,
         background: 'white', zIndex: 151, display: 'flex', flexDirection: 'column',
         boxShadow: '-8px 0 30px rgba(0,0,0,0.15)',
         animation: 'slideInRight 0.25s cubic-bezier(0.34,1.2,0.64,1) both'
@@ -63,12 +63,12 @@ export default function SchoolSlideOver({ open, schoolDetail, loading, onClose, 
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <Badge type={schoolDetail.status.toLowerCase() as any}>{schoolDetail.status}</Badge>
+                <Badge type={(schoolDetail.status.toLowerCase() as 'active' | 'pending' | 'approved' | 'suspended' | 'rejected' | 'draft')}>{schoolDetail.status}</Badge>
                 <button onClick={onClose} style={{
-                  width: 32, height: 32, borderRadius: 8, border: '1px solid #d4c8b8',
+                  width: 36, height: 36, borderRadius: 8, border: '1px solid #d4c8b8',
                   background: 'none', cursor: 'pointer', fontSize: 14, color: '#a89478',
                   display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}><X size={16} /></button>
+                }}><X size={18} /></button>
               </div>
             </div>
 

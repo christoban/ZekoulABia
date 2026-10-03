@@ -13,8 +13,8 @@ interface Props {
 
 export default function SectionOverview({ kpi, activity, onInvite, onGoToSchools, onGoToLogs }: Props) {
   return (
-    <div style={{ padding: '16px 20px', overflowY: 'auto', height: '100%' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+    <div className="pb-24 md:pb-6" style={{ padding: '16px', overflowY: 'auto', height: '100%', boxSizing: 'border-box' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
         <div>
           <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: '#1a1209' }}>
             Vue d&apos;ensemble
@@ -26,7 +26,7 @@ export default function SectionOverview({ kpi, activity, onInvite, onGoToSchools
         <button onClick={onInvite} style={btnPrimary}>+ Inviter une école</button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 18 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <KpiCard icon={School} bg="var(--green-light)" val={String(kpi.activeSchools)} label="Écoles actives" sub={`dont ${kpi.suspendedCount} suspendue${kpi.suspendedCount > 1 ? 's' : ''}`} trend={kpi.activeSchools > 0 ? `+${kpi.activeSchools}` : '0'} trendBg="var(--green-light)" trendColor="var(--green2)" onClick={() => onGoToSchools('active')} />
         <KpiCard icon={Loader2} bg="#fef3c7" val={String(kpi.pendingSchools)} label="En attente d'approbation" trend="Urgent" trendBg="#fef3c7" trendColor="#92400e" onClick={() => onGoToSchools('pending')} />
         <KpiCard icon={Mail} bg="#dbeafe" val={String(kpi.pendingInvites)} label="Invitations en cours" sub="statut PENDING" trend={kpi.pendingInvites > 0 ? `${kpi.pendingInvites} en attente` : '0'} trendBg={kpi.pendingInvites > 0 ? '#fef3c7' : 'var(--green-light)'} trendColor={kpi.pendingInvites > 0 ? '#92400e' : 'var(--green2)'} />

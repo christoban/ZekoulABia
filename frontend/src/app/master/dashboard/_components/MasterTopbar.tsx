@@ -1,5 +1,5 @@
 'use client'
-import { LogOut } from 'lucide-react'
+import { LogOut, Menu } from 'lucide-react'
 import type { Section, MasterUserDto } from '../_types'
 
 interface Props {
@@ -8,6 +8,7 @@ interface Props {
   mfaEnabled: boolean
   onNav: (s: Section) => void
   onLogout: () => void
+  onOpenMenu?: () => void
 }
 
 const NAV: { id: Section; label: string; dotColor: string }[] = [
@@ -21,31 +22,35 @@ function initials(name: string): string {
   return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?'
 }
 
-export default function MasterTopbar({ user, currentSection, mfaEnabled, onNav, onLogout }: Props) {
+export default function MasterTopbar({ user, currentSection, mfaEnabled, onNav, onLogout, onOpenMenu }: Props) {
   return (
     <header style={{
       height: 54, background: 'var(--sidebar-bg)', display: 'flex', alignItems: 'center',
-      padding: '0 20px', gap: 12, flexShrink: 0, position: 'relative', zIndex: 50
+      padding: '0 16px', gap: 10, flexShrink: 0, position: 'relative', zIndex: 50
     }}>
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0, height: 3,
         background: 'repeating-linear-gradient(90deg,#f59e0b 0,#f59e0b 16px,#22c55e 16px,#22c55e 32px,#ef4444 32px,#ef4444 48px,#60a5fa 48px,#60a5fa 64px)'
       }} />
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg,#f59e0b,#22c55e)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "70%", height: "70%", objectFit: "contain" }} /></div>
-        <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 19, fontWeight: 700, color: 'white' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg,#f59e0b,#22c55e)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+          <img src="/logo.svg" alt="ZekoulABia" style={{ width: "70%", height: "70%", objectFit: "contain" }} />
+        </div>
+        <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'white' }}>
           ZekoulABia
         </div>
       </div>
 
-      <div style={{
+      <div className="hidden sm:inline-block" style={{
         background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)',
         fontSize: 11, fontWeight: 700, padding: '2px 8px',
-        borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)'
+        borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)',
+        whiteSpace: 'nowrap'
       }}>HUB DE CONTRÔLE</div>
 
-      <nav style={{ display: 'flex', gap: 6, margin: '0 12px' }}>
+      {/* Desktop horizontal navigation */}
+      <nav className="hidden md:flex" style={{ gap: 6, margin: '0 12px' }}>
         {NAV.map(n => (
           <button key={n.id} onClick={() => onNav(n.id)}
             style={{
@@ -63,7 +68,8 @@ export default function MasterTopbar({ user, currentSection, mfaEnabled, onNav, 
         ))}
       </nav>
 
-      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+      {/* Right side: Desktop user info + Logout */}
+      <div className="hidden md:flex" style={{ marginLeft: 'auto', alignItems: 'center', gap: 10 }}>
         {mfaEnabled !== undefined && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 5,
@@ -95,6 +101,36 @@ export default function MasterTopbar({ user, currentSection, mfaEnabled, onNav, 
           cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.12s',
           display: 'flex', alignItems: 'center', gap: 6,
         }}><LogOut size={14} /> Déconnexion</button>
+      </div>
+
+      {/* Mobile action button: opens mobile drawer */}
+      <div className="flex md:hidden" style={{ marginLeft: 'auto', alignItems: 'center', gap: 8 }}>
+        <button
+          onClick={onOpenMenu}
+          aria-label="Menu Super Admin"
+          style={{
+            background: 'rgba(255,255,255,0.08)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            borderRadius: 8,
+            padding: '6px 10px',
+            color: 'white',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            cursor: 'pointer',
+            minHeight: 36,
+          }}
+        >
+          <div style={{
+            width: 24, height: 24, borderRadius: 6,
+            background: 'linear-gradient(135deg,#f59e0b,#ef4444)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'white', fontWeight: 700, fontSize: 11
+          }}>
+            {user ? initials(user.name) : '?'}
+          </div>
+          <Menu size={16} />
+        </button>
       </div>
     </header>
   )

@@ -203,9 +203,9 @@ export default function SectionReferentielsHub({ onToast }: Props) {
   }
 
   return (
-    <div style={{
-      height: '100%', overflowY: 'auto', padding: '24px 32px',
-      background: 'var(--bg)', color: '#1f2937',
+    <div className="pb-24 md:pb-6" style={{
+      height: '100%', overflowY: 'auto', padding: '16px',
+      background: 'var(--bg)', color: '#1f2937', boxSizing: 'border-box',
       fontFamily: 'var(--font-nunito), Nunito, sans-serif'
     }}>
       {/* ── Entête Hub ──────────────────────────────────────────────────────── */}
@@ -365,7 +365,7 @@ export default function SectionReferentielsHub({ onToast }: Props) {
       {/* ── Sélecteur de Module (Les 5 Piliers) ──────────────────────────────── */}
       <div style={{
         display: 'flex', gap: 8, marginBottom: 16, borderBottom: '1px solid #e5e7eb',
-        paddingBottom: 8, overflowX: 'auto'
+        paddingBottom: 8, overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none'
       }}>
         {[
           { id: 'calendar', label: '1. Calendrier Scolaire Officiel', icon: Calendar },
@@ -390,7 +390,7 @@ export default function SectionReferentielsHub({ onToast }: Props) {
                 color: isActive ? 'white' : '#4b5563',
                 fontSize: 13, fontWeight: 700, cursor: 'pointer',
                 boxShadow: isActive ? '0 2px 6px rgba(0,0,0,0.12)' : '0 1px 2px rgba(0,0,0,0.04)',
-                whiteSpace: 'nowrap', transition: 'all 0.15s'
+                whiteSpace: 'nowrap', flexShrink: 0, transition: 'all 0.15s'
               }}
             >
               <Icon size={16} />
@@ -504,7 +504,7 @@ export default function SectionReferentielsHub({ onToast }: Props) {
       {/* ── Tableaux des Données ────────────────────────────────────────────── */}
       <div style={{
         background: '#ffffff', borderRadius: 12, border: '1px solid #e5e7eb',
-        overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.05)'
+        overflowX: 'auto', WebkitOverflowScrolling: 'touch', boxShadow: '0 1px 4px rgba(0,0,0,0.05)'
       }}>
         {loading ? (
           <div style={{ padding: 48, textAlign: 'center', color: '#6b7280', fontSize: 14 }}>
