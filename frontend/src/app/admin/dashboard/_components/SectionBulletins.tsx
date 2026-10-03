@@ -156,7 +156,16 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Erreur')
-      onToast('Bulletins envoyés aux parents', 'success')
+      const envoyes = data.data?.envoyes ?? 0
+      const deja = data.data?.dejaEnvoyes ?? 0
+      if (envoyes > 0) {
+        onToast(`${envoyes} bulletin(s) envoyé(s) avec succès aux parents`, 'success')
+      } else if (deja > 0) {
+        onToast(`Tous les bulletins (${deja}) ont déjà été envoyés`, 'info')
+      } else {
+        onToast('Traitement terminé. Aucun nouveau destinataire avec email trouvé.', 'info')
+      }
+      loadClass()
     } catch (err) {
       onToast(err instanceof Error ? err.message : 'Erreur envoi', 'error')
     } finally {

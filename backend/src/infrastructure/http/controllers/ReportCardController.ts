@@ -196,7 +196,16 @@ export class ReportCardController {
       }
       const langue = resolveLanguage(ecole?.subsystem, sectionCode);
 
-      const resultat = await this.envoyer.execute({ schoolId: user.schoolId, classId, academicPeriodId, nomEtablissement, nomPeriode, langue });
+      const resultat = await this.envoyer.execute({
+        schoolId: user.schoolId,
+        classId,
+        academicPeriodId,
+        nomEtablissement,
+        nomPeriode,
+        langue,
+        demandeurRole: user.role,
+        demandeurId: user.userId,
+      });
       this.audit.journaliser({
         actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
         actionName: 'envoyer_bulletins_parents', targetType: 'Class', targetId: classId,
@@ -205,12 +214,13 @@ export class ReportCardController {
       res.json({ success: true, data: resultat });
     } catch (error) {
       const user = req.user;
+      const message = error instanceof Error ? error.message : 'Erreur lors de l\'envoi des bulletins';
       this.audit.journaliser({
         actorUserId: user?.userId, actorRole: user?.role, schoolId: user?.schoolId,
         actionName: 'envoyer_bulletins_parents', origin: 'UI_DIRECT', outcome: 'ERREUR',
-        refusalReason: error instanceof Error ? error.message : undefined, parametersSummary: req.body,
+        refusalReason: message, parametersSummary: req.body,
       });
-      next(error);
+      res.status(400).json({ success: false, message });
     }
   };
 

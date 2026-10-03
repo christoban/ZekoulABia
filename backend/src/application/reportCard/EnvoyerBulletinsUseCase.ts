@@ -15,11 +15,15 @@ export interface EnvoyerBulletinsCommande {
   nomPeriode: string;
   /** Langue de l'email (résolue par l'appelant : sous-système + section de la classe). Défaut 'fr'. */
   langue?: 'fr' | 'en';
+  /** Rôle de l'initiateur (si ADMIN, autorise la finalisation directe du workflow de publication) */
+  demandeurRole?: string;
+  demandeurId?: string;
 }
 
 export interface EnvoyerBulletinsResultat {
   envoyes: number;
   echoues: number;
+  dejaEnvoyes?: number;
 }
 
 export class EnvoyerBulletinsUseCase {
@@ -32,14 +36,52 @@ export class EnvoyerBulletinsUseCase {
 
   async execute(commande: EnvoyerBulletinsCommande): Promise<EnvoyerBulletinsResultat> {
     // Vérification du workflow de validation : la session doit être PUBLISHED
-    const session = await this.bulletinValidationRepository.sessionExistante(
+    let session = await this.bulletinValidationRepository.sessionExistante(
       commande.classId,
       commande.academicPeriodId,
     );
-    if (!session || session.status !== 'PUBLISHED') {
-      throw new Error(
-        'Publication non autorisée : le workflow de validation du bulletin n\'est pas complété pour cette classe et cette période.'
-      );
+
+    const estAdmin = commande.demandeurRole?.toUpperCase() === 'ADMIN';
+
+    if (!session) {
+      if (estAdmin && commande.demandeurId) {
+        // L'ADMIN crée et publie directement la session pour cette classe et période
+        session = await this.bulletinValidationRepository.creerSession({
+          schoolId: commande.schoolId,
+          classId: commande.classId,
+          academicPeriodId: commande.academicPeriodId,
+          submittedById: commande.demandeurId,
+        });
+        await this.bulletinValidationRepository.validerSession(session.id, commande.demandeurId);
+        await this.bulletinValidationRepository.publierSession(session.id);
+        await this.bulletinRepository.majStatutWorkflowParClasse(
+          commande.classId,
+          commande.academicPeriodId,
+          commande.schoolId,
+          'PUBLISHED',
+        );
+      } else {
+        throw new Error(
+          'Publication non autorisée : aucune session de validation n\'existe pour cette classe et cette période.'
+        );
+      }
+    } else if (session.status !== 'PUBLISHED') {
+      if (estAdmin && commande.demandeurId) {
+        if (session.status === 'SUBMITTED') {
+          await this.bulletinValidationRepository.validerSession(session.id, commande.demandeurId);
+        }
+        await this.bulletinValidationRepository.publierSession(session.id);
+        await this.bulletinRepository.majStatutWorkflowParClasse(
+          commande.classId,
+          commande.academicPeriodId,
+          commande.schoolId,
+          'PUBLISHED',
+        );
+      } else {
+        throw new Error(
+          'Publication non autorisée : le workflow de validation du bulletin n\'est pas complété pour cette classe et cette période.'
+        );
+      }
     }
 
     const bulletins = await this.bulletinRepository.findByClasse(
@@ -47,7 +89,16 @@ export class EnvoyerBulletinsUseCase {
       commande.academicPeriodId
     );
 
+    if (bulletins.length === 0) {
+      throw new Error('Aucun bulletin trouvé pour cette classe. Veuillez d\'abord cliquer sur « Générer les bulletins ».');
+    }
+
     const generes = bulletins.filter((b) => b.estGenere() && !b.estEnvoye());
+    const dejaEnvoyes = bulletins.filter((b) => b.estEnvoye()).length;
+
+    if (generes.length === 0 && dejaEnvoyes > 0) {
+      return { envoyes: 0, echoues: 0, dejaEnvoyes };
+    }
 
     let envoyes = 0;
     let echoues = 0;
