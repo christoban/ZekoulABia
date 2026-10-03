@@ -85,7 +85,7 @@ export default function SectionElevesAffectationsStaff({ onToast }: Props) {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newClassId: targetClassId }),
+        body: JSON.stringify({ fromClasseId: selectedClassId, toClasseId: targetClassId }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || data.error || 'Erreur lors du transfert')
@@ -96,8 +96,8 @@ export default function SectionElevesAffectationsStaff({ onToast }: Props) {
       setTransferTarget(null)
       setTargetClassId('')
       loadStudents(selectedClassId)
-    } catch (err: any) {
-      onToast(err.message || 'Erreur lors du transfert de l’élève', 'error')
+    } catch (err: unknown) {
+      onToast(err instanceof Error ? err.message : 'Erreur lors du transfert de l’élève', 'error')
     } finally {
       setTransferring(false)
     }

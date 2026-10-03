@@ -13,7 +13,7 @@ type ClassItem = {
   capacity?: number
   roomAssignment?: { roomName?: string }
   mainTeacher?: { nomComplet?: string; firstName?: string; lastName?: string }
-  _count?: { students?: number }
+  _count?: { students?: number; enrollments?: number }
 }
 
 type Props = {
@@ -263,7 +263,7 @@ export default function SectionClassesStaff({ onToast }: Props) {
                 <div style={{ fontSize: 11.5, color: 'var(--text2)', display: 'flex', flexDirection: 'column', gap: 3 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                     <Users size={11} />
-                    <span>Effectif : {cls._count?.students ?? 0} {cls.capacity ? `/ ${cls.capacity}` : ''} élèves</span>
+                    <span>Effectif : {cls._count?.enrollments ?? cls._count?.students ?? 0} {cls.capacity ? `/ ${cls.capacity}` : ''} élèves</span>
                   </div>
                   {cls.mainTeacher && (
                     <div>

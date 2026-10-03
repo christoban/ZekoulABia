@@ -172,7 +172,7 @@ export default function AdminDashboard() {
         setBadges({
           users:   users > 0         ? String(users)         : undefined,
           classes: classes > 0       ? String(classes)       : undefined,
-          grades:  pendingGrades > 0 ? String(pendingGrades) : undefined,
+          grades:  undefined,
           finance: pendingInvoices > 0 ? String(pendingInvoices) : undefined,
           'eleve-onboarding': (pendingOnboardings && pendingOnboardings > 0) ? String(pendingOnboardings) : undefined,
         })

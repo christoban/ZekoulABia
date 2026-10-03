@@ -159,16 +159,6 @@ export default function SectionOrgPedagogyHub({ onNav, onToast }: Props) {
        statusColor: 'var(--red)',
 
     },
-    {
-      id: 'users' as AdminSection,
-      title: 'Utilisateurs & Annuaire',
-      desc: 'Fiches et comptes Élèves, Enseignants, Staff & Parents — Supervision globale',
-      icon: Users,
-      accentColor: 'var(--text2)',
-      badgeBg: 'var(--surface2)',
-      statusBadge: 'Annuaire Transverse',
-      statusColor: 'var(--text2)',
-    },
   ]
 
   return (

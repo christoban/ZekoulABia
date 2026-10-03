@@ -74,7 +74,7 @@ export default function SectionGrades({ onToast }: Props) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
         <div>
           <div className="text-[15px] md:text-[17px]" style={sTitle}>{t('title')}</div>
-          <div className="text-[11px] md:text-[12px]" style={sSub}>Consultation des notes</div>
+          <div className="text-[11px] md:text-[12px]" style={sSub}>Consultation des notes académiques (Lecture seule — supervision)</div>
           {fromCache && cachedAt && (
             <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 6, padding: '3.5px 9px', fontSize: 11.5, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
               <Package size={13} strokeWidth={2} /> {t('cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}

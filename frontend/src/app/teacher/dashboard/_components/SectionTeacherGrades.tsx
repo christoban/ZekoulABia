@@ -77,6 +77,13 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
     }
   }, [])
 
+  // Chargement automatique lors de la sélection des 3 filtres
+  useEffect(() => {
+    if (selectedClass && selectedSubject && selectedSequence) {
+      loadGrades()
+    }
+  }, [selectedClass, selectedSubject, selectedSequence]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Rafraîchissement temps réel quand l'assistant IA saisit/soumet une note.
   useEffect(() => {
     const onChanged = (e: Event) => {
@@ -121,37 +128,78 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
         return
       }
 
-      const url = `/api/v2/grades?classId=${selectedClass}&subjectId=${selectedSubject}&sequenceId=${selectedSequence}`
-      const res = await fetchApi(url, { credentials: 'include' }).then(r => r.json())
-      let baseRows: any[] = []
-      if (res.grades?.length) {
-        baseRows = res.grades
-        const draft = await getCachedData<{ notes: Record<string, number>; observations: Record<string, string> }>(draftKey)
-        if (draft) {
-          setLocalDraft(draft.data as { notes: Record<string, number>; observations: Record<string, string> })
-          setShowDraftPrompt(true)
-        } else {
-          const n: Record<string, number> = {}
-          const o: Record<string, string> = {}
-          res.grades.forEach((g: any) => {
-            n[g.studentId] = g.sequenceScore ?? g.sequenceAverage ?? 0
-            o[g.studentId] = g.observation || ''
-          })
-          setNotes(n)
-          setObservations(o)
-        }
-      } else {
-        const usersRes = await fetchApi(`/api/v2/users?role=STUDENT&classId=${selectedClass}`, { credentials: 'include' }).then(r => r.json())
-        if (usersRes.success) {
-          baseRows = usersRes.data.map((u: any) => ({
-            studentId: u.id,
-            student: { id: u.id, firstName: u.firstName, lastName: u.lastName },
+      // 1. Récupération systématique de la liste exhaustive des élèves de la classe
+      let allClassStudents: { id: string; firstName: string; lastName: string; name: string }[] = []
+      try {
+        const classStudentsRes = await fetchApi(`/api/v2/classes/${selectedClass}/students`, { credentials: 'include' }).then(r => r.json())
+        if (classStudentsRes.success && Array.isArray(classStudentsRes.data) && classStudentsRes.data.length > 0) {
+          allClassStudents = classStudentsRes.data.map((s: any) => ({
+            id: s.id,
+            firstName: s.firstName || '',
+            lastName: s.lastName || '',
+            name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || t('grades_section.unknown_student'),
           }))
-          const n: Record<string, number> = {}
-          usersRes.data.forEach((u: any) => { n[u.id] = 0 })
-          setNotes(n)
-          setObservations({})
         }
+      } catch { /* repli sur users */ }
+
+      if (allClassStudents.length === 0) {
+        try {
+          const usersRes = await fetchApi(`/api/v2/users?role=STUDENT&classId=${selectedClass}&limit=100`, { credentials: 'include' }).then(r => r.json())
+          if (usersRes.success && Array.isArray(usersRes.data) && usersRes.data.length > 0) {
+            allClassStudents = usersRes.data.map((u: any) => ({
+              id: u.id,
+              firstName: u.firstName || '',
+              lastName: u.lastName || '',
+              name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || t('grades_section.unknown_student'),
+            }))
+          }
+        } catch { /* ignore */ }
+      }
+
+      // 2. Récupération des notes existantes pour cette séquence
+      const url = `/api/v2/grades?classId=${selectedClass}&subjectId=${selectedSubject}&sequenceId=${selectedSequence}`
+      const res = await fetchApi(url, { credentials: 'include' }).then(r => r.json()).catch(() => ({ grades: [] }))
+      const gradesByStudentId = new Map<string, any>()
+      if (Array.isArray(res.grades)) {
+        res.grades.forEach((g: any) => gradesByStudentId.set(g.studentId, g))
+      }
+
+      // 3. Fusion : chaque élève de la classe apparaît, avec sa note existante ou vide
+      let baseRows: any[] = allClassStudents.map(s => {
+        const existing = gradesByStudentId.get(s.id)
+        if (existing) return existing
+        return {
+          studentId: s.id,
+          student: { id: s.id, firstName: s.firstName, lastName: s.lastName },
+          sequenceScore: null,
+          sequenceAverage: null,
+          observation: '',
+        }
+      })
+
+      // Ajouter d'éventuels élèves présents dans res.grades mais absents du roster de base
+      if (Array.isArray(res.grades)) {
+        for (const g of res.grades) {
+          if (!baseRows.some(r => r.studentId === g.studentId)) {
+            baseRows.push(g)
+          }
+        }
+      }
+
+      // Initialisation des notes et observations saisies
+      const draft = await getCachedData<{ notes: Record<string, number>; observations: Record<string, string> }>(draftKey)
+      if (draft) {
+        setLocalDraft(draft.data as { notes: Record<string, number>; observations: Record<string, string> })
+        setShowDraftPrompt(true)
+      } else {
+        const n: Record<string, number> = {}
+        const o: Record<string, string> = {}
+        baseRows.forEach((r: any) => {
+          n[r.studentId] = r.sequenceScore ?? r.sequenceAverage ?? 0
+          o[r.studentId] = r.observation || ''
+        })
+        setNotes(n)
+        setObservations(o)
       }
 
       // Créneau électif (LV2 ou A-Level) : restreindre aux élèves ayant réellement cette matière

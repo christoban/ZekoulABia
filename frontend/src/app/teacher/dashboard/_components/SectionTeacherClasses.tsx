@@ -99,7 +99,7 @@ export default function SectionTeacherClasses({ onNav, onToast, user }: Props) {
     }
   }, [classes, fromCache]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const totalStudents = classes.reduce((sum: number, c: any) => sum + (c._count?.students || 0), 0)
+  const totalStudents = classes.reduce((sum: number, c: any) => sum + (c._count?.enrollments ?? c._count?.students ?? 0), 0)
 
   if (loading) {
     return (
@@ -156,7 +156,7 @@ export default function SectionTeacherClasses({ onNav, onToast, user }: Props) {
               </div>
 
               <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)', marginBottom: 10 }}>
-                {t('classes.students_count').replace('{count}', String(cls._count?.students || 0))}
+                {t('classes.students_count').replace('{count}', String(cls._count?.enrollments ?? cls._count?.students ?? 0))}
               </div>
 
               {/* Stats boxes */}

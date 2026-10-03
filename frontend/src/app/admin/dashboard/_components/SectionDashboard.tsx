@@ -139,21 +139,21 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
       {/* Content */}
       {!loading && !error && stats && (
         <>
-          {/* Bloc 1: KPIs de Santé d'Établissement */}
-          <div className="grid grid-cols-2 sm:grid-cols-4" style={{ gap: 12, marginBottom: 16 }}>
+          {/* Bloc 1: KPIs de Santé d'Établissement (5 cartes parfaitement alignées) */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
             {kpi.map((k, i) => (
               <div key={i}
                 onClick={() => k.nav && onNav(k.nav)}
-                className="p-4 md:px-[20px] md:py-[16px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none border-0 md:border md:border-[1.5px] md:border-[var(--border)]"
-                style={{ background: 'var(--surface)', borderRadius: 12, cursor: k.nav ? 'pointer' : 'default', transition: 'all 0.15s' }}
+                className="p-3.5 md:p-4 shadow-sm border border-[var(--border)] rounded-xl"
+                style={{ background: 'var(--surface)', cursor: k.nav ? 'pointer' : 'default', transition: 'all 0.15s' }}
                 onMouseEnter={e => k.nav && Object.assign((e.currentTarget as HTMLElement).style, { transform: 'translateY(-2px)', boxShadow: '0 6px 20px rgba(0,0,0,0.07)' })}
                 onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { transform: 'none', boxShadow: 'none' })}
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <div className="w-[32px] h-[32px] md:w-10 md:h-10 [&>svg]:w-[15px] [&>svg]:h-[15px] md:[&>svg]:w-[18px] md:[&>svg]:h-[18px]" style={{ borderRadius: 10, background: k.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{k.icon}</div>
+                  <div className="w-[32px] h-[32px] md:w-9 md:h-9 [&>svg]:w-[16px] [&>svg]:h-[16px]" style={{ borderRadius: 10, background: k.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{k.icon}</div>
                 </div>
-                <div className="text-[22px] md:text-[28px] font-bold md:font-black" style={{ color: 'var(--text)', lineHeight: 1 }}>{k.val}</div>
-                <div className="text-[12px] md:text-[13px]" style={{ color: 'var(--text3)', marginTop: 4, fontWeight: 600 }}>{k.label}</div>
+                <div className="text-[20px] md:text-[24px] font-bold md:font-black tracking-tight" style={{ color: 'var(--text)', lineHeight: 1 }}>{k.val}</div>
+                <div className="text-[11.5px] md:text-[12px] truncate" style={{ color: 'var(--text3)', marginTop: 4, fontWeight: 600 }}>{k.label}</div>
               </div>
             ))}
           </div>

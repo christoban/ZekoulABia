@@ -89,7 +89,7 @@ export default function SectionLibrary({ onToast }: Props) {
       setBookPag(data.pagination ?? { total: 0, page, pages: 1 })
     } catch (err) { setError(err instanceof Error ? err.message : 'Erreur') }
     finally { setLoading(false) }
-  }, [bookSearch])
+  }, [bookSearch, bookCategory])
 
   const fetchLoans = useCallback(async (page = 1) => {
     setLoading(true); setError(null)
@@ -109,6 +109,14 @@ export default function SectionLibrary({ onToast }: Props) {
     if (tab === 'books') fetchBooks(1)
     else fetchLoans(1)
   }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (tab === 'books') fetchBooks(1)
+  }, [bookCategory]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (tab === 'loans') fetchLoans(1)
+  }, [loanStatus]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Rafraîchissement temps réel quand l'assistant IA enregistre un emprunt/retour de livre.
   useEffect(() => {
