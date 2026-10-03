@@ -18,7 +18,8 @@ async function probeInternetAccess(): Promise<boolean> {
 
   lastProbeTime = now
   const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), 2500)
+  // Timeout adapté aux latences 2G/3G (6s pour éviter les faux négatifs sur réseaux lents)
+  const timer = setTimeout(() => controller.abort(), 6000)
 
   try {
     const res = await fetch('/api/v2/health', {

@@ -1,13 +1,15 @@
 'use client'
 
 import { useCallback, useState, useEffect } from 'react'
-import { ScrollText, Loader2, Download, WifiOff, Package, User, Award, BookOpen } from 'lucide-react'
+import { ScrollText, Loader2, Download, WifiOff, Package, User, Award, BookOpen, Eye, Printer } from 'lucide-react'
 import type { ChildWithStats, ReportCard } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import OfflineEmptyState from '@/components/OfflineEmptyState'
 import { useT } from '@/lib/i18n'
+import BulletinModalLight, { type BulletinData } from '@/components/bulletin/BulletinModalLight'
+import { getUserSession } from '@/lib/offline/db'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void
@@ -81,6 +83,16 @@ export default function SectionParentGrades({ onToast, userId }: Props) {
   const [selectedChildIndex, setSelectedChildIndex] = useState(0)
   const [activeTab, setActiveTab] = useState<'continuous' | 'bulletins'>('continuous')
   const [downloading, setDownloading] = useState<string | null>(null)
+  const [selectedBulletin, setSelectedBulletin] = useState<BulletinData | null>(null)
+  const [schoolInfo, setSchoolInfo] = useState<{ name: string; logoUrl: string | null } | null>(null)
+
+  useEffect(() => {
+    if (userId) {
+      getUserSession(userId).then(s => {
+        if (s?.schoolInfo) setSchoolInfo(s.schoolInfo)
+      }).catch(() => {})
+    }
+  }, [userId])
 
   // Séquences
   const [sequences, setSequences] = useState<SequenceItem[]>([])
@@ -475,30 +487,54 @@ export default function SectionParentGrades({ onToast, userId }: Props) {
                           </div>
                         </div>
 
-                        <button
-                          title={!isOnline ? t('grades.downloadUnavailable') : undefined}
-                          className="h-10 px-3.5 rounded-xl font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-xs border transition-transform active:scale-[0.98]"
-                          style={{
-                            background: isOnline ? 'var(--surface)' : 'var(--bg2)',
-                            color: isOnline ? 'var(--green)' : 'var(--text3)',
-                            borderColor: isOnline ? 'var(--green)' : 'var(--border2)',
-                            opacity: downloading === b.id ? 0.6 : 1,
-                          }}
-                          onClick={() => downloadPdf(b.id, b.academicPeriod?.name || 'bulletin')}
-                          disabled={downloading === b.id || !isOnline}
-                        >
-                          {downloading === b.id ? (
-                            <>
-                              <Loader2 size={13} strokeWidth={2} className="animate-spin" /> {t('grades.downloading')}
-                            </>
-                          ) : isOnline ? (
-                            <>
-                              <Download size={13} strokeWidth={2} /> {t('grades.downloadPdf')}
-                            </>
-                          ) : (
-                            <WifiOff size={13} strokeWidth={2} />
-                          )}
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            className="h-10 px-3 rounded-xl font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-xs border transition-transform active:scale-[0.98]"
+                            style={{
+                              background: 'var(--surface)',
+                              color: 'var(--text)',
+                              borderColor: 'var(--border2)',
+                            }}
+                            onClick={() => {
+                              const child = children[selectedChildIndex]
+                              const studentName = child ? `${child.prenom} ${child.nom}`.trim() : 'Élève'
+                              setSelectedBulletin({
+                                ...b,
+                                studentName,
+                                schoolName: schoolInfo?.name,
+                                schoolLogoUrl: schoolInfo?.logoUrl,
+                              })
+                            }}
+                          >
+                            <Eye size={13} strokeWidth={2} /> Consulter
+                          </button>
+
+                          <button
+                            title={!isOnline ? t('grades.downloadUnavailable') : undefined}
+                            className="h-10 px-3 rounded-xl font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-xs border transition-transform active:scale-[0.98]"
+                            style={{
+                              background: isOnline ? 'var(--surface)' : 'var(--bg2)',
+                              color: isOnline ? 'var(--green)' : 'var(--text3)',
+                              borderColor: isOnline ? 'var(--green)' : 'var(--border2)',
+                              opacity: downloading === b.id ? 0.6 : 1,
+                            }}
+                            onClick={() => downloadPdf(b.id, b.academicPeriod?.name || 'bulletin')}
+                            disabled={downloading === b.id || !isOnline}
+                          >
+                            {downloading === b.id ? (
+                              <>
+                                <Loader2 size={13} strokeWidth={2} className="animate-spin" /> {t('grades.downloading')}
+                              </>
+                            ) : isOnline ? (
+                              <>
+                                <Download size={13} strokeWidth={2} /> {t('grades.downloadPdf')}
+                              </>
+                            ) : (
+                              <WifiOff size={13} strokeWidth={2} />
+                            )}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )
@@ -553,38 +589,69 @@ export default function SectionParentGrades({ onToast, userId }: Props) {
                               )}
                             </td>
                             <td style={tdSt}>
-                              <button
-                                title={!isOnline ? t('grades.downloadUnavailable') : undefined}
-                                style={{
-                                  padding: '5px 10px',
-                                  borderRadius: 7,
-                                  fontSize: 12,
-                                  fontWeight: 700,
-                                  background: isOnline ? 'var(--surface)' : 'var(--bg2)',
-                                  color: isOnline ? 'var(--green)' : 'var(--text3)',
-                                  border: `1.5px solid ${isOnline ? 'var(--green)' : 'var(--border2)'}`,
-                                  cursor: isOnline ? 'pointer' : 'not-allowed',
-                                  fontFamily: 'inherit',
-                                  opacity: downloading === b.id ? 0.6 : 1,
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: 5,
-                                }}
-                                onClick={() => downloadPdf(b.id, b.academicPeriod?.name || 'bulletin')}
-                                disabled={downloading === b.id || !isOnline}
-                              >
-                                {downloading === b.id ? (
-                                  <>
-                                    <Loader2 size={13} strokeWidth={2} className="animate-spin" /> {t('grades.downloading')}
-                                  </>
-                                ) : isOnline ? (
-                                  <>
-                                    <Download size={13} strokeWidth={2} /> {t('grades.downloadPdf')}
-                                  </>
-                                ) : (
-                                  <WifiOff size={13} strokeWidth={2} />
-                                )}
-                              </button>
+                              <div style={{ display: 'inline-flex', gap: 6 }}>
+                                <button
+                                  type="button"
+                                  style={{
+                                    padding: '5px 10px',
+                                    borderRadius: 7,
+                                    fontSize: 12,
+                                    fontWeight: 700,
+                                    background: 'var(--surface)',
+                                    color: 'var(--text)',
+                                    border: '1.5px solid var(--border2)',
+                                    cursor: 'pointer',
+                                    fontFamily: 'inherit',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 5,
+                                  }}
+                                  onClick={() => {
+                                    const child = children[selectedChildIndex]
+                                    const studentName = child ? `${child.prenom} ${child.nom}`.trim() : 'Élève'
+                                    setSelectedBulletin({
+                                      ...b,
+                                      studentName,
+                                      schoolName: schoolInfo?.name,
+                                      schoolLogoUrl: schoolInfo?.logoUrl,
+                                    })
+                                  }}
+                                >
+                                  <Eye size={13} strokeWidth={2} /> Consulter
+                                </button>
+                                <button
+                                  title={!isOnline ? t('grades.downloadUnavailable') : undefined}
+                                  style={{
+                                    padding: '5px 10px',
+                                    borderRadius: 7,
+                                    fontSize: 12,
+                                    fontWeight: 700,
+                                    background: isOnline ? 'var(--surface)' : 'var(--bg2)',
+                                    color: isOnline ? 'var(--green)' : 'var(--text3)',
+                                    border: `1.5px solid ${isOnline ? 'var(--green)' : 'var(--border2)'}`,
+                                    cursor: isOnline ? 'pointer' : 'not-allowed',
+                                    fontFamily: 'inherit',
+                                    opacity: downloading === b.id ? 0.6 : 1,
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 5,
+                                  }}
+                                  onClick={() => downloadPdf(b.id, b.academicPeriod?.name || 'bulletin')}
+                                  disabled={downloading === b.id || !isOnline}
+                                >
+                                  {downloading === b.id ? (
+                                    <>
+                                      <Loader2 size={13} strokeWidth={2} className="animate-spin" /> {t('grades.downloading')}
+                                    </>
+                                  ) : isOnline ? (
+                                    <>
+                                      <Download size={13} strokeWidth={2} /> {t('grades.downloadPdf')}
+                                    </>
+                                  ) : (
+                                    <WifiOff size={13} strokeWidth={2} />
+                                  )}
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         )
@@ -597,6 +664,8 @@ export default function SectionParentGrades({ onToast, userId }: Props) {
           )}
         </>
       )}
+
+      <BulletinModalLight bulletin={selectedBulletin} onClose={() => setSelectedBulletin(null)} />
     </div>
   )
 }

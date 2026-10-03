@@ -48,6 +48,15 @@ export async function logoutUser(): Promise<void> {
     if (!confirme) return
   }
 
+  // Vérifier les fichiers et pièces jointes non envoyés avant de purger
+  const unsentUploads = await db.pendingUploads.count()
+  if (unsentUploads > 0) {
+    const confirme = window.confirm(
+      `${unsentUploads} document(s)/fichier(s) en attente d'envoi seront perdus si vous vous déconnectez. Continuer quand même ?`
+    )
+    if (!confirme) return
+  }
+
   try {
     await fetch('/api/v2/users/auth/logout', {
       method: 'POST',
@@ -64,6 +73,7 @@ export async function logoutUser(): Promise<void> {
   await db.pendingActions.clear()
   await db.messages.clear()
   await db.userSession.clear()
+  await db.pendingUploads.clear()
   localStorage.removeItem('zekoulabia_user')
   purgerCle() // clé de chiffrement — voir tâche 4
   try {

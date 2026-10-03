@@ -5,6 +5,8 @@ import type { LucideIcon } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
+import { useSyncQueue } from '@/hooks/useSyncQueue'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
@@ -28,6 +30,7 @@ const STATUS_STYLE: Record<string, { bg: string; color: string; label: string; i
 
 export default function SectionAdminAttendance({ onToast }: Props) {
   const t = useT('admin')
+  const { addToQueue } = useSyncQueue()
   const [stats, setStats]           = useState<AttendanceStats | null>(null)
   const [classes, setClasses]       = useState<ClassItem[]>([])
   const [classId, setClassId]       = useState('')
@@ -37,18 +40,38 @@ export default function SectionAdminAttendance({ onToast }: Props) {
 
   const fetchStats = useCallback(async () => {
     try {
-      const res = await fetchApi('/api/v2/attendance/stats', { credentials: 'include' })
-      const data = await res.json()
-      if (res.ok && data.stats) setStats(data.stats)
+      const cached = await getCachedData<AttendanceStats>('admin:attendance:stats')
+      if (cached?.data) setStats(cached.data)
     } catch { /* silencieux */ }
+
+    if (navigator.onLine) {
+      try {
+        const res = await fetchApi('/api/v2/attendance/stats', { credentials: 'include' })
+        const data = await res.json()
+        if (res.ok && data.stats) {
+          setStats(data.stats)
+          await putCachedData('admin:attendance:stats', data.stats).catch(() => {})
+        }
+      } catch { /* silencieux */ }
+    }
   }, [])
 
   const fetchClasses = useCallback(async () => {
     try {
-      const res = await fetchApi('/api/v2/classes', { credentials: 'include' })
-      const data = await res.json()
-      if (res.ok) setClasses(data.data || [])
+      const cached = await getCachedData<ClassItem[]>('admin:classes:list')
+      if (cached?.data) setClasses(cached.data)
     } catch { /* silencieux */ }
+
+    if (navigator.onLine) {
+      try {
+        const res = await fetchApi('/api/v2/classes', { credentials: 'include' })
+        const data = await res.json()
+        if (res.ok && Array.isArray(data.data)) {
+          setClasses(data.data)
+          await putCachedData('admin:classes:list', data.data).catch(() => {})
+        }
+      } catch { /* silencieux */ }
+    }
   }, [])
 
   useEffect(() => {
@@ -79,18 +102,48 @@ export default function SectionAdminAttendance({ onToast }: Props) {
 
   const justify = async (recordId: string) => {
     setJustifyingId(recordId)
+    const payload = { justification: "Justifiée par l'administration" }
+
+    if (!navigator.onLine) {
+      try {
+        await addToQueue({
+          type: 'ATTENDANCE',
+          endpoint: `/api/v2/attendance/${recordId}/justify`,
+          method: 'PATCH',
+          payload,
+        })
+        onToast('Absence justifiée hors-ligne (en attente de synchronisation)', 'info')
+      } catch (err) {
+        onToast(err instanceof Error ? err.message : 'Erreur', 'error')
+      } finally {
+        setJustifyingId(null)
+      }
+      return
+    }
+
     try {
       const res = await fetchApi(`/api/v2/attendance/${recordId}/justify`, {
         method: 'PATCH', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ justification: 'Justifiée par l\'administration' }),
+        body: JSON.stringify(payload),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Erreur')
       onToast('Absence justifiée', 'success')
       fetchRecords()
-    } catch (err) {
-      onToast(err instanceof Error ? err.message : 'Erreur', 'error')
+    } catch {
+      // Repli hors-ligne en cas de coupure
+      try {
+        await addToQueue({
+          type: 'ATTENDANCE',
+          endpoint: `/api/v2/attendance/${recordId}/justify`,
+          method: 'PATCH',
+          payload,
+        })
+        onToast('Connexion perdue : justification enregistrée hors-ligne', 'info')
+      } catch (err) {
+        onToast(err instanceof Error ? err.message : 'Erreur', 'error')
+      }
     } finally { setJustifyingId(null) }
   }
 

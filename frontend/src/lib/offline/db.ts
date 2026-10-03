@@ -94,11 +94,25 @@ export interface UserSessionData {
   cachedAt: number
 }
 
+export interface PendingUpload {
+  id: string
+  actionId?: string
+  fileName: string
+  mimeType: string
+  dataBase64: string
+  createdAt: number
+}
+
+interface PendingUploadChiffre extends Omit<PendingUpload, 'dataBase64'> {
+  dataBase64: { iv: number[]; data: number[] }
+}
+
 class ZekoulABiaDB extends Dexie {
   pendingActions!: Table<PendingAction>
   cachedData!: Table<CachedData>
   messages!: Table<CachedMessageChiffre>
   userSession!: Table<UserSessionData>
+  pendingUploads!: Table<PendingUploadChiffre>
 
   constructor() {
     super('ZekoulABiaDB')
@@ -149,6 +163,15 @@ class ZekoulABiaDB extends Dexie {
       cachedData: 'key, cachedAt',
       messages: 'id, conversationId, createdAt, status',
       userSession: 'userId, role, cachedAt',
+    })
+    // v5 — store des pièces jointes et uploads offline chiffrés (Phase 2 du Plan Offline-First) :
+    // stocke les justificatifs d'absence, devoirs scannés, actes de naissance en attente de réseau.
+    this.version(5).stores({
+      pendingActions: '++id, type, status, createdAt',
+      cachedData: 'key, cachedAt',
+      messages: 'id, conversationId, createdAt, status',
+      userSession: 'userId, role, cachedAt',
+      pendingUploads: 'id, actionId, fileName, mimeType, createdAt',
     })
   }
 }
@@ -298,4 +321,36 @@ export async function getLatestUserSession(): Promise<UserSessionData | undefine
 /** Supprime toutes les sessions utilisateurs en cache local (au logout). */
 export async function clearUserSession(): Promise<void> {
   await db.userSession.clear()
+}
+
+/** Enregistre une pièce jointe ou un fichier binaire (chiffré au repos) dans l'Outbox d'upload. */
+export async function addPendingUpload(upload: PendingUpload): Promise<void> {
+  const chiffre = await chiffrer(upload.dataBase64)
+  await db.pendingUploads.put({
+    ...upload,
+    dataBase64: chiffre,
+  })
+}
+
+/** Récupère les pièces jointes en attente d'envoi avec déchiffrement de leur contenu base64. */
+export async function getPendingUploads(actionId?: string): Promise<PendingUpload[]> {
+  const rows = actionId
+    ? await db.pendingUploads.where('actionId').equals(actionId).toArray()
+    : await db.pendingUploads.toArray()
+  return Promise.all(
+    rows.map(async (r) => ({
+      ...r,
+      dataBase64: await dechiffrer<string>(r.dataBase64),
+    }))
+  )
+}
+
+/** Supprime une pièce jointe après synchronisation réussie. */
+export async function deletePendingUpload(id: string): Promise<void> {
+  await db.pendingUploads.delete(id)
+}
+
+/** Purge toutes les pièces jointes en attente (au logout). */
+export async function clearPendingUploads(): Promise<void> {
+  await db.pendingUploads.clear()
 }
