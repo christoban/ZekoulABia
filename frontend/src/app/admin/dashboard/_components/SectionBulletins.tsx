@@ -149,7 +149,10 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
       const res = await fetchApi('/api/v2/report-cards/send', {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ classId }),
+        body: JSON.stringify({
+          classId,
+          ...(check?.periodId ? { academicPeriodId: check.periodId } : {}),
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Erreur')

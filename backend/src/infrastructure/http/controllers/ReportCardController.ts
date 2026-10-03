@@ -144,18 +144,48 @@ export class ReportCardController {
   envoyerBulletins = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const user = req.user;
-      const { classId, academicPeriodId, nomEtablissement, nomPeriode } = req.body;
+      let { classId, academicPeriodId, nomEtablissement, nomPeriode } = req.body;
 
-      if (!classId || !academicPeriodId || !nomEtablissement || !nomPeriode) {
+      if (!classId) {
         res.status(400).json({
           success: false,
-          message: 'classId, academicPeriodId, nomEtablissement et nomPeriode requis',
+          message: 'classId requis',
         });
         return;
       }
 
-      // Langue de l'email = sous-système de l'école, affiné par la section de la classe si bilingue.
+      // Auto-résolution des paramètres manquants
+      if (!academicPeriodId) {
+        const currentYear = await this.anneeRepository.findCourante(user.schoolId);
+        if (currentYear) {
+          const periodes = await this.anneeRepository.findPeriodesByAnnee(currentYear.id);
+          const currentPeriod = periodes.find(p => p.isCurrent) || periodes[0];
+          academicPeriodId = currentPeriod?.id;
+          if (!nomPeriode && currentPeriod) {
+            nomPeriode = currentPeriod.name;
+          }
+        }
+      }
+
+      if (!academicPeriodId) {
+        res.status(400).json({
+          success: false,
+          message: 'academicPeriodId requis ou aucune période active trouvée',
+        });
+        return;
+      }
+
       const ecole = await this.schoolRepository.findById(user.schoolId);
+      if (!nomEtablissement) {
+        nomEtablissement = ecole?.name ?? 'Établissement';
+      }
+
+      if (!nomPeriode) {
+        const periode = await this.anneeRepository.findPeriodeById(academicPeriodId, user.schoolId);
+        nomPeriode = periode?.name ?? 'Trimestre';
+      }
+
+      // Langue de l'email = sous-système de l'école, affiné par la section de la classe si bilingue.
       let sectionCode: string | null = null;
       if (ecole?.subsystem === 'BILINGUAL') {
         const cls = await this.classeRepository.findById(classId);
@@ -500,7 +530,7 @@ export class ReportCardController {
 
       const filename = `bulletin-${studentName.replace(/\s+/g, '-')}-${periodName.replace(/\s+/g, '-')}.pdf`;
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
       res.setHeader('Content-Length', pdfBuffer.length);
       res.end(pdfBuffer);
     } catch (error) {
