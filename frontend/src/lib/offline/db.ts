@@ -173,6 +173,32 @@ export async function deleteCachedData(key: string): Promise<void> {
   await db.cachedData.delete(key)
 }
 
+/**
+ * Purge les données de cache de lecture expirées (par défaut > 30 jours, décision architecturale validée).
+ * Si le nombre d'entrées dépasse maxEntries (défaut 500), élimine les plus anciennes (algorithme LRU).
+ * Protège scrupuleusement la table `pendingActions` (les données de l'Outbox ne sont JAMAIS supprimées ici).
+ */
+export async function purgeExpiredCache(maxAgeDays = 30, maxEntries = 500): Promise<number> {
+  try {
+    const cutoff = Date.now() - (maxAgeDays * 24 * 60 * 60 * 1000)
+    let deletedCount = await db.cachedData.where('cachedAt').below(cutoff).delete()
+
+    const totalCount = await db.cachedData.count()
+    if (totalCount > maxEntries) {
+      const excess = totalCount - maxEntries
+      const oldestKeys = await db.cachedData
+        .orderBy('cachedAt')
+        .limit(excess)
+        .primaryKeys()
+      await db.cachedData.bulkDelete(oldestKeys)
+      deletedCount += oldestKeys.length
+    }
+    return deletedCount
+  } catch {
+    return 0
+  }
+}
+
 /** Ajoute une action hors ligne à la file d'attente, payload chiffré. */
 export async function addPendingAction(
   action: Omit<PendingAction, 'id' | 'status' | 'createdAt' | 'idempotencyKey' | 'payload'> & {
