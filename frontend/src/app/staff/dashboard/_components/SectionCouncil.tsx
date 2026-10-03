@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
-import { CheckCircle2, RotateCcw, Scale, AlertTriangle, GraduationCap, X } from 'lucide-react'
+import { CheckCircle2, RotateCcw, Scale, AlertTriangle, GraduationCap, X, ArrowLeft } from 'lucide-react'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
@@ -181,10 +181,10 @@ export default function SectionCouncil({ onToast }: Props) {
   const lockedCount = sessions.filter(s => s.status === 'LOCKED').length
 
   return (
-    <div className="px-4 py-4 md:px-7 md:py-6" style={{ overflowY: 'auto', height: '100%' }}>
+    <div className="px-4 py-4 pb-24 md:px-7 md:py-6 md:pb-6" style={{ overflowY: 'auto', height: '100%', boxSizing: 'border-box' }}>
       <style>{`@keyframes edu-spin { to { transform: rotate(360deg); } }`}</style>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
           <div style={sTitle}>{t('council.title')}</div>
           <div style={sSub}>{t('council.subtitle', { openCount, s: openCount > 1 ? 's' : '', lockedCount, locked: lockedCount > 1 ? 's' : '' })}</div>
@@ -230,9 +230,9 @@ export default function SectionCouncil({ onToast }: Props) {
       )}
 
       {!loading && !error && sessions.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: selected ? '280px 1fr' : 'repeat(3,1fr)', gap: 12, alignItems: 'start' }}>
+        <div className={selected ? "flex flex-col md:grid md:grid-cols-[280px_1fr] gap-3 items-start" : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 items-start"}>
           {/* Liste des sessions */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className={selected ? "hidden md:flex flex-col gap-2 w-full md:w-[280px]" : "flex flex-col gap-2 col-span-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3"}>
             {sessions.map(s => (
               <div key={s.id}
                 onClick={() => openSession(s.id)}
@@ -253,7 +253,23 @@ export default function SectionCouncil({ onToast }: Props) {
 
           {/* Détail session */}
           {selected && (
-            <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
+            <div className="w-full" style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
+              {/* Bouton retour visible uniquement sur mobile */}
+              <div className="flex md:hidden items-center px-3 py-2 border-b border-[var(--border)] bg-[var(--surface)]">
+                <button
+                  type="button"
+                  onClick={() => setSelected(null)}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    color: 'var(--green)', fontSize: 12.5, fontWeight: 700, padding: 0
+                  }}
+                >
+                  <ArrowLeft size={16} />
+                  <span>{t('council.backToList') || '← Retour à la liste des conseils'}</span>
+                </button>
+              </div>
+
               {loadingDetail ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: 36 }}>
                   <div style={{ width: 24, height: 24, border: '2.5px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
@@ -264,7 +280,7 @@ export default function SectionCouncil({ onToast }: Props) {
                     <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>
                       {t('council.deliberationHeader', { className: selected.class.name, periodName: selected.academicPeriod.name })}
                     </span>
-                    <div style={{ display: 'flex', gap: 6 }}>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                       {selected.status !== 'LOCKED' && (
                         <>
                           <button style={btnSec} onClick={saveDecisions} disabled={saving}>
@@ -291,58 +307,103 @@ export default function SectionCouncil({ onToast }: Props) {
                       {t('council.noStudents')}
                     </div>
                   ) : (
-                    <div style={{ overflowX: 'auto' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 440 }}>
-                        <thead>
-                          <tr>{[t('council.studentHeader'), t('council.decisionHeader'), t('council.observationHeader')].map(h => (
-                            <th key={h} style={thSt}>{h}</th>
-                          ))}</tr>
-                        </thead>
-                        <tbody>
-                          {selected.decisions.map((d) => {
-                            const cur = decisions[d.studentId] ?? { decision: d.decision as DecisionValue, obs: d.observations ?? '' }
-                            const dc = DEC_COLOR[cur.decision] ?? DEC_COLOR.PASS
-                            return (
-                              <tr key={d.studentId}
-                                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
-                                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
-                                <td style={{ ...tdSt, fontWeight: 700, color: 'var(--text)' }}>
-                                  {d.student.firstName} {d.student.lastName}
-                                </td>
-                                <td style={tdSt}>
-                                  {selected.status === 'LOCKED' ? (
-                                    <span style={{ padding: '2.5px 8px', borderRadius: 14, fontSize: 11, fontWeight: 800, background: dc.bg, color: dc.color, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                                      {DEC_LABEL[cur.decision] ? <>{DEC_LABEL[cur.decision].icon}{DEC_LABEL[cur.decision].text}</> : cur.decision}
-                                    </span>
-                                  ) : (
-                                    <select
-                                      value={cur.decision}
-                                      onChange={e => setDecisions(p => ({ ...p, [d.studentId]: { ...cur, decision: e.target.value as DecisionValue } }))}
-                                      style={{ padding: '5px 8px', border: '1px solid var(--border)', borderRadius: 7, fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit', outline: 'none', cursor: 'pointer', background: 'var(--surface)', color: dc.color, minWidth: 150 }}>
-                                      <option value="PASS">{t('council.decisionPass')}</option>
-                                      <option value="REPEAT">{t('council.decisionRepeat')}</option>
-                                      <option value="DELIBERATION">{t('council.decisionDeliberation')}</option>
-                                    </select>
-                                  )}
-                                </td>
-                                <td style={tdSt}>
-                                  {selected.status === 'LOCKED' ? (
-                                    <span style={{ fontSize: 12, color: 'var(--text3)' }}>{cur.obs || '—'}</span>
-                                  ) : (
-                                    <input type="text"
-                                      value={cur.obs}
-                                      onChange={e => setDecisions(p => ({ ...p, [d.studentId]: { ...cur, obs: e.target.value } }))}
-                                      placeholder={t('council.observationPlaceholder')}
-                                      style={{ width: '100%', padding: '5px 8px', border: '1px solid var(--border)', borderRadius: 7, fontSize: 12, fontFamily: 'inherit', outline: 'none', background: 'var(--surface)', color: 'var(--text)', boxSizing: 'border-box' }}
-                                    />
-                                  )}
-                                </td>
-                              </tr>
-                            )
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                    <>
+                      {/* Vue cartes tactile pour mobile (< md) */}
+                      <div className="block md:hidden p-3 divide-y divide-[var(--border)]">
+                        {selected.decisions.map((d) => {
+                          const cur = decisions[d.studentId] ?? { decision: d.decision as DecisionValue, obs: d.observations ?? '' }
+                          const dc = DEC_COLOR[cur.decision] ?? DEC_COLOR.PASS
+                          return (
+                            <div key={d.studentId} className="py-3 flex flex-col gap-2">
+                              <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--text)' }}>
+                                {d.student.firstName} {d.student.lastName}
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                {selected.status === 'LOCKED' ? (
+                                  <span style={{ padding: '4px 10px', borderRadius: 14, fontSize: 11, fontWeight: 800, background: dc.bg, color: dc.color, alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                                    {DEC_LABEL[cur.decision] ? <>{DEC_LABEL[cur.decision].icon}{DEC_LABEL[cur.decision].text}</> : cur.decision}
+                                  </span>
+                                ) : (
+                                  <select
+                                    value={cur.decision}
+                                    onChange={e => setDecisions(p => ({ ...p, [d.studentId]: { ...cur, decision: e.target.value as DecisionValue } }))}
+                                    style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, fontWeight: 700, fontFamily: 'inherit', outline: 'none', cursor: 'pointer', background: 'var(--surface)', color: dc.color, minHeight: 40 }}>
+                                    <option value="PASS">{t('council.decisionPass')}</option>
+                                    <option value="REPEAT">{t('council.decisionRepeat')}</option>
+                                    <option value="DELIBERATION">{t('council.decisionDeliberation')}</option>
+                                  </select>
+                                )}
+
+                                {selected.status === 'LOCKED' ? (
+                                  cur.obs ? <div style={{ fontSize: 12, color: 'var(--text3)', background: 'var(--bg)', padding: '6px 10px', borderRadius: 6 }}>{cur.obs}</div> : null
+                                ) : (
+                                  <input type="text"
+                                    value={cur.obs}
+                                    onChange={e => setDecisions(p => ({ ...p, [d.studentId]: { ...cur, obs: e.target.value } }))}
+                                    placeholder={t('council.observationPlaceholder')}
+                                    style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12.5, fontFamily: 'inherit', outline: 'none', background: 'var(--surface)', color: 'var(--text)', boxSizing: 'border-box', minHeight: 38 }}
+                                  />
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {/* Vue tableau pour grand écran (>= md) */}
+                      <div className="hidden md:block" style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 440 }}>
+                          <thead>
+                            <tr>{[t('council.studentHeader'), t('council.decisionHeader'), t('council.observationHeader')].map(h => (
+                              <th key={h} style={thSt}>{h}</th>
+                            ))}</tr>
+                          </thead>
+                          <tbody>
+                            {selected.decisions.map((d) => {
+                              const cur = decisions[d.studentId] ?? { decision: d.decision as DecisionValue, obs: d.observations ?? '' }
+                              const dc = DEC_COLOR[cur.decision] ?? DEC_COLOR.PASS
+                              return (
+                                <tr key={d.studentId}
+                                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
+                                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
+                                  <td style={{ ...tdSt, fontWeight: 700, color: 'var(--text)' }}>
+                                    {d.student.firstName} {d.student.lastName}
+                                  </td>
+                                  <td style={tdSt}>
+                                    {selected.status === 'LOCKED' ? (
+                                      <span style={{ padding: '2.5px 8px', borderRadius: 14, fontSize: 11, fontWeight: 800, background: dc.bg, color: dc.color, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                                        {DEC_LABEL[cur.decision] ? <>{DEC_LABEL[cur.decision].icon}{DEC_LABEL[cur.decision].text}</> : cur.decision}
+                                      </span>
+                                    ) : (
+                                      <select
+                                        value={cur.decision}
+                                        onChange={e => setDecisions(p => ({ ...p, [d.studentId]: { ...cur, decision: e.target.value as DecisionValue } }))}
+                                        style={{ padding: '5px 8px', border: '1px solid var(--border)', borderRadius: 7, fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit', outline: 'none', cursor: 'pointer', background: 'var(--surface)', color: dc.color, minWidth: 150 }}>
+                                        <option value="PASS">{t('council.decisionPass')}</option>
+                                        <option value="REPEAT">{t('council.decisionRepeat')}</option>
+                                        <option value="DELIBERATION">{t('council.decisionDeliberation')}</option>
+                                      </select>
+                                    )}
+                                  </td>
+                                  <td style={tdSt}>
+                                    {selected.status === 'LOCKED' ? (
+                                      <span style={{ fontSize: 12, color: 'var(--text3)' }}>{cur.obs || '—'}</span>
+                                    ) : (
+                                      <input type="text"
+                                        value={cur.obs}
+                                        onChange={e => setDecisions(p => ({ ...p, [d.studentId]: { ...cur, obs: e.target.value } }))}
+                                        placeholder={t('council.observationPlaceholder')}
+                                        style={{ width: '100%', padding: '5px 8px', border: '1px solid var(--border)', borderRadius: 7, fontSize: 12, fontFamily: 'inherit', outline: 'none', background: 'var(--surface)', color: 'var(--text)', boxSizing: 'border-box' }}
+                                      />
+                                    )}
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
                   )}
                 </>
               )}

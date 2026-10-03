@@ -110,7 +110,7 @@ export default function SectionRapportsStaff() {
 
   if (loading && !data) {
     return (
-      <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>
+      <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)', height: '100%', overflowY: 'auto' }}>
         <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 12px' }} />
         <p>Génération des rapports consolidés en cours...</p>
       </div>
@@ -118,7 +118,7 @@ export default function SectionRapportsStaff() {
   }
 
   return (
-    <div style={{ padding: 24, maxWidth: 1280, margin: '0 auto' }}>
+    <div className="pb-24 md:pb-6" style={{ height: '100%', overflowY: 'auto', padding: '16px', boxSizing: 'border-box', maxWidth: 1280, margin: '0 auto' }}>
       {/* En-tête */}
       <div
         style={{
@@ -314,6 +314,9 @@ export default function SectionRapportsStaff() {
           gap: 8,
           borderBottom: '1px solid var(--border, #e5e7eb)',
           paddingBottom: 0,
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
         }}
       >
         <button
@@ -332,6 +335,8 @@ export default function SectionRapportsStaff() {
             color: onglet === 'EFFECTIFS' ? 'var(--blue, #2563eb)' : 'var(--text2, #4b5563)',
             borderBottom: `2.5px solid ${onglet === 'EFFECTIFS' ? 'var(--blue, #2563eb)' : 'transparent'}`,
             marginBottom: -1,
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
           }}
         >
           <School size={16} />
@@ -354,6 +359,8 @@ export default function SectionRapportsStaff() {
             color: onglet === 'DOSSIERS' ? 'var(--blue, #2563eb)' : 'var(--text2, #4b5563)',
             borderBottom: `2.5px solid ${onglet === 'DOSSIERS' ? 'var(--blue, #2563eb)' : 'transparent'}`,
             marginBottom: -1,
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
           }}
         >
           <AlertCircle size={16} />
@@ -390,6 +397,8 @@ export default function SectionRapportsStaff() {
             color: onglet === 'CONCOURS' ? 'var(--blue, #2563eb)' : 'var(--text2, #4b5563)',
             borderBottom: `2.5px solid ${onglet === 'CONCOURS' ? 'var(--blue, #2563eb)' : 'transparent'}`,
             marginBottom: -1,
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
           }}
         >
           <Award size={16} />
