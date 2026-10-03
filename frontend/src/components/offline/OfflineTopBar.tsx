@@ -40,6 +40,11 @@ export default function OfflineTopBar() {
     }
   }, [isOnline, dismissedOffline])
 
+  // Si l'utilisateur est hors-ligne mais a explicitement fermé la bannière, ne rien afficher
+  if (!isOnline && dismissedOffline) {
+    return null
+  }
+
   if (isOnline && !syncing && pendingCount === 0 && conflictCount === 0 && !showReconnectedBanner) {
     return null
   }
@@ -144,17 +149,23 @@ export default function OfflineTopBar() {
               type="button"
               onClick={() => setDismissedOffline(true)}
               style={{
-                background: 'transparent',
+                background: 'rgba(255,255,255,0.12)',
                 border: 'none',
-                color: 'rgba(255,255,255,0.7)',
+                borderRadius: 4,
+                color: '#ffffff',
                 cursor: 'pointer',
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
-                padding: 2,
+                justifyContent: 'center',
+                padding: '3px 7px',
+                fontSize: 11,
+                gap: 4,
               }}
-              aria-label="Masquer la bannière"
+              title="Fermer la bannière"
+              aria-label="Fermer la bannière"
             >
-              <X size={14} />
+              <X size={13} strokeWidth={2.5} />
+              <span>Fermer</span>
             </button>
           )}
         </div>
