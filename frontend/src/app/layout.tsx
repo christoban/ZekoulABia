@@ -6,7 +6,6 @@ import { LanguageProvider } from '@/lib/i18n'
 import { NotificationProvider } from '@/hooks/NotificationContext'
 import { Providers } from './providers'
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration'
-import OfflineTopBar from '@/components/offline/OfflineTopBar'
 
 const nunito = Nunito({
   subsets: ['latin'],
@@ -51,7 +50,7 @@ export default function RootLayout({
   return (
     <html lang="fr" className={`${nunito.variable} ${spectral.variable}`} suppressHydrationWarning>
       <body className="font-nunito antialiased" suppressHydrationWarning>
-        <Providers><LanguageProvider><NotificationProvider><SmoothScrollProvider><OfflineTopBar />{children}</SmoothScrollProvider></NotificationProvider></LanguageProvider></Providers>
+        <Providers><LanguageProvider><NotificationProvider><SmoothScrollProvider>{children}</SmoothScrollProvider></NotificationProvider></LanguageProvider></Providers>
         <ServiceWorkerRegistration />
       </body>
     </html>
