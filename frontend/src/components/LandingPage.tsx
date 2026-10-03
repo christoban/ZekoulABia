@@ -7,7 +7,7 @@ import { motion, AnimatePresence, useMotionValue, animate as motionAnimate, useI
 import {
   CheckCircle2, XCircle, Lock, Smartphone, WifiOff, School, GraduationCap, Presentation,
   FileText, Calendar, Bot, Mail, Rocket, Users, Search, Check, Star, ArrowRight, Play,
-  ChevronDown, Wallet, AlertTriangle, ShieldCheck,
+  ChevronDown, Wallet, AlertTriangle, ShieldCheck, Menu, X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import DemoModal from './DemoModal'
@@ -37,6 +37,7 @@ const textsFR = {
     demo: 'Demander une démo',
     demoShort: 'Démo',
     login: 'Se connecter',
+    loginShort: 'Connexion',
   },
   hero: {
     badge: '🇨🇲 Plateforme officielle · Système MINESEC Cameroun',
@@ -159,6 +160,7 @@ const textsEN = {
     demo: 'Request a demo',
     demoShort: 'Demo',
     login: 'Log in',
+    loginShort: 'Login',
   },
   hero: {
     badge: '🇨🇲 Official platform · MINESEC Cameroon',
@@ -406,6 +408,7 @@ export default function LandingPage() {
   const tx = lang === 'fr' ? textsFR : textsEN
 
   const [demoOpen, setDemoOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
 
   useEffect(() => {
@@ -477,35 +480,34 @@ export default function LandingPage() {
     <div style={{ fontFamily: 'var(--font-nunito),Nunito,sans-serif', color: 'var(--text)', background: 'var(--bg)' }}>
 
       {/* ══════════════════════════════════════════════════
-          NAVBAR — hauteur 72px, padding horizontal 56px
+          NAVBAR — responsive mobile & desktop
       ══════════════════════════════════════════════════ */}
-      <nav className="px-2 md:px-6 lg:px-10 gap-1 md:gap-3 lg:gap-7" style={{
+      <nav className="px-3 sm:px-6 lg:px-10" style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-        minHeight: 56, background: 'var(--surface)',
+        height: 56, background: 'var(--surface)',
         borderBottom: '1px solid var(--border)',
-        display: 'flex', alignItems: 'center',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         transition: 'box-shadow 200ms',
-        boxShadow: navScrolled ? '0 1px 8px rgba(0,0,0,0.05)' : 'none',
+        boxShadow: navScrolled ? '0 1px 8px rgba(0,0,0,0.06)' : 'none',
       }}>
         {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, minWidth: 0 }}>
           <img src="/logo.svg" alt="ZekoulABia" style={{ width: 28, height: 28, flexShrink: 0 }} />
-          <span className="truncate text-[15px] sm:text-[18px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>ZekoulABia</span>
+          <span className="text-[16px] sm:text-[18px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>ZekoulABia</span>
           <span className="hidden xl:inline-block" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text3)', fontSize: 11, fontWeight: 700, borderRadius: 16, padding: '1px 8px', marginLeft: 3, whiteSpace: 'nowrap' }}>
             {tx.nav.badge}
           </span>
         </div>
 
-        {/* Links — cachés avant lg (1024px) : en dessous, pas assez de place pour tenir sur une
-            ligne sans retour à la ligne (testé et cassé à 1024px avant l'ajout de ce seuil). */}
-        <div className="hidden lg:flex gap-4 xl:gap-9" style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        {/* Links desktop (≥ 1024px) */}
+        <div className="hidden lg:flex gap-6 xl:gap-9" style={{ alignItems: 'center' }}>
           {[
             { label: tx.nav.features, href: '#fonctionnalites' },
             { label: tx.nav.howItWorks, href: '#comment' },
             { label: tx.nav.plans, href: '#plans' },
             { label: tx.nav.contact, href: '#contact' },
           ].map(link => (
-            <a key={link.href} href={link.href} className="text-[15px] xl:text-[17px]"
+            <a key={link.href} href={link.href} className="text-[14px] xl:text-[16px]"
               style={{ fontWeight: 600, color: 'var(--text2)', textDecoration: 'none', transition: 'color 150ms', whiteSpace: 'nowrap' }}
               onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--primary)' }}
               onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text2)' }}
@@ -513,25 +515,149 @@ export default function LandingPage() {
           ))}
         </div>
 
-        {/* Right actions — visibles desktop ET mobile (mêmes classes responsive que la nav) */}
-        <div className="gap-2 md:gap-3" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, marginLeft: 'auto' }}>
-          <ThemeToggle />
-          <span className="hidden sm:inline-flex"><LanguageSwitch compact /></span>
+        {/* Actions à droite */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          {/* Outils visibles à partir de md */}
+          <div className="hidden md:flex items-center gap-2">
+            <ThemeToggle />
+            <LanguageSwitch compact />
+          </div>
+
+          {/* Bouton Connexion */}
           <button
             type="button"
             onClick={() => router.push('/login')}
-            className="px-2 py-[7px] text-[12px] sm:px-4 sm:text-[13px]"
-            style={{ ...btnSecondary, fontWeight: 800, borderRadius: 8 }}
+            className="px-2.5 py-1.5 text-[12px] sm:px-3.5 sm:py-1.5 sm:text-[13px]"
+            style={{
+              background: 'var(--surface)',
+              color: 'var(--text2)',
+              fontWeight: 700,
+              borderRadius: 8,
+              border: '1.5px solid var(--border2)',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              whiteSpace: 'nowrap',
+            }}
           >
-            {tx.nav.login}
+            <span className="hidden sm:inline">{tx.nav.login}</span>
+            <span className="sm:hidden">{tx.nav.loginShort}</span>
           </button>
-          <button onClick={openDemo} className="px-2 py-[7px] text-[12px] sm:px-[18px] sm:text-[13px]" style={{ ...btnPrimary, fontWeight: 800, borderRadius: 8 }}>
-            {/* Libellé long trop large pour la nav mobile (~165px) : version courte sous sm */}
+
+          {/* Bouton Démo */}
+          <button
+            type="button"
+            onClick={openDemo}
+            className="px-3 py-1.5 text-[12px] sm:px-4 sm:py-1.5 sm:text-[13px]"
+            style={{
+              background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))',
+              color: 'white',
+              fontWeight: 800,
+              borderRadius: 8,
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              boxShadow: '0 2px 6px rgba(142,42,58,0.2)',
+              whiteSpace: 'nowrap',
+            }}
+          >
             <span className="hidden sm:inline">{tx.nav.demo}</span>
             <span className="sm:hidden">{tx.nav.demoShort}</span>
           </button>
+
+          {/* Bouton Hamburger pour mobile (< lg) */}
+          <button
+            type="button"
+            className="lg:hidden"
+            onClick={() => setMobileMenuOpen(prev => !prev)}
+            aria-label={mobileMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 8,
+              background: mobileMenuOpen ? 'var(--bg2)' : 'transparent',
+              border: '1px solid var(--border)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'var(--text)',
+              marginLeft: 2,
+            }}
+          >
+            {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
         </div>
       </nav>
+
+      {/* Menu déroulant mobile (< lg) */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            className="lg:hidden"
+            style={{
+              position: 'fixed',
+              top: 56,
+              left: 0,
+              right: 0,
+              zIndex: 99,
+              background: 'var(--surface)',
+              borderBottom: '1.5px solid var(--border)',
+              boxShadow: '0 12px 28px rgba(0,0,0,0.12)',
+              padding: '16px 18px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
+            }}
+          >
+            {/* Liens de navigation */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {[
+                { label: tx.nav.features, href: '#fonctionnalites' },
+                { label: tx.nav.howItWorks, href: '#comment' },
+                { label: tx.nav.plans, href: '#plans' },
+                { label: tx.nav.contact, href: '#contact' },
+              ].map(link => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  style={{
+                    padding: '9px 12px',
+                    borderRadius: 8,
+                    fontSize: 13.5,
+                    fontWeight: 700,
+                    color: 'var(--text)',
+                    textDecoration: 'none',
+                    background: 'var(--bg)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <span>{link.label}</span>
+                  <ArrowRight size={14} color="var(--text3)" />
+                </a>
+              ))}
+            </div>
+
+            {/* Séparateur */}
+            <div style={{ height: 1, background: 'var(--border)' }} />
+
+            {/* Contrôles Thème & Langue */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 4px' }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text2)' }}>Thème & Langue</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <ThemeToggle />
+                <LanguageSwitch compact />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ═══════════════════════════════════════════════════
           HERO — padding réduit, titre 32px
