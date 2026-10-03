@@ -280,6 +280,7 @@ export default function TeacherDashboard() {
                     departementNom={activeDept.name}
                     departmentsList={deptList}
                     onSelectDept={setSelectedAPDeptId}
+                    onToast={showToast}
                   />
                 ) : null
               })()}
