@@ -264,8 +264,13 @@ export default function SuperAdminDashboard() {
 
   return (
     <div style={{
-      display: 'flex', flexDirection: 'column',
-      height: '100dvh', minHeight: '100vh', overflow: 'hidden',
+      position: 'fixed',
+      inset: 0,
+      width: '100%',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
       background: 'var(--bg)',
       fontFamily: 'var(--font-nunito), Nunito, sans-serif'
     }}>

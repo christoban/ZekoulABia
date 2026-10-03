@@ -81,7 +81,8 @@ export default function MasterTopbar({
   return (
     <header style={{
       height: 54, background: 'var(--sidebar-bg)', display: 'flex', alignItems: 'center',
-      padding: '0 16px', gap: 10, flexShrink: 0, position: 'relative', zIndex: 60
+      padding: '0 16px', gap: 10, flexShrink: 0, position: 'sticky', top: 0, left: 0, right: 0, zIndex: 60,
+      width: '100%', boxSizing: 'border-box'
     }}>
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0, height: 3,
