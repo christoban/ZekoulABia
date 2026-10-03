@@ -139,12 +139,15 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
       {/* Content */}
       {!loading && !error && stats && (
         <>
-          {/* Bloc 1: KPIs de Santé d'Établissement (5 cartes parfaitement alignées) */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+          {/* Bloc 1: KPIs de Santé d'Établissement (Swipeable sur mobile, 5 alignés sur desktop) */}
+          <div
+            className="flex md:grid md:grid-cols-5 gap-3 mb-4 overflow-x-auto no-scrollbar pb-1.5 pt-0.5 -mx-3.5 px-3.5 sm:mx-0 sm:px-0 snap-x snap-mandatory"
+            style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+          >
             {kpi.map((k, i) => (
               <div key={i}
                 onClick={() => k.nav && onNav(k.nav)}
-                className="p-3.5 md:p-4 shadow-sm border border-[var(--border)] rounded-xl"
+                className="p-3.5 md:p-4 shadow-sm border border-[var(--border)] rounded-xl flex-shrink-0 w-[155px] sm:w-[170px] md:w-auto md:flex-shrink snap-start"
                 style={{ background: 'var(--surface)', cursor: k.nav ? 'pointer' : 'default', transition: 'all 0.15s' }}
                 onMouseEnter={e => k.nav && Object.assign((e.currentTarget as HTMLElement).style, { transform: 'translateY(-2px)', boxShadow: '0 6px 20px rgba(0,0,0,0.07)' })}
                 onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { transform: 'none', boxShadow: 'none' })}

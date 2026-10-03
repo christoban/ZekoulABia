@@ -91,12 +91,15 @@ export default function SectionAdminAI({ onToast }: Props) {
 
       {/* KPIs */}
       {summary && !loading && (
-        <div className="grid grid-cols-2 sm:grid-cols-5" style={{ gap: 10, marginBottom: 14 }}>
+        <div
+          className="flex sm:grid sm:grid-cols-5 gap-2.5 overflow-x-auto no-scrollbar pb-1.5 pt-0.5 -mx-3.5 px-3.5 sm:mx-0 sm:px-0 snap-x snap-mandatory"
+          style={{ marginBottom: 14, scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+        >
           {(Object.entries(ALERT_STYLE) as [string, typeof ALERT_STYLE[string]][]).map(([key, s]) => {
             const isActive = alertFilter === key
             return (
             <div key={key}
-              className={`p-3 md:px-3.5 md:py-3 rounded-[12px] md:rounded-[10px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none md:border md:border-[1.5px] ${isActive ? 'border-[1.5px]' : 'border-0'}`}
+              className={`p-3 md:px-3.5 md:py-3 rounded-[12px] md:rounded-[10px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none md:border md:border-[1.5px] ${isActive ? 'border-[1.5px]' : 'border-0'} flex-shrink-0 w-[140px] sm:w-auto sm:flex-shrink snap-start`}
               style={{ background: 'var(--surface)', borderStyle: 'solid', borderColor: isActive ? 'var(--green)' : 'var(--border)', cursor: 'pointer', transition: 'all 0.15s' }}
               onClick={() => setAlertFilter(isActive ? '' : key)}>
               <div className="w-[28px] h-[28px] md:w-7 md:h-7" style={{ borderRadius: 7, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 5 }}><s.icon size={14} color={s.color} /></div>
