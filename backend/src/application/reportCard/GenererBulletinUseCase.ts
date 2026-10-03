@@ -211,6 +211,10 @@ export class GenererBulletinUseCase {
       lv2SubjectIds.add(subjectId);
     }
 
+    const [seqA, seqB] = sequences;
+    const seq1Label = seqA?.name || 'SÉQ 1';
+    const seq2Label = seqB?.name || 'SÉQ 2';
+
     // 7b. Générer le bulletin pour chaque élève
     let generes = 0;
     let ignores = 0;
@@ -221,10 +225,6 @@ export class GenererBulletinUseCase {
         eleve.id,
         commande.academicPeriodId
       );
-      if (bulletinExistant?.estGenere()) {
-        ignores++;
-        continue;
-      }
 
       const moyenneEleve = moyennesEleves.find((m) => m.studentId === eleve.id)?.moyenne ?? 0;
       const rang = rangs.get(eleve.id) ?? elevesClasse.length;
@@ -236,8 +236,8 @@ export class GenererBulletinUseCase {
         commande.academicPeriodId
       );
 
-      // Créer ou réutiliser le bulletin
-      const bulletin = bulletinExistant ?? Bulletin.create({
+      // Créer une nouvelle instance de bulletin
+      const bulletin = Bulletin.create({
         schoolId: commande.schoolId,
         studentId: eleve.id,
         academicYearId: commande.academicYearId,
@@ -252,18 +252,20 @@ export class GenererBulletinUseCase {
         n.sequenceAverage !== undefined
       );
 
-      // Grouper par subjectId — première note rencontrée avec sequenceAverage
-      const noteParSubject = new Map<string, typeof notesEleve[0]>();
+      // Grouper par subjectId — collecter toutes les notes de l'élève pour la période
+      const notesParSubject = new Map<string, typeof notesEleve>();
       for (const n of notesEleve) {
-        if (!noteParSubject.has(n.subjectId)) noteParSubject.set(n.subjectId, n);
+        const list = notesParSubject.get(n.subjectId) ?? [];
+        list.push(n);
+        notesParSubject.set(n.subjectId, list);
       }
 
       const eleveClv2 = lv2Map.get(eleve.id) ?? null;
       const alevelSelection = alevelMap.get(eleve.id) ?? null; // non-null ⇒ élève A-Level
 
-      const lignes = Array.from(noteParSubject.entries()).flatMap(([subjectId, note]) => {
+      const lignes = Array.from(notesParSubject.entries()).flatMap(([subjectId, notesList]) => {
         const matiere = matiereParId.get(subjectId);
-        const coeff = matiere?.coefficient ?? note.coefficient;
+        const coeff = matiere?.coefficient ?? notesList[0]?.coefficient ?? 1;
         const baseName = matiere?.name ?? `Matière (${subjectId.slice(0, 6)})`;
         const subjectEstLV2 = lv2SubjectIds.has(subjectId);
 
@@ -282,14 +284,39 @@ export class GenererBulletinUseCase {
         }
 
         const isLignLV2 = subjectEstLV2 && eleveClv2 === subjectId;
+
+        // Associer les notes de chaque séquence de la période
+        const nSeq1 = seqA ? notesList.find((n) => n.sequenceId === seqA.id) : undefined;
+        const nSeq2 = seqB ? notesList.find((n) => n.sequenceId === seqB.id) : undefined;
+
+        const s1 = nSeq1 ? (nSeq1.toObject().sequenceScore ?? nSeq1.sequenceAverage ?? null) : null;
+        const s2 = nSeq2 ? (nSeq2.toObject().sequenceScore ?? nSeq2.sequenceAverage ?? null) : null;
+
+        // Calcul de la moyenne de la matière pour la période
+        let subjAvg = 0;
+        if (s1 !== null && s2 !== null) {
+          subjAvg = Math.round(((s1 + s2) / 2) * 100) / 100;
+        } else if (s1 !== null) {
+          subjAvg = s1;
+        } else if (s2 !== null) {
+          subjAvg = s2;
+        } else if (notesList[0]?.sequenceAverage !== undefined) {
+          subjAvg = notesList[0].sequenceAverage;
+        }
+
+        const wScore = Math.round(subjAvg * coeff * 100) / 100;
+        const teacherComment = nSeq2?.toObject().observation || nSeq1?.toObject().observation || null;
+
         return [{
           id: crypto.randomUUID(),
           subjectId,
           subjectName: isLignLV2 ? `${baseName} (LV2)` : baseName,
           coefficient: coeff,
-          seq1Score: note.toObject().sequenceScore,
-          subjectAverage: note.sequenceAverage!,
-          weightedScore: note.sequenceAverage! * coeff,
+          seq1Score: s1 ?? undefined,
+          seq2Score: s2 ?? undefined,
+          subjectAverage: subjAvg,
+          weightedScore: wScore,
+          teacherComment: teacherComment ?? undefined,
         }];
       });
 
@@ -307,6 +334,9 @@ export class GenererBulletinUseCase {
         ? await this.userRepository.findById(classe.professorPrincipalId)
         : null;
 
+      const verifyBase = process.env.CLIENT_URL || 'http://localhost:3000';
+      const verifyUrl = `${verifyBase}/verify/${bulletin.id}`;
+
       await this.pdfService.genererBulletin({
         bulletin: bulletin.toObject(),
         nomEleve: eleve.nomComplet,
@@ -318,17 +348,19 @@ export class GenererBulletinUseCase {
         nomProfesseurPrincipal: professorPrincipal?.nomComplet,
         moyenneClasse: moyennesEleves.reduce((s, m) => s + m.moyenne, 0) / elevesClasse.length,
         langue,
+        verifyUrl,
+        seq1Label,
+        seq2Label,
       });
 
       const pdfUrl = `bulletins/${commande.schoolId}/${bulletin.id}.pdf`;
       bulletin.marquerGenere(pdfUrl);
 
-      // Sauvegarder
+      // Sauvegarder (si un ancien bulletin existait, le remplacer proprement)
       if (bulletinExistant) {
-        await this.bulletinRepository.update(bulletin);
-      } else {
-        await this.bulletinRepository.save(bulletin);
+        await this.bulletinRepository.delete(bulletinExistant.toObject().id);
       }
+      await this.bulletinRepository.save(bulletin);
 
       // Loi 6 — verrouiller les notes LOCKED après génération du bulletin
       await this.noteRepository.verrouillerNotesValidees(
@@ -343,7 +375,7 @@ export class GenererBulletinUseCase {
     return {
       bulletinsGeneres: generes,
       bulletinsIgnores: ignores,
-      message: `${generes} bulletin(s) généré(s) — ${ignores} déjà généré(s) ignoré(s)`,
+      message: `${generes} bulletin(s) généré(s) avec succès`,
     };
   }
 }

@@ -226,6 +226,9 @@ export class PdfKitBulletinService implements PdfService {
       classMasterComment: contexte.bulletin.classMasterComment ?? null,
       isOfficial: contexte.bulletin.validationStatus === 'GENERATED',
       language: contexte.langue ?? 'fr',
+      verifyUrl: contexte.verifyUrl,
+      seq1Label: contexte.seq1Label,
+      seq2Label: contexte.seq2Label,
       subjectLines: contexte.bulletin.lignesMatiere.map(this.mapperLigne),
     };
   }
@@ -249,6 +252,7 @@ export class PdfKitBulletinService implements PdfService {
       oralScore: ligne.oralScore,
       selfDevelopmentScore: ligne.selfDevelopmentScore,
       subjectAverage: ligne.subjectAverage,
+      weightedScore: ligne.weightedScore,
       teacherComment: ligne.teacherComment,
       competenceLabel: ligne.competenceLabel,
     };

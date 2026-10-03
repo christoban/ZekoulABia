@@ -21,6 +21,9 @@ export interface ContexteBulletin {
   tauxReussite?: number;
   /** Langue de rendu (templates partagés PRIMARY/ANNUAL). Résolue via resolveLanguage(). Défaut "fr". */
   langue?: "fr" | "en";
+  verifyUrl?: string;
+  seq1Label?: string;
+  seq2Label?: string;
 }
 
 export interface TableauHonneurLigne {

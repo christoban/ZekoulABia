@@ -61,6 +61,7 @@ export interface BulletinExportData {
     oralScore: number | null;
     selfDevelopmentScore: number | null;
     subjectAverage: number | null;
+    weightedScore: number | null;
     teacherComment: string | null;
     competenceLabel: string | null;
   }>;

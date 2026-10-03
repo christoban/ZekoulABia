@@ -1,4 +1,5 @@
 import PDFDocument from "pdfkit";
+import QRCode from "qrcode";
 import {
   drawBulletinHeader,
   drawBulletinFooter,
@@ -28,6 +29,7 @@ type SubjectLine = {
   oralScore?: number | null;
   selfDevelopmentScore?: number | null;
   subjectAverage?: number | null;
+  weightedScore?: number | null;
   teacherComment?: string | null;
   competenceLabel?: string | null;
 };
@@ -48,6 +50,9 @@ type BulletinData = {
   classMasterComment?: string | null;
   subjectLines: SubjectLine[];
   isOfficial?: boolean;
+  verifyUrl?: string;
+  seq1Label?: string;
+  seq2Label?: string;
   /**
    * Langue de rendu pour les templates PARTAGÉS entre sous-systèmes (PRIMARY, ANNUAL).
    * Résolue en amont via resolveLanguage(subsystem, section). Défaut "fr".
@@ -59,45 +64,51 @@ type BulletinData = {
 // ─── Helper : finalise un PDFDocument → Buffer ────────────────
 function finalizePdf(
   doc: InstanceType<typeof PDFDocument>,
-  build: (doc: InstanceType<typeof PDFDocument>) => void,
+  build: (doc: InstanceType<typeof PDFDocument>) => void | Promise<void>,
 ): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const buffers: Buffer[] = [];
     doc.on("data", (chunk: Buffer) => buffers.push(chunk));
     doc.on("end", () => resolve(Buffer.concat(buffers)));
     doc.on("error", reject);
-    build(doc);
-    doc.end();
+    Promise.resolve(build(doc)).then(() => doc.end()).catch(reject);
   });
 }
 
-// ─── TEMPLATE 1 : FR_SECONDARY ───────────────────────────────
-// Portrait A4, tableau à 7 colonnes
-// Ratios : 30 + 8 + 10 + 10 + 10 + 12 + 20 = 100
-const COLS_FR_SECONDARY: TableColumnDef[] = [
-  { label: "MATIÈRE",      key: "subjectName",      ratio: 30, type: "subject"     },
-  { label: "COEFF",        key: "coefficient",      ratio:  8, type: "score"       },
-  { label: "DS 1",         key: "seq1Score",        ratio: 10, type: "score"       },
-  { label: "DS 2",         key: "seq2Score",        ratio: 10, type: "score"       },
-  { label: "COMPO",        key: "compositionScore", ratio: 10, type: "score"       },
-  { label: "MOY /20",      key: "subjectAverage",   ratio: 12, type: "average"     },
-  { label: "APPRÉCIATION", key: "teacherComment",   ratio: 20, type: "text"        },
+// ─── TEMPLATE 1 : FR_SECONDARY (MINESEC Officiel) ─────────────
+// Portrait A4, tableau à 7 colonnes adaptées au système camerounais
+// Ratios : 28 + 8 + 11 + 11 + 12 + 12 + 18 = 100
+const getColsFrSecondary = (seq1Label?: string, seq2Label?: string): TableColumnDef[] => [
+  { label: "MATIÈRE",            key: "subjectName",    ratio: 28, type: "subject" },
+  { label: "COEFF",              key: "coefficient",    ratio:  8, type: "score"   },
+  { label: seq1Label || "SÉQ 1", key: "seq1Score",      ratio: 11, type: "score"   },
+  { label: seq2Label || "SÉQ 2", key: "seq2Score",      ratio: 11, type: "score"   },
+  { label: "MOY /20",            key: "subjectAverage", ratio: 12, type: "average" },
+  { label: "TOTAL POND.",        key: "weightedScore",  ratio: 12, type: "score"   },
+  { label: "APPRÉCIATION",       key: "teacherComment", ratio: 18, type: "text"    },
 ];
 
-export const generateFrSecondaryBulletin = (data: BulletinData): Promise<Buffer> => {
+export const generateFrSecondaryBulletin = async (data: BulletinData): Promise<Buffer> => {
+  const qrBuffer = data.verifyUrl
+    ? await QRCode.toBuffer(data.verifyUrl, { type: "png", margin: 1, width: 140 }).catch(() => null)
+    : null;
   const doc = new PDFDocument({ size: "A4", margin: 36 });
+  const cols = getColsFrSecondary(data.seq1Label, data.seq2Label);
   return finalizePdf(doc, (d) => {
     drawBulletinHeader(d, { ...data, template: "FR_SECONDARY" });
-    drawTable(d, COLS_FR_SECONDARY, data.subjectLines as Record<string, unknown>[]);
+    drawTable(d, cols, data.subjectLines as Record<string, unknown>[]);
     drawBulletinFooter(d, {
       generalAverage: data.generalAverage,
       mention: data.mention || getMentionFr(data.generalAverage),
       classMasterComment: data.classMasterComment,
       isOfficial: data.isOfficial,
       language: "fr",
+      qrBuffer,
+      verifyUrl: data.verifyUrl,
     });
   });
 };
+
 
 // ─── TEMPLATE 2 : EN_SECONDARY ───────────────────────────────
 // Portrait A4, tableau à 6 colonnes
@@ -111,7 +122,10 @@ const COLS_EN_SECONDARY: TableColumnDef[] = [
   { label: "TEACHER COMMENT", key: "teacherComment",    ratio: 22, type: "text"     },
 ];
 
-export const generateEnSecondaryBulletin = (data: BulletinData): Promise<Buffer> => {
+export const generateEnSecondaryBulletin = async (data: BulletinData): Promise<Buffer> => {
+  const qrBuffer = data.verifyUrl
+    ? await QRCode.toBuffer(data.verifyUrl, { type: "png", margin: 1, width: 140 }).catch(() => null)
+    : null;
   const doc = new PDFDocument({ size: "A4", margin: 36 });
   return finalizePdf(doc, (d) => {
     drawBulletinHeader(d, { ...data, template: "EN_SECONDARY" });
@@ -122,6 +136,8 @@ export const generateEnSecondaryBulletin = (data: BulletinData): Promise<Buffer>
       classMasterComment: data.classMasterComment,
       isOfficial: data.isOfficial,
       language: "en",
+      qrBuffer,
+      verifyUrl: data.verifyUrl,
     });
   });
 };
@@ -140,7 +156,10 @@ const COLS_TECHNICAL_FR: TableColumnDef[] = [
   { label: "APPRÉCIATION", key: "teacherComment",   ratio: 16, type: "text"     },
 ];
 
-export const generateTechnicalBulletin = (data: BulletinData): Promise<Buffer> => {
+export const generateTechnicalBulletin = async (data: BulletinData): Promise<Buffer> => {
+  const qrBuffer = data.verifyUrl
+    ? await QRCode.toBuffer(data.verifyUrl, { type: "png", margin: 1, width: 140 }).catch(() => null)
+    : null;
   const doc = new PDFDocument({ size: "A4", margin: 36 });
   return finalizePdf(doc, (d) => {
     drawBulletinHeader(d, { ...data, template: "TECHNICAL_FR" });
@@ -162,6 +181,8 @@ export const generateTechnicalBulletin = (data: BulletinData): Promise<Buffer> =
       classMasterComment: data.classMasterComment,
       isOfficial: data.isOfficial,
       language: "fr",
+      qrBuffer,
+      verifyUrl: data.verifyUrl,
     });
   });
 };
@@ -189,8 +210,11 @@ const COLS_PRIMARY_EN: TableColumnDef[] = [
   { label: "GRADE",           key: "competenceLabel",      ratio: 11, type: "competence"                },
 ];
 
-export const generatePrimaryBulletin = (data: BulletinData): Promise<Buffer> => {
+export const generatePrimaryBulletin = async (data: BulletinData): Promise<Buffer> => {
   const lang = data.language ?? "fr";
+  const qrBuffer = data.verifyUrl
+    ? await QRCode.toBuffer(data.verifyUrl, { type: "png", margin: 1, width: 140 }).catch(() => null)
+    : null;
   const doc = new PDFDocument({ size: "A4", margin: 36 });
   return finalizePdf(doc, (d) => {
     drawBulletinHeader(d, { ...data, template: "PRIMARY", language: lang });
@@ -201,6 +225,8 @@ export const generatePrimaryBulletin = (data: BulletinData): Promise<Buffer> => 
       classMasterComment: data.classMasterComment,
       isOfficial: data.isOfficial,
       language: lang,
+      qrBuffer,
+      verifyUrl: data.verifyUrl,
     });
   });
 };
@@ -241,8 +267,11 @@ const COLS_ANNUAL_EN: TableColumnDef[] = [
   { label: "YR AVG",  key: "subjectAverage",   ratio: 11, type: "average"  },
 ];
 
-export const generateAnnualBulletin = (data: BulletinData): Promise<Buffer> => {
+export const generateAnnualBulletin = async (data: BulletinData): Promise<Buffer> => {
   const lang = data.language ?? "fr";
+  const qrBuffer = data.verifyUrl
+    ? await QRCode.toBuffer(data.verifyUrl, { type: "png", margin: 1, width: 140 }).catch(() => null)
+    : null;
   const doc = new PDFDocument({ size: "A4", margin: 36, layout: "landscape" });
   return finalizePdf(doc, (d) => {
     drawBulletinHeader(d, { ...data, template: "ANNUAL", language: lang });
@@ -253,6 +282,8 @@ export const generateAnnualBulletin = (data: BulletinData): Promise<Buffer> => {
       classMasterComment: data.classMasterComment,
       isOfficial: data.isOfficial,
       language: lang,
+      qrBuffer,
+      verifyUrl: data.verifyUrl,
     });
   });
 };
@@ -269,7 +300,10 @@ const COLS_MONTHLY: TableColumnDef[] = [
   { label: "COMMENT",      key: "teacherComment", ratio: 15, type: "text"                      },
 ];
 
-export const generateMonthlyBulletin = (data: BulletinData): Promise<Buffer> => {
+export const generateMonthlyBulletin = async (data: BulletinData): Promise<Buffer> => {
+  const qrBuffer = data.verifyUrl
+    ? await QRCode.toBuffer(data.verifyUrl, { type: "png", margin: 1, width: 140 }).catch(() => null)
+    : null;
   const doc = new PDFDocument({ size: "A4", margin: 36 });
   return finalizePdf(doc, (d) => {
     drawBulletinHeader(d, { ...data, template: "MONTHLY" });
@@ -280,6 +314,8 @@ export const generateMonthlyBulletin = (data: BulletinData): Promise<Buffer> => 
       classMasterComment: data.classMasterComment,
       isOfficial: data.isOfficial,
       language: "en",
+      qrBuffer,
+      verifyUrl: data.verifyUrl,
     });
   });
 };

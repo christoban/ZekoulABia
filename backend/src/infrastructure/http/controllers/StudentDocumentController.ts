@@ -278,6 +278,37 @@ export class StudentDocumentController {
       const doc = await this.documentRepository.findById(documentId);
 
       if (!doc) {
+        // Recherche dans les bulletins de notes (ReportCard)
+        const bulletin = await this.bulletinRepository.findById(documentId);
+        if (bulletin) {
+          const bObj = bulletin.toObject();
+          const school = await this.schoolRepository.findById(bObj.schoolId);
+          const studentProfile = await this.studentProfileRepository.findForDocument(bObj.studentId, bObj.schoolId);
+          const studentName = studentProfile?.user
+            ? `${studentProfile.user.lastName} ${studentProfile.user.firstName}`
+            : 'Élève';
+
+          res.json({
+            success: true,
+            document: {
+              id: bObj.id.slice(0, 8).toUpperCase(),
+              type: 'Bulletin de notes',
+              school: school?.name ?? '—',
+              generatedAt: bObj.createdAt,
+              data: {
+                studentName,
+                matricule: studentProfile?.matricule ?? null,
+                className: classeActuelle(studentProfile)?.name ?? '—',
+                generalAverage: bObj.generalAverage != null ? `${bObj.generalAverage.toFixed(2)} / 20` : '—',
+                rank: bObj.rank && bObj.totalStudents ? `${bObj.rank} / ${bObj.totalStudents}` : bObj.rank ?? '—',
+                mention: bObj.mention ?? '—',
+              },
+              authentic: true,
+            },
+          });
+          return;
+        }
+
         res.status(404).json({ success: false, message: 'Document introuvable ou invalide.' });
         return;
       }

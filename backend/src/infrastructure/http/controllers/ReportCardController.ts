@@ -22,6 +22,8 @@ import { generateBulletinPdf } from '../../pdf/report-card/index';
 import { getMention } from '../../pdf/report-card/BulletinPdfHelpers';
 import { getEffectiveSchoolSettings } from '../../services/school-settings/SchoolSettingsService';
 
+const VERIFY_BASE = process.env.CLIENT_URL || 'http://localhost:3000';
+
 export class ReportCardController {
   constructor(
     private readonly generer: GenererBulletinUseCase,
@@ -274,10 +276,12 @@ export class ReportCardController {
             oralScore: line.oralScore,
             selfDevelopmentScore: line.selfDevelopmentScore,
             subjectAverage: line.subjectAverage,
+            weightedScore: line.weightedScore,
             teacherComment: line.teacherComment,
             competenceLabel: line.competenceLabel,
           })),
           isOfficial: true,
+          verifyUrl: `${VERIFY_BASE}/verify/${reportCard.id}`,
         });
 
         archive.append(pdfBuffer, { name: `bulletin-${studentName.replace(/\s+/g, '-')}.pdf` });
@@ -486,10 +490,12 @@ export class ReportCardController {
           oralScore: line.oralScore,
           selfDevelopmentScore: line.selfDevelopmentScore,
           subjectAverage: line.subjectAverage,
+          weightedScore: line.weightedScore,
           teacherComment: line.teacherComment,
           competenceLabel: line.competenceLabel,
         })),
         isOfficial: role !== 'PARENT',
+        verifyUrl: `${VERIFY_BASE}/verify/${reportCard.id}`,
       });
 
       const filename = `bulletin-${studentName.replace(/\s+/g, '-')}-${periodName.replace(/\s+/g, '-')}.pdf`;

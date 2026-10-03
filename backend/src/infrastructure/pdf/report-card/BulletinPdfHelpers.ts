@@ -314,9 +314,11 @@ export const drawBulletinFooter = (
     classMasterComment?: string | null;
     isOfficial?: boolean;
     language?: "fr" | "en";
+    qrBuffer?: Buffer | null;
+    verifyUrl?: string;
   },
 ) => {
-  const { generalAverage, mention, classMasterComment, isOfficial, language = "fr" } = options;
+  const { generalAverage, mention, classMasterComment, isOfficial, language = "fr", qrBuffer } = options;
   const b = pageBounds(doc);
 
   doc.moveDown(0.5);
@@ -355,11 +357,46 @@ export const drawBulletinFooter = (
   });
 
   if (isOfficial) {
-    doc.y = sigY + 38;
-    doc.fontSize(7).font("Helvetica-Oblique")
-      .text(
-        "Ce bulletin est un document officiel. Toute modification est passible de sanctions.",
-        { align: "center" },
-      );
+    if (qrBuffer) {
+      // QR Code anti-falsification en bas à droite
+      const qrSize = 46;
+      const qrX = b.right - qrSize - 4;
+      const qrY = sigY + 38;
+      try {
+        doc.image(qrBuffer, qrX, qrY, { fit: [qrSize, qrSize] });
+        doc.fontSize(5.5).font("Helvetica").fillColor("#64748b")
+          .text(language === "en" ? "Scan to verify" : "Scannez pour vérifier", qrX - 4, qrY + qrSize + 2, { width: qrSize + 8, align: "center" });
+      } catch { /* ignore */ }
+
+      // Mention d'authenticité et avertissement légal à gauche du QR code
+      const textW = b.width - qrSize - 20;
+      doc.y = sigY + 40;
+      doc.fontSize(7).font("Helvetica-Bold").fillColor("#1e293b")
+        .text(
+          language === "en"
+            ? "Official document issued by the school. Verified authenticity."
+            : "Document officiel délivré par l'établissement. Authenticité certifiée.",
+          b.left,
+          sigY + 40,
+          { width: textW }
+        );
+      doc.fontSize(6.5).font("Helvetica-Oblique").fillColor("#64748b")
+        .text(
+          language === "en"
+            ? "Any falsification or alteration exposes to judicial prosecution. Scan the QR code to verify."
+            : "Toute falsification ou altération expose à des poursuites judiciaires. Scannez le QR code pour vérification.",
+          b.left,
+          sigY + 50,
+          { width: textW }
+        );
+    } else {
+      doc.y = sigY + 38;
+      doc.fontSize(7).font("Helvetica-Oblique").fillColor("#475569")
+        .text(
+          "Ce bulletin est un document officiel. Toute modification est passible de sanctions.",
+          { align: "center" },
+        );
+    }
   }
 };
+
