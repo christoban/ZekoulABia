@@ -1005,30 +1005,39 @@ export default function LoginPage() {
             </button>
 
             {/* Option de bascule entre Email et SMS */}
-            {otpChannel === 'EMAIL' && hasPhone && (
+            {otpChannel === 'EMAIL' && (
               <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--border)', textAlign: 'center' }}>
-                <button
-                  type="button"
-                  onClick={switchToSms}
-                  disabled={switchingChannel || otpLoading}
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: 'var(--primary)',
-                    cursor: switchingChannel ? 'not-allowed' : 'pointer',
-                    background: 'none',
-                    border: 'none',
-                    fontFamily: 'inherit',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '4px 8px',
-                    opacity: switchingChannel ? 0.7 : 1,
-                  }}
-                >
-                  {switchingChannel ? <Loader2 size={14} className="animate-spin" /> : <Smartphone size={15} />}
-                  {switchingChannel ? t('login.switching_channel') : t('login.otp_no_email_access_sms')}
-                </button>
+                {hasPhone ? (
+                  <button
+                    type="button"
+                    onClick={switchToSms}
+                    disabled={switchingChannel || otpLoading}
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: 'var(--primary)',
+                      cursor: switchingChannel ? 'not-allowed' : 'pointer',
+                      background: 'none',
+                      border: 'none',
+                      fontFamily: 'inherit',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '4px 8px',
+                      opacity: switchingChannel ? 0.7 : 1,
+                    }}
+                  >
+                    {switchingChannel ? <Loader2 size={14} className="animate-spin" /> : <Smartphone size={15} />}
+                    {switchingChannel
+                      ? t('login.switching_channel')
+                      : t('login.otp_no_email_access_sms', { phone: phoneMasked ? ` (${phoneMasked})` : '' })}
+                  </button>
+                ) : (
+                  <div style={{ fontSize: 12, color: 'var(--text3)', display: 'inline-flex', alignItems: 'center', gap: 6, lineHeight: 1.4, padding: '4px 8px' }}>
+                    <Smartphone size={14} style={{ opacity: 0.6, flexShrink: 0 }} />
+                    <span>{t('login.no_phone_notice')}</span>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1054,7 +1063,9 @@ export default function LoginPage() {
                   }}
                 >
                   {switchingChannel ? <Loader2 size={14} className="animate-spin" /> : <Mail size={15} />}
-                  {switchingChannel ? t('login.switching_channel') : t('login.otp_use_email_instead')}
+                  {switchingChannel
+                    ? t('login.switching_channel')
+                    : t('login.otp_use_email_instead', { email: emailMasked ? ` (${emailMasked})` : '' })}
                 </button>
               </div>
             )}
