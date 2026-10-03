@@ -285,11 +285,12 @@ export class AttendanceController {
         filtre.studentId = childIds;
       }
 
-      const [total, present, absent, late] = await Promise.all([
+      const [total, present, absent, late, excused] = await Promise.all([
         this.presenceRepository.countByFiltre(schoolId, filtre),
         this.presenceRepository.countByFiltre(schoolId, { ...filtre, status: 'PRESENT' }),
         this.presenceRepository.countByFiltre(schoolId, { ...filtre, status: 'ABSENT' }),
         this.presenceRepository.countByFiltre(schoolId, { ...filtre, status: 'LATE' }),
+        this.presenceRepository.countByFiltre(schoolId, { ...filtre, status: 'ABSENT_JUSTIFIED' }),
       ]);
 
       res.json({
@@ -298,6 +299,7 @@ export class AttendanceController {
           present,
           absent,
           late,
+          excused,
           attendanceRate: total ? `${Math.round(((present + late) / total) * 100)}%` : '0%',
         },
       });

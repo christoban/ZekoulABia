@@ -96,6 +96,13 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
     }
   }, [])
 
+  // Chargement automatique lors de la sélection de classe ou de date
+  useEffect(() => {
+    if (selectedClass && selectedDate) {
+      loadAttendance()
+    }
+  }, [selectedClass, selectedDate, selectedSubject]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Rafraîchissement temps réel quand l'assistant IA marque une présence.
   useEffect(() => {
     const onChanged = (e: Event) => {
@@ -124,17 +131,50 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
         return
       }
 
+      // 1. Récupération systématique de la liste exhaustive des élèves de la classe
+      let studentList: any[] = []
+      try {
+        const classStudentsRes = await fetchApi(`/api/v2/classes/${selectedClass}/students`, { credentials: 'include' }).then(r => r.json())
+        if (classStudentsRes.success && Array.isArray(classStudentsRes.data) && classStudentsRes.data.length > 0) {
+          studentList = classStudentsRes.data.map((s: any) => ({
+            id: s.id,
+            name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || t('grades_section.unknown_student'),
+            firstName: s.firstName,
+            lastName: s.lastName,
+            matricule: s.matricule,
+          }))
+        }
+      } catch { /* repli sur users */ }
+
+      if (studentList.length === 0) {
+        try {
+          const usersRes = await fetchApi(`/api/v2/users?role=STUDENT&classId=${selectedClass}&limit=100`, { credentials: 'include' }).then(r => r.json())
+          if (usersRes.success && Array.isArray(usersRes.data) && usersRes.data.length > 0) {
+            studentList = usersRes.data.map((u: any) => ({
+              id: u.id,
+              name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || t('grades_section.unknown_student'),
+              firstName: u.firstName,
+              lastName: u.lastName,
+              matricule: u.studentProfile?.matricule,
+            }))
+          }
+        } catch { /* ignore */ }
+      }
+
+      // 2. Récupération des présences déjà saisies pour cette date
       const res = await fetchApi(`/api/v2/attendance?classId=${selectedClass}&date=${selectedDate}`, { credentials: 'include' }).then(r => r.json())
       const mapped: Record<string, AttStatus> = {}
-      let studentList: any[] = []
       if (res.records?.length) {
-        res.records.forEach((r: any) => { mapped[r.studentId] = r.status as AttStatus })
-          studentList = res.records.map((r: any) => ({ id: r.studentId, name: r.student?.name || t('grades_section.unknown_student'), ...r.student }))
-      } else {
-        const usersRes = await fetchApi(`/api/v2/users?role=STUDENT&classId=${selectedClass}`, { credentials: 'include' }).then(r => r.json())
-        if (usersRes.success && usersRes.data.length) {
-          studentList = usersRes.data.map((u: any) => ({ id: u.id, name: `${u.firstName} ${u.lastName}`.trim() }))
-        }
+        res.records.forEach((r: any) => {
+          mapped[r.studentId] = r.status as AttStatus
+          if (!studentList.some(s => s.id === r.studentId)) {
+            studentList.push({
+              id: r.studentId,
+              name: r.student?.name || `${r.student?.firstName || ''} ${r.student?.lastName || ''}`.trim() || t('grades_section.unknown_student'),
+              ...r.student,
+            })
+          }
+        })
       }
 
       // Créneau électif (LV2 ou A-Level) : restreindre à la liste filtrée + en-tête
