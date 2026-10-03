@@ -30,6 +30,7 @@ import SectionMonProfilRH from '@/features/rh/SectionMonProfilRH'
 import NotificationCenter from '@/components/NotificationCenter'
 import { fetchApi } from '@/lib/fetchApi'
 import { OfflineIndicator } from '@/components/OfflineIndicator'
+import { getUserSession, putUserSession } from '@/lib/offline/db'
 import ChangePasswordModal from '@/components/ChangePasswordModal'
 import EventCenterWidget from '@/features/communication/EventCenterWidget'
 import AssistantWidget from '../../admin/dashboard/_components/AssistantWidget'
@@ -115,7 +116,7 @@ export default function StaffDashboard() {
     return () => window.removeEventListener('zekoulabia:notification', handleNotification)
   }, [checkActiveConcours])
 
-  // Lecture session depuis localStorage (stockée au login)
+  // Lecture session depuis localStorage (stockée au login) + restauration Dexie offline
   useEffect(() => {
     try {
       const raw = localStorage.getItem('zekoulabia_user')
@@ -124,6 +125,13 @@ export default function StaffDashboard() {
         setSessionUser(user)
         const allowed = getSectionsFromPermissions(user.permissions ?? [])
         setAllowedSections(allowed)
+
+        getUserSession(user.userId).then(saved => {
+          if (saved?.schoolInfo) {
+            setSchoolName(saved.schoolInfo.name)
+            setLogoUrl(saved.schoolInfo.logoUrl ?? null)
+          }
+        }).catch(() => {})
 
         const params = new URLSearchParams(window.location.search)
         const convId = params.get('conversationId')
@@ -151,7 +159,19 @@ export default function StaffDashboard() {
         }
         return r.json()
       })
-      .then(d => { if (d.success) { setSchoolName(d.data.name); setLogoUrl(d.data.logoUrl ?? null) } })
+      .then(d => {
+        if (d.success) {
+          setSchoolName(d.data.name)
+          setLogoUrl(d.data.logoUrl ?? null)
+          try {
+            const raw = localStorage.getItem('zekoulabia_user')
+            if (raw) {
+              const u = JSON.parse(raw)
+              putUserSession({ userId: u.userId, role: u.role, schoolInfo: d.data }).catch(() => {})
+            }
+          } catch { /* ignore */ }
+        }
+      })
       .catch(err => { if (err !== 'auth') console.warn('[staff-dashboard] Erreur réseau:', err) })
   }, [router])
 

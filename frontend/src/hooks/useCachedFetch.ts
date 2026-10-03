@@ -19,38 +19,54 @@ export function useCachedFetch<T>(cacheKey: string, fetchFn: () => Promise<T>) {
     let mounted = true
 
     const load = async () => {
-      setLoading(true)
       setError(null)
 
+      // 1. STALE FIRST : lecture immédiate du cache local Dexie (rendu instantané en < 30ms)
+      let hasLocalData = false
+      try {
+        const cached = await getCachedData<T>(cacheKey)
+        if (cached && mounted) {
+          setData(cached.data)
+          setFromCache(true)
+          setCachedAt(cached.cachedAt)
+          setLoading(false)
+          hasLocalData = true
+        }
+      } catch {
+        // En cas d'erreur de lecture locale, on continue vers le réseau
+      }
+
+      // Si aucune donnée locale n'est disponible, l'interface doit montrer le loader
+      if (!hasLocalData && mounted) {
+        setLoading(true)
+      }
+
+      // 2. WHILE-REVALIDATE : Revalidation en tâche de fond si connecté
       if (isOnline) {
         try {
           const result = await fetchFnRef.current()
           if (!mounted) return
           setData(result)
           setFromCache(false)
-          setCachedAt(null)
+          setCachedAt(Date.now())
+          setError(null)
           await putCachedData(cacheKey, result)
         } catch {
-          const cached = await getCachedData<T>(cacheKey)
-          if (cached && mounted) {
-            setData(cached.data)
-            setFromCache(true)
-            setCachedAt(cached.cachedAt)
-          } else if (mounted) {
+          if (!mounted) return
+          // Si le réseau échoue mais qu'on avait des données locales, on les conserve sans alerte bloquante
+          if (!hasLocalData) {
             setError('Erreur de chargement')
           }
+        } finally {
+          if (mounted) setLoading(false)
         }
       } else {
-        const cached = await getCachedData<T>(cacheKey)
-        if (cached && mounted) {
-          setData(cached.data)
-          setFromCache(true)
-          setCachedAt(cached.cachedAt)
-        } else if (mounted) {
+        // Hors connexion
+        if (!hasLocalData && mounted) {
           setError('OFFLINE_NO_CACHE')
         }
+        if (mounted) setLoading(false)
       }
-      if (mounted) setLoading(false)
     }
 
     load()

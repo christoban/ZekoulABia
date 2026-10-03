@@ -63,6 +63,7 @@ export async function logoutUser(): Promise<void> {
   await db.cachedData.clear()
   await db.pendingActions.clear()
   await db.messages.clear()
+  await db.userSession.clear()
   localStorage.removeItem('zekoulabia_user')
   purgerCle() // clé de chiffrement — voir tâche 4
   try {

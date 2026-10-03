@@ -31,13 +31,14 @@ import SectionMatricules from './_components/SectionMatricules'
 import SectionSchoolPayments from './_components/SectionSchoolPayments'
 import SectionAdminLV2Choice from './_components/SectionAdminLV2Choice'
 import SectionAdminEntranceExams from './_components/SectionAdminEntranceExams'
+import SectionAdminAcademicEvents from './_components/SectionAdminAcademicEvents'
+import SectionAdminGroupTransfers from './_components/SectionAdminGroupTransfers'
 import SectionEleveOnboarding from './_components/SectionEleveOnboarding'
 import SectionMinesecStatistics from './_components/SectionMinesecStatistics'
 import SectionMinedubStatistics from './_components/SectionMinedubStatistics'
 import SectionAdminPebsExams from './_components/SectionAdminPebsExams'
-import SectionAdminAcademicEvents from './_components/SectionAdminAcademicEvents'
-import SectionAdminGroupTransfers from './_components/SectionAdminGroupTransfers'
 import EventCenterWidget from '@/features/communication/EventCenterWidget'
+import { getUserSession, putUserSession } from '@/lib/offline/db'
 import AdminToast from './_components/AdminToast'
 import AssistantWidget from './_components/AssistantWidget'
 import HighlightController from './_components/HighlightController'
@@ -109,10 +110,24 @@ export default function AdminDashboard() {
   }, [])
 
   useEffect(() => {
+    let currentUserId = ''
     try {
       const raw = localStorage.getItem('zekoulabia_user')
-      if (raw) setSessionUser(JSON.parse(raw) as SessionUser)
+      if (raw) {
+        const parsed = JSON.parse(raw) as SessionUser
+        setSessionUser(parsed)
+        currentUserId = parsed.userId ?? parsed.id ?? ''
+      }
     } catch { /* ignore */ }
+
+    // Restauration immédiate du schoolInfo depuis le cache local Dexie userSession
+    if (currentUserId) {
+      getUserSession(currentUserId).then(saved => {
+        if (saved?.schoolInfo) {
+          setSchoolInfo(saved.schoolInfo as SchoolInfo)
+        }
+      }).catch(() => {})
+    }
 
     const handleUserUpdated = (e: Event) => {
       const customEvent = e as CustomEvent
@@ -132,19 +147,32 @@ export default function AdminDashboard() {
         return r.json()
       })
       .then(d => {
-        if (!d || !d.success) {
-          try { localStorage.removeItem('zekoulabia_user') } catch { /* ignore */ }
-          router.replace('/login')
+        if (!d || !d.success || !d.data) {
+          // Erreur réseau ou serveur indisponible : ne pas purger la session locale !
           return
         }
         const { status } = d.data as { status: string }
         if (status === 'APPROVED') { router.replace('/admin/configuration'); return }
         if (status !== 'ACTIVE') {
+          // Établissement explicitement suspendu/inactif côté serveur
           try { localStorage.removeItem('zekoulabia_user') } catch { /* ignore */ }
           router.replace('/login')
           return
         }
         setSchoolInfo(d.data)
+
+        // Persistance du schoolInfo dans le store Dexie userSession pour les prochains démarrages offline
+        if (currentUserId) {
+          putUserSession({
+            userId: currentUserId,
+            role: 'ADMIN',
+            nomComplet: '',
+            firstName: '',
+            permissions: [],
+            schoolInfo: d.data,
+            cachedAt: Date.now(),
+          }).catch(() => {})
+        }
 
         const params = new URLSearchParams(window.location.search)
         if (params.get('activated') === '1') {

@@ -71,10 +71,32 @@ interface CachedMessageChiffre extends Omit<CachedMessage, 'content'> {
   content: { iv: number[]; data: number[] }
 }
 
+export interface SchoolInfoCached {
+  name: string
+  logoUrl: string | null
+  address?: string | null
+  phone?: string | null
+  email?: string | null
+}
+
+export interface UserSessionData {
+  userId: string
+  role: string
+  nomComplet?: string
+  firstName?: string
+  lastName?: string
+  schoolId?: string
+  schoolInfo?: SchoolInfoCached | null
+  fullProfile?: unknown
+  permissions?: string[]
+  cachedAt: number
+}
+
 class ZekoulABiaDB extends Dexie {
   pendingActions!: Table<PendingAction>
   cachedData!: Table<CachedData>
   messages!: Table<CachedMessageChiffre>
+  userSession!: Table<UserSessionData>
 
   constructor() {
     super('ZekoulABiaDB')
@@ -116,6 +138,15 @@ class ZekoulABiaDB extends Dexie {
       pendingActions: '++id, type, status, createdAt',
       cachedData: 'key, cachedAt',
       messages: 'id, conversationId, createdAt, status',
+    })
+    // v4 — store de session et profil enrichi offline (Phase 1 du Plan Offline-First) :
+    // conserve en local le profil complet (école, rôles étendus PP/AP, filtres) pour
+    // garantir un démarrage instantané < 30ms et sans dépendre d'un appel réseau /users/me.
+    this.version(4).stores({
+      pendingActions: '++id, type, status, createdAt',
+      cachedData: 'key, cachedAt',
+      messages: 'id, conversationId, createdAt, status',
+      userSession: 'userId, role, cachedAt',
     })
   }
 }
@@ -200,4 +231,38 @@ export async function getCachedMessages(conversationId: string): Promise<CachedM
 /** Met à jour le statut d'envoi d'un message en cache (horloge → coche / alerte). */
 export async function updateCachedMessageStatus(id: string, status: CachedMessage['status']): Promise<void> {
   await db.messages.update(id, { status })
+}
+
+/** Enregistre ou fusionne le profil enrichi et les données de session d'un utilisateur. */
+export async function putUserSession(session: Partial<UserSessionData> & { userId: string; role: string }): Promise<void> {
+  const existing = await db.userSession.get(session.userId)
+  const merged: UserSessionData = {
+    userId: session.userId,
+    role: session.role,
+    nomComplet: session.nomComplet ?? existing?.nomComplet ?? '',
+    firstName: session.firstName ?? existing?.firstName ?? '',
+    lastName: session.lastName ?? existing?.lastName ?? '',
+    schoolId: session.schoolId ?? existing?.schoolId,
+    schoolInfo: session.schoolInfo !== undefined ? session.schoolInfo : (existing?.schoolInfo ?? null),
+    fullProfile: session.fullProfile !== undefined ? session.fullProfile : (existing?.fullProfile ?? null),
+    permissions: session.permissions ?? existing?.permissions ?? [],
+    cachedAt: Date.now(),
+  }
+  await db.userSession.put(merged)
+}
+
+/** Récupère la session enrichie d'un utilisateur par son ID. */
+export async function getUserSession(userId: string): Promise<UserSessionData | undefined> {
+  return db.userSession.get(userId)
+}
+
+/** Récupère la dernière session active en cache local. */
+export async function getLatestUserSession(): Promise<UserSessionData | undefined> {
+  const sessions = await db.userSession.orderBy('cachedAt').reverse().toArray()
+  return sessions[0]
+}
+
+/** Supprime toutes les sessions utilisateurs en cache local (au logout). */
+export async function clearUserSession(): Promise<void> {
+  await db.userSession.clear()
 }

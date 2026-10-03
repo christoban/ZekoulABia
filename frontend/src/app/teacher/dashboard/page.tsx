@@ -23,6 +23,7 @@ import SectionTeacherCorrectionAnonyme from './_components/SectionTeacherCorrect
 import type { TeacherSection, Toast, UserInfo } from './_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
+import { getUserSession, putUserSession } from '@/lib/offline/db'
 import { OfflineIndicator } from '@/components/OfflineIndicator'
 import ChangePasswordModal from '@/components/ChangePasswordModal'
 import SectionMonProfilRH from '@/features/rh/SectionMonProfilRH'
@@ -116,12 +117,14 @@ export default function TeacherDashboard() {
     }
   }, [user, selectedPPClassId, selectedAPDeptId])
 
-  // Lecture session depuis localStorage (stockée au login) — identique à admin/staff
+  // Lecture session depuis localStorage + restauration profil complet depuis Dexie userSession
   useEffect(() => {
+    let currentUserId = ''
     try {
       const raw = localStorage.getItem('zekoulabia_user')
       if (raw) {
         const sessionUser = JSON.parse(raw) as SessionUser
+        currentUserId = sessionUser.userId
         setUser({ id: sessionUser.userId, firstName: sessionUser.firstName ?? '', lastName: sessionUser.nomComplet?.split(' ').slice(1).join(' ') ?? '', email: '', role: sessionUser.role })
       }
       const params = new URLSearchParams(window.location.search)
@@ -137,6 +140,18 @@ export default function TeacherDashboard() {
       }
     } catch { /* silencieux — données absentes ou corrompues */ }
 
+    // Restauration immédiate du profil complet (PP, AP, schoolInfo) depuis Dexie userSession
+    if (currentUserId) {
+      getUserSession(currentUserId).then(saved => {
+        if (saved?.fullProfile) {
+          setUser(saved.fullProfile as unknown as UserInfo)
+        }
+        if (saved?.schoolInfo) {
+          setSchoolInfo(saved.schoolInfo)
+        }
+      }).catch(() => {})
+    }
+
     const handleUserUpdated = (e: Event) => {
       const customEvent = e as CustomEvent
       if (customEvent.detail) {
@@ -149,8 +164,33 @@ export default function TeacherDashboard() {
 
   // Infos école + utilisateur + compteur notes en attente — fetch en arrière-plan
   useEffect(() => {
+    let uid = ''
+    try {
+      const raw = localStorage.getItem('zekoulabia_user')
+      if (raw) uid = (JSON.parse(raw) as SessionUser).userId
+    } catch { /* ignore */ }
+
     fetchApi('/api/v2/school/me', { credentials: 'include' })
-      .then(r => r.json()).then(d => { if (d.success) setSchoolInfo(d.data) }).catch(() => { })
+      .then(r => r.json()).then(d => {
+        if (d.success && d.data) {
+          setSchoolInfo(d.data)
+          if (uid) {
+            getUserSession(uid).then(existing => {
+              putUserSession({
+                userId: uid,
+                role: 'TEACHER',
+                nomComplet: existing?.nomComplet || '',
+                firstName: existing?.firstName || '',
+                permissions: existing?.permissions || [],
+                fullProfile: existing?.fullProfile,
+                schoolInfo: d.data,
+                cachedAt: Date.now(),
+              }).catch(() => {})
+            }).catch(() => {})
+          }
+        }
+      }).catch(() => { })
+
     fetchApi('/api/v2/users/me', { credentials: 'include' })
       .then(r => {
         if (r.status === 401) {
@@ -160,8 +200,28 @@ export default function TeacherDashboard() {
         }
         return r.json()
       })
-      .then(d => { if (d.success) setUser(d.data) })
+      .then(d => {
+        if (d.success && d.data) {
+          setUser(d.data)
+          // Persistance du profil complet (avec classesProfessorPrincipal et headedDepartments) dans Dexie
+          const fullUser = d.data as UserInfo
+          getUserSession(fullUser.id).then(existing => {
+            putUserSession({
+              userId: fullUser.id,
+              role: fullUser.role || 'TEACHER',
+              nomComplet: `${fullUser.firstName || ''} ${fullUser.lastName || ''}`.trim(),
+              firstName: fullUser.firstName || '',
+              lastName: fullUser.lastName || '',
+              permissions: [],
+              fullProfile: fullUser,
+              schoolInfo: existing?.schoolInfo,
+              cachedAt: Date.now(),
+            }).catch(() => {})
+          }).catch(() => {})
+        }
+      })
       .catch(err => { if (err !== 'auth') console.warn('[teacher-dashboard] Erreur réseau:', err) })
+
     fetchApi('/api/v2/grades?validationStatus=SUBMITTED&limit=1', { credentials: 'include' })
       .then(r => r.json()).then(d => { if (d.pagination) setPendingGrades(d.pagination.total ?? 0) }).catch(() => { })
   }, [router])

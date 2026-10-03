@@ -23,7 +23,7 @@ import HealthAlertBanner from './_components/HealthAlertBanner'
 import type { StudentSection, Toast, UserInfo } from './_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { OfflineIndicator } from '@/components/OfflineIndicator'
-import { putCachedData } from '@/lib/offline/db'
+import { putCachedData, getUserSession, putUserSession } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 import EventCenterWidget from '@/features/communication/EventCenterWidget'
 import AssistantWidget from '../../admin/dashboard/_components/AssistantWidget'
@@ -104,13 +104,19 @@ export default function StudentDashboard() {
   const [user, setUser] = useState<UserInfo | null>(null)
   const [changePwdOpen, setChangePwdOpen] = useState(false)
 
-  // Lecture session depuis localStorage (stockée au login) — identique à admin/staff/teacher/parent
+  // Lecture session depuis localStorage (stockée au login) + restauration Dexie offline
   useEffect(() => {
     try {
       const raw = localStorage.getItem('zekoulabia_user')
       if (raw) {
         const sessionUser = JSON.parse(raw) as SessionUser
         setUser({ id: sessionUser.userId, firstName: sessionUser.firstName ?? '', lastName: sessionUser.nomComplet?.split(' ').slice(1).join(' ') ?? '', email: '', role: sessionUser.role })
+        getUserSession(sessionUser.userId).then(saved => {
+          if (saved) {
+            if (saved.schoolInfo) setSchoolInfo({ name: saved.schoolInfo.name, logoUrl: saved.schoolInfo.logoUrl })
+            if (saved.fullProfile) setUser(saved.fullProfile as unknown as UserInfo)
+          }
+        }).catch(() => {})
       }
       const params = new URLSearchParams(window.location.search)
       const convId = params.get('conversationId')
@@ -130,7 +136,18 @@ export default function StudentDashboard() {
   useEffect(() => {
     fetchApi('/api/v2/school/me', { credentials: 'include' })
       .then(r => r.json())
-      .then(d => { if (d.success) setSchoolInfo(d.data) })
+      .then(d => {
+        if (d.success) {
+          setSchoolInfo(d.data)
+          try {
+            const raw = localStorage.getItem('zekoulabia_user')
+            if (raw) {
+              const u = JSON.parse(raw)
+              putUserSession({ userId: u.userId, role: u.role, schoolInfo: d.data }).catch(() => {})
+            }
+          } catch { /* ignore */ }
+        }
+      })
       .catch(() => {})
     fetchApi('/api/v2/users/me', { credentials: 'include' })
       .then(r => {
@@ -141,7 +158,18 @@ export default function StudentDashboard() {
         }
         return r.json()
       })
-      .then(d => { if (d.success) setUser(d.data) })
+      .then(d => {
+        if (d.success) {
+          setUser(d.data)
+          try {
+            const raw = localStorage.getItem('zekoulabia_user')
+            if (raw) {
+              const u = JSON.parse(raw)
+              putUserSession({ userId: u.userId, role: u.role, fullProfile: d.data }).catch(() => {})
+            }
+          } catch { /* ignore */ }
+        }
+      })
       .catch(err => { if (err !== 'auth') console.warn('[student-dashboard] Erreur réseau:', err) })
   }, [router])
 

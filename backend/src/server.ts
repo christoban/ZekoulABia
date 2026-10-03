@@ -128,6 +128,11 @@ app.get("/", (req: Request, res: Response) => {
   res.status(200).json({ status: "OK", message: "Server is healthy", libreOffice: libreOfficeHealth });
 });
 
+// Route health dédiée API v2 pour la sonde active de connectivité offline-first
+app.get("/api/v2/health", (_req: Request, res: Response) => {
+  res.status(200).json({ ok: true, timestamp: Date.now() });
+});
+
 // SPA Fallback: serve index.html for all non-API routes (enables SPA routing on direct links)
 // Note: Build frontend first (cd frontend && bun run build), then use NODE_ENV=production
 const staticPath = process.env.STATIC_PATH || join(process.cwd(), "..", "frontend", "dist");
