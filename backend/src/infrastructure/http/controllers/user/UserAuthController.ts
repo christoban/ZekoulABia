@@ -64,7 +64,7 @@ export class UserAuthController {
         userId: userId || undefined,
       });
 
-      await this.loginEmailOtp.envoyer(resultat.userId);
+      const envoi = await this.loginEmailOtp.envoyer(resultat.userId);
 
       const pendingPayload: Omit<PendingLoginPayload, 'tokenType'> = {
         userId: resultat.userId,
@@ -79,7 +79,14 @@ export class UserAuthController {
       const token = signPendingToken(pendingPayload, 'pending_login', '10m');
       setPendingCookie(res, token, 10 * 60 * 1000);
 
-      res.json({ success: true, step: 'email_otp', message: 'Code de vérification envoyé par email' });
+      res.json({
+        success: true,
+        step: 'email_otp',
+        message: 'Code de vérification envoyé par email',
+        emailMasked: envoi.emailMasked,
+        hasPhone: envoi.hasPhone,
+        phoneMasked: envoi.phoneMasked,
+      });
     } catch (error) {
       if (error instanceof Error && (error as SchoolSuspendedError).code === 'SCHOOL_SUSPENDED') {
         res.status(403).json({
@@ -151,12 +158,41 @@ export class UserAuthController {
   resendLoginOtp = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
       const decoded = readPendingToken(req, 'pending_login');
-      await this.loginEmailOtp.envoyer(decoded.userId);
+      const { channel } = req.body || {};
+      let info;
+      if (channel === 'SMS') {
+        info = await this.loginEmailOtp.envoyerSms(decoded.userId);
+      } else {
+        info = await this.loginEmailOtp.envoyer(decoded.userId);
+      }
       const token = signPendingToken(decoded, 'pending_login', '10m');
       setPendingCookie(res, token, 10 * 60 * 1000);
-      res.json({ success: true, message: 'Nouveau code de vérification envoyé' });
+      res.json({
+        success: true,
+        message: channel === 'SMS' ? 'Nouveau code envoyé par SMS' : 'Nouveau code envoyé par email',
+        phoneMasked: info.phoneMasked,
+        emailMasked: info.emailMasked,
+      });
     } catch (error: any) {
       res.status(400).json({ success: false, message: error.message || 'Erreur lors du renvoi' });
+    }
+  };
+
+  // POST /api/v2/users/auth/request-sms-otp
+  requestSmsOtp = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    try {
+      const decoded = readPendingToken(req, 'pending_login');
+      const info = await this.loginEmailOtp.envoyerSms(decoded.userId);
+      const token = signPendingToken(decoded, 'pending_login', '10m');
+      setPendingCookie(res, token, 10 * 60 * 1000);
+      res.json({
+        success: true,
+        channel: 'SMS',
+        message: `Code envoyé par SMS au ${info.phoneMasked || 'numéro associé'}`,
+        phoneMasked: info.phoneMasked,
+      });
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error.message || "Impossible d'envoyer le SMS" });
     }
   };
 
@@ -238,6 +274,59 @@ export class UserAuthController {
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message || 'Erreur' });
+    }
+  };
+
+  // POST /api/v2/users/auth/unlock-session — déverrouillage léger après inactivité (>7j mais <30j)
+  unlockSession = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({ success: false, message: 'Non authentifié' });
+        return;
+      }
+      const { password } = req.body as { password?: string };
+      if (!password) {
+        res.status(400).json({ success: false, message: 'Mot de passe requis' });
+        return;
+      }
+      const userAuth = await this.userRepository.findByIdWithRefreshVersion(userId);
+      if (!userAuth || !userAuth.user.isActive) {
+        res.status(401).json({ success: false, message: 'Compte introuvable ou inactif' });
+        return;
+      }
+      const ok = await this.userRepository.verifierMotDePasse(userId, password);
+      if (!ok) {
+        res.status(401).json({ success: false, message: 'Mot de passe incorrect' });
+        return;
+      }
+
+      const tokens = this.tokenService.genererTokens({
+        userId: userAuth.user.id,
+        schoolId: userAuth.user.schoolId,
+        role: userAuth.user.role,
+        permissions: userAuth.user.staffPermissions,
+        tokenType: 'access',
+        refreshTokenVersion: userAuth.refreshTokenVersion,
+      });
+
+      res.cookie('access_token', tokens.accessToken, { ...COOKIE_OPTIONS, maxAge: ACCESS_COOKIE_MAX_AGE_MS });
+      res.cookie('refresh_token', tokens.refreshToken, {
+        ...COOKIE_OPTIONS,
+        maxAge: dureeCookieRefreshMs(userAuth.user.role),
+      });
+
+      res.json({
+        success: true,
+        message: 'Session déverrouillée avec succès',
+        data: {
+          userId: userAuth.user.id,
+          role: userAuth.user.role,
+          nomComplet: `${userAuth.user.firstName} ${userAuth.user.lastName}`,
+        },
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message || 'Erreur lors du déverrouillage' });
     }
   };
 

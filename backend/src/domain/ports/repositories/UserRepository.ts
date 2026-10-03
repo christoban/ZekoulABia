@@ -23,6 +23,7 @@ export interface EmployeeDetail {
 export interface AuthUserData {
   id: string;
   email: string | null;
+  phone?: string | null;
   isActive: boolean;
   mustChangePassword?: boolean;
   loginEmailOtpHash: string | null;

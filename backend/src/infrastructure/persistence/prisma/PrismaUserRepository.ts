@@ -327,6 +327,7 @@ export class PrismaUserRepository implements UserRepository {
       select: {
         id: true,
         email: true,
+        phone: true,
         isActive: true,
         mustChangePassword: true,
         loginEmailOtpHash: true,

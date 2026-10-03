@@ -83,6 +83,16 @@ export function registerUserRoutes(app: Application, prismaParam: typeof prisma 
         throw new Error(result.error || "Échec d'envoi de l'email");
       }
     },
+    async ({ recipientPhone, otp }: { recipientPhone: string; otp: string }) => {
+      const { sendSMS } = await import('../../services/sms/SmsService.ts');
+      const result = await sendSMS(
+        recipientPhone,
+        `ZekoulABia : Votre code de vérification est ${otp}. Valide 10 minutes. Ne le partagez pas.`
+      );
+      if (!result.success) {
+        throw new Error(result.error || "Échec d'envoi du SMS");
+      }
+    },
   );
   const verifierMfaConnexionUseCase = new VerifierMfaConnexionUseCase(userRepository);
   const mfaService = new MfaServiceAdapter();

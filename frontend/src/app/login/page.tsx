@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import {
   Eye, EyeOff, Loader2, Search, School, Presentation, Users, GraduationCap,
-  User, Ban, Hand, AlertTriangle, Mail, Clock, ArrowLeft, KeyRound, Shield, Copy, Award
+  User, Ban, Hand, AlertTriangle, Mail, Clock, ArrowLeft, KeyRound, Shield, Copy, Award,
+  Smartphone, Lock
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -13,6 +14,7 @@ import LanguageSwitch from '@/components/LanguageSwitch'
 import ThemeToggle from '@/components/ThemeToggle'
 import { getDashboardLanguageKey, isLanguage, useT } from '@/lib/i18n'
 import { resetNotificationSocket } from '@/lib/notificationSocket'
+import { fetchApi } from '@/lib/fetchApi'
 
 // ── Configuration d'affichage par rôle (icônes, badges, redirections) ──
 type SuccessInfo = { icon: LucideIcon; badge: string; color: string; bg: string; dest: string; firstName: string }
@@ -47,6 +49,7 @@ export default function LoginPage() {
   const router = useRouter()
 
   const [step, setStep] = useState<LoginStep>('credentials')
+  const [checkingSession, setCheckingSession] = useState(true)
 
   const [email, setEmail]           = useState('')
   const [password, setPassword]     = useState('')
@@ -62,14 +65,31 @@ export default function LoginPage() {
   const [accountChoices, setAccountChoices] = useState<AccountChoice[] | null>(null)
   const [pendingCredentials, setPendingCredentials] = useState<{ email: string; password: string } | null>(null)
 
-  // ── Étape code email ──
+  // ── Étape code OTP (Email ou SMS) ──
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
+  const [otpChannel, setOtpChannel] = useState<'EMAIL' | 'SMS'>('EMAIL')
+  const [phoneMasked, setPhoneMasked] = useState<string | null>(null)
+  const [emailMasked, setEmailMasked] = useState<string | null>(null)
+  const [hasPhone, setHasPhone] = useState(false)
+  const [switchingChannel, setSwitchingChannel] = useState(false)
   const [otpTimerSecs, setOtpTimerSecs] = useState(600)
   const [otpResendEnabled, setOtpResendEnabled] = useState(false)
   const [otpLoading, setOtpLoading] = useState(false)
   const [otpAlert, setOtpAlert] = useState<string | null>(null)
   const otpRefs = useRef<(HTMLInputElement | null)[]>([])
   const otpTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // ── Modal Inactivité 7 jours ──
+  const [inactiveUser, setInactiveUser] = useState<{
+    userId: string
+    nomComplet: string
+    role: string
+    dest: string
+  } | null>(null)
+  const [unlockPassword, setUnlockPassword] = useState('')
+  const [unlockLoading, setUnlockLoading] = useState(false)
+  const [unlockAlert, setUnlockAlert] = useState<string | null>(null)
+  const [showUnlockPwd, setShowUnlockPwd] = useState(false)
 
   // ── Étape TOTP ──
   const [totpCode, setTotpCode] = useState('')
@@ -95,7 +115,78 @@ export default function LoginPage() {
   const [forgotDone,    setForgotDone]    = useState(false)
   const [forgotError,   setForgotError]   = useState('')
 
-  useEffect(() => { emailRef.current?.focus() }, [])
+  // Vérification de session active préalable (reprise d'application PWA, raccourci, onglet fermé/rouvert)
+  useEffect(() => {
+    let isMounted = true
+
+    const verifyActiveSession = async () => {
+      try {
+        const raw = localStorage.getItem('zekoulabia_user')
+        if (!raw) {
+          if (isMounted) setCheckingSession(false)
+          return
+        }
+
+        const parsed = JSON.parse(raw)
+        const role = parsed?.role
+        const dest = role ? ROLE_CONFIG[role]?.dest : null
+
+        if (!dest) {
+          if (isMounted) setCheckingSession(false)
+          return
+        }
+
+        // Si inactif depuis plus de 7 jours consécutifs, proposer la re-validation rapide par mot de passe
+        const INACTIVITY_MS = 7 * 24 * 60 * 60 * 1000
+        const lastActiveAt = parsed?.lastActiveAt
+        const isInactive = Boolean(lastActiveAt && (Date.now() - Number(lastActiveAt) > INACTIVITY_MS))
+
+        if (isInactive) {
+          setInactiveUser({
+            userId: parsed.userId,
+            nomComplet: parsed.nomComplet || parsed.firstName || 'Utilisateur',
+            role,
+            dest,
+          })
+          if (isMounted) setCheckingSession(false)
+          return
+        }
+
+        // Si l'appareil est hors-ligne, basculer directement sur le tableau de bord avec les données locales Dexie
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          router.replace(dest)
+          return
+        }
+
+        // Si en ligne, validation de la session (fetchApi gère le rafraîchissement transparent du refresh_token)
+        const res = await fetchApi('/api/v2/users/me')
+        if (res.ok) {
+          router.replace(dest)
+          return
+        }
+
+        if (res.status === 401 || res.status === 403) {
+          try { localStorage.removeItem('zekoulabia_user') } catch { /* ignore */ }
+        }
+      } catch {
+        // En cas d'erreur de parsing ou autre, afficher le formulaire normalement
+      } finally {
+        if (isMounted) setCheckingSession(false)
+      }
+    }
+
+    verifyActiveSession()
+
+    return () => {
+      isMounted = false
+    }
+  }, [router])
+
+  useEffect(() => {
+    if (!checkingSession) {
+      emailRef.current?.focus()
+    }
+  }, [checkingSession])
 
   // Empêcher le remplissage automatique du navigateur
   useEffect(() => {
@@ -140,6 +231,7 @@ export default function LoginPage() {
       userId, role, nomComplet, firstName,
       permissions: permissions ?? [],
       mustChangePassword: mustChangePassword ?? false,
+      lastActiveAt: Date.now(),
     }))
     const selectedLanguage = localStorage.getItem('zekoulabia_lang_override')
     const dashboardLanguageKey = getDashboardLanguageKey(userId)
@@ -193,6 +285,10 @@ export default function LoginPage() {
         return
       }
 
+      if (data.emailMasked) setEmailMasked(data.emailMasked)
+      if (data.phoneMasked) setPhoneMasked(data.phoneMasked)
+      setHasPhone(Boolean(data.hasPhone))
+      setOtpChannel('EMAIL')
       setOtp(['', '', '', '', '', ''])
       setOtpAlert(null)
       setStep('email_otp')
@@ -227,6 +323,10 @@ export default function LoginPage() {
       }
       setAccountChoices(null)
       setPendingCredentials(null)
+      if (data.emailMasked) setEmailMasked(data.emailMasked)
+      if (data.phoneMasked) setPhoneMasked(data.phoneMasked)
+      setHasPhone(Boolean(data.hasPhone))
+      setOtpChannel('EMAIL')
       setOtp(['', '', '', '', '', ''])
       setOtpAlert(null)
       setStep('email_otp')
@@ -314,14 +414,113 @@ export default function LoginPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
+        body: JSON.stringify({ channel: otpChannel }),
       })
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
+      if (data.phoneMasked) setPhoneMasked(data.phoneMasked)
+      if (data.emailMasked) setEmailMasked(data.emailMasked)
       startOtpTimer()
       setTimeout(() => otpRefs.current[0]?.focus(), 50)
     } catch (err: any) {
       setOtpAlert(err.message)
     }
+  }
+
+  const switchToSms = async () => {
+    setOtpAlert(null)
+    setSwitchingChannel(true)
+    try {
+      const res = await fetch('/api/v2/users/auth/request-sms-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      })
+      const data = await res.json()
+      if (data.success) {
+        setOtpChannel('SMS')
+        if (data.phoneMasked) setPhoneMasked(data.phoneMasked)
+        setOtp(['', '', '', '', '', ''])
+        startOtpTimer()
+        setTimeout(() => otpRefs.current[0]?.focus(), 100)
+      } else {
+        setOtpAlert(data.message || t('login.sms_error'))
+      }
+    } catch {
+      setOtpAlert(t('login.sms_network_error'))
+    } finally {
+      setSwitchingChannel(false)
+    }
+  }
+
+  const switchToEmail = async () => {
+    setOtpAlert(null)
+    setSwitchingChannel(true)
+    try {
+      const res = await fetch('/api/v2/users/auth/resend-login-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ channel: 'EMAIL' }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setOtpChannel('EMAIL')
+        setOtp(['', '', '', '', '', ''])
+        startOtpTimer()
+        setTimeout(() => otpRefs.current[0]?.focus(), 100)
+      } else {
+        setOtpAlert(data.message || t('login.email_error'))
+      }
+    } catch {
+      setOtpAlert(t('login.email_network_error'))
+    } finally {
+      setSwitchingChannel(false)
+    }
+  }
+
+  const handleUnlockSession = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    if (!unlockPassword) {
+      setUnlockAlert(t('fields.password'))
+      return
+    }
+    setUnlockLoading(true)
+    setUnlockAlert(null)
+    try {
+      const res = await fetchApi('/api/v2/users/auth/unlock-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ password: unlockPassword }),
+      })
+      const data = await res.json()
+      if (data.success && inactiveUser) {
+        const raw = localStorage.getItem('zekoulabia_user')
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          localStorage.setItem('zekoulabia_user', JSON.stringify({
+            ...parsed,
+            lastActiveAt: Date.now(),
+          }))
+        }
+        router.replace(inactiveUser.dest)
+        return
+      }
+      setUnlockAlert(data.message || t('login.inactive_wrong_password'))
+    } catch {
+      setUnlockAlert(t('messages.networkError'))
+    } finally {
+      setUnlockLoading(false)
+    }
+  }
+
+  const cancelUnlockSession = () => {
+    try { localStorage.removeItem('zekoulabia_user') } catch { /* ignore */ }
+    setInactiveUser(null)
+    setUnlockPassword('')
+    setUnlockAlert(null)
+    setStep('credentials')
   }
 
   const submitTotp = async () => {
@@ -398,6 +597,33 @@ export default function LoginPage() {
     e.target.style.boxShadow = 'none'
   }
 
+  if (checkingSession) {
+    return (
+      <div style={{
+        minHeight: '100dvh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--bg)',
+        fontFamily: 'var(--font-nunito), Nunito, sans-serif'
+      }}>
+        <div style={{
+          width: 50, height: 50, borderRadius: 12,
+          background: 'linear-gradient(135deg,var(--primary),var(--accent))',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 4px 14px rgba(180,83,42,0.25)', marginBottom: 18
+        }}>
+          <img src="/logo.svg" alt="ZekoulABia" style={{ width: '65%', height: '65%', objectFit: 'contain' }} />
+        </div>
+        <Loader2 size={24} className="animate-spin" style={{ color: 'var(--primary)', marginBottom: 12 }} />
+        <span style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 600 }}>
+          Vérification de la session...
+        </span>
+      </div>
+    )
+  }
+
   return (
     <div style={{
       minHeight: '100dvh',
@@ -466,7 +692,93 @@ export default function LoginPage() {
           boxShadow: '0 10px 40px rgba(58, 36, 25, 0.10)',
         }}
       >
-        {suspended ? (
+        {inactiveUser ? (
+          <form onSubmit={handleUnlockSession} style={{ animation: 'edu-fadeUp 0.25s ease both' }}>
+            <div style={{ textAlign: 'center', marginBottom: 20 }}>
+              <div style={{
+                width: 52, height: 52, borderRadius: 14,
+                background: 'linear-gradient(135deg,var(--primary),var(--accent))',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 12px', color: 'white',
+                boxShadow: '0 4px 14px rgba(180,83,42,0.22)'
+              }}>
+                <Lock size={24} />
+              </div>
+              <h2 style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', margin: '0 0 6px' }}>
+                {t('login.inactive_title')}
+              </h2>
+              <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--primary)', marginBottom: 6 }}>
+                {inactiveUser.nomComplet}
+              </div>
+              <p style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 500, margin: 0, lineHeight: 1.4 }}>
+                {t('login.inactive_subtitle')}
+              </p>
+            </div>
+
+            {unlockAlert && (
+              <div style={{
+                borderRadius: 9, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8,
+                padding: '10px 14px', marginBottom: 14, background: 'var(--red-light)',
+                border: '1px solid rgba(217,72,31,0.2)', color: 'var(--red)', fontSize: 13
+              }}>
+                <AlertTriangle size={16} strokeWidth={2} style={{ flexShrink: 0 }} /><span>{unlockAlert}</span>
+              </div>
+            )}
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, fontWeight: 800, color: 'var(--text2)', display: 'block', marginBottom: 6, letterSpacing: '0.4px', textTransform: 'uppercase' }}>
+                {t('fields.password')}
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showUnlockPwd ? 'text' : 'password'}
+                  value={unlockPassword}
+                  onChange={e => { setUnlockPassword(e.target.value); setUnlockAlert(null) }}
+                  placeholder="••••••••••••"
+                  autoFocus
+                  style={{
+                    width: '100%', minHeight: 48, padding: '12px 44px 12px 14px',
+                    background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10,
+                    color: 'var(--text)', fontFamily: 'inherit', fontSize: 16, fontWeight: 600, outline: 'none'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowUnlockPwd(s => !s)}
+                  style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', padding: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  {showUnlockPwd ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={unlockLoading}
+              style={{
+                width: '100%', minHeight: 48, background: 'var(--primary)', color: 'white',
+                fontSize: 15, fontWeight: 800, border: 'none', borderRadius: 10,
+                cursor: unlockLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                boxShadow: '0 4px 14px rgba(180,83,42,0.22)', marginBottom: 14,
+                opacity: unlockLoading ? 0.8 : 1
+              }}
+            >
+              {unlockLoading ? <Loader2 size={18} className="animate-spin" /> : null}
+              {t('login.inactive_unlock_btn')}
+            </button>
+
+            <div style={{ textAlign: 'center' }}>
+              <button
+                type="button"
+                onClick={cancelUnlockSession}
+                style={{ fontSize: 13, fontWeight: 700, color: 'var(--text3)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '4px 0' }}
+              >
+                {t('login.inactive_switch_account')}
+              </button>
+            </div>
+          </form>
+        ) : suspended ? (
           <div style={{ animation: 'edu-fadeUp 0.25s ease both' }}>
             <div style={{ background: 'var(--red-light)', border: '1px solid rgba(217,72,31,0.2)', borderRadius: 10, padding: '16px 20px' }}>
               <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--red)', marginBottom: 8 }}><Ban size={24} strokeWidth={2} /></div>
@@ -648,9 +960,13 @@ export default function LoginPage() {
               <ArrowLeft size={16} /> {t('login.back')}
             </button>
             <div style={{ marginBottom: 16 }}>
-              <h2 style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', margin: '0 0 6px' }}>{t('login.otp_title')}</h2>
+              <h2 style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', margin: '0 0 6px' }}>
+                {otpChannel === 'SMS' ? t('login.otp_title_sms') : t('login.otp_title')}
+              </h2>
               <p style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 500, margin: 0, lineHeight: 1.4 }}>
-                {t('login.otp_subtitle', { email: maskEmail(email) })}
+                {otpChannel === 'SMS'
+                  ? t('login.otp_subtitle_sms', { phone: phoneMasked || '' })
+                  : t('login.otp_subtitle', { email: emailMasked || maskEmail(email) })}
               </p>
             </div>
             {otpAlert && (
@@ -687,6 +1003,61 @@ export default function LoginPage() {
               {otpLoading ? <Loader2 size={18} className="animate-spin" /> : null}
               {t('login.otp_verify')}
             </button>
+
+            {/* Option de bascule entre Email et SMS */}
+            {otpChannel === 'EMAIL' && hasPhone && (
+              <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--border)', textAlign: 'center' }}>
+                <button
+                  type="button"
+                  onClick={switchToSms}
+                  disabled={switchingChannel || otpLoading}
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: 'var(--primary)',
+                    cursor: switchingChannel ? 'not-allowed' : 'pointer',
+                    background: 'none',
+                    border: 'none',
+                    fontFamily: 'inherit',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '4px 8px',
+                    opacity: switchingChannel ? 0.7 : 1,
+                  }}
+                >
+                  {switchingChannel ? <Loader2 size={14} className="animate-spin" /> : <Smartphone size={15} />}
+                  {switchingChannel ? t('login.switching_channel') : t('login.otp_no_email_access_sms')}
+                </button>
+              </div>
+            )}
+
+            {otpChannel === 'SMS' && (
+              <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--border)', textAlign: 'center' }}>
+                <button
+                  type="button"
+                  onClick={switchToEmail}
+                  disabled={switchingChannel || otpLoading}
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: 'var(--primary)',
+                    cursor: switchingChannel ? 'not-allowed' : 'pointer',
+                    background: 'none',
+                    border: 'none',
+                    fontFamily: 'inherit',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '4px 8px',
+                    opacity: switchingChannel ? 0.7 : 1,
+                  }}
+                >
+                  {switchingChannel ? <Loader2 size={14} className="animate-spin" /> : <Mail size={15} />}
+                  {switchingChannel ? t('login.switching_channel') : t('login.otp_use_email_instead')}
+                </button>
+              </div>
+            )}
           </div>
 
         ) : step === 'totp' ? (

@@ -198,4 +198,29 @@ describe('LoginEmailOtpUseCase', () => {
     const uc = new LoginEmailOtpUseCase(repo, async () => {});
     await expect(uc.verifier('u1', '123456')).rejects.toThrow('Code de vérification invalide');
   });
+
+  it('envoyerSms : refuse si aucun téléphone associé', async () => {
+    const { repo } = makeRepo(authUser({ phone: null }));
+    const uc = new LoginEmailOtpUseCase(repo, async () => {}, async () => {});
+    await expect(uc.envoyerSms('u1')).rejects.toThrow('Aucun numéro de téléphone');
+  });
+
+  it('envoyerSms : envoie SMS et renvoie le numéro masqué', async () => {
+    let capturedSms: { recipientPhone: string; otp: string } | null = null;
+    const { repo, store } = makeRepo(authUser({ phone: '+237699112233' }));
+    const uc = new LoginEmailOtpUseCase(
+      repo,
+      async () => {},
+      async (params) => { capturedSms = params; }
+    );
+
+    const res = await uc.envoyerSms('u1');
+    expect(res.channel).toBe('SMS');
+    expect(res.phoneMasked).toContain('+2376');
+    expect(res.phoneMasked).toContain('33');
+    expect(capturedSms).not.toBeNull();
+    expect(capturedSms!.recipientPhone).toBe('+237699112233');
+    expect(capturedSms!.otp).toHaveLength(6);
+    expect(store.saved?.expiresAt.getTime()).toBeGreaterThan(Date.now());
+  });
 });

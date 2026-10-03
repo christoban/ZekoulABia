@@ -2,6 +2,23 @@ import { db } from '@/lib/offline/db'
 import { purgerCle } from '@/lib/offline/crypto'
 
 /**
+ * Met à jour le timestamp de dernière activité de l'utilisateur dans localStorage.
+ * Utilisé pour le challenge d'inactivité de 7 jours.
+ */
+export function touchUserActivity(): void {
+  if (typeof window === 'undefined') return
+  try {
+    const raw = localStorage.getItem('zekoulabia_user')
+    if (!raw) return
+    const parsed = JSON.parse(raw)
+    parsed.lastActiveAt = Date.now()
+    localStorage.setItem('zekoulabia_user', JSON.stringify(parsed))
+  } catch {
+    // ignore
+  }
+}
+
+/**
  * Déconnecte l'utilisateur : appelle POST /api/v2/users/auth/logout (efface les cookies
  * httpOnly côté serveur), purge le stockage local complet, puis redirige vers /login.
  * Avertit si des actions non synchronisées ou messages non envoyés existent (perte de

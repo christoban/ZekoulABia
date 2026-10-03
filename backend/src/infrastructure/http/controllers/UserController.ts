@@ -133,6 +133,12 @@ export class UserController {
   refresh = (req: Request, res: Response, next: NextFunction): Promise<void> =>
     this.authController.refresh(req, res, next);
 
+  requestSmsOtp = (req: Request, res: Response, next: NextFunction): Promise<void> =>
+    this.authController.requestSmsOtp(req, res, next);
+
+  unlockSession = (req: Request, res: Response): Promise<void> =>
+    this.authController.unlockSession(req, res);
+
   // ── MFA & Mots de passe ─────────────────────────────────────────────────────
   mfaStatus = (req: Request, res: Response, next: NextFunction): Promise<void> =>
     this.mfaPasswordController.mfaStatus(req, res, next);

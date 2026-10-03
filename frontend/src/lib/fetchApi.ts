@@ -16,7 +16,18 @@
  * gérer le mode hors ligne.
  */
 
+import { touchUserActivity } from '@/lib/userAuth'
+
 let refreshingPromise: Promise<{ ok: boolean; expired?: boolean }> | null = null
+let lastActivityTouch = 0
+
+function maybeTouchActivity() {
+  const now = Date.now()
+  if (now - lastActivityTouch > 60_000) {
+    lastActivityTouch = now
+    touchUserActivity()
+  }
+}
 
 async function doRefresh(): Promise<{ ok: boolean; expired?: boolean }> {
   try {
@@ -36,7 +47,10 @@ async function doRefresh(): Promise<{ ok: boolean; expired?: boolean }> {
 export async function fetchApi(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   const res = await fetch(input, { credentials: 'include', ...init })
 
-  if (res.status !== 401) return res
+  if (res.status !== 401) {
+    if (res.ok) maybeTouchActivity()
+    return res
+  }
 
   if (!refreshingPromise) {
     refreshingPromise = doRefresh()
@@ -59,5 +73,7 @@ export async function fetchApi(input: RequestInfo | URL, init?: RequestInit): Pr
     return res
   }
 
-  return fetch(input, { credentials: 'include', ...init })
+  const retryRes = await fetch(input, { credentials: 'include', ...init })
+  if (retryRes.ok) maybeTouchActivity()
+  return retryRes
 }

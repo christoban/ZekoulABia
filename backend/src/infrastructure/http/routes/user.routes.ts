@@ -27,11 +27,13 @@ export function creerUserRoutes(controller: UserController): Router {
   router.post('/auth/login',             authLimiter,          controller.login);
   router.post('/auth/verify-login-otp',  userEmailOtpLimiter,  controller.verifyLoginOtp);
   router.post('/auth/resend-login-otp',  userEmailOtpLimiter,  controller.resendLoginOtp);
+  router.post('/auth/request-sms-otp',   userEmailOtpLimiter,  controller.requestSmsOtp);
   router.post('/auth/verify-login-mfa',  userMfaLimiter,       controller.verifyLoginMfa);
   router.post('/auth/mfa/first-setup',   userMfaLimiter,       controller.firstMfaSetup);
   router.post('/auth/mfa/first-enable',  userMfaLimiter,       controller.firstMfaEnable);
   router.post('/auth/logout', controller.logout);
   router.post('/auth/refresh', controller.refresh);
+  router.post('/auth/unlock-session',    requireAuth, authLimiter, controller.unlockSession);
 
   // MFA — gestion depuis le dashboard (authentifié)
   router.get('/mfa/status',              requireAuth,                                controller.mfaStatus);
