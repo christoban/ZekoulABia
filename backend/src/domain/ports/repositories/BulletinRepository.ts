@@ -86,8 +86,8 @@ export interface BulletinRepository {
   findEnrichedById(bulletinId: string, schoolId: string): Promise<BulletinEnrichi | null>;
   findPreviousByStudent(studentId: string, schoolId: string, excludeBulletinId?: string): Promise<{ generalAverage: number | null } | null>;
   // Export / PDF — shared prisma include (enrollmentsYearScoped/class.name, schoolConfig, section.code, schoolSettings)
-  findForExport(schoolId: string, academicPeriodId: string): Promise<BulletinExportData[]>;
-  findExportDataByPeriode(schoolId: string, academicPeriodId: string): Promise<BulletinExportData[]>;
+  findForExport(schoolId: string, academicPeriodId: string, classId?: string): Promise<BulletinExportData[]>;
+  findExportDataByPeriode(schoolId: string, academicPeriodId: string, classId?: string): Promise<BulletinExportData[]>;
   findForPdf(bulletinId: string, schoolId: string): Promise<BulletinExportData | null>;
 
   // Listing — report-card controller (mesBulletins / lister)

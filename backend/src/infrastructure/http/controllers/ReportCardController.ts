@@ -246,18 +246,27 @@ export class ReportCardController {
   exporterZip = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const user = req.user;
-      const { classId } = req.params;
-      const { academicPeriodId } = req.body;
+      const classId = req.params.classId as string;
+      let { academicPeriodId } = req.body || {};
 
       if (!academicPeriodId) {
-        res.status(400).json({ success: false, message: 'academicPeriodId requis' });
+        const currentYear = await this.anneeRepository.findCourante(user.schoolId);
+        if (currentYear) {
+          const periodes = await this.anneeRepository.findPeriodesByAnnee(currentYear.id);
+          const currentPeriod = periodes.find(p => p.isCurrent) || periodes[0];
+          academicPeriodId = currentPeriod?.id;
+        }
+      }
+
+      if (!academicPeriodId) {
+        res.status(400).json({ success: false, message: 'academicPeriodId requis ou aucune période active trouvée' });
         return;
       }
 
-      const reportCards = await this.bulletinRepository.findForExport(user.schoolId, academicPeriodId);
+      const reportCards = await this.bulletinRepository.findForExport(user.schoolId, academicPeriodId, classId);
 
       if (!reportCards.length) {
-        res.status(404).json({ success: false, message: 'Aucun bulletin trouvé pour cette classe et cette période' });
+        res.status(404).json({ success: false, message: 'Aucun bulletin trouvé pour cette classe et cette période. Veuillez d\'abord générer les bulletins.' });
         return;
       }
 
@@ -329,6 +338,11 @@ export class ReportCardController {
 
       await archive.finalize();
     } catch (error) {
+      if (!res.headersSent) {
+        const message = error instanceof Error ? error.message : 'Erreur lors de la génération du ZIP';
+        res.status(500).json({ success: false, message });
+        return;
+      }
       next(error);
     }
   };

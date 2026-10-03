@@ -127,14 +127,24 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
     if (!classId) return
     setExporting(true)
     try {
-      const res = await fetchApi(`/api/v2/report-cards/export/${classId}`, { method: 'POST', credentials: 'include' })
-      if (!res.ok) throw new Error('Erreur export')
+      const res = await fetchApi(`/api/v2/report-cards/export/${classId}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...(check?.periodId ? { academicPeriodId: check.periodId } : {}),
+        }),
+      })
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.message || 'Erreur lors de l\'export du ZIP')
+      }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url; a.download = `bulletins-${classId}.zip`; a.click()
       URL.revokeObjectURL(url)
-      onToast('ZIP téléchargé', 'success')
+      onToast('ZIP téléchargé avec succès', 'success')
     } catch (err) {
       onToast(err instanceof Error ? err.message : 'Erreur export', 'error')
     } finally {

@@ -360,9 +360,22 @@ export class PrismaBulletinRepository implements BulletinRepository {
     return rows.map((r: any) => ({ studentId: r.studentId, student: r.student, generalAverage: r.generalAverage ?? null }));
   }
 
-  async findForExport(schoolId: string, academicPeriodId: string): Promise<BulletinExportData[]> {
+  async findForExport(schoolId: string, academicPeriodId: string, classId?: string): Promise<BulletinExportData[]> {
+    let studentIdFilter: { in: string[] } | undefined = undefined;
+    if (classId) {
+      const eleves = await this.prisma.studentProfile.findMany({
+        where: { enrollmentsYearScoped: { some: { classId, status: 'ACTIVE' as const, academicYear: { isCurrent: true } } } },
+        select: { userId: true },
+      });
+      studentIdFilter = { in: eleves.map(e => e.userId) };
+    }
+
     const rows = await this.prisma.reportCard.findMany({
-      where: { schoolId, academicPeriodId },
+      where: {
+        schoolId,
+        academicPeriodId,
+        ...(studentIdFilter ? { studentId: studentIdFilter } : {}),
+      },
       include: {
         academicYear: true,
         academicPeriod: true,
@@ -390,8 +403,8 @@ export class PrismaBulletinRepository implements BulletinRepository {
     return rows as unknown as BulletinExportData[];
   }
 
-  async findExportDataByPeriode(schoolId: string, academicPeriodId: string): Promise<BulletinExportData[]> {
-    return this.findForExport(schoolId, academicPeriodId);
+  async findExportDataByPeriode(schoolId: string, academicPeriodId: string, classId?: string): Promise<BulletinExportData[]> {
+    return this.findForExport(schoolId, academicPeriodId, classId);
   }
 
   async findForPdf(bulletinId: string, schoolId: string): Promise<BulletinExportData | null> {
