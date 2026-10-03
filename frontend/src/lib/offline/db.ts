@@ -24,6 +24,8 @@ export interface PendingAction {
     | 'ENROLLMENT_VALIDATE'
     | 'ENROLLMENT_ACTIVATE'
     | 'EXAM_PUBLISH'
+    | 'FEE_PAYMENT_CASH'
+    | 'EXPENSE_CREATE'
   payload: unknown
   endpoint: string
   method: 'POST' | 'PATCH'
@@ -173,16 +175,21 @@ export async function deleteCachedData(key: string): Promise<void> {
 
 /** Ajoute une action hors ligne à la file d'attente, payload chiffré. */
 export async function addPendingAction(
-  action: Omit<PendingAction, 'id' | 'status' | 'createdAt' | 'idempotencyKey' | 'payload'> & { payload: unknown }
-): Promise<void> {
+  action: Omit<PendingAction, 'id' | 'status' | 'createdAt' | 'idempotencyKey' | 'payload'> & {
+    payload: unknown
+    idempotencyKey?: string
+  }
+): Promise<string> {
   const payloadChiffre = await chiffrer(action.payload)
+  const key = action.idempotencyKey || crypto.randomUUID()
   await db.pendingActions.add({
     ...action,
     payload: payloadChiffre,
     status: 'PENDING',
     createdAt: Date.now(),
-    idempotencyKey: crypto.randomUUID(),
+    idempotencyKey: key,
   })
+  return key
 }
 
 /** Liste toutes les actions en attente avec leur payload déchiffré. */

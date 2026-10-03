@@ -7,6 +7,9 @@ import { AlertTriangle, Loader2, Smartphone, Wallet, Pencil, Banknote } from 'lu
 import SectionAPEEStaff from './SectionAPEEStaff'
 import SectionPlansStaff from './SectionPlansStaff'
 import { fmtCFA } from '@/components/finance/ModalOverlay'
+import { useSyncQueue } from '@/hooks/useSyncQueue'
+import { getCachedData, putCachedData, getUserSession } from '@/lib/offline/db'
+import RecuProvisoireModal, { type RecuProvisoireData } from '@/components/finance/RecuProvisoireModal'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
@@ -36,6 +39,7 @@ const EMPTY_DEP = { label: '', amount: '', category: '', date: '' }
 
 export default function SectionFinanceStaff({ onToast, sessionUser, initialTab = 'invoices' }: Props) {
   const t = useT('staff')
+  const { addToQueue } = useSyncQueue()
   const [tab, setTab]           = useState<'invoices' | 'apee' | 'plans'>(initialTab)
   const [invoices, setInvoices] = useState<InvoiceItem[]>([])
   const [pag, setPag]           = useState<Pagination>({ total: 0, page: 1, pages: 1 })
@@ -46,6 +50,9 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
   const [sendingId, setSendingId] = useState<string | null>(null)
   const [payingId, setPayingId]   = useState<string | null>(null)
 
+  const [schoolInfo, setSchoolInfo] = useState<{ name: string; logoUrl: string | null } | null>(null)
+  const [currentRecu, setCurrentRecu] = useState<RecuProvisoireData | null>(null)
+
   const [depenseOpen, setDepenseOpen]       = useState(false)
   const [depenseForm, setDepenseForm]       = useState(EMPTY_DEP)
   const [depenseSending, setDepenseSending] = useState(false)
@@ -53,16 +60,47 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
 
   const hasMF = sessionUser?.permissions?.includes('MANAGE_FINANCE') ?? false
 
+  useEffect(() => {
+    if (sessionUser?.userId) {
+      getUserSession(sessionUser.userId).then(s => {
+        if (s?.schoolInfo) setSchoolInfo(s.schoolInfo)
+      }).catch(() => {})
+    }
+  }, [sessionUser])
+
   const submitDepense = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!depenseForm.label.trim()) { setDepenseError(t('finance.depenseLabelRequired')); return }
     const amt = parseFloat(depenseForm.amount)
     if (!depenseForm.amount || isNaN(amt) || amt <= 0) { setDepenseError(t('finance.depenseAmountInvalid')); return }
     setDepenseSending(true); setDepenseError(null)
+
+    const body: Record<string, unknown> = { label: depenseForm.label.trim(), amount: amt }
+    if (depenseForm.category.trim()) body.category = depenseForm.category.trim()
+    if (depenseForm.date) body.date = depenseForm.date
+
+    if (!navigator.onLine) {
+      try {
+        const idempotencyKey = crypto.randomUUID()
+        await addToQueue({
+          type: 'EXPENSE_CREATE',
+          endpoint: '/api/v2/finance/expenses',
+          method: 'POST',
+          idempotencyKey,
+          payload: body,
+        })
+        onToast('Dépense enregistrée hors-ligne (en attente de synchronisation)', 'info')
+        setDepenseOpen(false)
+        setDepenseForm(EMPTY_DEP)
+      } catch (err) {
+        setDepenseError(err instanceof Error ? err.message : 'Erreur enregistrement hors-ligne')
+      } finally {
+        setDepenseSending(false)
+      }
+      return
+    }
+
     try {
-      const body: Record<string, unknown> = { label: depenseForm.label.trim(), amount: amt }
-      if (depenseForm.category.trim()) body.category = depenseForm.category.trim()
-      if (depenseForm.date) body.date = depenseForm.date
       const res = await fetchApi('/api/v2/finance/expenses', {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -81,21 +119,40 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
   }
 
   const fetchInvoices = useCallback(async (pg = 1) => {
-    setLoading(true); setError(null)
+    setError(null)
+    const cacheKey = `staff:finance:invoices:${statusFilter}:${pg}`
     try {
-      const params = new URLSearchParams({ limit: '20', page: String(pg) })
-      if (statusFilter) params.set('status', statusFilter)
-      const res = await fetchApi(`/api/v2/finance/invoices?${params}`, { credentials: 'include' })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Erreur serveur')
-      setInvoices(data.data || [])
-      setPag(data.pagination ?? { total: 0, page: pg, pages: 1 })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur de chargement')
-    } finally {
+      const cached = await getCachedData<{ invoices: InvoiceItem[]; pagination: Pagination }>(cacheKey)
+      if (cached?.data?.invoices) {
+        setInvoices(cached.data.invoices)
+        setPag(cached.data.pagination)
+        setLoading(false)
+      }
+    } catch { /* ignore */ }
+
+    if (navigator.onLine) {
+      try {
+        const params = new URLSearchParams({ limit: '20', page: String(pg) })
+        if (statusFilter) params.set('status', statusFilter)
+        const res = await fetchApi(`/api/v2/finance/invoices?${params}`, { credentials: 'include' })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.message || 'Erreur serveur')
+        const items = data.data || []
+        const pagination = data.pagination ?? { total: 0, page: pg, pages: 1 }
+        setInvoices(items)
+        setPag(pagination)
+        await putCachedData(cacheKey, { invoices: items, pagination })
+      } catch (err) {
+        if (!invoices.length) {
+          setError(err instanceof Error ? err.message : 'Erreur de chargement')
+        }
+      } finally {
+        setLoading(false)
+      }
+    } else {
       setLoading(false)
     }
-  }, [statusFilter])
+  }, [statusFilter, invoices.length])
 
   useEffect(() => {
     if (tab === 'invoices') { setPage(1); fetchInvoices(1) }
@@ -144,11 +201,65 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
       onToast('Montant invalide', 'error')
       return
     }
+
     setPayingId(inv.id)
+    const idempotencyKey = crypto.randomUUID()
+    const isCurrentlyOffline = !navigator.onLine
+
+    const buildRecuData = (isOffline: boolean, ref: string): RecuProvisoireData => ({
+      reference: ref,
+      isOffline,
+      date: new Date(),
+      schoolName: schoolInfo?.name || 'Établissement Scolaire',
+      schoolLogoUrl: schoolInfo?.logoUrl,
+      studentName: `${inv.student.firstName} ${inv.student.lastName}`,
+      studentId: inv.student.id,
+      feePlanName: inv.feePlan?.name || 'Frais de scolarité',
+      amountPaid: montant,
+      totalAmount: inv.amount,
+      remainingAmount: Math.max(0, inv.amount - (alreadyPaid + montant)),
+      receivedBy: sessionUser?.nomComplet || sessionUser?.firstName || 'Intendant',
+    })
+
+    const applyOptimisticPayment = async () => {
+      const newPaid = alreadyPaid + montant
+      const newStatus = newPaid >= inv.amount ? 'PAID' : 'PARTIAL'
+      const updatedPayments: Payment[] = [
+        ...inv.payments,
+        { id: idempotencyKey, amount: montant, status: 'PAID', paidAt: new Date().toISOString(), method: 'CASH' },
+      ]
+      const updatedInvoices = invoices.map(item =>
+        item.id === inv.id ? { ...item, payments: updatedPayments, status: newStatus } : item
+      )
+      setInvoices(updatedInvoices)
+      const cacheKey = `staff:finance:invoices:${statusFilter}:${page}`
+      await putCachedData(cacheKey, { invoices: updatedInvoices, pagination: pag }).catch(() => {})
+    }
+
+    if (isCurrentlyOffline) {
+      try {
+        await addToQueue({
+          type: 'FEE_PAYMENT_CASH',
+          endpoint: '/api/v2/finance/payments/cash',
+          method: 'POST',
+          idempotencyKey,
+          payload: { factureId: inv.id, studentId: inv.student.id, montant },
+        })
+        await applyOptimisticPayment()
+        setCurrentRecu(buildRecuData(true, `PROV-${idempotencyKey.slice(0, 8).toUpperCase()}`))
+        onToast('Encaissement enregistré hors-ligne (reçu provisoire généré)', 'info')
+      } catch (err) {
+        onToast(err instanceof Error ? err.message : 'Erreur enregistrement hors-ligne', 'error')
+      } finally {
+        setPayingId(null)
+      }
+      return
+    }
+
     try {
       const res = await fetchApi('/api/v2/finance/payments/cash', {
         method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
         body: JSON.stringify({
           factureId: inv.id,
           studentId: inv.student.id,
@@ -157,10 +268,27 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Erreur lors de l’encaissement')
+      await applyOptimisticPayment()
+      const ref = data.data?.recuNumero || data.data?.paiementId || `REC-${idempotencyKey.slice(0, 8).toUpperCase()}`
+      setCurrentRecu(buildRecuData(false, ref))
       onToast(t('finance.cashSuccess') || 'Paiement en espèces enregistré avec succès', 'success')
       fetchInvoices(page)
     } catch (err) {
-      onToast(err instanceof Error ? err.message : 'Erreur', 'error')
+      // Repli hors-ligne automatique si la requête réseau a échoué
+      try {
+        await addToQueue({
+          type: 'FEE_PAYMENT_CASH',
+          endpoint: '/api/v2/finance/payments/cash',
+          method: 'POST',
+          idempotencyKey,
+          payload: { factureId: inv.id, studentId: inv.student.id, montant },
+        })
+        await applyOptimisticPayment()
+        setCurrentRecu(buildRecuData(true, `PROV-${idempotencyKey.slice(0, 8).toUpperCase()}`))
+        onToast('Connexion perdue : paiement conservé hors-ligne avec reçu provisoire', 'info')
+      } catch {
+        onToast(err instanceof Error ? err.message : 'Erreur', 'error')
+      }
     } finally {
       setPayingId(null)
     }
@@ -538,6 +666,8 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
       )}
         </>
       ) : null}
+
+      <RecuProvisoireModal data={currentRecu} onClose={() => setCurrentRecu(null)} />
     </div>
   )
 }

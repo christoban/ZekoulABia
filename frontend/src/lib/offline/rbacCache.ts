@@ -73,6 +73,8 @@ export const OPERATION_CATEGORY: Record<PendingActionType, OperationCategory> = 
   ENROLLMENT_VALIDATE: 'DESTRUCTIF',
   ENROLLMENT_ACTIVATE: 'DESTRUCTIF',
   EXAM_PUBLISH: 'DESTRUCTIF',
+  FEE_PAYMENT_CASH: 'ECRITURE',
+  EXPENSE_CREATE: 'ECRITURE',
 }
 
 /** TTL en millisecondes par catégorie */

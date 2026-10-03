@@ -18,12 +18,13 @@ export function useSyncQueue() {
   }, [])
 
   const addToQueue = useCallback(
-    async (action: Omit<Parameters<typeof addPendingAction>[0], 'status'>) => {
+    async (action: Omit<Parameters<typeof addPendingAction>[0], 'status'>): Promise<string> => {
       if (OPERATION_RISK_LEVEL[action.type] === 'FORT') {
         throw new OfflineActionRefusedError(action.type)
       }
-      await addPendingAction(action)
+      const key = await addPendingAction(action)
       await updateCount()
+      return key
     },
     [updateCount]
   )
