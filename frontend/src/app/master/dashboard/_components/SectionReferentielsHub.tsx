@@ -203,9 +203,10 @@ export default function SectionReferentielsHub({ onToast }: Props) {
   }
 
   return (
-    <div className="pb-24 md:pb-6" style={{
-      height: '100%', overflowY: 'auto', padding: '16px',
+    <div style={{
+      height: '100%', overflowY: 'auto', padding: '16px 16px 40px 16px',
       background: 'var(--bg)', color: '#1f2937', boxSizing: 'border-box',
+      WebkitOverflowScrolling: 'touch',
       fontFamily: 'var(--font-nunito), Nunito, sans-serif'
     }}>
       {/* ── Entête Hub ──────────────────────────────────────────────────────── */}

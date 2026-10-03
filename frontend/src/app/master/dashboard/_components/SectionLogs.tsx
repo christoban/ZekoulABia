@@ -635,7 +635,7 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
   const authLogs = initialLogs.filter(l => !l.action.startsWith('action:'))
 
   return (
-    <div className="pb-24 md:pb-6" style={{ padding: '16px', overflowY: 'auto', height: '100%', boxSizing: 'border-box' }}>
+    <div style={{ padding: '16px 16px 40px 16px', overflowY: 'auto', height: '100%', boxSizing: 'border-box', WebkitOverflowScrolling: 'touch' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
           <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: '#1a1209' }}>

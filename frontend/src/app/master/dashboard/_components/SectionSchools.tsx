@@ -59,7 +59,7 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
   const filtered = activeTab === 'all' ? schools : schools.filter(s => s.status === activeTab)
 
   return (
-    <div className="pb-24 md:pb-0" style={{ padding: '16px', height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+    <div style={{ padding: '16px', height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexShrink: 0, flexWrap: 'wrap', gap: 10 }}>
         <div>
           <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: '#1a1209' }}>
@@ -106,9 +106,9 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
         </div>
 
         {/* Content list: Mobile cards (< md) and Desktop table (>= md) */}
-        <div style={{ overflow: 'auto', flex: 1, minHeight: 0 }}>
+        <div style={{ overflow: 'auto', flex: 1, minHeight: 0, WebkitOverflowScrolling: 'touch' }}>
           {/* Mobile view (< md) */}
-          <div className="block md:hidden" style={{ padding: 10 }}>
+          <div className="block md:hidden" style={{ padding: '10px 10px 40px 10px' }}>
             {loading ? (
               <div style={{ padding: '24px 8px', textAlign: 'center', color: '#a89478', fontSize: 13 }}>Chargement...</div>
             ) : filtered.length === 0 ? (

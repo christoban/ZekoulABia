@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import MasterTopbar from './_components/MasterTopbar'
 import MasterBottomNav from './_components/MasterBottomNav'
-import MasterMobileMenuDrawer from './_components/MasterMobileMenuDrawer'
 import SectionOverview from './_components/SectionOverview'
 import SectionSchools from './_components/SectionSchools'
 import SectionReferentielsHub from './_components/SectionReferentielsHub'
@@ -266,7 +265,7 @@ export default function SuperAdminDashboard() {
   return (
     <div style={{
       display: 'flex', flexDirection: 'column',
-      height: '100vh', overflow: 'hidden',
+      height: '100dvh', minHeight: '100vh', overflow: 'hidden',
       background: 'var(--bg)',
       fontFamily: 'var(--font-nunito), Nunito, sans-serif'
     }}>
@@ -276,10 +275,13 @@ export default function SuperAdminDashboard() {
         mfaEnabled={mfaEnabled}
         onNav={setSection}
         onLogout={handleLogout}
-        onOpenMenu={() => setMobileMenuOpen(true)}
+        onInviteSchool={() => { setSelectedSchoolId(null); setModal('invite') }}
+        onChangePwd={() => setModal('changePwd')}
+        isMenuOpen={mobileMenuOpen}
+        setIsMenuOpen={setMobileMenuOpen}
       />
 
-      <main style={{ flex: 1, overflow: 'hidden' }}>
+      <main style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
         <div style={{ display: section === 'overview' ? 'block' : 'none', height: '100%' }}>
           <SectionOverview
             kpi={kpiData}
@@ -328,29 +330,11 @@ export default function SuperAdminDashboard() {
         )}
       </main>
 
-      {/* Mobile Bottom Navigation (< md) */}
+      {/* Mobile Bottom Navigation (< md) intégrée dans le flux flex vertical */}
       <MasterBottomNav
         currentSection={section}
         onNav={setSection}
-        onOpenMenu={() => setMobileMenuOpen(true)}
-      />
-
-      {/* Mobile Drawer menu (< md) */}
-      <MasterMobileMenuDrawer
-        open={mobileMenuOpen}
-        onClose={() => setMobileMenuOpen(false)}
-        user={user}
-        mfaEnabled={mfaEnabled}
-        onLogout={handleLogout}
-        onChangePwd={() => {
-          setMobileMenuOpen(false)
-          setModal('changePwd')
-        }}
-        onInviteSchool={() => {
-          setMobileMenuOpen(false)
-          setSelectedSchoolId(null)
-          setModal('invite')
-        }}
+        onOpenMenu={() => setMobileMenuOpen(prev => !prev)}
       />
 
       <MasterModals
