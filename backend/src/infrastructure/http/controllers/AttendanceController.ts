@@ -9,6 +9,7 @@ import type { User } from '@domain/entities/User';
 import type { AIActionAuditPort } from '@domain/ports/services/AIActionAuditPort';
 import { notifyAbsenceSms } from '@infrastructure/services/sms/SmsNotificationService';
 import { notifierParentsPushDabord } from '@infrastructure/services/notification/PushFirstNotifier';
+import { parseSinceParam } from '@infrastructure/http/helpers/deltaSyncHelper';
 
 const startOfDayUtc = (dateString: string) => {
   const [y = 0, m = 1, d = 1] = dateString.split('-').map(Number);
@@ -146,9 +147,12 @@ export class AttendanceController {
       const classId = req.query.classId as string | undefined;
       const studentId = req.query.studentId as string | undefined;
       const date = req.query.date as string | undefined;
+      const since = req.query.since as string | undefined;
+      const sinceDate = parseSinceParam(since);
 
       const filtre: FiltrePresences = {};
       if (classId) filtre.classId = classId;
+      if (sinceDate) filtre.since = sinceDate;
       if (date) {
         filtre.dateDebut = startOfDayUtc(date);
         filtre.dateFin = endOfDayUtc(date);
@@ -196,6 +200,9 @@ export class AttendanceController {
       );
 
       res.json({
+        success: true,
+        serverTime: new Date().toISOString(),
+        isDelta: Boolean(sinceDate),
         records: records.map((r) => ({
           ...r,
           student: studentMap.get(r.studentId) ?? null,

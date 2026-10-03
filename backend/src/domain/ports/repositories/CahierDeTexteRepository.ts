@@ -36,6 +36,7 @@ export interface CahierDeTexteFilters {
   academicYearId?: string;
   depuis?: Date;
   jusqua?: Date;
+  since?: Date;
   orderDate?: 'asc' | 'desc';
   take?: number;
 }

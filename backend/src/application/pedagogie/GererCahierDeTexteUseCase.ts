@@ -26,6 +26,7 @@ export interface ListerCahierDeTexteInput {
   teacherId?: string;
   role: string;
   academicYearId?: string;
+  since?: Date;
   limit?: string;
 }
 
@@ -98,6 +99,7 @@ export class GererCahierDeTexteUseCase {
       classId: input.classId,
       subjectId: input.subjectId,
       enseignantId: input.teacherId ?? (input.role === 'TEACHER' ? input.userId : undefined),
+      since: input.since,
       take: input.limit ? parseInt(input.limit, 10) : 100,
       orderDate: 'desc',
     });

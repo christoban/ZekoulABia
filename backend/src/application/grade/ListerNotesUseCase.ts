@@ -3,7 +3,7 @@ import type { NoteRepository, NoteFilters, PaginatedResult } from '@domain/ports
 import type { UserRepository } from '@domain/ports/repositories/UserRepository';
 import type { MatiereRepository } from '@domain/ports/repositories/MatiereRepository';
 import type { ParentRepository } from '@domain/ports/repositories/ParentRepository';
-import type { UserRole, StaffPermissionType } from '@domain/types/enums';
+import type { UserRole, StaffPermissionType, GradeValidationStatus } from '@domain/types/enums';
 
 export interface ListerNotesRequete {
   schoolId: string;
@@ -15,6 +15,8 @@ export interface ListerNotesRequete {
     subjectId?: string;
     sequenceId?: string;
     studentId?: string;
+    validationStatus?: GradeValidationStatus;
+    since?: Date;
   };
   pagination: { page: number; limit: number };
 }

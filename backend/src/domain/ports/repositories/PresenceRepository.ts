@@ -31,6 +31,7 @@ export interface FiltrePresences {
   dateDebut?: Date;
   dateFin?: Date;
   status?: AttendanceStatus;
+  since?: Date;
 }
 
 /** Présence enrichie de sa classe (id + nom) — route lister. */

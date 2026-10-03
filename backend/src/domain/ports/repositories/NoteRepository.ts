@@ -14,6 +14,7 @@ export interface NoteFilters {
   studentId?: string;
   studentIds?: string[];
   validationStatus?: GradeValidationStatus;
+  since?: Date;
 }
 
 export interface PaginatedResult<T> {

@@ -3,7 +3,8 @@ import type { ListerNotesUseCase } from '@application/grade/ListerNotesUseCase';
 import type { ListerNotesEnAttenteUseCase } from '@application/grade/ListerNotesEnAttenteUseCase';
 import type { StatutParClasseUseCase } from '@application/grade/StatutParClasseUseCase';
 import type { CalculerMoyenneUseCase } from '@application/grade/CalculerMoyenneUseCase';
-import type { UserRole, StaffPermissionType } from '@domain/types/enums';
+import type { UserRole, StaffPermissionType, GradeValidationStatus } from '@domain/types/enums';
+import { parseSinceParam } from '@infrastructure/http/helpers/deltaSyncHelper';
 
 export class GradeLectureController {
   constructor(
@@ -17,7 +18,7 @@ export class GradeLectureController {
   lister = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const user = req.user;
-      const { classId, subjectId, sequenceId, studentId, validationStatus, page = '1', limit = '50' } =
+      const { classId, subjectId, sequenceId, studentId, validationStatus, since, page = '1', limit = '50' } =
         req.query as Record<string, string>;
 
       // Validation explicite du paramètre validationStatus
@@ -29,6 +30,7 @@ export class GradeLectureController {
         return;
       }
 
+      const sinceDate = parseSinceParam(since);
       const pageNum = Math.max(1, parseInt(page));
       const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
 
@@ -42,12 +44,16 @@ export class GradeLectureController {
           subjectId,
           sequenceId,
           studentId,
-          ...(validationStatus ? { validationStatus } : {}),
+          ...(validationStatus ? { validationStatus: validationStatus as GradeValidationStatus } : {}),
+          ...(sinceDate ? { since: sinceDate } : {}),
         },
         pagination: { page: pageNum, limit: limitNum },
       });
 
       res.json({
+        success: true,
+        serverTime: new Date().toISOString(),
+        isDelta: Boolean(sinceDate),
         grades: result.items,
         pagination: { total: result.total, page: result.page, pages: result.pages, limit: result.limit },
       });

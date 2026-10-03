@@ -16,6 +16,7 @@ function whereFromFiltre(schoolId: string, filtre: FiltrePresences): Record<stri
     };
   }
   if (filtre.status) where.status = filtre.status;
+  if (filtre.since) where.createdAt = { gt: filtre.since };
   return where;
 }
 

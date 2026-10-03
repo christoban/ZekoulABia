@@ -9,6 +9,7 @@ import type { CalculerProgressionProgrammeUseCase } from '@application/pedagogie
 import type { ObtenirSlotDuJourUseCase } from '@application/pedagogie/ObtenirSlotDuJourUseCase';
 import type { GenererRapportPedagogieUseCase } from '@application/pedagogie/GenererRapportPedagogieUseCase';
 import { PedagogieValidationError, PedagogieNotFoundError, PedagogieForbiddenError } from '@application/pedagogie/errors';
+import { parseSinceParam } from '@infrastructure/http/helpers/deltaSyncHelper';
 
 export class PedagogieController {
   constructor(
@@ -128,9 +129,25 @@ export class PedagogieController {
   listCahierDeTexte = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const user = req.user;
-      const { classId, subjectId, teacherId, academicYearId, limit } = req.query as Record<string, string>;
-      const entries = await this.gererCahier.lister({ schoolId: user.schoolId, userId: user.userId, role: user.role, classId, subjectId, teacherId, academicYearId, limit });
-      res.json({ success: true, data: entries });
+      const { classId, subjectId, teacherId, academicYearId, since, limit } = req.query as Record<string, string>;
+      const sinceDate = parseSinceParam(since);
+      const entries = await this.gererCahier.lister({
+        schoolId: user.schoolId,
+        userId: user.userId,
+        role: user.role,
+        classId,
+        subjectId,
+        teacherId,
+        academicYearId,
+        since: sinceDate,
+        limit,
+      });
+      res.json({
+        success: true,
+        serverTime: new Date().toISOString(),
+        isDelta: Boolean(sinceDate),
+        data: entries,
+      });
     } catch (e) { this.gererErreur(e, res, next); }
   };
 

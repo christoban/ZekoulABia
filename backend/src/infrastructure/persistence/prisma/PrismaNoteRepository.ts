@@ -141,6 +141,7 @@ export class PrismaNoteRepository implements NoteRepository {
     if (filters.studentId) where.studentId = filters.studentId;
     if (filters.studentIds) where.studentId = { in: filters.studentIds };
     if (filters.validationStatus) where.validationStatus = filters.validationStatus;
+    if (filters.since) where.updatedAt = { gt: filters.since };
 
     const [total, data] = await Promise.all([
       this.prisma.grade.count({ where }),

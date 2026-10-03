@@ -19,6 +19,7 @@ export class PrismaCahierDeTexteRepository implements CahierDeTexteRepository {
         ...(filters.enseignantId && { teacherId: filters.enseignantId }),
         ...(filters.subjectId && { subjectId: filters.subjectId }),
         ...(filters.academicYearId && { academicYearId: filters.academicYearId }),
+        ...(filters.since ? { createdAt: { gt: filters.since } } : {}),
         ...(filters.depuis || filters.jusqua ? { date: { ...(filters.depuis && { gte: filters.depuis }), ...(filters.jusqua && { lte: filters.jusqua }) } } : {}),
       },
       include: {
