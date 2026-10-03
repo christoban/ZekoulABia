@@ -142,7 +142,12 @@ export default function SectionFinance({ onToast, onNav }: Props) {
 
   // KPIs calculés depuis les factures
   const totalAmount = invoices.reduce((s, i) => s + i.amount, 0)
-  const paidAmount = invoices.filter((i) => i.status === 'PAID').reduce((s, i) => s + i.amount, 0)
+  const paidAmount = invoices.reduce((sum, inv) => {
+    const paidInInvoice = (inv.payments || [])
+      .filter((p) => p.status === 'PAID' || p.status === 'SUCCESS' || p.status === 'COMPLETED')
+      .reduce((s, p) => s + p.amount, 0)
+    return sum + (inv.status === 'PAID' ? Math.max(inv.amount, paidInInvoice) : paidInInvoice)
+  }, 0)
   const pendingCount = invoices.filter((i) => i.status === 'PENDING').length
   const overdueCount = invoices.filter((i) => i.status === 'OVERDUE').length
   const recoveryRate = totalAmount > 0 ? Math.round((paidAmount / totalAmount) * 100) : 0
