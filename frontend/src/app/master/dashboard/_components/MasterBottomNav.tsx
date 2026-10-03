@@ -60,12 +60,11 @@ export default function MasterBottomNav({ currentSection, onNav, onOpenMenu }: P
   return (
     <nav
       aria-label="Navigation mobile Super Admin"
-      className="md:hidden flex-shrink-0 z-40 border-t border-[var(--border)] shadow-[0_-2px_12px_rgba(0,0,0,0.08)]"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--border)] shadow-[0_-2px_12px_rgba(0,0,0,0.08)]"
       style={{
         background: 'var(--surface)',
         paddingBottom: 'calc(6px + env(safe-area-inset-bottom, 0px))',
         paddingTop: 6,
-        width: '100%',
       }}
     >
       <div className="flex items-center justify-around px-1 max-w-lg mx-auto">
