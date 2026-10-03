@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import type { SessionUser } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
-import { AlertTriangle, Loader2, Smartphone, Wallet, Pencil } from 'lucide-react'
+import { AlertTriangle, Loader2, Smartphone, Wallet, Pencil, Banknote } from 'lucide-react'
 import SectionAPEEStaff from './SectionAPEEStaff'
 import SectionPlansStaff from './SectionPlansStaff'
 import { fmtCFA } from '@/components/finance/ModalOverlay'
@@ -124,6 +124,43 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
       fetchInvoices(page)
     } catch (err) {
       onToast(err instanceof Error ? err.message : 'Erreur Mobile Money', 'error')
+    } finally {
+      setPayingId(null)
+    }
+  }
+
+  const recordCashPayment = async (inv: InvoiceItem) => {
+    const alreadyPaid = inv.payments
+      .filter(p => p.status === 'COMPLETED' || p.status === 'SUCCESS' || p.status === 'PAID')
+      .reduce((s, p) => s + p.amount, 0)
+    const remaining = Math.max(0, inv.amount - alreadyPaid)
+    const defaultAmount = remaining > 0 ? remaining : inv.amount
+    const promptMsg = t('finance.cashPrompt', { firstName: inv.student.firstName, lastName: inv.student.lastName }) ||
+      `Encaisser en espèces pour ${inv.student.firstName} ${inv.student.lastName} (FCFA) :`
+    const amountStr = prompt(promptMsg, String(defaultAmount))
+    if (!amountStr?.trim()) return
+    const montant = parseFloat(amountStr.trim())
+    if (isNaN(montant) || montant <= 0) {
+      onToast('Montant invalide', 'error')
+      return
+    }
+    setPayingId(inv.id)
+    try {
+      const res = await fetchApi('/api/v2/finance/payments/cash', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          factureId: inv.id,
+          studentId: inv.student.id,
+          montant,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Erreur lors de l’encaissement')
+      onToast(t('finance.cashSuccess') || 'Paiement en espèces enregistré avec succès', 'success')
+      fetchInvoices(page)
+    } catch (err) {
+      onToast(err instanceof Error ? err.message : 'Erreur', 'error')
     } finally {
       setPayingId(null)
     }
@@ -291,7 +328,7 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
             {/* Vue Mobile : Cartes factures */}
             <div className="md:hidden divide-y divide-[var(--border)]">
               {invoices.map(inv => {
-                const totalPaid = inv.payments.filter(p => p.status === 'COMPLETED').reduce((s, p) => s + p.amount, 0)
+                const totalPaid = inv.payments.filter(p => p.status === 'COMPLETED' || p.status === 'SUCCESS' || p.status === 'PAID').reduce((s, p) => s + p.amount, 0)
                 const stCfg = INV_STATUS[inv.status] || { bg: 'var(--bg2)', color: 'var(--text2)' }
                 return (
                   <div key={inv.id} className="p-3.5 space-y-2.5">
@@ -320,7 +357,18 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
                     </div>
 
                     {inv.status !== 'PAID' && (
-                      <div className="flex items-center gap-2 pt-1">
+                      <div className="flex items-center gap-2 pt-1 flex-wrap">
+                        {hasMF && (
+                          <button
+                            style={{ ...btnSecSm, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, background: 'var(--green-light)', color: 'var(--green)', borderColor: 'var(--green)' }}
+                            className="min-h-[38px] px-3 text-xs font-semibold"
+                            disabled={payingId === inv.id}
+                            onClick={() => recordCashPayment(inv)}
+                          >
+                            {payingId === inv.id ? <Loader2 size={13} className="animate-spin" /> : <Banknote size={13} />}
+                            {t('finance.cashBtn') || 'Espèces'}
+                          </button>
+                        )}
                         <button
                           style={{ ...btnSecSm, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
                           className="flex-1 min-h-[38px] text-xs font-semibold"
@@ -360,7 +408,7 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
                 </thead>
                 <tbody>
                   {invoices.map(inv => {
-                    const totalPaid = inv.payments.filter(p => p.status === 'COMPLETED').reduce((s, p) => s + p.amount, 0)
+                    const totalPaid = inv.payments.filter(p => p.status === 'COMPLETED' || p.status === 'SUCCESS' || p.status === 'PAID').reduce((s, p) => s + p.amount, 0)
                     const stCfg = INV_STATUS[inv.status] || { bg: 'var(--bg2)', color: 'var(--text2)' }
                     return (
                       <tr key={inv.id}>
@@ -381,6 +429,17 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
                         </td>
                         <td style={tdSt}>
                           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                            {inv.status !== 'PAID' && hasMF && (
+                              <button
+                                style={{ ...btnSecSm, display: 'flex', alignItems: 'center', gap: 4, background: 'var(--green-light)', color: 'var(--green)', borderColor: 'var(--green)' }}
+                                disabled={payingId === inv.id}
+                                onClick={() => recordCashPayment(inv)}
+                                title={t('finance.cashBtn') || 'Encaisser en espèces'}
+                              >
+                                {payingId === inv.id ? <Loader2 size={11} className="animate-spin" /> : <Banknote size={11} />}
+                                {t('finance.cashBtn') || 'Espèces'}
+                              </button>
+                            )}
                             {inv.status !== 'PAID' && (
                               <button
                                 style={{ ...btnSecSm, display: 'flex', alignItems: 'center', gap: 4 }}

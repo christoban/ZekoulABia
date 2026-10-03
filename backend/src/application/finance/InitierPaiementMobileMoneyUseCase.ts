@@ -16,6 +16,7 @@ export interface InitierPaiementCommande {
   studentId: string;
   phoneNumber: string;
   method: PaymentMethod;
+  amount?: number;
   /** V3.2 — version locale optionnelle (compat offline retro) */
   baseUpdatedAt?: Date | string | null;
   versionLocale?: Date | string | null;
@@ -73,9 +74,20 @@ export class InitierPaiementMobileMoneyUseCase {
       );
     }
 
+    // 2b. Calcul du montant réel à payer (solde restant dû ou montant saisi)
+    const totalPayeActuel = await this.factureRepository.calculerTotalPayeAvecSucces(commande.factureId);
+    const resteARegler = Math.max(0, facture.amount - totalPayeActuel);
+    if (resteARegler <= 0) {
+      throw new Error('Cette facture a déjà été intégralement réglée');
+    }
+
+    const montantAPayer = (commande.amount && commande.amount > 0)
+      ? Math.min(commande.amount, resteARegler)
+      : resteARegler;
+
     // 3. Initier via Campay
     const resultatCampay = await this.paiementService.initierPaiement({
-      montant: facture.amount,
+      montant: montantAPayer,
       devise: 'XAF',
       telephone: commande.phoneNumber,
       methode: commande.method,
@@ -89,7 +101,7 @@ export class InitierPaiementMobileMoneyUseCase {
       schoolId: commande.schoolId,
       invoiceId: commande.factureId,
       studentId: commande.studentId,
-      amount: facture.amount,
+      amount: montantAPayer,
       method: commande.method,
       feeType: 'TUITION',
       campayRef: resultatCampay.reference,

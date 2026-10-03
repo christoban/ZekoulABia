@@ -817,7 +817,7 @@ export function registerListsRoutes(app: Application, p: typeof prisma = prisma,
           include: {
             student: { select: { id: true, firstName: true, lastName: true } },
             feePlan: { select: { id: true, name: true, feeType: true, amount: true } },
-            payments: { select: { id: true, amount: true, status: true, paidAt: true, method: true } },
+            payments: { select: { id: true, amount: true, status: true, paidAt: true, method: true, feeType: true, cautionStatus: true, refundedAt: true } },
           },
           orderBy: { createdAt: 'desc' },
           skip: (pageNum - 1) * limitNum,

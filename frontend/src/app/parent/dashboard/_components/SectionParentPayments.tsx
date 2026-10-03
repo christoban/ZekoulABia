@@ -47,6 +47,15 @@ interface Payment {
   status: string
   paidAt: string | null
   method: string
+  feeType?: string
+  cautionStatus?: string
+  refundedAt?: string | null
+}
+
+function getPaidAmount(payments: Payment[] = []): number {
+  return (payments || [])
+    .filter((p) => p.status === 'PAID' || p.status === 'SUCCESS' || p.status === 'COMPLETED')
+    .reduce((s, p) => s + p.amount, 0)
 }
 
 interface Invoice {
@@ -129,6 +138,7 @@ export default function SectionParentPayments({ onToast, userId }: Props) {
     open: boolean
     invoiceId: string
     amount: number
+    maxAmount: number
     label: string
     method: 'MTN_MOMO' | 'ORANGE_MONEY'
     phone: string
@@ -138,6 +148,7 @@ export default function SectionParentPayments({ onToast, userId }: Props) {
     open: false,
     invoiceId: '',
     amount: 0,
+    maxAmount: 0,
     label: '',
     method: 'MTN_MOMO',
     phone: '',
@@ -231,12 +242,13 @@ export default function SectionParentPayments({ onToast, userId }: Props) {
       onToast(t('payments.offlineMessage'), 'warning')
       return
     }
-    const paidAmt = inv.payments.filter((p) => p.status === 'PAID').reduce((s, p) => s + p.amount, 0)
+    const paidAmt = getPaidAmount(inv.payments)
     const remaining = Math.max(0, inv.amount - paidAmt)
     setModal({
       open: true,
       invoiceId: inv.id,
       amount: remaining,
+      maxAmount: remaining,
       label: inv.feePlan?.name ?? inv.description ?? 'Facture',
       method: 'MTN_MOMO',
       phone: '',
@@ -254,13 +266,22 @@ export default function SectionParentPayments({ onToast, userId }: Props) {
       setModal((m) => ({ ...m, error: t('payments.phoneRequired') }))
       return
     }
+    if (modal.amount <= 0 || modal.amount > modal.maxAmount) {
+      setModal((m) => ({ ...m, error: `Montant invalide (maximum : ${fmtCFA(modal.maxAmount)})` }))
+      return
+    }
     setModal((m) => ({ ...m, loading: true, error: '' }))
     try {
       const res = await fetchApi('/api/v2/parent/pay', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invoiceId: modal.invoiceId, method: modal.method, phoneNumber: modal.phone }),
+        body: JSON.stringify({
+          invoiceId: modal.invoiceId,
+          method: modal.method,
+          phoneNumber: modal.phone,
+          amount: modal.amount,
+        }),
       })
       const d = await res.json()
       if (!res.ok) throw new Error(d.message || tf('errors.generic_error'))
@@ -275,7 +296,7 @@ export default function SectionParentPayments({ onToast, userId }: Props) {
   // Calculs synthétiques
   const unpaid = invoices.filter((i) => i.status === 'PENDING' || i.status === 'OVERDUE' || i.status === 'PARTIAL')
   const totalDu = unpaid.reduce((s, i) => {
-    const paid = i.payments.filter((p) => p.status === 'PAID').reduce((ss, p) => ss + p.amount, 0)
+    const paid = getPaidAmount(i.payments)
     return s + Math.max(0, i.amount - paid)
   }, 0)
 
@@ -286,7 +307,7 @@ export default function SectionParentPayments({ onToast, userId }: Props) {
 
   // Filtrage selon l'onglet d'état
   const filteredInvoices = invoices.filter((inv) => {
-    const paidAmt = inv.payments.filter((p) => p.status === 'PAID').reduce((s, p) => s + p.amount, 0)
+    const paidAmt = getPaidAmount(inv.payments)
     const isPaid = inv.status === 'PAID' || paidAmt >= inv.amount
 
     if (statusTab === 'PAID') return isPaid
@@ -582,7 +603,7 @@ export default function SectionParentPayments({ onToast, userId }: Props) {
               {filteredInvoices.map((inv) => {
                 const INV_STATUS = invStatus(tf)
                 const st = INV_STATUS[inv.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)', label: inv.status }
-                const paid = inv.payments.filter((p) => p.status === 'PAID').reduce((s, p) => s + p.amount, 0)
+                const paid = getPaidAmount(inv.payments)
                 const remaining = Math.max(0, inv.amount - paid)
                 const isPaid = remaining === 0 || inv.status === 'PAID'
                 const canPay = !isPaid
@@ -681,7 +702,7 @@ export default function SectionParentPayments({ onToast, userId }: Props) {
                   {filteredInvoices.map((inv) => {
                     const INV_STATUS = invStatus(tf)
                     const st = INV_STATUS[inv.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)', label: inv.status }
-                    const paid = inv.payments.filter((p) => p.status === 'PAID').reduce((s, p) => s + p.amount, 0)
+                    const paid = getPaidAmount(inv.payments)
                     const remaining = Math.max(0, inv.amount - paid)
                     const isPaid = remaining === 0 || inv.status === 'PAID'
                     const canPay = !isPaid
@@ -787,9 +808,38 @@ export default function SectionParentPayments({ onToast, userId }: Props) {
             </div>
             <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 14 }}>{modal.label}</div>
 
-            <div style={{ background: 'var(--bg2)', borderRadius: 10, padding: '10px 14px', marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text2)' }}>Montant à régler</span>
-              <span style={{ fontSize: 17, fontWeight: 900, color: 'var(--green)' }}>{fmtCFA(modal.amount)}</span>
+            <div style={{ background: 'var(--bg2)', borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>Reste total dû</span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>{fmtCFA(modal.maxAmount)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>Montant à débiter</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <input
+                    type="number"
+                    min={100}
+                    max={modal.maxAmount}
+                    value={modal.amount}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 0
+                      setModal((s) => ({ ...s, amount: Math.min(val, s.maxAmount) }))
+                    }}
+                    style={{
+                      width: 130,
+                      padding: '4px 8px',
+                      borderRadius: 6,
+                      fontSize: 14,
+                      fontWeight: 800,
+                      textAlign: 'right',
+                      border: '1.5px solid var(--border)',
+                      background: 'var(--surface)',
+                      color: 'var(--green)',
+                    }}
+                  />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--green)' }}>FCFA</span>
+                </div>
+              </div>
             </div>
 
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', marginBottom: 4 }}>Opérateur Mobile Money</div>

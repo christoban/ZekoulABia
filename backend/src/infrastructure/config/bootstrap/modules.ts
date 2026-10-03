@@ -319,7 +319,7 @@ export function registerModulesRoutes(app: Application, p: typeof prisma = prism
           include: {
             student: { select: { id: true, firstName: true, lastName: true } },
             feePlan: { select: { id: true, name: true, feeType: true, amount: true } },
-            payments: { select: { id: true, amount: true, status: true, paidAt: true, method: true } },
+            payments: { select: { id: true, amount: true, status: true, paidAt: true, method: true, feeType: true, cautionStatus: true, refundedAt: true } },
           },
           orderBy: { createdAt: 'desc' },
           skip: (pageNum - 1) * limitNum,
@@ -335,7 +335,7 @@ export function registerModulesRoutes(app: Application, p: typeof prisma = prism
     try {
       const userId = req.user!.userId;
       const schoolId = req.user!.schoolId;
-      const { invoiceId, method, phoneNumber } = req.body as { invoiceId: string; method: string; phoneNumber: string };
+      const { invoiceId, method, phoneNumber, amount } = req.body as { invoiceId: string; method: string; phoneNumber: string; amount?: number };
 
       if (!invoiceId || !method || !phoneNumber) {
         res.status(400).json({ success: false, message: 'invoiceId, method et phoneNumber requis' }); return;
@@ -366,6 +366,7 @@ export function registerModulesRoutes(app: Application, p: typeof prisma = prism
         method: method as PaymentMethod,
         phoneNumber,
         schoolId,
+        amount: typeof amount === 'number' && amount > 0 ? amount : undefined,
       });
       res.status(201).json({ success: true, data: result });
     } catch (err) { next(err); }

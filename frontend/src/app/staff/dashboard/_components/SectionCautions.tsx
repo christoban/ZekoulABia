@@ -8,7 +8,15 @@ interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
 }
 
-interface Payment { id: string; amount: number; status: string; paidAt: string | null }
+interface Payment {
+  id: string
+  amount: number
+  status: string
+  paidAt: string | null
+  feeType?: string
+  cautionStatus?: 'HELD' | 'REFUNDED' | 'PERMANENTLY_HELD' | null
+  refundedAt?: string | null
+}
 interface CautionInvoice {
   id: string; amount: number; status: string; createdAt: string
   student: { id: string; firstName: string; lastName: string }
@@ -17,14 +25,37 @@ interface CautionInvoice {
 }
 
 const STATUS_LABEL: Record<string, { bg: string; color: string }> = {
-  PENDING:   { bg: 'var(--amber-light)', color: 'var(--amber)' },
-  PAID:      { bg: 'var(--green-light)', color: 'var(--green)' },
-  CANCELLED: { bg: 'var(--red-light)', color: 'var(--red)' },
+  HELD:      { bg: 'var(--amber-light)', color: 'var(--amber)' },
+  REFUNDED:  { bg: 'var(--green-light)', color: 'var(--green)' },
+  RETAINED:  { bg: 'var(--red-light)', color: 'var(--red)' },
+  PENDING:   { bg: 'var(--bg2)', color: 'var(--text2)' },
   PARTIAL:   { bg: 'var(--amber-light)', color: 'var(--amber)' },
 }
 
 function fmtCFA(n: number) {
   return new Intl.NumberFormat('fr-FR').format(n) + ' FCFA'
+}
+
+function isCautionHeld(c: CautionInvoice): boolean {
+  if (c.payments.some(p => p.cautionStatus === 'REFUNDED' || p.cautionStatus === 'PERMANENTLY_HELD')) return false
+  if (c.status === 'CANCELLED') return false
+  return c.payments.some(p => p.cautionStatus === 'HELD' || p.status === 'PAID' || p.status === 'SUCCESS') || c.status === 'PAID'
+}
+
+function isCautionRefunded(c: CautionInvoice): boolean {
+  return c.payments.some(p => p.cautionStatus === 'REFUNDED')
+}
+
+function isCautionRetained(c: CautionInvoice): boolean {
+  return c.payments.some(p => p.cautionStatus === 'PERMANENTLY_HELD') || c.status === 'CANCELLED'
+}
+
+function findEligiblePayment(caution: CautionInvoice): Payment | undefined {
+  return (
+    caution.payments.find(p => p.cautionStatus === 'HELD') ||
+    caution.payments.find(p => (p.status === 'PAID' || p.status === 'SUCCESS') && p.cautionStatus !== 'REFUNDED' && p.cautionStatus !== 'PERMANENTLY_HELD') ||
+    (caution.payments.length > 0 ? caution.payments[0] : undefined)
+  )
 }
 
 export default function SectionCautions({ onToast }: Props) {
@@ -51,8 +82,8 @@ export default function SectionCautions({ onToast }: Props) {
   useEffect(() => { fetchCautions() }, [fetchCautions])
 
   const handleRemboursement = async (caution: CautionInvoice) => {
-    const cautionPayment = caution.payments.find(p => p.status !== 'PAID')
-    if (!cautionPayment) {
+    const cautionPayment = findEligiblePayment(caution)
+    if (!cautionPayment || !isCautionHeld(caution)) {
       onToast(t('cautions.noEligiblePayment'), 'error')
       return
     }
@@ -77,8 +108,11 @@ export default function SectionCautions({ onToast }: Props) {
 
   const handleRetention = async (caution: CautionInvoice) => {
     if (!confirm(t('cautions.retainConfirm', { firstName: caution.student.firstName, lastName: caution.student.lastName }))) return
-    const cautionPayment = caution.payments.find(p => p.status !== 'PAID')
-    if (!cautionPayment) { onToast(t('cautions.noPaymentFound'), 'error'); return }
+    const cautionPayment = findEligiblePayment(caution)
+    if (!cautionPayment || !isCautionHeld(caution)) {
+      onToast(t('cautions.noPaymentFound'), 'error')
+      return
+    }
     setActionId(caution.id)
     try {
       const res = await fetchApi(`/api/v2/finance/payments/caution/${cautionPayment.id}/rembourser`, {
@@ -97,8 +131,8 @@ export default function SectionCautions({ onToast }: Props) {
     }
   }
 
-  const heldCount   = cautions.filter(c => c.status === 'PENDING' || c.status === 'PARTIAL').length
-  const totalAmount = cautions.filter(c => c.status === 'PENDING' || c.status === 'PARTIAL').reduce((s, c) => s + c.amount, 0)
+  const heldCount   = cautions.filter(isCautionHeld).length
+  const totalAmount = cautions.filter(isCautionHeld).reduce((s, c) => s + c.amount, 0)
 
   return (
     <div className="px-4 py-4 md:px-7 md:py-6" style={{ overflowY: 'auto', height: '100%' }}>
@@ -168,9 +202,11 @@ export default function SectionCautions({ onToast }: Props) {
               </thead>
               <tbody>
                 {cautions.map((c) => {
-                  const st = STATUS_LABEL[c.status] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }
-                  const statusLabelKey = c.status === 'PENDING' ? 'statusHeldf' : c.status === 'PAID' ? 'statusRefunded' : c.status === 'CANCELLED' ? 'statusRetained' : 'statusPartial'
-                  const isHeld = c.status === 'PENDING' || c.status === 'PARTIAL'
+                  const isHeld = isCautionHeld(c)
+                  const isRef = isCautionRefunded(c)
+                  const isRet = isCautionRetained(c)
+                  const st = isRef ? STATUS_LABEL.REFUNDED : isRet ? STATUS_LABEL.RETAINED : isHeld ? STATUS_LABEL.HELD : (STATUS_LABEL[c.status] ?? STATUS_LABEL.PENDING)
+                  const statusLabelKey = isRef ? 'statusRefunded' : isRet ? 'statusRetained' : isHeld ? 'statusHeldf' : c.status === 'PARTIAL' ? 'statusPartial' : 'statusPending'
                   return (
                     <tr key={c.id}
                       onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
@@ -205,7 +241,7 @@ export default function SectionCautions({ onToast }: Props) {
                         )}
                         {!isHeld && (
                           <span style={{ fontSize: 12, color: 'var(--text3)', fontStyle: 'italic' }}>
-                            {c.status === 'PAID' ? t('cautions.refunded') : t('cautions.processed')}
+                            {isRef ? t('cautions.statusRefunded') : isRet ? t('cautions.statusRetained') : t('cautions.statusPending')}
                           </span>
                         )}
                       </td>
