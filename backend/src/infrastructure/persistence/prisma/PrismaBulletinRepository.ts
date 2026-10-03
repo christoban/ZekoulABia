@@ -139,7 +139,7 @@ export class PrismaBulletinRepository implements BulletinRepository {
         ...(params.academicYearId ? { academicYearId: params.academicYearId } : {}),
         ...(params.classWorkflowStatusIn ? { classWorkflowStatus: { in: params.classWorkflowStatusIn as BulletinValidationStatus[] } } : {}),
       },
-      include: { academicYear: true, academicPeriod: true },
+      include: { academicYear: true, academicPeriod: true, subjectLines: true },
       orderBy: { createdAt: 'desc' },
     }) as unknown as Record<string, unknown>[];
   }

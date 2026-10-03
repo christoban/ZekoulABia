@@ -1,13 +1,14 @@
 'use client'
-import { useCallback } from 'react'
-import { ScrollText, Download, Loader2, WifiOff } from 'lucide-react'
+import { useCallback, useState, useEffect } from 'react'
+import { ScrollText, Download, Loader2, WifiOff, Eye, Printer } from 'lucide-react'
 import type { UserInfo } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import OfflineEmptyState from '@/components/OfflineEmptyState'
-import { useState } from 'react'
 import { useT } from '@/lib/i18n'
+import BulletinModalLight, { type BulletinData } from '@/components/bulletin/BulletinModalLight'
+import { getUserSession } from '@/lib/offline/db'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void
@@ -40,6 +41,16 @@ export default function SectionStudentBulletins({ onToast, user }: Props) {
   const tcommon = useT('common')
   const isOnline = useOnlineStatus()
   const [downloading, setDownloading] = useState<string | null>(null)
+  const [selectedBulletin, setSelectedBulletin] = useState<BulletinData | null>(null)
+  const [schoolInfo, setSchoolInfo] = useState<{ name: string; logoUrl: string | null } | null>(null)
+
+  useEffect(() => {
+    if (user?.id) {
+      getUserSession(user.id).then(s => {
+        if (s?.schoolInfo) setSchoolInfo(s.schoolInfo)
+      }).catch(() => {})
+    }
+  }, [user])
 
   const cacheKey = user ? `student:bulletins:${user.id}` : ''
   const fetchFn = useCallback(async () => {
@@ -150,23 +161,50 @@ export default function SectionStudentBulletins({ onToast, user }: Props) {
                     <div style={{ fontSize: 10.5, color: 'var(--text3)', fontWeight: 700, marginTop: 2 }}>{t('bulletins.rank_label').replace('{total}', String(totalDisplay))}</div>
                   </div>
                 </div>
-                <button
-                  title={!isOnline ? t('bulletins.toast_download_offline') : undefined}
-                  className="w-full h-10 sm:h-9 px-3.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-transform active:scale-[0.99] border-0"
-                  style={{
-                    background: isOnline ? 'linear-gradient(135deg,var(--primary),var(--primary-hover))' : 'var(--border2)',
-                    color: 'white',
-                    opacity: downloading === b.id ? 0.7 : 1,
-                  }}
-                  onClick={() => downloadPdf(b.id, b.academicPeriod?.name || 'bulletin')}
-                  disabled={downloading === b.id || !isOnline}>
-                  {!isOnline ? <><WifiOff size={13} strokeWidth={2} /> {t('bulletins.offline_label')}</> : downloading === b.id ? <><Loader2 size={13} strokeWidth={2} className="animate-spin" /> {t('bulletins.downloading_label')}</> : <><Download size={13} strokeWidth={2} /> {t('bulletins.download_button')}</>}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="flex-1 h-10 sm:h-9 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer transition-transform active:scale-[0.99] border"
+                    style={{
+                      background: 'var(--surface)',
+                      borderColor: 'var(--border2)',
+                      color: 'var(--text)',
+                    }}
+                    onClick={() => {
+                      const studentName = user ? `${user.firstName} ${user.lastName}`.trim() : 'Élève'
+                      setSelectedBulletin({
+                        ...b,
+                        studentName,
+                        schoolName: schoolInfo?.name,
+                        schoolLogoUrl: schoolInfo?.logoUrl,
+                      })
+                    }}
+                  >
+                    <Eye size={14} strokeWidth={2} />
+                    Consulter
+                  </button>
+
+                  <button
+                    title={!isOnline ? t('bulletins.toast_download_offline') : undefined}
+                    className="flex-1 h-10 sm:h-9 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer transition-transform active:scale-[0.99] border-0"
+                    style={{
+                      background: isOnline ? 'linear-gradient(135deg,var(--primary),var(--primary-hover))' : 'var(--border2)',
+                      color: 'white',
+                      opacity: downloading === b.id ? 0.7 : 1,
+                    }}
+                    onClick={() => downloadPdf(b.id, b.academicPeriod?.name || 'bulletin')}
+                    disabled={downloading === b.id || !isOnline}
+                  >
+                    {!isOnline ? <><WifiOff size={13} strokeWidth={2} /> PDF indispo</> : downloading === b.id ? <><Loader2 size={13} strokeWidth={2} className="animate-spin" /> ...</> : <><Download size={13} strokeWidth={2} /> PDF</>}
+                  </button>
+                </div>
               </div>
             </div>
           )
         })}
       </div>
+
+      <BulletinModalLight bulletin={selectedBulletin} onClose={() => setSelectedBulletin(null)} />
     </div>
   )
 }

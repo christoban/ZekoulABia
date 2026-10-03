@@ -5,7 +5,7 @@ import type { UserInfo } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
-import { db } from '@/lib/offline/db'
+import { db, putCachedData, getCachedData } from '@/lib/offline/db'
 import type { PendingAction } from '@/lib/offline/db'
 
 interface Props {
@@ -215,7 +215,26 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
       } else {
         onToast(data.message ?? t('cahier_de_texte.toast_save_error'), 'error')
       }
-    } catch { onToast(t('cahier_de_texte.toast_network_error'), 'error') }
+    } catch {
+      // Repli hors-ligne automatique si la requête réseau a échoué
+      try {
+        await addToQueue({
+          type: 'CAHIER_DE_TEXTE_CREATE',
+          endpoint: '/api/v2/pedagogie/cahier-de-texte',
+          method: 'POST',
+          payload: {
+            ...payload,
+            _className:   classes.find(c => c.id === selectedClass)?.name,
+            _subjectName: subjects.find(s => s.id === selectedSubject)?.name,
+          },
+        })
+        onToast('Connexion perdue : entrée enregistrée hors-ligne (en attente de synchronisation)', 'info')
+        setContenu(''); setContenuLibre(''); setDevoirs(''); setDevoirsOn(false)
+        setSelectedChapitre(''); setScanBanner(null)
+      } catch {
+        onToast(t('cahier_de_texte.toast_network_error'), 'error')
+      }
+    }
     finally { setSaving(false) }
   }
 
@@ -262,13 +281,34 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
   }
 
   // ── Historique ─────────────────────────────────────────────────────────────
-  const loadEntries = () => {
+  const loadEntries = async () => {
     setLoadingEntries(true)
-    const params = new URLSearchParams()
-    if (filterClass) params.set('classId', filterClass)
-    fetchApi(`/api/v2/pedagogie/cahier-de-texte?${params}`, { credentials: 'include' })
-      .then(r => r.json()).then(d => { if (d.success) setEntries(d.data ?? []) })
-      .catch(() => {}).finally(() => setLoadingEntries(false))
+    const cacheKey = `teacher:cahierDeTexte:${filterClass || 'all'}`
+    try {
+      const cached = await getCachedData<CahierEntry[]>(cacheKey)
+      if (cached?.data) {
+        setEntries(cached.data)
+        setLoadingEntries(false)
+      }
+    } catch { /* ignore */ }
+
+    if (navigator.onLine) {
+      const params = new URLSearchParams()
+      if (filterClass) params.set('classId', filterClass)
+      fetchApi(`/api/v2/pedagogie/cahier-de-texte?${params}`, { credentials: 'include' })
+        .then(r => r.json())
+        .then(async d => {
+          if (d.success) {
+            const list = d.data ?? []
+            setEntries(list)
+            await putCachedData(cacheKey, list).catch(() => {})
+          }
+        })
+        .catch(() => {})
+        .finally(() => setLoadingEntries(false))
+    } else {
+      setLoadingEntries(false)
+    }
   }
 
   // Entrées en attente de synchronisation (Dexie)
