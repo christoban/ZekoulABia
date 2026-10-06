@@ -175,16 +175,93 @@ export default function ParentDashboard() {
     const uid = user.id
     ;(async () => {
       try {
-        const childrenRes = await fetchApi('/api/v2/parent/children', { credentials: 'include' }).then(r => r.json())
-        if (!childrenRes.success) return
+        const childrenRes = await fetchApi('/api/v2/parent/children', { credentials: 'include' }).then(r => r.json()).catch(() => null)
+        if (!childrenRes?.success || !Array.isArray(childrenRes.data)) return
         const children = childrenRes.data
         await putCachedData(`parent:children:${uid}`, children)
         await putCachedData(`parent:attendance:${uid}`, children)
+
         const rcRes = await fetchApi('/api/v2/report-cards', { credentials: 'include' }).then(r => r.json()).catch(() => null)
         await putCachedData(`parent:grades:${uid}`, { children, bulletins: rcRes?.reportCards ?? [] })
+
         const invRes = await fetchApi('/api/v2/parent/invoices?limit=50', { credentials: 'include' }).then(r => r.json()).catch(() => null)
         if (invRes?.data) {
           await putCachedData(`parent:invoices:${uid}:all`, invRes.data)
+        }
+
+        // 1. Précharger les années et séquences académiques
+        const ayRes = await fetchApi('/api/v2/academic-years', { credentials: 'include' }).then(r => r.json()).catch(() => null)
+        let sequences: { id: string; name: string }[] = []
+        if (ayRes?.success && Array.isArray(ayRes.data)) {
+          await putCachedData('parent:academic-years', ayRes.data)
+          const curYear = ayRes.data.find((y: any) => y.isCurrent) ?? ayRes.data[0]
+          if (curYear?.periods) {
+            for (const p of curYear.periods) {
+              for (const s of p.sequences ?? []) {
+                sequences.push({ id: s.id, name: s.name })
+              }
+            }
+          }
+        }
+
+        // 2. Précharger la configuration de la grille d'emploi du temps
+        const gridRes = await fetchApi('/api/v2/timetable-grid-config', { credentials: 'include' }).then(r => r.json()).catch(() => null)
+        if (gridRes?.success && gridRes.data) {
+          await putCachedData('parent:timetable-grid-config', gridRes.data)
+        }
+
+        // 3. Précharger pour chaque enfant : notes séquentielles, assiduité, cahier de texte, emploi du temps, profil académique
+        for (const child of children) {
+          const sid = child.studentId
+          if (!sid) continue
+
+          // Notes par séquence
+          for (const seq of sequences) {
+            const [gRes, avgRes] = await Promise.all([
+              fetchApi(`/api/v2/grades?studentId=${sid}&sequenceId=${seq.id}`, { credentials: 'include' }).then(r => r.json()).catch(() => null),
+              child.classeId
+                ? fetchApi(`/api/v2/grades/average/${sid}?classId=${child.classeId}&sequenceId=${seq.id}`, { credentials: 'include' }).then(r => r.json()).catch(() => null)
+                : Promise.resolve(null),
+            ])
+            if (gRes?.data || avgRes?.data !== undefined) {
+              await putCachedData(`parent:grades:seq:${sid}:${seq.id}`, {
+                grades: gRes?.data ?? [],
+                avg: avgRes?.data?.average ?? null,
+              })
+            }
+          }
+
+          // Journal d'assiduité
+          const attRes = await fetchApi(`/api/v2/attendance?studentId=${sid}&limit=50`, { credentials: 'include' }).then(r => r.json()).catch(() => null)
+          if (attRes?.records) {
+            await putCachedData(`parent:attendance:journal:${sid}`, attRes.records)
+          }
+
+          // Cahier de texte et emploi du temps de la classe
+          if (child.classeId) {
+            const [cahierRes, ttRes] = await Promise.all([
+              fetchApi(`/api/v2/pedagogie/cahier-de-texte?classId=${child.classeId}&limit=100`, { credentials: 'include' }).then(r => r.json()).catch(() => null),
+              fetchApi(`/api/v2/timetables?classId=${child.classeId}`, { credentials: 'include' }).then(r => r.json()).catch(() => null),
+            ])
+            if (cahierRes?.success && Array.isArray(cahierRes.data)) {
+              await putCachedData(`parent:cahier:${sid}:${child.classeId}`, cahierRes.data)
+            }
+            if (ttRes?.success && ttRes.data) {
+              await putCachedData(`parent:timetables:class:${child.classeId}`, ttRes.data)
+            }
+          }
+
+          // Factures filtrées par enfant
+          const childInvRes = await fetchApi(`/api/v2/parent/invoices?limit=50&studentId=${sid}`, { credentials: 'include' }).then(r => r.json()).catch(() => null)
+          if (childInvRes?.data) {
+            await putCachedData(`parent:invoices:${uid}:${sid}`, childInvRes.data)
+          }
+
+          // Profil académique
+          const acadRes = await fetchApi(`/api/v2/students/${sid}/academic-profile`, { credentials: 'include' }).then(r => r.json()).catch(() => null)
+          if (acadRes?.success && acadRes.data) {
+            await putCachedData(`student:academic-profile:${sid}`, acadRes.data)
+          }
         }
       } catch { /* silent */ }
     })()

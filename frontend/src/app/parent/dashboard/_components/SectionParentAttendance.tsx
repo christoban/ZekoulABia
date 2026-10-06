@@ -65,12 +65,12 @@ export default function SectionParentAttendance({ onToast, userId }: Props) {
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ABSENT' | 'LATE' | 'JUSTIFIED'>('ALL')
 
   // 1. Fetch enfants avec stats
-  const cacheKeyChildren = userId ? `parent:attendance:children:${userId}` : ''
+  const cacheKeyChildren = userId ? `parent:children:${userId}` : 'parent:children:default'
   const fetchChildrenFn = useCallback(async () => {
     const res = await fetchApi('/api/v2/parent/children', { credentials: 'include' }).then((r) => r.json())
     if (!res.success) throw new Error(t('errorLoad'))
     return res.data as ChildWithStats[]
-  }, [userId, t])
+  }, [t])
 
   const { data: children, loading: loadingChildren, error: errorChildren, fromCache: fromCacheKids, cachedAt: cachedAtKids, refetch: refetchKids } =
     useCachedFetch<ChildWithStats[]>(cacheKeyChildren, fetchChildrenFn)

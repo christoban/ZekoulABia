@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { TrendingUp, TrendingDown, Minus, Award, AlertTriangle, BookOpen } from 'lucide-react'
 
 interface MatiereProfil {
@@ -55,11 +56,22 @@ export default function SectionProfilAcademique({ studentId, academicYearId }: P
       const json = await res.json()
       if (json.success && json.data) {
         setData(json.data)
+        putCachedData(`student:academic-profile:${studentId}`, json.data).catch(() => {})
       } else {
-        setError(json.message || 'Erreur lors du chargement')
+        const cached = await getCachedData<ProfilData>(`student:academic-profile:${studentId}`)
+        if (cached?.data) {
+          setData(cached.data)
+        } else {
+          setError(json.message || 'Erreur lors du chargement')
+        }
       }
     } catch {
-      setError('Impossible de charger le profil académique')
+      const cached = await getCachedData<ProfilData>(`student:academic-profile:${studentId}`)
+      if (cached?.data) {
+        setData(cached.data)
+      } else {
+        setError('Impossible de charger le profil académique')
+      }
     } finally {
       setLoading(false)
     }

@@ -9,7 +9,7 @@ import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import OfflineEmptyState from '@/components/OfflineEmptyState'
 import { useT } from '@/lib/i18n'
 import BulletinModalLight, { type BulletinData } from '@/components/bulletin/BulletinModalLight'
-import { getUserSession } from '@/lib/offline/db'
+import { getUserSession, getCachedData, putCachedData } from '@/lib/offline/db'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void
@@ -116,33 +116,55 @@ export default function SectionParentGrades({ onToast, userId }: Props) {
   const selectedName = selectedChild ? `${selectedChild.prenom} ${selectedChild.nom}` : ''
   const filteredBulletins = bulletins.filter((b) => b.student?.id === selectedStudentId)
 
-  // 2. Charger les séquences académiques
+  // 2. Charger les séquences académiques (avec repli Dexie hors-connexion)
   useEffect(() => {
     let mounted = true
-    fetchApi('/api/v2/academic-years', { credentials: 'include' })
-      .then((r) => r.json())
-      .then((ayRes) => {
-        if (!mounted || !ayRes.success || !ayRes.data?.length) return
-        const curYear = ayRes.data.find((y: any) => y.isCurrent) ?? ayRes.data[0]
-        if (!curYear?.periods) return
 
-        const allSeqs: SequenceItem[] = []
-        for (const period of curYear.periods) {
-          for (const s of period.sequences ?? []) {
-            allSeqs.push({ id: s.id, name: s.name, isCurrent: Boolean(s.isCurrent) })
-          }
+    const parseAcademicYears = (years: any[]) => {
+      if (!years?.length) return
+      const curYear = years.find((y: any) => y.isCurrent) ?? years[0]
+      if (!curYear?.periods) return
+
+      const allSeqs: SequenceItem[] = []
+      for (const period of curYear.periods) {
+        for (const s of period.sequences ?? []) {
+          allSeqs.push({ id: s.id, name: s.name, isCurrent: Boolean(s.isCurrent) })
         }
-        setSequences(allSeqs)
-        if (allSeqs.length > 0 && !selectedSequenceId) {
+      }
+      setSequences(allSeqs)
+      if (allSeqs.length > 0) {
+        setSelectedSequenceId(prev => {
+          if (prev && allSeqs.some(s => s.id === prev)) return prev
           const active = allSeqs.find((s) => s.isCurrent) ?? allSeqs[allSeqs.length - 1]
-          setSelectedSequenceId(active.id)
-        }
-      })
-      .catch(() => {})
+          return active?.id || ''
+        })
+      }
+    }
+
+    if (navigator.onLine) {
+      fetchApi('/api/v2/academic-years', { credentials: 'include' })
+        .then((r) => r.json())
+        .then(async (ayRes) => {
+          if (!mounted || !ayRes.success || !ayRes.data?.length) return
+          await putCachedData('parent:academic-years', ayRes.data)
+          parseAcademicYears(ayRes.data)
+        })
+        .catch(async () => {
+          const cached = await getCachedData<any[]>('parent:academic-years')
+          if (mounted && cached?.data) parseAcademicYears(cached.data)
+        })
+    } else {
+      getCachedData<any[]>('parent:academic-years')
+        .then(cached => {
+          if (mounted && cached?.data) parseAcademicYears(cached.data)
+        })
+        .catch(() => {})
+    }
+
     return () => {
       mounted = false
     }
-  }, [selectedSequenceId])
+  }, [])
 
   // 3. Charger les notes séquentielles de l'enfant
   const cacheKeySeqGrades =

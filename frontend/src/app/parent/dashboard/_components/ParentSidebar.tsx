@@ -108,12 +108,26 @@ export default function ParentSidebar({ current, onChange, onLogout, user, schoo
       <div className="absolute top-0 left-0 right-0 h-[5px] z-10"
         style={{ background: 'repeating-linear-gradient(90deg,var(--amber) 0,var(--amber) 13px,var(--green) 13px,var(--green) 25px,var(--red) 25px,var(--red) 37px,#60a5fa 37px,#60a5fa 49px)' }} />
 
-      <div className="flex items-center gap-2.5 border-b border-white/[0.07]" style={{ padding: '12px 12px' }}>
-        <div className="w-7.5 h-7.5 rounded-[8px] flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: "linear-gradient(135deg,var(--amber),var(--accent))" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "70%", height: "70%", objectFit: "contain" }} /></div>
-        <div>
-          <div className="font-spectral text-[16px] font-bold text-white leading-tight">ZekoulABia</div>
-          <div className="text-[11px] text-white/35 font-semibold">{tcommon('brand.roleParent')}</div>
+      <div className="flex items-center justify-between border-b border-white/[0.07]" style={{ padding: '12px 12px' }}>
+        <div className="flex items-center gap-2.5">
+          <div className="w-7.5 h-7.5 rounded-[8px] flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: "linear-gradient(135deg,var(--amber),var(--accent))" }}>
+            <img src="/logo.svg" alt="ZekoulABia" style={{ width: "70%", height: "70%", objectFit: "contain" }} />
+          </div>
+          <div>
+            <div className="font-spectral text-[16px] font-bold text-white leading-tight">ZekoulABia</div>
+            <div className="text-[11px] text-white/35 font-semibold">{tcommon('brand.roleParent')}</div>
+          </div>
         </div>
+        {onMobileClose && (
+          <button
+            type="button"
+            onClick={onMobileClose}
+            aria-label="Fermer le menu"
+            className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white border-0 cursor-pointer transition-colors"
+          >
+            <X size={18} strokeWidth={2.2} />
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col flex-1 overflow-hidden" style={{ padding: '8px 10px 0' }}>

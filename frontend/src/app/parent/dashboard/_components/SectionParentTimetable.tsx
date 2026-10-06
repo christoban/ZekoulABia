@@ -6,6 +6,7 @@ import { fetchApi } from '@/lib/fetchApi'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
 import OfflineEmptyState from '@/components/OfflineEmptyState'
 import { useT } from '@/lib/i18n'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { groupTimetableSlotsForStudent, normalizeTimetableCellSlots } from '@/lib/timetableSlotGrouping'
 import type { TimetableGroupSlot } from '@/lib/timetableSlotGrouping'
 
@@ -113,27 +114,55 @@ export default function SectionParentTimetable({ onToast, userId }: Props) {
 
   const cacheKey = userId ? `parent:timetable:v2:${userId}` : ''
   const fetchFn = useCallback(async (): Promise<TimetableData> => {
-    const [childrenRes, gridRes] = await Promise.all([
-      fetchApi('/api/v2/parent/children', { credentials: 'include' }).then(r => r.json()),
-      fetchApi('/api/v2/timetable-grid-config', { credentials: 'include' }).then(r => r.json()).catch(() => ({ success: false })),
-    ])
+    let children: ChildWithStats[] = []
+    let gridData: any = null
 
-    if (!childrenRes.success) throw new Error(t('children.errorLoadChildren'))
-    const children: ChildWithStats[] = childrenRes.data
+    try {
+      const [childrenRes, gridRes] = await Promise.all([
+        fetchApi('/api/v2/parent/children', { credentials: 'include' }).then(r => r.json()),
+        fetchApi('/api/v2/timetable-grid-config', { credentials: 'include' }).then(r => r.json()).catch(() => ({ success: false })),
+      ])
+
+      if (childrenRes?.success && Array.isArray(childrenRes.data)) {
+        children = childrenRes.data
+      }
+      if (gridRes?.success && gridRes.data) {
+        gridData = gridRes.data
+        putCachedData('parent:timetable-grid-config', gridData).catch(() => {})
+      }
+    } catch {
+      // Erreur réseau : tentative de repli local
+    }
+
+    if (!children.length && userId) {
+      const cachedKids = await getCachedData<ChildWithStats[]>(`parent:children:${userId}`)
+      if (cachedKids?.data && cachedKids.data.length > 0) {
+        children = cachedKids.data
+      }
+    }
+
+    if (!children.length) {
+      throw new Error(t('children.errorLoadChildren'))
+    }
+
+    if (!gridData) {
+      const cachedGrid = await getCachedData<any>('parent:timetable-grid-config')
+      gridData = cachedGrid?.data
+    }
 
     let squelette: PeriodeGrille[] = DEFAULT_SKELETON
     let joursActifs: string[] = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI']
     let squeletteParJour: Record<string, PeriodeGrille[]> = {}
 
-    if (gridRes?.success && gridRes.data) {
-      if (Array.isArray(gridRes.data.squelette) && gridRes.data.squelette.length > 0) {
-        squelette = gridRes.data.squelette
+    if (gridData) {
+      if (Array.isArray(gridData.squelette) && gridData.squelette.length > 0) {
+        squelette = gridData.squelette
       }
-      if (Array.isArray(gridRes.data.config?.joursActifs) && gridRes.data.config.joursActifs.length > 0) {
-        joursActifs = gridRes.data.config.joursActifs
+      if (Array.isArray(gridData.config?.joursActifs) && gridData.config.joursActifs.length > 0) {
+        joursActifs = gridData.config.joursActifs
       }
-      if (gridRes.data.squeletteParJour && typeof gridRes.data.squeletteParJour === 'object') {
-        squeletteParJour = gridRes.data.squeletteParJour
+      if (gridData.squeletteParJour && typeof gridData.squeletteParJour === 'object') {
+        squeletteParJour = gridData.squeletteParJour
       }
     }
 
@@ -145,9 +174,15 @@ export default function SectionParentTimetable({ onToast, userId }: Props) {
       classNames[child.studentId] = child.classeNom || ''
       try {
         const ttRes = await fetchApi(`/api/v2/timetables?classId=${child.classeId}`, { credentials: 'include' }).then(r => r.json())
-        slotsByChild[child.studentId] = ttRes.success ? buildSlots(ttRes.data, child.groupIds ?? [], t('timetable.notAssignedToGroup')) : {}
+        if (ttRes?.success && ttRes.data) {
+          slotsByChild[child.studentId] = buildSlots(ttRes.data, child.groupIds ?? [], t('timetable.notAssignedToGroup'))
+          putCachedData(`parent:timetables:class:${child.classeId}`, ttRes.data).catch(() => {})
+        } else {
+          throw new Error('API timetables failed')
+        }
       } catch {
-        slotsByChild[child.studentId] = {}
+        const cachedTT = await getCachedData<any>(`parent:timetables:class:${child.classeId}`)
+        slotsByChild[child.studentId] = cachedTT?.data ? buildSlots(cachedTT.data, child.groupIds ?? [], t('timetable.notAssignedToGroup')) : {}
       }
     }))
 
