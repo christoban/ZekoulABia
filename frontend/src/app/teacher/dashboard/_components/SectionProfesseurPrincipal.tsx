@@ -5,6 +5,7 @@ import type { UserInfo } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 
 interface Props {
   user: UserInfo
@@ -51,17 +52,27 @@ export default function SectionProfesseurPrincipal({ user: _user, classeId, clas
   const [selectedPeriodId, setSelectedPeriodId] = useState<string>('')
 
   useEffect(() => {
-    fetchApi('/api/v2/academic-years?isCurrent=true', { credentials: 'include' })
-      .then(r => r.json())
-      .then(d => {
-        const years = Array.isArray(d.data) ? d.data : Array.isArray(d) ? d : []
-        const current = years[0]
-        if (current?.periods?.length) {
-          setPeriods(current.periods)
-          setSelectedPeriodId(current.periods[0].id)
+    if (navigator.onLine) {
+      fetchApi('/api/v2/academic-years?isCurrent=true', { credentials: 'include' })
+        .then(r => r.json())
+        .then(async d => {
+          const years = Array.isArray(d.data) ? d.data : Array.isArray(d) ? d : []
+          const current = years[0]
+          if (current?.periods?.length) {
+            setPeriods(current.periods)
+            setSelectedPeriodId(current.periods[0].id)
+            await putCachedData('teacher:academic-periods', current.periods).catch(() => {})
+          }
+        })
+        .catch(() => {})
+    } else {
+      getCachedData<{ id: string; name: string }[]>('teacher:academic-periods').then(cached => {
+        if (cached?.data?.length) {
+          setPeriods(cached.data)
+          setSelectedPeriodId(cached.data[0].id)
         }
-      })
-      .catch(() => {})
+      }).catch(() => {})
+    }
   }, [])
 
   const downloadTableauHonneur = async () => {

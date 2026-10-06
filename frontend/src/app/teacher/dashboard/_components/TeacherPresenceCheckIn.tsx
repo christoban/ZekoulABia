@@ -15,6 +15,7 @@ import {
   Navigation,
 } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 
 export interface TeacherAttendanceStatusData {
   hasCheckedIn: boolean
@@ -75,28 +76,45 @@ export default function TeacherPresenceCheckIn({
   const loadStatus = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetchApi('/api/v2/staff-attendance/status', { credentials: 'include' }).then(r => r.json())
-      if (res.success && res.data) {
-        setStatusData(res.data)
-        if (res.data.hasCheckedIn && onPresenceConfirmed) {
-          onPresenceConfirmed(res.data.attendance)
+      if (navigator.onLine) {
+        const res = await fetchApi('/api/v2/staff-attendance/status', { credentials: 'include' }).then(r => r.json())
+        if (res.success && res.data) {
+          setStatusData(res.data)
+          putCachedData('teacher:staff-attendance-status', res.data).catch(() => {})
+          if (res.data.hasCheckedIn && onPresenceConfirmed) {
+            onPresenceConfirmed(res.data.attendance)
+          }
+          if (!res.data.hasCheckedIn && res.data.recommendedMode) {
+            setSelectedMode(res.data.recommendedMode)
+          }
+          if (res.data.currentSlot?.roomId) {
+            setSelectedRoomId(res.data.currentSlot.roomId)
+          } else if (res.data.rooms?.length > 0) {
+            const firstQrRoom = res.data.rooms.find((r: any) => r.qrEnabled)
+            if (firstQrRoom) setSelectedRoomId(firstQrRoom.id)
+          }
         }
-        if (!res.data.hasCheckedIn && res.data.recommendedMode) {
-          setSelectedMode(res.data.recommendedMode)
-        }
-        if (res.data.currentSlot?.roomId) {
-          setSelectedRoomId(res.data.currentSlot.roomId)
-        } else if (res.data.rooms?.length > 0) {
-          const firstQrRoom = res.data.rooms.find((r: any) => r.qrEnabled)
-          if (firstQrRoom) setSelectedRoomId(firstQrRoom.id)
+      } else {
+        const cached = await getCachedData<TeacherAttendanceStatusData>('teacher:staff-attendance-status')
+        if (cached?.data) {
+          setStatusData(cached.data)
+          if (cached.data.hasCheckedIn && onPresenceConfirmed) {
+            onPresenceConfirmed(cached.data.attendance)
+          }
         }
       }
     } catch {
-      // mode silencieux
+      const cached = await getCachedData<TeacherAttendanceStatusData>('teacher:staff-attendance-status')
+      if (cached?.data) {
+        setStatusData(cached.data)
+        if (cached.data.hasCheckedIn && onPresenceConfirmed) {
+          onPresenceConfirmed(cached.data.attendance)
+        }
+      }
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [onPresenceConfirmed])
 
   useEffect(() => {
     loadStatus()
@@ -139,6 +157,33 @@ export default function TeacherPresenceCheckIn({
   const handlePointer = async (modeOverride?: 'QR' | 'GPS' | 'MANUEL') => {
     const mode = modeOverride || selectedMode
     setSubmitting(true)
+
+    if (!navigator.onLine) {
+      const localAtt = {
+        id: `offline-${Date.now()}`,
+        statut: 'PRESENT' as const,
+        mode: mode as any,
+        date: new Date().toISOString().split('T')[0],
+      }
+      const updatedStatus: TeacherAttendanceStatusData = {
+        ...(statusData ?? {
+          hasCheckedIn: true,
+          attendance: localAtt,
+          settings: { gpsConfigured: false, gpsRadiusMeters: 50, schoolLatitude: null, schoolLongitude: null, qrConfigured: false },
+          rooms: [],
+          currentSlot: null,
+          recommendedMode: 'MANUEL',
+        }),
+        hasCheckedIn: true,
+        attendance: localAtt,
+      }
+      setStatusData(updatedStatus)
+      await putCachedData('teacher:staff-attendance-status', updatedStatus).catch(() => {})
+      if (onPresenceConfirmed) onPresenceConfirmed(localAtt)
+      onToast('Présence confirmée hors-ligne ! (Prise d\'appel déverrouillée)', 'info')
+      setSubmitting(false)
+      return
+    }
 
     try {
       let body: any = { mode }

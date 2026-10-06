@@ -100,9 +100,12 @@ export default function TeacherTopbar({ title, onNavigate, onChangePassword, onM
     >
       {/* Hamburger — sous md uniquement */}
       {onMenuClick && (
-        <button onClick={onMenuClick} aria-label="Menu" className="flex md:!hidden"
-          style={{ width: 40, height: 40, borderRadius: 20, border: 'none', background: 'transparent', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
-          <Menu size={22} color="var(--text)" strokeWidth={2} />
+        <button
+          onClick={onMenuClick}
+          aria-label="Menu"
+          className="flex md:!hidden items-center justify-center shrink-0 w-10 h-10 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--bg2)] active:scale-90 transition-all cursor-pointer shadow-xs"
+        >
+          <Menu size={20} color="var(--text)" strokeWidth={2.2} />
         </button>
       )}
 
@@ -113,7 +116,9 @@ export default function TeacherTopbar({ title, onNavigate, onChangePassword, onM
       </div>
 
       {/* Bouton calendrier unifié */}
-      <CalendarTopbarButton />
+      <div className="shrink-0">
+        <CalendarTopbarButton />
+      </div>
 
       {/* Notifications — mobile */}
       <div ref={notifRef} className="relative md:hidden flex-shrink-0">

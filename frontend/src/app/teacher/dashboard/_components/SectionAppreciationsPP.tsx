@@ -5,6 +5,7 @@ import type { UserInfo } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
 import { useT } from '@/lib/i18n'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 
 interface Props {
   user: UserInfo
@@ -71,19 +72,31 @@ export default function SectionAppreciationsPP({ user: _user, classeId, classeNo
 
   // Load periods from current academic year
   useEffect(() => {
-    fetchApi('/api/v2/academic-years?isCurrent=true', { credentials: 'include' })
-      .then(r => r.json())
-      .then(d => {
-        const years = Array.isArray(d.data) ? d.data : Array.isArray(d) ? d : []
-        const current = years[0]
-        if (current?.periods?.length) {
-          setPeriods(current.periods)
-          setSelectedPeriodId(current.periods[0].id)
-          const currentPer = current.periods.find((p: Period) => p.isCurrent)
+    if (navigator.onLine) {
+      fetchApi('/api/v2/academic-years?isCurrent=true', { credentials: 'include' })
+        .then(r => r.json())
+        .then(async d => {
+          const years = Array.isArray(d.data) ? d.data : Array.isArray(d) ? d : []
+          const current = years[0]
+          if (current?.periods?.length) {
+            setPeriods(current.periods)
+            setSelectedPeriodId(current.periods[0].id)
+            const currentPer = current.periods.find((p: Period) => p.isCurrent)
+            if (currentPer) setCurrentPeriodId(currentPer.id)
+            await putCachedData('teacher:academic-periods', current.periods).catch(() => {})
+          }
+        })
+        .catch(() => {})
+    } else {
+      getCachedData<Period[]>('teacher:academic-periods').then(cached => {
+        if (cached?.data?.length) {
+          setPeriods(cached.data)
+          setSelectedPeriodId(cached.data[0].id)
+          const currentPer = cached.data.find((p: Period) => p.isCurrent)
           if (currentPer) setCurrentPeriodId(currentPer.id)
         }
-      })
-      .catch(() => {})
+      }).catch(() => {})
+    }
   }, [])
 
   // Load PP's class
@@ -113,26 +126,53 @@ export default function SectionAppreciationsPP({ user: _user, classeId, classeNo
     if (!selectedPeriodId) return
     setLoadingCards(true)
     setError(null)
-    fetchApi(`/api/v2/report-cards?classId=${classeId}&periodId=${selectedPeriodId}&limit=100`, { credentials: 'include' })
-      .then(r => r.json())
-      .then(d => {
-        const cards: ReportCard[] = (d.reportCards ?? []).map((rc: any) => ({
-          id: rc.id,
-          studentId: rc.studentId,
-          studentName: rc.student ? `${rc.student.lastName ?? ''} ${rc.student.firstName ?? ''}`.trim() : rc.studentId,
-          generalAverage: rc.generalAverage ?? null,
-          classMasterComment: rc.classMasterComment ?? null,
-          status: rc.status ?? '',
-        }))
-        setReportCards(cards)
-        const init: Record<string, string> = {}
-        for (const rc of cards) init[rc.id] = rc.classMasterComment ?? ''
-        setComments(init)
-        setSaved({})
-      })
-      .catch(() => setError(t('pp.toast_error')))
-      .finally(() => setLoadingCards(false))
-  }, [selectedPeriodId, classeId])
+    const rcCacheKey = `teacher:pp-report-cards:${classeId}:${selectedPeriodId}`
+
+    if (navigator.onLine) {
+      fetchApi(`/api/v2/report-cards?classId=${classeId}&periodId=${selectedPeriodId}&limit=100`, { credentials: 'include' })
+        .then(r => r.json())
+        .then(async d => {
+          const cards: ReportCard[] = (d.reportCards ?? []).map((rc: any) => ({
+            id: rc.id,
+            studentId: rc.studentId,
+            studentName: rc.student ? `${rc.student.lastName ?? ''} ${rc.student.firstName ?? ''}`.trim() : rc.studentId,
+            generalAverage: rc.generalAverage ?? null,
+            classMasterComment: rc.classMasterComment ?? null,
+            status: rc.status ?? '',
+          }))
+          setReportCards(cards)
+          const init: Record<string, string> = {}
+          for (const rc of cards) init[rc.id] = rc.classMasterComment ?? ''
+          setComments(init)
+          setSaved({})
+          await putCachedData(rcCacheKey, cards).catch(() => {})
+        })
+        .catch(async () => {
+          const cached = await getCachedData<ReportCard[]>(rcCacheKey)
+          if (cached?.data?.length) {
+            setReportCards(cached.data)
+            const init: Record<string, string> = {}
+            for (const rc of cached.data) init[rc.id] = rc.classMasterComment ?? ''
+            setComments(init)
+          } else {
+            setError(t('pp.toast_error'))
+          }
+        })
+        .finally(() => setLoadingCards(false))
+    } else {
+      getCachedData<ReportCard[]>(rcCacheKey).then(cached => {
+        if (cached?.data?.length) {
+          setReportCards(cached.data)
+          const init: Record<string, string> = {}
+          for (const rc of cached.data) init[rc.id] = rc.classMasterComment ?? ''
+          setComments(init)
+        } else {
+          setError(t('pp.toast_error'))
+        }
+      }).catch(() => setError(t('pp.toast_error')))
+        .finally(() => setLoadingCards(false))
+    }
+  }, [selectedPeriodId, classeId, t])
 
   // Debounced auto-save per report card
   const debouncedComments = useDebounce(comments, 1500)

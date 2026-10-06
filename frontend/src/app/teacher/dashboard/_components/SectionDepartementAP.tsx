@@ -9,6 +9,7 @@ import type { UserInfo } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 
 interface Props {
   user: UserInfo
@@ -155,28 +156,46 @@ export default function SectionDepartementAP({ user, departementId, departementN
 
   const loadProgrammes = useCallback(async () => {
     setProgLoading(true)
+    const cacheKey = `teacher:dept-programmes:${departementId}`
     try {
-      const res = await fetchApi('/api/v2/pedagogie/programmes', { credentials: 'include' }).then(r => r.json())
-      if (res.success && Array.isArray(res.data)) {
-        const all: Programme[] = res.data
-        // Filtrage strict : matières du département géré par cet animateur
-        const filtered = all.filter(p => allowedSubjectIds.has(p.subject?.id) || allowedSubjectNames.has((p.subject?.name || '').toLowerCase().trim()))
-        setProgrammes(filtered)
+      if (navigator.onLine) {
+        const res = await fetchApi('/api/v2/pedagogie/programmes', { credentials: 'include' }).then(r => r.json())
+        if (res.success && Array.isArray(res.data)) {
+          const all: Programme[] = res.data
+          // Filtrage strict : matières du département géré par cet animateur
+          const filtered = all.filter(p => allowedSubjectIds.has(p.subject?.id) || allowedSubjectNames.has((p.subject?.name || '').toLowerCase().trim()))
+          setProgrammes(filtered)
+          await putCachedData(cacheKey, filtered).catch(() => {})
+        }
+      } else {
+        const cached = await getCachedData<Programme[]>(cacheKey)
+        if (cached?.data) setProgrammes(cached.data)
       }
     } catch {
-      showToast('Erreur lors du chargement des programmes', 'error')
+      const cached = await getCachedData<Programme[]>(cacheKey)
+      if (cached?.data) {
+        setProgrammes(cached.data)
+      } else {
+        showToast('Erreur lors du chargement des programmes', 'error')
+      }
     } finally {
       setProgLoading(false)
     }
-  }, [allowedSubjectIds, allowedSubjectNames, showToast])
+  }, [departementId, allowedSubjectIds, allowedSubjectNames, showToast])
 
   useEffect(() => {
     if (tab === 'programmes') {
       loadProgrammes()
-      fetchApi('/api/v2/classes', { credentials: 'include' })
-        .then(r => r.json())
-        .then(d => { if (d.success && Array.isArray(d.data)) setClassesList(d.data) })
-        .catch(() => {})
+      if (navigator.onLine) {
+        fetchApi('/api/v2/classes', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => { if (d.success && Array.isArray(d.data)) setClassesList(d.data) })
+          .catch(() => {})
+      } else {
+        getCachedData<any[]>('teacher:classes').then(cached => {
+          if (cached?.data) setClassesList(cached.data)
+        }).catch(() => {})
+      }
     }
   }, [tab, loadProgrammes])
 

@@ -23,7 +23,7 @@ import SectionTeacherCorrectionAnonyme from './_components/SectionTeacherCorrect
 import type { TeacherSection, Toast, UserInfo } from './_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
-import { getUserSession, putUserSession } from '@/lib/offline/db'
+import { getUserSession, putUserSession, putCachedData } from '@/lib/offline/db'
 import { OfflineIndicator } from '@/components/OfflineIndicator'
 import ChangePasswordModal from '@/components/ChangePasswordModal'
 import SectionMonProfilRH from '@/features/rh/SectionMonProfilRH'
@@ -225,6 +225,145 @@ export default function TeacherDashboard() {
     fetchApi('/api/v2/grades?validationStatus=SUBMITTED&limit=1', { credentials: 'include' })
       .then(r => r.json()).then(d => { if (d.pagination) setPendingGrades(d.pagination.total ?? 0) }).catch(() => { })
   }, [router])
+
+  // Préchargement exhaustif en tâche de fond pour l'autonomie hors-ligne complète (enseignant simple, PP et AP)
+  useEffect(() => {
+    if (!user || !navigator.onLine) return
+    const uid = user.id
+    ;(async () => {
+      try {
+        // 1. Classes, matières, grille horaire, emplois du temps et années académiques
+        const [clsRes, subRes, ayRes, gridRes, ttRes] = await Promise.all([
+          fetchApi('/api/v2/classes', { credentials: 'include' }).then(r => r.json()).catch(() => null),
+          fetchApi('/api/v2/subjects', { credentials: 'include' }).then(r => r.json()).catch(() => null),
+          fetchApi('/api/v2/academic-years', { credentials: 'include' }).then(r => r.json()).catch(() => null),
+          fetchApi('/api/v2/timetable-grid-config', { credentials: 'include' }).then(r => r.json()).catch(() => null),
+          fetchApi('/api/v2/timetables', { credentials: 'include' }).then(r => r.json()).catch(() => null),
+        ])
+
+        if (clsRes?.success && Array.isArray(clsRes.data)) {
+          await putCachedData('teacher:classes', clsRes.data)
+        }
+        if (subRes?.success && Array.isArray(subRes.data)) {
+          await putCachedData('teacher:subjects', subRes.data)
+        }
+        if (gridRes?.success && gridRes.data) {
+          await putCachedData('teacher:timetable-grid-config', gridRes.data)
+        }
+        if (ttRes?.success && Array.isArray(ttRes.data)) {
+          await putCachedData(`teacher:timetables:${uid}`, ttRes.data)
+          await putCachedData('teacher:timetables:all', ttRes.data)
+        }
+
+        // Périodes et séquences
+        let seqs: any[] = []
+        if (ayRes?.success && Array.isArray(ayRes.data)) {
+          seqs = ayRes.data.flatMap((ay: any) =>
+            ay.periods?.flatMap((p: any) =>
+              p.sequences?.map((s: any) => ({ ...s, periodName: p.name, academicYearId: ay.id })) || []
+            ) || []
+          )
+          await putCachedData('teacher:sequences', seqs)
+
+          const currentYear = ayRes.data.find((y: any) => y.isCurrent) ?? ayRes.data[0]
+          if (currentYear?.periods?.length) {
+            await putCachedData('teacher:academic-periods', currentYear.periods)
+          }
+        }
+
+        const classes = clsRes?.success && Array.isArray(clsRes.data) ? clsRes.data : []
+
+        // 2. Pour chaque classe : élèves, assignations, cahier de texte
+        for (const cls of classes) {
+          if (!cls.id) continue
+
+          // Élèves de la classe (utilisé par SectionTeacherAttendance et SectionProfesseurPrincipal)
+          const studRes = await fetchApi(`/api/v2/classes/${cls.id}/students`, { credentials: 'include' }).then(r => r.json()).catch(() => null)
+          if (studRes?.success && Array.isArray(studRes.data)) {
+            const mappedStudents = studRes.data.map((s: any) => ({
+              id: s.id,
+              name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || 'Élève inconnu',
+              firstName: s.firstName,
+              lastName: s.lastName,
+              matricule: s.matricule,
+              rang: s.rang,
+              moyenne: s.moyenne,
+              tauxPresence: s.tauxPresence,
+            }))
+            await putCachedData(`teacher:students:${cls.id}`, mappedStudents)
+            await putCachedData(`teacher:pp-students:${cls.id}`, studRes.data)
+          }
+
+          // Affectations d'enseignement
+          const assignRes = await fetchApi(`/api/v2/teaching-assignments?classId=${cls.id}`, { credentials: 'include' }).then(r => r.json()).catch(() => null)
+          if (assignRes?.success && Array.isArray(assignRes.data)) {
+            await putCachedData(`teacher:teaching-assignments:${cls.id}`, assignRes.data)
+          }
+
+          // Cahier de texte de la classe
+          const cahierRes = await fetchApi(`/api/v2/pedagogie/cahier-de-texte?classId=${cls.id}&limit=50`, { credentials: 'include' }).then(r => r.json()).catch(() => null)
+          if (cahierRes?.success && Array.isArray(cahierRes.data)) {
+            await putCachedData(`teacher:cahierDeTexte:${cls.id}`, cahierRes.data)
+          }
+        }
+
+        // Cahier de texte global
+        const cahierAll = await fetchApi('/api/v2/pedagogie/cahier-de-texte?limit=50', { credentials: 'include' }).then(r => r.json()).catch(() => null)
+        if (cahierAll?.success && Array.isArray(cahierAll.data)) {
+          await putCachedData('teacher:cahierDeTexte:all', cahierAll.data)
+        }
+
+        // Élèves à risque
+        const atRiskRes = await fetchApi('/api/v2/ai/at-risk-students', { credentials: 'include' }).then(r => r.json()).catch(() => null)
+        if (atRiskRes) {
+          await putCachedData('teacher:at-risk-students', atRiskRes)
+        }
+
+        // Actions de suivi
+        const followUpRes = await fetchApi('/api/v2/student-follow-up/mine', { credentials: 'include' }).then(r => r.json()).catch(() => null)
+        if (followUpRes?.success && Array.isArray(followUpRes.data)) {
+          await putCachedData('teacher:mes-actions-suivi', followUpRes.data)
+        }
+
+        // 3. Spécifique Professeur Principal (PP)
+        const ppClasses = user.classesProfessorPrincipal ?? []
+        for (const ppCls of ppClasses) {
+          if (!ppCls.id) continue
+          const currentPeriods = ayRes?.data?.[0]?.periods ?? []
+          for (const per of currentPeriods) {
+            const rcRes = await fetchApi(`/api/v2/report-cards?classId=${ppCls.id}&periodId=${per.id}&limit=100`, { credentials: 'include' }).then(r => r.json()).catch(() => null)
+            if (rcRes?.reportCards) {
+              const cards = rcRes.reportCards.map((rc: any) => ({
+                id: rc.id,
+                studentId: rc.studentId,
+                studentName: rc.student ? `${rc.student.lastName ?? ''} ${rc.student.firstName ?? ''}`.trim() : rc.studentId,
+                generalAverage: rc.generalAverage ?? null,
+                classMasterComment: rc.classMasterComment ?? null,
+                status: rc.status ?? '',
+              }))
+              await putCachedData(`teacher:pp-report-cards:${ppCls.id}:${per.id}`, cards)
+            }
+          }
+        }
+
+        // 4. Spécifique Animateur Pédagogique (AP)
+        const apDepts = user.headedDepartments ?? []
+        for (const dept of apDepts) {
+          if (!dept.id) continue
+          const [perfRes, progAlertRes] = await Promise.all([
+            fetchApi(`/api/v2/departments/${dept.id}/performance`, { credentials: 'include' }).then(r => r.json()).catch(() => null),
+            fetchApi('/api/v2/pedagogie/alertes-retard', { credentials: 'include' }).then(r => r.json()).catch(() => null),
+          ])
+          if (perfRes?.data) {
+            await putCachedData(`teacher:dept-perf:${dept.id}`, perfRes.data)
+          }
+          if (progAlertRes?.data) {
+            await putCachedData(`teacher:dept-progression:${dept.id}`, progAlertRes.data)
+          }
+        }
+      } catch { /* silencieux */ }
+    })()
+  }, [user])
 
   const showToast = useCallback((msg: string, type: Toast['type'] = 'success') => {
     const id = ++toastId

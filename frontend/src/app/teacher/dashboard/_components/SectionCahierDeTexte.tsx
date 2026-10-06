@@ -103,8 +103,19 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
       }
     } catch { /* ignore */ }
 
-    fetchApi('/api/v2/classes', { credentials: 'include' })
-      .then(r => r.json()).then(d => { if (d.success) setClasses(d.data ?? []) }).catch(() => {})
+    if (navigator.onLine) {
+      fetchApi('/api/v2/classes', { credentials: 'include' })
+        .then(r => r.json()).then(async d => {
+          if (d.success && Array.isArray(d.data)) {
+            setClasses(d.data)
+            await putCachedData('teacher:classes', d.data).catch(() => {})
+          }
+        }).catch(() => {})
+    } else {
+      getCachedData<Classe[]>('teacher:classes').then(cached => {
+        if (cached?.data) setClasses(cached.data)
+      }).catch(() => {})
+    }
 
     if (!hasQuickPrefill) {
       fetchApi('/api/v2/pedagogie/today-slot', { credentials: 'include' })
@@ -123,17 +134,35 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
   // ── Matières selon la classe ────────────────────────────────────────────────
   useEffect(() => {
     if (!selectedClass) { setSubjects([]); setSelectedSubject(''); return }
-    fetchApi(`/api/v2/teaching-assignments?classId=${selectedClass}`, { credentials: 'include' })
-      .then(r => r.json())
-      .then(d => {
-        if (d.success) {
+    const assignCacheKey = `teacher:teaching-assignments:${selectedClass}`
+    if (navigator.onLine) {
+      fetchApi(`/api/v2/teaching-assignments?classId=${selectedClass}`, { credentials: 'include' })
+        .then(r => r.json())
+        .then(async d => {
+          if (d.success && Array.isArray(d.data)) {
+            await putCachedData(assignCacheKey, d.data).catch(() => {})
+            const myId = user?.id
+            const mine = (d.data ?? []).filter((a: any) => a.teacherId === myId)
+            const dedup = new Map<string, Subject>()
+            for (const a of mine) dedup.set(a.subject.id, a.subject)
+            setSubjects([...dedup.values()])
+          }
+        }).catch(() => {})
+    } else {
+      getCachedData<any[]>(assignCacheKey).then(cached => {
+        if (cached?.data) {
           const myId = user?.id
-          const mine = (d.data ?? []).filter((a: any) => a.teacherId === myId)
+          const mine = cached.data.filter((a: any) => a.teacherId === myId)
           const dedup = new Map<string, Subject>()
           for (const a of mine) dedup.set(a.subject.id, a.subject)
           setSubjects([...dedup.values()])
+        } else {
+          getCachedData<Subject[]>('teacher:subjects').then(sCached => {
+            if (sCached?.data) setSubjects(sCached.data)
+          }).catch(() => {})
         }
       }).catch(() => {})
+    }
     setSelectedSubject(''); setChapitres([]); setSelectedChapitre(''); setHasProgramme(null)
   }, [selectedClass, user?.id])
 
@@ -149,16 +178,29 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
   // ── Vérification programme + chapitres selon matière ──────────────────────
   useEffect(() => {
     if (!selectedSubject) { setChapitres([]); setSelectedChapitre(''); setHasProgramme(null); return }
+    const progKey = `teacher:has-programme:${selectedSubject}:${selectedClass || 'all'}`
     const url = `/api/v2/pedagogie/subjects/${selectedSubject}/has-programme${selectedClass ? `?classId=${selectedClass}` : ''}`
-    fetchApi(url, { credentials: 'include' })
-      .then(r => r.json())
-      .then(d => {
-        if (d.success) {
-          setHasProgramme(d.data.hasProgramme)
-          setChapitres(d.data.chapitres ?? [])
+    if (navigator.onLine) {
+      fetchApi(url, { credentials: 'include' })
+        .then(r => r.json())
+        .then(async d => {
+          if (d.success) {
+            setHasProgramme(d.data.hasProgramme)
+            setChapitres(d.data.chapitres ?? [])
+            await putCachedData(progKey, d.data).catch(() => {})
+          }
+        })
+        .catch(() => setHasProgramme(true))
+    } else {
+      getCachedData<any>(progKey).then(cached => {
+        if (cached?.data) {
+          setHasProgramme(cached.data.hasProgramme)
+          setChapitres(cached.data.chapitres ?? [])
+        } else {
+          setHasProgramme(true)
         }
-      })
-      .catch(() => setHasProgramme(true)) // fallback safe : afficher le dropdown
+      }).catch(() => setHasProgramme(true))
+    }
     setSelectedChapitre('')
   }, [selectedSubject, selectedClass])
 
