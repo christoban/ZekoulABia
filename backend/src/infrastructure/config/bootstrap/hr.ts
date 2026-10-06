@@ -230,6 +230,7 @@ export function registerHrRoutes(app: Application, prismaParam: typeof prisma = 
     c.staffAttendance.pointerPresenceEnseignant,
     c.staffAttendance.staffAttendanceRepository,
     new AIActionAuditAdapter(p as any),
+    p as any,
   );
   app.use('/api/v2/staff-attendance', creerStaffAttendanceRoutes(staffAttendanceController));
 

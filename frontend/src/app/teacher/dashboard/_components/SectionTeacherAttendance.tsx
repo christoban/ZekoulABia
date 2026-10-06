@@ -6,6 +6,7 @@ import { fetchApi } from '@/lib/fetchApi'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
 import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
+import TeacherPresenceCheckIn from './TeacherPresenceCheckIn'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void
@@ -53,6 +54,7 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [rosterLabel, setRosterLabel] = useState<string | null>(null)
+  const [teacherCheckedIn, setTeacherCheckedIn] = useState<boolean>(false)
 
   const { isOnline, addToQueue } = useSyncQueue()
 
@@ -212,6 +214,10 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
 
   const saveAttendance = async () => {
     if (!selectedClass || !students.length) { onToast(t('attendance.toast_nothing_save'), 'warning'); return }
+    if (!teacherCheckedIn) {
+      onToast("Veuillez d'abord signaler votre présence (Étape 1) avant d'enregistrer l'appel de la classe.", 'warning')
+      return
+    }
     const presences = Object.entries(statuses)
       .filter(([, v]) => v !== null)
       .map(([studentId, statut]) => ({ studentId, statut }))
@@ -284,6 +290,14 @@ export default function SectionTeacherAttendance({ onToast, user }: Props) {
           <div style={sSub}>{t('attendance.subtitle')} · {selectedDate} ({selectedPeriod === 'MORNING' ? 'Matin' : 'Après-midi'})</div>
         </div>
       </div>
+
+      {/* Étape 1 du protocole d'appel : Signalement préalable de la présence de l'enseignant */}
+      <TeacherPresenceCheckIn
+        onPresenceConfirmed={(_att) => setTeacherCheckedIn(true)}
+        onToast={onToast}
+        classId={selectedClass}
+        subjectId={selectedSubject}
+      />
 
       {!isOnline && (
         <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 8, padding: '9px 14px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
