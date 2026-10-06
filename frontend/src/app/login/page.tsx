@@ -158,15 +158,22 @@ export default function LoginPage() {
           return
         }
 
-        // Si en ligne, validation de la session (fetchApi gère le rafraîchissement transparent du refresh_token)
-        const res = await fetchApi('/api/v2/users/me')
-        if (res.ok) {
+        // Validation de la session avec le serveur
+        try {
+          const res = await fetchApi('/api/v2/users/me')
+          if (res.ok) {
+            router.replace(dest)
+            return
+          }
+
+          if (res.status === 401 || res.status === 403) {
+            try { localStorage.removeItem('zekoulabia_user') } catch { /* ignore */ }
+          }
+        } catch {
+          // Erreur réseau (serveur distant inaccessible, coupure internet non détectée par navigator) :
+          // Si une session locale existe sur la machine, basculer immédiatement sur le tableau de bord hors-ligne !
           router.replace(dest)
           return
-        }
-
-        if (res.status === 401 || res.status === 403) {
-          try { localStorage.removeItem('zekoulabia_user') } catch { /* ignore */ }
         }
       } catch {
         // En cas d'erreur de parsing ou autre, afficher le formulaire normalement
@@ -295,6 +302,17 @@ export default function LoginPage() {
       startOtpTimer()
       setTimeout(() => otpRefs.current[0]?.focus(), 100)
     } catch {
+      try {
+        const raw = localStorage.getItem('zekoulabia_user')
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          const dest = parsed?.role ? ROLE_CONFIG[parsed.role]?.dest : null
+          if (dest) {
+            router.replace(dest)
+            return
+          }
+        }
+      } catch { /* ignore */ }
       setAlert({ msg: t('messages.networkError'), type: 'error' })
     } finally {
       setLoading(false)

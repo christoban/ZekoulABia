@@ -5,6 +5,7 @@ import { fetchApi } from '@/lib/fetchApi'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
 import OfflineEmptyState from '@/components/OfflineEmptyState'
 import { useT } from '@/lib/i18n'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void
@@ -62,30 +63,52 @@ export default function SectionStudentGrades({ onToast, user }: Props) {
   const [sequences, setSequences] = useState<SequenceItem[]>([])
   const [selectedSequenceId, setSelectedSequenceId] = useState<string>('')
 
-  // Charger la liste des séquences de l'année scolaire
+  // Charger la liste des séquences de l'année scolaire (avec résilience Dexie hors-ligne)
   useEffect(() => {
     let mounted = true
-    fetchApi('/api/v2/academic-years', { credentials: 'include' })
-      .then(r => r.json())
-      .then(ayRes => {
-        if (!mounted || !ayRes.success || !ayRes.data?.length) return
-        const curYear = ayRes.data.find((y: any) => y.isCurrent) ?? ayRes.data[0]
-        if (!curYear?.periods) return
 
-        const allSeqs: SequenceItem[] = []
-        for (const period of curYear.periods) {
-          for (const s of (period.sequences ?? [])) {
-            allSeqs.push({ id: s.id, name: s.name, isCurrent: Boolean(s.isCurrent) })
-          }
+    const parseAcademicYears = (years: any[]) => {
+      if (!years?.length) return
+      const curYear = years.find((y: any) => y.isCurrent) ?? years[0]
+      if (!curYear?.periods) return
+
+      const allSeqs: SequenceItem[] = []
+      for (const period of curYear.periods) {
+        for (const s of (period.sequences ?? [])) {
+          allSeqs.push({ id: s.id, name: s.name, isCurrent: Boolean(s.isCurrent) })
         }
+      }
 
-        setSequences(allSeqs)
-        if (allSeqs.length > 0 && !selectedSequenceId) {
+      setSequences(allSeqs)
+      if (allSeqs.length > 0) {
+        setSelectedSequenceId(prev => {
+          if (prev && allSeqs.some(s => s.id === prev)) return prev
           const active = allSeqs.find(s => s.isCurrent) ?? allSeqs[allSeqs.length - 1]
-          setSelectedSequenceId(active.id)
-        }
-      })
-      .catch(() => {})
+          return active?.id || ''
+        })
+      }
+    }
+
+    if (navigator.onLine) {
+      fetchApi('/api/v2/academic-years', { credentials: 'include' })
+        .then(r => r.json())
+        .then(async ayRes => {
+          if (!mounted || !ayRes.success || !ayRes.data?.length) return
+          await putCachedData('student:academic-years', ayRes.data)
+          parseAcademicYears(ayRes.data)
+        })
+        .catch(async () => {
+          const cached = await getCachedData<any[]>('student:academic-years')
+          if (mounted && cached?.data) parseAcademicYears(cached.data)
+        })
+    } else {
+      getCachedData<any[]>('student:academic-years')
+        .then(cached => {
+          if (mounted && cached?.data) parseAcademicYears(cached.data)
+        })
+        .catch(() => {})
+    }
+
     return () => { mounted = false }
   }, [])
 

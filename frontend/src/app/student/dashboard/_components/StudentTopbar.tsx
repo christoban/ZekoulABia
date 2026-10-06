@@ -104,20 +104,23 @@ export default function StudentTopbar({ title, onNavigate, onChangePassword, onM
     >
       {/* Hamburger — sous md uniquement */}
       {onMenuClick && (
-        <button onClick={onMenuClick} aria-label="Menu" className="flex md:!hidden"
-          style={{ width: 40, height: 40, borderRadius: 20, border: 'none', background: 'transparent', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
-          <Menu size={22} color="var(--text)" strokeWidth={2} />
+        <button
+          onClick={onMenuClick}
+          aria-label="Menu de navigation"
+          className="flex md:!hidden items-center justify-center w-10 h-10 rounded-xl bg-transparent border-none cursor-pointer shrink-0 active:scale-90 transition-transform mr-1 hover:bg-[var(--bg2)]"
+        >
+          <Menu size={22} color="var(--text)" strokeWidth={2.2} />
         </button>
       )}
 
-      <div className="min-w-0 flex-1">
-        <div className="text-[16px] md:text-[18px] truncate" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
+      <div className="min-w-0 flex-1 pr-1">
+        <div className="text-[15px] sm:text-[16px] md:text-[18px] truncate" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
           {title}
         </div>
       </div>
 
       {/* Bouton calendrier unifié */}
-      <CalendarTopbarButton />
+      <CalendarTopbarButton className="shrink-0" />
 
       {/* Notifications — mobile */}
       <div ref={notifRef} className="relative md:hidden flex-shrink-0">

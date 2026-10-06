@@ -219,11 +219,7 @@ export default function SectionStudentDashboard({ onNav, onToast, user }: Props)
 
   return (
     <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3 sm:space-y-4" style={{ overflowY: 'auto', height: '100%' }}>
-      <ProfileIncompleteBanner onOpenEdit={setEditProfileData} />
-      <Lv2ChoiceBanner onToast={onToast} />
-      <OrientationCheckpointBanner onToast={onToast} user={user} />
-      
-      {/* Carte d'accueil et profil élève */}
+      {/* Carte d'accueil et profil élève — priorité visuelle au chargement */}
       <div
         className="rounded-2xl p-4 sm:p-5 relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 shadow-sm"
         style={{ background: 'linear-gradient(135deg,var(--sidebar),var(--sidebar2))' }}
@@ -257,16 +253,23 @@ export default function SectionStudentDashboard({ onNav, onToast, user }: Props)
           </div>
         </div>
 
-        {/* Moyenne générale en valeur clé */}
-        <div className="flex sm:flex-col items-center justify-between sm:justify-center border-t sm:border-t-0 pt-2.5 sm:pt-0 border-white/10 shrink-0">
-          <div className="text-left sm:text-center">
-            <div style={{ fontSize: 28, fontWeight: 900, color: 'white', lineHeight: 1 }}>{displayAvg.toFixed(1)}</div>
-            <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>{t('dashboard.average_label')}</div>
-          </div>
-          <div style={{ background: mBg, color: mC, padding: '3px 10px', borderRadius: 16, fontSize: 11.5, fontWeight: 800 }} className="sm:mt-2">
-            {({ TB: t('grades.mention_tb'), B: t('grades.mention_b'), AB: t('grades.mention_ab'), P: t('grades.mention_p'), I: t('grades.mention_i') } as Record<string, string>)[mention] ?? t('grades.mention_i')}
+        <div className="flex items-center gap-2 sm:gap-3 self-end sm:self-auto shrink-0">
+          <div className="text-right">
+            <div style={{ fontSize: 24, fontWeight: 800, color: NOTE_COLOR(displayAvg), lineHeight: 1 }}>
+              {displayAvg ? displayAvg.toFixed(2) : '—'}
+            </div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 2, fontWeight: 600 }}>
+              Moyenne générale
+            </div>
           </div>
         </div>
+      </div>
+
+      {/* Bannières contextuelles et démarches administratives */}
+      <div className="space-y-2">
+        <ProfileIncompleteBanner onOpenEdit={setEditProfileData} />
+        <Lv2ChoiceBanner onToast={onToast} />
+        <OrientationCheckpointBanner onToast={onToast} user={user} />
       </div>
 
       {/* Cartes statistiques KPIs (2 colonnes sur mobile, 4 sur desktop) */}

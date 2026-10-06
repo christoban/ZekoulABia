@@ -176,14 +176,20 @@ export default function StudentDashboard() {
   useEffect(() => {
     if (!user || !navigator.onLine) return
     const uid = user.id
+    const classId = user.studentProfile?.class?.id
+    const groupIds = user.studentProfile?.groupIds ?? []
+    const groupKey = [...groupIds].sort().join(',')
+
     ;(async () => {
       try {
-        const now = Date.now()
-        const rcRes = await fetchApi('/api/v2/report-cards/my', { credentials: 'include' }).then(r => r.json())
+        // 1. Bulletins scolaires
+        const rcRes = await fetchApi('/api/v2/report-cards/my', { credentials: 'include' }).then(r => r.json()).catch(() => ({}))
         if (rcRes.reportCards) await putCachedData(`student:bulletins:${uid}`, rcRes.reportCards)
+
+        // 2. Assiduité et statistiques
         const [statsRes, recordsRes] = await Promise.all([
-          fetchApi('/api/v2/attendance/stats', { credentials: 'include' }).then(r => r.json()),
-          fetchApi('/api/v2/attendance?limit=100', { credentials: 'include' }).then(r => r.json()),
+          fetchApi('/api/v2/attendance/stats', { credentials: 'include' }).then(r => r.json()).catch(() => ({})),
+          fetchApi('/api/v2/attendance?limit=100', { credentials: 'include' }).then(r => r.json()).catch(() => ({})),
         ])
         const stats = statsRes.stats ? {
           total: statsRes.stats.total || 0, present: statsRes.stats.present || 0,
@@ -204,6 +210,57 @@ export default function StudentDashboard() {
         const fmt = (s: string) => { const d = new Date(s + 'T00:00:00'), e = new Date(d); e.setDate(d.getDate() + 4); return `${d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} – ${e.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}` }
         const weekly = Object.values(weeks).sort((a, b) => a.week.localeCompare(b.week)).map(w => ({ ...w, week: fmt(w.week) }))
         await putCachedData(`student:attendance:${uid}`, { stats, weekly })
+
+        // 3. Année académique & Séquences (indispensable pour l'affichage offline des notes)
+        const ayRes = await fetchApi('/api/v2/academic-years', { credentials: 'include' }).then(r => r.json()).catch(() => ({}))
+        if (ayRes.success && ayRes.data) {
+          await putCachedData('student:academic-years', ayRes.data)
+
+          // Extraire toutes les séquences de l'année courante
+          const curYear = ayRes.data.find((y: any) => y.isCurrent) ?? ayRes.data[0]
+          const seqIds: string[] = []
+          for (const period of (curYear?.periods ?? [])) {
+            for (const s of (period.sequences ?? [])) {
+              if (s.id) seqIds.push(s.id)
+            }
+          }
+
+          // 4. Préchargement des notes pour chaque séquence
+          if (classId) {
+            for (const seqId of seqIds) {
+              try {
+                const [gradesRes, avgRes] = await Promise.all([
+                  fetchApi(`/api/v2/grades?sequenceId=${seqId}`, { credentials: 'include' }).then(r => r.json()).catch(() => ({})),
+                  fetchApi(`/api/v2/grades/average/${uid}?classId=${classId}&sequenceId=${seqId}`, { credentials: 'include' }).then(r => r.json()).catch(() => null),
+                ])
+                if (gradesRes.grades || avgRes) {
+                  await putCachedData(`student:grades:${uid}:${seqId}`, {
+                    grades: gradesRes.grades ?? [],
+                    avg: avgRes?.average ?? null,
+                    rank: avgRes?.rank != null ? { pos: avgRes.rank, total: avgRes.totalStudents || 0 } : null,
+                  })
+                }
+              } catch { /* ignore */ }
+            }
+          }
+        }
+
+        // 5. Emploi du temps & configuration de la grille
+        if (classId) {
+          const [ttRes, gridRes] = await Promise.all([
+            fetchApi(`/api/v2/timetables?classId=${classId}`, { credentials: 'include' }).then(r => r.json()).catch(() => ({})),
+            fetchApi('/api/v2/timetable-grid-config', { credentials: 'include' }).then(r => r.json()).catch(() => ({})),
+          ])
+          if (gridRes.success && gridRes.data) {
+            await putCachedData('student:timetable-grid-config', gridRes.data)
+          }
+
+          // 6. Cahier de texte & devoirs
+          const cahierRes = await fetchApi(`/api/v2/pedagogie/cahier-de-texte?classId=${classId}&limit=50`, { credentials: 'include' }).then(r => r.json()).catch(() => ({}))
+          if (cahierRes.success && Array.isArray(cahierRes.data)) {
+            await putCachedData(`student:cahier:${uid}:${classId}`, cahierRes.data)
+          }
+        }
       } catch { /* silent */ }
     })()
   }, [user])

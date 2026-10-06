@@ -5,6 +5,7 @@ import { fetchApi } from '@/lib/fetchApi'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
 import OfflineEmptyState from '@/components/OfflineEmptyState'
 import { useT } from '@/lib/i18n'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { groupTimetableSlotsForStudent, normalizeTimetableCellSlots } from '@/lib/timetableSlotGrouping'
 import type { TimetableGroupSlot } from '@/lib/timetableSlotGrouping'
 import { Coffee, Utensils, MapPin, User as UserIcon } from 'lucide-react'
@@ -75,7 +76,18 @@ export default function SectionStudentTimetable({ onToast, user }: Props) {
 
     const [res, gridRes] = await Promise.all([
       fetchApi(`/api/v2/timetables?classId=${classId}`, { credentials: 'include' }).then(r => r.json()),
-      fetchApi('/api/v2/timetable-grid-config', { credentials: 'include' }).then(r => r.json()).catch(() => ({ success: false })),
+      fetchApi('/api/v2/timetable-grid-config', { credentials: 'include' })
+        .then(async r => {
+          const json = await r.json()
+          if (json.success && json.data) {
+            await putCachedData('student:timetable-grid-config', json.data)
+          }
+          return json
+        })
+        .catch(async () => {
+          const cached = await getCachedData<any>('student:timetable-grid-config')
+          return cached?.data ? { success: true, data: cached.data } : { success: false }
+        }),
     ])
 
     if (!res.success) throw new Error(t('timetable.load_error'))
