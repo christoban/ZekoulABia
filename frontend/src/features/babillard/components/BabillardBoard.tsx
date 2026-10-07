@@ -18,6 +18,7 @@ import {
   Megaphone,
 } from 'lucide-react';
 import { fetchApi } from '@/lib/fetchApi';
+import { getCachedData, putCachedData } from '@/lib/offline/db';
 import { Publication, BABILLARD_CATEGORIES, CategorieDetails } from '../types';
 import AnnonceCardRenderer from '../renderers/AnnonceCardRenderer';
 import { BabillardReaderModal } from './BabillardReaderModal';
@@ -132,9 +133,8 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
     };
   }, [isPublishModalOpen, selectedPublication, deletingPublication]);
 
-  // Load publications with accurate counts
+  // Load publications with accurate counts & Dexie encrypted cache
   const loadPublications = useCallback(async () => {
-    setLoading(true);
     const tabParamMap: Record<TabType, string> = {
       all: 'tous',
       pinned: 'une',
@@ -145,8 +145,30 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
 
     const tabParam = tabParamMap[activeTab];
     const url = `/api/v2/babillard?tab=${tabParam}`;
+    const cacheKey = `babillard:publications:${activeTab}`;
+
+    // 1. Lecture instantanée depuis Dexie (0 ms)
+    const [cachedPubs, cachedCounts] = await Promise.all([
+      getCachedData<Publication[]>(cacheKey),
+      getCachedData<{ all: number; pinned: number; for_me: number; unread: number; archives: number }>('babillard:counts'),
+    ]);
+
+    if (cachedPubs?.data && Array.isArray(cachedPubs.data) && cachedPubs.data.length > 0) {
+      setPublications(cachedPubs.data);
+      setLoading(false);
+    }
+    if (cachedCounts?.data) {
+      setTabCounts(cachedCounts.data);
+    }
+
+    if (typeof window !== 'undefined' && !navigator.onLine) {
+      setIsOffline(true);
+      setLoading(false);
+      return;
+    }
 
     try {
+      if (!cachedPubs?.data || cachedPubs.data.length === 0) setLoading(true);
       const res = await fetchApi(url, { cache: 'no-store' });
       if (!res.ok) throw new Error('Erreur lors du chargement des publications');
       const data = await res.json();
@@ -162,35 +184,24 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
         ? data
         : [];
       setPublications(items);
-
-      // Cache locally for offline viewing
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem(`babillard_cache_${activeTab}`, JSON.stringify(items));
-        } catch (_) {}
-      }
+      await putCachedData(cacheKey, items);
+      // Pré-cache asynchrone des publications individuelles pour consultation hors-ligne instantanée
+      Promise.all(items.map((item) => putCachedData(`babillard:publication:${item.id}`, item))).catch(() => {});
 
       // Sync exact counts from backend
       if (data.counts) {
-        setTabCounts({
+        const countsObj = {
           all: data.counts.tous ?? 0,
           pinned: data.counts.une ?? 0,
           for_me: data.counts.pourMoi ?? 0,
           unread: data.counts.nonLus ?? 0,
           archives: data.counts.archives ?? 0,
-        });
+        };
+        setTabCounts(countsObj);
+        await putCachedData('babillard:counts', countsObj);
       }
     } catch {
-      // Offline fallback ONLY if navigator is truly offline
-      if (typeof window !== 'undefined' && !navigator.onLine) {
-        setIsOffline(true);
-        const cached = localStorage.getItem(`babillard_cache_${activeTab}`);
-        if (cached) {
-          try {
-            setPublications(JSON.parse(cached));
-          } catch (_) {}
-        }
-      }
+      setIsOffline(true);
     } finally {
       setLoading(false);
     }

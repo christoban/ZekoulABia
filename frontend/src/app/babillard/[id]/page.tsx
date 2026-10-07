@@ -7,6 +7,8 @@ import { Publication } from '@/features/babillard/types';
 import AnnonceDetailRenderer from '@/features/babillard/renderers/AnnonceDetailRenderer';
 import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 
+import { getCachedData, putCachedData } from '@/lib/offline/db';
+
 export default function BabillardPublicationPage() {
   const params = useParams();
   const router = useRouter();
@@ -19,9 +21,26 @@ export default function BabillardPublicationPage() {
   useEffect(() => {
     if (!id) return;
 
+    let isMounted = true;
+
     const loadPublication = async () => {
-      setLoading(true);
-      setError(null);
+      // 1. Essai immédiat depuis le cache Dexie chiffré (0 ms)
+      try {
+        const cached = await getCachedData<Publication>(`babillard:publication:${id}`);
+        if (cached?.data && isMounted) {
+          setPublication(cached.data);
+          setLoading(false);
+        }
+      } catch {
+        // Poursuite vers le réseau
+      }
+
+      // 2. Si hors-ligne strict et déjà affiché depuis le cache, arrêt
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        if (isMounted) setLoading(false);
+        return;
+      }
+
       try {
         const res = await fetchApi(`/api/v2/babillard/${id}`);
         if (!res.ok) {
@@ -31,18 +50,40 @@ export default function BabillardPublicationPage() {
           throw new Error('Erreur lors du chargement de la publication.');
         }
         const data = await res.json();
-        setPublication(data.data || data);
+        const pubData: Publication = data.data || data;
+        if (isMounted) {
+          setPublication(pubData);
+          setError(null);
+        }
 
-        // Auto mark as read
+        // Sauvegarde dans Dexie pour consultation ultérieure hors-ligne
+        await putCachedData(`babillard:publication:${id}`, pubData).catch(() => {});
+
+        // Auto mark as read (si en ligne)
         fetchApi(`/api/v2/babillard/${id}/lu`, { method: 'POST' }).catch(() => {});
-      } catch (err: any) {
-        setError(err?.message || 'Impossible d\'afficher le communiqué');
+      } catch (err: unknown) {
+        if (isMounted) {
+          // Si on n'avait rien en cache, afficher l'erreur
+          setPublication((current) => {
+            if (!current) {
+              const msg = err instanceof Error ? err.message : 'Impossible d\'afficher le communiqué';
+              setError(msg);
+            }
+            return current;
+          });
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     loadPublication();
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
   return (

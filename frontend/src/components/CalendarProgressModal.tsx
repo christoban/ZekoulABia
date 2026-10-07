@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { X, Calendar, Clock, CheckCircle2, Sparkles, PartyPopper } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 
 interface Props {
   isOpen: boolean
@@ -18,6 +19,14 @@ interface AcademicEvent {
   status?: string
 }
 
+interface AcademicYearCacheItem {
+  id?: string
+  name: string
+  isCurrent?: boolean
+  startDate?: string | null
+  endDate?: string | null
+}
+
 export default function CalendarProgressModal({ isOpen, onClose }: Props) {
   const [loading, setLoading] = useState(true)
   const [events, setEvents] = useState<AcademicEvent[]>([])
@@ -31,8 +40,45 @@ export default function CalendarProgressModal({ isOpen, onClose }: Props) {
 
     let isMounted = true
     async function loadCalendarInfo() {
+      // 1. Charger d'abord depuis Dexie (0 ms)
       try {
-        setLoading(true)
+        const [cachedStaffYears, cachedAdminYears, cachedEvs] = await Promise.all([
+          getCachedData<AcademicYearCacheItem[]>('staff:academic-years'),
+          getCachedData<AcademicYearCacheItem[]>('admin:academic-years'),
+          getCachedData<AcademicEvent[]>('shared:academic-events'),
+        ])
+
+        const yearsList = cachedStaffYears?.data || cachedAdminYears?.data
+        if (yearsList && Array.isArray(yearsList) && yearsList.length > 0) {
+          const current = yearsList.find(y => y.isCurrent) || yearsList[0]
+          if (current) {
+            setActiveYearName(current.name || '2026-2027')
+            if (current.startDate && current.endDate) {
+              const start = new Date(current.startDate)
+              const end = new Date(current.endDate)
+              const now = new Date()
+              const total = Math.max(1, Math.round((end.getTime() - start.getTime()) / (1000 * 3600 * 24)))
+              const elapsed = Math.max(0, Math.min(total, Math.round((now.getTime() - start.getTime()) / (1000 * 3600 * 24))))
+              const pct = Math.round((elapsed / total) * 100)
+              setTotalDays(total)
+              setDaysElapsed(elapsed)
+              setProgressPercent(pct)
+            }
+          }
+          setLoading(false)
+        }
+
+        if (cachedEvs?.data && Array.isArray(cachedEvs.data) && cachedEvs.data.length > 0) {
+          setEvents(cachedEvs.data)
+        }
+      } catch { /* ignorer */ }
+
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        if (isMounted) setLoading(false)
+        return
+      }
+
+      try {
         const [resYears, resEvents] = await Promise.allSettled([
           fetchApi('/api/v2/academic-years'),
           fetchApi('/api/v2/academic-events').then(async (r) => {
@@ -45,8 +91,8 @@ export default function CalendarProgressModal({ isOpen, onClose }: Props) {
 
         if (resYears.status === 'fulfilled' && resYears.value.ok) {
           const data = await resYears.value.json()
-          const years = data.data || []
-          const current = years.find((y: { isCurrent?: boolean }) => y.isCurrent) || years[0]
+          const years: AcademicYearCacheItem[] = data.data || []
+          const current = years.find(y => y.isCurrent) || years[0]
           if (current) {
             setActiveYearName(current.name || '2026-2027')
             if (current.startDate && current.endDate) {
@@ -65,7 +111,9 @@ export default function CalendarProgressModal({ isOpen, onClose }: Props) {
 
         if (resEvents.status === 'fulfilled' && resEvents.value.ok) {
           const data = await resEvents.value.json()
-          setEvents(data.data || [])
+          const evList: AcademicEvent[] = data.data || []
+          setEvents(evList)
+          await putCachedData('shared:academic-events', evList)
         }
       } catch (err) {
         console.error('Erreur chargement calendrier:', err)

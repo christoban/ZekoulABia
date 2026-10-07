@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { CalendarClock, ChevronRight, X } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 
 interface ActiveEvent {
@@ -31,10 +32,23 @@ export default function EventCenterWidget({ onNav }: Props) {
   const [dismissed, setDismissed] = useState<string[]>([])
 
   const fetchActive = useCallback(async () => {
+    // 1. Lire d'abord Dexie en 0 ms
+    const cached = await getCachedData<ActiveEvent[]>('shared:academic-events:active')
+    if (cached?.data && Array.isArray(cached.data)) {
+      setEvents(cached.data)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      return
+    }
+
     try {
       const res = await fetchApi('/api/v2/academic-events/active', { credentials: 'include' })
       const data = await res.json()
-      if (data.success) setEvents(data.data || [])
+      if (data.success && Array.isArray(data.data)) {
+        setEvents(data.data)
+        await putCachedData('shared:academic-events:active', data.data)
+      }
     } catch { /* silencieux — widget non critique */ }
   }, [])
 
@@ -49,7 +63,7 @@ export default function EventCenterWidget({ onNav }: Props) {
   }
 
   return (
-    <div style={{ background: 'var(--bg2)', borderBottom: '1px solid var(--border)', padding: '10px 32px', display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+    <div className="px-3.5 py-2 sm:px-8 border-b border-[var(--border)] bg-[var(--bg2)] flex flex-col gap-1.5 shrink-0 font-nunito">
       {visibles.map(ev => {
         const jours = ev.status === 'UPCOMING' ? daysUntil(ev.openDate) : daysUntil(ev.closeDate)
         const label = ev.status === 'UPCOMING'

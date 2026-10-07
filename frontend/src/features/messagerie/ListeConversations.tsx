@@ -121,11 +121,12 @@ export default function ListeConversations({ conversations, loading, selectedId,
         key={conversation.id}
         type="button"
         onClick={() => onSelect(conversation.id)}
+        className="active:scale-[0.99] transition-transform"
         style={{
           display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left',
           padding: '10px 10px', borderRadius: 14, border: 'none', cursor: 'pointer', marginBottom: 2,
           background: active ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
-          transition: 'background 0.15s',
+          transition: 'background 0.15s, transform 0.1s ease',
         }}
         onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'var(--bg2, rgba(0,0,0,0.04))' }}
         onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = 'transparent' }}
@@ -241,11 +242,12 @@ export default function ListeConversations({ conversations, loading, selectedId,
             type="button"
             onClick={onNewMessage}
             title={t('messagerie.new_message') ?? 'Nouveau message'}
+            className="active:scale-95 transition-transform"
             style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               width: 34, height: 34, borderRadius: 12, border: 'none',
               background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))',
-              color: 'white', cursor: 'pointer', transition: 'transform 0.15s',
+              color: 'white', cursor: 'pointer', transition: 'transform 0.15s ease',
             }}
             onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08)' }}
             onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)' }}

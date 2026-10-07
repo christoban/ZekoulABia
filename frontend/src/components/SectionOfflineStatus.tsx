@@ -115,14 +115,14 @@ export default function SectionOfflineStatus({ onToast, namespace }: Props) {
   }
 
   return (
-    <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto' }}>
-      <div style={{ marginBottom: 26 }}>
+    <div className="px-3.5 py-4 sm:px-8 sm:py-7 font-nunito" style={{ height: '100%', overflowY: 'auto' }}>
+      <div style={{ marginBottom: 20 }}>
         <div style={sTitle}>{t('sync.title')}</div>
         <div style={sSub}>{t('sync.subtitle')}</div>
       </div>
 
       {/* Status card */}
-      <div style={{ background: isOnline ? 'var(--green-light)' : 'var(--red-light)', borderRadius: 16, padding: '20px 24px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14 }}>
+      <div className="p-4 sm:p-6" style={{ background: isOnline ? 'var(--green-light)' : 'var(--red-light)', borderRadius: 16, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
         <span style={{ display: 'flex', alignItems: 'center' }}>{isOnline ? <Wifi size={28} strokeWidth={2} /> : <WifiOff size={28} strokeWidth={2} />}</span>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 17, fontWeight: 800, color: isOnline ? 'var(--green)' : 'var(--red)' }}>
@@ -142,7 +142,7 @@ export default function SectionOfflineStatus({ onToast, namespace }: Props) {
       </div>
 
       {actions.length === 0 ? (
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', padding: 48, textAlign: 'center' }}>
+        <div className="p-6 sm:p-12" style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border)', textAlign: 'center' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}><CheckCircle2 size={48} strokeWidth={2} /></div>
           <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{t('sync.all_synced_title')}</div>
           <div style={{ fontSize: 14, color: 'var(--text3)' }}>{t('sync.all_synced_sub')}</div>
