@@ -7,6 +7,7 @@ import {
   Calendar, School, ArrowRight, UserCheck, Loader2, Download, Camera
 } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import StudentPhotoStudioModal from './StudentPhotoStudioModal'
 
 type ClassItem = {
@@ -50,37 +51,70 @@ export default function SectionElevesFamillesStaff({ onToast }: Props) {
   const [photoStudioStudent, setPhotoStudioStudent] = useState<StudentItem | null>(null)
   const [filterProfile, setFilterProfile] = useState<string>('ALL')
 
-  // 1. Charger les classes
+  // 1. Charger les classes avec cache Dexie offline-first
   useEffect(() => {
     let mounted = true
     setLoading(true)
-    fetchApi('/api/v2/classes', { credentials: 'include' })
-      .then(r => r.json())
-      .then(d => {
+
+    const loadClasses = async () => {
+      const cached = await getCachedData<ClassItem[]>('staff:classes')
+      if (mounted && cached?.data && cached.data.length > 0) {
+        setClasses(cached.data)
+        setSelectedClassId(prev => prev || cached.data[0].id)
+        setLoading(false)
+      }
+
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        if (mounted) setLoading(false)
+        return
+      }
+
+      try {
+        const r = await fetchApi('/api/v2/classes', { credentials: 'include' })
+        const d = await r.json()
         if (!mounted) return
         const list: ClassItem[] = Array.isArray(d?.data) ? d.data : Array.isArray(d) ? d : []
-        setClasses(list)
         if (list.length > 0) {
-          setSelectedClassId(list[0].id)
+          setClasses(list)
+          await putCachedData('staff:classes', list)
+          await putCachedData('staff:classes:list', list)
+          setSelectedClassId(prev => prev || list[0].id)
         }
-      })
-      .catch(() => {
-        if (mounted) onToast('Erreur chargement classes', 'error')
-      })
-      .finally(() => {
+      } catch {
+        if (!cached?.data || cached.data.length === 0) {
+          if (mounted) onToast('Erreur chargement classes', 'error')
+        }
+      } finally {
         if (mounted) setLoading(false)
-      })
+      }
+    }
+
+    loadClasses()
     return () => { mounted = false }
   }, [onToast])
 
-  // 2. Charger les élèves de la classe sélectionnée via l'annuaire complet
+  // 2. Charger les élèves de la classe sélectionnée via l'annuaire complet avec cache Dexie offline-first
   useEffect(() => {
     if (!selectedClassId) return
     let mounted = true
     setLoading(true)
-    fetchApi(`/api/v2/classes/${selectedClassId}/students-directory`, { credentials: 'include' })
-      .then(r => r.json())
-      .then(d => {
+
+    const loadStudents = async () => {
+      const cacheKey = `staff:students-directory:${selectedClassId}`
+      const cached = await getCachedData<StudentItem[]>(cacheKey)
+      if (mounted && cached?.data && cached.data.length > 0) {
+        setStudents(cached.data)
+        setLoading(false)
+      }
+
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        if (mounted) setLoading(false)
+        return
+      }
+
+      try {
+        const r = await fetchApi(`/api/v2/classes/${selectedClassId}/students-directory`, { credentials: 'include' })
+        const d = await r.json()
         if (!mounted) return
         const rawList = Array.isArray(d?.data) ? d.data : []
         const currentClassName = classes.find(c => c.id === selectedClassId)?.name || 'Classe'
@@ -118,38 +152,43 @@ export default function SectionElevesFamillesStaff({ onToast }: Props) {
           }
         })
         setStudents(mapped)
-      })
-      .catch(() => {
+        await putCachedData(cacheKey, mapped)
+      } catch {
         // Fallback gracieux sur l'ancienne route
-        fetchApi(`/api/v2/classes/${selectedClassId}/students`, { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (!mounted) return
-            const rawList = Array.isArray(d?.data) ? d.data : []
-            const currentClassName = classes.find(c => c.id === selectedClassId)?.name || 'Classe'
-            setStudents(rawList.map((s: any, idx: number) => ({
-              id: s.id ?? `stud-${idx}`,
-              userId: s.userId ?? s.id,
-              firstName: s.firstName ?? '',
-              lastName: s.lastName ?? '',
-              name: `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim(),
-              matricule: s.matricule || `MAT-${1000 + idx}`,
-              gender: s.gender || 'M',
-              className: currentClassName,
-              photoUrl: s.photoUrl || null,
-              parentName: s.parentName || 'Parent',
-              parentPhone: s.parentPhone || '',
-              parentEmail: s.parentEmail || '',
-              accessProfile: 'NON_CONNECTE' as const,
-            })))
-          })
-          .catch(() => {
+        try {
+          const r2 = await fetchApi(`/api/v2/classes/${selectedClassId}/students`, { credentials: 'include' })
+          const d2 = await r2.json()
+          if (!mounted) return
+          const rawList = Array.isArray(d2?.data) ? d2.data : []
+          const currentClassName = classes.find(c => c.id === selectedClassId)?.name || 'Classe'
+          const mappedLegacy: StudentItem[] = rawList.map((s: Record<string, unknown>, idx: number) => ({
+            id: String(s.id ?? `stud-${idx}`),
+            userId: String(s.userId ?? s.id ?? ''),
+            firstName: String(s.firstName ?? ''),
+            lastName: String(s.lastName ?? ''),
+            name: `${String(s.firstName ?? '')} ${String(s.lastName ?? '')}`.trim(),
+            matricule: String(s.matricule ?? `MAT-${1000 + idx}`),
+            gender: String(s.gender ?? 'M'),
+            className: currentClassName,
+            photoUrl: (s.photoUrl as string) || null,
+            parentName: String(s.parentName ?? 'Parent'),
+            parentPhone: String(s.parentPhone ?? ''),
+            parentEmail: String(s.parentEmail ?? ''),
+            accessProfile: 'NON_CONNECTE' as const,
+          }))
+          setStudents(mappedLegacy)
+          await putCachedData(cacheKey, mappedLegacy)
+        } catch {
+          if (!cached?.data || cached.data.length === 0) {
             if (mounted) onToast('Erreur chargement élèves', 'error')
-          })
-      })
-      .finally(() => {
+          }
+        }
+      } finally {
         if (mounted) setLoading(false)
-      })
+      }
+    }
+
+    loadStudents()
     return () => { mounted = false }
   }, [selectedClassId, classes, onToast])
 

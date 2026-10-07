@@ -8,7 +8,7 @@ import {
   Compass, IdCard, ShieldAlert,
   Megaphone, MessageCircle,
   ScanSearch, Users, Settings, ChevronDown, ChevronRight,
-  BarChart3, UserPlus, Award, RefreshCw, Camera,
+  BarChart3, UserPlus, Award, RefreshCw, Camera, X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -180,12 +180,23 @@ export default function StaffSidebar({
         style={{ background: 'repeating-linear-gradient(90deg,var(--amber) 0,var(--amber) 13px,var(--green) 13px,var(--green) 25px,var(--red) 25px,var(--red) 37px,#60a5fa 37px,#60a5fa 49px)' }} />
 
       {/* Brand */}
-      <div className="flex items-center gap-2.5 border-b border-white/[0.07]" style={{ padding: '12px 12px' }}>
-        <div className="w-7.5 h-7.5 rounded-[8px] flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: "linear-gradient(135deg,var(--amber),var(--accent))" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "70%", height: "70%", objectFit: "contain" }} /></div>
-        <div>
-          <div className="font-spectral text-[16px] font-bold text-white leading-tight">ZekoulABia</div>
-          <div className="text-[11px] text-white/50 font-semibold truncate">{displayRoleTitle}</div>
+      <div className="flex items-center justify-between border-b border-white/[0.07]" style={{ padding: '12px 12px' }}>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-7.5 h-7.5 rounded-[8px] flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: "linear-gradient(135deg,var(--amber),var(--accent))" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "70%", height: "70%", objectFit: "contain" }} /></div>
+          <div>
+            <div className="font-spectral text-[16px] font-bold text-white leading-tight">ZekoulABia</div>
+            <div className="text-[11px] text-white/50 font-semibold truncate">{displayRoleTitle}</div>
+          </div>
         </div>
+        {onMobileClose && (
+          <button
+            onClick={onMobileClose}
+            className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg text-white/50 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer"
+            aria-label="Fermer le menu"
+          >
+            <X size={18} strokeWidth={2.5} />
+          </button>
+        )}
       </div>
 
       {/* École */}

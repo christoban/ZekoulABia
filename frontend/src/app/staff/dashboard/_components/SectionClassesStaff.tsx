@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Plus, School, Edit2, Users, Search, Loader2 } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 
 type ClassItem = {
   id: string
@@ -46,32 +47,60 @@ export default function SectionClassesStaff({ onToast }: Props) {
   const [anneeSuivanteId, setAnneeSuivanteId] = useState('')
   const [proposing, setProposing] = useState(false)
 
-  const loadClassesAndYears = () => {
+  const loadClassesAndYears = async () => {
     setLoading(true)
-    Promise.all([
-      fetchApi('/api/v2/classes', { credentials: 'include' }).then(r => r.json()),
-      fetchApi('/api/v2/academic-years', { credentials: 'include' }).then(r => r.json()).catch(() => null),
-    ])
-      .then(([classData, ayData]) => {
-        if (Array.isArray(classData?.data)) {
-          setClasses(classData.data)
-        } else if (Array.isArray(classData)) {
-          setClasses(classData)
-        } else if (classData && !classData.success && classData.error) {
-          onToast(classData.error, 'error')
-        }
+    if (navigator.onLine) {
+      Promise.all([
+        fetchApi('/api/v2/classes', { credentials: 'include' }).then(r => r.json()),
+        fetchApi('/api/v2/academic-years', { credentials: 'include' }).then(r => r.json()).catch(() => null),
+      ])
+        .then(async ([classData, ayData]) => {
+          let loadedClasses: ClassItem[] = []
+          if (Array.isArray(classData?.data)) {
+            loadedClasses = classData.data
+          } else if (Array.isArray(classData)) {
+            loadedClasses = classData
+          } else if (classData && !classData.success && classData.error) {
+            onToast(classData.error, 'error')
+          }
+          if (loadedClasses.length > 0) {
+            setClasses(loadedClasses)
+            await putCachedData('staff:classes', loadedClasses).catch(() => {})
+          }
 
-        if (ayData?.success && Array.isArray(ayData.data)) {
-          const years: AcademicYearItem[] = ayData.data
-          setAcademicYears(years)
-          const current = years.find(y => y.isCurrent)
-          if (current) setAnneeActuelleId(current.id)
-          const next = years.find(y => !y.isCurrent && y.status !== 'ARCHIVED')
-          if (next) setAnneeSuivanteId(next.id)
-        }
-      })
-      .catch(() => onToast('Erreur réseau lors du chargement des données', 'error'))
-      .finally(() => setLoading(false))
+          if (ayData?.success && Array.isArray(ayData.data)) {
+            const years: AcademicYearItem[] = ayData.data
+            setAcademicYears(years)
+            const current = years.find(y => y.isCurrent)
+            if (current) setAnneeActuelleId(current.id)
+            const next = years.find(y => !y.isCurrent && y.status !== 'ARCHIVED')
+            if (next) setAnneeSuivanteId(next.id)
+            await putCachedData('staff:academic-years', years).catch(() => {})
+          }
+        })
+        .catch(async () => {
+          const [cachedClasses, cachedYears] = await Promise.all([
+            getCachedData<ClassItem[]>('staff:classes'),
+            getCachedData<AcademicYearItem[]>('staff:academic-years'),
+          ])
+          if (cachedClasses?.data) setClasses(cachedClasses.data)
+          if (cachedYears?.data) setAcademicYears(cachedYears.data)
+          if (!cachedClasses?.data && !cachedYears?.data) {
+            onToast('Erreur réseau lors du chargement des données', 'error')
+          }
+        })
+        .finally(() => setLoading(false))
+    } else {
+      try {
+        const [cachedClasses, cachedYears] = await Promise.all([
+          getCachedData<ClassItem[]>('staff:classes'),
+          getCachedData<AcademicYearItem[]>('staff:academic-years'),
+        ])
+        if (cachedClasses?.data) setClasses(cachedClasses.data)
+        if (cachedYears?.data) setAcademicYears(cachedYears.data)
+      } catch { /* ignore */ }
+      finally { setLoading(false) }
+    }
   }
 
   useEffect(() => {

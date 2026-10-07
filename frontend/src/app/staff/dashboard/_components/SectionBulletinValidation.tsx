@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { CheckCircle2, Upload, AlertTriangle, Loader2, FileText } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 
 interface Props {
@@ -33,8 +34,22 @@ export default function SectionBulletinValidation({ onToast }: Props) {
   const [activeTab, setActiveTab] = useState<'SUBMITTED' | 'VALIDATED'>('SUBMITTED')
 
   const fetchSessions = useCallback(async () => {
+    // 1. Charger depuis le cache Dexie en premier
+    const cached = await getCachedData<{ submitted: BulletinSession[]; validated: BulletinSession[] }>('staff:bulletin-validations')
+    if (cached?.data) {
+      if (Array.isArray(cached.data.submitted)) setSubmitted(cached.data.submitted)
+      if (Array.isArray(cached.data.validated)) setValidated(cached.data.validated)
+      setLoading(false)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setLoading(false)
+      return
+    }
+
     try {
-      setLoading(true); setError(null)
+      if (!cached) setLoading(true)
+      setError(null)
       const [subRes, valRes] = await Promise.all([
         fetchApi('/api/v2/bulletin-validations?status=SUBMITTED', { credentials: 'include' }),
         fetchApi('/api/v2/bulletin-validations?status=VALIDATED', { credentials: 'include' }),
@@ -42,10 +57,15 @@ export default function SectionBulletinValidation({ onToast }: Props) {
       const subData = await subRes.json()
       const valData = await valRes.json()
       if (!subRes.ok || !valRes.ok) throw new Error(subData.message || valData.message || 'Erreur serveur')
-      setSubmitted(subData.data || [])
-      setValidated(valData.data || [])
+      const subList = subData.data || []
+      const valList = valData.data || []
+      setSubmitted(subList)
+      setValidated(valList)
+      await putCachedData('staff:bulletin-validations', { submitted: subList, validated: valList })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur de chargement')
+      if (!cached) {
+        setError(err instanceof Error ? err.message : 'Erreur de chargement')
+      }
     } finally { setLoading(false) }
   }, [])
 

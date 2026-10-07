@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 import { CheckCircle2, RotateCcw, Scale, AlertTriangle, GraduationCap, X, ArrowLeft } from 'lucide-react'
 
@@ -70,14 +71,31 @@ export default function SectionCouncil({ onToast }: Props) {
   const [fetchingFormData, setFetchingFormData] = useState(false)
 
   const fetchSessions = useCallback(async () => {
+    // 1. Lire depuis le cache Dexie en premier
+    const cached = await getCachedData<CouncilSession[]>('staff:class-councils')
+    if (cached?.data && Array.isArray(cached.data)) {
+      setSessions(cached.data)
+      setLoading(false)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setLoading(false)
+      return
+    }
+
     try {
-      setLoading(true); setError(null)
+      if (!cached?.data) setLoading(true)
+      setError(null)
       const res = await fetchApi('/api/v2/class-councils', { credentials: 'include' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Erreur serveur')
-      setSessions(data.sessions || [])
+      const list = data.sessions || []
+      setSessions(list)
+      await putCachedData('staff:class-councils', list)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur de chargement')
+      if (!cached?.data) {
+        setError(err instanceof Error ? err.message : 'Erreur de chargement')
+      }
     } finally {
       setLoading(false)
     }
@@ -86,8 +104,25 @@ export default function SectionCouncil({ onToast }: Props) {
   useEffect(() => { fetchSessions() }, [fetchSessions])
 
   const openSession = async (sessionId: string) => {
+    // 1. Lire détail depuis Dexie d'abord
+    const cacheKey = `staff:class-councils:${sessionId}`
+    const cached = await getCachedData<SessionDetail>(cacheKey)
+    if (cached?.data) {
+      setSelected(cached.data)
+      const init: Record<string, { decision: DecisionValue; obs: string }> = {}
+      for (const d of cached.data.decisions || []) {
+        init[d.studentId] = { decision: d.decision as DecisionValue, obs: d.observations ?? '' }
+      }
+      setDecisions(init)
+    } else {
+      setSelected(null)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      return
+    }
+
     setLoadingDetail(true)
-    setSelected(null)
     try {
       const res = await fetchApi(`/api/v2/class-councils/${sessionId}`, { credentials: 'include' })
       const data = await res.json()
@@ -95,12 +130,15 @@ export default function SectionCouncil({ onToast }: Props) {
       const sess: SessionDetail = data.session
       setSelected(sess)
       const init: Record<string, { decision: DecisionValue; obs: string }> = {}
-      for (const d of sess.decisions) {
+      for (const d of sess.decisions || []) {
         init[d.studentId] = { decision: d.decision as DecisionValue, obs: d.observations ?? '' }
       }
       setDecisions(init)
+      await putCachedData(cacheKey, sess)
     } catch (err) {
-      onToast(err instanceof Error ? err.message : 'Erreur de chargement', 'error')
+      if (!cached) {
+        onToast(err instanceof Error ? err.message : 'Erreur de chargement', 'error')
+      }
     } finally {
       setLoadingDetail(false)
     }

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
 import { AlertTriangle, CheckCircle2, Check, X, Loader2, Gavel, Download, WifiOff } from 'lucide-react'
@@ -102,14 +103,29 @@ export default function SectionDiscipline({ onToast }: Props) {
   const [tenirForm, setTenirForm] = useState<TenirFormState>(EMPTY_TENIR_FORM)
 
   const fetchCouncilSessions = useCallback(async () => {
+    const cached = await getCachedData<CouncilSession[]>('staff:discipline:council-sessions')
+    if (cached?.data && Array.isArray(cached.data)) {
+      setCouncilSessions(cached.data)
+      setCouncilLoading(false)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setCouncilLoading(false)
+      return
+    }
+
     setCouncilLoading(true)
     try {
       const res = await fetchApi('/api/v2/discipline-council', { credentials: 'include' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Erreur serveur')
-      setCouncilSessions(data.data || [])
+      const list = data.data || []
+      setCouncilSessions(list)
+      await putCachedData('staff:discipline:council-sessions', list)
     } catch (err) {
-      onToast(err instanceof Error ? err.message : t('council.toasts.load_error'), 'error')
+      if (!cached) {
+        onToast(err instanceof Error ? err.message : t('council.toasts.load_error'), 'error')
+      }
     } finally {
       setCouncilLoading(false)
     }
@@ -184,7 +200,20 @@ export default function SectionDiscipline({ onToast }: Props) {
   }
 
   const fetchRecords = useCallback(async () => {
-    setLoading(true); setError(null)
+    const cacheKey = `staff:discipline:${typeFilter || 'ALL'}:${statusFilter || 'ALL'}`
+    const cached = await getCachedData<DisciplineRecord[]>(cacheKey)
+    if (cached?.data && Array.isArray(cached.data)) {
+      setRecords(cached.data)
+      setLoading(false)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    setError(null)
     try {
       const params = new URLSearchParams({ limit: '50' })
       if (typeFilter)   params.set('type', typeFilter)
@@ -192,9 +221,13 @@ export default function SectionDiscipline({ onToast }: Props) {
       const res = await fetchApi(`/api/v2/discipline?${params}`, { credentials: 'include' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Erreur serveur')
-      setRecords(data.data || [])
+      const list = data.data || []
+      setRecords(list)
+      await putCachedData(cacheKey, list)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur de chargement')
+      if (!cached?.data) {
+        setError(err instanceof Error ? err.message : 'Erreur de chargement')
+      }
     } finally {
       setLoading(false)
     }
