@@ -68,6 +68,13 @@ export class CampayPaiementService implements PaiementService {
     const telephone = normaliserTelephone(options.telephone);
     const operateur = detecterOperateur(telephone);
 
+    // En environnement de démo / sandbox Campay (demo.campay.net), Campay refuse tout montant > 25 XAF (ER201).
+    // On envoie 10 XAF en démo pour permettre aux présentations et tests de réussir sans blocage API,
+    // tandis que la base de données ZekoulABia conserve scrupuleusement le montant réel de la facture scolaire.
+    const montantEnvoye = (BASE_URL.includes('demo.campay.net') && options.montant > 25)
+      ? 10
+      : options.montant;
+
     const response = await fetch(`${BASE_URL}/collect/`, {
       method: 'POST',
       headers: {
@@ -75,7 +82,7 @@ export class CampayPaiementService implements PaiementService {
         Authorization: `Token ${token}`,
       },
       body: JSON.stringify({
-        amount: String(options.montant),
+        amount: String(montantEnvoye),
         from: telephone,
         description: `[${operateur}] ${options.description}`,
         external_reference: options.referenceInterne,
