@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { fetchApi } from '@/lib/fetchApi'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 import ImportUsersWizardModal from './ImportUsersWizardModal'
 import {
@@ -821,11 +822,22 @@ export default function SectionUsers({ onToast, onNav }: Props) {
   const [importOpen, setImportOpen] = useState(false)
   const [staffTitles, setStaffTitles] = useState<StaffTitle[]>([])
 
-  // Fetch des titres staff filtrés selon le template de l'école (une seule fois)
+  // Fetch des titres staff filtrés selon le template de l'école (avec cache Dexie)
   useEffect(() => {
+    getCachedData<StaffTitle[]>('admin:staff-titles').then(c => {
+      if (c?.data && Array.isArray(c.data)) setStaffTitles(c.data)
+    }).catch(() => {})
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
+
     fetchApi('/api/v2/school/staff-titles')
       .then(r => r.json())
-      .then(d => { if (d.success) setStaffTitles(d.data as StaffTitle[]) })
+      .then(d => {
+        if (d.success && Array.isArray(d.data)) {
+          setStaffTitles(d.data as StaffTitle[])
+          putCachedData('admin:staff-titles', d.data).catch(() => {})
+        }
+      })
       .catch(() => { /* non bloquant */ })
   }, [])
 
@@ -836,8 +848,27 @@ export default function SectionUsers({ onToast, onNav }: Props) {
   const [counts, setCounts] = useState<Record<string, number>>({})
 
   const fetchUsers = useCallback(async (roleFilter = '') => {
+    const cacheKey = `admin:users:${roleFilter || 'ALL'}`
+    const [cachedUsers, cachedCounts] = await Promise.all([
+      getCachedData<UserItem[]>(cacheKey),
+      getCachedData<Record<string, number>>('admin:users:role-counts'),
+    ])
+
+    if (cachedUsers?.data && Array.isArray(cachedUsers.data) && cachedUsers.data.length > 0) {
+      setUsers(cachedUsers.data)
+      setLoading(false)
+    }
+    if (cachedCounts?.data) {
+      setCounts(cachedCounts.data)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setLoading(false)
+      return
+    }
+
     try {
-      setLoading(true)
+      if (!cachedUsers?.data || cachedUsers.data.length === 0) setLoading(true)
       setError(null)
       const params = new URLSearchParams({ limit: '100' })
       if (roleFilter) params.set('role', roleFilter)
@@ -845,13 +876,18 @@ export default function SectionUsers({ onToast, onNav }: Props) {
       const res = await fetchApi(`/api/v2/users?${params}`, { credentials: 'include' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Erreur')
-      setUsers(data.data || [])
+      const userList = data.data || []
+      setUsers(userList)
+      await putCachedData(cacheKey, userList)
       // Utiliser roleCounts du backend (vrais totaux, pas limités à la page)
       if (!roleFilter && data.roleCounts) {
         setCounts(data.roleCounts as Record<string, number>)
+        await putCachedData('admin:users:role-counts', data.roleCounts)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur de chargement')
+      if (!cachedUsers?.data || cachedUsers.data.length === 0) {
+        setError(err instanceof Error ? err.message : 'Erreur de chargement')
+      }
     } finally {
       setLoading(false)
     }

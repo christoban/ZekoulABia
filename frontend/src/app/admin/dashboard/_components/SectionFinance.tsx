@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 import { AlertTriangle, Wallet, CheckCircle2, Loader2, Circle, Clock, DollarSign, Smartphone } from 'lucide-react'
 import DelegationSupervisionBanner from './DelegationSupervisionBanner'
@@ -88,15 +89,30 @@ export default function SectionFinance({ onToast, onNav }: Props) {
   }
 
   const fetchPlans = useCallback(async () => {
+    const cached = await getCachedData<FeePlan[]>('admin:finance:fee-plans')
+    if (cached?.data && Array.isArray(cached.data)) {
+      setPlans(cached.data)
+      setLoading(false)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setLoading(false)
+      return
+    }
+
     try {
-      setLoading(true)
+      if (!cached?.data) setLoading(true)
       setError(null)
       const res = await fetchApi('/api/v2/finance/fee-plans', { credentials: 'include' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || t('errors.server_error'))
-      setPlans(data.data || [])
+      const planList = data.data || []
+      setPlans(planList)
+      await putCachedData('admin:finance:fee-plans', planList)
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('errors.generic_error'))
+      if (!cached?.data) {
+        setError(err instanceof Error ? err.message : t('errors.generic_error'))
+      }
     } finally {
       setLoading(false)
     }
@@ -104,18 +120,35 @@ export default function SectionFinance({ onToast, onNav }: Props) {
 
   const fetchInvoices = useCallback(
     async (pg = page) => {
+      const cacheKey = `admin:finance:invoices:${invStatus || 'ALL'}:${pg}`
+      const cached = await getCachedData<{ invoices: InvoiceItem[]; pagination: Pagination }>(cacheKey)
+      if (cached?.data?.invoices) {
+        setInvoices(cached.data.invoices)
+        if (cached.data.pagination) setPag(cached.data.pagination)
+        setLoading(false)
+      }
+
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        setLoading(false)
+        return
+      }
+
       try {
-        setLoading(true)
+        if (!cached?.data?.invoices) setLoading(true)
         setError(null)
         const params = new URLSearchParams({ page: String(pg), limit: '20' })
         if (invStatus) params.set('status', invStatus)
         const res = await fetchApi(`/api/v2/finance/invoices?${params}`, { credentials: 'include' })
         const data = await res.json()
         if (!res.ok) throw new Error(data.message || t('errors.server_error'))
-        setInvoices(data.data || [])
+        const invList = data.data || []
+        setInvoices(invList)
         if (data.pagination) setPag(data.pagination)
+        await putCachedData(cacheKey, { invoices: invList, pagination: data.pagination ?? { total: invList.length, page: pg, pages: 1 } })
       } catch (err) {
-        setError(err instanceof Error ? err.message : t('errors.generic_error'))
+        if (!cached?.data?.invoices) {
+          setError(err instanceof Error ? err.message : t('errors.generic_error'))
+        }
       } finally {
         setLoading(false)
       }

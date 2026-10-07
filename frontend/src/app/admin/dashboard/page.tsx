@@ -38,7 +38,7 @@ import SectionMinesecStatistics from './_components/SectionMinesecStatistics'
 import SectionMinedubStatistics from './_components/SectionMinedubStatistics'
 import SectionAdminPebsExams from './_components/SectionAdminPebsExams'
 import EventCenterWidget from '@/features/communication/EventCenterWidget'
-import { getUserSession, putUserSession } from '@/lib/offline/db'
+import { getUserSession, putUserSession, putCachedData } from '@/lib/offline/db'
 import AdminToast from './_components/AdminToast'
 import AssistantWidget from './_components/AssistantWidget'
 import HighlightController from './_components/HighlightController'
@@ -229,6 +229,124 @@ export default function AdminDashboard() {
 
     return () => window.removeEventListener('zekoulabia:user-updated', handleUserUpdated)
   }, [router, showToast])
+
+  // Préchargement offline-first silencieux en tâche de fond pour l'ensemble du dashboard Admin
+  useEffect(() => {
+    if (!sessionUser || typeof navigator === 'undefined' || !navigator.onLine) return
+
+    let cancelled = false
+
+    const preloadAdminData = async () => {
+      try {
+        // 1. Statistiques du dashboard de pilotage
+        fetchApi('/api/v2/dashboard/stats', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => {
+            if (d?.stats) putCachedData('admin:dashboard-stats', d.stats).catch(() => {})
+          })
+          .catch(() => {})
+
+        // 2. Classes & Années académiques
+        const [clsRes, yearsRes, gridRes, titlesRes] = await Promise.allSettled([
+          fetchApi('/api/v2/classes', { credentials: 'include' }).then(r => r.json()),
+          fetchApi('/api/v2/academic-years', { credentials: 'include' }).then(r => r.json()),
+          fetchApi('/api/v2/timetable-grid-config', { credentials: 'include' }).then(r => r.json()),
+          fetchApi('/api/v2/school/staff-titles').then(r => r.json()),
+        ])
+
+        if (cancelled) return
+
+        let classesList: Array<{ id: string; name: string }> = []
+        if (clsRes.status === 'fulfilled') {
+          const raw = clsRes.value
+          const list = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : []
+          if (list.length > 0) {
+            classesList = list
+            await putCachedData('admin:classes', list).catch(() => {})
+            await putCachedData('staff:classes', list).catch(() => {})
+          }
+        }
+
+        if (yearsRes.status === 'fulfilled') {
+          const raw = yearsRes.value
+          const list = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : []
+          if (list.length > 0) {
+            await putCachedData('admin:academic-years', list).catch(() => {})
+            await putCachedData('staff:academic-years', list).catch(() => {})
+          }
+        }
+
+        if (gridRes.status === 'fulfilled' && gridRes.value?.data) {
+          await putCachedData('admin:timetable-grid-config', gridRes.value.data).catch(() => {})
+          await putCachedData('staff:timetable-grid-config', gridRes.value.data).catch(() => {})
+        }
+
+        if (titlesRes.status === 'fulfilled' && titlesRes.value?.data) {
+          await putCachedData('admin:staff-titles', titlesRes.value.data).catch(() => {})
+        }
+
+        // 3. Utilisateurs & effectifs par rôle
+        fetchApi('/api/v2/users?limit=100', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => {
+            if (d?.data && Array.isArray(d.data)) {
+              putCachedData('admin:users:ALL', d.data).catch(() => {})
+              if (d.roleCounts) {
+                putCachedData('admin:users:role-counts', d.roleCounts).catch(() => {})
+              }
+            }
+          })
+          .catch(() => {})
+
+        // 4. Finances : plans tarifaires et factures en attente
+        fetchApi('/api/v2/finance/fee-plans', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => {
+            if (d?.data && Array.isArray(d.data)) {
+              putCachedData('admin:finance:fee-plans', d.data).catch(() => {})
+            }
+          })
+          .catch(() => {})
+
+        fetchApi('/api/v2/finance/invoices?status=PENDING&page=1&limit=20', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => {
+            if (d?.data && Array.isArray(d.data)) {
+              putCachedData('admin:finance:invoices:PENDING:1', {
+                invoices: d.data,
+                pagination: d.pagination ?? { total: d.data.length, page: 1, pages: 1 }
+              }).catch(() => {})
+            }
+          })
+          .catch(() => {})
+
+        // 5. Emplois du temps des 10 premières classes
+        if (classesList.length > 0) {
+          const targetClasses = classesList.slice(0, 10)
+          for (const c of targetClasses) {
+            if (cancelled) return
+            fetchApi(`/api/v2/timetables?classId=${c.id}`, { credentials: 'include' })
+              .then(r => r.json())
+              .then(d => {
+                const list = d?.data || []
+                if (list[0]) {
+                  putCachedData(`admin:timetables:${c.id}`, list[0]).catch(() => {})
+                  putCachedData(`staff:timetables:${c.id}`, list[0]).catch(() => {})
+                }
+              })
+              .catch(() => {})
+          }
+        }
+
+      } catch { /* ignorer */ }
+    }
+
+    preloadAdminData()
+
+    return () => {
+      cancelled = true
+    }
+  }, [sessionUser])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

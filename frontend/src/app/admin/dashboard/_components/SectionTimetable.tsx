@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { fetchApi } from '@/lib/fetchApi'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 import { groupTimetableSlotsForDisplay, normalizeTimetableCellSlots, timetableCellKey } from '@/lib/timetableSlotGrouping'
 import { X, AlertTriangle, CalendarDays, Calendar, Bot } from 'lucide-react'
@@ -85,37 +86,90 @@ export default function SectionTimetable({ onToast, onNav }: Props) {
   const [mobileDay, setMobileDay]             = useState('LUNDI')
 
   useEffect(() => {
-    Promise.all([
-      fetchApi('/api/v2/classes', { credentials: 'include' }).then(r => r.json()),
-      fetchApi('/api/v2/timetable-grid-config', { credentials: 'include' }).then(r => r.json()),
-    ]).then(([classData, configData]) => {
-      setClasses(classData.data || [])
-      if (configData.data) {
-         setSquelette(configData.data.squelette || [])
-         setSqueletteParJour(configData.data.squeletteParJour || {})
+    const loadInitialData = async () => {
+      // 1. Essai Dexie d'abord
+      const [cachedClasses, cachedGrid] = await Promise.all([
+        getCachedData<ClassItem[]>('admin:classes'),
+        getCachedData<{ squelette?: PeriodeGrille[]; squeletteParJour?: Record<string, PeriodeGrille[]>; config?: { joursActifs?: string[] } }>('admin:timetable-grid-config'),
+      ])
 
-        setJoursActifs(configData.data.config?.joursActifs || ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI'])
+      const fallbackClasses = !cachedClasses?.data ? await getCachedData<ClassItem[]>('staff:classes') : null
+      const classList = cachedClasses?.data || fallbackClasses?.data
+      if (classList && Array.isArray(classList) && classList.length > 0) {
+        setClasses(classList)
       }
-    }).catch(() => {})
-      .finally(() => setLoadingClasses(false))
+
+      if (cachedGrid?.data) {
+        if (cachedGrid.data.squelette) setSquelette(cachedGrid.data.squelette)
+        if (cachedGrid.data.squeletteParJour) setSqueletteParJour(cachedGrid.data.squeletteParJour)
+        if (cachedGrid.data.config?.joursActifs) setJoursActifs(cachedGrid.data.config.joursActifs)
+      }
+
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        setLoadingClasses(false)
+        return
+      }
+
+      Promise.all([
+        fetchApi('/api/v2/classes', { credentials: 'include' }).then(r => r.json()),
+        fetchApi('/api/v2/timetable-grid-config', { credentials: 'include' }).then(r => r.json()),
+      ]).then(async ([classData, configData]) => {
+        if (classData?.data) {
+          setClasses(classData.data)
+          await putCachedData('admin:classes', classData.data).catch(() => {})
+        }
+        if (configData?.data) {
+          setSquelette(configData.data.squelette || [])
+          setSqueletteParJour(configData.data.squeletteParJour || {})
+          setJoursActifs(configData.data.config?.joursActifs || ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI'])
+          await putCachedData('admin:timetable-grid-config', configData.data).catch(() => {})
+        }
+      }).catch(() => {})
+        .finally(() => setLoadingClasses(false))
+    }
+
+    loadInitialData()
   }, [])
 
   const fetchTimetable = useCallback(async (cid?: string) => {
     const id = cid ?? classId
     if (!id) return
-    setLoading(true); setError(null)
+
+    const cacheKey = `admin:timetables:${id}`
+    const cached = await getCachedData<Timetable>(cacheKey)
+    const fallbackCached = !cached?.data ? await getCachedData<Timetable>(`staff:timetables:${id}`) : null
+    const initialT = cached?.data ?? fallbackCached?.data
+
+    if (initialT) {
+      setTimetable(initialT)
+      setLoading(false)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    setError(null)
     try {
       const res = await fetchApi(`/api/v2/timetables?classId=${id}`, { credentials: 'include' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || t('timetable.err'))
       const list: Timetable[] = data.data || []
-      setTimetable(list[0] ?? null)
+      const found = list[0] ?? null
+      setTimetable(found)
+      if (found) {
+        await putCachedData(cacheKey, found)
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('timetable.errLoad'))
+      if (!initialT) {
+        setError(err instanceof Error ? err.message : t('timetable.errLoad'))
+      }
     } finally {
       setLoading(false)
     }
-  }, [classId])
+  }, [classId, t])
 
   // Rafraîchissement temps réel quand l'assistant IA publie/modifie un emploi du temps.
   useEffect(() => {

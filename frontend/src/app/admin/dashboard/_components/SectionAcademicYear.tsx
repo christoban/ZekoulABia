@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 import { AlertTriangle, Calendar, Star, ChevronRight, Loader2, Pencil, FolderOpen, X, Lock, Save, Check } from 'lucide-react'
 
@@ -81,8 +82,25 @@ export default function SectionAcademicYear({ onToast }: Props) {
   const [reconduction, setReconduction] = useState(EMPTY_RECONDUCTION)
 
   const fetchYears = useCallback(async () => {
+    const cached = await getCachedData<AcademicYear[]>('admin:academic-years')
+    const fallback = !cached?.data ? await getCachedData<AcademicYear[]>('staff:academic-years') : null
+    const initialList = cached?.data || fallback?.data
+    if (initialList && Array.isArray(initialList) && initialList.length > 0) {
+      setYears(initialList)
+      const current = initialList.find(y => y.isCurrent)
+      if (current) {
+        setOpenPeriods(new Set(current.periods.map(p => p.id)))
+      }
+      setLoading(false)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setLoading(false)
+      return
+    }
+
     try {
-      setLoading(true)
+      if (!initialList || initialList.length === 0) setLoading(true)
       setError(null)
       const res = await fetchApi('/api/v2/academic-years', { credentials: 'include' })
       const data = await res.json()
@@ -94,12 +112,16 @@ export default function SectionAcademicYear({ onToast }: Props) {
       if (current) {
         setOpenPeriods(new Set(current.periods.map(p => p.id)))
       }
+      await putCachedData('admin:academic-years', list)
+      await putCachedData('staff:academic-years', list)
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('academic_year.toast.errLoad'))
+      if (!initialList || initialList.length === 0) {
+        setError(err instanceof Error ? err.message : t('academic_year.toast.errLoad'))
+      }
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => { fetchYears() }, [fetchYears])
 

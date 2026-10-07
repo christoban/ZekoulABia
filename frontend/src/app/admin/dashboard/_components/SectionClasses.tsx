@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { AlertTriangle, School, GraduationCap, Armchair, UserCheck, Trash2, Link2, Check, ArrowLeft } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 import DelegationSupervisionBanner from './DelegationSupervisionBanner'
 
@@ -123,16 +124,38 @@ export default function SectionClasses({ onToast, onNav }: Props) {
   const [schoolInfo, setSchoolInfo]   = useState<SchoolInfo | null>(null)
 
   const fetchClasses = useCallback(async () => {
+    // 1. Lire d'abord depuis le cache local Dexie
+    const cached = await getCachedData<ClassItem[]>('admin:classes')
+    const fallbackCached = !cached?.data ? await getCachedData<ClassItem[]>('staff:classes') : null
+    const initialList = cached?.data || fallbackCached?.data
+    if (initialList && Array.isArray(initialList) && initialList.length > 0) {
+      setClasses(initialList)
+      setLoading(false)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setLoading(false)
+      return
+    }
+
     try {
-      setLoading(true); setError(null)
+      if (!initialList || initialList.length === 0) setLoading(true)
+      setError(null)
       const res = await fetchApi('/api/v2/classes', { credentials: 'include' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || t('classes.error.load'))
-      setClasses(data.data || [])
+      const list: ClassItem[] = data.data || []
+      setClasses(list)
+      await putCachedData('admin:classes', list)
+      await putCachedData('staff:classes', list)
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('classes.error.load'))
-    } finally { setLoading(false) }
-  }, [])
+      if (!initialList || initialList.length === 0) {
+        setError(err instanceof Error ? err.message : t('classes.error.load'))
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [t])
 
   useEffect(() => { fetchClasses() }, [fetchClasses])
 

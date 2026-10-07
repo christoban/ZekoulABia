@@ -222,6 +222,16 @@ export default function AdminSidebar({
           <div className="font-spectral text-[16px] font-bold text-white leading-tight truncate">ZekoulABia</div>
           <div className="text-[11px] text-white/35 font-semibold truncate">{tcommon('brand.roleAdmin')}</div>
         </div>
+        {onMobileClose && (
+          <button
+            type="button"
+            onClick={onMobileClose}
+            className="md:hidden ml-auto p-1 text-white/60 hover:text-white rounded-lg hover:bg-white/10 active:scale-90 transition-all flex items-center justify-center"
+            aria-label="Fermer le menu"
+          >
+            <X size={18} />
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col gap-2 md:px-2 md:gap-2" style={{ flex: 1, minHeight: 0 }}>

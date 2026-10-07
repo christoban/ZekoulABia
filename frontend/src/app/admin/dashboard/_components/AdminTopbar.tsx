@@ -111,9 +111,14 @@ export default function AdminTopbar({ title, onNavigate, onChangePassword, onMen
     >
       {/* Hamburger — sous md uniquement */}
       {onMenuClick && (
-        <button onClick={onMenuClick} aria-label="Menu" className="flex md:!hidden"
-          style={{ width: 40, height: 40, borderRadius: 20, border: 'none', background: 'transparent', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
-          <Menu size={22} color="var(--text)" strokeWidth={2} />
+        <button
+          type="button"
+          onClick={onMenuClick}
+          aria-label="Menu"
+          className="flex md:!hidden active:scale-90 transition-transform cursor-pointer border border-[var(--border)] bg-[var(--bg2)] hover:bg-[var(--surface2)] items-center justify-center shrink-0"
+          style={{ width: 38, height: 38, borderRadius: 10 }}
+        >
+          <Menu size={20} color="var(--text)" strokeWidth={2} />
         </button>
       )}
 
@@ -124,7 +129,9 @@ export default function AdminTopbar({ title, onNavigate, onChangePassword, onMen
       </div>
 
       {/* Bouton calendrier unifié (Mobile, Tablette, Desktop) */}
-      <CalendarTopbarButton />
+      <div className="shrink-0">
+        <CalendarTopbarButton />
+      </div>
 
       {/* Notifications — mobile : cercle 40px + pastille + panneau responsive */}
       <div ref={notifRef} className="relative md:hidden flex-shrink-0">
