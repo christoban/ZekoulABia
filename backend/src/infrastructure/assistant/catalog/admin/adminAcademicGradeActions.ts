@@ -583,6 +583,10 @@ export function buildAdminAcademicGradeActions(deps: AdminActionDeps): ActionDef
       inputSchema: z.object({}),
       async execute(_input, ctx) {
         const period = await resolveCurrentPeriod(ctx);
+        const periodData = await ctx.prisma.academicPeriod.findUnique({
+          where: { id: period.id },
+          select: { endDate: true },
+        });
         const classes = await ctx.prisma.class.findMany({ where: { schoolId: ctx.schoolId }, select: { id: true, name: true } });
         const sessions = await ctx.prisma.classCouncilSession.findMany({
           where: { schoolId: ctx.schoolId, academicPeriodId: period.id, status: 'LOCKED' },
@@ -590,10 +594,19 @@ export function buildAdminAcademicGradeActions(deps: AdminActionDeps): ActionDef
         });
         const lockedIds = new Set(sessions.map((s: any) => s.classId));
         const sansConseil = classes.filter((c) => !lockedIds.has(c.id));
-        const resultLabel =
-          sansConseil.length === 0
-            ? 'Toutes les classes ont tenu et verrouillé leur conseil de classe.'
-            : `${sansConseil.length} classe(s) sans conseil de classe verrouillé : ${sansConseil.map((c) => c.name).join(', ')}`;
+
+        const now = Date.now();
+        const finPeriode = periodData?.endDate ? new Date(periodData.endDate).getTime() : NaN;
+        const estFinDePeriode = !isNaN(finPeriode) && now >= (finPeriode - 10 * 24 * 3600 * 1000);
+
+        let resultLabel: string;
+        if (!estFinDePeriode && periodData?.endDate) {
+          resultLabel = `La période « ${period.name} » est actuellement en cours d’enseignement et d’évaluations séquentielles. Les délibérations de conseil de classe se tiendront en fin de trimestre (vers le ${new Date(periodData.endDate).toLocaleDateString('fr-FR')}).`;
+        } else if (sansConseil.length === 0) {
+          resultLabel = 'Toutes les classes ont tenu et verrouillé leur conseil de classe.';
+        } else {
+          resultLabel = `${sansConseil.length} classe(s) sans conseil de classe verrouillé : ${sansConseil.map((c) => c.name).join(', ')}`;
+        }
         return { resultLabel, section: 'council', entity: 'classCouncilSession' };
       },
       async undo() {

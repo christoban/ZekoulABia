@@ -46,6 +46,19 @@ export class ObtenirAnomaliesEtablissementUseCase {
   private async sansConseilTenu(schoolId: string, classes: { id: string; name: string }[]): Promise<string[]> {
     const period = await this.anneeRepository.findPeriodeCourante(schoolId).catch(() => null);
     if (!period) return [];
+
+    // Règle métier : le conseil de classe délibère sur les notes séquentielles en clôture de trimestre.
+    // Il n'est exigible que lorsque la période touche à sa fin (dans les 10 jours précédant la date de fin
+    // du trimestre ou après celle-ci). En début ou milieu de période (quand les cours et évaluations séquentielles ont lieu),
+    // l'absence de conseil verrouillé est l'état normal et attendu et ne constitue pas une anomalie.
+    const now = Date.now();
+    const finPeriode = new Date(period.endDate).getTime();
+    const estFinDePeriode = !isNaN(finPeriode) && now >= (finPeriode - 10 * 24 * 3600 * 1000);
+
+    if (!estFinDePeriode) {
+      return [];
+    }
+
     const lockedIds = new Set(await this.classCouncilRepository.findClassIdsAvecConseilVerrouille(schoolId, period.id));
     return classes.filter((c) => !lockedIds.has(c.id)).map((c) => c.name);
   }
