@@ -97,8 +97,12 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
     return () => window.removeEventListener('zekoulabia:data-changed', onChanged)
   }, [classId])  // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (classId) void loadClass()
+  }, [classId])  // eslint-disable-line react-hooks/exhaustive-deps
+
   const loadClass = async () => {
-    if (!classId) { onToast('Sélectionnez une classe', 'info'); return }
+    if (!classId) return
     setLoadingCheck(true)
     setCheck(null)
     setReportCards([])

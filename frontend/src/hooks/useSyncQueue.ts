@@ -71,14 +71,30 @@ export function useSyncQueue() {
         // qu'il est bien parti.
         if (action.type === 'MESSAGE_SEND') {
           const clientMessageId = (action.payload as { clientMessageId?: string })?.clientMessageId
-          if (clientMessageId) await updateCachedMessageStatus(clientMessageId, 'SENT')
+          if (clientMessageId) {
+            await updateCachedMessageStatus(clientMessageId, 'SENT')
+            window.dispatchEvent(new CustomEvent('zekoulabia:message-status-updated', { detail: { clientMessageId, status: 'SENT' } }))
+          }
         }
         synced++
-      } catch {
+      } catch (err: unknown) {
+        const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) ||
+          String((err as any)?.message || err).includes('fetch') ||
+          String((err as any)?.message || err).includes('Network') ||
+          String((err as any)?.message || err).includes('Failed to fetch')
+
+        if (isNet) {
+          // Erreur réseau transitoire : on conserve l'action en PENDING pour la renvoyer dès reconnexion
+          continue
+        }
+
         await updatePendingActionStatus(action.id!, 'FAILED')
         if (action.type === 'MESSAGE_SEND') {
           const clientMessageId = (action.payload as { clientMessageId?: string })?.clientMessageId
-          if (clientMessageId) await updateCachedMessageStatus(clientMessageId, 'FAILED')
+          if (clientMessageId) {
+            await updateCachedMessageStatus(clientMessageId, 'FAILED')
+            window.dispatchEvent(new CustomEvent('zekoulabia:message-status-updated', { detail: { clientMessageId, status: 'FAILED' } }))
+          }
         }
       }
     }
@@ -95,10 +111,28 @@ export function useSyncQueue() {
 
   useEffect(() => {
     if (isOnline) {
-      syncQueue()
+      void syncQueue()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOnline])
+
+  // Gardien d'arrière-plan : renvoie la file automatiquement dès qu'un signal réseau est détecté
+  useEffect(() => {
+    const trigger = () => { void syncQueue() }
+    window.addEventListener('online', trigger)
+    window.addEventListener('focus', trigger)
+    const interval = setInterval(() => {
+      if (typeof navigator !== 'undefined' && navigator.onLine) {
+        void syncQueue()
+      }
+    }, 12_000)
+
+    return () => {
+      window.removeEventListener('online', trigger)
+      window.removeEventListener('focus', trigger)
+      clearInterval(interval)
+    }
+  }, [syncQueue])
 
   return { pendingCount, syncing, isOnline, addToQueue, syncQueue }
 }

@@ -45,6 +45,8 @@ const cardTitle: React.CSSProperties = { fontWeight: 700, color: 'var(--text)', 
 const selectCls = 'text-[11.5px] md:text-[12.5px] px-[8px] py-[4px] md:px-[10px] md:py-[5px]'
 const select: React.CSSProperties = { borderRadius: 7, border: '1px solid var(--border2)', fontFamily: 'inherit', color: 'var(--text)', background: 'var(--surface)' }
 
+import { getCachedData, putCachedData } from '@/lib/offline/db'
+
 export default function SectionStatistics({ onToast }: Props) {
   const t = useT('admin')
   const [classes, setClasses] = useState<ClassItem[]>([])
@@ -61,14 +63,44 @@ export default function SectionStatistics({ onToast }: Props) {
   const [teacherId, setTeacherId] = useState('')
 
   useEffect(() => {
+    // 1. Lire immédiatement depuis IndexedDB
+    Promise.all([
+      getCachedData<ClassItem[]>('admin:classes').then(async c => {
+        if (c?.data && Array.isArray(c.data) && c.data.length > 0) return c.data
+        const fallback = await getCachedData<ClassItem[]>('staff:classes').catch(() => null)
+        return fallback?.data ?? []
+      }).catch(() => []),
+      getCachedData<SubjectItem[]>('admin:subjects').then(s => s?.data ?? []).catch(() => []),
+      getCachedData<TeacherItem[]>('admin:users:TEACHER').then(async t => {
+        if (t?.data && Array.isArray(t.data) && t.data.length > 0) return t.data
+        const fallback = await getCachedData<any[]>('admin:users:ALL').catch(() => null)
+        return (fallback?.data ?? []).filter((u: any) => u.role === 'TEACHER')
+      }).catch(() => []),
+    ]).then(([cList, sList, tList]) => {
+      if (cList.length > 0) setClasses(cList)
+      if (sList.length > 0) setSubjects(sList)
+      if (tList.length > 0) setTeachers(tList)
+    })
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
+
     Promise.all([
       fetchApi('/api/v2/classes', { credentials: 'include' }).then(r => r.json()),
       fetchApi('/api/v2/subjects', { credentials: 'include' }).then(r => r.json()),
       fetchApi('/api/v2/users?role=TEACHER&limit=200', { credentials: 'include' }).then(r => r.json()),
     ]).then(([cd, sd, td]) => {
-      setClasses(cd.data || [])
-      setSubjects(sd.data || [])
-      setTeachers(td.data || [])
+      if (cd.data && Array.isArray(cd.data)) {
+        setClasses(cd.data)
+        putCachedData('admin:classes', cd.data).catch(() => {})
+      }
+      if (sd.data && Array.isArray(sd.data)) {
+        setSubjects(sd.data)
+        putCachedData('admin:subjects', sd.data).catch(() => {})
+      }
+      if (td.data && Array.isArray(td.data)) {
+        setTeachers(td.data)
+        putCachedData('admin:users:TEACHER', td.data).catch(() => {})
+      }
     }).catch(() => {})
   }, [])
 

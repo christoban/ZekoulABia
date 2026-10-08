@@ -58,8 +58,10 @@ export default function SectionAdminAttendance({ onToast }: Props) {
 
   const fetchClasses = useCallback(async () => {
     try {
-      const cached = await getCachedData<ClassItem[]>('admin:classes:list')
-      if (cached?.data) setClasses(cached.data)
+      const cached = (await getCachedData<ClassItem[]>('admin:classes').catch(() => null))
+        || (await getCachedData<ClassItem[]>('admin:classes:list').catch(() => null))
+        || (await getCachedData<ClassItem[]>('staff:classes').catch(() => null))
+      if (cached?.data && Array.isArray(cached.data)) setClasses(cached.data)
     } catch { /* silencieux */ }
 
     if (navigator.onLine) {
@@ -68,6 +70,7 @@ export default function SectionAdminAttendance({ onToast }: Props) {
         const data = await res.json()
         if (res.ok && Array.isArray(data.data)) {
           setClasses(data.data)
+          await putCachedData('admin:classes', data.data).catch(() => {})
           await putCachedData('admin:classes:list', data.data).catch(() => {})
         }
       } catch { /* silencieux */ }

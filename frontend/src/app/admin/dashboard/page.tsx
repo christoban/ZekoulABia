@@ -342,6 +342,24 @@ export default function AdminDashboard() {
                 if (d?.data) putCachedData(`admin:subjects:class:${c.id}`, d.data).catch(() => {})
               })
               .catch(() => {})
+
+            // Préchargement des bulletins et du statut de génération de la classe
+            fetchApi(`/api/v2/report-cards?classId=${c.id}&limit=100`, { credentials: 'include' })
+              .then(r => r.json())
+              .then(rd => {
+                const cards = rd?.reportCards ?? rd?.data ?? []
+                if (Array.isArray(cards) && cards.length > 0) {
+                  putCachedData(`admin:report-cards:${c.id}`, cards).catch(() => {})
+                }
+              })
+              .catch(() => {})
+
+            fetchApi(`/api/v2/report-cards/check/${c.id}`, { credentials: 'include' })
+              .then(r => r.json())
+              .then(cd => {
+                if (cd) putCachedData(`admin:report-cards:check:${c.id}`, cd).catch(() => {})
+              })
+              .catch(() => {})
           }
         }
 
@@ -353,7 +371,7 @@ export default function AdminDashboard() {
           })
           .catch(() => {})
 
-        // 7. Matières & Départements
+        // 7. Matières, Départements & Enseignants
         fetchApi('/api/v2/subjects', { credentials: 'include' })
           .then(r => r.json())
           .then(d => {
@@ -366,6 +384,66 @@ export default function AdminDashboard() {
           .then(d => {
             if (d?.data) putCachedData('admin:departments', d.data).catch(() => {})
           })
+          .catch(() => {})
+
+        fetchApi('/api/v2/users?role=TEACHER&limit=200', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => {
+            if (d?.data && Array.isArray(d.data)) putCachedData('admin:users:TEACHER', d.data).catch(() => {})
+          })
+          .catch(() => {})
+
+        // 7b. Statistiques globales
+        fetchApi('/api/v2/statistics/classes-comparison', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => { if (d?.data) putCachedData('admin:stats-comparison:', d.data).catch(() => {}) })
+          .catch(() => {})
+
+        fetchApi('/api/v2/statistics/students-distribution?criteria=gender', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => { if (d?.data) putCachedData('admin:stats-distribution:gender', d.data).catch(() => {}) })
+          .catch(() => {})
+
+        fetchApi('/api/v2/statistics/grades-evolution', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => { if (d?.data) putCachedData('admin:stats-evolution::', d.data).catch(() => {}) })
+          .catch(() => {})
+
+        // 7c. Ressources Humaines (RH)
+        fetchApi('/api/v2/hr/employees', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => {
+            if (d?.data && Array.isArray(d.data)) {
+              putCachedData('admin:hr:employees', d.data).catch(() => {})
+              if (d.data[0]?.id) {
+                fetchApi(`/api/v2/hr/employees/${d.data[0].id}`, { credentials: 'include' })
+                  .then(dr => dr.json())
+                  .then(dd => { if (dd?.data) putCachedData(`admin:hr:employee:${d.data[0].id}`, dd.data).catch(() => {}) })
+                  .catch(() => {})
+              }
+            }
+          })
+          .catch(() => {})
+
+        fetchApi('/api/v2/hr/leave-requests', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => { if (d?.data) putCachedData('admin:hr:leave-requests', d.data).catch(() => {}) })
+          .catch(() => {})
+
+        // 7d. Campagnes statistiques ministérielles
+        fetchApi('/api/v2/statistical-campaign/supplement', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => { if (d?.data) putCachedData('admin:minesec:supplement', d.data).catch(() => {}) })
+          .catch(() => {})
+
+        fetchApi('/api/v2/statistical-campaign/submissions', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => { if (d?.data) putCachedData('admin:minesec:submissions', d.data).catch(() => {}) })
+          .catch(() => {})
+
+        fetchApi('/api/v2/statistical-campaign/meta', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => { if (d?.data) putCachedData('admin:minesec:meta', d.data).catch(() => {}) })
           .catch(() => {})
 
         // 8. Conseils de classe & Onboarding

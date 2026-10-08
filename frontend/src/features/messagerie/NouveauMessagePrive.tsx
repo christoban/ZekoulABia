@@ -6,6 +6,9 @@ import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import type { ContactUser, ConversationSummary } from './types'
 
+import { getCachedData, putCachedMessage } from '@/lib/offline/db'
+import { useSyncQueue } from '@/hooks/useSyncQueue'
+
 interface Props {
   onCreated: (conversationId: string) => void
   onCancel: () => void
@@ -34,6 +37,7 @@ function avatarColor(id: string): string {
 
 export default function NouveauMessagePrive({ onCreated, onCancel, conversations, onSelectConversation }: Props) {
   const t = useT('common')
+  const { addToQueue, syncQueue, isOnline } = useSyncQueue()
   const [recherche, setRecherche] = useState('')
   const [resultats, setResultats] = useState<ContactUser[]>([])
   const [loading, setLoading] = useState(false)
@@ -49,7 +53,7 @@ export default function NouveauMessagePrive({ onCreated, onCancel, conversations
     (c) => c.type === 'CLASS_CHANNEL' || c.type === 'PARENT_CHANNEL'
   )
 
-  // Recherche textuelle côté serveur avec debounce
+  // Recherche textuelle côté serveur avec debounce et repli hors-ligne
   const rechercherContacts = useCallback(async (q: string) => {
     const terme = q.trim()
     if (terme.length < 2) {
@@ -59,10 +63,36 @@ export default function NouveauMessagePrive({ onCreated, onCancel, conversations
     }
     setLoading(true)
     try {
-      const res = await fetchApi(`/api/v2/messagerie/contacts?q=${encodeURIComponent(terme)}`)
-      const data = await res.json()
-      if (data.success) {
-        setResultats(data.data ?? [])
+      if (typeof navigator !== 'undefined' && navigator.onLine) {
+        const res = await fetchApi(`/api/v2/messagerie/contacts?q=${encodeURIComponent(terme)}`)
+        const data = await res.json()
+        if (data.success && Array.isArray(data.data)) {
+          setResultats(data.data ?? [])
+          setLoading(false)
+          setAEffectueRecherche(true)
+          return
+        }
+      }
+    } catch { /* silencieux — bascule sur le cache */ }
+
+    // Repli sur le cache local des utilisateurs
+    try {
+      const cachedUsers = await getCachedData<any[]>('admin:users:ALL').catch(() => null)
+      if (cachedUsers?.data && Array.isArray(cachedUsers.data)) {
+        const lower = terme.toLowerCase()
+        const filtres: ContactUser[] = cachedUsers.data
+          .filter((u: any) =>
+            `${u.firstName || ''} ${u.lastName || ''} ${u.email || ''}`.toLowerCase().includes(lower)
+          )
+          .slice(0, 20)
+          .map((u: any) => ({
+            id: u.id,
+            firstName: u.firstName || '',
+            lastName: u.lastName || '',
+            role: u.role || 'USER',
+            avatarUrl: u.avatarUrl || null,
+          }))
+        setResultats(filtres)
       }
     } catch { /* silencieux */ }
     finally {
@@ -78,7 +108,7 @@ export default function NouveauMessagePrive({ onCreated, onCancel, conversations
       setAEffectueRecherche(false)
       return
     }
-    debounceRef.current = setTimeout(() => rechercherContacts(recherche), 300)
+    debounceRef.current = setTimeout(() => void rechercherContacts(recherche), 300)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [recherche, rechercherContacts])
 
@@ -86,11 +116,58 @@ export default function NouveauMessagePrive({ onCreated, onCancel, conversations
     if (!destinataire || !contenu.trim() || envoi) return
     setEnvoi(true)
     setErreur(null)
+    const clientMessageId = crypto.randomUUID()
+
+    // Vérifier si une conversation directe existe déjà avec ce destinataire
+    const existante = conversations?.find((c) =>
+      c.type === 'PRIVATE' &&
+      Array.isArray(c.participants) &&
+      c.participants.some((p) => p.id === destinataire.id)
+    )
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      // Mode hors-ligne : envoi optimiste dans la file de synchronisation
+      if (existante) {
+        await putCachedMessage({
+          id: clientMessageId,
+          conversationId: existante.id,
+          senderId: 'ME',
+          content: contenu.trim(),
+          createdAt: Date.now(),
+          status: 'PENDING',
+        }).catch(() => {})
+
+        await addToQueue({
+          type: 'MESSAGE_SEND',
+          endpoint: '/api/v2/messagerie/messages',
+          method: 'POST',
+          payload: { clientMessageId, content: contenu.trim(), conversationId: existante.id },
+        }).catch(() => {})
+
+        void syncQueue().catch(() => {})
+        onCreated(existante.id)
+        setEnvoi(false)
+        return
+      }
+
+      await addToQueue({
+        type: 'MESSAGE_SEND',
+        endpoint: '/api/v2/messagerie/messages',
+        method: 'POST',
+        payload: { clientMessageId, content: contenu.trim(), destinataireId: destinataire.id },
+      }).catch(() => {})
+
+      void syncQueue().catch(() => {})
+      onCancel()
+      setEnvoi(false)
+      return
+    }
+
     try {
       const response = await fetchApi('/api/v2/messagerie/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ destinataireId: destinataire.id, content: contenu.trim(), clientMessageId: crypto.randomUUID() }),
+        body: JSON.stringify({ destinataireId: destinataire.id, content: contenu.trim(), clientMessageId }),
       })
       const payload = await response.json()
       if (payload.success) {
@@ -99,7 +176,16 @@ export default function NouveauMessagePrive({ onCreated, onCancel, conversations
         setErreur(payload.message ?? (t('messagerie.generic_error') ?? 'Une erreur est survenue.'))
       }
     } catch {
-      setErreur(t('messagerie.generic_error') ?? 'Une erreur est survenue.')
+      // Si la requête échoue en réseau, repli sur la file d'attente
+      await addToQueue({
+        type: 'MESSAGE_SEND',
+        endpoint: '/api/v2/messagerie/messages',
+        method: 'POST',
+        payload: { clientMessageId, content: contenu.trim(), destinataireId: destinataire.id },
+      }).catch(() => {})
+      void syncQueue().catch(() => {})
+      if (existante) onCreated(existante.id)
+      else onCancel()
     } finally {
       setEnvoi(false)
     }

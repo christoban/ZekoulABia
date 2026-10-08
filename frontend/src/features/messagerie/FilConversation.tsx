@@ -364,6 +364,24 @@ export default function FilConversation({ conversationId, conversation, currentU
     }
   }, [loading, conversationId, messages.length, marquerCommeLu])
 
+  // Écoute des mises à jour de statut de message depuis le gardien de synchronisation hors-ligne
+  useEffect(() => {
+    const onStatusUpdated = (e: Event) => {
+      const detail = (e as CustomEvent<{ clientMessageId?: string; status?: 'PENDING' | 'SENT' | 'FAILED' }>).detail
+      if (detail?.clientMessageId && detail?.status) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === detail.clientMessageId
+              ? { ...m, status: detail.status! }
+              : m
+          )
+        )
+      }
+    }
+    window.addEventListener('zekoulabia:message-status-updated', onStatusUpdated)
+    return () => window.removeEventListener('zekoulabia:message-status-updated', onStatusUpdated)
+  }, [])
+
   useEffect(() => {
     finRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages.length])
@@ -375,6 +393,7 @@ export default function FilConversation({ conversationId, conversation, currentU
     const clientMessageId = crypto.randomUUID()
     const createdAt = Date.now()
 
+    // 1. Affichage optimiste immédiat façon Facebook / WhatsApp
     const message: DisplayMessage = { id: clientMessageId, conversationId, senderId: currentUser.id, content, createdAt, status: 'PENDING' }
     await putCachedMessage({ id: clientMessageId, conversationId, senderId: currentUser.id, content, createdAt, status: 'PENDING' })
     setMessages((prev) => [...prev, message])
@@ -382,16 +401,19 @@ export default function FilConversation({ conversationId, conversation, currentU
 
     // Reset textarea height
     if (inputRef.current) inputRef.current.style.height = 'auto'
+    setSending(false)
 
+    // 2. Enregistrement dans la file de synchro persistante
     await addToQueue({
       type: 'MESSAGE_SEND',
       endpoint: '/api/v2/messagerie/messages',
       method: 'POST',
       payload: { clientMessageId, content, conversationId },
-    })
-    syncQueue()
+    }).catch(() => {})
+
+    // 3. Déclenchement de la transmission dès qu'une porte réseau est ouverte
+    void syncQueue().catch(() => {})
     onMessageSent?.()
-    setSending(false)
   }
 
   const statutIcone = (message: DisplayMessage) => {

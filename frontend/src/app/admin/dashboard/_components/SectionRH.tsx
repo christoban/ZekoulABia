@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { fetchApi } from '@/lib/fetchApi'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 import { Users, Palmtree, CheckCircle2, FileText, AlertTriangle, ArrowLeft } from 'lucide-react'
 import SectionStaffAttendanceAVerifier from './SectionStaffAttendanceAVerifier'
@@ -148,14 +149,34 @@ export default function SectionRH({ onToast }: { onToast: OnToast }) {
 
   const loadEmployees = async () => {
     setLoadingEmployees(true)
+    const cacheKey = 'admin:hr:employees'
+    const cached = await getCachedData<EmployeeItem[]>(cacheKey).catch(() => null)
+    if (cached?.data && Array.isArray(cached.data) && cached.data.length > 0) {
+      setEmployees(cached.data)
+      if (!selectedEmployeeId && cached.data[0]) setSelectedEmployeeId(cached.data[0].id)
+      setLoadingEmployees(false)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setLoadingEmployees(false)
+      return
+    }
+
     try {
       const r = await fetchApi('/api/v2/hr/employees', { credentials: 'include' })
       const d = await r.json()
       if (!d.success) throw new Error(d.message ?? t('rh.toast.errLoadStaff'))
-      setEmployees(d.data ?? [])
-      if (!selectedEmployeeId && (d.data ?? []).length > 0) setSelectedEmployeeId((d.data ?? [])[0].id)
+      const list = d.data ?? []
+      setEmployees(list)
+      putCachedData(cacheKey, list).catch(() => {})
+      if (!selectedEmployeeId && list.length > 0) setSelectedEmployeeId(list[0].id)
     } catch (error) {
-      onToast(error instanceof Error ? error.message : t('rh.toast.errLoadStaff'), 'error')
+      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) ||
+        String((error as any)?.message || error).includes('fetch') ||
+        String((error as any)?.message || error).includes('Network')
+      if (!isNet && !cached?.data) {
+        onToast(error instanceof Error ? error.message : t('rh.toast.errLoadStaff'), 'error')
+      }
     } finally {
       setLoadingEmployees(false)
     }
@@ -163,6 +184,20 @@ export default function SectionRH({ onToast }: { onToast: OnToast }) {
 
   const loadDetail = async (employeeId: string) => {
     setLoadingDetail(true)
+    const cacheKey = `admin:hr:employee:${employeeId}`
+    const cached = await getCachedData<EmployeeDetail>(cacheKey).catch(() => null)
+    if (cached?.data) {
+      setSelectedDetail(cached.data)
+      setSelectedEmployeeId(employeeId)
+      setDocEmployeeId(employeeId)
+      setLoadingDetail(false)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setLoadingDetail(false)
+      return
+    }
+
     try {
       const r = await fetchApi(`/api/v2/hr/employees/${employeeId}`, { credentials: 'include' })
       const d = await r.json()
@@ -170,8 +205,14 @@ export default function SectionRH({ onToast }: { onToast: OnToast }) {
       setSelectedDetail(d.data)
       setSelectedEmployeeId(employeeId)
       setDocEmployeeId(employeeId)
+      if (d.data) putCachedData(cacheKey, d.data).catch(() => {})
     } catch (error) {
-      onToast(error instanceof Error ? error.message : t('rh.toast.errLoadFile'), 'error')
+      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) ||
+        String((error as any)?.message || error).includes('fetch') ||
+        String((error as any)?.message || error).includes('Network')
+      if (!isNet && !cached?.data) {
+        onToast(error instanceof Error ? error.message : t('rh.toast.errLoadFile'), 'error')
+      }
     } finally {
       setLoadingDetail(false)
     }
@@ -179,13 +220,32 @@ export default function SectionRH({ onToast }: { onToast: OnToast }) {
 
   const loadLeaves = async () => {
     setLoadingLeaves(true)
+    const cacheKey = 'admin:hr:leave-requests'
+    const cached = await getCachedData<LeaveRequestItem[]>(cacheKey).catch(() => null)
+    if (cached?.data && Array.isArray(cached.data)) {
+      setLeaveRequests(cached.data)
+      setLoadingLeaves(false)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setLoadingLeaves(false)
+      return
+    }
+
     try {
       const r = await fetchApi('/api/v2/hr/leave-requests', { credentials: 'include' })
       const d = await r.json()
       if (!d.success) throw new Error(d.message ?? t('rh.toast.errLeaves'))
-      setLeaveRequests(d.data ?? [])
+      const list = d.data ?? []
+      setLeaveRequests(list)
+      putCachedData(cacheKey, list).catch(() => {})
     } catch (error) {
-      onToast(error instanceof Error ? error.message : t('rh.toast.errLeaves'), 'error')
+      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) ||
+        String((error as any)?.message || error).includes('fetch') ||
+        String((error as any)?.message || error).includes('Network')
+      if (!isNet && !cached?.data) {
+        onToast(error instanceof Error ? error.message : t('rh.toast.errLeaves'), 'error')
+      }
     } finally {
       setLoadingLeaves(false)
     }

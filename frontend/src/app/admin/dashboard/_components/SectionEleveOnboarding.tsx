@@ -165,7 +165,7 @@ export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
   }
 
   return (
-    <div style={{ padding: 24, maxWidth: 1280, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div className="px-3.5 py-4 md:px-6 md:py-6" style={{ height: '100%', overflowY: 'auto', maxWidth: 1280, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* En-tête officiel */}
       <div
         style={{

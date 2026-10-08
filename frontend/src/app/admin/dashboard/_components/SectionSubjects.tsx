@@ -120,12 +120,36 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
   const fetchTeacherView = useCallback(async () => {
     setTeacherViewLoading(true)
     try {
+      // 1. Lire d'abord depuis le cache IndexedDB
+      const cachedT = await getCachedData<TeacherWithSubjects[]>('admin:users:TEACHER').catch(() => null)
+      if (cachedT?.data && Array.isArray(cachedT.data) && cachedT.data.length > 0) {
+        setTeacherViewTeachers(cachedT.data)
+        setTeacherViewLoading(false)
+      } else {
+        const cachedAll = await getCachedData<any[]>('admin:users:ALL').catch(() => null)
+        if (cachedAll?.data && Array.isArray(cachedAll.data)) {
+          const teachers = cachedAll.data.filter((u: any) => u.role === 'TEACHER')
+          if (teachers.length > 0) {
+            setTeacherViewTeachers(teachers)
+            setTeacherViewLoading(false)
+          }
+        }
+      }
+
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        setTeacherViewLoading(false)
+        return
+      }
+
       const [teacherRes] = await Promise.all([
         fetchApi('/api/v2/users?role=TEACHER&limit=200', { credentials: 'include' }),
       ])
       const tData = await teacherRes.json()
-      if (teacherRes.ok) setTeacherViewTeachers(tData.data || [])
-    } catch { /* silencieux */ }
+      if (teacherRes.ok && Array.isArray(tData.data)) {
+        setTeacherViewTeachers(tData.data)
+        putCachedData('admin:users:TEACHER', tData.data).catch(() => {})
+      }
+    } catch { /* silencieux en offline */ }
     finally { setTeacherViewLoading(false) }
   }, [])
 
@@ -180,6 +204,10 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
       setDepartments(cachedDept.data)
       setDeptLoading(false)
     }
+    const cachedT = await getCachedData<TeacherWithSubjects[]>('admin:users:TEACHER').catch(() => null)
+    if (cachedT?.data && Array.isArray(cachedT.data)) {
+      setAllTeachers(cachedT.data)
+    }
 
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       setDeptLoading(false)
@@ -201,7 +229,10 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
       const dList = deptData.data || []
       setDepartments(dList)
       await putCachedData('admin:departments', dList).catch(() => {})
-      if (teacherRes.ok) setAllTeachers(teacherData.data || [])
+      if (teacherRes.ok && Array.isArray(teacherData.data)) {
+        setAllTeachers(teacherData.data)
+        putCachedData('admin:users:TEACHER', teacherData.data).catch(() => {})
+      }
       if (subjRes.ok && subjData.data) setSubjects(subjData.data)
     } catch (err: unknown) {
       const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || String((err as any)?.message || err).includes('fetch') || String((err as any)?.message || err).includes('Network')

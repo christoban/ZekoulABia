@@ -72,6 +72,8 @@ function BoolSelect({ value, onChange }: { value: boolean | null | undefined; on
   )
 }
 
+import { getCachedData, putCachedData } from '@/lib/offline/db'
+
 export default function SectionMinesecStatistics({ onToast }: Props) {
   const t = useT('admin')
   const [tab, setTab] = useState<'supplement' | 'generer'>('supplement')
@@ -91,6 +93,25 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
   const fetchAll = useCallback(async () => {
     setLoading(true)
     try {
+      // 1. Lire d'abord depuis IndexedDB
+      const [cachedSup, cachedSub, cachedMeta] = await Promise.all([
+        getCachedData<Supplement>('admin:minesec:supplement').catch(() => null),
+        getCachedData<Submission[]>('admin:minesec:submissions').catch(() => null),
+        getCachedData<Meta>('admin:minesec:meta').catch(() => null),
+      ])
+      if (cachedSup?.data) {
+        setSupplement(cachedSup.data)
+        setForm(cachedSup.data ?? {})
+        setLoading(false)
+      }
+      if (cachedSub?.data) setSubmissions(cachedSub.data)
+      if (cachedMeta?.data) setMeta(cachedMeta.data)
+
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        setLoading(false)
+        return
+      }
+
       const [supRes, subRes, metaRes] = await Promise.all([
         fetchApi('/api/v2/statistical-campaign/supplement', { credentials: 'include' }),
         fetchApi('/api/v2/statistical-campaign/submissions', { credentials: 'include' }),
@@ -102,11 +123,25 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
       if (supData.success) {
         setSupplement(supData.data)
         setForm(supData.data ?? {})
+        if (supData.data) putCachedData('admin:minesec:supplement', supData.data).catch(() => {})
       }
-      if (subData.success) setSubmissions(subData.data || [])
-      if (metaData.success) setMeta(metaData.data)
-    } catch { onToast(t('minesecStats.errorGeneric'), 'error') } finally { setLoading(false) }
-  }, [])
+      if (subData.success) {
+        setSubmissions(subData.data || [])
+        if (subData.data) putCachedData('admin:minesec:submissions', subData.data).catch(() => {})
+      }
+      if (metaData.success) {
+        setMeta(metaData.data)
+        if (metaData.data) putCachedData('admin:minesec:meta', metaData.data).catch(() => {})
+      }
+    } catch (err: unknown) {
+      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) ||
+        String((err as any)?.message || err).includes('fetch') ||
+        String((err as any)?.message || err).includes('Network')
+      if (!isNet) {
+        onToast(t('minesecStats.errorGeneric'), 'error')
+      }
+    } finally { setLoading(false) }
+  }, [t, onToast])
 
   useEffect(() => { fetchAll() }, [fetchAll])
 

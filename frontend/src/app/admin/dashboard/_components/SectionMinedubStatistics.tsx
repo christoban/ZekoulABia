@@ -39,6 +39,8 @@ const smallInputStyle = { ...inputStyle, padding: '4px 8px', fontSize: 11.5 }
 const cardStyleCls = 'rounded-[12px] p-[12px] md:p-[16px] mb-[10px] md:mb-[14px] shadow-[0_1px_2px_rgba(20,20,15,0.05)] border border-[var(--border)]'
 const cardStyle = { background: 'var(--surface)' }
 
+import { getCachedData, putCachedData } from '@/lib/offline/db'
+
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text2)', margin: '8px 0 4px' }}>{children}</div>
 }
@@ -46,6 +48,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 export default function SectionMinedubStatistics({ onToast }: Props) {
   const t = useT('admin')
   const [tab, setTab] = useState<'supplement' | 'generer'>('supplement')
+
   const [supplement, setSupplement] = useState<Supplement | null>(null)
   const [form, setForm] = useState<Record<string, any>>({})
   const [saving, setSaving] = useState(false)
@@ -60,16 +63,43 @@ export default function SectionMinedubStatistics({ onToast }: Props) {
   const fetchAll = useCallback(async () => {
     setLoading(true)
     try {
+      // 1. Lire d'abord depuis IndexedDB
+      const [cachedSup, cachedRep] = await Promise.all([
+        getCachedData<Supplement>('admin:minedub:supplement').catch(() => null),
+        getCachedData<Report[]>('admin:minedub:reports').catch(() => null),
+      ])
+      if (cachedSup?.data) { setSupplement(cachedSup.data); setForm(cachedSup.data ?? {}); setLoading(false) }
+      if (cachedRep?.data) setReports(cachedRep.data)
+
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        setLoading(false)
+        return
+      }
+
       const [supRes, repRes] = await Promise.all([
         fetchApi('/api/v2/statistical-campaign-minedub/supplement', { credentials: 'include' }),
         fetchApi('/api/v2/statistical-campaign-minedub/reports', { credentials: 'include' }),
       ])
       const supData = await supRes.json()
       const repData = await repRes.json()
-      if (supData.success) { setSupplement(supData.data); setForm(supData.data ?? {}) }
-      if (repData.success) setReports(repData.data || [])
-    } catch { onToast(t('minedubStats.errorGeneric'), 'error') } finally { setLoading(false) }
-  }, [])
+      if (supData.success) {
+        setSupplement(supData.data)
+        setForm(supData.data ?? {})
+        if (supData.data) putCachedData('admin:minedub:supplement', supData.data).catch(() => {})
+      }
+      if (repData.success) {
+        setReports(repData.data || [])
+        if (repData.data) putCachedData('admin:minedub:reports', repData.data).catch(() => {})
+      }
+    } catch (err: unknown) {
+      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) ||
+        String((err as any)?.message || err).includes('fetch') ||
+        String((err as any)?.message || err).includes('Network')
+      if (!isNet) {
+        onToast(t('minedubStats.errorGeneric'), 'error')
+      }
+    } finally { setLoading(false) }
+  }, [t, onToast])
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
