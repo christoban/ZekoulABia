@@ -153,6 +153,60 @@ export function registerListsRoutes(app: Application, p: typeof prisma = prisma,
 
       if (!rawUser) { res.status(404).json({ success: false, message: 'Utilisateur introuvable' }); return; }
 
+      let studentGroupIds = rawUser.studentProfile?.groupMemberships.map(m => m.groupId) ?? [];
+      const targetSchoolId = rawUser.school?.id || req.user!.schoolId;
+
+      // Auto-résolution intelligente des groupes d'emploi du temps :
+      // Si l'élève a une matière LV2 (ex. Chinois/Arabe) mais pas encore d'entrée StudentGroupMembership,
+      // on résout automatiquement le StudentGroup correspondant pour que son emploi du temps affiche le cours.
+      if (rawUser.studentProfile?.lv2Subject?.id && targetSchoolId) {
+        try {
+          const matchingGroup = await p.studentGroup.findFirst({
+            where: { subjectId: rawUser.studentProfile.lv2Subject.id, groupSet: { schoolId: targetSchoolId } },
+            select: { id: true, groupSetId: true },
+          });
+          if (matchingGroup && !studentGroupIds.includes(matchingGroup.id)) {
+            studentGroupIds.push(matchingGroup.id);
+
+            // Auto-synchronisation asynchrone non-bloquante dans StudentGroupMembership
+            const anneeCourante = await p.academicYear.findFirst({
+              where: { schoolId: targetSchoolId, isCurrent: true },
+              select: { id: true },
+            });
+            if (anneeCourante) {
+              p.studentGroupMembership.upsert({
+                where: {
+                  studentProfileId_groupSetId_academicYearId: {
+                    studentProfileId: rawUser.studentProfile.id,
+                    groupSetId: matchingGroup.groupSetId,
+                    academicYearId: anneeCourante.id,
+                  },
+                },
+                create: {
+                  studentProfileId: rawUser.studentProfile.id,
+                  groupId: matchingGroup.id,
+                  groupSetId: matchingGroup.groupSetId,
+                  academicYearId: anneeCourante.id,
+                },
+                update: { groupId: matchingGroup.id },
+              }).catch(() => {});
+            }
+          }
+        } catch {}
+      }
+
+      if (rawUser.studentProfile?.pebsFiliere && targetSchoolId) {
+        try {
+          const pebsGroup = await p.studentGroup.findFirst({
+            where: { name: rawUser.studentProfile.pebsFiliere, groupSet: { schoolId: targetSchoolId, code: 'PROGRAMME' } },
+            select: { id: true },
+          });
+          if (pebsGroup && !studentGroupIds.includes(pebsGroup.id)) {
+            studentGroupIds.push(pebsGroup.id);
+          }
+        } catch {}
+      }
+
       // Mapper pour préserver le contrat API
       const user = {
         ...rawUser,
@@ -168,7 +222,7 @@ export function registerListsRoutes(app: Application, p: typeof prisma = prisma,
                pebsFiliere: rawUser.studentProfile.pebsFiliere ?? null,
                lv2Subject: rawUser.studentProfile.lv2Subject ?? null,
                class: rawUser.studentProfile.enrollmentsYearScoped?.[0]?.class ?? null,
-               groupIds: rawUser.studentProfile.groupMemberships.map(membership => membership.groupId),
+               groupIds: studentGroupIds,
              }
           : null,
         classesProfessorPrincipal: rawUser.classesProfessorPrincipal?.map(c => ({

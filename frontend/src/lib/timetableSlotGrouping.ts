@@ -39,20 +39,61 @@ export function groupTimetableSlotsForDisplay<T extends TimetableCellSlot & { ki
   return new Map([...grouped].map(([key, values]) => [key, normalizeTimetableCellSlots(values)]))
 }
 
+export interface StudentGroupingOptions {
+  studentGroupIds?: readonly string[]
+  studentLv2SubjectId?: string | null
+  studentLv2SubjectName?: string | null
+}
+
+function isStudentGroupingOptions(
+  val: readonly string[] | StudentGroupingOptions,
+): val is StudentGroupingOptions {
+  return typeof val === 'object' && val !== null && !Array.isArray(val)
+}
+
 export function groupTimetableSlotsForStudent<T extends TimetableGroupSlot>(
   slots: readonly T[],
-  studentGroupIds: readonly string[],
+  studentGroupIdsOrOptions: readonly string[] | StudentGroupingOptions,
 ): Map<string, Array<T | UnassignedTimetableGroupSlot>> {
+  let studentGroupIds: readonly string[] = []
+  let studentLv2SubjectId: string | null = null
+  let studentLv2SubjectName: string | null = null
+
+  if (isStudentGroupingOptions(studentGroupIdsOrOptions)) {
+    studentGroupIds = studentGroupIdsOrOptions.studentGroupIds ?? []
+    studentLv2SubjectId = studentGroupIdsOrOptions.studentLv2SubjectId ?? null
+    studentLv2SubjectName = studentGroupIdsOrOptions.studentLv2SubjectName ?? null
+  } else {
+    studentGroupIds = studentGroupIdsOrOptions
+  }
+
   const visibleGroupIds = new Set(studentGroupIds)
   const grouped: Map<string, T[]> = groupTimetableSlots<T>(slots)
   const visible = new Map<string, Array<T | UnassignedTimetableGroupSlot>>()
 
   for (const [key, values] of grouped) {
     const groupSlots = values.filter(slot => slot.groupId !== null && slot.groupId !== undefined && slot.groupId !== '')
-    const visibleValues = values.filter(slot =>
-      slot.groupId === null || slot.groupId === undefined || slot.groupId === '' || visibleGroupIds.has(slot.groupId),
-    ) as Array<T | UnassignedTimetableGroupSlot>
-    if (groupSlots.length > 0 && !visibleValues.some(slot => 'groupId' in slot && slot.groupId)) {
+
+    // Vérifie si la matière du slot correspond au choix LV2/filière de l'élève
+    const isSlotMatchingStudentLv2 = (slot: T) => {
+      if (!studentLv2SubjectId && !studentLv2SubjectName) return false
+      const sub = (slot as any).subject
+      const subId = (slot as any).subjectId || (typeof sub === 'object' ? sub?.id : undefined)
+      if (studentLv2SubjectId && subId && subId === studentLv2SubjectId) return true
+      const subName = (typeof sub === 'string' ? sub : sub?.name)?.trim().toLowerCase()
+      if (studentLv2SubjectName && subName && subName === studentLv2SubjectName.trim().toLowerCase()) return true
+      return false
+    }
+
+    const visibleValues = values.filter(slot => {
+      const isGroupSlot = slot.groupId !== null && slot.groupId !== undefined && slot.groupId !== ''
+      if (!isGroupSlot) return true
+      if (visibleGroupIds.has(slot.groupId!)) return true
+      if (isSlotMatchingStudentLv2(slot)) return true
+      return false
+    }) as Array<T | UnassignedTimetableGroupSlot>
+
+    if (groupSlots.length > 0 && visibleValues.length === 0) {
       const firstGroupSlot = groupSlots[0]
       visibleValues.push({ ...firstGroupSlot, unassigned: true })
     }
@@ -114,7 +155,8 @@ export function formatStudentTimetableData(
   gridConfigRaw: any,
   groupIds: readonly string[] = [],
   className: string = '',
-  unassignedLabel = 'Non assigné au groupe'
+  unassignedLabel = 'Non assigné au groupe',
+  lv2Options?: { studentLv2SubjectId?: string | null; studentLv2SubjectName?: string | null }
 ): FormattedStudentTimetableData {
   let squelette: PeriodeGrille[] = DEFAULT_TIMETABLE_SKELETON
   let joursActifs: string[] = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI']
@@ -146,7 +188,13 @@ export function formatStudentTimetableData(
 
   const rawSlots: RawSlot[] = ttList.flatMap((tt: { slots?: RawSlot[] }) => tt?.slots ?? [])
 
-  for (const entries of groupTimetableSlotsForStudent(rawSlots, groupIds).values()) {
+  const groupingOptions: StudentGroupingOptions = {
+    studentGroupIds: groupIds,
+    studentLv2SubjectId: lv2Options?.studentLv2SubjectId,
+    studentLv2SubjectName: lv2Options?.studentLv2SubjectName,
+  }
+
+  for (const entries of groupTimetableSlotsForStudent(rawSlots, groupingOptions).values()) {
     const first = entries[0]
     if (!first) continue
     const key = `${first.dayOfWeek}-${first.startTime}`

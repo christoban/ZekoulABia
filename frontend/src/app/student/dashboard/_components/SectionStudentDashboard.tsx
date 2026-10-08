@@ -137,10 +137,16 @@ export default function SectionStudentDashboard({ onNav, onToast, user }: Props)
       if (ttRes?.success) {
         const todayIdx = (new Date().getDay() + 6) % 7
         const groupIds = user.studentProfile?.groupIds ?? []
+        const lv2Id = user.studentProfile?.lv2Subject?.id
+        const lv2Name = user.studentProfile?.lv2Subject?.name
         const rawTodaySlots = (ttRes.data || []).flatMap((tt: { slots?: Array<{ dayOfWeek: number; startTime: string; endTime: string; groupId?: string | null; subject?: { name?: string | null } | null; teacher?: { firstName: string; lastName: string } | null; room?: string | null }> }) =>
           (tt.slots || []).filter(slot => slot.dayOfWeek === todayIdx),
         )
-        result.todaySlots = [...groupTimetableSlotsForStudent<{ dayOfWeek: number; startTime: string; endTime: string; groupId?: string | null; subject?: { name?: string | null } | null; teacher?: { firstName: string; lastName: string } | null; room?: string | null }>(rawTodaySlots, groupIds).values()]
+        result.todaySlots = [...groupTimetableSlotsForStudent<{ dayOfWeek: number; startTime: string; endTime: string; groupId?: string | null; subject?: { name?: string | null } | null; teacher?: { firstName: string; lastName: string } | null; room?: string | null }>(rawTodaySlots, {
+          studentGroupIds: groupIds,
+          studentLv2SubjectId: lv2Id,
+          studentLv2SubjectName: lv2Name,
+        }).values()]
           .flatMap(entries => entries.map(entry => ({
             time: entry.startTime,
             subject: 'unassigned' in entry ? t('timetable.notAssignedToGroup') : entry.subject?.name || '',

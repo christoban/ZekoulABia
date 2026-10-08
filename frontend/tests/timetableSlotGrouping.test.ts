@@ -60,4 +60,22 @@ describe('Regroupement des créneaux EDT', () => {
 
     expect(values.map(slot => slot.id)).toEqual(['arabe', 'chinois'])
   })
+
+  it('résout automatiquement le créneau Chinois sans assignation manuelle si l’élève a choisi Chinois en LV2/filière', () => {
+    const slots = [
+      { id: 'arabe', dayOfWeek: 0, startTime: '14:15', endTime: '15:15', subject: 'Arabe', groupId: 'groupe-arabe' },
+      { id: 'chinois', dayOfWeek: 0, startTime: '14:15', endTime: '15:15', subject: 'Chinois', groupId: 'groupe-chinois' },
+    ]
+
+    // Élève avec groupIds vide mais LV2 Chinois renseignée
+    const values = groupTimetableSlotsForStudent(slots, {
+      studentGroupIds: [],
+      studentLv2SubjectName: 'Chinois',
+    })
+    const cell = values.get('0-14:15-15:15') ?? []
+
+    expect(cell.length).toBe(1)
+    expect('subject' in cell[0]! && cell[0].subject).toBe('Chinois')
+    expect('unassigned' in cell[0]!).toBe(false)
+  })
 })

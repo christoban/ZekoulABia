@@ -46,7 +46,10 @@ export default function SectionStudentTimetable({ onToast, user }: Props) {
   const tcommon = useT('common')
   const classId = user?.studentProfile?.class?.id ?? ''
   const groupIds = user?.studentProfile?.groupIds ?? []
-  const cacheKey = classId ? `student:timetable:v2:${classId}:${[...groupIds].sort().join(',')}` : ''
+  const lv2Subject = user?.studentProfile?.lv2Subject
+  const cacheKey = classId
+    ? `student:timetable:v3:${classId}:${[...groupIds].sort().join(',')}:${lv2Subject?.id || ''}`
+    : ''
 
   const fetchFn = useCallback(async (): Promise<TimetableData> => {
     if (!classId) throw new Error(t('timetable.no_class'))
@@ -85,7 +88,11 @@ export default function SectionStudentTimetable({ onToast, user }: Props) {
       gridRes?.data,
       groupIds,
       user?.studentProfile?.class?.name || '',
-      t('timetable.notAssignedToGroup')
+      t('timetable.notAssignedToGroup'),
+      {
+        studentLv2SubjectId: lv2Subject?.id,
+        studentLv2SubjectName: lv2Subject?.name,
+      }
     )
 
     if (cacheKey) {
@@ -93,12 +100,12 @@ export default function SectionStudentTimetable({ onToast, user }: Props) {
     }
 
     return formatted
-  }, [classId, groupIds, t, user, cacheKey])
+  }, [classId, groupIds, lv2Subject, t, user, cacheKey])
 
   const { data, loading, error, fromCache, cachedAt, refetch } = useCachedFetch<TimetableData>(cacheKey, fetchFn)
   const [fallbackData, setFallbackData] = useState<TimetableData | null>(null)
 
-  // Résilience hors-ligne renforcée : si la clé v2 était absente du cache, tenter de
+  // Résilience hors-ligne renforcée : si la clé v3 était absente du cache, tenter de
   // reconstituer l'emploi du temps depuis le cache brut student:timetables:${classId}
   useEffect(() => {
     if (error === 'OFFLINE_NO_CACHE' && !data && classId) {
@@ -112,14 +119,18 @@ export default function SectionStudentTimetable({ onToast, user }: Props) {
             rawGrid?.data,
             groupIds,
             user?.studentProfile?.class?.name || '',
-            t('timetable.notAssignedToGroup')
+            t('timetable.notAssignedToGroup'),
+            {
+              studentLv2SubjectId: lv2Subject?.id,
+              studentLv2SubjectName: lv2Subject?.name,
+            }
           )
           setFallbackData(formatted)
           if (cacheKey) putCachedData(cacheKey, formatted).catch(() => {})
         }
       }).catch(() => {})
     }
-  }, [error, data, classId, groupIds, user, t, cacheKey])
+  }, [error, data, classId, groupIds, lv2Subject, user, t, cacheKey])
 
   const timetable = data ?? fallbackData
 
