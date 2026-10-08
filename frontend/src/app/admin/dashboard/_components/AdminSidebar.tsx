@@ -155,7 +155,6 @@ export default function AdminSidebar({
       id: 'pedagogy',
       label: tnav('group.pedagogie') ?? 'Évaluations & Conseils',
       items: [
-        { id: 'grades', icon: FileText, label: tnav('sidebar.grades') },
         { id: 'bulletins', icon: ScrollText, label: tnav('sidebar.bulletins') },
         { id: 'council', icon: GraduationCap, label: tnav('sidebar.council') },
       ],

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { fetchApi } from '@/lib/fetchApi'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import DelegationSupervisionBanner from './DelegationSupervisionBanner'
 
 import type { AdminSection } from '../_types'
@@ -63,14 +64,34 @@ export default function SectionAdminCouncil({ onToast, onNav }: Props) {
   const [selectedPeriodId, setSelectedPeriodId] = useState<string>('all')
 
   const fetchSessions = useCallback(async () => {
+    const cacheKey = 'admin:class-councils'
+    const cached = await getCachedData<{ sessions: CouncilSession[] }>(cacheKey).catch(() => null)
+    if (cached?.data?.sessions && Array.isArray(cached.data.sessions)) {
+      setSessions(cached.data.sessions)
+      setLoading(false)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setLoading(false)
+      return
+    }
+
     try {
-      setLoading(true); setError(null)
+      if (!cached?.data) setLoading(true)
+      setError(null)
       const res = await fetchApi('/api/v2/class-councils', { credentials: 'include' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Erreur serveur')
-      setSessions(data.sessions || [])
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur de chargement')
+      const sessionList = data.sessions || []
+      setSessions(sessionList)
+      await putCachedData(cacheKey, { sessions: sessionList }).catch(() => {})
+    } catch (err: unknown) {
+      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || String((err as any)?.message || err).includes('fetch') || String((err as any)?.message || err).includes('Network')
+      if (isNet) {
+        if (!cached?.data) setSessions([])
+      } else if (!cached?.data) {
+        setError(err instanceof Error ? err.message : 'Erreur de chargement')
+      }
     } finally { setLoading(false) }
   }, [])
 
@@ -87,13 +108,30 @@ export default function SectionAdminCouncil({ onToast, onNav }: Props) {
 
   const openSession = async (sessionId: string) => {
     setLoadingDetail(true); setSelected(null)
+    const detailKey = `admin:class-councils:${sessionId}`
+    const cachedDetail = await getCachedData<SessionDetail>(detailKey).catch(() => null)
+    if (cachedDetail?.data) {
+      setSelected(cachedDetail.data)
+      setLoadingDetail(false)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setLoadingDetail(false)
+      return
+    }
+
     try {
       const res = await fetchApi(`/api/v2/class-councils/${sessionId}`, { credentials: 'include' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Erreur')
       setSelected(data.session)
+      if (data.session) {
+        await putCachedData(detailKey, data.session).catch(() => {})
+      }
     } catch (err) {
-      onToast(err instanceof Error ? err.message : 'Erreur de chargement', 'error')
+      if (!cachedDetail?.data) {
+        onToast(err instanceof Error ? err.message : 'Erreur de chargement', 'error')
+      }
     } finally { setLoadingDetail(false) }
   }
 

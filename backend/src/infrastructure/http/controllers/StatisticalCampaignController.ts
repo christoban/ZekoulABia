@@ -94,7 +94,7 @@ export class StatisticalCampaignController {
       const generatedByUserId = req.user!.userId;
       const result = await this._genererDeclaration.execute({ schoolId, generatedByUserId });
       res.json({ success: true, data: result });
-    } catch (err) {
+    } catch (err: any) {
       if (err instanceof LibreOfficeUnavailableError || err instanceof LibreOfficeConversionError) {
         res.status(503).json({
           success: false,
@@ -102,7 +102,10 @@ export class StatisticalCampaignController {
         });
         return;
       }
-      next(err);
+      res.status(400).json({
+        success: false,
+        message: err?.message || 'Erreur lors de la génération de la déclaration statistique',
+      });
     }
   };
 

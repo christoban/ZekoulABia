@@ -16,6 +16,7 @@ import {
   GraduationCap,
 } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 import ModalNouvelEvenement from './academicEvents/ModalNouvelEvenement'
 
@@ -64,28 +65,56 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
   // Garde préventive : vérifie si une année scolaire courante est configurée
   const [hasCurrentYear, setHasCurrentYear] = useState<boolean>(true)
   useEffect(() => {
+    getCachedData<any[]>('admin:academic-years').then(c => {
+      if (c?.data && Array.isArray(c.data)) {
+        setHasCurrentYear(c.data.some((y: any) => y.isCurrent === true))
+      }
+    }).catch(() => {})
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
+
     fetchApi('/api/v2/academic-years', { credentials: 'include' })
       .then((r) => r.json())
       .then((d) => {
         if (d.success && Array.isArray(d.data)) {
           setHasCurrentYear(d.data.some((y: any) => y.isCurrent === true))
+          putCachedData('admin:academic-years', d.data).catch(() => {})
         }
       })
       .catch(() => {})
   }, [])
 
   const fetchEvents = useCallback(async () => {
+    const cacheKey = 'admin:academic-events'
+    const cached = await getCachedData<AcademicEvent[]>(cacheKey).catch(() => null)
+    if (cached?.data && Array.isArray(cached.data)) {
+      setEvents(cached.data)
+      setLoading(false)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setLoading(false)
+      return
+    }
+
     try {
-      setLoading(true)
+      if (!cached?.data) setLoading(true)
       setError(null)
       const res = await fetchApi('/api/v2/academic-events', { credentials: 'include' })
       const data = await res.json()
       if (!data.success) {
         throw new Error(data.message || 'Erreur lors du chargement des événements')
       }
-      setEvents(data.data || [])
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors du chargement des événements')
+      const eventList = data.data || []
+      setEvents(eventList)
+      await putCachedData(cacheKey, eventList).catch(() => {})
+    } catch (err: unknown) {
+      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || String((err as any)?.message || err).includes('fetch') || String((err as any)?.message || err).includes('Network')
+      if (isNet) {
+        if (!cached?.data) setEvents([])
+      } else if (!cached?.data) {
+        setError(err instanceof Error ? err.message : 'Erreur lors du chargement des événements')
+      }
     } finally {
       setLoading(false)
     }

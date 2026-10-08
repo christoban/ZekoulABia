@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { DndContext, DragOverlay, useDraggable, useDroppable, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { fetchApi } from '@/lib/fetchApi'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 import {
   AlertTriangle, BookOpen, Loader2, Trash2, X, Search, GraduationCap, MoreHorizontal,
@@ -131,15 +132,36 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
   useEffect(() => { if (view === 'par-enseignant') fetchTeacherView() }, [view, fetchTeacherView])
 
   const fetchSubjects = useCallback(async () => {
+    const cacheKey = 'admin:subjects'
+    const cached = await getCachedData<SubjectItem[]>(cacheKey).catch(() => null)
+    if (cached?.data && Array.isArray(cached.data)) {
+      setSubjects(cached.data)
+      setLoading(false)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setLoading(false)
+      return
+    }
+
     try {
-      setLoading(true); setError(null)
+      if (!cached?.data) setLoading(true)
+      setError(null)
       const res = await fetchApi('/api/v2/subjects', { credentials: 'include' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || t('subjects.error.load'))
-      setSubjects(data.data || [])
-    } catch (err) { setError(err instanceof Error ? err.message : 'Erreur') }
-    finally { setLoading(false) }
-  }, [])
+      const list = data.data || []
+      setSubjects(list)
+      await putCachedData(cacheKey, list).catch(() => {})
+    } catch (err: unknown) {
+      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || String((err as any)?.message || err).includes('fetch') || String((err as any)?.message || err).includes('Network')
+      if (isNet) {
+        if (!cached?.data) setSubjects([])
+      } else if (!cached?.data) {
+        setError(err instanceof Error ? err.message : 'Erreur')
+      }
+    } finally { setLoading(false) }
+  }, [t])
 
   useEffect(() => { fetchSubjects() }, [fetchSubjects])
 
@@ -153,8 +175,20 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
   }, [fetchSubjects])
 
   const fetchDepartments = useCallback(async () => {
+    const cachedDept = await getCachedData<Department[]>('admin:departments').catch(() => null)
+    if (cachedDept?.data && Array.isArray(cachedDept.data)) {
+      setDepartments(cachedDept.data)
+      setDeptLoading(false)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setDeptLoading(false)
+      return
+    }
+
     try {
-      setDeptLoading(true); setDeptError(null)
+      if (!cachedDept?.data) setDeptLoading(true)
+      setDeptError(null)
       const [deptRes, subjRes, teacherRes] = await Promise.all([
         fetchApi('/api/v2/departments', { credentials: 'include' }),
         fetchApi('/api/v2/subjects', { credentials: 'include' }),
@@ -164,12 +198,19 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
       const subjData = await subjRes.json()
       const teacherData = await teacherRes.json()
       if (!deptRes.ok) throw new Error(deptData.message || 'Erreur')
-      setDepartments(deptData.data || [])
+      const dList = deptData.data || []
+      setDepartments(dList)
+      await putCachedData('admin:departments', dList).catch(() => {})
       if (teacherRes.ok) setAllTeachers(teacherData.data || [])
-      // subjects cached in state are used by "Non classé" computation
       if (subjRes.ok && subjData.data) setSubjects(subjData.data)
-    } catch (err) { setDeptError(err instanceof Error ? err.message : 'Erreur') }
-    finally { setDeptLoading(false) }
+    } catch (err: unknown) {
+      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || String((err as any)?.message || err).includes('fetch') || String((err as any)?.message || err).includes('Network')
+      if (isNet) {
+        if (!cachedDept?.data) setDepartments([])
+      } else if (!cachedDept?.data) {
+        setDeptError(err instanceof Error ? err.message : 'Erreur')
+      }
+    } finally { setDeptLoading(false) }
   }, [])
 
   useEffect(() => { if (view === 'departements') fetchDepartments() }, [view, fetchDepartments])
@@ -177,9 +218,28 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
   // Charger les classes quand on bascule en vue par classe
   useEffect(() => {
     if (view !== 'par-classe' || classList.length > 0) return
+    getCachedData<any[]>('admin:classes').then(async c => {
+      let list = c?.data
+      if (!list || !Array.isArray(list) || list.length === 0) {
+        const fallback = await getCachedData<any[]>('staff:classes').catch(() => null)
+        list = fallback?.data
+      }
+      if (list && Array.isArray(list)) {
+        setClassList(list.map((cls: any) => ({ id: cls.id, name: cls.name, level: cls.level })))
+      }
+    }).catch(() => {})
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
+
     fetchApi('/api/v2/classes', { credentials: 'include' })
       .then(r => r.json())
-      .then(d => { if (d.success) setClassList(d.data.map((c: any) => ({ id: c.id, name: c.name, level: c.level }))) })
+      .then(d => {
+        if (d.success && Array.isArray(d.data)) {
+          const mapped = d.data.map((c: any) => ({ id: c.id, name: c.name, level: c.level }))
+          setClassList(mapped)
+          putCachedData('admin:classes', d.data).catch(() => {})
+        }
+      })
       .catch(() => {})
   }, [view, classList.length])
 
@@ -188,14 +248,34 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
     setClassSubjects([])
     setClassViewError(null)
     if (!cid) return
+
+    const classSubjKey = `admin:subjects:class:${cid}`
+    const cachedClassSubj = await getCachedData<ClassSubjectItem[]>(classSubjKey).catch(() => null)
+    if (cachedClassSubj?.data && Array.isArray(cachedClassSubj.data)) {
+      setClassSubjects(cachedClassSubj.data)
+      setLoadingCV(false)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setLoadingCV(false)
+      return
+    }
+
     setLoadingCV(true)
     try {
       const res = await fetchApi(`/api/v2/subjects?classId=${cid}`, { credentials: 'include' })
       const d   = await res.json()
       if (!res.ok) throw new Error(d.message || 'Erreur')
-      setClassSubjects(d.data || [])
-    } catch (err) {
-      setClassViewError(err instanceof Error ? err.message : 'Erreur')
+      const subList = d.data || []
+      setClassSubjects(subList)
+      await putCachedData(classSubjKey, subList).catch(() => {})
+    } catch (err: unknown) {
+      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || String((err as any)?.message || err).includes('fetch') || String((err as any)?.message || err).includes('Network')
+      if (isNet) {
+        if (!cachedClassSubj?.data) setClassSubjects([])
+      } else if (!cachedClassSubj?.data) {
+        setClassViewError(err instanceof Error ? err.message : 'Erreur')
+      }
     } finally {
       setLoadingCV(false)
     }

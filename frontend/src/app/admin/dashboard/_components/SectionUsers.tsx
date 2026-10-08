@@ -854,10 +854,43 @@ export default function SectionUsers({ onToast, onNav }: Props) {
       getCachedData<Record<string, number>>('admin:users:role-counts'),
     ])
 
-    if (cachedUsers?.data && Array.isArray(cachedUsers.data) && cachedUsers.data.length > 0) {
-      setUsers(cachedUsers.data)
+    let localList: UserItem[] | null = (cachedUsers?.data && Array.isArray(cachedUsers.data) && cachedUsers.data.length > 0)
+      ? cachedUsers.data
+      : null
+
+    // Si pas de cache spécifique au rôle, replier intelligemment sur le cache maître ALL
+    if (!localList) {
+      const masterCache = await getCachedData<UserItem[]>('admin:users:ALL')
+      if (masterCache?.data && Array.isArray(masterCache.data) && masterCache.data.length > 0) {
+        localList = roleFilter ? masterCache.data.filter(u => u.role === roleFilter) : masterCache.data
+        // Calculer les compteurs locaux si absents
+        if (!cachedCounts?.data) {
+          const derivedCounts: Record<string, number> = {
+            ALL: masterCache.data.length,
+            TEACHER: masterCache.data.filter(u => u.role === 'TEACHER').length,
+            STUDENT: masterCache.data.filter(u => u.role === 'STUDENT').length,
+            PARENT: masterCache.data.filter(u => u.role === 'PARENT').length,
+            STAFF: masterCache.data.filter(u => u.role === 'STAFF').length,
+          }
+          setCounts(derivedCounts)
+        }
+      }
+    }
+
+    if (localList) {
+      let displayList = localList
+      if (search.trim()) {
+        const q = search.trim().toLowerCase()
+        displayList = displayList.filter(u =>
+          `${u.firstName} ${u.lastName}`.toLowerCase().includes(q) ||
+          (u.email && u.email.toLowerCase().includes(q)) ||
+          (u.studentProfile?.matricule && u.studentProfile.matricule.toLowerCase().includes(q))
+        )
+      }
+      setUsers(displayList)
       setLoading(false)
     }
+
     if (cachedCounts?.data) {
       setCounts(cachedCounts.data)
     }
@@ -868,7 +901,7 @@ export default function SectionUsers({ onToast, onNav }: Props) {
     }
 
     try {
-      if (!cachedUsers?.data || cachedUsers.data.length === 0) setLoading(true)
+      if (!localList || localList.length === 0) setLoading(true)
       setError(null)
       const params = new URLSearchParams({ limit: '100' })
       if (roleFilter) params.set('role', roleFilter)
@@ -879,13 +912,16 @@ export default function SectionUsers({ onToast, onNav }: Props) {
       const userList = data.data || []
       setUsers(userList)
       await putCachedData(cacheKey, userList)
-      // Utiliser roleCounts du backend (vrais totaux, pas limités à la page)
+      // Mettre à jour roleCounts du backend
       if (!roleFilter && data.roleCounts) {
         setCounts(data.roleCounts as Record<string, number>)
         await putCachedData('admin:users:role-counts', data.roleCounts)
       }
-    } catch (err) {
-      if (!cachedUsers?.data || cachedUsers.data.length === 0) {
+    } catch (err: unknown) {
+      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || String((err as any)?.message || err).includes('fetch') || String((err as any)?.message || err).includes('Network')
+      if (isNet) {
+        if (!localList || localList.length === 0) setUsers([])
+      } else if (!localList || localList.length === 0) {
         setError(err instanceof Error ? err.message : 'Erreur de chargement')
       }
     } finally {

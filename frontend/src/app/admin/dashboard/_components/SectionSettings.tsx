@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { fetchApi } from '@/lib/fetchApi'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { type Language, useChangeLanguage, useLanguage, useT } from '@/lib/i18n'
 import { Smartphone, Mail, School, Search, Save, CheckCircle2, Info, ClipboardList } from 'lucide-react'
 import PushNotificationToggle from '@/components/PushNotificationToggle'
@@ -148,12 +149,36 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
   const [emlData, setEmlData]               = useState<{ logs: EmailLog[]; pagination: { total: number; page: number; pages: number; limit: number } } | null>(null)
   const [emlLoading, setEmlLoading]         = useState(false)
 
+  const isNetworkErr = (e: unknown) => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return true
+    const msg = String((e as any)?.message || e || '')
+    return msg.includes('fetch') || msg.includes('Network') || msg.includes('Failed')
+  }
+
   // ── Structure load ──────────────────────────────────────────────────────
   useEffect(() => {
     if (activeTab !== 7 || structConfig !== null || !schoolInfo?.id) return
+
+    getCachedData<any>('admin:school:me').then(c => {
+      const cfg = c?.data?.onboardingConfig
+      if (cfg) {
+        const parsed = {
+          niveaux1erCycle: cfg.niveaux1erCycle ?? [],
+          classesParNiveau: cfg.classesParNiveau ?? {},
+          niveauxPrimaire: cfg.niveauxPrimaire ?? [],
+          classesParNiveauPrimaire: cfg.classesParNiveauPrimaire ?? {},
+        }
+        setStructConfig(parsed)
+        setStructEdit({ ...parsed.classesParNiveau, ...parsed.classesParNiveauPrimaire })
+      }
+    }).catch(() => {})
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
+
     fetchApi('/api/v2/school/me', { credentials: 'include' })
       .then(r => r.json())
       .then(d => {
+        if (d?.data) putCachedData('admin:school:me', d.data).catch(() => {})
         const cfg = d.data?.onboardingConfig
         if (!cfg) return
         const parsed = {
@@ -165,30 +190,56 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
         setStructConfig(parsed)
         setStructEdit({ ...parsed.classesParNiveau, ...parsed.classesParNiveauPrimaire })
       })
-      .catch(() => onToast('Erreur chargement structure', 'error'))
+      .catch((err) => {
+        if (!isNetworkErr(err)) onToast('Erreur chargement structure', 'error')
+      })
   }, [activeTab, schoolInfo?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (activeTab !== 7 || backupInfo !== null || !schoolInfo?.id) return
+
+    getCachedData<BackupInfo>('admin:school:last-backup').then(c => {
+      if (c?.data) setBackupInfo(c.data)
+    }).catch(() => {})
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
+
     setBackupLoading(true)
     fetchApi('/api/v2/school/last-backup', { credentials: 'include' })
       .then(r => r.json())
-      .then(d => { if (d.success) setBackupInfo(d.data) })
-      .catch(() => onToast('Erreur chargement dernière sauvegarde', 'error'))
+      .then(d => {
+        if (d.success) {
+          setBackupInfo(d.data)
+          putCachedData('admin:school:last-backup', d.data).catch(() => {})
+        }
+      })
+      .catch((err) => {
+        if (!isNetworkErr(err)) onToast('Erreur chargement dernière sauvegarde', 'error')
+      })
       .finally(() => setBackupLoading(false))
   }, [activeTab, schoolInfo?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (activeTab !== 7 || logRetentionLoading || !schoolInfo?.id) return
+
+    getCachedData<any>('admin:school-settings').then(c => {
+      if (c?.data?.logRetentionDays != null) setLogRetentionDays(Number(c.data.logRetentionDays))
+    }).catch(() => {})
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
+
     setLogRetentionLoading(true)
     fetchApi('/api/v2/school-settings', { credentials: 'include' })
       .then(r => r.json())
       .then(d => {
         if (d.success) {
           setLogRetentionDays(Number(d.data?.logRetentionDays ?? 90))
+          putCachedData('admin:school-settings', d.data).catch(() => {})
         }
       })
-      .catch(() => onToast('Erreur chargement rétention des logs', 'error'))
+      .catch((err) => {
+        if (!isNetworkErr(err)) onToast('Erreur chargement rétention des logs', 'error')
+      })
       .finally(() => setLogRetentionLoading(false))
   }, [activeTab, schoolInfo?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -303,28 +354,83 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
   // ── Notifications load ──────────────────────────────────────────────────
   useEffect(() => {
     if (activeTab !== 1 || notifData !== null || !schoolInfo?.id) return
+
+    getCachedData<NotifSettings>('admin:notification-settings').then(c => {
+      if (c?.data) setNotifData(c.data)
+      else if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        setNotifData({ smsAbsences: true, smsPayments: true, smsBulletins: true, emailDigestAdmin: true, smsLowBalance: false })
+      }
+    }).catch(() => {})
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
+
     setNotifLoading(true)
     fetchApi(`/api/v2/schools/${schoolInfo.id}/notification-settings`, { credentials: 'include' })
       .then(r => r.json())
-      .then(d => { if (d.success) setNotifData(d.data) })
-      .catch(() => onToast('Erreur chargement notifications', 'error'))
+      .then(d => {
+        if (d.success) {
+          setNotifData(d.data)
+          putCachedData('admin:notification-settings', d.data).catch(() => {})
+        }
+      })
+      .catch((err) => {
+        if (!isNetworkErr(err)) onToast('Erreur chargement notifications', 'error')
+        setNotifData(prev => prev ?? { smsAbsences: true, smsPayments: true, smsBulletins: true, emailDigestAdmin: true, smsLowBalance: false })
+      })
       .finally(() => setNotifLoading(false))
   }, [activeTab, schoolInfo?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Security settings load ──────────────────────────────────────────────
   useEffect(() => {
     if (activeTab !== 2 || secSettings !== null || !schoolInfo?.id) return
+
+    getCachedData<SecSettings>('admin:security-settings').then(c => {
+      if (c?.data) {
+        setSecSettings(c.data)
+        setSecEdit(c.data)
+      } else if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        const defSec: SecSettings = { passwordMinLength: 8, passwordRequireUpper: false, passwordRequireDigit: true, sessionTimeoutMin: 60 }
+        setSecSettings(defSec)
+        setSecEdit(defSec)
+      }
+    }).catch(() => {})
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
+
     setSecLoading(true)
     fetchApi(`/api/v2/schools/${schoolInfo.id}/security-settings`, { credentials: 'include' })
       .then(r => r.json())
-      .then(d => { if (d.success) { setSecSettings(d.data); setSecEdit(d.data) } })
-      .catch(() => onToast(t('settings.security.load_error'), 'error'))
+      .then(d => {
+        if (d.success) {
+          setSecSettings(d.data)
+          setSecEdit(d.data)
+          putCachedData('admin:security-settings', d.data).catch(() => {})
+        }
+      })
+      .catch((err) => {
+        if (!isNetworkErr(err)) onToast(t('settings.security.load_error'), 'error')
+        const defSec: SecSettings = { passwordMinLength: 8, passwordRequireUpper: false, passwordRequireDigit: true, sessionTimeoutMin: 60 }
+        setSecSettings(prev => prev ?? defSec)
+        setSecEdit(prev => prev ?? defSec)
+      })
       .finally(() => setSecLoading(false))
   }, [activeTab, schoolInfo?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Audit logs load ─────────────────────────────────────────────────────
   useEffect(() => {
     if (!auditOpen || !schoolInfo?.id) return
+
+    const cacheKey = `admin:audit-logs:${auditPage}:${auditAction}`
+    getCachedData<any>(cacheKey).then(c => {
+      if (c?.data) {
+        setAuditLogs(c.data.logs || [])
+        setAuditTotal(c.data.total || 0)
+        setAuditPages(c.data.pages || 1)
+      }
+    }).catch(() => {})
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
+
     setAuditLoad(true)
     const params = new URLSearchParams({ page: String(auditPage), limit: '20' })
     if (auditAction) params.set('action', auditAction)
@@ -332,70 +438,164 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
     if (auditTo)     params.set('to',     auditTo)
     fetchApi(`/api/v2/schools/${schoolInfo.id}/audit-logs?${params}`, { credentials: 'include' })
       .then(r => r.json())
-      .then(d => { if (d.success) { setAuditLogs(d.logs); setAuditPage(d.page); setAuditPages(d.pages); setAuditTotal(d.total) } })
-      .catch(() => onToast('Erreur chargement journaux', 'error'))
+      .then(d => {
+        if (d.success) {
+          setAuditLogs(d.logs); setAuditPage(d.page); setAuditPages(d.pages); setAuditTotal(d.total)
+          putCachedData(cacheKey, { logs: d.logs, total: d.total, pages: d.pages }).catch(() => {})
+        }
+      })
+      .catch((err) => {
+        if (!isNetworkErr(err)) onToast('Erreur chargement journaux', 'error')
+      })
       .finally(() => setAuditLoad(false))
   }, [auditOpen, auditPage, auditAction, auditFrom, auditTo, schoolInfo?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Pédagogie load ──────────────────────────────────────────────────────
   useEffect(() => {
     if (activeTab !== 3 || pedSettings) return
+
+    getCachedData<any>('admin:school-settings').then(c => {
+      if (c?.data) setPedSettings(c.data)
+      else if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        setPedSettings({
+          passMark: 10, councilPassMark: 9.5, gradesPerTerm: 2, termsPerYear: 3,
+          maxAbsences: 30, attendanceLateAsAbsence: false,
+          legalMaxContributionFirstCycle: 10000, legalMaxContributionSecondCycle: 15000,
+          bulletinBlockOnUnpaidFees: true,
+          schoolLanguageMode: 'FR', academicCalendarType: 'TRIMESTRE', cycles: ['PREMIER_CYCLE', 'SECOND_CYCLE'],
+          smsEnabled: false, offlineModeEnabled: true, aiAlertsEnabled: true, messageModeration: false,
+        })
+      }
+    }).catch(() => {})
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
+
     setPedLoading(true)
     fetchApi('/api/v2/school-settings', { credentials: 'include' })
       .then(r => r.json())
-      .then(d => { if (d.success) setPedSettings(d.data) })
-      .catch(() => onToast(t('settings.pedagogy.load_error'), 'error'))
+      .then(d => {
+        if (d.success) {
+          setPedSettings(d.data)
+          putCachedData('admin:school-settings', d.data).catch(() => {})
+        }
+      })
+      .catch((err) => {
+        if (!isNetworkErr(err)) onToast(t('settings.pedagogy.load_error'), 'error')
+        setPedSettings(prev => prev ?? {
+          passMark: 10, councilPassMark: 9.5, gradesPerTerm: 2, termsPerYear: 3,
+          maxAbsences: 30, attendanceLateAsAbsence: false,
+          legalMaxContributionFirstCycle: 10000, legalMaxContributionSecondCycle: 15000,
+          bulletinBlockOnUnpaidFees: true,
+          schoolLanguageMode: 'FR', academicCalendarType: 'TRIMESTRE', cycles: ['PREMIER_CYCLE', 'SECOND_CYCLE'],
+          smsEnabled: false, offlineModeEnabled: true, aiAlertsEnabled: true, messageModeration: false,
+        })
+      })
       .finally(() => setPedLoading(false))
   }, [activeTab]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Activity logs load ───────────────────────────────────────────────────
   useEffect(() => {
     if (activeTab !== 5) return
+
+    const cacheKey = `admin:activities:${actPage}:${actSearch}`
+    getCachedData<any>(cacheKey).then(c => {
+      if (c?.data) setActData(c.data)
+    }).catch(() => {})
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
+
     setActLoading(true)
     const params = new URLSearchParams({ page: String(actPage), limit: '10' })
     if (actSearch) params.set('search', actSearch)
     fetchApi(`/api/v2/activities?${params}`, { credentials: 'include' })
       .then(r => r.json())
-      .then(d => setActData({ logs: d.logs ?? [], page: d.page ?? 1, pages: d.pages ?? 1, total: d.total ?? 0 }))
-      .catch(() => onToast('Erreur chargement activités', 'error'))
+      .then(d => {
+        const payload = { logs: d.logs ?? [], page: d.page ?? 1, pages: d.pages ?? 1, total: d.total ?? 0 }
+        setActData(payload)
+        putCachedData(cacheKey, payload).catch(() => {})
+      })
+      .catch((err) => {
+        if (!isNetworkErr(err)) onToast('Erreur chargement activités', 'error')
+      })
       .finally(() => setActLoading(false))
   }, [activeTab, actPage, actSearch]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Journal Sécurité IA (copilot + équivalents UI) — scopé à cet établissement ─────────────
   useEffect(() => {
     if (activeTab !== 5) return
+
+    const cacheKey = `admin:ai-security-log:${aiAuditOutcome || 'ALL'}`
+    getCachedData<any>(cacheKey).then(c => {
+      if (c?.data) setAiAuditData(c.data)
+    }).catch(() => {})
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
+
     setAiAuditLoading(true)
     const params = new URLSearchParams({ page: '1', limit: '20' })
     if (aiAuditOutcome) params.set('outcome', aiAuditOutcome)
     fetchApi(`/api/v2/security/audit-log?${params}`, { credentials: 'include' })
       .then(r => r.json())
-      .then(d => setAiAuditData({ entries: d.data ?? [], total: d.pagination?.total ?? 0 }))
-      .catch(() => onToast('Erreur chargement du journal Sécurité IA', 'error'))
+      .then(d => {
+        const payload = { entries: d.data ?? [], total: d.pagination?.total ?? 0 }
+        setAiAuditData(payload)
+        putCachedData(cacheKey, payload).catch(() => {})
+      })
+      .catch((err) => {
+        if (!isNetworkErr(err)) onToast('Erreur chargement du journal Sécurité IA', 'error')
+      })
       .finally(() => setAiAuditLoading(false))
   }, [activeTab, aiAuditOutcome]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Frise unifiée (V3.6) — 3 journaux fusionnés, triés chronologiquement ─────────
   useEffect(() => {
     if (activeTab !== 5) return
+
+    getCachedData<any[]>('admin:activities-timeline').then(c => {
+      if (c?.data) setTimelineData(c.data)
+    }).catch(() => {})
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
+
     setTimelineLoading(true)
     fetchApi('/api/v2/activities/timeline?limit=20', { credentials: 'include' })
       .then(r => r.json())
-      .then(d => setTimelineData(d.timeline ?? []))
-      .catch(() => onToast('Erreur chargement frise unifiée', 'error'))
+      .then(d => {
+        const list = d.timeline ?? []
+        setTimelineData(list)
+        putCachedData('admin:activities-timeline', list).catch(() => {})
+      })
+      .catch((err) => {
+        if (!isNetworkErr(err)) onToast('Erreur chargement frise unifiée', 'error')
+      })
       .finally(() => setTimelineLoading(false))
   }, [activeTab]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Email logs load ──────────────────────────────────────────────────────
   useEffect(() => {
     if (activeTab !== 6) return
+
+    const cacheKey = `admin:email-logs:${emlPage}:${emlSearch}:${emlStatus}`
+    getCachedData<any>(cacheKey).then(c => {
+      if (c?.data) setEmlData(c.data)
+    }).catch(() => {})
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
+
     setEmlLoading(true)
     const params = new URLSearchParams({ page: String(emlPage), limit: '15' })
     if (emlSearch) params.set('search', emlSearch)
     if (emlStatus) params.set('status', emlStatus)
     fetchApi(`/api/v2/email-logs?${params}`, { credentials: 'include' })
       .then(r => r.json())
-      .then(d => setEmlData({ logs: d.logs ?? [], pagination: d.pagination ?? { total: 0, page: 1, pages: 1, limit: 15 } }))
-      .catch(() => onToast('Erreur chargement emails', 'error'))
+      .then(d => {
+        const payload = { logs: d.logs ?? [], pagination: d.pagination ?? { total: 0, page: 1, pages: 1, limit: 15 } }
+        setEmlData(payload)
+        putCachedData(cacheKey, payload).catch(() => {})
+      })
+      .catch((err) => {
+        if (!isNetworkErr(err)) onToast('Erreur chargement emails', 'error')
+      })
       .finally(() => setEmlLoading(false))
   }, [activeTab, emlPage, emlSearch, emlStatus]) // eslint-disable-line react-hooks/exhaustive-deps
 

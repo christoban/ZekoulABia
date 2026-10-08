@@ -320,9 +320,9 @@ export default function AdminDashboard() {
           })
           .catch(() => {})
 
-        // 5. Emplois du temps des 10 premières classes
+        // 5. Emplois du temps et Matières des classes
         if (classesList.length > 0) {
-          const targetClasses = classesList.slice(0, 10)
+          const targetClasses = classesList.slice(0, 25)
           for (const c of targetClasses) {
             if (cancelled) return
             fetchApi(`/api/v2/timetables?classId=${c.id}`, { credentials: 'include' })
@@ -335,9 +335,149 @@ export default function AdminDashboard() {
                 }
               })
               .catch(() => {})
+
+            fetchApi(`/api/v2/subjects?classId=${c.id}`, { credentials: 'include' })
+              .then(r => r.json())
+              .then(d => {
+                if (d?.data) putCachedData(`admin:subjects:class:${c.id}`, d.data).catch(() => {})
+              })
+              .catch(() => {})
           }
         }
 
+        // 6. Événements académiques
+        fetchApi('/api/v2/academic-events', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => {
+            if (d?.data) putCachedData('admin:academic-events', d.data).catch(() => {})
+          })
+          .catch(() => {})
+
+        // 7. Matières & Départements
+        fetchApi('/api/v2/subjects', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => {
+            if (d?.data) putCachedData('admin:subjects', d.data).catch(() => {})
+          })
+          .catch(() => {})
+
+        fetchApi('/api/v2/departments', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => {
+            if (d?.data) putCachedData('admin:departments', d.data).catch(() => {})
+          })
+          .catch(() => {})
+
+        // 8. Conseils de classe & Onboarding
+        fetchApi('/api/v2/class-councils', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => {
+            if (d?.sessions) putCachedData('admin:class-councils', { sessions: d.sessions }).catch(() => {})
+          })
+          .catch(() => {})
+
+        fetchApi('/api/v2/eleve-onboarding', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => {
+            if (d?.data) putCachedData('admin:eleve-onboarding', d.data).catch(() => {})
+          })
+          .catch(() => {})
+
+        // 9. IA Santé scolaire
+        fetchApi('/api/v2/ai/students-health', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => {
+            if (d?.students) {
+              putCachedData('admin:ai-health:', { students: d.students, summary: d.summary ?? null }).catch(() => {})
+            }
+          })
+          .catch(() => {})
+
+        // 10. Pédagogie (programmes et alertes retard)
+        fetchApi('/api/v2/pedagogie/programmes', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => {
+            if (d?.data) putCachedData('admin:pedagogie:programmes', d.data).catch(() => {})
+          })
+          .catch(() => {})
+
+        fetchApi('/api/v2/pedagogie/alertes-retard', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => {
+            if (d?.data) putCachedData('admin:pedagogie:alertes', d.data).catch(() => {})
+          })
+          .catch(() => {})
+
+        // 11. Configuration établissement, Paramètres & Sauvegardes
+        fetchApi('/api/v2/school/me', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => {
+            if (d?.data) {
+              putCachedData('admin:school:me', d.data).catch(() => {})
+              const sid = d.data.id
+              if (sid) {
+                fetchApi(`/api/v2/schools/${sid}/notification-settings`, { credentials: 'include' })
+                  .then(nr => nr.json())
+                  .then(nd => { if (nd?.data) putCachedData('admin:notification-settings', nd.data).catch(() => {}) })
+                  .catch(() => {})
+
+                fetchApi(`/api/v2/schools/${sid}/security-settings`, { credentials: 'include' })
+                  .then(sr => sr.json())
+                  .then(sd => { if (sd?.data) putCachedData('admin:security-settings', sd.data).catch(() => {}) })
+                  .catch(() => {})
+              }
+            }
+          })
+          .catch(() => {})
+
+        fetchApi('/api/v2/school/last-backup', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => {
+            if (d?.data) putCachedData('admin:school:last-backup', d.data).catch(() => {})
+          })
+          .catch(() => {})
+
+        fetchApi('/api/v2/school-settings', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => {
+            if (d?.data) putCachedData('admin:school-settings', d.data).catch(() => {})
+          })
+          .catch(() => {})
+
+        fetchApi('/api/v2/corbeille', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => {
+            if (d?.data) putCachedData('admin:corbeille', d.data).catch(() => {})
+          })
+          .catch(() => {})
+
+        // 12. Messagerie conversations & messages de l'utilisateur courant
+        try {
+          const rawU = typeof window !== 'undefined' ? localStorage.getItem('zekoulabia_user') : null
+          const parsed = rawU ? JSON.parse(rawU) : null
+          const uid = parsed?.userId || parsed?.id || ''
+          fetchApi('/api/v2/messagerie/conversations')
+            .then(r => r.json())
+            .then(d => {
+              if (d?.data && Array.isArray(d.data)) {
+                if (uid) putCachedData(`messagerie:conversations:${uid}`, d.data).catch(() => {})
+                putCachedData('messagerie:conversations', d.data).catch(() => {})
+
+                // Précharger les messages des premières conversations pour lecture immédiate hors-ligne
+                for (const conv of d.data.slice(0, 5)) {
+                  fetchApi(`/api/v2/messagerie/conversations/${conv.id}/messages`)
+                    .then(mr => mr.json())
+                    .then(md => {
+                      if (md?.data && Array.isArray(md.data)) {
+                        putCachedData(`messagerie:messages:${conv.id}`, md.data).catch(() => {})
+                      }
+                    })
+                    .catch(() => {})
+                }
+              }
+            })
+            .catch(() => {})
+        } catch { /* ignorer */ }
       } catch { /* ignorer */ }
     }
 

@@ -16,6 +16,7 @@ import {
   Archive,
 } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 import EnrollmentCompletenessRing from '@/components/enrollment/EnrollmentCompletenessRing'
 import ValidationDrawer, { type DrawerDossier } from '@/components/enrollment/ValidationDrawer'
@@ -64,15 +65,31 @@ export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
   const [drawerDossier, setDrawerDossier] = useState<Dossier | null>(null)
 
   const chargerDossiers = useCallback(async () => {
-    setLoading(true)
+    const cacheKey = 'admin:eleve-onboarding'
+    const cached = await getCachedData<Dossier[]>(cacheKey).catch(() => null)
+    if (cached?.data && Array.isArray(cached.data)) {
+      setDossiers(cached.data)
+      setLoading(false)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setLoading(false)
+      return
+    }
+
     try {
+      if (!cached?.data) setLoading(true)
       const res = await fetchApi('/api/v2/eleve-onboarding', { credentials: 'include' })
       const data = await res.json()
       if (data.success && Array.isArray(data.data)) {
         setDossiers(data.data)
+        await putCachedData(cacheKey, data.data).catch(() => {})
       }
-    } catch {
-      onToast('Erreur lors du chargement des dossiers', 'error')
+    } catch (err: unknown) {
+      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || String((err as any)?.message || err).includes('fetch') || String((err as any)?.message || err).includes('Network')
+      if (!isNet && !cached?.data) {
+        onToast('Erreur lors du chargement des dossiers', 'error')
+      }
     } finally {
       setLoading(false)
     }

@@ -3,8 +3,10 @@ import { generateWithGroq } from '../../services/ai/GroqClient.ts';
 import { resolveLanguage, type Language } from '../../../domain/policies/LanguagePolicy';
 import { instructionLangue } from '../../services/ai/prompts/LanguagePrompt';
 import type { CompareRisquePredictionsUseCase } from '@application/ai/CompareRisquePredictionsUseCase';
+import type { CalculerIndiceSanteUseCase } from '@application/ai/CalculerIndiceSanteUseCase';
 import type { EnrollmentRepository } from '@domain/ports/repositories/EnrollmentRepository';
 import type { AIContextQueryRepository } from '@domain/ports/repositories/AIContextQueryRepository';
+import type { PrismaClient } from '@prisma/client';
 import { getClassIdActuelEleve } from '@application/shared/studentEnrollment';
 
 export class AIController {
@@ -12,6 +14,8 @@ export class AIController {
     private readonly contextRepo: AIContextQueryRepository,
     private readonly enrollmentRepository: EnrollmentRepository,
     private readonly compareRisquePredictions?: CompareRisquePredictionsUseCase,
+    private readonly calculerIndiceSante?: CalculerIndiceSanteUseCase,
+    private readonly prisma?: PrismaClient,
   ) {}
 
   /** Résout la langue de l'école courante (via son sous-système) pour les prompts Groq. */
@@ -135,7 +139,29 @@ export class AIController {
         return;
       }
 
-      const students = await this.contextRepo.findStudentsByClass(schoolId, classId);
+      let students = await this.contextRepo.findStudentsByClass(schoolId, classId);
+
+      // Recalcul à la demande (ex: clic sur "Actualiser les scores" sur le dashboard)
+      if (req.query.recalculate === 'true' && this.calculerIndiceSante && this.prisma) {
+        try {
+          const currentYear = await this.prisma.academicYear.findFirst({
+            where: { schoolId, isCurrent: true },
+            select: { id: true },
+          });
+          if (currentYear) {
+            for (const s of students) {
+              try {
+                await this.calculerIndiceSante.calculerScoreSeulement(s.userId, schoolId, currentYear.id);
+              } catch {
+                // Best-effort par élève
+              }
+            }
+            students = await this.contextRepo.findStudentsByClass(schoolId, classId);
+          }
+        } catch {
+          // Repli gracieux
+        }
+      }
 
       const categorized = students.map((s) => {
         const score = s.healthScore ?? 75;

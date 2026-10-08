@@ -76,7 +76,26 @@ export class GenererDeclarationStatistiqueMinesecUseCase {
     const supplement = await this.campaignRepository.trouverSupplement(cmd.schoolId);
     const school = await this.query.trouverEcole(cmd.schoolId);
 
-    const session = await decryptTemplate(template.filePath);
+    // Résolution de chemin multi-plateforme (sécurise la transition Windows -> Fedora Linux)
+    let effectiveFilePath = template.filePath;
+    if (!fs.existsSync(effectiveFilePath)) {
+      const fileName = path.basename(template.filePath.replace(/\\/g, '/')) || '1-DPPC-MINESEC-SECONDAIRE-2022.xls';
+      const localCandidate = path.resolve(process.cwd(), 'storage', 'statistical-templates', fileName);
+      if (fs.existsSync(localCandidate)) {
+        effectiveFilePath = localCandidate;
+      } else {
+        const rootCandidate = path.resolve(process.cwd(), 'storage', 'statistical-templates', '1-DPPC-MINESEC-SECONDAIRE-2022.xls');
+        if (fs.existsSync(rootCandidate)) {
+          effectiveFilePath = rootCandidate;
+        }
+      }
+    }
+
+    if (!fs.existsSync(effectiveFilePath)) {
+      throw new Error(`Fichier template MINESEC introuvable (${effectiveFilePath}). Veuillez contacter l'administrateur.`);
+    }
+
+    const session = await decryptTemplate(effectiveFilePath);
     try {
       return await this.remplirEtEcrire(session, cmd, template, supplement, school);
     } catch (err) {

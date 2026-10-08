@@ -147,18 +147,6 @@ export default function SectionOrgPedagogyHub({ onNav, onToast }: Props) {
        statusColor: 'var(--blue)',
 
     },
-    {
-      id: 'eleve-onboarding' as AdminSection,
-      title: 'Onboarding & Inscriptions',
-      desc: 'Dossiers d’admissions et matricules élèves — Piloté par le Secrétaire',
-      icon: UserPlus,
-       accentColor: 'var(--red)',
-       badgeBg: 'var(--red-light)',
-
-      statusBadge: 'Dossiers Admissions',
-       statusColor: 'var(--red)',
-
-    },
   ]
 
   return (

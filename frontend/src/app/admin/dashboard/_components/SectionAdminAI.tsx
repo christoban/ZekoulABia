@@ -5,6 +5,7 @@ import type { LucideIcon } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import OfflineEmptyState from '@/components/OfflineEmptyState'
 
 interface Props {
@@ -32,26 +33,33 @@ interface HealthData { students: StudentHealth[]; summary: HealthSummary | null 
 
 export default function SectionAdminAI({ onToast }: Props) {
   const t = useT('admin')
-  const [classes, setClasses]     = useState<ClassItem[]>([])
+  const [classes, setClasses]         = useState<ClassItem[]>([])
   const [classFilter, setClassFilter] = useState('')
   const [alertFilter, setAlertFilter] = useState('')
+  const [recalculating, setRecalculating] = useState(false)
 
   const fetchClasses = useCallback(async () => {
     try {
+      const cached = await getCachedData<ClassItem[]>('admin:classes')
+      if (cached?.data && cached.data.length > 0) setClasses(cached.data)
       const res = await fetchApi('/api/v2/classes', { credentials: 'include' })
       const d = await res.json()
-      if (res.ok) setClasses(d.data || [])
-    } catch { /* silencieux */ }
+      if (res.ok && Array.isArray(d.data)) {
+        setClasses(d.data)
+        await putCachedData('admin:classes', d.data)
+      }
+    } catch { /* silencieux en offline */ }
   }, [])
 
   const fetchHealthFn = useCallback(async (): Promise<HealthData> => {
     const params = new URLSearchParams()
     if (classFilter) params.set('classId', classFilter)
+    if (recalculating) params.set('recalculate', 'true')
     const res = await fetchApi(`/api/v2/ai/students-health?${params}`, { credentials: 'include' })
     const d = await res.json()
     if (!res.ok) throw new Error(d.message || t('common.error'))
     return { students: d.students || [], summary: d.summary || null }
-  }, [classFilter]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [classFilter, recalculating]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data, loading, error, fromCache, cachedAt, refetch } = useCachedFetch<HealthData>(`admin:ai-health:${classFilter}`, fetchHealthFn)
   const students = data?.students ?? []

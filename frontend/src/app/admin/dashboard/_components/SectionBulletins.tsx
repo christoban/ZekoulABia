@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { PartyPopper, Search, AlertTriangle, CheckCircle2, Loader2, FileText, BarChart3, Package, Upload, Eye } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { fetchApi } from '@/lib/fetchApi'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import AnimatedBackground from '@/components/AnimatedBackground'
 import DelegationSupervisionBanner from './DelegationSupervisionBanner'
 
@@ -58,9 +59,31 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
   }, [celebrate])
 
   useEffect(() => {
+    getCachedData<ClassItem[]>('admin:classes').then(async c => {
+      let list = c?.data
+      if (!list || !Array.isArray(list) || list.length === 0) {
+        const fallback = await getCachedData<ClassItem[]>('staff:classes').catch(() => null)
+        list = fallback?.data
+      }
+      if (list && Array.isArray(list)) {
+        setClasses(list)
+        setLoadingClasses(false)
+      }
+    }).catch(() => {})
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setLoadingClasses(false)
+      return
+    }
+
     fetchApi('/api/v2/classes', { credentials: 'include' })
       .then(r => r.json())
-      .then(d => setClasses(d.data || []))
+      .then(d => {
+        if (d?.data && Array.isArray(d.data)) {
+          setClasses(d.data)
+          putCachedData('admin:classes', d.data).catch(() => {})
+        }
+      })
       .catch(() => {})
       .finally(() => setLoadingClasses(false))
   }, [])
@@ -79,6 +102,23 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
     setLoadingCheck(true)
     setCheck(null)
     setReportCards([])
+
+    const checkKey = `admin:report-cards:check:${classId}`
+    const rcardsKey = `admin:report-cards:${classId}`
+
+    const [cachedCheck, cachedRC] = await Promise.all([
+      getCachedData<CheckResult>(checkKey).catch(() => null),
+      getCachedData<ReportCardItem[]>(rcardsKey).catch(() => null),
+    ])
+
+    if (cachedCheck?.data) setCheck(cachedCheck.data)
+    if (cachedRC?.data) setReportCards(cachedRC.data)
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setLoadingCheck(false)
+      return
+    }
+
     try {
       const [checkRes, rcRes] = await Promise.all([
         fetchApi(`/api/v2/report-cards/check/${classId}`, { credentials: 'include' }),
@@ -87,13 +127,19 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
       if (checkRes.ok) {
         const cd = await checkRes.json()
         setCheck(cd)
+        putCachedData(checkKey, cd).catch(() => {})
       }
       if (rcRes.ok) {
         const rd = await rcRes.json()
-        setReportCards(rd.reportCards ?? rd.data ?? [])
+        const cards = rd.reportCards ?? rd.data ?? []
+        setReportCards(cards)
+        putCachedData(rcardsKey, cards).catch(() => {})
       }
-    } catch {
-      onToast('Erreur de chargement', 'error')
+    } catch (err: unknown) {
+      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || String((err as any)?.message || err).includes('fetch') || String((err as any)?.message || err).includes('Network')
+      if (!isNet && !cachedCheck?.data && !cachedRC?.data) {
+        onToast('Erreur de chargement', 'error')
+      }
     } finally {
       setLoadingCheck(false)
     }

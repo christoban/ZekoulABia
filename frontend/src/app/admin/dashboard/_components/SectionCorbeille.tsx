@@ -4,7 +4,6 @@ import { Trash2, RotateCcw, User, School, BookOpen, Clock } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
-import OfflineEmptyState from '@/components/OfflineEmptyState'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
@@ -44,12 +43,13 @@ export default function SectionCorbeille({ onToast }: Props) {
 
   const { data, loading, error, refetch } = useCachedFetch<CorbeilleData>('admin:corbeille', fetchFn)
 
-  if (error === 'OFFLINE_NO_CACHE') return <OfflineEmptyState />
+  // En mode offline sans données préalables, on affiche la corbeille vide par défaut plutôt qu'un écran bloquant
+  const safeData = data ?? { utilisateurs: [], classes: [], matieres: [] }
 
   const elements: ElementCorbeille[] = [
-    ...(data?.utilisateurs ?? []),
-    ...(data?.classes ?? []),
-    ...(data?.matieres ?? []),
+    ...(safeData.utilisateurs ?? []),
+    ...(safeData.classes ?? []),
+    ...(safeData.matieres ?? []),
   ].sort((a, b) => new Date(b.deletedAt).getTime() - new Date(a.deletedAt).getTime())
 
   const restaurer = async (el: ElementCorbeille) => {

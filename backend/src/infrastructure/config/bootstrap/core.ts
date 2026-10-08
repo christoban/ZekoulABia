@@ -96,7 +96,7 @@ export function registerCoreRoutes(app: Application, prismaParam: typeof prisma 
   const dashboardController  = new DashboardController(new PrismaDashboardQueryRepository(p), enrollmentRepository);
   const emailLogController   = new EmailLogController(new PrismaEmailLogQueryRepository(p));
   const searchController     = new SearchController(new PrismaSearchQueryRepository(p));
-  const aiController         = new AIController(new PrismaAIContextQueryRepository(p), enrollmentRepository, c.prediction.comparerRisque);
+  const aiController         = new AIController(new PrismaAIContextQueryRepository(p), enrollmentRepository, c.prediction.comparerRisque, c.ai.calculerIndiceSante, p);
   const studentFollowUpRepo  = new PrismaStudentFollowUpRepository(p);
   const suiviRBACRepository    = new PrismaSuiviRBACRepository(p);
   const studentFollowUpController = new StudentFollowUpController(

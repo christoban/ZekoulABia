@@ -28,8 +28,9 @@ export default function Messagerie() {
       if (typeof window !== 'undefined') {
         const raw = localStorage.getItem('zekoulabia_user')
         if (raw) {
-          const parsed = JSON.parse(raw) as { userId: string; role: string }
-          return { id: parsed.userId, role: parsed.role }
+          const parsed = JSON.parse(raw) as { userId?: string; id?: string; role: string }
+          const uid = parsed.userId || parsed.id || ''
+          return { id: uid, role: parsed.role }
         }
       }
     } catch { /* ignore */ }
@@ -42,20 +43,21 @@ export default function Messagerie() {
   const [nouveauMessage, setNouveauMessage] = useState(false)
 
   useEffect(() => {
-    if (!currentUser) {
+    if (!currentUser?.id) {
       try {
         const raw = localStorage.getItem('zekoulabia_user')
         if (raw) {
-          const parsed = JSON.parse(raw) as { userId: string; role: string }
-          setCurrentUser({ id: parsed.userId, role: parsed.role })
+          const parsed = JSON.parse(raw) as { userId?: string; id?: string; role: string }
+          const uid = parsed.userId || parsed.id || ''
+          setCurrentUser({ id: uid, role: parsed.role })
         }
       } catch { /* silencieux */ }
     }
   }, [currentUser])
 
   const chargerConversations = useCallback(async (silencieux = false) => {
-    if (!currentUser) return
-    const cleCache = `messagerie:conversations:${currentUser.id}`
+    const currentId = currentUser?.id || ''
+    const cleCache = currentId ? `messagerie:conversations:${currentId}` : 'messagerie:conversations'
 
     // Si on n'a encore aucune conversation en mémoire et que ce n'est pas silencieux, activer le loading
     if (!silencieux && cachedConversationsStore === null) {
@@ -64,13 +66,21 @@ export default function Messagerie() {
 
     try {
       // 1. Lire d'abord IndexedDB en fallback ultra-rapide si la mémoire est vide
-      if (!cachedConversationsStore) {
-        const cache = await getCachedData<ConversationSummary[]>(cleCache)
+      if (!cachedConversationsStore || cachedConversationsStore.length === 0) {
+        let cache = await getCachedData<ConversationSummary[]>(cleCache)
+        if (!cache?.data && cleCache !== 'messagerie:conversations') {
+          cache = await getCachedData<ConversationSummary[]>('messagerie:conversations')
+        }
         if (cache?.data && cache.data.length > 0) {
           cachedConversationsStore = cache.data
           setConversations(cache.data)
           setLoading(false)
         }
+      }
+
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        setLoading(false)
+        return
       }
 
       // 2. Fetch réseau en arrière-plan (Stale-While-Revalidate)
@@ -79,11 +89,15 @@ export default function Messagerie() {
       if (payload.success && Array.isArray(payload.data)) {
         cachedConversationsStore = payload.data
         setConversations(payload.data)
-        await putCachedData(cleCache, payload.data)
+        await putCachedData(cleCache, payload.data).catch(() => {})
+        await putCachedData('messagerie:conversations', payload.data).catch(() => {})
       }
     } catch {
       // Hors-ligne ou serveur injoignable : on s'assure d'avoir au moins le cache IndexedDB
-      const cache = await getCachedData<ConversationSummary[]>(cleCache)
+      let cache = await getCachedData<ConversationSummary[]>(cleCache).catch(() => null)
+      if (!cache?.data) {
+        cache = await getCachedData<ConversationSummary[]>('messagerie:conversations').catch(() => null)
+      }
       if (cache?.data) {
         cachedConversationsStore = cache.data
         setConversations(cache.data)
@@ -94,10 +108,8 @@ export default function Messagerie() {
   }, [currentUser])
 
   useEffect(() => {
-    if (currentUser) {
-      // Si on a déjà les conversations en mémoire, rafraîchir en tâche de fond 100% silencieuse
-      chargerConversations(cachedConversationsStore !== null)
-    }
+    // Si on a déjà les conversations en mémoire, rafraîchir en tâche de fond silencieuse
+    chargerConversations(cachedConversationsStore !== null)
   }, [currentUser, chargerConversations])
 
   // Ouvre automatiquement la conversation demandée lors d'un clic sur une notification (in-app ou out-app)

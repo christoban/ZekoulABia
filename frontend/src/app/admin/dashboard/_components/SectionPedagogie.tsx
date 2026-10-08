@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
 import { Circle, TrendingUp, BookOpen, CheckCircle2, Inbox, Check, WifiOff } from 'lucide-react'
@@ -72,29 +73,75 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
   const [loadingProg, setLoadingProg] = useState(false)
 
   useEffect(() => {
+    // 1. Lire d'abord le cache local Dexie
+    getCachedData<Subject[]>('admin:subjects').then(c => {
+      if (c?.data && Array.isArray(c.data)) setSubjects(c.data)
+    }).catch(() => {})
+
+    getCachedData<Classe[]>('admin:classes').then(async c => {
+      let list = c?.data
+      if (!list || !Array.isArray(list) || list.length === 0) {
+        const fallback = await getCachedData<Classe[]>('staff:classes').catch(() => null)
+        list = fallback?.data
+      }
+      if (list && Array.isArray(list)) setClasses(list)
+    }).catch(() => {})
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
+
     Promise.all([
       fetchApi('/api/v2/subjects', { credentials: 'include' }).then(r => r.json()),
       fetchApi('/api/v2/classes', { credentials: 'include' }).then(r => r.json()),
     ]).then(([subs, cls]) => {
-      if (subs.success) setSubjects(subs.data ?? [])
-      if (cls.success) setClasses(cls.data ?? [])
+      if (subs.success && Array.isArray(subs.data)) {
+        setSubjects(subs.data)
+        putCachedData('admin:subjects', subs.data).catch(() => {})
+      }
+      if (cls.success && Array.isArray(cls.data)) {
+        setClasses(cls.data)
+        putCachedData('admin:classes', cls.data).catch(() => {})
+      }
     }).catch(() => {})
   }, [])
 
-  const loadProgrammes = () => {
+  const loadProgrammes = async () => {
+    const cached = await getCachedData<Programme[]>('admin:pedagogie:programmes').catch(() => null)
+    if (cached?.data && Array.isArray(cached.data)) {
+      setProgrammes(cached.data)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
+
     setLoading(true)
     fetchApi('/api/v2/pedagogie/programmes', { credentials: 'include' })
       .then(r => r.json())
-      .then(d => { if (d.success) setProgrammes(d.data ?? []) })
+      .then(d => {
+        if (d.success && Array.isArray(d.data)) {
+          setProgrammes(d.data)
+          putCachedData('admin:pedagogie:programmes', d.data).catch(() => {})
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
   }
 
-  const loadAlertes = () => {
+  const loadAlertes = async () => {
+    const cached = await getCachedData<Alerte[]>('admin:pedagogie:alertes').catch(() => null)
+    if (cached?.data && Array.isArray(cached.data)) {
+      setAlertes(cached.data)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
+
     setLoading(true)
     fetchApi('/api/v2/pedagogie/alertes-retard', { credentials: 'include' })
       .then(r => r.json())
-      .then(d => { if (d.success) setAlertes(d.data ?? []) })
+      .then(d => {
+        if (d.success && Array.isArray(d.data)) {
+          setAlertes(d.data)
+          putCachedData('admin:pedagogie:alertes', d.data).catch(() => {})
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
   }
@@ -174,12 +221,29 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
     else onToast(d.message ?? 'Erreur', 'error')
   }
 
-  const loadProgression = () => {
+  const loadProgression = async () => {
     if (!progClassId || !progSubjectId) return
+    const cacheKey = `admin:pedagogie:progression:${progClassId}:${progSubjectId}`
+    const cached = await getCachedData<ProgressionData>(cacheKey).catch(() => null)
+    if (cached?.data) {
+      setProgressionData(cached.data)
+      setLoadingProg(false)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setLoadingProg(false)
+      return
+    }
+
     setLoadingProg(true)
     fetchApi(`/api/v2/pedagogie/progression?classId=${progClassId}&subjectId=${progSubjectId}`, { credentials: 'include' })
       .then(r => r.json())
-      .then(d => { if (d.success) setProgressionData(d.data) })
+      .then(d => {
+        if (d.success) {
+          setProgressionData(d.data)
+          putCachedData(cacheKey, d.data).catch(() => {})
+        }
+      })
       .catch(() => {})
       .finally(() => setLoadingProg(false))
   }
