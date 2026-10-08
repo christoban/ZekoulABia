@@ -27,21 +27,29 @@ interface NavGroup {
   items: NavItem[]
 }
 
+// ==========================================================================
+// CONFIGURATION DU MENU DE NAVIGATION (BARRE LATÉRALE ENSEIGNANT)
+// Pour ajouter, retirer ou modifier un onglet du menu enseignant :
+// - Modifiez les groupes ci-dessous ('classes', 'grades', 'attendance', etc.)
+// - 'id'   : identifiant de l'écran (TeacherSection dans '../_types.ts')
+// - 'icon' : icône importée de lucide-react
+// - 'label': titre affiché dans le menu
+// ==========================================================================
 function buildNav(user: UserInfo | null | undefined, pendingGrades: number | undefined, messagesNonLus: number, tnav: ReturnType<typeof useT>, tcommon: ReturnType<typeof useT>): NavGroup[] {
   const groups: NavGroup[] = [
     {
       items: [{ id: 'dashboard', icon: LayoutDashboard, label: tnav('sidebar.dashboard') }],
     },
-{
-        label: tnav('group.academic'),
-        items: [
-          { id: 'classes',    icon: School, label: tnav('sidebar.myClasses') },
-          { id: 'attendance', icon: ClipboardCheck, label: tnav('sidebar.attendance') },
-          { id: 'grades',     icon: FileText, label: tnav('sidebar.grades'), ...(pendingGrades ? { badge: String(pendingGrades), badgeColor: 'red' as const } : {}) },
-          { id: 'timetable',  icon: Calendar, label: tnav('sidebar.timetable') },
-          { id: 'correction-anonyme', icon: ScanSearch, label: tnav('sidebar.correctionAnonyme') },
-        ],
-      },
+    {
+      label: tnav('group.academic'),
+      items: [
+        { id: 'classes', icon: School, label: tnav('sidebar.myClasses') },
+        { id: 'attendance', icon: ClipboardCheck, label: tnav('sidebar.attendance') },
+        { id: 'grades', icon: FileText, label: tnav('sidebar.grades'), ...(pendingGrades ? { badge: String(pendingGrades), badgeColor: 'red' as const } : {}) },
+        { id: 'timetable', icon: Calendar, label: tnav('sidebar.timetable') },
+        { id: 'correction-anonyme', icon: ScanSearch, label: tnav('sidebar.correctionAnonyme') },
+      ],
+    },
     {
       label: tnav('group.pedagogie'),
       items: [
@@ -75,8 +83,8 @@ function buildNav(user: UserInfo | null | undefined, pendingGrades: number | und
     groups.push({
       label: tnav('group.pp'),
       items: [
-        { id: 'pp-classe',        icon: ClipboardList, label: classLabel },
-        { id: 'pp-appreciations', icon: PenLine,  label: tnav('sidebar.appreciations') },
+        { id: 'pp-classe', icon: ClipboardList, label: classLabel },
+        { id: 'pp-appreciations', icon: PenLine, label: tnav('sidebar.appreciations') },
       ],
     })
   }
@@ -93,7 +101,7 @@ function buildNav(user: UserInfo | null | undefined, pendingGrades: number | und
 }
 
 const BADGE_STYLES = {
-  red:   'bg-red-500/25 text-red-300',
+  red: 'bg-red-500/25 text-red-300',
   green: 'bg-success/20 text-success',
   amber: 'bg-amber-500/20 text-amber-300',
 }
@@ -323,7 +331,7 @@ export default function TeacherSidebar({
           userName={userDisplayName}
           onClose={() => setAvatarModalOpen(false)}
           onSuccess={(url) => setCurrentAvatar(url)}
-          onToast={() => {}}
+          onToast={() => { }}
         />
       )}
     </>

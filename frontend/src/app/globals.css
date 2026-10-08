@@ -11,177 +11,182 @@
 
 /* ── DESIGN TOKENS ZEKOULABIA ── */
 :root {
-  /* ── NOUVELLE PALETTE CACAO + TERRACOTTA + OR ── */
+  /* ==========================================================================
+     PALETTE DU THÈME CLAIR (Actif par défaut sur l'ensemble de l'application)
+     Si tu veux modifier l'apparence visuelle, les couleurs ou les dimensions
+     globales du logiciel, modifie les valeurs hexadécimales ci-dessous.
+     ========================================================================== */
 
-  /* Backgrounds */
-  --bg: #FBF7F2;
-  --bg2: #F4ECE3;
-  --surface: #FFFFFF;
-  --surface-2: #F4ECE3;
+  /* ── 1. ARRIÈRE-PLANS & SURFACES ── */
+  --bg: #FBF7F2;              /* Fond général de l'écran : couleur de toile de fond derrière toutes les pages */
+  --bg2: #F4ECE3;             /* Fond secondaire : utilisé pour les barres d'outils, filtres, en-têtes et lignes alternées */
+  --surface: #FFFFFF;         /* Fond des cartes (cards), fenêtres modales, formulaires et conteneurs principaux */
+  --surface-2: #F4ECE3;       /* Fond des sous-cartes, blocs de détails et zones imbriquées */
 
-  /* Sidebar */
-  --sidebar-bg: #3A2419;
-  --sidebar-hover: #4A2D20;
-  --sidebar-border: #5B392A;
-  --sidebar-text: #F5E9DF;
-  --sidebar-text-muted: #CDB7AA;
-  --sidebar: var(--sidebar-bg);
-  --sidebar2: var(--sidebar-hover);
-  --sidebar3: var(--sidebar-border);
-  --sidebar-active: #E3B04B;
-  --sidebar-width: 200px;
+  /* ── 2. BARRE LATÉRALE DE NAVIGATION (SIDEBAR GAUCHE) ── */
+  --sidebar-bg: #3A2419;          /* Fond de la barre latérale gauche : change ici si tu veux modifier la couleur du menu principal */
+  --sidebar-hover: #4A2D20;       /* Couleur de fond d'un onglet du menu lorsque la souris passe dessus (effet hover) */
+  --sidebar-border: #5B392A;      /* Bordure droite de la barre latérale et lignes de séparation internes du menu */
+  --sidebar-text: #F5E9DF;        /* Couleur d'écriture des libellés et noms d'onglets du menu */
+  --sidebar-text-muted: #CDB7AA;  /* Couleur des icônes inactives, sous-titres et chevrons du menu */
+  --sidebar: var(--sidebar-bg);   /* Alias pratique pointant vers le fond de la barre latérale */
+  --sidebar2: var(--sidebar-hover);/* Alias pratique pointant vers le survol de la barre latérale */
+  --sidebar3: var(--sidebar-border);/* Alias pratique pointant vers la bordure de la barre latérale */
+  --sidebar-active: #E3B04B;      /* Couleur d'accentuation dorée de l'onglet actuellement sélectionné / ouvert */
+  --sidebar-width: 200px;         /* Largeur de la barre latérale sur écran d'ordinateur (desktop) */
 
-  /* Borders */
-  --border: #E5D8CC;
-  --border2: #DED3C8;
+  /* ── 3. BORDURES & LIGNES DE SÉPARATION ── */
+  --border: #E5D8CC;          /* Bordure fine autour des cartes, des tableaux de données, modales et champs de saisie */
+  --border2: #DED3C8;         /* Bordure secondaire plus marquée pour délimiter les blocs contrastés */
 
-  /* Text */
-  --text: #2A1A15;
-  --text2: #76645D;
-  --text3: #9E8C84;
-  --text-muted: var(--text2);
+  /* ── 4. COULEURS DE TYPOGRAPHIE (TEXTES) ── */
+  --text: #2A1A15;            /* Texte principal : titres h1/h2, données importantes, valeurs chiffrées, paragraphes */
+  --text2: #76645D;           /* Texte secondaire : sous-titres, libellés de champs (labels), descriptions et aides */
+  --text3: #9E8C84;           /* Texte tertiaire : textes d'exemple dans les champs vides (placeholders), dates discrètes */
+  --text-muted: var(--text2); /* Alias pointant vers la couleur de texte secondaire estompée */
 
-  /* Action */
-  --primary: #B4532A;
-  --primary-hover: #963F20;
-  --primary-light: rgba(180, 83, 42, 0.12);
-  --accent: #E3B04B;
+  /* ── 5. COULEUR DE MARQUE & BOUTONS D'ACTION (PRIMARY & ACCENT) ── */
+  --primary: #B4532A;                      /* Couleur principale de la marque : boutons 'Enregistrer', 'Créer', liens et onglets actifs */
+  --primary-hover: #963F20;                /* Couleur des boutons principaux lorsque la souris passe dessus */
+  --primary-light: rgba(180, 83, 42, 0.12); /* Voile transparent léger de la couleur principale (fond des badges actifs et sélections) */
+  --accent: #E3B04B;                       /* Couleur d'accentuation dorée : distinctions, badges de réussite, étoiles de notation */
 
-  /* Density tokens - Ultra dense */
-  --text-xs: 9px;
-  --text-sm: 10px;
-  --text-md: 11px;
-  --text-base: 11px;
-  --text-lg: 12px;
-  --text-xl: 13px;
-  --text-2xl: 14px;
-  --text-3xl: 16px;
-  --text-4xl: 18px;
-  --text-hero: 24px;
+  /* ── 6. ÉCHELLE TYPOGRAPHIQUE (TAILLES DE POLICE) ── */
+  --text-xs: 9px;             /* Très petite taille : micro-badges, indices et mentions légales */
+  --text-sm: 10px;            /* Petite taille : dates, badges de statut, compteurs secondaires */
+  --text-md: 11px;            /* Taille compacte standard */
+  --text-base: 11px;          /* Taille de base de l'application pour la lecture courante */
+  --text-lg: 12px;            /* Titres de sous-cartes, onglets et boutons d'action */
+  --text-xl: 13px;            /* Titres de sections et en-têtes de modales */
+  --text-2xl: 14px;           /* Titres de niveau 2 (titres de rubriques principales) */
+  --text-3xl: 16px;           /* Grands titres de pages */
+  --text-4xl: 18px;           /* Chiffres clés des indicateurs et statistiques majeures */
+  --text-hero: 24px;          /* Titre monumental (écrans d'accueil ou montants financiers totaux) */
 
-  --space-1: 3px;
-  --space-2: 6px;
-  --space-3: 9px;
-  --space-4: 12px;
-  --space-5: 16px;
-  --space-6: 18px;
+  /* ── 7. ESPACEMENTS (MARGES ET PADDINGS) ── */
+  --space-1: 3px;             /* Micro-espacement : écart serré entre icône et texte proche */
+  --space-2: 6px;             /* Petit espacement : rembourrage interne des badges et puces */
+  --space-3: 9px;             /* Espacement intermédiaire */
+  --space-4: 12px;            /* Espacement standard : marges entre boutons et champs de saisie */
+  --space-5: 16px;            /* Espacement moyen : marges intérieures des cartes (cards) */
+  --space-6: 18px;            /* Grand espacement : séparation entre grandes sections */
 
-  --topbar-height: 40px;
-  --radius-card: 7px;
-  --radius-btn: 6px;
+  /* ── 8. DIMENSIONS & RAYONS D'ARRONDI ── */
+  --topbar-height: 40px;      /* Hauteur de la barre d'en-tête supérieure fixée en haut de l'écran */
+  --radius-card: 7px;         /* Arrondi des angles des cartes, conteneurs et tableaux */
+  --radius-btn: 6px;          /* Arrondi des angles des boutons, sélecteurs et champs de saisie */
 
-  /* Semantic colors — le vert reste réservé au succès/statut positif */
-  --success: #2F8F5B;
-  --green: var(--success);
-  --green2: #276749;
-  --green-light: #D1E7DD;
+  /* ── 9. COULEURS SÉMANTIQUES (STATUTS & ÉTATS MÉTIER) ── */
+  --success: #2F8F5B;         /* Vert succès : paiements régularisés, cours validés, assiduité parfaite, sauvegardes OK */
+  --green: var(--success);    /* Alias pour la couleur verte */
+  --green2: #276749;          /* Vert foncé pour texte bien lisible sur fond blanc ou clair */
+  --green-light: #D1E7DD;     /* Fond vert pastel très clair pour les badges de statut réussi */
 
-  --danger: #D9481F;
-  --red: var(--danger);
-  --red-light: #FCE2D9;
+  --danger: #D9481F;          /* Rouge alerte / danger : impayés, absences injustifiées, suppressions critiques, erreurs */
+  --red: var(--danger);       /* Alias pour la couleur rouge */
+  --red-light: #FCE2D9;       /* Fond rouge pastel très clair pour badges d'alerte et bannières de risque */
 
-  --blue: #1d4ed8;
-  --blue-light: #dbeafe;
+  --blue: #1d4ed8;            /* Bleu information : liens de documentation, dossiers réguliers, profils scolaires */
+  --blue-light: #dbeafe;      /* Fond bleu pastel pour badges d'information neutre */
 
-  --amber: #d97706;
-  --amber-light: #fef3c7;
+  --amber: #d97706;           /* Ambre / Jaune attention : paiements partiels, retards, dossiers en attente de validation */
+  --amber-light: #fef3c7;     /* Fond ambre pastel pour badges d'avertissement */
 
-  --purple: #7c3aed;
-  --purple-light: #ede9fe;
+  --purple: #7c3aed;          /* Violet : fonctionnalités intelligentes, prédictions de risques scolaires, orientations */
+  --purple-light: #ede9fe;    /* Fond violet pastel pour badges des modules spécialisés */
 
-  --orange: #ea580c;
-  --orange-light: #ffedd5;
+  --orange: #ea580c;          /* Orange d'attention : statuts intermédiaires et notifications d'action requise */
+  --orange-light: #ffedd5;    /* Fond orange pastel pour alertes secondaires */
 
-  /* Babillard Officiel (Thème clair Cacao + Terracotta + Or) */
-  --board-bg: #F4ECE3;
-  --board-texture: radial-gradient(#E5D8CC 1.2px, transparent 1.2px);
-  --cork-panel-bg: #EFE4D6;
-  --cork-panel-border: #8D5B3A;
-  --cork-panel-dots: #D6C2A8;
-  --cork-panel-title: #2A1A15;
-  --cork-panel-text: #76645D;
-  --paper: #FFFFFF;
-  --paper-edge: #E5D8CC;
-  --paper-text: #2A1A15;
-  --paper-text-muted: #5C4B44;
-  --paper-text-sub: #76645D;
-  --paper-footer-bg: #FBF7F2;
-  --paper-footer-border: #F0E6DC;
-  --paper-shadow: 0 4px 12px rgba(45, 35, 20, 0.08), 0 1px 3px rgba(45, 35, 20, 0.06);
-  --paper-shadow-hover: 0 8px 24px rgba(45, 35, 20, 0.14), 0 2px 6px rgba(45, 35, 20, 0.08);
-  --pin-red: #D9481F;
-  --pin-orange: #EA580C;
-  --pin-green: #2F8F5B;
+  /* ── 10. BABILLARD SCOLAIRE (PANNEAU D'AFFICHAGE OFFICIEL DES NOTES & CIRCULAIRES) ── */
+  --board-bg: #F4ECE3;              /* Fond général de la page du tableau d'affichage */
+  --board-texture: radial-gradient(#E5D8CC 1.2px, transparent 1.2px); /* Texture pointillée imitant le mur de fond */
+  --cork-panel-bg: #EFE4D6;         /* Fond imitation panneau de liège où sont punaisées les circulaires */
+  --cork-panel-border: #8D5B3A;     /* Bordure effet cadre en bois autour du tableau d'affichage */
+  --cork-panel-dots: #D6C2A8;       /* Petits grains de texture du liège */
+  --cork-panel-title: #2A1A15;      /* Couleur d'écriture du grand titre du babillard */
+  --cork-panel-text: #76645D;       /* Couleur d'écriture des textes descriptifs du babillard */
+  --paper: #FFFFFF;                 /* Fond blanc d'une note de service ou circulaire punaisée */
+  --paper-edge: #E5D8CC;            /* Bordure d'une feuille de circulaire */
+  --paper-text: #2A1A15;            /* Texte principal d'une note affichée */
+  --paper-text-muted: #5C4B44;      /* Métadonnées de la note (date d'affichage, auteur, classe concernée) */
+  --paper-text-sub: #76645D;        /* Sous-titres et signatures des circulaires */
+  --paper-footer-bg: #FBF7F2;       /* Fond du bas d'une circulaire punaisée */
+  --paper-footer-border: #F0E6DC;   /* Filet de séparation avant les boutons du bas de note */
+  --paper-shadow: 0 4px 12px rgba(45, 35, 20, 0.08), 0 1px 3px rgba(45, 35, 20, 0.06); /* Ombre portée sous la feuille punaisée */
+  --paper-shadow-hover: 0 8px 24px rgba(45, 35, 20, 0.14), 0 2px 6px rgba(45, 35, 20, 0.08); /* Ombre agrandie lors du survol de la note */
+  --pin-red: #D9481F;               /* Punaise rouge pour les notes urgentes */
+  --pin-orange: #EA580C;            /* Punaise orange pour les notes importantes */
+  --pin-green: #2F8F5B;             /* Punaise verte pour les notes d'information générale */
 
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(40,30,15,0.06);
-  --shadow-md: 0 2px 8px rgba(0,0,0,0.06);
-  --shadow-lg: 0 4px 16px rgba(0,0,0,0.08);
+  /* ── 11. OMBRES PORTÉES (EFFET DE RELIEF & PROFONDEUR) ── */
+  --shadow-sm: 0 1px 3px rgba(40, 30, 15, 0.06); /* Ombre légère pour boutons et petits badges */
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06);     /* Ombre moyenne pour cartes et menus déroulants */
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.08);    /* Ombre prononcée pour fenêtres modales et panneaux latéraux */
 }
 
-/* ── DARK THEME PALETTE (Cacao profond + Terracotta + Or) ── */
+/* ==========================================================================
+   PALETTE DU THÈME SOMBRE (.dark)
+   S'active automatiquement quand l'utilisateur bascule en mode nuit.
+   Chaque variable ci-dessous remplace sa version claire correspondante.
+   ========================================================================== */
 .dark {
-  /* ── DARK THEME CACAO PROFOND + TERRACOTTA + OR ── */
+  /* ── 1. ARRIÈRE-PLANS & SURFACES EN MODE SOMBRE ── */
+  --bg: #16100C;              /* Fond général en mode nuit (ton marron-nuit très sombre et reposant pour les yeux) */
+  --bg2: #2B1D17;             /* Fond secondaire sombre pour tableaux et barres de filtres */
+  --surface: #211612;         /* Fond sombre des cartes (cards), modales et boîtes de dialogue */
+  --surface-2: #2B1D17;       /* Fond sombre des sous-cartes et sections imbriquées */
 
-  /* Backgrounds */
-  --bg: #16100C;
-  --bg2: #2B1D17;
-  --surface: #211612;
-  --surface-2: #2B1D17;
-
-  /* Sidebar */
-  --sidebar-bg: #3A2419;
-  --sidebar-hover: #4A2D20;
-  --sidebar-border: #5B392A;
-  --sidebar-text: #F5E9DF;
-  --sidebar-text-muted: #CDB7AA;
+  /* ── 2. BARRE LATÉRALE EN MODE SOMBRE ── */
+  --sidebar-bg: #3A2419;          /* Fond de la barre latérale gauche en mode nuit */
+  --sidebar-hover: #4A2D20;       /* Fond d'un onglet au survol de la souris en mode nuit */
+  --sidebar-border: #5B392A;      /* Bordure droite et séparateurs de la barre latérale en mode nuit */
+  --sidebar-text: #F5E9DF;        /* Couleur d'écriture des éléments du menu en mode nuit */
+  --sidebar-text-muted: #CDB7AA;  /* Couleur des textes et icônes secondaires du menu en mode nuit */
   --sidebar: var(--sidebar-bg);
   --sidebar2: var(--sidebar-hover);
   --sidebar3: var(--sidebar-border);
-  --sidebar-active: #E3B04B;
+  --sidebar-active: #E3B04B;      /* Accent doré de l'onglet actif en mode nuit */
 
-  /* Borders */
-  --border: #443027;
-  --border2: #553C31;
+  /* ── 3. BORDURES EN MODE SOMBRE ── */
+  --border: #443027;          /* Bordures fines des cartes et tableaux en mode nuit */
+  --border2: #553C31;         /* Bordures secondaires plus marquées en mode nuit */
 
-  /* Text */
-  --text: #F3E9E1;
-  --text2: #B8A49B;
-  --text3: #8D7970;
+  /* ── 4. COULEURS DE TEXTE EN MODE SOMBRE ── */
+  --text: #F3E9E1;            /* Texte principal clair, à fort contraste sur fond sombre */
+  --text2: #B8A49B;           /* Texte secondaire estompé (descriptions, libellés) */
+  --text3: #8D7970;           /* Texte tertiaire discret (champs vides, dates secondaires) */
   --text-muted: var(--text2);
 
-  /* Action */
-  --primary: #B4532A;
-  --primary-hover: #C76335;
-  --primary-light: rgba(180, 83, 42, 0.18);
-  --accent: #E3B04B;
+  /* ── 5. COULEUR DE MARQUE & BOUTONS D'ACTION EN MODE SOMBRE ── */
+  --primary: #B4532A;                      /* Couleur d'action principale en mode nuit */
+  --primary-hover: #C76335;                /* Couleur des boutons principaux au survol en mode nuit */
+  --primary-light: rgba(180, 83, 42, 0.18); /* Fond transparent pour sélections actives en mode nuit */
+  --accent: #E3B04B;                       /* Accent doré en mode nuit */
 
-  /* Semantic colors */
-  --success: #4BA66F;
+  /* ── 6. COULEURS SÉMANTIQUES ADAPTÉES AU MODE SOMBRE ── */
+  --success: #4BA66F;         /* Vert succès ajusté pour ressortir parfaitement sur fond noir/marron sombre */
   --green: var(--success);
   --green2: #22c55e;
-  --green-light: #14532d;
+  --green-light: #14532d;     /* Fond vert foncé pour badges de succès en mode nuit */
 
-  --danger: #E05A32;
+  --danger: #E05A32;          /* Rouge alerte ajusté pour être visible sans éblouir en mode nuit */
   --red: var(--danger);
-  --red-light: #450a0a;
+  --red-light: #450a0a;       /* Fond rouge très foncé pour alertes en mode nuit */
 
-  /* Blue */
-  --blue: #3b82f6;
-  --blue-light: #1e3a5f;
+  --blue: #3b82f6;            /* Bleu information ajusté pour mode nuit */
+  --blue-light: #1e3a5f;      /* Fond bleu foncé pour badges d'information */
 
-  --amber: #f59e0b;
-  --amber-light: #451a03;
+  --amber: #f59e0b;           /* Ambre avertissement ajusté pour mode nuit */
+  --amber-light: #451a03;     /* Fond ambre foncé pour badges d'avertissement */
 
-  /* Purple */
-  --purple: #8b5cf6;
-  --purple-light: #2e1065;
+  --purple: #8b5cf6;          /* Violet adapté au mode nuit */
+  --purple-light: #2e1065;    /* Fond violet foncé */
 
-  /* Orange */
-  --orange: #f97316;
-  --orange-light: #431407;
+  --orange: #f97316;          /* Orange adapté au mode nuit */
+  --orange-light: #431407;    /* Fond orange foncé */
 
-  /* Babillard Officiel (Thème sombre Cacao profond + Terracotta + Or) */
+  /* ── 7. BABILLARD EN MODE SOMBRE ── */
   --board-bg: #16100C;
   --board-texture: radial-gradient(#2B1D17 1.2px, transparent 1.2px);
   --cork-panel-bg: #231812;
@@ -189,7 +194,7 @@
   --cork-panel-dots: #35231A;
   --cork-panel-title: #F3E9E1;
   --cork-panel-text: #B8A49B;
-  --paper: #281B15;
+  --paper: #281B15;           /* Fond sombre des feuilles de circulaire en mode nuit */
   --paper-edge: #443027;
   --paper-text: #F3E9E1;
   --paper-text-muted: #CDB7AA;
@@ -199,10 +204,10 @@
   --paper-shadow: 0 4px 16px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
   --paper-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.6), 0 3px 8px rgba(0, 0, 0, 0.4);
 
-  /* Shadows — light-on-dark */
-  --shadow-sm: 0 1px 4px rgba(0,0,0,0.35);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.45);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,0.55);
+  /* ── 8. OMBRES EN MODE SOMBRE ── */
+  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.55);
 }
 
 /* -- BASE STYLES --
@@ -256,7 +261,8 @@
   }
 }
 
-html, body {
+html,
+body {
   height: 100%;
 }
 
@@ -278,10 +284,23 @@ body {
 }
 
 /* ── SCROLLBAR ── */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 5px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border2);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text3);
+}
 
 /* ── TYPOGRAPHY UTILITIES ── */
 .font-serif {
@@ -291,13 +310,11 @@ body {
 /* ── BANDE DÉCORATIVE CAMEROUNAISE ── */
 .deco-band {
   height: 4px;
-  background: repeating-linear-gradient(
-    90deg,
-    #f59e0b 0, #f59e0b 12px,
-    #22c55e 12px, #22c55e 24px,
-    #ef4444 24px, #ef4444 36px,
-    #60a5fa 36px, #60a5fa 48px
-  );
+  background: repeating-linear-gradient(90deg,
+      #f59e0b 0, #f59e0b 12px,
+      #22c55e 12px, #22c55e 24px,
+      #ef4444 24px, #ef4444 36px,
+      #60a5fa 36px, #60a5fa 48px);
   flex-shrink: 0;
 }
 
@@ -314,7 +331,7 @@ body {
   content: '';
   position: absolute;
   inset: -50px;
-  background-image: 
+  background-image:
     radial-gradient(circle at 50% 50%, rgba(227, 176, 75, 0.06) 0%, transparent 65%),
     url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg stroke='%23B4532A' stroke-width='1.2' stroke-opacity='0.06'%3E%3Cpath d='M30 0L60 30L30 60L0 30z'/%3E%3Cpath d='M30 10L50 30L30 50L10 30z'/%3E%3C/g%3E%3Cg stroke='%23E3B04B' stroke-width='1' stroke-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='5'/%3E%3Cpath d='M0 0l15 15M60 0L45 15M0 60l15-15M60 60L45 45'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
   background-repeat: repeat;
@@ -324,9 +341,17 @@ body {
 }
 
 @keyframes loginBgSlowFloat {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-12px); }
-  100% { transform: translateY(0); }
+  0% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-12px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -338,8 +363,15 @@ body {
 
 /* ── FADE IN ANIMATION ── */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fadeIn {
@@ -347,18 +379,39 @@ body {
 }
 
 @keyframes popIn {
-  from { opacity: 0; transform: scale(0.92); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes slideInRight {
-  from { opacity: 0; transform: translateX(20px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
 .animate-float {
@@ -366,15 +419,24 @@ body {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── VIEW TRANSITIONS (section navigation) ── */
 @keyframes slide-in {
-  from { transform: translateX(20px); opacity: 0; }
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
 }
+
 @keyframes slide-out {
-  to { transform: translateX(-20px); opacity: 0; }
+  to {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
 }
 
 /* ── BABILLARD RICH EDITOR & DOCUMENT RENDERING ── */
@@ -388,22 +450,27 @@ body {
 .babillard-prose p {
   margin-bottom: 0.75rem;
 }
+
 .babillard-prose p:last-child {
   margin-bottom: 0;
 }
+
 .babillard-prose ul {
   list-style-type: disc;
   margin-left: 1.5rem;
   margin-bottom: 0.75rem;
 }
+
 .babillard-prose ol {
   list-style-type: decimal;
   margin-left: 1.5rem;
   margin-bottom: 0.75rem;
 }
+
 .babillard-prose li {
   margin-bottom: 0.25rem;
 }
+
 .babillard-prose a {
   color: var(--primary);
   text-decoration: underline;

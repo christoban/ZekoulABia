@@ -24,7 +24,7 @@ interface NavGroup {
 }
 
 const BADGE_STYLES = {
-  red:   'bg-red-500/25 text-red-300',
+  red: 'bg-red-500/25 text-red-300',
   green: 'bg-success/20 text-success',
   amber: 'bg-amber-500/20 text-amber-300',
 }
@@ -49,6 +49,14 @@ export default function StudentSidebar({ current, onChange, schoolName, logoUrl,
     user?.studentProfile?.class?.serie
   )
 
+  // ==========================================================================
+  // CONFIGURATION DU MENU DE NAVIGATION (BARRE LATÉRALE ÉLÈVE)
+  // Pour ajouter, retirer, réordonner ou changer un onglet de l'espace élève :
+  // - Modifiez les éléments ci-dessous ('dashboard', 'homework', 'grades', etc.)
+  // - 'id'   : identifiant de l'écran (StudentSection dans '../_types.ts')
+  // - 'icon' : icône importée de lucide-react
+  // - 'label': titre affiché dans le menu
+  // ==========================================================================
   const NAV: NavGroup[] = [
     {
       items: [
@@ -58,30 +66,30 @@ export default function StudentSidebar({ current, onChange, schoolName, logoUrl,
     {
       label: tnav('group.schoolAgenda'),
       items: [
-        { id: 'homework',   icon: NotebookPen, label: tnav('sidebar.homework') || 'Cahier & Devoirs' },
-        { id: 'timetable',  icon: Calendar,    label: tnav('sidebar.timetable') },
+        { id: 'homework', icon: NotebookPen, label: tnav('sidebar.homework') || 'Cahier & Devoirs' },
+        { id: 'timetable', icon: Calendar, label: tnav('sidebar.timetable') },
         { id: 'attendance', icon: ClipboardCheck, label: tnav('sidebar.myAttendance') },
       ]
     },
     {
       label: tnav('group.results'),
       items: [
-        { id: 'grades',           icon: FileText,   label: tnav('sidebar.myGrades') },
-        { id: 'bulletins',        icon: ScrollText, label: tnav('sidebar.bulletins') },
-        { id: 'academic-profile', icon: BarChart3,  label: tnav('sidebar.academicProfile') },
+        { id: 'grades', icon: FileText, label: tnav('sidebar.myGrades') },
+        { id: 'bulletins', icon: ScrollText, label: tnav('sidebar.bulletins') },
+        { id: 'academic-profile', icon: BarChart3, label: tnav('sidebar.academicProfile') },
         ...(orientationElig.isEligible ? [
           { id: 'orientation' as const, icon: Compass, label: tnav('sidebar.orientation') || 'Orientation' }
         ] : []),
-        { id: 'health-tracking',  icon: HeartPulse, label: tnav('sidebar.myHealthTracking') },
+        { id: 'health-tracking', icon: HeartPulse, label: tnav('sidebar.myHealthTracking') },
       ]
     },
     {
       label: tnav('group.services'),
       items: [
-        { id: 'profile',    icon: UserCheck, label: 'Mon Dossier & Profil' },
-        { id: 'documents',  icon: FileBadge, label: tnav('sidebar.documents') || 'Mes Documents' },
-        { id: 'library',    icon: BookOpen,  label: tnav('sidebar.myLibrary') },
-        { id: 'babillard',  icon: Megaphone, label: tnav('sidebar.babillard') },
+        { id: 'profile', icon: UserCheck, label: 'Mon Dossier & Profil' },
+        { id: 'documents', icon: FileBadge, label: tnav('sidebar.documents') || 'Mes Documents' },
+        { id: 'library', icon: BookOpen, label: tnav('sidebar.myLibrary') },
+        { id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard') },
         { id: 'messagerie', icon: MessageCircle, label: tnav('sidebar.messagerie'), ...(messagesNonLus > 0 ? { badge: String(messagesNonLus), badgeColor: 'red' as const } : {}) },
       ]
     },
@@ -163,7 +171,7 @@ export default function StudentSidebar({ current, onChange, schoolName, logoUrl,
                 <div className="text-[10px] font-black text-white/35 tracking-[1px] uppercase" style={{ padding: '6px 0 0 0' }}>
                   {group.label}
                 </div>
-            )}
+              )}
               {group.items.map(item => (
                 <button key={item.id} onClick={() => handleChange(item.id)}
                   className={cn(
@@ -263,7 +271,7 @@ export default function StudentSidebar({ current, onChange, schoolName, logoUrl,
           userName={userDisplayName}
           onClose={() => setAvatarModalOpen(false)}
           onSuccess={(url) => setCurrentAvatar(url)}
-          onToast={() => {}}
+          onToast={() => { }}
         />
       )}
     </>

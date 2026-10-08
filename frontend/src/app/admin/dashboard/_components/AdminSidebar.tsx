@@ -30,7 +30,7 @@ interface NavSection {
 }
 
 const BADGE_STYLES = {
-  red:   'bg-red-500/25 text-red-300',
+  red: 'bg-red-500/25 text-red-300',
   green: 'bg-success/20 text-success',
   amber: 'bg-amber-500/20 text-amber-300',
 }
@@ -132,9 +132,18 @@ export default function AdminSidebar({
       if (saved) {
         setOpenGroups(prev => ({ ...prev, ...JSON.parse(saved) }))
       }
-    } catch {}
+    } catch { }
   }, [])
 
+  // ==========================================================================
+  // CONFIGURATION DU MENU DE NAVIGATION (BARRE LATÉRALE ADMIN)
+  // Pour ajouter, masquer, modifier l'ordre ou changer une icône du menu :
+  // - 'id'        : clé de la section (définie dans '../_types.ts')
+  // - 'icon'      : icône visuelle importée depuis 'lucide-react'
+  // - 'label'     : texte affiché à l'écran dans le menu
+  // - 'badge'     : pastille optionnelle pour afficher un compteur (ex: alertes, messages)
+  // - 'badgeColor': couleur de la pastille ('green' | 'amber' | 'red')
+  // ==========================================================================
   const NAV: NavSection[] = [
     {
       id: 'admin',
@@ -189,7 +198,7 @@ export default function AdminSidebar({
     if (activeSectionGroup?.id && !openGroups[activeSectionGroup.id]) {
       setOpenGroups(prev => {
         const next = { ...prev, [activeSectionGroup.id!]: true }
-        try { localStorage.setItem('zekoulabia.admin.nav.groups', JSON.stringify(next)) } catch {}
+        try { localStorage.setItem('zekoulabia.admin.nav.groups', JSON.stringify(next)) } catch { }
         return next
       })
     }
@@ -198,7 +207,7 @@ export default function AdminSidebar({
   const toggleGroup = (groupId: string) => {
     setOpenGroups(prev => {
       const next = { ...prev, [groupId]: !prev[groupId] }
-      try { localStorage.setItem('zekoulabia.admin.nav.groups', JSON.stringify(next)) } catch {}
+      try { localStorage.setItem('zekoulabia.admin.nav.groups', JSON.stringify(next)) } catch { }
       return next
     })
   }
@@ -484,7 +493,7 @@ export default function AdminSidebar({
           userName={userDisplayName}
           onClose={() => setAvatarModalOpen(false)}
           onSuccess={(url) => setCurrentAvatar(url)}
-          onToast={() => {}}
+          onToast={() => { }}
         />
       )}
     </>

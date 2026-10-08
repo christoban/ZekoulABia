@@ -23,7 +23,7 @@ interface NavGroup {
 }
 
 const BADGE_STYLES = {
-  red:   'bg-red-500/25 text-red-300',
+  red: 'bg-red-500/25 text-red-300',
   green: 'bg-success/20 text-success',
   amber: 'bg-amber-500/20 text-amber-300',
 }
@@ -44,31 +44,39 @@ export default function ParentSidebar({ current, onChange, onLogout, user, schoo
   const tcommon = useT('common')
   const messagesNonLus = useUnreadMessagesCount()
 
+  // ==========================================================================
+  // CONFIGURATION DU MENU DE NAVIGATION (BARRE LATÉRALE PARENT)
+  // Pour ajouter, retirer ou modifier un onglet du menu parent :
+  // - Modifiez les groupes ci-dessous ('children', 'grades', 'payments', etc.)
+  // - 'id'   : identifiant de l'écran (ParentSection dans '../_types.ts')
+  // - 'icon' : icône importée de lucide-react
+  // - 'label': titre affiché dans le menu
+  // ==========================================================================
   const NAV_GROUPS: NavGroup[] = [
     {
       items: [
-        { id: 'children',      icon: Users, label: tnav('sidebar.myChildren') },
-        { id: 'child-profile', icon: User,  label: tnav('sidebar.parent_childProfile') },
+        { id: 'children', icon: Users, label: tnav('sidebar.myChildren') },
+        { id: 'child-profile', icon: User, label: tnav('sidebar.parent_childProfile') },
       ]
     },
     {
       label: tnav('group.academic'),
       items: [
-        { id: 'grades',            icon: FileText,       label: tnav('sidebar.grades') },
-        { id: 'academic-profile',  icon: TrendingUp,     label: tnav('sidebar.parent_academicProfile') },
-        { id: 'health-tracking',   icon: HeartPulse,     label: tnav('sidebar.parent_healthTracking') },
-        { id: 'attendance',        icon: ClipboardCheck, label: tnav('sidebar.attendance') },
-        { id: 'homework',          icon: BookMarked,     label: tnav('sidebar.parent_homework') },
-        { id: 'timetable',         icon: Calendar,       label: tnav('sidebar.timetable') },
-        { id: 'documents',         icon: FileCheck,      label: tnav('sidebar.parent_documents') },
+        { id: 'grades', icon: FileText, label: tnav('sidebar.grades') },
+        { id: 'academic-profile', icon: TrendingUp, label: tnav('sidebar.parent_academicProfile') },
+        { id: 'health-tracking', icon: HeartPulse, label: tnav('sidebar.parent_healthTracking') },
+        { id: 'attendance', icon: ClipboardCheck, label: tnav('sidebar.attendance') },
+        { id: 'homework', icon: BookMarked, label: tnav('sidebar.parent_homework') },
+        { id: 'timetable', icon: Calendar, label: tnav('sidebar.timetable') },
+        { id: 'documents', icon: FileCheck, label: tnav('sidebar.parent_documents') },
       ]
     },
     {
       label: tnav('group.services'),
       items: [
         { id: 'payments', icon: Smartphone, label: tnav('sidebar.payments') },
-        { id: 'apee',     icon: HandCoins, label: tnav('sidebar.apee') },
-        { id: 'library',  icon: BookOpen, label: tnav('sidebar.readings') },
+        { id: 'apee', icon: HandCoins, label: tnav('sidebar.apee') },
+        { id: 'library', icon: BookOpen, label: tnav('sidebar.readings') },
         { id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard') },
         { id: 'messagerie', icon: MessageCircle, label: tnav('sidebar.messagerie'), ...(messagesNonLus > 0 ? { badge: String(messagesNonLus), badgeColor: 'red' as const } : {}) },
         // notifications retiré — redondant avec la cloche (permanente sur tous les écrans),
@@ -136,8 +144,8 @@ export default function ParentSidebar({ current, onChange, onLogout, user, schoo
             {school?.logoUrl
               ? <img src={school.logoUrl} alt={school.name} className="w-6.5 h-6.5 rounded-[6px] flex-shrink-0" style={{ objectFit: 'cover' }} />
               : <div className="w-6.5 h-6.5 rounded-[6px] bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center text-[11px] font-black text-white flex-shrink-0">
-                  {school ? school.name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('') : tcommon('brand.fallbackInitials')}
-                </div>
+                {school ? school.name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('') : tcommon('brand.fallbackInitials')}
+              </div>
             }
             <div className="min-w-0">
               <div className="text-[12.5px] font-bold text-white truncate">{school?.name ?? tcommon('user.loading')}</div>
@@ -153,7 +161,7 @@ export default function ParentSidebar({ current, onChange, onLogout, user, schoo
                 <div className="text-[10px] font-black text-white/35 tracking-[1px] uppercase" style={{ padding: '6px 0 0 0' }}>
                   {group.label}
                 </div>
-            )}
+              )}
               {group.items.map(item => (
                 <button key={item.id} onClick={() => handleChange(item.id)}
                   className={cn(
@@ -253,7 +261,7 @@ export default function ParentSidebar({ current, onChange, onLogout, user, schoo
           userName={userDisplayName}
           onClose={() => setAvatarModalOpen(false)}
           onSuccess={(url) => setCurrentAvatar(url)}
-          onToast={() => {}}
+          onToast={() => { }}
         />
       )}
     </>
