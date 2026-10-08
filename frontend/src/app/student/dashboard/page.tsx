@@ -31,6 +31,8 @@ import { useRouter } from 'next/navigation'
 import Babillard from '@/features/communication/Babillard'
 import Messagerie from '@/features/messagerie'
 import ChangePasswordModal from '@/components/ChangePasswordModal'
+import { formatStudentTimetableData } from '@/lib/timetableSlotGrouping'
+import { resolveOrientationEligibility } from '@/lib/orientationEligibility'
 
 interface SessionUser {
   userId: string
@@ -177,6 +179,7 @@ export default function StudentDashboard() {
     if (!user || !navigator.onLine) return
     const uid = user.id
     const classId = user.studentProfile?.class?.id
+    const className = user.studentProfile?.class?.name || ''
     const groupIds = user.studentProfile?.groupIds ?? []
     const groupKey = [...groupIds].sort().join(',')
 
@@ -254,12 +257,84 @@ export default function StudentDashboard() {
           if (gridRes.success && gridRes.data) {
             await putCachedData('student:timetable-grid-config', gridRes.data)
           }
+          if (ttRes.success && ttRes.data) {
+            await putCachedData(`student:timetables:${classId}`, ttRes.data)
+            const formatted = formatStudentTimetableData(ttRes.data, gridRes?.data, groupIds, className)
+            await putCachedData(`student:timetable:v2:${classId}:${groupKey}`, formatted)
+          }
 
           // 6. Cahier de texte & devoirs
-          const cahierRes = await fetchApi(`/api/v2/pedagogie/cahier-de-texte?classId=${classId}&limit=50`, { credentials: 'include' }).then(r => r.json()).catch(() => ({}))
+          const cahierRes = await fetchApi(`/api/v2/pedagogie/cahier-de-texte?classId=${classId}&limit=100`, { credentials: 'include' }).then(r => r.json()).catch(() => ({}))
           if (cahierRes.success && Array.isArray(cahierRes.data)) {
             await putCachedData(`student:cahier:${uid}:${classId}`, cahierRes.data)
           }
+        }
+
+        // 7. Profil académique de l'élève
+        const profileRes = await fetchApi(`/api/v2/students/${uid}/academic-profile`, { credentials: 'include' }).then(r => r.json()).catch(() => ({}))
+        if (profileRes.success && profileRes.data) {
+          await putCachedData(`student:academic-profile:${uid}`, profileRes.data)
+        }
+
+        // 8. Mes lectures / Bibliothèque (même liste vide pour éviter OFFLINE_NO_CACHE)
+        const loansRes = await fetchApi('/api/v2/library/my-loans', { credentials: 'include' }).then(r => r.json()).catch(() => ({}))
+        if (loansRes.success && Array.isArray(loansRes.data)) {
+          await putCachedData('student-library', loansRes.data)
+        } else {
+          await putCachedData('student-library', [])
+        }
+
+        // 9. Messagerie : conversations et messages récents
+        const convRes = await fetchApi('/api/v2/messagerie/conversations', { credentials: 'include' }).then(r => r.json()).catch(() => ({}))
+        if (convRes.success && Array.isArray(convRes.data)) {
+          await putCachedData(`messagerie:conversations:${uid}`, convRes.data)
+          await putCachedData('messagerie:conversations', convRes.data)
+
+          // Précharger les messages des conversations (top 5) pour consultation hors-ligne immédiate
+          for (const c of convRes.data.slice(0, 5)) {
+            if (c?.id) {
+              try {
+                const msgRes = await fetchApi(`/api/v2/messagerie/conversations/${c.id}/messages`, { credentials: 'include' }).then(r => r.json()).catch(() => ({}))
+                if (msgRes.success && Array.isArray(msgRes.data)) {
+                  await putCachedData(`messagerie:messages:${c.id}`, msgRes.data)
+                }
+              } catch { /* silencieux */ }
+            }
+          }
+        }
+
+        // 10. Suivi scolaire & santé (IA Health Tracking)
+        const htRes = await fetchApi('/api/v2/ai/health-tracking', { credentials: 'include' }).then(r => r.json()).catch(() => ({}))
+        if (htRes.children && Array.isArray(htRes.children) && htRes.children[0]) {
+          await putCachedData(`student:health-tracking:${uid}`, htRes.children[0])
+        }
+
+        // 11. Orientation & Langue Vivante 2
+        if (user.studentProfile?.class) {
+          try {
+            const eligibility = resolveOrientationEligibility(
+              user.studentProfile.class.name,
+              user.studentProfile.class.level,
+              user.studentProfile.class.serie
+            )
+            if (eligibility.checkpointKey === 'FIN_TROISIEME' || eligibility.checkpointKey === 'FIN_SECONDE_C') {
+              const recoRes = await fetchApi(`/api/v2/orientation/ma-recommandation/${eligibility.checkpointKey}`, { credentials: 'include' }).then(r => r.json()).catch(() => ({}))
+              if (recoRes.success && recoRes.data) {
+                await putCachedData(`student:orientation:${uid}:${eligibility.checkpointKey}`, recoRes.data)
+              }
+            } else if (eligibility.checkpointKey === 'LV2') {
+              const lv2Res = await fetchApi('/api/v2/students/me/lv2-choice-window', { credentials: 'include' }).then(r => r.json()).catch(() => ({}))
+              if (lv2Res.success && lv2Res.data) {
+                await putCachedData(`student:lv2-choice:${uid}`, lv2Res.data)
+              }
+            }
+          } catch { /* silencieux */ }
+        }
+
+        // 12. Babillard officiel
+        const babRes = await fetchApi('/api/v2/babillard?tab=tous', { credentials: 'include' }).then(r => r.json()).catch(() => ({}))
+        if (babRes.success && Array.isArray(babRes.data)) {
+          await putCachedData('babillard:publications:all', babRes.data)
         }
       } catch { /* silent */ }
     })()

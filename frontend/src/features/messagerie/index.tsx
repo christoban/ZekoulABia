@@ -56,7 +56,16 @@ export default function Messagerie() {
   }, [currentUser])
 
   const chargerConversations = useCallback(async (silencieux = false) => {
-    const currentId = currentUser?.id || ''
+    let currentId = currentUser?.id || ''
+    if (!currentId && typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('zekoulabia_user')
+        if (raw) {
+          const parsed = JSON.parse(raw) as { userId?: string; id?: string }
+          currentId = parsed.userId || parsed.id || ''
+        }
+      } catch { /* silencieux */ }
+    }
     const cleCache = currentId ? `messagerie:conversations:${currentId}` : 'messagerie:conversations'
 
     // Si on n'a encore aucune conversation en mémoire et que ce n'est pas silencieux, activer le loading
@@ -71,7 +80,7 @@ export default function Messagerie() {
         if (!cache?.data && cleCache !== 'messagerie:conversations') {
           cache = await getCachedData<ConversationSummary[]>('messagerie:conversations')
         }
-        if (cache?.data && cache.data.length > 0) {
+        if (cache?.data && Array.isArray(cache.data)) {
           cachedConversationsStore = cache.data
           setConversations(cache.data)
           setLoading(false)
@@ -98,7 +107,7 @@ export default function Messagerie() {
       if (!cache?.data) {
         cache = await getCachedData<ConversationSummary[]>('messagerie:conversations').catch(() => null)
       }
-      if (cache?.data) {
+      if (cache?.data && Array.isArray(cache.data)) {
         cachedConversationsStore = cache.data
         setConversations(cache.data)
       }

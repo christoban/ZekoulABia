@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { getCachedData, putCachedData } from '@/lib/offline/db'
-import { TrendingUp, TrendingDown, Minus, Award, AlertTriangle, BookOpen } from 'lucide-react'
+import OfflineEmptyState from '@/components/OfflineEmptyState'
+import { TrendingUp, TrendingDown, Minus, Award, AlertTriangle, BookOpen, Package } from 'lucide-react'
 
 interface MatiereProfil {
   subjectId: string
@@ -40,14 +41,46 @@ const CLASSIFICATION_STYLES: Record<string, { bg: string; color: string; labelKe
 
 export default function SectionProfilAcademique({ studentId, academicYearId }: Props) {
   const t = useT('student')
+  const tcommon = useT('common')
   const [data, setData] = useState<ProfilData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [fromCache, setFromCache] = useState(false)
+  const [cachedAt, setCachedAt] = useState<number | null>(null)
 
   const charger = useCallback(async () => {
     if (!studentId) return
-    setLoading(true)
     setError(null)
+
+    // 1. Stale-First : lecture instantanée depuis Dexie (< 30ms)
+    let hasLocalData = false
+    try {
+      const cached = await getCachedData<ProfilData>(`student:academic-profile:${studentId}`)
+      if (cached?.data) {
+        setData(cached.data)
+        setFromCache(true)
+        setCachedAt(cached.cachedAt)
+        setLoading(false)
+        hasLocalData = true
+      }
+    } catch {
+      // continuer vers le réseau
+    }
+
+    if (!hasLocalData) {
+      setLoading(true)
+    }
+
+    // 2. Si hors-ligne
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      if (!hasLocalData) {
+        setError('OFFLINE_NO_CACHE')
+      }
+      setLoading(false)
+      return
+    }
+
+    // 3. Revalidation réseau en tâche de fond si connecté
     try {
       const q = academicYearId ? `?academicYearId=${encodeURIComponent(academicYearId)}` : ''
       const res = await fetchApi(`/api/v2/students/${studentId}/academic-profile${q}`, {
@@ -56,21 +89,19 @@ export default function SectionProfilAcademique({ studentId, academicYearId }: P
       const json = await res.json()
       if (json.success && json.data) {
         setData(json.data)
-        putCachedData(`student:academic-profile:${studentId}`, json.data).catch(() => {})
-      } else {
-        const cached = await getCachedData<ProfilData>(`student:academic-profile:${studentId}`)
-        if (cached?.data) {
-          setData(cached.data)
-        } else {
-          setError(json.message || 'Erreur lors du chargement')
-        }
+        setFromCache(false)
+        setCachedAt(Date.now())
+        await putCachedData(`student:academic-profile:${studentId}`, json.data).catch(() => {})
+      } else if (!hasLocalData) {
+        setError(json.message || 'Erreur lors du chargement')
       }
     } catch {
-      const cached = await getCachedData<ProfilData>(`student:academic-profile:${studentId}`)
-      if (cached?.data) {
-        setData(cached.data)
-      } else {
-        setError('Impossible de charger le profil académique')
+      if (!hasLocalData) {
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          setError('OFFLINE_NO_CACHE')
+        } else {
+          setError('Impossible de charger le profil académique')
+        }
       }
     } finally {
       setLoading(false)
@@ -81,7 +112,7 @@ export default function SectionProfilAcademique({ studentId, academicYearId }: P
     charger()
   }, [charger])
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <div style={{ padding: 24, textAlign: 'center', color: 'var(--text2)' }}>
         {t('academic.loading')}
@@ -89,10 +120,20 @@ export default function SectionProfilAcademique({ studentId, academicYearId }: P
     )
   }
 
-  if (error) {
+  if (error === 'OFFLINE_NO_CACHE' && !data) {
+    return <OfflineEmptyState />
+  }
+
+  if (error && !data) {
     return (
-      <div style={{ padding: 16, background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8 }}>
-        {error}
+      <div style={{ padding: 16, background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span>{error}</span>
+        <button
+          onClick={() => charger()}
+          style={{ padding: '6px 12px', borderRadius: 6, background: 'var(--surface)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: 'var(--text)' }}
+        >
+          {tcommon('retry') || 'Réessayer'}
+        </button>
       </div>
     )
   }
@@ -108,6 +149,12 @@ export default function SectionProfilAcademique({ studentId, academicYearId }: P
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {fromCache && cachedAt && (
+        <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 6, padding: '3px 8px', fontSize: 11.5, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5, alignSelf: 'flex-start' }}>
+          <Package size={13} strokeWidth={2} />
+          <span>{tcommon('cacheBadge', { date: new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })}</span>
+        </div>
+      )}
       {/* En-tête : Moyenne générale annuelle */}
       <div style={{
         display: 'flex',

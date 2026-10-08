@@ -17,6 +17,7 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 import { isFirstCycleOrPrimary } from '@/lib/academicExamDetector'
 import ChangePasswordModal from '@/components/ChangePasswordModal'
@@ -58,7 +59,27 @@ export default function SectionStudentProfile({ onToast }: Props) {
   const [saveSuccess, setSaveSuccess] = useState(false)
 
   const loadProfile = useCallback(async () => {
-    setLoading(true)
+    // 1. Essayer d'abord le cache local Dexie
+    let hasLocal = false
+    try {
+      const cached = await getCachedData<StudentFullProfile>('student:full-profile')
+      if (cached?.data) {
+        setProfile(cached.data)
+        setPhone(cached.data.phone || '')
+        setLoading(false)
+        hasLocal = true
+      }
+    } catch { /* ignorer */ }
+
+    if (!hasLocal) {
+      setLoading(true)
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setLoading(false)
+      return
+    }
+
     try {
       const [userRes, compRes] = await Promise.all([
         fetchApi('/api/v2/users/me', { credentials: 'include' }).then((r) => r.json()).catch(() => null),
@@ -90,9 +111,13 @@ export default function SectionStudentProfile({ onToast }: Props) {
         }
         setProfile(full)
         setPhone(full.phone || '')
+        await putCachedData('student:full-profile', full).catch(() => {})
+        if (full.id) await putCachedData(`student:full-profile:${full.id}`, full).catch(() => {})
       }
     } catch {
-      onToast('Erreur lors du chargement des informations de votre profil', 'error')
+      if (!hasLocal) {
+        onToast('Erreur lors du chargement des informations de votre profil', 'error')
+      }
     } finally {
       setLoading(false)
     }

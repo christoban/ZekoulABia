@@ -1,13 +1,21 @@
 'use client'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import type { UserInfo } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
 import OfflineEmptyState from '@/components/OfflineEmptyState'
 import { useT } from '@/lib/i18n'
 import { getCachedData, putCachedData } from '@/lib/offline/db'
-import { groupTimetableSlotsForStudent, normalizeTimetableCellSlots } from '@/lib/timetableSlotGrouping'
-import type { TimetableGroupSlot } from '@/lib/timetableSlotGrouping'
+import {
+  groupTimetableSlotsForStudent,
+  normalizeTimetableCellSlots,
+  formatStudentTimetableData,
+  DEFAULT_TIMETABLE_SKELETON,
+  type PeriodeGrille,
+  type FormattedStudentTimetableData as TimetableData,
+  type CellSlots,
+  type RawSlot,
+} from '@/lib/timetableSlotGrouping'
 import { Coffee, Utensils, MapPin, User as UserIcon } from 'lucide-react'
 
 interface Props {
@@ -15,43 +23,12 @@ interface Props {
   user?: UserInfo | null
 }
 
-export interface PeriodeGrille {
-  ordre: number
-  debut: string
-  fin: string
-  type: 'COURS' | 'PETITE_PAUSE' | 'GRANDE_PAUSE'
-  duree: number
-}
-
-type SlotType = { subject: string; teacher: string; room: string; kind: string; color: string; groupId?: string | null; unassigned?: boolean }
-type RawSlot = TimetableGroupSlot & { subject?: { name?: string | null } | null; teacher?: { firstName: string; lastName: string } | null; room?: string | null; kind?: string | null }
-type CellSlots = SlotType[]
-
 const DAY_NAMES = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI']
 const DAY_MAP: Record<string, number> = {
   LUNDI: 0, MARDI: 1, MERCREDI: 2, JEUDI: 3, VENDREDI: 4, SAMEDI: 5,
 }
 
-// Fallback skeleton standard si la grille n'a pas encore été configurée
-const DEFAULT_SKELETON: PeriodeGrille[] = [
-  { ordre: 1, debut: '07:30', fin: '08:25', type: 'COURS', duree: 55 },
-  { ordre: 2, debut: '08:25', fin: '09:20', type: 'COURS', duree: 55 },
-  { ordre: 0, debut: '09:20', fin: '09:35', type: 'PETITE_PAUSE', duree: 15 },
-  { ordre: 3, debut: '09:35', fin: '10:30', type: 'COURS', duree: 55 },
-  { ordre: 4, debut: '10:30', fin: '11:25', type: 'COURS', duree: 55 },
-  { ordre: 5, debut: '11:25', fin: '12:20', type: 'COURS', duree: 55 },
-  { ordre: 0, debut: '12:20', fin: '12:50', type: 'GRANDE_PAUSE', duree: 30 },
-  { ordre: 6, debut: '12:50', fin: '13:45', type: 'COURS', duree: 55 },
-  { ordre: 7, debut: '13:45', fin: '14:40', type: 'COURS', duree: 55 },
-]
-
-interface TimetableData {
-  slots: Record<string, CellSlots>
-  className: string
-  squelette: PeriodeGrille[]
-  joursActifs: string[]
-  squeletteParJour: Record<string, PeriodeGrille[]>
-}
+const DEFAULT_SKELETON = DEFAULT_TIMETABLE_SKELETON
 
 function CacheBadge({ cachedAt }: { cachedAt: number | null }) {
   const t = useT('student')
@@ -75,12 +52,23 @@ export default function SectionStudentTimetable({ onToast, user }: Props) {
     if (!classId) throw new Error(t('timetable.no_class'))
 
     const [res, gridRes] = await Promise.all([
-      fetchApi(`/api/v2/timetables?classId=${classId}`, { credentials: 'include' }).then(r => r.json()),
+      fetchApi(`/api/v2/timetables?classId=${classId}`, { credentials: 'include' })
+        .then(async r => {
+          const json = await r.json()
+          if (json.success && json.data) {
+            await putCachedData(`student:timetables:${classId}`, json.data).catch(() => {})
+          }
+          return json
+        })
+        .catch(async () => {
+          const cached = await getCachedData<any>(`student:timetables:${classId}`)
+          return cached?.data ? { success: true, data: cached.data } : { success: false }
+        }),
       fetchApi('/api/v2/timetable-grid-config', { credentials: 'include' })
         .then(async r => {
           const json = await r.json()
           if (json.success && json.data) {
-            await putCachedData('student:timetable-grid-config', json.data)
+            await putCachedData('student:timetable-grid-config', json.data).catch(() => {})
           }
           return json
         })
@@ -90,72 +78,50 @@ export default function SectionStudentTimetable({ onToast, user }: Props) {
         }),
     ])
 
-    if (!res.success) throw new Error(t('timetable.load_error'))
+    if (!res.success || !res.data) throw new Error(t('timetable.load_error'))
 
-    // Extraction de la grille horaire officielle
-    let squelette: PeriodeGrille[] = DEFAULT_SKELETON
-    let joursActifs: string[] = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI']
-    let squeletteParJour: Record<string, PeriodeGrille[]> = {}
+    const formatted = formatStudentTimetableData(
+      res.data,
+      gridRes?.data,
+      groupIds,
+      user?.studentProfile?.class?.name || '',
+      t('timetable.notAssignedToGroup')
+    )
 
-    if (gridRes?.success && gridRes.data) {
-      if (Array.isArray(gridRes.data.squelette) && gridRes.data.squelette.length > 0) {
-        squelette = gridRes.data.squelette
-      }
-      if (Array.isArray(gridRes.data.config?.joursActifs) && gridRes.data.config.joursActifs.length > 0) {
-        joursActifs = gridRes.data.config.joursActifs
-      }
-      if (gridRes.data.squeletteParJour && typeof gridRes.data.squeletteParJour === 'object') {
-        squeletteParJour = gridRes.data.squeletteParJour
-      }
+    if (cacheKey) {
+      await putCachedData(cacheKey, formatted).catch(() => {})
     }
 
-    const slotMap: Record<string, CellSlots> = {}
-    const colors = ['var(--green)', 'var(--blue)', 'var(--purple)', 'var(--amber)', 'var(--primary)', 'var(--red)', 'var(--orange)']
-    let colorIdx = 0
-    const subjectColors: Record<string, string> = {}
-    const rawSlots: RawSlot[] = res.data.flatMap((tt: { slots?: RawSlot[] }) => tt.slots ?? [])
-
-    for (const entries of groupTimetableSlotsForStudent(rawSlots, groupIds).values()) {
-      const first = entries[0]
-      // Clé précise jour-heureDebut (ex: "0-07:30")
-      const key = `${first.dayOfWeek}-${first.startTime}`
-      slotMap[key] = entries.map(entry => {
-        if ('unassigned' in entry) {
-          return {
-            subject: t('timetable.notAssignedToGroup'),
-            teacher: '',
-            room: '',
-            kind: 'GROUP_UNASSIGNED',
-            color: 'var(--text3)',
-            unassigned: true,
-          }
-        }
-        const subName = entry.subject?.name || ''
-        if (subName && !subjectColors[subName]) {
-          subjectColors[subName] = colors[colorIdx % colors.length]
-          colorIdx++
-        }
-        return {
-          subject: subName,
-          teacher: entry.teacher ? `${entry.teacher.firstName} ${entry.teacher.lastName}` : '',
-          room: entry.room || '',
-          kind: entry.kind || 'CLASS',
-          color: subjectColors[subName] || 'var(--green)',
-          groupId: entry.groupId,
-        }
-      })
-    }
-
-    return {
-      slots: slotMap,
-      className: user?.studentProfile?.class?.name || '',
-      squelette,
-      joursActifs,
-      squeletteParJour,
-    }
-  }, [classId, groupIds, t, user])
+    return formatted
+  }, [classId, groupIds, t, user, cacheKey])
 
   const { data, loading, error, fromCache, cachedAt, refetch } = useCachedFetch<TimetableData>(cacheKey, fetchFn)
+  const [fallbackData, setFallbackData] = useState<TimetableData | null>(null)
+
+  // Résilience hors-ligne renforcée : si la clé v2 était absente du cache, tenter de
+  // reconstituer l'emploi du temps depuis le cache brut student:timetables:${classId}
+  useEffect(() => {
+    if (error === 'OFFLINE_NO_CACHE' && !data && classId) {
+      Promise.all([
+        getCachedData<any>(`student:timetables:${classId}`),
+        getCachedData<any>('student:timetable-grid-config'),
+      ]).then(([rawTt, rawGrid]) => {
+        if (rawTt?.data) {
+          const formatted = formatStudentTimetableData(
+            rawTt.data,
+            rawGrid?.data,
+            groupIds,
+            user?.studentProfile?.class?.name || '',
+            t('timetable.notAssignedToGroup')
+          )
+          setFallbackData(formatted)
+          if (cacheKey) putCachedData(cacheKey, formatted).catch(() => {})
+        }
+      }).catch(() => {})
+    }
+  }, [error, data, classId, groupIds, user, t, cacheKey])
+
+  const timetable = data ?? fallbackData
 
   const getWeekRange = () => {
     const now = new Date()
@@ -171,7 +137,7 @@ export default function SectionStudentTimetable({ onToast, user }: Props) {
   const currentDayIdx = (new Date().getDay() + 6) % 7
   const [selectedDay, setSelectedDay] = useState(currentDayIdx >= 0 && currentDayIdx <= 4 ? currentDayIdx : 0)
 
-  if (!user || loading) {
+  if (!user || (loading && !timetable)) {
     return (
       <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600 }}>{tcommon('status.loading')}</div>
@@ -187,9 +153,9 @@ export default function SectionStudentTimetable({ onToast, user }: Props) {
     )
   }
 
-  if (error === 'OFFLINE_NO_CACHE') return <OfflineEmptyState />
+  if (error === 'OFFLINE_NO_CACHE' && !timetable) return <OfflineEmptyState />
 
-  if (error) {
+  if (error && !timetable) {
     return (
       <div style={{ padding: '28px 32px', height: '100%', overflowY: 'auto' }}>
         <div style={{ padding: 24, textAlign: 'center' }}>
@@ -203,23 +169,23 @@ export default function SectionStudentTimetable({ onToast, user }: Props) {
     )
   }
 
-  const slots = data?.slots ?? {}
-  const className = data?.className ?? ''
-  const squelette = data?.squelette ?? DEFAULT_SKELETON
-  const joursActifs = data?.joursActifs ?? ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI']
-  const squeletteParJour = data?.squeletteParJour ?? {}
+  const slots = timetable?.slots ?? {}
+  const className = timetable?.className ?? ''
+  const squelette = timetable?.squelette ?? DEFAULT_SKELETON
+  const joursActifs = timetable?.joursActifs ?? ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI']
+  const squeletteParJour = timetable?.squeletteParJour ?? {}
 
   const activeDayName = DAY_NAMES[selectedDay] || 'LUNDI'
   const activeDayPeriods = squeletteParJour[activeDayName] || squelette
 
   return (
     <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
-      <div style={{ marginBottom: fromCache ? 6 : 12 }}>
+      <div style={{ marginBottom: fromCache || Boolean(fallbackData) ? 6 : 12 }}>
         <div style={sTitle}>{t('timetable.title')}</div>
         <div style={sSub}>{className} · {getWeekRange()}</div>
       </div>
 
-      {fromCache && <CacheBadge cachedAt={cachedAt} />}
+      {(fromCache || Boolean(fallbackData)) && <CacheBadge cachedAt={cachedAt ?? Date.now()} />}
 
       {/* ========================================================
           VUE MOBILE (md:hidden) : Sélecteur de jour + Déroulé chronologique avec Pauses

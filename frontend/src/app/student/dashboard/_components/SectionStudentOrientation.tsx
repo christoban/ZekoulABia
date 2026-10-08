@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { Compass, Clock, CheckCircle, Sparkles, AlertCircle, BookMarked, ArrowRight, Languages, Lock, Info, CheckCircle2 } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 import { resolveOrientationEligibility } from '@/lib/orientationEligibility'
 import type { UserInfo } from '../_types'
@@ -77,15 +78,36 @@ export default function SectionStudentOrientation({ user, onToast }: Props) {
 
   const { data: reco, loading, refetch } = useCachedFetch<Recommandation | null>(cacheKey, fetchFn)
 
-  // Chargement spécifique si éligible LV2
+  // Chargement spécifique si éligible LV2 (avec résilience Dexie hors-ligne)
   useEffect(() => {
     if (eligibility.checkpointKey === 'LV2') {
       setLv2Loading(true)
+      const uid = user?.id
+
+      if (uid) {
+        getCachedData<Lv2WindowData>(`student:lv2-choice:${uid}`)
+          .then((cached) => {
+            if (cached?.data) {
+              setLv2Data(cached.data)
+              if (cached.data.currentChoice?.subjectId) {
+                setSelectedLv2(cached.data.currentChoice.subjectId)
+              }
+            }
+          })
+          .catch(() => {})
+      }
+
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        setLv2Loading(false)
+        return
+      }
+
       fetchApi('/api/v2/students/me/lv2-choice-window', { credentials: 'include' })
         .then((r) => r.json())
         .then((d) => {
           if (d.success && d.data) {
             setLv2Data(d.data)
+            if (uid) putCachedData(`student:lv2-choice:${uid}`, d.data).catch(() => {})
             if (d.data.currentChoice?.subjectId) {
               setSelectedLv2(d.data.currentChoice.subjectId)
             }
@@ -94,7 +116,7 @@ export default function SectionStudentOrientation({ user, onToast }: Props) {
         .catch(() => {})
         .finally(() => setLv2Loading(false))
     }
-  }, [eligibility.checkpointKey])
+  }, [eligibility.checkpointKey, user?.id])
 
   const handleChoisirPiste = async () => {
     if (!reco || !selectedTrack) return
