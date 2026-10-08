@@ -317,7 +317,10 @@ export default function PublicationCard({
           >
             {premierePieceJointe.mime.startsWith('image/') ? (
               <img
-                src={`/api/v2/babillard/${publication.id}/pieces-jointes/${premierePieceJointe.id}`}
+                src={
+                  premierePieceJointe.previewUrl ||
+                  `/api/v2/babillard/${publication.id}/pieces-jointes/${premierePieceJointe.id}`
+                }
                 alt={premierePieceJointe.texteAlternatif ?? premierePieceJointe.nomOriginal}
                 className="w-full h-full object-cover object-top"
                 loading="lazy"

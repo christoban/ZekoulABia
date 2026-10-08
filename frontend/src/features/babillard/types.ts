@@ -29,6 +29,7 @@ export interface PieceJointe {
   hauteur?: number | null;
   ordre: number;
   texteAlternatif?: string | null;
+  previewUrl?: string;
 }
 
 export interface PublicationAudience {

@@ -60,10 +60,33 @@ export default function BabillardPublishModal({
   const [serverError, setServerError] = useState<string | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [mobileTab, setMobileTab] = useState<'form' | 'preview'>('form');
+  const [selectedLightboxImage, setSelectedLightboxImage] = useState<{ url: string; title: string } | null>(null);
 
-  // References for scrolling to invalid input (B4)
+  // References for scrolling to invalid input (B4) and cleanup of Blob URLs
   const titreInputRef = useRef<HTMLInputElement | null>(null);
   const editorRef = useRef<HTMLDivElement | null>(null);
+  const blobUrlsRef = useRef<string[]>([]);
+
+  // Nettoyage de sécurité des Blob URLs au démontage
+  useEffect(() => {
+    return () => {
+      blobUrlsRef.current.forEach((url) => {
+        try {
+          URL.revokeObjectURL(url);
+        } catch {}
+      });
+    };
+  }, []);
+
+  // Fermeture lightbox via Échap
+  useEffect(() => {
+    if (!selectedLightboxImage) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedLightboxImage(null);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedLightboxImage]);
 
   // Load school classes
   useEffect(() => {
@@ -112,6 +135,13 @@ export default function BabillardPublishModal({
     setUploading(true);
     setServerError(null);
 
+    // Prévisualisation locale instantanée (0 ms) pour les images
+    let localPreviewUrl: string | undefined = undefined;
+    if (file.type.startsWith('image/')) {
+      localPreviewUrl = URL.createObjectURL(file);
+      blobUrlsRef.current.push(localPreviewUrl);
+    }
+
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -124,11 +154,17 @@ export default function BabillardPublishModal({
 
       const data = await res.json();
       if (data.success && data.data) {
-        setPiecesJointes([...piecesJointes, data.data]);
+        const nouvellePj: PieceJointe = {
+          ...data.data,
+          previewUrl: localPreviewUrl,
+        };
+        setPiecesJointes([...piecesJointes, nouvellePj]);
       } else {
+        if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl);
         setServerError(data.message || "Erreur lors de l'envoi du document.");
       }
     } catch {
+      if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl);
       setServerError('Impossible de téléverser le fichier.');
     } finally {
       setUploading(false);
@@ -137,6 +173,12 @@ export default function BabillardPublishModal({
   };
 
   const removePieceJointe = (id: string) => {
+    const pj = piecesJointes.find((p) => p.id === id);
+    if (pj?.previewUrl) {
+      try {
+        URL.revokeObjectURL(pj.previewUrl);
+      } catch {}
+    }
     setPiecesJointes(piecesJointes.filter((p) => p.id !== id));
   };
 
@@ -435,28 +477,83 @@ export default function BabillardPublishModal({
               {/* Liste des pièces jointes */}
               {piecesJointes.length > 0 && (
                 <div className="space-y-1.5 mt-2">
-                  {piecesJointes.map((pj) => (
-                    <div
-                      key={pj.id}
-                      className="flex items-center justify-between px-3 py-2 rounded bg-[var(--surface)] border border-[var(--border)] text-xs text-[var(--text)]"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <FileText size={15} className="text-[var(--text3)] shrink-0" />
-                        <span className="truncate font-medium">{pj.nomOriginal}</span>
-                        <span className="text-[11px] text-[var(--text3)]">
-                          ({(pj.taille / 1024).toFixed(0)} Ko)
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removePieceJointe(pj.id)}
-                        className="text-red-500 hover:text-red-600 p-1 transition-colors"
-                        title="Retirer"
+                  {piecesJointes.map((pj) => {
+                    const isImg = pj.mime.startsWith('image/');
+                    const displayUrl =
+                      pj.previewUrl ||
+                      (initialData?.id
+                        ? `/api/v2/babillard/${initialData.id}/pieces-jointes/${pj.id}`
+                        : undefined);
+
+                    return (
+                      <div
+                        key={pj.id}
+                        className="flex items-center justify-between px-3 py-2 rounded bg-[var(--surface)] border border-[var(--border)] text-xs text-[var(--text)] group hover:border-primary/50 transition-colors"
                       >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  ))}
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {isImg && displayUrl ? (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedLightboxImage({ url: displayUrl, title: pj.nomOriginal })}
+                              className="relative w-9 h-9 rounded overflow-hidden border border-[var(--border)] shrink-0 group/thumb cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                              title="Cliquer pour agrandir l'image"
+                            >
+                              <img
+                                src={displayUrl}
+                                alt={pj.nomOriginal}
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 flex items-center justify-center transition-opacity text-white">
+                                <Eye size={12} />
+                              </div>
+                            </button>
+                          ) : (
+                            <div className="w-9 h-9 rounded bg-[var(--bg2)] flex items-center justify-center shrink-0 border border-[var(--border)]">
+                              <FileText size={16} className="text-[var(--text3)]" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            {isImg && displayUrl ? (
+                              <button
+                                type="button"
+                                onClick={() => setSelectedLightboxImage({ url: displayUrl, title: pj.nomOriginal })}
+                                className="text-left font-medium text-[var(--text)] hover:text-primary transition-colors truncate block max-w-[200px] sm:max-w-[240px] cursor-pointer"
+                                title="Cliquer pour inspecter l'image"
+                              >
+                                {pj.nomOriginal}
+                              </button>
+                            ) : (
+                              <span className="truncate font-medium block max-w-[200px] sm:max-w-[240px]">{pj.nomOriginal}</span>
+                            )}
+                            <span className="text-[11px] text-[var(--text3)]">
+                              {(pj.taille / 1024).toFixed(0)} Ko {isImg && '· Image'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1 shrink-0">
+                          {isImg && displayUrl && (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedLightboxImage({ url: displayUrl, title: pj.nomOriginal })}
+                              className="text-[var(--text2)] hover:text-primary p-1.5 rounded hover:bg-[var(--bg2)] transition-colors"
+                              title="Aperçu grand format"
+                            >
+                              <Eye size={15} />
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => removePieceJointe(pj.id)}
+                            className="text-red-500 hover:text-red-600 p-1.5 rounded hover:bg-red-500/10 transition-colors"
+                            title="Retirer"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -621,7 +718,20 @@ export default function BabillardPublishModal({
                     publication={previewItem}
                     userRole={userRole}
                     canManage={false}
-                    onClick={() => {}}
+                    onClick={() => {
+                      const imgPj = previewItem.piecesJointes?.find((p) => p.mime.startsWith('image/'));
+                      const imgUrl =
+                        imgPj?.previewUrl ||
+                        (initialData?.id && imgPj?.id
+                          ? `/api/v2/babillard/${initialData.id}/pieces-jointes/${imgPj.id}`
+                          : undefined);
+                      if (imgUrl) {
+                        setSelectedLightboxImage({
+                          url: imgUrl,
+                          title: imgPj?.nomOriginal || previewItem.titre,
+                        });
+                      }
+                    }}
                   />
                 </div>
               </div>
@@ -719,6 +829,43 @@ export default function BabillardPublishModal({
                 {submitting ? 'Validation...' : 'Confirmer et diffuser'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox d'inspection haute résolution pour prévisualiser l'image avant publication */}
+      {selectedLightboxImage && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-70 bg-black/90 flex flex-col items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={() => setSelectedLightboxImage(null)}
+        >
+          <div className="absolute top-4 right-4 flex items-center gap-3 text-white z-10">
+            <span className="text-xs font-medium max-w-[300px] truncate opacity-80">
+              {selectedLightboxImage.title}
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelectedLightboxImage(null)}
+              className="p-2 rounded-full bg-white/10 hover:bg-white/25 text-white transition-colors cursor-pointer"
+              title="Fermer (Échap)"
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <div
+            className="max-w-[92vw] max-h-[85vh] flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={selectedLightboxImage.url}
+              alt={selectedLightboxImage.title}
+              className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl border border-white/10"
+            />
+          </div>
+          <div className="mt-3 text-white/70 text-xs">
+            Aperçu haute résolution avant diffusion
           </div>
         </div>
       )}

@@ -18,6 +18,7 @@ import type { CalculerStatistiquesLectureUseCase } from '../../../application/ba
 import type { UploaderPieceJointeUseCase } from '../../../application/babillard/UploaderPieceJointeUseCase';
 import type { PublicationRepository } from '../../../domain/ports/repositories/PublicationRepository';
 import { peutVoir, type UtilisateurContexte } from '../../../domain/rules/BabillardVisibilityRules';
+import { peutPublierBabillard } from '../../../domain/rules/BabillardPermissionRules';
 
 export const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   allowedTags: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'ul', 'ol', 'li', 'a', 'mark', 'span'],
@@ -320,6 +321,43 @@ export class BabillardController {
       const user = await this.buildUtilisateurContexte(req);
       const publicationId = String(req.params.id);
       const pjId = String(req.params.pjId);
+
+      // Prise en charge des fichiers en cours de prévisualisation / rédaction
+      if (publicationId === 'preview-mock-id' || publicationId === 'temp') {
+        if (!peutPublierBabillard(user)) {
+          res.status(403).json({ success: false, message: 'Accès refusé' });
+          return;
+        }
+
+        const tempDir = path.resolve(process.cwd(), 'uploads', 'schools', user.schoolId, 'babillard', 'temp');
+        if (!fs.existsSync(tempDir)) {
+          res.status(404).json({ success: false, message: 'Dossier temporaire introuvable' });
+          return;
+        }
+
+        // Sécurisation stricte multi-tenant : confinement dans tempDir de l'école
+        const safePjId = path.basename(pjId);
+        const files = fs.readdirSync(tempDir);
+        const matchingFile = files.find((f) => f.startsWith(safePjId));
+
+        if (!matchingFile) {
+          res.status(404).json({ success: false, message: 'Fichier temporaire introuvable' });
+          return;
+        }
+
+        const fullPath = path.join(tempDir, matchingFile);
+        const ext = path.extname(matchingFile).toLowerCase();
+        let mime = 'application/octet-stream';
+        if (ext === '.png') mime = 'image/png';
+        else if (ext === '.jpg' || ext === '.jpeg') mime = 'image/jpeg';
+        else if (ext === '.webp') mime = 'image/webp';
+        else if (ext === '.pdf') mime = 'application/pdf';
+
+        res.setHeader('Content-Type', mime);
+        res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(matchingFile)}"`);
+        fs.createReadStream(fullPath).pipe(res);
+        return;
+      }
 
       const pub = await this.repo.trouverParId(publicationId, user.schoolId);
       if (!pub) {

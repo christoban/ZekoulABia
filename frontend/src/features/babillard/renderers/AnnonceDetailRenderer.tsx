@@ -490,26 +490,29 @@ export default function AnnonceDetailRenderer({
             <div className="space-y-4 mb-4">
               {publication.piecesJointes
                 .filter((p) => p.mime.startsWith('image/'))
-                .map((pj) => (
-                  <div key={pj.id} className="relative rounded overflow-hidden border border-[var(--paper-edge)] group">
-                    <img
-                      src={`/api/v2/babillard/${publication.id}/pieces-jointes/${pj.id}`}
-                      alt={pj.texteAlternatif ?? pj.nomOriginal}
-                      className="w-full max-h-[550px] object-contain bg-[var(--paper-footer-bg)] cursor-zoom-in"
-                      onClick={() => setSelectedImage(`/api/v2/babillard/${publication.id}/pieces-jointes/${pj.id}`)}
-                    />
-                    <div className="p-2.5 bg-[var(--paper-footer-bg)] border-t border-[var(--paper-edge)] flex items-center justify-between text-xs text-[var(--paper-text-muted)]">
-                      <span className="font-semibold truncate text-[var(--paper-text)]">{pj.nomOriginal}</span>
-                      <a
-                        href={`/api/v2/babillard/${publication.id}/pieces-jointes/${pj.id}`}
-                        download={pj.nomOriginal}
-                        className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
-                      >
-                        <Download size={12} /> Télécharger
-                      </a>
+                .map((pj) => {
+                  const imgUrl = pj.previewUrl || `/api/v2/babillard/${publication.id}/pieces-jointes/${pj.id}`;
+                  return (
+                    <div key={pj.id} className="relative rounded overflow-hidden border border-[var(--paper-edge)] group">
+                      <img
+                        src={imgUrl}
+                        alt={pj.texteAlternatif ?? pj.nomOriginal}
+                        className="w-full max-h-[550px] object-contain bg-[var(--paper-footer-bg)] cursor-zoom-in"
+                        onClick={() => setSelectedImage(imgUrl)}
+                      />
+                      <div className="p-2.5 bg-[var(--paper-footer-bg)] border-t border-[var(--paper-edge)] flex items-center justify-between text-xs text-[var(--paper-text-muted)]">
+                        <span className="font-semibold truncate text-[var(--paper-text)]">{pj.nomOriginal}</span>
+                        <a
+                          href={imgUrl}
+                          download={pj.nomOriginal}
+                          className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
+                        >
+                          <Download size={12} /> Télécharger
+                        </a>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
             </div>
 
             {/* Fichiers PDF et documents */}
