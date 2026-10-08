@@ -16,6 +16,7 @@ interface Props {
   conversations?: ConversationSummary[]
   /** Quand on clique sur un canal de groupe, on ouvre directement la conversation */
   onSelectConversation?: (id: string) => void
+  currentUser?: { id: string; role: string } | null
 }
 
 /** Couleur déterministe basée sur l'id */
@@ -35,7 +36,7 @@ function avatarColor(id: string): string {
   return colors[Math.abs(hash) % colors.length]
 }
 
-export default function NouveauMessagePrive({ onCreated, onCancel, conversations, onSelectConversation }: Props) {
+export default function NouveauMessagePrive({ onCreated, onCancel, conversations, onSelectConversation, currentUser }: Props) {
   const t = useT('common')
   const { addToQueue, syncQueue, isOnline } = useSyncQueue()
   const [recherche, setRecherche] = useState('')
@@ -117,6 +118,15 @@ export default function NouveauMessagePrive({ onCreated, onCancel, conversations
     setEnvoi(true)
     setErreur(null)
     const clientMessageId = crypto.randomUUID()
+    const myId = currentUser?.id || (() => {
+      try {
+        if (typeof window !== 'undefined') {
+          const raw = localStorage.getItem('zekoulabia_user')
+          if (raw) return JSON.parse(raw)?.userId || JSON.parse(raw)?.id || ''
+        }
+      } catch {}
+      return ''
+    })()
 
     // Vérifier si une conversation directe existe déjà avec ce destinataire
     const existante = conversations?.find((c) =>
@@ -125,69 +135,64 @@ export default function NouveauMessagePrive({ onCreated, onCancel, conversations
       c.participants.some((p) => p.id === destinataire.id)
     )
 
+    const convId = existante ? existante.id : `direct-${destinataire.id}`
+
+    // 1. Stockage optimiste immédiat dans le cache local
+    await putCachedMessage({
+      id: clientMessageId,
+      conversationId: convId,
+      senderId: myId,
+      content: contenu.trim(),
+      createdAt: Date.now(),
+      status: 'PENDING',
+    }).catch(() => {})
+
+    // 2. Mise en file d'attente pour le gardien de connectivité
+    await addToQueue({
+      type: 'MESSAGE_SEND',
+      endpoint: '/api/v2/messagerie/messages',
+      method: 'POST',
+      payload: existante
+        ? { clientMessageId, content: contenu.trim(), conversationId: existante.id }
+        : { clientMessageId, content: contenu.trim(), destinataireId: destinataire.id },
+    }).catch(() => {})
+
+    // Si on est hors ligne : bascule immédiate vers la conversation sans attendre
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      // Mode hors-ligne : envoi optimiste dans la file de synchronisation
-      if (existante) {
-        await putCachedMessage({
-          id: clientMessageId,
-          conversationId: existante.id,
-          senderId: 'ME',
-          content: contenu.trim(),
-          createdAt: Date.now(),
-          status: 'PENDING',
-        }).catch(() => {})
-
-        await addToQueue({
-          type: 'MESSAGE_SEND',
-          endpoint: '/api/v2/messagerie/messages',
-          method: 'POST',
-          payload: { clientMessageId, content: contenu.trim(), conversationId: existante.id },
-        }).catch(() => {})
-
-        void syncQueue().catch(() => {})
-        onCreated(existante.id)
-        setEnvoi(false)
-        return
-      }
-
-      await addToQueue({
-        type: 'MESSAGE_SEND',
-        endpoint: '/api/v2/messagerie/messages',
-        method: 'POST',
-        payload: { clientMessageId, content: contenu.trim(), destinataireId: destinataire.id },
-      }).catch(() => {})
-
-      void syncQueue().catch(() => {})
-      onCancel()
       setEnvoi(false)
+      onCreated(convId)
+      void syncQueue().catch(() => {})
       return
     }
 
+    // Si en ligne : tentative rapide (timeout 3.5s) pour obtenir l'ID serveur définitif
     try {
+      const controller = new AbortController()
+      const tId = setTimeout(() => controller.abort(), 3500)
+
       const response = await fetchApi('/api/v2/messagerie/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ destinataireId: destinataire.id, content: contenu.trim(), clientMessageId }),
-      })
+        body: JSON.stringify(
+          existante
+            ? { conversationId: existante.id, content: contenu.trim(), clientMessageId }
+            : { destinataireId: destinataire.id, content: contenu.trim(), clientMessageId }
+        ),
+        signal: controller.signal,
+      }).finally(() => clearTimeout(tId))
+
       const payload = await response.json()
-      if (payload.success) {
+      if (payload.success && payload.data?.conversationId) {
         onCreated(payload.data.conversationId)
       } else {
-        setErreur(payload.message ?? (t('messagerie.generic_error') ?? 'Une erreur est survenue.'))
+        onCreated(convId)
       }
     } catch {
-      // Si la requête échoue en réseau, repli sur la file d'attente
-      await addToQueue({
-        type: 'MESSAGE_SEND',
-        endpoint: '/api/v2/messagerie/messages',
-        method: 'POST',
-        payload: { clientMessageId, content: contenu.trim(), destinataireId: destinataire.id },
-      }).catch(() => {})
-      void syncQueue().catch(() => {})
-      if (existante) onCreated(existante.id)
-      else onCancel()
+      // Repli immédiat sans blocage en cas de réseau lent ou instable
+      onCreated(convId)
     } finally {
       setEnvoi(false)
+      void syncQueue().catch(() => {})
     }
   }
 

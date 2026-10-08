@@ -224,18 +224,47 @@ export default function FilConversation({ conversationId, conversation, currentU
         }
       }
 
+      // 2. Si hors-ligne, ne pas tenter le réseau et charger directement depuis le cache + outbox
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        const [cache, locaux] = await Promise.all([
+          getCachedData<DisplayMessage[]>(cleCacheHistorique),
+          getCachedMessages(conversationId),
+        ])
+        const fusion = fusionner(cache?.data ?? [], locaux as DisplayMessage[])
+        memoryMessagesCache.set(conversationId, fusion)
+        setMessages(fusion)
+        setLoading(false)
+        return
+      }
+
+      // 3. Si en ligne, tentative réseau avec temporisation de sécurité (3.5s)
+      const controller = new AbortController()
+      const tId = setTimeout(() => controller.abort(), 3500)
+
       const [res, locaux] = await Promise.all([
-        fetchApi(`/api/v2/messagerie/conversations/${conversationId}/messages`).then((r) => r.json()),
+        fetchApi(`/api/v2/messagerie/conversations/${conversationId}/messages`, { signal: controller.signal })
+          .then((r) => r.json())
+          .catch(() => ({ success: false, data: [] }))
+          .finally(() => clearTimeout(tId)),
         getCachedMessages(conversationId),
       ])
-      const serveur: DisplayMessage[] = res.success ? res.data : []
-      const locauxEnCours = locaux.filter((m) => m.status !== 'SENT')
-      const fusion = fusionner(serveur, locauxEnCours as DisplayMessage[])
-      memoryMessagesCache.set(conversationId, fusion)
-      setMessages(fusion)
-      await putCachedData(cleCacheHistorique, serveur)
+
+      const serveur: DisplayMessage[] = res.success && Array.isArray(res.data) ? res.data : []
+      if (serveur.length > 0) {
+        const fusion = fusionner(serveur, locaux as DisplayMessage[])
+        memoryMessagesCache.set(conversationId, fusion)
+        setMessages(fusion)
+        await putCachedData(cleCacheHistorique, serveur).catch(() => {})
+      } else {
+        const cache = await getCachedData<DisplayMessage[]>(cleCacheHistorique)
+        const fusion = fusionner(cache?.data ?? [], locaux as DisplayMessage[])
+        if (fusion.length > 0) {
+          memoryMessagesCache.set(conversationId, fusion)
+          setMessages(fusion)
+        }
+      }
     } catch {
-      // Hors-ligne ou serveur injoignable : on retombe sur le dernier historique mis en cache
+      // Hors-ligne ou serveur injoignable : repli propre sur les messages locaux
       const [cache, locaux] = await Promise.all([
         getCachedData<DisplayMessage[]>(cleCacheHistorique),
         getCachedMessages(conversationId),
@@ -417,7 +446,13 @@ export default function FilConversation({ conversationId, conversation, currentU
   }
 
   const statutIcone = (message: DisplayMessage) => {
-    if (message.status === 'PENDING') return <Clock size={12} className="msg-time-sent" style={{ opacity: 0.8 }} />
+    if (message.status === 'PENDING') {
+      return (
+        <span title={t('messagerie.sent_offline_guardian') ?? "Envoyé (acheminement automatique par le gardien)"} style={{ display: 'inline-flex', alignItems: 'center' }}>
+          <Check size={12} className="msg-time-sent" style={{ opacity: 0.75 }} />
+        </span>
+      )
+    }
     if (message.status === 'FAILED') return <AlertCircle size={12} color="var(--red)" />
     const isRead = message.isRead || (Array.isArray(message.readStatuses) && message.readStatuses.some((r) => r.userId !== currentUser.id))
     if (isRead) {
@@ -429,7 +464,7 @@ export default function FilConversation({ conversationId, conversation, currentU
     }
     return (
       <span title="Envoyé" style={{ display: 'inline-flex', alignItems: 'center' }}>
-        <Check size={12} className="msg-time-sent" style={{ opacity: 0.8 }} />
+        <Check size={12} className="msg-time-sent" style={{ opacity: 0.95 }} />
       </span>
     )
   }

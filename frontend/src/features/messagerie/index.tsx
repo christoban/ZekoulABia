@@ -366,6 +366,7 @@ export default function Messagerie() {
         <div className="messagerie-pane-fil" style={{ background: 'var(--bg)' }}>
           {nouveauMessage ? (
             <NouveauMessagePrive
+              currentUser={currentUser}
               onCreated={handleCreated}
               onCancel={() => { setNouveauMessage(false); setVueMobile('liste') }}
               conversations={conversations}
