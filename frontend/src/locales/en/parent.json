@@ -12,7 +12,9 @@
     "noTransactions": "No transaction yet",
     "validated": "Validated",
     "pending": "Pending validation",
-    "loadError": "Error loading APEE data"
+    "loadError": "Error loading APEE data",
+    "offlineWarning": "Data not yet synchronized offline. Information will update once you are back online.",
+    "offlineNoCacheHistory": "No transactions stored in offline cache yet."
   },
   "health": {
     "label": "Health score",
@@ -206,10 +208,14 @@
     "carteTitle": "Student Identity Card",
     "carteDesc": "Official student ID card with national ID number, class, photo and emergency contact.",
     "downloadPdf": "Download PDF",
+    "downloadCachedPdf": "Download (cached)",
     "downloading": "Generating document…",
     "downloadSuccess": "Document downloaded successfully",
+    "downloadCachedSuccess": "Document downloaded from local offline cache",
     "downloadError": "Error generating document",
-    "offlineNotice": "Downloading a new official document requires an active internet connection.",
+    "offlineNotice": "Initial download of this official document requires an active internet connection.",
+    "offlineNotCached": "Offline (not cached)",
+    "cachedBadge": "Available offline",
     "securityBadge": "Certified document with instant digital QR Code verification",
     "emptyChild": "Select a child to view administrative documents."
   },

@@ -1,5 +1,5 @@
 'use client'
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useEffect } from 'react'
 import { Clock, MapPin, User as UserIcon, Coffee, Utensils } from 'lucide-react'
 import type { ChildWithStats } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
@@ -190,6 +190,48 @@ export default function SectionParentTimetable({ onToast, userId }: Props) {
   }, [userId, t])
 
   const { data, loading, error, fromCache, cachedAt, refetch } = useCachedFetch<TimetableData>(cacheKey, fetchFn)
+  const [fallbackData, setFallbackData] = useState<TimetableData | null>(null)
+
+  useEffect(() => {
+    if (error === 'OFFLINE_NO_CACHE' && !data && userId) {
+      getCachedData<ChildWithStats[]>(`parent:children:${userId}`).then(async (cachedKids) => {
+        const kids = cachedKids?.data || []
+        if (kids.length === 0) return
+
+        const cachedGrid = await getCachedData<any>('parent:timetable-grid-config')
+        const gridData = cachedGrid?.data
+
+        let squelette: PeriodeGrille[] = DEFAULT_SKELETON
+        let joursActifs: string[] = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI']
+        let squeletteParJour: Record<string, PeriodeGrille[]> = {}
+
+        if (gridData) {
+          if (Array.isArray(gridData.squelette) && gridData.squelette.length > 0) squelette = gridData.squelette
+          if (Array.isArray(gridData.config?.joursActifs) && gridData.config.joursActifs.length > 0) joursActifs = gridData.config.joursActifs
+          if (gridData.squeletteParJour && typeof gridData.squeletteParJour === 'object') squeletteParJour = gridData.squeletteParJour
+        }
+
+        const slotsByChild: Record<string, Record<string, CellSlots>> = {}
+        const classNames: Record<string, string> = {}
+
+        for (const c of kids) {
+          classNames[c.studentId] = c.classeNom || ''
+          if (c.classeId) {
+            const cachedTT = await getCachedData<any>(`parent:timetables:class:${c.classeId}`)
+            slotsByChild[c.studentId] = cachedTT?.data ? buildSlots(cachedTT.data, c.groupIds ?? [], t('timetable.notAssignedToGroup')) : {}
+          } else {
+            slotsByChild[c.studentId] = {}
+          }
+        }
+
+        const resolved: TimetableData = { children: kids, slotsByChild, classNames, squelette, joursActifs, squeletteParJour }
+        setFallbackData(resolved)
+        if (cacheKey) putCachedData(cacheKey, resolved).catch(() => {})
+      }).catch(() => {})
+    }
+  }, [error, data, userId, cacheKey, t])
+
+  const timetable = data ?? fallbackData
 
   const getWeekRange = () => {
     const now = new Date()
@@ -201,7 +243,7 @@ export default function SectionParentTimetable({ onToast, userId }: Props) {
     return t('timetable.weekRange').replace('{start}', fmt(monday)).replace('{end}', fmt(friday))
   }
 
-  if (loading) {
+  if (loading && !timetable) {
     return (
       <div style={{ padding: '20px 24px', height: '100%', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ fontSize: 12.5, color: 'var(--text3)', fontWeight: 600 }}>{t('loading')}</div>
@@ -209,9 +251,9 @@ export default function SectionParentTimetable({ onToast, userId }: Props) {
     )
   }
 
-  if (error === 'OFFLINE_NO_CACHE') return <OfflineEmptyState />
+  if (error === 'OFFLINE_NO_CACHE' && !timetable) return <OfflineEmptyState />
 
-  if (error) {
+  if (error && !timetable) {
     return (
       <div className="px-3.5 py-3.5 sm:px-6 sm:py-5" style={{ height: '100%', overflowY: 'auto' }}>
         <div style={{ padding: 20, textAlign: 'center' }}>
@@ -226,13 +268,13 @@ export default function SectionParentTimetable({ onToast, userId }: Props) {
     )
   }
 
-  const children = data?.children ?? []
+  const children = timetable?.children ?? []
   const child = children[selectedChild]
-  const slots = child ? (data?.slotsByChild[child.studentId] ?? {}) : {}
-  const className = child ? (data?.classNames[child.studentId] ?? '') : ''
-  const squelette = data?.squelette ?? DEFAULT_SKELETON
-  const joursActifs = data?.joursActifs ?? ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI']
-  const squeletteParJour = data?.squeletteParJour ?? {}
+  const slots = child ? (timetable?.slotsByChild[child.studentId] ?? {}) : {}
+  const className = child ? (timetable?.classNames[child.studentId] ?? '') : ''
+  const squelette = timetable?.squelette ?? DEFAULT_SKELETON
+  const joursActifs = timetable?.joursActifs ?? ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI']
+  const squeletteParJour = timetable?.squeletteParJour ?? {}
 
   const activeDayName = DAY_NAMES[selectedDay] || 'LUNDI'
   const activeDayPeriods = squeletteParJour[activeDayName] || squelette

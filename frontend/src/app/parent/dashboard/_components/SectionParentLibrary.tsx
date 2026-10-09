@@ -6,6 +6,8 @@ import { useCachedFetch } from '@/hooks/useCachedFetch'
 import OfflineEmptyState from '@/components/OfflineEmptyState'
 import { useT } from '@/lib/i18n'
 
+import { getCachedData } from '@/lib/offline/db'
+
 interface Child { studentId: string; prenom: string; nom: string }
 
 interface BookLoan {
@@ -35,19 +37,39 @@ export default function SectionParentLibrary({ userId }: Props) {
 
   useEffect(() => {
     if (!userId) return
-    fetchApi('/api/v2/parent/children', { credentials: 'include' })
-      .then(r => r.json())
-      .then(d => {
-        if (!d.success) return
-        const kids: Child[] = (d.data || []).map((c: any) => ({
-          studentId: c.studentId,
-          prenom: c.prenom,
-          nom: c.nom,
-        }))
-        setChildren(kids)
-        if (kids.length > 0 && kids[0]) setSelected(kids[0].studentId)
-      })
-      .catch(() => {})
+
+    const loadKids = async () => {
+      let kids: Child[] = []
+      try {
+        const r = await fetchApi('/api/v2/parent/children', { credentials: 'include' })
+        const d = await r.json()
+        if (d.success && Array.isArray(d.data)) {
+          kids = d.data.map((c: any) => ({
+            studentId: c.studentId,
+            prenom: c.prenom,
+            nom: c.nom,
+          }))
+        }
+      } catch {
+        /* hors-ligne */
+      }
+
+      if (kids.length === 0) {
+        const cached = await getCachedData<any[]>(`parent:children:${userId}`)
+        if (cached?.data && Array.isArray(cached.data)) {
+          kids = cached.data.map((c: any) => ({
+            studentId: c.studentId,
+            prenom: c.prenom,
+            nom: c.nom,
+          }))
+        }
+      }
+
+      setChildren(kids)
+      if (kids.length > 0 && kids[0]) setSelected(kids[0].studentId)
+    }
+
+    loadKids()
   }, [userId])
 
   const fetchLoansFn = useCallback(async (): Promise<BookLoan[]> => {
@@ -130,7 +152,13 @@ export default function SectionParentLibrary({ userId }: Props) {
         </div>
       )}
 
-      {!loading && error === 'OFFLINE_NO_CACHE' && <OfflineEmptyState />}
+      {!loading && error === 'OFFLINE_NO_CACHE' && (
+        <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: '36px 16px', textAlign: 'center', color: 'var(--text3)' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><BookOpen size={34} strokeWidth={1.5} style={{ opacity: 0.5 }} /></div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>Aucun emprunt enregistré hors ligne</div>
+          <div style={{ fontSize: 12.5, marginTop: 4 }}>Les données d&apos;emprunt de cet élève n&apos;ont pas encore été synchronisées sur cet appareil.</div>
+        </div>
+      )}
 
       {!loading && error && error !== 'OFFLINE_NO_CACHE' && (
         <div style={{ background: 'var(--red-light)', borderRadius: 10, padding: '10px 14px', color: 'var(--red)', fontWeight: 700, fontSize: 12.5, display: 'flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={15} strokeWidth={2} /> {error}</div>

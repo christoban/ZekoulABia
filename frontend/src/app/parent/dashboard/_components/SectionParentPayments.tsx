@@ -25,6 +25,7 @@ import type { Toast } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 import { isExamClass, getExamLabel, isSchoolPrivate } from '@/lib/academicExamDetector'
 
@@ -192,7 +193,40 @@ export default function SectionParentPayments({ onToast, userId }: Props) {
     fetchInvoicesFn
   )
 
-  const invoices = cachedInvoices ?? []
+  const [offlineFallbackInvoices, setOfflineFallbackInvoices] = useState<Invoice[]>([])
+
+  useEffect(() => {
+    if (error === 'OFFLINE_NO_CACHE' && !cachedInvoices && userId) {
+      if (childFilter) {
+        getCachedData<Invoice[]>(`parent:invoices:${userId}:${childFilter}`).then((cached) => {
+          if (cached?.data && Array.isArray(cached.data)) setOfflineFallbackInvoices(cached.data)
+        }).catch(() => {})
+      } else {
+        Promise.all(
+          children.map((c) => getCachedData<Invoice[]>(`parent:invoices:${userId}:${c.studentId}`))
+        ).then((results) => {
+          const merged: Invoice[] = []
+          const seenIds = new Set<string>()
+          for (const r of results) {
+            if (r?.data && Array.isArray(r.data)) {
+              for (const inv of r.data) {
+                if (!seenIds.has(inv.id)) {
+                  seenIds.add(inv.id)
+                  merged.push(inv)
+                }
+              }
+            }
+          }
+          if (merged.length > 0) {
+            setOfflineFallbackInvoices(merged)
+            putCachedData(`parent:invoices:${userId}:all`, merged).catch(() => {})
+          }
+        }).catch(() => {})
+      }
+    }
+  }, [error, cachedInvoices, userId, childFilter, children])
+
+  const invoices = cachedInvoices ?? (offlineFallbackInvoices.length > 0 ? offlineFallbackInvoices : [])
 
   // Rafraîchissement temps réel
   useEffect(() => {

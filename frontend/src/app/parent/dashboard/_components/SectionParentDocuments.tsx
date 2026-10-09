@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { FileText, CreditCard, Download, Loader2, ShieldCheck, WifiOff, User, CheckCircle2 } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 import type { ChildWithStats } from '../_types'
 
@@ -19,6 +20,7 @@ export default function SectionParentDocuments({ childrenList, userId, onToast }
   const isOnline = useOnlineStatus()
   const [selectedChildIndex, setSelectedChildIndex] = useState(0)
   const [downloading, setDownloading] = useState<'certificat' | 'carte' | null>(null)
+  const [cachedDocs, setCachedDocs] = useState<{ certificat: boolean; carte: boolean }>({ certificat: false, carte: false })
 
   const childrenCacheKey = userId ? `parent:children:${userId}` : 'parent:children:documents'
   const fetchChildrenFn = useCallback(async (): Promise<ChildWithStats[]> => {
@@ -37,13 +39,49 @@ export default function SectionParentDocuments({ childrenList, userId, onToast }
   const studentId = currentChild?.studentId
   const childName = currentChild ? `${currentChild.prenom}_${currentChild.nom}` : 'eleve'
 
-  const downloadDoc = async (type: 'certificat' | 'carte') => {
-    if (!studentId) return
-    if (!isOnline) {
-      onToast(t('documents.offlineNotice'), 'warning')
+  // Vérifier la présence des documents en cache Dexie pour cet élève
+  useEffect(() => {
+    if (!studentId) {
+      setCachedDocs({ certificat: false, carte: false })
       return
     }
+    let active = true
+    Promise.all([
+      getCachedData<{ dataUrl: string }>(`parent:doc:certificat:${studentId}`),
+      getCachedData<{ dataUrl: string }>(`parent:doc:carte:${studentId}`),
+    ]).then(([cCert, cCarte]) => {
+      if (active) {
+        setCachedDocs({
+          certificat: !!cCert?.data?.dataUrl,
+          carte: !!cCarte?.data?.dataUrl,
+        })
+      }
+    }).catch(() => {})
+    return () => { active = false }
+  }, [studentId])
 
+  const downloadDoc = async (type: 'certificat' | 'carte') => {
+    if (!studentId) return
+
+    // 1. Si hors-ligne ou si le document est déjà en cache
+    const cached = await getCachedData<{ dataUrl: string; filename: string }>(`parent:doc:${type}:${studentId}`).catch(() => null)
+    if (!isOnline) {
+      if (cached?.data?.dataUrl) {
+        const a = document.createElement('a')
+        a.href = cached.data.dataUrl
+        a.download = cached.data.filename || `${type}_${childName}.pdf`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        onToast(t('documents.downloadCachedSuccess'), 'success')
+        return
+      } else {
+        onToast(t('documents.offlineNotice'), 'warning')
+        return
+      }
+    }
+
+    // 2. Si en ligne : télécharger depuis le serveur et mettre en cache local Dexie
     setDownloading(type)
     try {
       const endpoint =
@@ -58,13 +96,25 @@ export default function SectionParentDocuments({ childrenList, userId, onToast }
 
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
+      const filename = `${type}_${childName}.pdf`
       const a = document.createElement('a')
       a.href = url
-      a.download = `${type}_${childName}.pdf`
+      a.download = filename
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
+
+      // Sauvegarder dans Dexie sous forme de Data URL pour accès hors-ligne
+      const reader = new FileReader()
+      reader.onloadend = async () => {
+        const dataUrl = reader.result as string
+        if (dataUrl) {
+          await putCachedData(`parent:doc:${type}:${studentId}`, { dataUrl, filename, savedAt: Date.now() })
+          setCachedDocs(prev => ({ ...prev, [type]: true }))
+        }
+      }
+      reader.readAsDataURL(blob)
 
       onToast(t('documents.downloadSuccess'), 'success')
     } catch {
@@ -191,12 +241,24 @@ export default function SectionParentDocuments({ childrenList, userId, onToast }
             </div>
           </div>
 
+          <div className="flex items-center justify-between gap-2 mt-auto">
+            {cachedDocs.certificat && (
+              <span className="text-[11px] font-bold text-[var(--green)] flex items-center gap-1">
+                <CheckCircle2 size={12} /> {t('documents.cachedBadge')}
+              </span>
+            )}
+          </div>
+
           <button
             onClick={() => downloadDoc('certificat')}
-            disabled={downloading === 'certificat'}
+            disabled={downloading === 'certificat' || (!isOnline && !cachedDocs.certificat)}
             className="w-full h-10 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2 cursor-pointer shadow-xs transition-transform active:scale-[0.98] border-none"
             style={{
-              background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))',
+              background: (!isOnline && !cachedDocs.certificat)
+                ? 'var(--border2)'
+                : 'linear-gradient(135deg,var(--primary),var(--primary-hover))',
+              color: (!isOnline && !cachedDocs.certificat) ? 'var(--text3)' : '#fff',
+              cursor: (!isOnline && !cachedDocs.certificat) ? 'not-allowed' : 'pointer',
               opacity: downloading === 'certificat' ? 0.7 : 1,
             }}
           >
@@ -210,10 +272,15 @@ export default function SectionParentDocuments({ childrenList, userId, onToast }
                 <Download size={14} strokeWidth={2} />
                 <span>{t('documents.downloadPdf')}</span>
               </>
+            ) : cachedDocs.certificat ? (
+              <>
+                <Download size={14} strokeWidth={2} />
+                <span>{t('documents.downloadCachedPdf')}</span>
+              </>
             ) : (
               <>
                 <WifiOff size={14} strokeWidth={2} />
-                <span>Hors-ligne</span>
+                <span>{t('documents.offlineNotCached')}</span>
               </>
             )}
           </button>
@@ -236,12 +303,24 @@ export default function SectionParentDocuments({ childrenList, userId, onToast }
             </div>
           </div>
 
+          <div className="flex items-center justify-between gap-2 mt-auto">
+            {cachedDocs.carte && (
+              <span className="text-[11px] font-bold text-[var(--green)] flex items-center gap-1">
+                <CheckCircle2 size={12} /> {t('documents.cachedBadge')}
+              </span>
+            )}
+          </div>
+
           <button
             onClick={() => downloadDoc('carte')}
-            disabled={downloading === 'carte'}
+            disabled={downloading === 'carte' || (!isOnline && !cachedDocs.carte)}
             className="w-full h-10 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2 cursor-pointer shadow-xs transition-transform active:scale-[0.98] border-none"
             style={{
-              background: 'linear-gradient(135deg,var(--purple),var(--accent))',
+              background: (!isOnline && !cachedDocs.carte)
+                ? 'var(--border2)'
+                : 'linear-gradient(135deg,var(--purple),var(--accent))',
+              color: (!isOnline && !cachedDocs.carte) ? 'var(--text3)' : '#fff',
+              cursor: (!isOnline && !cachedDocs.carte) ? 'not-allowed' : 'pointer',
               opacity: downloading === 'carte' ? 0.7 : 1,
             }}
           >
@@ -255,10 +334,15 @@ export default function SectionParentDocuments({ childrenList, userId, onToast }
                 <Download size={14} strokeWidth={2} />
                 <span>{t('documents.downloadPdf')}</span>
               </>
+            ) : cachedDocs.carte ? (
+              <>
+                <Download size={14} strokeWidth={2} />
+                <span>{t('documents.downloadCachedPdf')}</span>
+              </>
             ) : (
               <>
                 <WifiOff size={14} strokeWidth={2} />
-                <span>Hors-ligne</span>
+                <span>{t('documents.offlineNotCached')}</span>
               </>
             )}
           </button>

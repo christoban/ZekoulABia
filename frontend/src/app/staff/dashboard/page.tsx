@@ -356,6 +356,51 @@ export default function StaffDashboard() {
           })
           .catch(() => {})
 
+        // 8. Messagerie
+        const uid = sessionUser?.userId
+        fetchApi('/api/v2/messagerie/conversations', { credentials: 'include' })
+          .then(r => r.json())
+          .then(async d => {
+            if (d?.success && Array.isArray(d.data)) {
+              if (uid) await putCachedData(`messagerie:conversations:${uid}`, d.data).catch(() => {})
+              await putCachedData('messagerie:conversations', d.data).catch(() => {})
+              for (const c of d.data.slice(0, 5)) {
+                if (c?.id) {
+                  fetchApi(`/api/v2/messagerie/conversations/${c.id}/messages`, { credentials: 'include' })
+                    .then(r => r.json())
+                    .then(m => {
+                      if (m?.success && Array.isArray(m.data)) {
+                        putCachedData(`messagerie:messages:${c.id}`, m.data).catch(() => {})
+                      }
+                    })
+                    .catch(() => {})
+                }
+              }
+            }
+          })
+          .catch(() => {})
+
+        // 9. Babillard officiel & compteurs
+        fetchApi('/api/v2/babillard?tab=tous', { credentials: 'include' })
+          .then(r => r.json())
+          .then(async babRes => {
+            const babItems = babRes?.data || babRes?.publications || []
+            if (Array.isArray(babItems)) {
+              await putCachedData('babillard:publications:all', babItems).catch(() => {})
+              if (babRes?.counts) {
+                const countsObj = {
+                  all: babRes.counts.tous ?? 0,
+                  pinned: babRes.counts.une ?? 0,
+                  for_me: babRes.counts.pourMoi ?? 0,
+                  unread: babRes.counts.nonLus ?? 0,
+                  archives: babRes.counts.archives ?? 0,
+                }
+                await putCachedData('babillard:counts', countsObj).catch(() => {})
+              }
+            }
+          })
+          .catch(() => {})
+
       } catch { /* ignorer */ }
     }
 

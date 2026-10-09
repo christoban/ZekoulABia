@@ -210,6 +210,12 @@ export default function ParentDashboard() {
           await putCachedData('parent:timetable-grid-config', gridRes.data)
         }
 
+        // 2bis. Précharger toutes les factures (vue par défaut du parent)
+        const allInvRes = await fetchApi('/api/v2/parent/invoices?limit=50', { credentials: 'include' }).then(r => r.json()).catch(() => null)
+        if (allInvRes?.data) {
+          await putCachedData(`parent:invoices:${uid}:all`, allInvRes.data)
+        }
+
         // 3. Précharger pour chaque enfant : notes séquentielles, assiduité, cahier de texte, emploi du temps, profil académique
         for (const child of children) {
           const sid = child.studentId
@@ -262,7 +268,68 @@ export default function ParentDashboard() {
           if (acadRes?.success && acadRes.data) {
             await putCachedData(`student:academic-profile:${sid}`, acadRes.data)
           }
+
+          // Prêts de bibliothèque pour cet enfant
+          try {
+            const loanRes = await fetchApi(`/api/v2/library/my-loans?studentId=${sid}`, { credentials: 'include' }).then(r => r.json()).catch(() => null)
+            const loanList = loanRes?.success && Array.isArray(loanRes.data) ? loanRes.data : []
+            await putCachedData(`parent-library-${sid}`, loanList)
+          } catch { /* ignore */ }
         }
+
+        // 4. Transparence APEE
+        try {
+          const [rSolde, rTx] = await Promise.all([
+            fetchApi('/api/v2/apee/solde', { credentials: 'include' }).then(r => r.json()).catch(() => null),
+            fetchApi('/api/v2/apee/transactions', { credentials: 'include' }).then(r => r.json()).catch(() => null),
+          ])
+          const dSolde = rSolde?.success ? rSolde.data : null
+          const dTx = rTx?.success && Array.isArray(rTx.data) ? rTx.data : []
+          await putCachedData('parent-apee', { solde: dSolde, transactions: dTx })
+        } catch { /* ignore */ }
+
+        // 5. Messagerie : conversations et messages récents du parent
+        try {
+          const convRes = await fetchApi('/api/v2/messagerie/conversations', { credentials: 'include' }).then(r => r.json()).catch(() => null)
+          if (convRes?.success && Array.isArray(convRes.data)) {
+            await putCachedData(`messagerie:conversations:${uid}`, convRes.data)
+            await putCachedData('messagerie:conversations', convRes.data)
+
+            for (const c of convRes.data.slice(0, 5)) {
+              if (c?.id) {
+                try {
+                  const msgRes = await fetchApi(`/api/v2/messagerie/conversations/${c.id}/messages`, { credentials: 'include' }).then(r => r.json()).catch(() => null)
+                  if (msgRes?.success && Array.isArray(msgRes.data)) {
+                    await putCachedData(`messagerie:messages:${c.id}`, msgRes.data)
+                  }
+                } catch { /* ignore */ }
+              }
+            }
+          }
+        } catch { /* ignore */ }
+
+        // 6. Babillard officiel & compteurs
+        try {
+          const babRes = await fetchApi('/api/v2/babillard?tab=tous', { credentials: 'include' }).then(r => r.json()).catch(() => null)
+          const babItems = babRes?.data || babRes?.publications || []
+          if (Array.isArray(babItems)) {
+            await putCachedData('babillard:publications:all', babItems)
+            const counts = babRes?.counts ? {
+              all: babRes.counts.tous ?? babItems.length,
+              pinned: babRes.counts.une ?? 0,
+              for_me: babRes.counts.pourMoi ?? 0,
+              unread: babRes.counts.nonLus ?? 0,
+              archives: babRes.counts.archives ?? 0,
+            } : {
+              all: babItems.length,
+              pinned: babItems.filter((p: any) => p.isPinned || p.pinned).length,
+              for_me: babItems.length,
+              unread: 0,
+              archives: 0,
+            }
+            await putCachedData('babillard:counts', counts)
+          }
+        } catch { /* ignore */ }
       } catch { /* silent */ }
     })()
   }, [user])

@@ -1,10 +1,9 @@
 'use client'
 import { useCallback, useEffect } from 'react'
-import { HandCoins, CheckCircle2, Clock, Package } from 'lucide-react'
+import { HandCoins, CheckCircle2, Clock, Package, WifiOff } from 'lucide-react'
 import type { Toast } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
-import OfflineEmptyState from '@/components/OfflineEmptyState'
 import { useT } from '@/lib/i18n'
 
 interface Props {
@@ -52,6 +51,7 @@ export default function SectionParentAPEE({ onToast }: Props) {
   }, [t])
 
   const { data, loading, error, fromCache, cachedAt } = useCachedFetch<ApeeData>('parent-apee', fetchFn)
+  const isOfflineNoCache = error === 'OFFLINE_NO_CACHE'
   const solde = data?.solde ?? null
   const transactions = data?.transactions ?? []
 
@@ -59,13 +59,17 @@ export default function SectionParentAPEE({ onToast }: Props) {
     if (error && error !== 'OFFLINE_NO_CACHE' && !data) onToast(t('apee.loadError'), 'error')
   }, [error, data, onToast, t])
 
-  if (error === 'OFFLINE_NO_CACHE') return <OfflineEmptyState />
-
   return (
     <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
       <div style={{ marginBottom: 8 }}>
         <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>{t('apee.title')}</div>
         <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 500, marginTop: 2 }}>{t('apee.subtitle')}</div>
+        {isOfflineNoCache && (
+          <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+            <WifiOff size={14} className="shrink-0" />
+            <span>{t('apee.offlineWarning')}</span>
+          </div>
+        )}
         {fromCache && cachedAt && (
           <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 6, padding: '3px 8px', fontSize: 11.5, fontWeight: 600, color: 'var(--amber)', display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 8 }}>
             <Package size={13} strokeWidth={2} /> {t('cacheBadge').replace('{date}', new Date(cachedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }))}
@@ -73,12 +77,12 @@ export default function SectionParentAPEE({ onToast }: Props) {
         )}
       </div>
 
-      {solde && (
+      {(solde || isOfflineNoCache) && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5 mb-3 sm:mb-4">
           {[
-            { label: t('apee.totalCollectes'), value: fmtCFA(solde.totalCollectes), color: 'var(--green)' },
-            { label: t('apee.totalDepenses'), value: fmtCFA(solde.totalDepenses), color: 'var(--red)' },
-            { label: t('apee.solde'), value: fmtCFA(solde.solde), color: 'var(--blue)' },
+            { label: t('apee.totalCollectes'), value: solde ? fmtCFA(solde.totalCollectes) : '—', color: 'var(--green)' },
+            { label: t('apee.totalDepenses'), value: solde ? fmtCFA(solde.totalDepenses) : '—', color: 'var(--red)' },
+            { label: t('apee.solde'), value: solde ? fmtCFA(solde.solde) : '—', color: 'var(--blue)' },
           ].map((k) => (
             <div key={k.label} style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', padding: '10px 14px' }}>
               <div style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase' }}>{k.label}</div>
@@ -93,7 +97,9 @@ export default function SectionParentAPEE({ onToast }: Props) {
         {loading ? (
           <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)', fontSize: 12.5 }}>{t('apee.loading')}</div>
         ) : transactions.length === 0 ? (
-          <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)', fontSize: 12.5 }}>{t('apee.noTransactions')}</div>
+          <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)', fontSize: 12.5 }}>
+            {isOfflineNoCache ? t('apee.offlineNoCacheHistory') : t('apee.noTransactions')}
+          </div>
         ) : (
           <div className="divide-y divide-[var(--border)]">
             {transactions.map((tx) => (

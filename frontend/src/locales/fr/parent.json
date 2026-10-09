@@ -12,7 +12,9 @@
     "noTransactions": "Aucune transaction pour le moment",
     "validated": "Validée",
     "pending": "En attente de validation",
-    "loadError": "Erreur lors du chargement des données APEE"
+    "loadError": "Erreur lors du chargement des données APEE",
+    "offlineWarning": "Données non synchronisées hors-ligne. Les informations seront actualisées dès le retour de la connexion.",
+    "offlineNoCacheHistory": "Aucune transaction enregistrée en cache pour le moment."
   },
   "health": {
     "label": "Indice santé",
@@ -206,10 +208,14 @@
     "carteTitle": "Carte d'identité scolaire",
     "carteDesc": "Carte officielle de l'élève avec matricule national, classe, photo et contact d'urgence.",
     "downloadPdf": "Télécharger en PDF",
+    "downloadCachedPdf": "Télécharger (en cache)",
     "downloading": "Génération du document…",
     "downloadSuccess": "Document téléchargé avec succès",
+    "downloadCachedSuccess": "Document téléchargé depuis la mémoire locale (hors-ligne)",
     "downloadError": "Erreur lors de la génération du document",
-    "offlineNotice": "Le téléchargement d'un nouveau document officiel requiert une connexion internet.",
+    "offlineNotice": "Le téléchargement initial de ce document officiel requiert une connexion internet.",
+    "offlineNotCached": "Hors-ligne (non synchronisé)",
+    "cachedBadge": "Disponible hors-ligne",
     "securityBadge": "Document certifié avec QR Code de vérification numérique instantanée",
     "emptyChild": "Sélectionnez un enfant pour consulter ses documents administratifs."
   },

@@ -153,12 +153,51 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
       getCachedData<{ all: number; pinned: number; for_me: number; unread: number; archives: number }>('babillard:counts'),
     ]);
 
-    if (cachedPubs?.data && Array.isArray(cachedPubs.data) && cachedPubs.data.length > 0) {
+    let allPubsFallback: Publication[] = [];
+    if (!cachedPubs?.data || cachedPubs.data.length === 0) {
+      const allCached = await getCachedData<Publication[]>('babillard:publications:all');
+      if (allCached?.data && Array.isArray(allCached.data) && allCached.data.length > 0) {
+        allPubsFallback = allCached.data;
+        let filtered = allPubsFallback;
+        if (activeTab === 'pinned') {
+          filtered = allPubsFallback.filter((p) => p.isPinned || p.epinglee);
+        } else if (activeTab === 'archives') {
+          filtered = allPubsFallback.filter((p) => p.statut === 'ARCHIVEE');
+        } else if (activeTab === 'unread') {
+          filtered = allPubsFallback.filter((p) => !p.isRead);
+        } else if (activeTab === 'for_me') {
+          const userRole = role?.toUpperCase();
+          filtered = allPubsFallback.filter((p) => {
+            const roles = p.audience?.roles || p.audienceRoles || p.targetRoles;
+            return !roles || roles.length === 0 || (userRole ? roles.includes(userRole) : true);
+          });
+        }
+        setPublications(filtered);
+        setLoading(false);
+      }
+    } else {
       setPublications(cachedPubs.data);
       setLoading(false);
     }
-    if (cachedCounts?.data) {
+
+    if (cachedCounts?.data && (cachedCounts.data.all > 0 || cachedCounts.data.pinned > 0)) {
       setTabCounts(cachedCounts.data);
+    } else {
+      const basePubs = allPubsFallback.length > 0 ? allPubsFallback : (cachedPubs?.data ?? []);
+      if (basePubs.length > 0) {
+        const userRole = role?.toUpperCase();
+        const derived = {
+          all: basePubs.length,
+          pinned: basePubs.filter((p) => p.isPinned || p.epinglee).length,
+          for_me: basePubs.filter((p) => {
+            const roles = p.audience?.roles || p.audienceRoles || p.targetRoles;
+            return !roles || roles.length === 0 || (userRole ? roles.includes(userRole) : true);
+          }).length,
+          unread: basePubs.filter((p) => !p.isRead).length,
+          archives: basePubs.filter((p) => p.statut === 'ARCHIVEE').length,
+        };
+        setTabCounts(derived);
+      }
     }
 
     if (typeof window !== 'undefined' && !navigator.onLine) {
@@ -205,7 +244,7 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [activeTab]);
+  }, [activeTab, role]);
 
   useEffect(() => {
     loadPublications();

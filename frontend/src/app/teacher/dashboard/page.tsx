@@ -361,6 +361,42 @@ export default function TeacherDashboard() {
             await putCachedData(`teacher:dept-progression:${dept.id}`, progAlertRes.data)
           }
         }
+
+        // Messagerie : conversations et messages récents de l'enseignant
+        try {
+          const convRes = await fetchApi('/api/v2/messagerie/conversations', { credentials: 'include' }).then(r => r.json()).catch(() => null)
+          if (convRes?.success && Array.isArray(convRes.data)) {
+            await putCachedData(`messagerie:conversations:${uid}`, convRes.data).catch(() => {})
+            await putCachedData('messagerie:conversations', convRes.data).catch(() => {})
+            for (const c of convRes.data.slice(0, 5)) {
+              if (c?.id) {
+                const msgRes = await fetchApi(`/api/v2/messagerie/conversations/${c.id}/messages`, { credentials: 'include' }).then(r => r.json()).catch(() => null)
+                if (msgRes?.success && Array.isArray(msgRes.data)) {
+                  await putCachedData(`messagerie:messages:${c.id}`, msgRes.data).catch(() => {})
+                }
+              }
+            }
+          }
+        } catch { /* ignore */ }
+
+        // Babillard officiel & compteurs
+        try {
+          const babRes = await fetchApi('/api/v2/babillard?tab=tous', { credentials: 'include' }).then(r => r.json()).catch(() => null)
+          const babItems = babRes?.data || babRes?.publications || []
+          if (Array.isArray(babItems)) {
+            await putCachedData('babillard:publications:all', babItems).catch(() => {})
+            if (babRes?.counts) {
+              const countsObj = {
+                all: babRes.counts.tous ?? 0,
+                pinned: babRes.counts.une ?? 0,
+                for_me: babRes.counts.pourMoi ?? 0,
+                unread: babRes.counts.nonLus ?? 0,
+                archives: babRes.counts.archives ?? 0,
+              }
+              await putCachedData('babillard:counts', countsObj).catch(() => {})
+            }
+          }
+        } catch { /* ignore */ }
       } catch { /* silencieux */ }
     })()
   }, [user])

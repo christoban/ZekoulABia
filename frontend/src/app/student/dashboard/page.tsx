@@ -259,7 +259,20 @@ export default function StudentDashboard() {
           }
           if (ttRes.success && ttRes.data) {
             await putCachedData(`student:timetables:${classId}`, ttRes.data)
-            const formatted = formatStudentTimetableData(ttRes.data, gridRes?.data, groupIds, className)
+            const lv2Subject = user.studentProfile?.lv2Subject
+            const formatted = formatStudentTimetableData(
+              ttRes.data,
+              gridRes?.data,
+              groupIds,
+              className,
+              undefined,
+              {
+                studentLv2SubjectId: lv2Subject?.id,
+                studentLv2SubjectName: lv2Subject?.name,
+              }
+            )
+            const v3Key = `student:timetable:v3:${classId}:${[...groupIds].sort().join(',')}:${lv2Subject?.id || ''}`
+            await putCachedData(v3Key, formatted)
             await putCachedData(`student:timetable:v2:${classId}:${groupKey}`, formatted)
           }
 
@@ -333,8 +346,23 @@ export default function StudentDashboard() {
 
         // 12. Babillard officiel
         const babRes = await fetchApi('/api/v2/babillard?tab=tous', { credentials: 'include' }).then(r => r.json()).catch(() => ({}))
-        if (babRes.success && Array.isArray(babRes.data)) {
-          await putCachedData('babillard:publications:all', babRes.data)
+        const babItems = babRes.data || babRes.publications || []
+        if (Array.isArray(babItems)) {
+          await putCachedData('babillard:publications:all', babItems)
+          const counts = babRes.counts ? {
+            all: babRes.counts.tous ?? babItems.length,
+            pinned: babRes.counts.une ?? 0,
+            for_me: babRes.counts.pourMoi ?? 0,
+            unread: babRes.counts.nonLus ?? 0,
+            archives: babRes.counts.archives ?? 0,
+          } : {
+            all: babItems.length,
+            pinned: babItems.filter((p: any) => p.isPinned || p.pinned).length,
+            for_me: babItems.length,
+            unread: 0,
+            archives: 0,
+          }
+          await putCachedData('babillard:counts', counts)
         }
       } catch { /* silent */ }
     })()
