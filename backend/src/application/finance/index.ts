@@ -33,3 +33,7 @@ export type { ChangerStatutPlanFraisCommande, ChangerStatutPlanFraisResultat } f
 
 export { ModifierPlanFraisUseCase } from './ModifierPlanFraisUseCase';
 export type { ModifierPlanFraisCommande, ModifierPlanFraisResultat } from './ModifierPlanFraisUseCase';
+
+export { VerifierStatutPaiementUseCase } from './VerifierStatutPaiementUseCase';
+export type { VerifierStatutCommande, VerifierStatutResultat } from './VerifierStatutPaiementUseCase';
+

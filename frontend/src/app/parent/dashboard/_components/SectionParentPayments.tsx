@@ -20,6 +20,7 @@ import {
   Copy,
   Phone,
   Info,
+  Loader2,
 } from 'lucide-react'
 import type { Toast } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
@@ -137,7 +138,9 @@ export default function SectionParentPayments({ onToast, userId }: Props) {
   // ── Modal paiement ──────────────────────────────────────────────────────────
   const [modal, setModal] = useState<{
     open: boolean
+    step: 'FORM' | 'WAITING_USSD' | 'SUCCESS' | 'FAILED'
     invoiceId: string
+    campayRef: string
     amount: number
     maxAmount: number
     label: string
@@ -145,9 +148,12 @@ export default function SectionParentPayments({ onToast, userId }: Props) {
     phone: string
     loading: boolean
     error: string
+    pollingCount: number
   }>({
     open: false,
+    step: 'FORM',
     invoiceId: '',
+    campayRef: '',
     amount: 0,
     maxAmount: 0,
     label: '',
@@ -155,7 +161,10 @@ export default function SectionParentPayments({ onToast, userId }: Props) {
     phone: '',
     loading: false,
     error: '',
+    pollingCount: 0,
   })
+
+  const [verifyingInvoiceId, setVerifyingInvoiceId] = useState<string | null>(null)
 
   // 1. Récupération enfants (mis en cache)
   const childrenCacheKey = userId ? `parent:children:${userId}` : 'parent:children:default'
@@ -280,7 +289,9 @@ export default function SectionParentPayments({ onToast, userId }: Props) {
     const remaining = Math.max(0, inv.amount - paidAmt)
     setModal({
       open: true,
+      step: 'FORM',
       invoiceId: inv.id,
+      campayRef: '',
       amount: remaining,
       maxAmount: remaining,
       label: inv.feePlan?.name ?? inv.description ?? 'Facture',
@@ -288,7 +299,47 @@ export default function SectionParentPayments({ onToast, userId }: Props) {
       phone: '',
       loading: false,
       error: '',
+      pollingCount: 0,
     })
+  }
+
+  const verifyPayment = async (invoiceId: string, campayRef?: string) => {
+    if (!isOnline) {
+      onToast(t('payments.offlineMessage'), 'warning')
+      return false
+    }
+    setVerifyingInvoiceId(invoiceId)
+    try {
+      const res = await fetchApi('/api/v2/parent/payments/verify', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoiceId, campayRef: campayRef || undefined }),
+      })
+      const d = await res.json()
+      if (d.success && d.data?.statut === 'SUCCESS') {
+        onToast(d.data.message || 'Paiement validé avec succès ! Facture soldée.', 'success')
+        if (modal.open) {
+          setModal((m) => ({ ...m, step: 'SUCCESS', loading: false }))
+        }
+        reloadInvoices()
+        return true
+      } else if (d.success && d.data?.statut === 'PENDING') {
+        onToast(d.data.message || 'Le paiement est toujours en attente de confirmation sur le téléphone.', 'info')
+        return false
+      } else {
+        onToast(d.data?.message || 'Aucun paiement validé trouvé pour cette facture.', 'warning')
+        if (modal.open && modal.step === 'WAITING_USSD') {
+          setModal((m) => ({ ...m, step: 'FAILED', error: d.data?.message || 'Le paiement a échoué ou a expiré.' }))
+        }
+        return false
+      }
+    } catch {
+      onToast('Erreur lors de la vérification du paiement', 'error')
+      return false
+    } finally {
+      setVerifyingInvoiceId(null)
+    }
   }
 
   const submitPayment = async () => {
@@ -319,13 +370,87 @@ export default function SectionParentPayments({ onToast, userId }: Props) {
       })
       const d = await res.json()
       if (!res.ok) throw new Error(d.message || tf('errors.generic_error'))
-      onToast(t('payments.paymentInitiated'), 'success')
-      setModal((m) => ({ ...m, open: false }))
-      reloadInvoices()
+
+      // Basculer sur l'étape interactive d'attente USSD
+      setModal((m) => ({
+        ...m,
+        loading: false,
+        step: 'WAITING_USSD',
+        campayRef: d.data?.campayRef || '',
+        pollingCount: 0,
+      }))
     } catch (err) {
       setModal((m) => ({ ...m, error: err instanceof Error ? err.message : tf('errors.generic_error'), loading: false }))
     }
   }
+
+  // Polling automatique de confirmation du paiement en direct
+  useEffect(() => {
+    if (!modal.open || modal.step !== 'WAITING_USSD' || !modal.invoiceId) return
+
+    let cancelled = false
+    let count = 0
+    const maxPolls = 30 // 30 x 3s = 90 secondes max
+
+    const timer = setInterval(async () => {
+      count++
+      if (cancelled) return
+
+      try {
+        const res = await fetchApi('/api/v2/parent/payments/verify', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            invoiceId: modal.invoiceId,
+            campayRef: modal.campayRef || undefined,
+          }),
+        })
+        const d = await res.json()
+        if (cancelled) return
+
+        if (d.success && d.data?.statut === 'SUCCESS') {
+          clearInterval(timer)
+          setModal((m) => ({ ...m, step: 'SUCCESS', loading: false }))
+          reloadInvoices()
+          onToast('Paiement validé avec succès ! Facture soldée.', 'success')
+          return
+        }
+
+        if (d.success && d.data?.statut === 'FAILED') {
+          clearInterval(timer)
+          setModal((m) => ({
+            ...m,
+            step: 'FAILED',
+            loading: false,
+            error: d.data?.message || 'Le paiement a été rejeté ou a expiré.',
+          }))
+          reloadInvoices()
+          return
+        }
+
+        setModal((m) => ({ ...m, pollingCount: count }))
+      } catch {
+        // Poursuivre le polling
+      }
+
+      if (count >= maxPolls) {
+        clearInterval(timer)
+        if (!cancelled) {
+          setModal((m) => ({
+            ...m,
+            step: 'FAILED',
+            error: 'Délai d’attente dépassé (90s). Si vous avez déjà validé votre code secret, cliquez sur "Vérifier à nouveau".',
+          }))
+        }
+      }
+    }, 3000)
+
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+    }
+  }, [modal.open, modal.step, modal.invoiceId, modal.campayRef, reloadInvoices, onToast])
 
   // Calculs synthétiques
   const unpaid = invoices.filter((i) => i.status === 'PENDING' || i.status === 'OVERDUE' || i.status === 'PARTIAL')
@@ -700,20 +825,39 @@ export default function SectionParentPayments({ onToast, userId }: Props) {
                     </div>
 
                     {canPay && (
-                      <button
-                        onClick={() => openModal(inv)}
-                        disabled={!isOnline}
-                        className="w-full h-9 rounded-lg text-xs font-bold text-white flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                        style={{
-                          background: isOnline
-                            ? 'linear-gradient(135deg,var(--primary),var(--primary-hover))'
-                            : 'var(--border)',
-                          color: isOnline ? 'white' : 'var(--text3)',
-                        }}
-                      >
-                        <Smartphone size={13} />
-                        {isOnline ? `Payer par Mobile Money (${fmtCFA(remaining)})` : 'Connexion requise pour payer'}
-                      </button>
+                      <div className="flex flex-col gap-2">
+                        <button
+                          onClick={() => openModal(inv)}
+                          disabled={!isOnline}
+                          className="w-full h-9 rounded-lg text-xs font-bold text-white flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                          style={{
+                            background: isOnline
+                              ? 'linear-gradient(135deg,var(--primary),var(--primary-hover))'
+                              : 'var(--border)',
+                            color: isOnline ? 'white' : 'var(--text3)',
+                          }}
+                        >
+                          <Smartphone size={13} />
+                          {isOnline ? `Payer par Mobile Money (${fmtCFA(remaining)})` : 'Connexion requise pour payer'}
+                        </button>
+                        <button
+                          onClick={() => verifyPayment(inv.id)}
+                          disabled={!isOnline || verifyingInvoiceId === inv.id}
+                          className="w-full h-8 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                          style={{
+                            background: 'var(--bg2)',
+                            color: 'var(--text2)',
+                            border: '1px solid var(--border)',
+                          }}
+                        >
+                          {verifyingInvoiceId === inv.id ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : (
+                            <RefreshCw size={12} />
+                          )}
+                          Vérifier le statut du paiement
+                        </button>
+                      </div>
                     )}
                   </div>
                 )
@@ -799,21 +943,48 @@ export default function SectionParentPayments({ onToast, userId }: Props) {
                         </td>
                         <td style={tdSt}>
                           {canPay && (
-                            <button
-                              style={{
-                                ...btnPay,
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 5,
-                                opacity: isOnline ? 1 : 0.6,
-                                cursor: isOnline ? 'pointer' : 'not-allowed',
-                              }}
-                              disabled={!isOnline}
-                              onClick={() => openModal(inv)}
-                            >
-                              <Smartphone size={12} />
-                              {isOnline ? 'Payer' : 'Connexion requise'}
-                            </button>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                              <button
+                                style={{
+                                  ...btnPay,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 5,
+                                  opacity: isOnline ? 1 : 0.6,
+                                  cursor: isOnline ? 'pointer' : 'not-allowed',
+                                }}
+                                disabled={!isOnline}
+                                onClick={() => openModal(inv)}
+                              >
+                                <Smartphone size={12} />
+                                {isOnline ? 'Payer' : 'Connexion requise'}
+                              </button>
+                              <button
+                                style={{
+                                  padding: '4px 8px',
+                                  borderRadius: 7,
+                                  fontSize: 11.5,
+                                  fontWeight: 600,
+                                  background: 'var(--bg2)',
+                                  color: 'var(--text2)',
+                                  border: '1px solid var(--border)',
+                                  cursor: isOnline && verifyingInvoiceId !== inv.id ? 'pointer' : 'not-allowed',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                }}
+                                title="Vérifier si un paiement a déjà été validé sur votre mobile"
+                                disabled={!isOnline || verifyingInvoiceId === inv.id}
+                                onClick={() => verifyPayment(inv.id)}
+                              >
+                                {verifyingInvoiceId === inv.id ? (
+                                  <Loader2 size={11} className="animate-spin" />
+                                ) : (
+                                  <RefreshCw size={11} />
+                                )}
+                                Vérifier
+                              </button>
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -826,136 +997,288 @@ export default function SectionParentPayments({ onToast, userId }: Props) {
         )}
       </div>
 
-      {/* Modal paiement */}
+      {/* Modal paiement avec états dynamiques */}
       {modal.open && (
         <div
-          onClick={() => !modal.loading && setModal((m) => ({ ...m, open: false }))}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+          onClick={() => {
+            if (modal.step !== 'WAITING_USSD' && !modal.loading) {
+              setModal((m) => ({ ...m, open: false }))
+            }
+          }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
             className="px-4 py-4 md:px-6 md:py-5"
-            style={{ background: 'var(--surface)', borderRadius: 14, width: 420, maxWidth: '94vw', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}
+            style={{ background: 'var(--surface)', borderRadius: 14, width: 440, maxWidth: '94vw', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}
           >
-            <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
-              Règlement Mobile Money
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 14 }}>{modal.label}</div>
-
-            <div style={{ background: 'var(--bg2)', borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>Reste total dû</span>
-                <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>{fmtCFA(modal.maxAmount)}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>Montant à débiter</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <input
-                    type="number"
-                    min={100}
-                    max={modal.maxAmount}
-                    value={modal.amount}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value) || 0
-                      setModal((s) => ({ ...s, amount: Math.min(val, s.maxAmount) }))
-                    }}
-                    style={{
-                      width: 130,
-                      padding: '4px 8px',
-                      borderRadius: 6,
-                      fontSize: 14,
-                      fontWeight: 800,
-                      textAlign: 'right',
-                      border: '1.5px solid var(--border)',
-                      background: 'var(--surface)',
-                      color: 'var(--green)',
-                    }}
-                  />
-                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--green)' }}>FCFA</span>
+            {/* ÉTAPE 1 : FORMULAIRE DE SAISIE */}
+            {modal.step === 'FORM' && (
+              <>
+                <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
+                  Règlement Mobile Money
                 </div>
-              </div>
-            </div>
+                <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 14 }}>{modal.label}</div>
 
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', marginBottom: 4 }}>Opérateur Mobile Money</div>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-              {(['MTN_MOMO', 'ORANGE_MONEY'] as const).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setModal((s) => ({ ...s, method: m }))}
-                  className="h-10 sm:h-9"
-                  style={{
-                    flex: 1,
-                    padding: '7px 10px',
-                    borderRadius: 8,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    border: '1.5px solid',
-                    borderColor: modal.method === m ? 'var(--green)' : 'var(--border)',
-                    background: modal.method === m ? 'var(--green-light)' : 'var(--surface)',
-                    color: modal.method === m ? 'var(--green)' : 'var(--text3)',
-                    transition: 'all 0.12s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                  }}
-                >
-                  <Circle size={8} fill={m === 'MTN_MOMO' ? 'var(--amber)' : 'var(--orange)'} stroke="none" />
-                  {m === 'MTN_MOMO' ? 'MTN MoMo' : 'Orange Money'}
-                </button>
-              ))}
-            </div>
+                <div style={{ background: 'var(--bg2)', borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>Reste total dû</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>{fmtCFA(modal.maxAmount)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>Montant à régler</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <input
+                        type="number"
+                        min={100}
+                        max={modal.maxAmount}
+                        value={modal.amount}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value) || 0
+                          setModal((s) => ({ ...s, amount: Math.min(val, s.maxAmount) }))
+                        }}
+                        style={{
+                          width: 130,
+                          padding: '4px 8px',
+                          borderRadius: 6,
+                          fontSize: 14,
+                          fontWeight: 800,
+                          textAlign: 'right',
+                          border: '1.5px solid var(--border)',
+                          background: 'var(--surface)',
+                          color: 'var(--green)',
+                        }}
+                      />
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--green)' }}>FCFA</span>
+                    </div>
+                  </div>
+                </div>
 
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', marginBottom: 4 }}>Numéro de débit Mobile Money</div>
-            <input
-              className="h-11 sm:h-9"
-              style={{ width: '100%', padding: '7px 10px', borderRadius: 8, fontSize: 13, border: '1.5px solid var(--border)', fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 12, outline: 'none', background: 'var(--surface)', color: 'var(--text)' }}
-              type="tel"
-              placeholder="Ex: 677000000"
-              value={modal.phone}
-              onChange={(e) => setModal((m) => ({ ...m, phone: e.target.value }))}
-            />
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', marginBottom: 4 }}>Opérateur Mobile Money</div>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                  {(['MTN_MOMO', 'ORANGE_MONEY'] as const).map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => setModal((s) => ({ ...s, method: m }))}
+                      className="h-10 sm:h-9"
+                      style={{
+                        flex: 1,
+                        padding: '7px 10px',
+                        borderRadius: 8,
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        border: '1.5px solid',
+                        borderColor: modal.method === m ? 'var(--green)' : 'var(--border)',
+                        background: modal.method === m ? 'var(--green-light)' : 'var(--surface)',
+                        color: modal.method === m ? 'var(--green)' : 'var(--text3)',
+                        transition: 'all 0.12s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                      }}
+                    >
+                      <Circle size={8} fill={m === 'MTN_MOMO' ? 'var(--amber)' : 'var(--orange)'} stroke="none" />
+                      {m === 'MTN_MOMO' ? 'MTN MoMo' : 'Orange Money'}
+                    </button>
+                  ))}
+                </div>
 
-            {modal.error && (
-              <div style={{ background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, marginBottom: 10 }}>{modal.error}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', marginBottom: 4 }}>Numéro de débit Mobile Money</div>
+                <input
+                  className="h-11 sm:h-9"
+                  style={{ width: '100%', padding: '7px 10px', borderRadius: 8, fontSize: 13, border: '1.5px solid var(--border)', fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 12, outline: 'none', background: 'var(--surface)', color: 'var(--text)' }}
+                  type="tel"
+                  placeholder="Ex: 677000000"
+                  value={modal.phone}
+                  onChange={(e) => setModal((m) => ({ ...m, phone: e.target.value }))}
+                />
+
+                {modal.error && (
+                  <div style={{ background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, marginBottom: 10 }}>{modal.error}</div>
+                )}
+
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    onClick={() => setModal((m) => ({ ...m, open: false }))}
+                    disabled={modal.loading}
+                    className="h-11 sm:h-9"
+                    style={{ flex: 1, padding: '7px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={submitPayment}
+                    disabled={modal.loading || !isOnline}
+                    className="h-11 sm:h-9"
+                    style={{
+                      flex: 2,
+                      padding: '7px 12px',
+                      borderRadius: 8,
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))',
+                      color: 'white',
+                      border: 'none',
+                      cursor: modal.loading ? 'wait' : 'pointer',
+                      fontFamily: 'inherit',
+                      opacity: modal.loading || !isOnline ? 0.7 : 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    {modal.loading ? (
+                      <>
+                        <Loader2 size={13} className="animate-spin" />
+                        Initiation du paiement…
+                      </>
+                    ) : (
+                      <>
+                        <Smartphone size={13} strokeWidth={2} />
+                        Confirmer le paiement
+                      </>
+                    )}
+                  </button>
+                </div>
+              </>
             )}
 
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                onClick={() => setModal((m) => ({ ...m, open: false }))}
-                disabled={modal.loading}
-                className="h-11 sm:h-9"
-                style={{ flex: 1, padding: '7px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit' }}
-              >
-                Annuler
-              </button>
-              <button
-                onClick={submitPayment}
-                disabled={modal.loading || !isOnline}
-                className="h-11 sm:h-9"
-                style={{
-                  flex: 2,
-                  padding: '7px 12px',
-                  borderRadius: 8,
-                  fontSize: 12.5,
-                  fontWeight: 700,
-                  background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))',
-                  color: 'white',
-                  border: 'none',
-                  cursor: modal.loading ? 'wait' : 'pointer',
-                  fontFamily: 'inherit',
-                  opacity: modal.loading || !isOnline ? 0.7 : 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
-                }}
-              >
-                {modal.loading ? 'Demande en cours…' : <><Smartphone size={13} strokeWidth={2} /> Confirmer le paiement</>}
-              </button>
-            </div>
+            {/* ÉTAPE 2 : ATTENTE DU CODE PIN USSD SUR LE TÉLÉPHONE */}
+            {modal.step === 'WAITING_USSD' && (
+              <div className="py-2 text-center">
+                <div className="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ background: 'var(--primary-light)' }}>
+                  <Smartphone size={32} className="animate-pulse" style={{ color: 'var(--primary)' }} />
+                </div>
+
+                <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
+                  Validez sur votre téléphone
+                </div>
+
+                <p style={{ fontSize: 12.5, color: 'var(--text2)', lineHeight: 1.5, marginBottom: 16 }}>
+                  Un pop-up ou message d’autorisation a été envoyé au <strong>{modal.phone}</strong>.<br />
+                  Composez votre <strong>code PIN secret</strong> pour valider le règlement de <strong>{fmtCFA(modal.amount)}</strong>.
+                </p>
+
+                <div className="flex items-center justify-center gap-2 p-3 rounded-xl mb-4" style={{ background: 'var(--bg2)', border: '1px solid var(--border)' }}>
+                  <Loader2 size={16} className="animate-spin" style={{ color: 'var(--primary)' }} />
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>
+                    Détection automatique du paiement ({modal.pollingCount * 3}s écoulées)…
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => verifyPayment(modal.invoiceId, modal.campayRef)}
+                    disabled={verifyingInvoiceId === modal.invoiceId}
+                    className="w-full h-10 rounded-lg text-xs font-bold text-white flex items-center justify-center gap-2 cursor-pointer"
+                    style={{ background: 'linear-gradient(135deg,var(--green),#15803d)', border: 'none' }}
+                  >
+                    {verifyingInvoiceId === modal.invoiceId ? (
+                      <>
+                        <Loader2 size={13} className="animate-spin" />
+                        Vérification en cours…
+                      </>
+                    ) : (
+                      <>
+                        <Check size={14} />
+                        J’ai validé mon code PIN (Vérifier maintenant)
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => setModal((m) => ({ ...m, open: false }))}
+                    className="w-full h-9 rounded-lg text-xs font-semibold cursor-pointer"
+                    style={{ background: 'transparent', color: 'var(--text3)', border: 'none' }}
+                  >
+                    Fermer (la vérification continuera)
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ÉTAPE 3 : CONFIRMATION DU SUCCÈS */}
+            {modal.step === 'SUCCESS' && (
+              <div className="py-3 text-center">
+                <div className="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ background: 'var(--green-light)' }}>
+                  <CheckCircle2 size={36} style={{ color: 'var(--green)' }} />
+                </div>
+
+                <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
+                  Paiement confirmé avec succès !
+                </div>
+
+                <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.5, marginBottom: 18 }}>
+                  Le débit a été validé par l’opérateur Mobile Money. Votre facture a été mise à jour et un reçu a été enregistré.
+                </p>
+
+                <button
+                  onClick={() => setModal((m) => ({ ...m, open: false }))}
+                  className="w-full h-10 rounded-lg text-xs font-bold text-white flex items-center justify-center gap-2 cursor-pointer"
+                  style={{ background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', border: 'none' }}
+                >
+                  Terminer
+                </button>
+              </div>
+            )}
+
+            {/* ÉTAPE 4 : ÉCHEC OU DÉPASSEMENT DE DÉLAI */}
+            {modal.step === 'FAILED' && (
+              <div className="py-2 text-center">
+                <div className="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ background: 'var(--red-light)' }}>
+                  <AlertTriangle size={32} style={{ color: 'var(--red)' }} />
+                </div>
+
+                <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
+                  Paiement non confirmé
+                </div>
+
+                <p style={{ fontSize: 12.5, color: 'var(--red)', lineHeight: 1.5, marginBottom: 16 }}>
+                  {modal.error || 'Le délai de validation a expiré ou la transaction a été annulée.'}
+                </p>
+
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => verifyPayment(modal.invoiceId, modal.campayRef)}
+                    disabled={verifyingInvoiceId === modal.invoiceId}
+                    className="w-full h-10 rounded-lg text-xs font-bold text-white flex items-center justify-center gap-2 cursor-pointer"
+                    style={{ background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', border: 'none' }}
+                  >
+                    {verifyingInvoiceId === modal.invoiceId ? (
+                      <>
+                        <Loader2 size={13} className="animate-spin" />
+                        Vérification en cours…
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw size={13} />
+                        Vérifier à nouveau auprès de l’opérateur
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => setModal((m) => ({ ...m, step: 'FORM', error: '' }))}
+                    className="w-full h-9 rounded-lg text-xs font-semibold cursor-pointer"
+                    style={{ background: 'var(--bg2)', color: 'var(--text2)', border: '1px solid var(--border)' }}
+                  >
+                    Recommencer la saisie
+                  </button>
+
+                  <button
+                    onClick={() => setModal((m) => ({ ...m, open: false }))}
+                    className="w-full h-8 rounded-lg text-xs font-medium cursor-pointer"
+                    style={{ background: 'transparent', color: 'var(--text3)', border: 'none' }}
+                  >
+                    Fermer
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -372,6 +372,51 @@ export function registerModulesRoutes(app: Application, p: typeof prisma = prism
     } catch (err) { next(err); }
   });
 
+  // POST /api/v2/parent/payments/verify — vérifier et synchroniser activement le statut d'un paiement Mobile Money
+  app.post('/api/v2/parent/payments/verify', requireAuth, requireRole('PARENT'), async (req, res, next) => {
+    try {
+      const userId = req.user!.userId;
+      const schoolId = req.user!.schoolId;
+      const { invoiceId, paymentId, campayRef } = req.body as { invoiceId?: string; paymentId?: string; campayRef?: string };
+
+      if (!invoiceId && !paymentId && !campayRef) {
+        res.status(400).json({ success: false, message: 'invoiceId, paymentId ou campayRef requis' });
+        return;
+      }
+
+      // Si invoiceId fourni, vérifier que la facture appartient bien à un enfant du parent
+      if (invoiceId) {
+        const invoice = await p.invoice.findFirst({ where: { id: invoiceId, schoolId } });
+        if (!invoice) {
+          res.status(404).json({ success: false, message: 'Facture introuvable' });
+          return;
+        }
+
+        const parentProfile = await p.parentProfile.findUnique({
+          where: { userId },
+          include: { children: { include: { studentProfile: { select: { userId: true } } } } },
+        });
+        const childUserIds = (parentProfile?.children ?? [])
+          .map(c => c.studentProfile?.userId)
+          .filter((id): id is string => Boolean(id));
+
+        if (!childUserIds.includes(invoice.studentId)) {
+          res.status(403).json({ success: false, message: 'Accès refusé' });
+          return;
+        }
+      }
+
+      const result = await c.finance.verifierStatutPaiement.execute({
+        schoolId,
+        invoiceId,
+        paymentId,
+        campayRef,
+      });
+
+      res.status(200).json({ success: true, data: result });
+    } catch (err) { next(err); }
+  });
+
   // Master admin — approbation d'une école (hexagonale) — vérification identité requise
   // /api/master/ (v1) ne passe PAS par le router /api/v2/master, donc protectMaster est nécessaire
   const onboardingControllerForMaster2 = new SchoolOnboardingControllerForMaster(c.school.onboarder, c.school.approuver);

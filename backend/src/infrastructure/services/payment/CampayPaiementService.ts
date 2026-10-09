@@ -123,7 +123,7 @@ export class CampayPaiementService implements PaiementService {
 
     return {
       reference: data.reference,
-      statut: data.status === 'SUCCESSFUL' ? 'SUCCESS' : 'FAILED',
+      statut: data.status === 'SUCCESSFUL' ? 'SUCCESS' : data.status === 'PENDING' ? 'PENDING' : 'FAILED',
       operateurRef: data.operator,
     };
   }

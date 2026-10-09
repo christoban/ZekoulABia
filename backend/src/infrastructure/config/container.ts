@@ -220,6 +220,7 @@ import { TraiterWebhookCampayUseCase } from '@application/finance/TraiterWebhook
 import { RembourserCautionUseCase } from '@application/finance/RembourserCautionUseCase';
 import { EnregistrerDepenseUseCase } from '@application/finance/EnregistrerDepenseUseCase';
 import { EnregistrerPaiementCashUseCase } from '@application/finance/EnregistrerPaiementCashUseCase';
+import { VerifierStatutPaiementUseCase } from '@application/finance/VerifierStatutPaiementUseCase';
 
 // --- Adapters Persistence Classe + Matière ---
 import { PrismaSousGroupeRepository } from '@infrastructure/persistence/prisma/PrismaSousGroupeRepository';
@@ -672,6 +673,9 @@ export function creerContainer() {
     factureRepository, paiementRepository,
   );
   const copierPlansFraisAnneePrecedenteUseCase = new CopierPlansFraisAnneePrecedenteUseCase(planFraisRepository);
+  const verifierStatutPaiementUseCase = new VerifierStatutPaiementUseCase(
+    paiementRepository, factureRepository, campayPaiementService,
+  );
 
   // 11. Use Cases — Classe + Matière
   const sousGroupeRepository = new PrismaSousGroupeRepository(prisma);
@@ -1178,6 +1182,7 @@ export function creerContainer() {
       enregistrerPaiementCash: enregistrerPaiementCashUseCase,
       copierPlansFraisAnneePrecedente: copierPlansFraisAnneePrecedenteUseCase,
       changerStatutPlanFrais: changerStatutPlanFraisUseCase,
+      verifierStatutPaiement: verifierStatutPaiementUseCase,
       factureRepository,
     },
     ai: {
