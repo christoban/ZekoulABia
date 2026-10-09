@@ -45,6 +45,7 @@ export class CreerPlanFraisUseCase {
       isRefundable: commande.isRefundable,
       dueDate: commande.dueDate,
       description: commande.description,
+      status: commande.demandeurRole === 'ADMIN' ? 'PUBLISHED' : 'PENDING_VALIDATION',
     });
 
     // 2. Loi 3 — vérifier le seuil légal pour les frais de scolarité

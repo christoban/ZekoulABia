@@ -58,6 +58,16 @@ export class ModifierPlanFraisUseCase {
       throw new Error('Le montant doit être supérieur à 0 pour un plan publié');
     }
 
+    // Règle de gouvernance / RBAC :
+    // Un utilisateur non-ADMIN ne peut pas promouvoir directement un plan non publié au statut PUBLISHED.
+    // L'intendant (STAFF) prépare le plan en DRAFT ou le soumet en PENDING_VALIDATION.
+    // Seul l'administrateur (Direction) peut valider et publier (PUBLISHED).
+    if (nouveauStatut === 'PUBLISHED' && plan.status !== 'PUBLISHED' && commande.demandeurRole !== 'ADMIN') {
+      throw new Error(
+        "Seul l'administrateur (Direction) est habilité à valider et publier un plan de frais. L'intendant peut l'enregistrer en brouillon ou le soumettre pour validation."
+      );
+    }
+
     // Loi 3 — Art. 48 MINESEC (Vérification du seuil légal si frais de scolarité)
     if (plan.estScolarite() && nouveauMontant > 0) {
       const seuil = await this.planFraisRepository.getSeuilLegalTuition(commande.schoolId, 'SECOND');

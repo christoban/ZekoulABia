@@ -135,6 +135,10 @@ export default function FeePlanCreateModal({ open, onClose, onCreated, onToast }
         </label>
       </div>
 
+      <div style={{ background: 'var(--blue-light)', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: 'var(--blue)', fontWeight: 600, marginTop: 4, marginBottom: 12, lineHeight: 1.4 }}>
+        ℹ️ Gouvernance : Le plan créé sera soumis au Chef d&apos;établissement (Direction) pour validation avant son activation officielle et l&apos;émission des factures.
+      </div>
+
       {form.error && (
         <div style={{ background: 'var(--red-light)', color: 'var(--red)', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, marginBottom: 8 }}>
           {form.error}

@@ -289,6 +289,10 @@ export default function SectionPlansStaff({ onToast, onInvoiceCreated }: Props) 
                 <span style={{ fontSize: 11, color: 'var(--text3)' }}>
                   {plan.status === 'PUBLISHED' && plan.amount > 0
                     ? '⚡ Facturation auto active'
+                    : plan.status === 'PENDING_VALIDATION'
+                    ? '⏳ En attente de validation Admin'
+                    : plan.amount > 0
+                    ? '✏️ Brouillon (non soumis)'
                     : 'Montant à définir'}
                 </span>
                 <button

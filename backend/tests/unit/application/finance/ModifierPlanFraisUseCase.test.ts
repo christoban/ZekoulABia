@@ -77,10 +77,68 @@ describe('ModifierPlanFraisUseCase', () => {
 
     expect(useCase.execute({
       schoolId: 'school-1',
-      demandeurRole: 'STAFF',
+      demandeurRole: 'ADMIN',
       feePlanId: initialPlan.id,
       amount: 0,
       status: 'PUBLISHED',
     })).rejects.toThrow('Le montant doit être supérieur à 0 pour un plan publié');
   });
+
+  it('interdit à un non-ADMIN (Intendant/STAFF) de publier directement un plan non publié', async () => {
+    const initialPlan = PlanFrais.create({
+      schoolId: 'school-1',
+      name: 'Frais de cantine',
+      amount: 15000,
+      feeType: 'SPORTS_LEVY',
+      status: 'PENDING_VALIDATION',
+    });
+
+    const mockPlanFraisRepo = {
+      findById: async () => initialPlan,
+      update: async () => {},
+      updateStatus: async () => {},
+    };
+
+    const useCase = new ModifierPlanFraisUseCase(mockPlanFraisRepo as any);
+
+    await expect(useCase.execute({
+      schoolId: 'school-1',
+      demandeurRole: 'STAFF',
+      feePlanId: initialPlan.id,
+      amount: 15000,
+      status: 'PUBLISHED',
+    })).rejects.toThrow("Seul l'administrateur (Direction) est habilité à valider et publier un plan de frais");
+  });
+
+  it('autorise un non-ADMIN (Intendant/STAFF) à enregistrer en DRAFT ou PENDING_VALIDATION', async () => {
+    let savedPlan: PlanFrais | null = null;
+    const initialPlan = PlanFrais.create({
+      schoolId: 'school-1',
+      name: 'Frais de cantine',
+      amount: 15000,
+      feeType: 'SPORTS_LEVY',
+      status: 'DRAFT',
+    });
+
+    const mockPlanFraisRepo = {
+      findById: async () => initialPlan,
+      update: async (p: PlanFrais) => { savedPlan = p; },
+      updateStatus: async () => {},
+    };
+
+    const useCase = new ModifierPlanFraisUseCase(mockPlanFraisRepo as any);
+
+    const res = await useCase.execute({
+      schoolId: 'school-1',
+      demandeurRole: 'STAFF',
+      feePlanId: initialPlan.id,
+      amount: 18000,
+      status: 'PENDING_VALIDATION',
+    });
+
+    expect(res.status).toBe('PENDING_VALIDATION');
+    expect(res.amount).toBe(18000);
+    expect(savedPlan?.status).toBe('PENDING_VALIDATION');
+  });
 });
+

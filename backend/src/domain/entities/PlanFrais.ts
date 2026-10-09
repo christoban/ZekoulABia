@@ -92,7 +92,7 @@ export class PlanFrais {
   changerStatut(cible: FeePlanStatus): void {
     const transitions: Record<FeePlanStatus, FeePlanStatus[]> = {
       DRAFT: ['PENDING_VALIDATION'],
-      PENDING_VALIDATION: ['APPROVED'],
+      PENDING_VALIDATION: ['APPROVED', 'PUBLISHED'],
       APPROVED: ['PUBLISHED'],
       PUBLISHED: [],
     };

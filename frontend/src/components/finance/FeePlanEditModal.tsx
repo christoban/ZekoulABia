@@ -56,7 +56,7 @@ export default function FeePlanEditModal({ open, plan, onClose, onUpdated, onToa
 
   if (!open || !plan) return null
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (targetStatus?: string) => {
     if (!name.trim()) {
       setError(t('errors.name_required') || 'Le nom du plan est obligatoire')
       return
@@ -66,8 +66,11 @@ export default function FeePlanEditModal({ open, plan, onClose, onUpdated, onToa
       setError(t('errors.invalid_amount') || 'Veuillez saisir un montant valide')
       return
     }
-    if (status === 'PUBLISHED' && parsedAmount <= 0) {
-      setError(t('errors.amount_gt_zero') || 'Le montant doit être supérieur à 0 pour être publié et facturé')
+
+    const finalStatus = targetStatus ?? (plan.status === 'PUBLISHED' ? 'PUBLISHED' : (plan.status || 'DRAFT'))
+
+    if (finalStatus === 'PENDING_VALIDATION' && parsedAmount <= 0) {
+      setError('Veuillez définir un montant supérieur à 0 avant de soumettre pour validation.')
       return
     }
 
@@ -84,14 +87,16 @@ export default function FeePlanEditModal({ open, plan, onClose, onUpdated, onToa
           description: description.trim() || undefined,
           dueDate: dueDate || null,
           level: level.trim() || null,
-          status,
+          status: finalStatus,
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || t('errors.generic_error'))
 
       const count = data.data?.facturesGenerees ?? 0
-      const toastMsg = count > 0
+      const toastMsg = finalStatus === 'PENDING_VALIDATION'
+        ? (ts('finance.planSubmittedForValidation') || 'Plan de frais soumis pour validation à la Direction.')
+        : count > 0
         ? `${ts('finance.planUpdated') || 'Plan de frais mis à jour'} — ${count} facture(s) générée(s) automatiquement.`
         : (ts('finance.planUpdated') || 'Plan de frais mis à jour avec succès.')
       onToast(toastMsg, 'success')
@@ -161,21 +166,32 @@ export default function FeePlanEditModal({ open, plan, onClose, onUpdated, onToa
           />
         </div>
         <div>
-          <div className={sLbCls} style={sLb}>Statut du plan</div>
-          <select
-            className={sInCls} style={sIn}
-            value={status}
-            onChange={e => setStatus(e.target.value)}
+          <div className={sLbCls} style={sLb}>Statut actuel</div>
+          <div
+            style={{
+              padding: '9px 12px',
+              borderRadius: 8,
+              fontSize: 12.5,
+              fontWeight: 700,
+              background: plan.status === 'PUBLISHED' ? 'var(--green-light)' : plan.status === 'PENDING_VALIDATION' ? 'var(--amber-light)' : 'var(--bg2)',
+              color: plan.status === 'PUBLISHED' ? 'var(--green)' : plan.status === 'PENDING_VALIDATION' ? 'var(--amber)' : 'var(--text2)',
+              border: '1px solid var(--border)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
           >
-            <option value="PUBLISHED">{ts('finance.statusPublished') || 'Publié & Actif (Facturation automatique)'}</option>
-            <option value="DRAFT">{ts('finance.statusDraft') || 'Brouillon'}</option>
-            <option value="PENDING_VALIDATION">{ts('finance.statusPendingValidation') || 'En attente de validation'}</option>
-          </select>
+            {plan.status === 'PUBLISHED' && '⚡ Publié & Actif'}
+            {plan.status === 'PENDING_VALIDATION' && '⏳ En attente de validation (Direction)'}
+            {(!plan.status || plan.status === 'DRAFT') && '✏️ Brouillon (Non soumis)'}
+          </div>
         </div>
       </div>
 
       <div style={{ background: 'var(--blue-light)', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: 'var(--blue)', fontWeight: 600, marginTop: 12, marginBottom: 12, lineHeight: 1.4 }}>
-        ℹ️ {ts('finance.autoBilledInfo') || 'Facturation automatique : dès que le plan est publié avec un montant défini, chaque élève ciblé reçoit automatiquement sa facture à régler dans son espace parent.'}
+        {plan.status === 'PUBLISHED'
+          ? '⚡ Plan publié : les factures sont actives dans les espaces parents.'
+          : 'ℹ️ Séparation des rôles : L\'intendant prépare le plan de frais. La validation officielle et l\'émission des factures sont opérées par le Chef d\'établissement (Direction).'}
       </div>
 
       {error && (
@@ -184,16 +200,49 @@ export default function FeePlanEditModal({ open, plan, onClose, onUpdated, onToa
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-        <button style={btnCancel} onClick={onClose}>{t('actions.cancel')}</button>
-        <button
-          style={{ ...btnSubmit, cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.7 : 1 }}
-          onClick={handleSubmit}
-          disabled={loading}
-        >
-          {loading ? t('loading.saving') : (ts('finance.savePlan') || 'Enregistrer')}
-        </button>
+      <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+        <button style={btnCancel} onClick={onClose} disabled={loading}>{t('actions.cancel')}</button>
+        {plan.status === 'PUBLISHED' ? (
+          <button
+            style={{ ...btnSubmit, cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.7 : 1 }}
+            onClick={() => handleSubmit('PUBLISHED')}
+            disabled={loading}
+          >
+            {loading ? (t('loading.saving') || 'Enregistrement...') : (ts('finance.savePlan') || 'Enregistrer les modifications')}
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              style={{
+                ...btnCancel,
+                border: '1px solid var(--border)',
+                background: 'var(--surface)',
+                color: 'var(--text)',
+                cursor: loading ? 'wait' : 'pointer',
+                fontWeight: 600,
+              }}
+              onClick={() => handleSubmit('DRAFT')}
+              disabled={loading}
+            >
+              {loading ? '...' : (ts('finance.saveDraft') || 'Enregistrer en brouillon')}
+            </button>
+            <button
+              type="button"
+              style={{
+                ...btnSubmit,
+                cursor: loading ? 'wait' : 'pointer',
+                opacity: loading ? 0.7 : 1,
+              }}
+              onClick={() => handleSubmit('PENDING_VALIDATION')}
+              disabled={loading}
+            >
+              {loading ? (t('loading.saving') || 'Envoi...') : (ts('finance.submitForValidation') || 'Soumettre pour validation')}
+            </button>
+          </>
+        )}
       </div>
     </ModalOverlay>
   )
 }
+

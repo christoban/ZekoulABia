@@ -26,6 +26,7 @@ interface FeePlan {
   isRefundable: boolean
   dueDate: string | null
   createdAt: string
+  status?: string
 }
 
 interface Payment {
@@ -64,6 +65,7 @@ export default function SectionFinance({ onToast, onNav }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [invStatus, setInvStatus] = useState('')
   const [page, setPage] = useState(1)
+  const [validatingPlanId, setValidatingPlanId] = useState<string | null>(null)
 
   const t = useT('finance')
 
@@ -155,6 +157,35 @@ export default function SectionFinance({ onToast, onNav }: Props) {
     },
     [invStatus, page, t]
   )
+
+  const handleValidatePlan = async (planId: string, planName: string) => {
+    setValidatingPlanId(planId)
+    try {
+      const res = await fetchApi(`/api/v2/finance/fee-plans/${planId}/status`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ statutCible: 'PUBLISHED' }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || t('errors.generic_error'))
+
+      const count = data.data?.facturesGenerees ?? 0
+      const msg = count > 0
+        ? `Plan « ${planName} » validé et publié avec succès ! ${count} facture(s) générée(s) pour les élèves.`
+        : `Plan « ${planName} » validé et publié avec succès !`
+      if (onToast) onToast(msg, 'success')
+      else alert(msg)
+      fetchPlans()
+      window.dispatchEvent(new Event('zekoulabia:data-changed'))
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : t('errors.generic_error')
+      if (onToast) onToast(errMsg, 'error')
+      else alert(errMsg)
+    } finally {
+      setValidatingPlanId(null)
+    }
+  }
 
   useEffect(() => {
     if (tab === 'plans') {
@@ -454,8 +485,8 @@ export default function SectionFinance({ onToast, onNav }: Props) {
         <>
           <div className="flex items-center justify-between mb-3">
             <div className="text-[13px] md:text-[14px] font-bold text-[var(--text)]">{t('tabs.plans')}</div>
-            <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg" style={{ background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid var(--amber)' }}>
-              Gestion déléguée à l&apos;Intendant (Lecture seule)
+            <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg" style={{ background: 'var(--blue-light)', color: 'var(--blue)', border: '1px solid var(--blue)' }}>
+              Supervision & validation directrice des tarifs
             </span>
           </div>
 
@@ -508,6 +539,20 @@ export default function SectionFinance({ onToast, onNav }: Props) {
                     <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 8, lineHeight: 1.4 }}>{plan.description}</div>
                   )}
                   <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 8 }}>
+                    {plan.status && (
+                      <span
+                        className="text-[10px] md:text-[11px]"
+                        style={{
+                          background: plan.status === 'PUBLISHED' ? 'var(--green-light)' : plan.status === 'PENDING_VALIDATION' ? 'var(--amber-light)' : 'var(--bg2)',
+                          color: plan.status === 'PUBLISHED' ? 'var(--green)' : plan.status === 'PENDING_VALIDATION' ? 'var(--amber)' : 'var(--text2)',
+                          padding: '2px 6px',
+                          borderRadius: 6,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {plan.status === 'PUBLISHED' ? 'Publié & Actif' : plan.status === 'PENDING_VALIDATION' ? 'En attente de validation' : 'Brouillon'}
+                      </span>
+                    )}
                     {plan.level && (
                       <span
                         className="text-[10px] md:text-[11px]"
@@ -534,6 +579,40 @@ export default function SectionFinance({ onToast, onNav }: Props) {
                           new Date(plan.dueDate).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
                         )}
                       </span>
+                    )}
+                  </div>
+
+                  <div style={{ paddingTop: 10, marginTop: 10, borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                    <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                      {plan.status === 'PUBLISHED'
+                        ? '⚡ Facturation automatique active'
+                        : plan.status === 'PENDING_VALIDATION'
+                        ? '⏳ Soumis par l\'Intendant'
+                        : '✏️ Brouillon de l\'Intendant'}
+                    </span>
+                    {plan.status !== 'PUBLISHED' && plan.amount > 0 && (
+                      <button
+                        onClick={() => handleValidatePlan(plan.id, plan.name)}
+                        disabled={validatingPlanId === plan.id}
+                        style={{
+                          padding: '5px 10px',
+                          borderRadius: 8,
+                          background: 'var(--green)',
+                          color: '#fff',
+                          border: 'none',
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          cursor: validatingPlanId === plan.id ? 'wait' : 'pointer',
+                          opacity: validatingPlanId === plan.id ? 0.7 : 1,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        <CheckCircle2 size={13} />
+                        {validatingPlanId === plan.id ? 'Validation...' : 'Valider & Publier'}
+                      </button>
                     )}
                   </div>
                 </div>

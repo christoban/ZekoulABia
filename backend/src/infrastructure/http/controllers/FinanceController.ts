@@ -377,6 +377,14 @@ export class FinanceController {
         return;
       }
 
+      if (statutCible === 'PUBLISHED' && user.role !== 'ADMIN') {
+        res.status(403).json({
+          success: false,
+          message: "Seul l'administrateur (Direction) peut valider et publier un plan de frais.",
+        });
+        return;
+      }
+
       const resultat = await this.changerStatutPlanFrais.execute({
         schoolId: user.schoolId,
         feePlanId: id,
