@@ -4,8 +4,7 @@ import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { AlertTriangle, Wallet } from 'lucide-react'
 import FeePlanCreateModal from '@/components/finance/FeePlanCreateModal'
-import BulkInvoiceModal from '@/components/finance/BulkInvoiceModal'
-import SingleInvoiceModal from '@/components/finance/SingleInvoiceModal'
+import FeePlanEditModal from '@/components/finance/FeePlanEditModal'
 import { fmtCFA } from '@/components/finance/ModalOverlay'
 
 interface FeePlan {
@@ -20,6 +19,7 @@ interface FeePlan {
   dueDate: string | null
   createdAt: string
   status?: string
+  _count?: { invoices: number }
 }
 
 interface Props {
@@ -34,6 +34,9 @@ const FEE_TYPE_LABELS: Record<string, string> = {
   UNIFORM: 'Uniforme',
   TRANSPORT: 'Transport',
   CAUTION: 'Caution',
+  SPORTS_LEVY: 'Sport / Activités',
+  DEVELOPMENT_LEVY: 'Développement',
+  APEE_PTA: 'APEE / PTA',
   OTHER: 'Autre',
 }
 
@@ -44,11 +47,9 @@ export default function SectionPlansStaff({ onToast, onInvoiceCreated }: Props) 
   const [error, setError] = useState<string | null>(null)
 
   const [createOpen, setCreateOpen] = useState(false)
-  const [singleInvoiceOpen, setSingleInvoiceOpen] = useState(false)
-  const [bulkModal, setBulkModal] = useState<{ open: boolean; planId: string; planName: string }>({
+  const [editModal, setEditModal] = useState<{ open: boolean; plan: FeePlan | null }>({
     open: false,
-    planId: '',
-    planName: '',
+    plan: null,
   })
 
   const fetchPlans = useCallback(async () => {
@@ -213,6 +214,34 @@ export default function SectionPlansStaff({ onToast, onInvoiceCreated }: Props) 
                 </div>
               )}
               <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
+                {plan.status && (
+                  <span
+                    style={{
+                      background: plan.status === 'PUBLISHED' ? 'var(--green-light)' : 'var(--amber-light)',
+                      color: plan.status === 'PUBLISHED' ? 'var(--green)' : 'var(--amber)',
+                      padding: '2px 6px',
+                      borderRadius: 6,
+                      fontSize: 11,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {plan.status === 'PUBLISHED' ? (t('finance.statusPublished') || 'Publié') : plan.status === 'PENDING_VALIDATION' ? (t('finance.statusPendingValidation') || 'En validation') : (t('finance.statusDraft') || 'Brouillon')}
+                  </span>
+                )}
+                {plan._count?.invoices !== undefined && (
+                  <span
+                    style={{
+                      background: 'var(--blue-light)',
+                      color: 'var(--blue)',
+                      padding: '2px 6px',
+                      borderRadius: 6,
+                      fontSize: 11,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {plan._count.invoices} factures
+                  </span>
+                )}
                 {plan.level && (
                   <span
                     style={{
@@ -256,15 +285,17 @@ export default function SectionPlansStaff({ onToast, onInvoiceCreated }: Props) 
                   </span>
                 )}
               </div>
-              <div style={{ paddingTop: 8, borderTop: '1px solid var(--border)', display: 'flex', gap: 6 }}>
+              <div style={{ paddingTop: 8, borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                  {plan.status === 'PUBLISHED' && plan.amount > 0
+                    ? '⚡ Facturation auto active'
+                    : 'Montant à définir'}
+                </span>
                 <button
-                  style={btnSecSm}
-                  onClick={() => setBulkModal({ open: true, planId: plan.id, planName: plan.name })}
+                  style={btnPrimSm}
+                  onClick={() => setEditModal({ open: true, plan })}
                 >
-                  {t('finance.generateInvoices') || 'Facturer'}
-                </button>
-                <button style={btnSecSm} onClick={() => setSingleInvoiceOpen(true)}>
-                  {t('finance.singleInvoice') || 'Facture individuelle'}
+                  {t('finance.editPlan') || 'Modifier'}
                 </button>
               </div>
             </div>
@@ -282,22 +313,12 @@ export default function SectionPlansStaff({ onToast, onInvoiceCreated }: Props) 
         }}
         onToast={onToast}
       />
-      <BulkInvoiceModal
-        open={bulkModal.open}
-        planId={bulkModal.planId}
-        planName={bulkModal.planName}
-        onClose={() => setBulkModal({ open: false, planId: '', planName: '' })}
-        onGenerated={() => {
-          setBulkModal({ open: false, planId: '', planName: '' })
-          onInvoiceCreated?.()
-        }}
-        onToast={onToast}
-      />
-      <SingleInvoiceModal
-        open={singleInvoiceOpen}
-        onClose={() => setSingleInvoiceOpen(false)}
-        onCreated={() => {
-          setSingleInvoiceOpen(false)
+      <FeePlanEditModal
+        open={editModal.open}
+        plan={editModal.plan}
+        onClose={() => setEditModal({ open: false, plan: null })}
+        onUpdated={() => {
+          fetchPlans()
           onInvoiceCreated?.()
         }}
         onToast={onToast}
@@ -343,6 +364,17 @@ const btnSecSm: React.CSSProperties = {
   background: 'var(--surface)',
   color: 'var(--text2)',
   border: '1px solid var(--border2)',
+  cursor: 'pointer',
+  fontFamily: 'inherit',
+}
+const btnPrimSm: React.CSSProperties = {
+  padding: '5px 12px',
+  borderRadius: 7,
+  fontSize: 12,
+  fontWeight: 700,
+  background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))',
+  color: 'white',
+  border: 'none',
   cursor: 'pointer',
   fontFamily: 'inherit',
 }

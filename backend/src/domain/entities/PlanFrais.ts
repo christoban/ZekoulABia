@@ -119,6 +119,36 @@ export class PlanFrais {
     }
   }
 
+  modifier(props: {
+    name?: string;
+    amount?: number;
+    description?: string;
+    level?: string | null;
+    dueDate?: Date | null;
+    status?: FeePlanStatus;
+  }): void {
+    if (props.name !== undefined) {
+      if (!props.name.trim()) throw new Error('Le nom du plan est obligatoire');
+      this.props.name = props.name.trim();
+    }
+    if (props.amount !== undefined) {
+      if (props.amount < 0) throw new Error('Le montant ne peut pas être négatif');
+      this.props.amount = props.amount;
+    }
+    if (props.description !== undefined) {
+      this.props.description = props.description;
+    }
+    if (props.level !== undefined) {
+      this.props.level = props.level ?? undefined;
+    }
+    if (props.dueDate !== undefined) {
+      this.props.dueDate = props.dueDate ?? undefined;
+    }
+    if (props.status !== undefined) {
+      this.props.status = props.status;
+    }
+  }
+
   toObject(): PlanFraisProps {
     return { ...this.props };
   }

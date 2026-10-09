@@ -210,6 +210,7 @@ import { CampayPaiementService } from '@infrastructure/services/payment/CampayPa
 
 // --- Use Cases : Finance ---
 import { CreerPlanFraisUseCase } from '@application/finance/CreerPlanFraisUseCase';
+import { ModifierPlanFraisUseCase } from '@application/finance/ModifierPlanFraisUseCase';
 import { ChangerStatutPlanFraisUseCase } from '@application/finance/ChangerStatutPlanFraisUseCase';
 import { CopierPlansFraisAnneePrecedenteUseCase } from '@application/finance/CopierPlansFraisAnneePrecedenteUseCase';
 import { GenererFactureUseCase } from '@application/finance/GenererFactureUseCase';
@@ -645,11 +646,18 @@ export function creerContainer() {
   const campayPaiementService = new CampayPaiementService();
 
   const creerPlanFraisUseCase = new CreerPlanFraisUseCase(planFraisRepository);
-  const changerStatutPlanFraisUseCase = new ChangerStatutPlanFraisUseCase(planFraisRepository);
-  const genererFactureUseCase = new GenererFactureUseCase(factureRepository, planFraisRepository);
   const genererFacturesEnMasseUseCase = new GenererFacturesEnMasseUseCase(
     factureRepository, planFraisRepository, userRepository,
   );
+  const changerStatutPlanFraisUseCase = new ChangerStatutPlanFraisUseCase(
+    planFraisRepository,
+    genererFacturesEnMasseUseCase,
+  );
+  const modifierPlanFraisUseCase = new ModifierPlanFraisUseCase(
+    planFraisRepository,
+    genererFacturesEnMasseUseCase,
+  );
+  const genererFactureUseCase = new GenererFactureUseCase(factureRepository, planFraisRepository);
   const initierPaiementUseCase = new InitierPaiementMobileMoneyUseCase(
     factureRepository, paiementRepository, campayPaiementService,
   );
@@ -1160,6 +1168,7 @@ export function creerContainer() {
     },
     finance: {
       creerPlanFrais: creerPlanFraisUseCase,
+      modifierPlanFrais: modifierPlanFraisUseCase,
       genererFacture: genererFactureUseCase,
       genererFacturesEnMasse: genererFacturesEnMasseUseCase,
       initierPaiement: initierPaiementUseCase,

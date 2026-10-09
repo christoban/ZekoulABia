@@ -50,6 +50,7 @@ export function registerFinanceRoutes(app: Application, prismaParam: typeof pris
 
   const financeController = new FinanceController(
     c.finance.creerPlanFrais,
+    c.finance.modifierPlanFrais,
     c.finance.genererFacture,
     c.finance.genererFacturesEnMasse,
     c.finance.initierPaiement,

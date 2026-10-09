@@ -12,6 +12,8 @@ export function creerFinanceRoutes(
   // Plans de frais
   router.post('/fee-plans', requireAuth, requireRole('ADMIN', 'STAFF'), controller.creerPlan);
   router.post('/fee-plans/copy-from-previous-year', requireAuth, requireRole('ADMIN', 'STAFF'), controller.copierPlansAnneePrecedente);
+  // Modification d'un plan de frais (montant, nom, description, échéance, niveau)
+  router.patch('/fee-plans/:id', requireAuth, requireRole('ADMIN', 'STAFF'), controller.modifierPlan);
   // Workflow de publication V1.11 : DRAFT → PENDING_VALIDATION → APPROVED → PUBLISHED
   router.patch('/fee-plans/:id/status', requireAuth, requireRole('ADMIN', 'STAFF'), controller.changerStatutPlan);
 

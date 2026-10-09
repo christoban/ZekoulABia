@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { CreerPlanFraisUseCase } from '@application/finance/CreerPlanFraisUseCase';
+import type { ModifierPlanFraisUseCase } from '@application/finance/ModifierPlanFraisUseCase';
 import type { ChangerStatutPlanFraisUseCase } from '@application/finance/ChangerStatutPlanFraisUseCase';
 import type { GenererFactureUseCase } from '@application/finance/GenererFactureUseCase';
 import type { GenererFacturesEnMasseUseCase } from '@application/finance/GenererFacturesEnMasseUseCase';
@@ -177,6 +178,7 @@ async function envoyerRecuParEmail(paiementRepository: PaiementRepository, payme
 export class FinanceController {
   constructor(
     private readonly creerPlanFrais: CreerPlanFraisUseCase,
+    private readonly modifierPlanFrais: ModifierPlanFraisUseCase,
     private readonly genererFacture: GenererFactureUseCase,
     private readonly genererFacturesEnMasse: GenererFacturesEnMasseUseCase,
     private readonly initierPaiement: InitierPaiementMobileMoneyUseCase,
@@ -194,12 +196,14 @@ export class FinanceController {
   ) {}
 
   // STAFF doit avoir MANAGE_FINANCE.
-  // ADMIN est en supervision et lecture seule : toute mutation directe est rejetée avec HTTP 403.
-  private async checkFinancePermission(user: any, res: Response): Promise<boolean> {
+  // ADMIN est autorisé sur l'approbation/validation ou rejet de plan (workflow de publication).
+  // Pour la gestion financière directe quotidienne, elle est réservée à l'Intendant / Économe.
+  private async checkFinancePermission(user: any, res: Response, allowAdmin = false): Promise<boolean> {
     const perms: string[] = user.permissions ?? [];
     if (perms.includes('MANAGE_FINANCE')) return true;
 
     if (user.role === 'ADMIN') {
+      if (allowAdmin) return true;
       res.status(403).json({
         success: false,
         message: 'La gestion financière directe est réservée à l\'Intendant / Économe. La Direction assure la supervision en lecture seule.',
@@ -364,7 +368,7 @@ export class FinanceController {
   changerStatutPlan = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const user = req.user;
-      if (!(await this.checkFinancePermission(user, res))) return;
+      if (!(await this.checkFinancePermission(user, res, true))) return;
       const { id } = req.params as { id: string };
       const { statutCible } = req.body as { statutCible?: FeePlanStatus };
 
@@ -390,6 +394,37 @@ export class FinanceController {
       this.audit.journaliser({
         actorUserId: user?.userId, actorRole: user?.role, schoolId: user?.schoolId,
         actionName: 'changer_statut_plan_frais', origin: 'UI_DIRECT', outcome: 'ERREUR',
+        refusalReason: error instanceof Error ? error.message : undefined,
+        parametersSummary: { id: req.params.id, ...req.body },
+      });
+      this.gererErreur(error, res, next);
+    }
+  };
+
+  // PATCH /api/v2/finance/fee-plans/:id — modifier le montant, nom, échéance, description
+  modifierPlan = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = req.user;
+      if (!(await this.checkFinancePermission(user, res, true))) return;
+      const { id } = req.params as { id: string };
+      const resultat = await this.modifierPlanFrais.execute({
+        schoolId: user.schoolId,
+        demandeurRole: user.role,
+        feePlanId: id,
+        ...req.body,
+      });
+      this.audit.journaliser({
+        actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
+        actionName: 'modifier_plan_frais', targetType: 'FeePlan', targetId: resultat.planId,
+        origin: 'UI_DIRECT', outcome: 'SUCCES',
+        parametersSummary: req.body,
+      });
+      res.json({ success: true, data: resultat });
+    } catch (error) {
+      const user = req.user;
+      this.audit.journaliser({
+        actorUserId: user?.userId, actorRole: user?.role, schoolId: user?.schoolId,
+        actionName: 'modifier_plan_frais', origin: 'UI_DIRECT', outcome: 'ERREUR',
         refusalReason: error instanceof Error ? error.message : undefined,
         parametersSummary: { id: req.params.id, ...req.body },
       });

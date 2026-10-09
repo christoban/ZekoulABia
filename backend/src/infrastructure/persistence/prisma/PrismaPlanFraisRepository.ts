@@ -94,6 +94,7 @@ export class PrismaPlanFraisRepository implements PlanFraisRepository {
         description: data.description,
         dueDate: data.dueDate ?? null,
         level: data.level ?? null,
+        status: data.status,
       },
     });
   }

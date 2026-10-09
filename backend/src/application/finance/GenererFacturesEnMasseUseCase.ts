@@ -41,6 +41,11 @@ export class GenererFacturesEnMasseUseCase {
       );
     }
 
+    // Si le montant est à 0, ne pas générer de factures
+    if (plan.amount <= 0) {
+      return { crees: 0, ignores: 0, erreurs: [] };
+    }
+
     // 2. Loi 3
     if (plan.estScolarite()) {
       const seuil = await this.planFraisRepository.getSeuilLegalTuition(
@@ -59,8 +64,16 @@ export class GenererFacturesEnMasseUseCase {
         .map(e => e.id);
     }
 
+    // Ciblage automatique de tous les élèves de l'école si aucune classe spécifique n'est fournie
     if (studentIds.length === 0) {
-      throw new Error('Aucun élève cible trouvé');
+      const allStudents = await this.userRepository.findByRole(commande.schoolId, 'STUDENT');
+      studentIds = allStudents
+        .filter(e => e.isActive)
+        .map(e => e.id);
+    }
+
+    if (studentIds.length === 0) {
+      return { crees: 0, ignores: 0, erreurs: [] };
     }
 
     // 4. Vérifier les factures existantes pour ce plan

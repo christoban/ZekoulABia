@@ -27,3 +27,9 @@ export type {
   EnregistrerPaiementCashCommande,
   EnregistrerPaiementCashResultat,
 } from './EnregistrerPaiementCashUseCase';
+
+export { ChangerStatutPlanFraisUseCase } from './ChangerStatutPlanFraisUseCase';
+export type { ChangerStatutPlanFraisCommande, ChangerStatutPlanFraisResultat } from './ChangerStatutPlanFraisUseCase';
+
+export { ModifierPlanFraisUseCase } from './ModifierPlanFraisUseCase';
+export type { ModifierPlanFraisCommande, ModifierPlanFraisResultat } from './ModifierPlanFraisUseCase';

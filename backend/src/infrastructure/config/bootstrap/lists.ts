@@ -846,6 +846,7 @@ export function registerListsRoutes(app: Application, p: typeof prisma = prisma,
       const { academicYearId } = req.query as Record<string, string>;
       const plans = await p.feePlan.findMany({
         where: { schoolId, ...(academicYearId ? { academicYearId } : {}) },
+        include: { _count: { select: { invoices: true } } },
         orderBy: { createdAt: 'desc' },
       });
       res.json({ success: true, data: plans });

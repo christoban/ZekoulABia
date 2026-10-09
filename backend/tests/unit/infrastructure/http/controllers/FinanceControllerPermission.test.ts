@@ -56,6 +56,10 @@ describe('FinanceController — Contrôle des permissions financières', () => {
       },
     } as any
 
+    const mockModifierPlan = {
+      execute: async () => ({ planId: 'p1', name: 'Plan Test', amount: 10000, status: 'PUBLISHED' }),
+    } as any
+
     const mockGenererFacture = {
       execute: async () => {
         genererFactureAppele = true
@@ -69,6 +73,7 @@ describe('FinanceController — Contrôle des permissions financières', () => {
 
     controller = new FinanceController(
       mockCreerPlan,
+      mockModifierPlan,
       mockGenererFacture,
       {} as any, // genererFacturesEnMasse
       {} as any, // initierPaiement
