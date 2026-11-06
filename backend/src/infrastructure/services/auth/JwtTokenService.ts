@@ -7,7 +7,7 @@ import type { TokenService, PayloadToken, TokensGeneres } from '@domain/ports/se
 
 // Type exact attendu par jwt.sign({ expiresIn }) — @types/jsonwebtoken 9.0.10 l'a resserré à un
 // format de durée précis (ex. "7d"), un `string` générique ne suffit plus. Repris depuis la
-// bibliothèque elle-même plutôt qu'un `as any` : si le format accepté change encore, l'erreur de
+// bibliothèque elle-même plutôt qu'un cast non typé : si le format accepté change encore, l'erreur de
 // type réapparaît ici plutôt que de se taire.
 type Duree = NonNullable<SignOptions['expiresIn']>;
 

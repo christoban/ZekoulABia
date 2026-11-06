@@ -11,8 +11,8 @@
  */
 import fs from 'fs';
 import path from 'path';
-import type { StatisticalQueryPort } from '@domain/ports/repositories/StatisticalQueryPort';
-import type { StatisticalCampaignRepository } from '@domain/ports/repositories/StatisticalCampaignRepository';
+import type { StatisticalQueryPort, EcoleIdentification } from '@domain/ports/repositories/StatisticalQueryPort';
+import type { StatisticalCampaignRepository, SupplementData, TemplateData } from '@domain/ports/repositories/StatisticalCampaignRepository';
 import { decryptTemplate, setCellValue, writeWorkbookToFile, cleanupSession, type WorkbookSession } from './xlsEngine';
 import { resolveEsgFields, resolveIdentificationAutoFields, resolveFeeAutoFields, type ResolvedCell } from './resolveAutoFields';
 import { resolveEsgEngFields } from './resolveEsgEngFields';
@@ -24,23 +24,43 @@ import { ESTP_ENG_GRID_BLOCKS } from './minesecEstpEngGridMap';
 import { MANUELS_FIELD_MAPPING } from './minesecManuelsFieldMap';
 import { THEMES_FIELD_MAPPING } from './minesecThemesFieldMap';
 import { resolveAtelierFields } from './resolveAtelierFields';
+import type { AtelierDetailEntry } from './minesecAteliersFieldMap';
 import type { ChampNonResolu, GenererDeclarationStatistiqueCommande, GenererDeclarationStatistiqueResultat } from './types';
 
-function getByPath(obj: any, keyPath: string): any {
+interface ManuelDetailEntry {
+  code?: string;
+  discipline?: string;
+  niveaux?: Record<string, number>;
+  other?: number;
+}
+
+interface EffectifTechniqueEntry {
+  anneeEtude: string;
+  specialiteAcronyme?: string;
+  divisions?: number;
+  fillesTotal?: number;
+  garconsTotal?: number;
+  fillesRedoublants?: number;
+  garconsRedoublants?: number;
+}
+
+function getByPath(obj: unknown, keyPath: string): unknown {
   // Supporte "a.b.c" et "a[0].b"
   const parts = keyPath.replace(/\[(\d+)\]/g, '.$1').split('.');
-  let cur = obj;
+  let cur: unknown = obj;
   for (const p of parts) {
-    if (cur === null || cur === undefined) return undefined;
-    cur = cur[p];
+    if (cur === null || cur === undefined || typeof cur !== 'object') return undefined;
+    cur = (cur as Record<string, unknown>)[p];
   }
   return cur;
 }
 
 /** P0 V2.14 — extraction testable du choix de clé manuelsDetail (typo rétrocompat). */
-export function pickManuelsDetail(supplement: any): any[] {
-  if (Array.isArray(supplement?.manuelsDetail)) return supplement.manuelsDetail;
-  if (Array.isArray(supplement?.manuelDetail)) return supplement.manuelDetail;
+export function pickManuelsDetail(supplement: unknown): ManuelDetailEntry[] {
+  if (!supplement || typeof supplement !== 'object') return [];
+  const s = supplement as { manuelsDetail?: unknown; manuelDetail?: unknown };
+  if (Array.isArray(s.manuelsDetail)) return s.manuelsDetail as ManuelDetailEntry[];
+  if (Array.isArray(s.manuelDetail)) return s.manuelDetail as ManuelDetailEntry[];
   return [];
 }
 
@@ -107,9 +127,9 @@ export class GenererDeclarationStatistiqueMinesecUseCase {
   private async remplirEtEcrire(
     session: WorkbookSession,
     cmd: GenererDeclarationStatistiqueCommande,
-    template: any,
-    supplement: any,
-    school: any,
+    template: TemplateData,
+    supplement: SupplementData | null,
+    school: EcoleIdentification | null,
   ): Promise<GenererDeclarationStatistiqueResultat> {
     const wb = session.workbook;
     const champsNonResolus: ChampNonResolu[] = [];
@@ -142,7 +162,10 @@ export class GenererDeclarationStatistiqueMinesecUseCase {
     for (const field of fixedManualFields) {
       const ws = wb.getWorksheet(field.sheetName);
       if (!ws || !field.supplementKey) continue;
-      const value = getByPath(supplement, field.supplementKey);
+      const rawValue = getByPath(supplement, field.supplementKey);
+      const value = typeof rawValue === 'string' || typeof rawValue === 'number' || typeof rawValue === 'boolean'
+        ? rawValue
+        : rawValue === null || rawValue === undefined ? undefined : String(rawValue);
       if (value === undefined || value === null) {
         champsNonResolus.push({
           fieldCode: field.fieldCode,
@@ -176,7 +199,9 @@ export class GenererDeclarationStatistiqueMinesecUseCase {
 
     // ── Catégorie C_MANUAL — spécialités techniques ESTP (grille dynamique) ──
     const wsEstp = wb.getWorksheet('Eleves_ESTP_Fr');
-    const effectifsTechniques: any[] = Array.isArray(supplement?.effectifsTechniquesDetail) ? supplement.effectifsTechniquesDetail : [];
+    const effectifsTechniques: EffectifTechniqueEntry[] = Array.isArray(supplement?.effectifsTechniquesDetail)
+      ? (supplement.effectifsTechniquesDetail as EffectifTechniqueEntry[])
+      : [];
     const blockByAnnee = new Map<string, typeof ESTP_GRID_BLOCKS>();
     for (const block of ESTP_GRID_BLOCKS) {
       const base = block.blockLabel.replace(/ suite$/, '');
@@ -272,11 +297,11 @@ export class GenererDeclarationStatistiqueMinesecUseCase {
     }
 
     // ── Catégorie C_MANUAL — Manuels-Didactics ──
-    const manuelsDetail: any[] = pickManuelsDetail(supplement);
+    const manuelsDetail = pickManuelsDetail(supplement);
     for (const mapping of MANUELS_FIELD_MAPPING) {
       const ws = wb.getWorksheet('Manuels-Didactics');
       if (!ws) continue;
-      const entry = manuelsDetail.find((m: any) => m.code === mapping.fieldCode || m.discipline === mapping.discipline);
+      const entry = manuelsDetail.find((m) => m.code === mapping.fieldCode || m.discipline === mapping.discipline);
       if (!entry) {
         champsNonResolus.push({ fieldCode: mapping.fieldCode, sheetName: 'Manuels-Didactics', cellReference: mapping.otherCell, fieldLabel: mapping.discipline, raison: 'Non renseigne dans le formulaire complementaire.' });
         continue;
@@ -293,12 +318,17 @@ export class GenererDeclarationStatistiqueMinesecUseCase {
     }
 
     // ── Catégorie C_MANUAL — Themes Transversaux ──
-    const themesDetail: any = supplement?.themesTransversauxDetail ?? null;
+    const themesDetail = typeof supplement?.themesTransversauxDetail === 'object' && supplement.themesTransversauxDetail !== null
+      ? (supplement.themesTransversauxDetail as Record<string, unknown>)
+      : null;
     if (themesDetail) {
       const ws = wb.getWorksheet('Themes_Tranversaux');
       if (ws) {
         for (const mapping of THEMES_FIELD_MAPPING) {
-          const value = themesDetail[mapping.questionRef];
+          const rawValue = themesDetail[mapping.questionRef];
+          const value = typeof rawValue === 'string' || typeof rawValue === 'number' || typeof rawValue === 'boolean'
+            ? rawValue
+            : rawValue === null || rawValue === undefined ? undefined : String(rawValue);
           if (value === undefined || value === null) {
             champsNonResolus.push({ fieldCode: mapping.fieldCode, sheetName: 'Themes_Tranversaux', cellReference: mapping.cellRef, fieldLabel: mapping.fieldLabel, raison: 'Non renseigne dans le formulaire complementaire.' });
             continue;
@@ -309,7 +339,9 @@ export class GenererDeclarationStatistiqueMinesecUseCase {
     }
 
     // ── Catégorie C_MANUAL — Atelier_Workshop (ligne par ligne) ──
-    const ateliersDetail: any[] = Array.isArray(supplement?.ateliersDetail) ? supplement.ateliersDetail : [];
+    const ateliersDetail: AtelierDetailEntry[] = Array.isArray(supplement?.ateliersDetail)
+      ? (supplement.ateliersDetail as AtelierDetailEntry[])
+      : [];
     const atelierResolved = resolveAtelierFields(ateliersDetail);
     applyCells(atelierResolved.cells);
     champsNonResolus.push(...atelierResolved.nonCouverts);

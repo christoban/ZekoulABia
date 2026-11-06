@@ -59,16 +59,30 @@ export class GenererRapportPedagogieUseCase {
       subjectIds,
     });
 
-    const groupes: Record<string, any> = {};
+    interface GroupeMatiere {
+      subject: CahierDeTexteProps['subject'];
+      seances: number;
+      chapitresAbordees: Set<string>;
+    }
+    interface GroupeClasse {
+      class: CahierDeTexteProps['class'];
+      subjects: Record<string, GroupeMatiere>;
+    }
+    interface GroupeEnseignant {
+      teacher: CahierDeTexteProps['teacher'];
+      totalSeances: number;
+      classes: Record<string, GroupeClasse>;
+    }
+    const groupes: Record<string, GroupeEnseignant> = {};
     for (const e of entries) {
       const teacherKey = e.teacherId;
       if (!groupes[teacherKey]) {
-        groupes[teacherKey] = { teacher: e.teacher, totalSeances: 0, classes: {} as Record<string, any> };
+        groupes[teacherKey] = { teacher: e.teacher, totalSeances: 0, classes: {} };
       }
       groupes[teacherKey].totalSeances++;
       const classeKey = e.classId;
       if (!groupes[teacherKey].classes[classeKey]) {
-        groupes[teacherKey].classes[classeKey] = { class: e.class, subjects: {} as Record<string, any> };
+        groupes[teacherKey].classes[classeKey] = { class: e.class, subjects: {} };
       }
       const subjectKey = e.subjectId;
       if (!groupes[teacherKey].classes[classeKey].subjects[subjectKey]) {
@@ -82,12 +96,12 @@ export class GenererRapportPedagogieUseCase {
       if (e.chapitreId) groupes[teacherKey].classes[classeKey].subjects[subjectKey].chapitresAbordees.add(e.chapitreId);
     }
 
-    const rapport = Object.values(groupes).map((g: any) => ({
+    const rapport = Object.values(groupes).map((g) => ({
       teacher: g.teacher,
       totalSeances: g.totalSeances,
-      classes: Object.values(g.classes).map((c: any) => ({
+      classes: Object.values(g.classes).map((c) => ({
         class: c.class,
-        subjects: Object.values(c.subjects).map((s: any) => ({
+        subjects: Object.values(c.subjects).map((s) => ({
           subject: s.subject,
           seances: s.seances,
           chapitresAbordees: s.chapitresAbordees.size,

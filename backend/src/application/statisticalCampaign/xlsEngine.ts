@@ -21,6 +21,7 @@ import crypto from 'crypto';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import officecrypto from 'officecrypto-tool';
+import { messageErreur } from '@application/shared/messageErreur';
 import ExcelJS from 'exceljs';
 
 const execFileAsync = promisify(execFile);
@@ -81,8 +82,8 @@ export async function checkLibreOfficeAvailable(): Promise<{ available: boolean;
       { timeout: 15_000 },
     );
     return { available: true, version: stdout.trim() };
-  } catch (err: any) {
-    return { available: false, error: err?.message ?? String(err) };
+  } catch (err) {
+    return { available: false, error: messageErreur(err) };
   } finally {
     fs.rmSync(profileDir, { recursive: true, force: true });
   }
@@ -113,13 +114,14 @@ async function runLibreOfficeConvert(args: {
       ],
       { timeout: CONVERT_TIMEOUT_MS },
     );
-  } catch (err: any) {
-    if (err?.code === 'ENOENT') {
+  } catch (err) {
+    const e = err as NodeJS.ErrnoException & { killed?: boolean; signal?: string };
+    if (e.code === 'ENOENT') {
       throw new LibreOfficeUnavailableError(
         "Le service de génération est temporairement indisponible (LibreOffice introuvable). Réessayez ou contactez le support.",
       );
     }
-    if (err?.killed || err?.signal === 'SIGTERM') {
+    if (e.killed || e.signal === 'SIGTERM') {
       throw new LibreOfficeConversionError(
         `La conversion LibreOffice a dépassé le délai de ${CONVERT_TIMEOUT_MS}ms (fichier : ${path.basename(args.inputPath)}).`,
         err,

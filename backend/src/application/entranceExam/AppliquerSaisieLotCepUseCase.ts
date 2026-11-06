@@ -1,7 +1,7 @@
 import type { EntranceExamRepository } from '@domain/ports/repositories/EntranceExamRepository';
 import type { SchoolRepository } from '@domain/ports/repositories/SchoolRepository';
 import type { CreerSqueletteOnboardingUseCase } from '../eleveOnboarding/CreerSqueletteOnboardingUseCase';
-import { notifyConcoursPromotionSms } from '@infrastructure/services/sms/SmsNotificationService';
+import type { SmsNotificationPort } from '@domain/ports/services/SmsNotificationPort';
 
 export interface DecisionCandidatCep {
   candidateId: string;
@@ -28,6 +28,7 @@ export class AppliquerSaisieLotCepUseCase {
   constructor(
     private readonly entranceRepository: EntranceExamRepository,
     private readonly creerSqueletteOnboarding: CreerSqueletteOnboardingUseCase,
+    private readonly smsNotification: SmsNotificationPort,
     private readonly schoolRepository?: SchoolRepository,
   ) {}
 
@@ -115,7 +116,7 @@ export class AppliquerSaisieLotCepUseCase {
 
         // Envoi du SMS au candidat promu (information nouvelle)
         if (promoCand.parentPhone && promoCand.parentPhone.trim().length >= 8) {
-          await notifyConcoursPromotionSms({
+          await this.smsNotification.notifyConcoursPromotionSms({
             schoolId: cmd.schoolId,
             candidateName: `${promoCand.firstName} ${promoCand.lastName}`,
             parentPhone: promoCand.parentPhone.trim(),

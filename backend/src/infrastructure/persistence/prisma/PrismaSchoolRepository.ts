@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, School as PrismaSchool } from '@prisma/client';
 import { School } from '@domain/entities/School';
 import type { SchoolRepository } from '@domain/ports/repositories/SchoolRepository';
 import type { EducationType, SchoolOwnership, SchoolStatus, SchoolSubsystem } from '@domain/types/enums';
@@ -122,11 +122,11 @@ export class PrismaSchoolRepository implements SchoolRepository {
   }
 
   async isEmailDigestAdminEnabled(schoolId: string): Promise<boolean> {
-    const s = await (this.prisma as any).schoolNotificationSettings.findUnique({ where: { schoolId }, select: { emailDigestAdmin: true } });
+    const s = await this.prisma.schoolNotificationSettings.findUnique({ where: { schoolId }, select: { emailDigestAdmin: true } });
     return s?.emailDigestAdmin ?? false;
   }
 
-  private toDomain(data: any): School {
+  private toDomain(data: PrismaSchool): School {
     return School.reconstituer({
       id: data.id,
       name: data.name,

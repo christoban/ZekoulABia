@@ -6,11 +6,10 @@ export class PrismaSauvegardeRepository implements SauvegardeRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   async listerEcoles(params: { schoolId?: string }): Promise<Array<{ id: string; name: string }>> {
-    const db = this.prisma as any;
     if (params.schoolId) {
-      return db.school.findMany({ where: { id: params.schoolId }, select: { id: true, name: true } });
+      return this.prisma.school.findMany({ where: { id: params.schoolId }, select: { id: true, name: true } });
     }
-    return db.school.findMany({ where: { status: 'ACTIVE' }, select: { id: true, name: true } });
+    return this.prisma.school.findMany({ where: { status: 'ACTIVE' }, select: { id: true, name: true } });
   }
 
   async sauvegarderEcole(params: {

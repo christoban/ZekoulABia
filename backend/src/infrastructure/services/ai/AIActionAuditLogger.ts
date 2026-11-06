@@ -9,6 +9,7 @@
  * doit jamais bloquer l'action métier elle-même.
  */
 import type { PrismaClient, Prisma } from '@prisma/client';
+import { messageErreur } from '@application/shared/messageErreur';
 
 export type AIActionOrigin = 'UI_DIRECT' | 'AI_ASSISTANT';
 export type AIActionOutcome = 'SUCCES' | 'REFUSE' | 'ERREUR';
@@ -62,5 +63,5 @@ export function journaliserActionIA(prisma: PrismaClient, params: JournaliserAct
         triggeringMessage: params.triggeringMessage ?? undefined,
       },
     })
-    .catch((e: any) => console.error('[AIActionAuditLog]', e?.message));
+    .catch((e) => console.error('[AIActionAuditLog]', messageErreur(e)));
 }

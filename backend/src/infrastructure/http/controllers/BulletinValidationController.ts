@@ -12,6 +12,7 @@ import type { SectionRepository } from '@domain/ports/repositories/SectionReposi
 import type { ClasseRepository } from '@domain/ports/repositories/ClasseRepository';
 import type { BulletinValidationRepository } from '@domain/ports/repositories/BulletinValidationRepository';
 import { resolveLanguage } from '../../../domain/policies/LanguagePolicy';
+import type { BulletinValidationStatus } from '@domain/types/enums';
 
 type AuthUser = { schoolId: string; userId: string; role: string; permissions?: string[] };
 
@@ -39,7 +40,7 @@ export class BulletinValidationController {
       const result = await this.bulletinValidationRepository.listerSessions(user.schoolId, {
         classId: classId || undefined,
         academicPeriodId: academicPeriodId || undefined,
-        status: status as any || undefined,
+        status: (status as BulletinValidationStatus) || undefined,
       });
       res.json({ success: true, data: result });
     } catch (error) {

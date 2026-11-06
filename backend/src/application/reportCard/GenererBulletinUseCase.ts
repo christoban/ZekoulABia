@@ -116,7 +116,7 @@ export class GenererBulletinUseCase {
     const schoolForCoeff = await this.schoolRepository.findById(commande.schoolId);
     const classeForCoeff = await this.classeRepository.findById(commande.classId);
     const hasCoefficientBySubject = schoolForCoeff && classeForCoeff
-      ? resolveHasCoefficientForClass(schoolForCoeff as any, (classeForCoeff as any).level ?? null)
+      ? resolveHasCoefficientForClass(schoolForCoeff, classeForCoeff.level ?? null)
       : true;
     // On utilise notesDeClasse (déjà chargé par findByClasse — classId garanti correct)
     const moyennesEleves: { studentId: string; moyenne: number }[] = [];

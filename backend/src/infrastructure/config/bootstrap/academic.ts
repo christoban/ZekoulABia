@@ -53,7 +53,7 @@ export function registerAcademicRoutes(app: Application, prismaParam: typeof pri
     c.school.sectionRepository,
     c.reportCard.bulletinRepository,
     c.reportCard.parentRepository,
-    new AIActionAuditAdapter(p as any),
+    new AIActionAuditAdapter(p),
     c.reportCard.verifierDisponibilite,
     c.reportCard.lister,
   );
@@ -166,7 +166,7 @@ export function registerAcademicRoutes(app: Application, prismaParam: typeof pri
     c.pedagogie.calculerProgression,
     c.pedagogie.obtenirSlot,
     c.pedagogie.genererRapport,
-    new AIActionAuditAdapter(p as any),
+    new AIActionAuditAdapter(p),
   );
   app.use('/api/v2/pedagogie', requireAuth, creerPedagogieRoutes(pedagogieController));
 
@@ -201,8 +201,8 @@ export function registerAcademicRoutes(app: Application, prismaParam: typeof pri
   ));
 
   // V1.1 — Profil Académique (RBAC : ADMIN/STAFF, PP, parent, élève lui-même)
-    const enrollmentRepo = new PrismaEnrollmentRepository(p as any);
-  const anneeRepo = new PrismaAnneeAcademiqueRepository(p as any);
+    const enrollmentRepo = new PrismaEnrollmentRepository(p);
+  const anneeRepo = new PrismaAnneeAcademiqueRepository(p);
   const academicProfileController = new AcademicProfileController(
     c.academicProfile.obtenirProfil,
     c.parent.verifierAcces,

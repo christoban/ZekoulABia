@@ -28,10 +28,10 @@ export class GetStudentPaymentDashboardUseCase {
       : [];
 
     // Calcul totaux
-    const totalAttenduMinesec = paiementsMinesec.reduce((s: number, p: any) => s + p.montantAttendu, 0);
-    const totalPayeMinesec = paiementsMinesec.reduce((s: number, p: any) => s + (p.montantPaye ?? 0), 0);
-    const totalAttenduEtab = paiementsEtablissement.reduce((s: number, p: any) => s + p.montantAttendu, 0);
-    const totalPayeEtab = paiementsEtablissement.reduce((s: number, p: any) => s + p.montantPaye, 0);
+    const totalAttenduMinesec = paiementsMinesec.reduce((s, p) => s + p.montantAttendu, 0);
+    const totalPayeMinesec = paiementsMinesec.reduce((s, p) => s + (p.montantPaye ?? 0), 0);
+    const totalAttenduEtab = paiementsEtablissement.reduce((s, p) => s + p.montantAttendu, 0);
+    const totalPayeEtab = paiementsEtablissement.reduce((s, p) => s + (p.montantPaye ?? 0), 0);
 
     const totalAttendu = totalAttenduMinesec + totalAttenduEtab;
     const totalPaye = totalPayeMinesec + totalPayeEtab;
@@ -40,8 +40,8 @@ export class GetStudentPaymentDashboardUseCase {
     // Statut global
     let statutGlobal: 'A_JOUR' | 'PARTIELLEMENT_PAYE' | 'EN_RETARD' = 'A_JOUR';
     if (totalRestant > 0) {
-      const hasOverdue = paiementsMinesec.some((p: any) => p.status === 'IMPAYE' && p.dateEcheance && new Date(p.dateEcheance) < new Date())
-        || paiementsEtablissement.some((p: any) => p.status === 'IMPAYE');
+      const hasOverdue = paiementsMinesec.some((p) => p.status === 'IMPAYE' && p.dateEcheance && new Date(p.dateEcheance) < new Date())
+        || paiementsEtablissement.some((p) => p.status === 'IMPAYE');
       statutGlobal = hasOverdue ? 'EN_RETARD' : 'PARTIELLEMENT_PAYE';
     }
 
@@ -58,7 +58,7 @@ export class GetStudentPaymentDashboardUseCase {
         status: enrollment.status,
         anneeScolaire: enrollment.anneeScolaire,
       } : { id: '', status: 'NONE', anneeScolaire: '' },
-      paiementsMinesec: paiementsMinesec.map((p: any) => ({
+      paiementsMinesec: paiementsMinesec.map((p) => ({
         id: p.id,
         typeFrais: p.typeFrais,
         montantAttendu: p.montantAttendu,
@@ -68,7 +68,7 @@ export class GetStudentPaymentDashboardUseCase {
         operateur: p.operateur,
         recuVerifie: p.recuVerifie,
       })),
-      paiementsEtablissement: paiementsEtablissement.map((p: any) => ({
+      paiementsEtablissement: paiementsEtablissement.map((p) => ({
         id: p.id,
         label: p.typeFrais,
         montantAttendu: p.montantAttendu,

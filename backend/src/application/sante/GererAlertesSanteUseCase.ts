@@ -1,3 +1,4 @@
+import { messageErreur } from '@application/shared/messageErreur';
 import type { HealthJobsRepository } from '@domain/ports/repositories/HealthJobsRepository';
 import type { IAService } from '@domain/ports/services/IAService';
 import type { NotificationService } from '@domain/ports/services/NotificationService';
@@ -12,7 +13,7 @@ export class GererAlertesSanteUseCase {
   private async notifierPersonnelDirect(userId: string, schoolId: string, titre: string, corps: string) {
     await this.notificationService
       .envoyer({ schoolId, userId, type: "STUDENT_RISK_ALERT", titre, corps, urgency: "HIGH" })
-      .catch((err: any) => console.error("[HealthAlert] personnel:", err?.message));
+      .catch((err) => console.error("[HealthAlert] personnel:", messageErreur(err)));
   }
 
   private async notifierParents(opts: { schoolId: string; studentId: string; titre: string; corps: string }) {
@@ -23,7 +24,7 @@ export class GererAlertesSanteUseCase {
         type: "STUDENT_RISK_ALERT",
         titre: opts.titre,
         corps: opts.corps,
-      }).catch((err: any) => console.error("[HealthAlert] parent:", err?.message));
+      }).catch((err) => console.error("[HealthAlert] parent:", messageErreur(err)));
     } else {
       // Fallback: try direct envoyer if parent resolution not available via port
       console.warn("[HealthAlert] notifierParents not implemented on NotificationService");
@@ -55,8 +56,8 @@ export class GererAlertesSanteUseCase {
         content,
       });
       return content;
-    } catch (err: any) {
-      console.error("[Conseil IA]", err?.message);
+    } catch (err) {
+      console.error("[Conseil IA]", messageErreur(err));
       return null;
     }
   }
@@ -77,8 +78,8 @@ export class GererAlertesSanteUseCase {
         await this.notifierPersonnelDirect(c.userId, schoolId, "Suivi Orientation suggéré",
           `${nomComplet} (${className ?? "N/A"}) est en risque critique de façon répétée (${occurrences} alerte(s) récente(s)). Une fiche d'orientation pourrait être ouverte.`);
       }
-    } catch (err: any) {
-      console.error("[Orientation] suggestion:", err?.message);
+    } catch (err) {
+      console.error("[Orientation] suggestion:", messageErreur(err));
     }
   }
 

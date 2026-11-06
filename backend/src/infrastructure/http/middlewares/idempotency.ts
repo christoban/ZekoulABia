@@ -1,4 +1,5 @@
 import { type Request, type Response, type NextFunction } from 'express';
+import { messageErreur } from '@application/shared/messageErreur';
 import type { PrismaClient, Prisma } from '@prisma/client';
 
 /**
@@ -45,7 +46,7 @@ export function idempotency(prisma: PrismaClient) {
               responseBody: body as Prisma.InputJsonValue,
             },
           })
-          .catch((e: any) => console.error('[Idempotency] Échec enregistrement:', e?.message));
+          .catch((e) => console.error('[Idempotency] Échec enregistrement:', messageErreur(e)));
       }
       return originalJson(body);
     }) as typeof res.json;

@@ -66,9 +66,9 @@ export function registerUserRoutes(app: Application, prismaParam: typeof prisma 
   const p = prismaParam ?? prisma;
   const c = container;
 
-  const designerAPUseCase = new DesignerAPUseCase(new PrismaStaffProfileRepository(p as any), new ActivityLogAdapter());
+  const designerAPUseCase = new DesignerAPUseCase(new PrismaStaffProfileRepository(p), new ActivityLogAdapter());
 
-  const userRepository = new PrismaUserRepository(p as any);
+  const userRepository = new PrismaUserRepository(p);
   const loginEmailOtpUseCase = new LoginEmailOtpUseCase(
     userRepository,
     async ({ recipientEmail, otp }: { recipientEmail: string; otp: string }) => {
@@ -97,9 +97,9 @@ export function registerUserRoutes(app: Application, prismaParam: typeof prisma 
   const verifierMfaConnexionUseCase = new VerifierMfaConnexionUseCase(userRepository);
   const mfaService = new MfaServiceAdapter();
   const mfaUseCase = new MfaUseCase(userRepository, mfaService);
-  const classeRepositoryForUser = new PrismaClasseRepository(p as any);
-  const enrollmentRepositoryForUser = new PrismaEnrollmentRepository(p as any);
-  const auditForUser = new AIActionAuditAdapter(p as any);
+  const classeRepositoryForUser = new PrismaClasseRepository(p);
+  const enrollmentRepositoryForUser = new PrismaEnrollmentRepository(p);
+  const auditForUser = new AIActionAuditAdapter(p);
 
   const userController = new UserController(
     c.user.connecter,
@@ -141,7 +141,7 @@ export function registerUserRoutes(app: Application, prismaParam: typeof prisma 
 
   app.use('/api/v2/users', creerUserRoutes(userController));
 
-  const masterUserAuthRepository = new PrismaMasterUserAuthRepository(p as any);
+  const masterUserAuthRepository = new PrismaMasterUserAuthRepository(p);
   const loginMasterUseCase = new LoginMasterUseCase(
     masterUserAuthRepository,
     async ({ recipientEmail, otp }: { recipientEmail: string; otp: string }) => {
@@ -181,9 +181,9 @@ export function registerUserRoutes(app: Application, prismaParam: typeof prisma 
   );
   app.use('/api/v2/master', creerSchoolTemplateAdminRoutes(schoolTemplateAdminController));
 
-  const schoolGroupOwnerAuthRepository = new PrismaSchoolGroupOwnerAuthRepository(p as any);
-  const groupTransferRepository = new PrismaGroupTransferRepository(p as any);
-  const groupeScolaireQueryRepository = new PrismaGroupeScolaireQueryRepository(p as any);
+  const schoolGroupOwnerAuthRepository = new PrismaSchoolGroupOwnerAuthRepository(p);
+  const groupTransferRepository = new PrismaGroupTransferRepository(p);
+  const groupeScolaireQueryRepository = new PrismaGroupeScolaireQueryRepository(p);
 
   const loginGroupOwnerUseCase = new LoginGroupOwnerUseCase(
     schoolGroupOwnerAuthRepository,

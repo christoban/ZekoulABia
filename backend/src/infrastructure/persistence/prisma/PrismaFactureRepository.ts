@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, Invoice } from '@prisma/client';
 import { Facture } from '@domain/entities/Facture';
 import type {
   FactureRepository,
@@ -137,7 +137,7 @@ export class PrismaFactureRepository implements FactureRepository {
     await this.prisma.invoice.delete({ where: { id } });
   }
 
-  private toDomain(data: any): Facture {
+  private toDomain(data: Invoice): Facture {
     return Facture.reconstituer({
       id: data.id,
       schoolId: data.schoolId,

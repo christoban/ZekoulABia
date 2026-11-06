@@ -149,6 +149,7 @@ describe('PrismaEleveOnboardingRepository — Intégration', () => {
     const dummyProfile = await prismaTest.studentProfile.create({
       data: {
         userId: dummyEleve.id,
+        schoolId,
         studentStatus: 'ACTIVE',
       },
     });

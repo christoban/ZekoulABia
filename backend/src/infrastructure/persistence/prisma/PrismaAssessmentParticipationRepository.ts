@@ -1,9 +1,9 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, AssessmentParticipation as AssessmentParticipationModel } from '@prisma/client';
 import type { AssessmentParticipationRepository } from '@domain/ports/repositories/AssessmentParticipationRepository';
 import type { AttendanceStatus } from '@domain/types/enums';
 import { AssessmentParticipation } from '@domain/entities/AssessmentParticipation';
 
-function toDomain(data: any): AssessmentParticipation {
+function toDomain(data: AssessmentParticipationModel): AssessmentParticipation {
   return AssessmentParticipation.reconstituer({
     id: data.id,
     schoolId: data.schoolId,

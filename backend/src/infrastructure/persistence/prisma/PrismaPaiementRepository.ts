@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, Prisma, Payment } from '@prisma/client';
 import { Paiement } from '@domain/entities/Paiement';
 import type { Facture } from '@domain/entities/Facture';
 import type {
@@ -175,8 +175,8 @@ export class PrismaPaiementRepository implements PaiementRepository {
     });
   }
 
-  async findRecuData(paymentId: string): Promise<any | null> {
-    return (this.prisma as any).payment.findUnique({
+  async findRecuData(paymentId: string): Promise<Prisma.PaymentGetPayload<{ include: { student: { include: { studentProfile: true } }; invoice: { include: { feePlan: true; payments: true } }; school: true } }> | null> {
+    return this.prisma.payment.findUnique({
       where: { id: paymentId },
       include: {
         student: { include: { studentProfile: true } },
@@ -186,7 +186,7 @@ export class PrismaPaiementRepository implements PaiementRepository {
     });
   }
 
-  private toDomain(data: any): Paiement {
+  private toDomain(data: Payment): Paiement {
     return Paiement.reconstituer({
       id: data.id,
       schoolId: data.schoolId,

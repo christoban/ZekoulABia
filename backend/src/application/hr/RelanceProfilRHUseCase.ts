@@ -1,3 +1,4 @@
+import type { StepRunner } from '@application/shared/StepRunner';
 import type { HrJobsRepository } from '@domain/ports/repositories/HrJobsRepository';
 import type { EmailService } from '@domain/ports/services/EmailService';
 
@@ -7,7 +8,7 @@ const ESCALATION_DELAY_DAYS = 21;
 export class RelanceProfilRHUseCase {
   constructor(private readonly repository: HrJobsRepository, private readonly emailService: EmailService) {}
 
-  async execute(step: any): Promise<{ reminded: number; escalated: number; processedAt: string }> {
+  async execute(step: StepRunner): Promise<{ reminded: number; escalated: number; processedAt: string }> {
     const FRONTEND_URL = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
     const employes = await this.repository.listerEmployesActifs();
 

@@ -592,7 +592,7 @@ export function buildAdminAcademicGradeActions(deps: AdminActionDeps): ActionDef
           where: { schoolId: ctx.schoolId, academicPeriodId: period.id, status: 'LOCKED' },
           select: { classId: true },
         });
-        const lockedIds = new Set(sessions.map((s: any) => s.classId));
+        const lockedIds = new Set(sessions.map((s) => s.classId));
         const sansConseil = classes.filter((c) => !lockedIds.has(c.id));
 
         const now = Date.now();

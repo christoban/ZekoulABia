@@ -3,7 +3,7 @@
  * Implémente le port PublicationRepository via Prisma Client.
  */
 
-import type { PrismaClient } from '@prisma/client';
+import type { Announcement, Prisma, PrismaClient, PublicationCategorie as PrismaPublicationCategorie, UserRole } from '@prisma/client';
 import {
   Publication,
   type PublicationProps,
@@ -26,18 +26,18 @@ export class PrismaPublicationRepository implements PublicationRepository {
         schoolId: publication.tenantId,
         title: publication.titre,
         content: publication.corps,
-        targetRoles: publication.audience.roles as any,
+        targetRoles: publication.audience.roles as UserRole[],
         isPinned: publication.epinglee,
         authorId: publication.auteurId,
         createdAt: publication.createdAt,
         updatedAt: publication.updatedAt,
         expiresAt: publication.expireLe,
-        type: publication.type as any,
-        format: publication.corpsFormat as any,
-        categorie: publication.categorie as any,
-        priorite: publication.priorite as any,
-        statut: publication.statut as any,
-        dureeVisibilite: publication.dureeVisibilite as any,
+        type: publication.type,
+        format: publication.corpsFormat,
+        categorie: publication.categorie,
+        priorite: publication.priorite,
+        statut: publication.statut,
+        dureeVisibilite: publication.dureeVisibilite,
         publieeLe: publication.publieeLe,
         programmeeLe: publication.programmeeLe,
         modifieLe: publication.modifieLe,
@@ -46,8 +46,8 @@ export class PrismaPublicationRepository implements PublicationRepository {
         auteurTitre: publication.auteurTitre,
         targetNiveaux: publication.audience.niveauIds ?? [],
         targetClasses: publication.audience.classeIds ?? [],
-        piecesJointes: publication.piecesJointes as any,
-        payload: publication.payload as any,
+        piecesJointes: publication.piecesJointes as unknown as Prisma.InputJsonValue,
+        payload: (publication.payload ?? undefined) as Prisma.InputJsonValue | undefined,
         referenceType: publication.referenceType,
         referenceId: publication.referenceId,
       },
@@ -61,7 +61,7 @@ export class PrismaPublicationRepository implements PublicationRepository {
     schoolId: string,
     data: Partial<PublicationProps>
   ): Promise<Publication> {
-    const updateData: any = {};
+    const updateData: Prisma.AnnouncementUpdateInput = {};
 
     if (data.titre !== undefined) updateData.title = data.titre;
     if (data.corps !== undefined) updateData.content = data.corps;
@@ -76,11 +76,11 @@ export class PrismaPublicationRepository implements PublicationRepository {
     if (data.expireLe !== undefined) updateData.expiresAt = data.expireLe;
     if (data.modifieLe !== undefined) updateData.modifieLe = data.modifieLe;
     if (data.deletedAt !== undefined) updateData.deletedAt = data.deletedAt;
-    if (data.piecesJointes !== undefined) updateData.piecesJointes = data.piecesJointes;
-    if (data.payload !== undefined) updateData.payload = data.payload;
+    if (data.piecesJointes !== undefined) updateData.piecesJointes = data.piecesJointes as unknown as Prisma.InputJsonValue;
+    if (data.payload !== undefined) updateData.payload = (data.payload ?? undefined) as Prisma.InputJsonValue | undefined;
 
     if (data.audience) {
-      if (data.audience.roles) updateData.targetRoles = data.audience.roles;
+      if (data.audience.roles) updateData.targetRoles = data.audience.roles as UserRole[];
       if (data.audience.niveauIds) updateData.targetNiveaux = data.audience.niveauIds;
       if (data.audience.classeIds) updateData.targetClasses = data.audience.classeIds;
     }
@@ -112,16 +112,16 @@ export class PrismaPublicationRepository implements PublicationRepository {
     filtres: PublicationFiltres = {}
   ): Promise<{ publications: Publication[]; curseurSuivant?: string }> {
     const limite = filtres.limite ?? 20;
-    const where: any = {
+    const where: Prisma.AnnouncementWhereInput = {
       schoolId,
       deletedAt: null,
     };
 
     if (filtres.categorie) {
-      where.categorie = filtres.categorie;
+      where.categorie = filtres.categorie as PrismaPublicationCategorie;
     }
 
-    const andConditions: any[] = [];
+    const andConditions: Prisma.AnnouncementWhereInput[] = [];
 
     if (filtres.recherche && filtres.recherche.trim().length > 0) {
       const q = filtres.recherche.trim();
@@ -152,7 +152,7 @@ export class PrismaPublicationRepository implements PublicationRepository {
       where.AND = andConditions;
     }
 
-    const queryOptions: any = {
+    const queryOptions: Prisma.AnnouncementFindManyArgs = {
       where,
       take: limite + 1,
       orderBy: [
@@ -336,7 +336,7 @@ export class PrismaPublicationRepository implements PublicationRepository {
           where: {
             schoolId: publication.tenantId,
             deletedAt: null,
-            role: { in: autresRoles as any },
+            role: { in: autresRoles as UserRole[] },
           },
         });
         total += autres;
@@ -350,7 +350,7 @@ export class PrismaPublicationRepository implements PublicationRepository {
       where: {
         schoolId: publication.tenantId,
         deletedAt: null,
-        role: { in: audienceRoles as any },
+        role: { in: audienceRoles as UserRole[] },
       },
     });
   }
@@ -381,7 +381,7 @@ export class PrismaPublicationRepository implements PublicationRepository {
           publicationId: data.publicationId,
           userId: data.userId,
           action: data.action,
-          details: data.details as any,
+          details: data.details as Prisma.InputJsonValue | undefined,
         },
       });
     } catch {
@@ -389,10 +389,13 @@ export class PrismaPublicationRepository implements PublicationRepository {
     }
   }
 
-  private mapperVersEntite(raw: any): Publication {
+  private mapperVersEntite(raw: Announcement & {
+    author?: { id: string; firstName: string; lastName: string; role: string } | null;
+    school?: { id: string; name: string; logoUrl: string | null; city: string | null; subsystem: string | null; features: Prisma.JsonValue } | null;
+  }): Publication {
     let piecesJointes: PieceJointe[] = [];
     if (Array.isArray(raw.piecesJointes)) {
-      piecesJointes = raw.piecesJointes as PieceJointe[];
+      piecesJointes = raw.piecesJointes as unknown as PieceJointe[];
     }
 
     let auteur = undefined;
@@ -408,7 +411,7 @@ export class PrismaPublicationRepository implements PublicationRepository {
 
     let etablissement = undefined;
     if (raw.school) {
-      const features = (raw.school.features as Record<string, any>) || {};
+      const features = (raw.school.features as Record<string, unknown> | null) || {};
       etablissement = {
         nom: raw.school.name,
         logoUrl: raw.school.logoUrl,
@@ -416,7 +419,7 @@ export class PrismaPublicationRepository implements PublicationRepository {
         sousSysteme: raw.school.subsystem,
         devisesActives: features.enTeteRepublique !== false,
         ministereActif: features.ministereActif === true,
-        cachetUrl: features.cachetUrl ?? null,
+        cachetUrl: (features.cachetUrl as string | null | undefined) ?? null,
       };
     }
 
@@ -444,7 +447,7 @@ export class PrismaPublicationRepository implements PublicationRepository {
       auteurRole: raw.auteurRole,
       auteurTitre: raw.auteurTitre,
       piecesJointes,
-      payload: raw.payload,
+      payload: raw.payload as Record<string, unknown> | null,
       referenceType: raw.referenceType,
       referenceId: raw.referenceId,
       createdAt: raw.createdAt,

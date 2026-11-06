@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, LeaveStatus, LeaveType } from '@prisma/client';
 import type { LeaveRepository, LeaveRequestData, LeaveBalanceData } from '@domain/ports/repositories/LeaveRepository';
 
 export class PrismaLeaveRepository implements LeaveRepository {
@@ -9,11 +9,11 @@ export class PrismaLeaveRepository implements LeaveRepository {
   }
 
   async updateRequestStatus(id: string, statut: string, validatedById: string | null): Promise<LeaveRequestData> {
-    return this.prisma.leaveRequest.update({ where: { id }, data: { statut: statut as any, validatedBy: validatedById, validatedAt: new Date() } });
+    return this.prisma.leaveRequest.update({ where: { id }, data: { statut: statut as LeaveStatus, validatedBy: validatedById, validatedAt: new Date() } });
   }
 
   async createRequest(data: { userId: string; schoolId: string; type: string; dateDebut: Date; dateFin: Date; motif?: string }): Promise<LeaveRequestData> {
-    return this.prisma.leaveRequest.create({ data: { userId: data.userId, schoolId: data.schoolId, type: data.type as any, dateDebut: data.dateDebut, dateFin: data.dateFin, motif: data.motif ?? null } });
+    return this.prisma.leaveRequest.create({ data: { userId: data.userId, schoolId: data.schoolId, type: data.type as LeaveType, dateDebut: data.dateDebut, dateFin: data.dateFin, motif: data.motif ?? null } });
   }
 
   async findRequestsBySchool(schoolId: string, userId?: string): Promise<LeaveRequestData[]> {

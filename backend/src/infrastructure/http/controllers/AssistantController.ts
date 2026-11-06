@@ -1,3 +1,4 @@
+import { messageErreur } from '@application/shared/messageErreur';
 import type { PrismaClient } from '@prisma/client';
 import type { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
@@ -20,6 +21,17 @@ const UNDO_WINDOW_MS = 5 * 60 * 1000;
 
 /** Contact support affiché lors d'une escalade — placeholder configurable, jamais en dur. */
 const SUPPORT_CONTACT = process.env.ASSISTANT_SUPPORT_CONTACT || 'le support ZekoulABia (contact à configurer)';
+
+type ActionExecutee = {
+  actionLogId?: string;
+  actionType: string;
+  label?: string;
+  section?: string | null;
+  entity?: unknown;
+  undoable?: boolean;
+  error?: string;
+};
+type ActionEnAttente = { pendingActionId: string; actionType: string; summary: string };
 
 const ESCALATE_TOOL_NAME = 'escalate_to_support';
 
@@ -126,7 +138,7 @@ export class AssistantController {
       texte.length > MAX_CARACTERES_PAR_TOUR ? `${texte.slice(0, MAX_CARACTERES_PAR_TOUR)}…` : texte;
 
     const historyBlock = turns
-      .map((t: any, i: number) => `[${t.role === 'user' ? 'UTILISATEUR' : 'ASSISTANT'}, tour ${i + 1}] : "${tronquer(t.content)}"`)
+      .map((t, i: number) => `[${t.role === 'user' ? 'UTILISATEUR' : 'ASSISTANT'}, tour ${i + 1}] : "${tronquer(t.content)}"`)
       .join('\n');
 
     return (
@@ -142,7 +154,7 @@ export class AssistantController {
   private saveTurn(conversationId: string, schoolId: string, userId: string, role: 'user' | 'assistant', content: string, toolCalls?: unknown) {
     this.contextRepo
       .createConversationTurn({ conversationId, schoolId, userId, role, content, toolCalls })
-      .catch((e: any) => console.error('[AssistantConversationTurn]', e?.message));
+      .catch((e) => console.error('[AssistantConversationTurn]', messageErreur(e)));
   }
 
   /**
@@ -178,7 +190,7 @@ export class AssistantController {
     const helpSection = helpArticles.length > 0
       ? `\n\n── Aide contextuelle pour l'écran actuel (${screenKey}) ──\n` +
         `Ces fiches décrivent le fonctionnement réel de cet écran. Fonde ta réponse dessus en priorité pour toute question sur « comment faire X ici » plutôt que d'inventer une explication.\n` +
-        helpArticles.map((a: any) => `• ${a.title} : ${a.content}`).join('\n')
+        helpArticles.map((a) => `• ${a.title} : ${a.content}`).join('\n')
       : screenKey
         ? `\n\n── Aide contextuelle ──\nAucune fiche d'aide n'existe pour l'écran actuel (${screenKey}). Si la question porte sur le fonctionnement précis de ZekoulABia et que tu n'es pas certain de la réponse, utilise l'outil ${ESCALATE_TOOL_NAME} plutôt que d'inventer.`
         : '';
@@ -279,13 +291,13 @@ export class AssistantController {
             responseType,
             articleFound: helpArticles.length > 0,
           })
-          .catch((e: any) => console.error('[AssistantHelpQueryLog]', e?.message));
+          .catch((e) => console.error('[AssistantHelpQueryLog]', messageErreur(e)));
       };
 
       let result;
       try {
         result = await this.genererTexte({ model: groqModel, system, prompt: message, tools, toolChoice: 'auto' });
-      } catch (e: any) {
+      } catch (e) {
         // Le message top-level (ex. « Failed to call a function ») ne dit jamais QUEL tool ni
         // QUELS arguments malformés Groq a tenté de générer — cette information vit dans
         // responseBody (le champ `failed_generation` de l'API Groq). Sans elle, ce log est
@@ -294,7 +306,7 @@ export class AssistantController {
         if (APICallError.isInstance(e)) {
           console.error('Assistant Groq error:', e.message, '| responseBody:', e.responseBody);
         } else {
-          console.error('Assistant Groq error:', e?.message);
+          console.error('Assistant Groq error:', messageErreur(e));
         }
         res.json({ success: true, type: 'message', response: "Le service IA est momentanément indisponible. Réessayez dans un instant.", conversationId });
         return;
@@ -354,8 +366,8 @@ export class AssistantController {
       }
 
       logQuery('ACTION');
-      const executed: any[] = [];
-      const pending: any[] = [];
+      const executed: ActionExecutee[] = [];
+      const pending: ActionEnAttente[] = [];
 
       for (const tc of toolCalls) {
         // DOUBLE-VÉRIFICATION SERVEUR : l'action doit figurer dans le catalogue autorisé.
@@ -375,8 +387,8 @@ export class AssistantController {
           let summary = 'Cette action est irréversible.';
           try {
             if (action.summarizeDestructive) summary = await action.summarizeDestructive(input, ctx);
-          } catch (e: any) {
-            executed.push({ error: e?.message ?? 'Impossible de préparer l\'action.', actionType: action.name });
+          } catch (e) {
+            executed.push({ error: messageErreur(e) ?? 'Impossible de préparer l\'action.', actionType: action.name });
             continue;
           }
           const log = await this.contextRepo.createActionLog({
@@ -417,13 +429,13 @@ export class AssistantController {
               entity: r.entity ?? null,
               undoable: true,
             });
-          } catch (e: any) {
+          } catch (e) {
             this.audit.journaliser({
               actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
               actionName: action.name, origin: 'AI_ASSISTANT', outcome: 'ERREUR',
-              refusalReason: e?.message, parametersSummary: input, triggeringMessage: message,
+              refusalReason: messageErreur(e), parametersSummary: input, triggeringMessage: message,
             });
-            executed.push({ error: e?.message ?? 'Échec de l\'action.', actionType: action.name });
+            executed.push({ error: messageErreur(e) ?? 'Échec de l\'action.', actionType: action.name });
           }
         }
       }
@@ -503,13 +515,13 @@ export class AssistantController {
           success: true,
           executed: { actionLogId: log.id, label: r.resultLabel, section: r.section ?? null, entity: r.entity ?? null },
         });
-      } catch (e: any) {
+      } catch (e) {
         this.audit.journaliser({
           actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
           actionName: action.name, origin: 'AI_ASSISTANT', outcome: 'ERREUR',
-          refusalReason: e?.message, parametersSummary: log.parameters,
+          refusalReason: messageErreur(e), parametersSummary: log.parameters,
         });
-        res.status(400).json({ success: false, message: e?.message ?? 'Échec de la suppression.' });
+        res.status(400).json({ success: false, message: messageErreur(e) ?? 'Échec de la suppression.' });
       }
     } catch (error) {
       next(error);
@@ -552,8 +564,8 @@ export class AssistantController {
         await action.undo(log.parameters, undoData, this.ctx(req));
         await this.contextRepo.updateActionLog(log.id, { status: 'UNDONE', undoneAt: new Date() });
         res.json({ success: true, undone: true, section: undoData.__section ?? null, entity: undoData.__entity ?? null });
-      } catch (e: any) {
-        res.status(400).json({ success: false, message: e?.message ?? 'Échec de l\'annulation.' });
+      } catch (e) {
+        res.status(400).json({ success: false, message: messageErreur(e) ?? 'Échec de l\'annulation.' });
       }
     } catch (error) {
       next(error);

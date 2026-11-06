@@ -9,6 +9,7 @@ import { RelancerElevesEnAttenteUseCase } from './RelancerElevesEnAttenteUseCase
 import { FinaliserParDefautUseCase } from './FinaliserParDefautUseCase';
 import { ListerElevesAOrienterUseCase } from './ListerElevesAOrienterUseCase';
 import type { ConseillerResolverPort } from '@domain/ports/services/ConseillerResolverPort';
+import { messageErreur } from '@application/shared/messageErreur';
 import type { PersonnelNotificationPort } from '@domain/ports/services/PersonnelNotificationPort';
 
 export interface VerifierOrientationCheckpointsDeps {
@@ -40,8 +41,8 @@ export class VerifierOrientationCheckpointsUseCase {
       const conseillers = await this.deps.staffProfileRepository.findConseillersOrientation(schoolId).catch(() => [] as string[]);
       if (conseillers.length > 0) return conseillers;
       if (this.deps.userRepository) {
-        const admins = await this.deps.userRepository.findByRole(schoolId, 'ADMIN' as any).catch(() => [] as any[]);
-        return (admins as any[]).map((a: any) => a.id as string);
+        const admins = await this.deps.userRepository.findByRole(schoolId, 'ADMIN').catch(() => []);
+        return admins.map((a) => a.id);
       }
       return conseillers;
     }
@@ -103,8 +104,8 @@ export class VerifierOrientationCheckpointsUseCase {
                   `Une proposition a été calculée pour ${eleve.firstName} ${eleve.lastName} (${eleve.className}).`,
                 );
               }
-            } catch (err: any) {
-              console.error(`[Orientation] génération recommandation (${eleve.studentId}):`, err?.message);
+            } catch (err) {
+              console.error(`[Orientation] génération recommandation (${eleve.studentId}):`, messageErreur(err));
             }
           }
         }
@@ -136,8 +137,8 @@ export class VerifierOrientationCheckpointsUseCase {
             );
           }
         }
-      } catch (err: any) {
-        console.error(`[Orientation] école ${school.id}:`, err?.message);
+      } catch (err) {
+        console.error(`[Orientation] école ${school.id}:`, messageErreur(err));
       }
     }
 

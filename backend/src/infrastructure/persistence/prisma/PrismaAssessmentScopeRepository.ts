@@ -1,6 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 import type { AssessmentScopeRepository } from '@domain/ports/repositories/AssessmentScopeRepository';
 import { AssessmentScope } from '@domain/entities/AssessmentScope';
+import type { SequenceType } from '@domain/types/enums';
 
 export class PrismaAssessmentScopeRepository implements AssessmentScopeRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -15,7 +16,7 @@ export class PrismaAssessmentScopeRepository implements AssessmentScopeRepositor
       schoolId: data.schoolId,
       academicYearId: data.academicYearId,
       name: data.name,
-      sequenceType: data.sequenceType as any,
+      sequenceType: data.sequenceType as SequenceType,
       subjectIds: data.subjectIds,
       classIds: data.classIds,
       createdAt: data.createdAt,
@@ -32,7 +33,7 @@ export class PrismaAssessmentScopeRepository implements AssessmentScopeRepositor
         schoolId: d.schoolId,
         academicYearId: d.academicYearId,
         name: d.name,
-        sequenceType: d.sequenceType as any,
+        sequenceType: d.sequenceType as SequenceType,
         subjectIds: d.subjectIds,
         classIds: d.classIds,
         createdAt: d.createdAt,

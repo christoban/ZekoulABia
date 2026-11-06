@@ -66,10 +66,10 @@ export interface ActionDefinition {
   domain?: string;
   inputSchema: z.ZodTypeAny;
   /** Résumé de ce qui sera perdu — obligatoire pour toute action destructive. */
-  summarizeDestructive?: (input: any, ctx: ActionContext) => Promise<string>;
-  execute: (input: any, ctx: ActionContext) => Promise<ActionExecuteResult>;
+  summarizeDestructive?: (input: any, ctx: ActionContext) => Promise<string>; // hex-allow-any: entrée validée par le Zod schema de l'action
+  execute: (input: any, ctx: ActionContext) => Promise<ActionExecuteResult>; // hex-allow-any: entrée validée par le Zod schema de l'action
   /** Annulation d'une action non-destructive. Lève une erreur si non annulable. */
-  undo: (params: any, undoData: any, ctx: ActionContext) => Promise<void>;
+  undo: (params: any, undoData: any, ctx: ActionContext) => Promise<void>; // hex-allow-any: paramètres validés par le Zod schema de l'action
 }
 
 // ─── Helpers de résolution nom → entité, partagés entre catalogues de rôles ──
@@ -223,7 +223,7 @@ export async function calculerMoyennesClasseSequence(
     ]);
     if (school && classe) {
       const { resolveHasCoefficientForClass } = await import('@domain/subsystems/SubsystemDefaults');
-      hasCoefficientBySubject = resolveHasCoefficientForClass(school as any, (classe as any).level ?? null);
+      hasCoefficientBySubject = resolveHasCoefficientForClass(school, classe.level ?? null);
     }
   } catch {
     // best-effort fallback
@@ -235,7 +235,7 @@ export async function calculerMoyennesClasseSequence(
   });
   const parStudent = new Map<string, { somme: number; poids: number }>();
   for (const g of grades) {
-    if ((g as any).isAbsentGrade) continue;
+    if (g.isAbsentGrade) continue;
     const coeff = hasCoefficientBySubject ? g.coefficient : 1;
     const cur = parStudent.get(g.studentId) ?? { somme: 0, poids: 0 };
     cur.somme += (g.sequenceAverage ?? 0) * coeff;

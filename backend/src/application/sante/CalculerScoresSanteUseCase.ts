@@ -14,15 +14,15 @@ export class CalculerScoresSanteUseCase {
     this.calculerIndice = new CalculerIndiceSanteUseCase(santeRepository, iaService);
   }
 
-  async execute(): Promise<{ computed: boolean; events: Array<{ name: string; data: any }> }> {
-    const events: Array<{ name: string; data: any }> = [];
+  async execute(): Promise<{ computed: boolean; events: Array<{ name: string; data: Record<string, unknown> }> }> {
+    const events: Array<{ name: string; data: Record<string, unknown> }> = [];
     const schools = await this.healthJobsRepository.findActiveSchools();
 
     for (const school of schools) {
       const config = await this.healthJobsRepository.getSchoolConfig(school.id);
-      const alertsEnabled = (config as any)?.aiAlertsEnabled ?? true;
-      const warningThreshold = (config as any)?.aiRiskThreshold ?? 50;
-      const criticalThreshold = (config as any)?.aiRiskThresholdCritical ?? 30;
+      const alertsEnabled = config?.aiAlertsEnabled ?? true;
+      const warningThreshold = config?.aiRiskThreshold ?? 50;
+      const criticalThreshold = config?.aiRiskThresholdCritical ?? 30;
 
       const currentYear = await this.healthJobsRepository.findCurrentAcademicYear(school.id);
       if (!currentYear) continue;

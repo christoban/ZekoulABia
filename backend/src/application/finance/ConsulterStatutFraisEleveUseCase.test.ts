@@ -6,7 +6,7 @@ import type { UserRepository } from '@domain/ports/repositories/UserRepository';
 
 describe('ConsulterStatutFraisEleveUseCase', () => {
   let useCase: ConsulterStatutFraisEleveUseCase;
-  let mockUser: any;
+  let mockUser: { id: string; schoolId: string; firstName: string; lastName: string; role: string };
   let mockFactures: Facture[];
   let paymentsMap: Record<string, number>;
 
@@ -34,7 +34,7 @@ describe('ConsulterStatutFraisEleveUseCase', () => {
     save: async () => {},
     update: async () => {},
     delete: async () => {},
-  } as any;
+  } as unknown as UserRepository;
 
   beforeEach(() => {
     mockUser = {

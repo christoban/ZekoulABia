@@ -1,5 +1,5 @@
 // ponytail: 362l < 500l hard ceiling, single adapter — no split needed until >500l or 2nd impl
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, AcademicYear, AcademicPeriod, AcademicSequence } from '@prisma/client';
 import type {
   AnneeAcademiqueRepository,
   AnneeAcademiqueProps,
@@ -322,7 +322,7 @@ export class PrismaAnneeAcademiqueRepository implements AnneeAcademiqueRepositor
 
   // --- Conversions ---
 
-  private anneeToProps(data: any): AnneeAcademiqueProps {
+  private anneeToProps(data: AcademicYear): AnneeAcademiqueProps {
     return {
       id: data.id,
       schoolId: data.schoolId,
@@ -334,7 +334,7 @@ export class PrismaAnneeAcademiqueRepository implements AnneeAcademiqueRepositor
     };
   }
 
-  private periodeToProps(data: any): PeriodeAcademiqueProps {
+  private periodeToProps(data: AcademicPeriod): PeriodeAcademiqueProps {
     return {
       id: data.id,
       academicYearId: data.academicYearId,
@@ -347,7 +347,7 @@ export class PrismaAnneeAcademiqueRepository implements AnneeAcademiqueRepositor
     };
   }
 
-  private sequenceToProps(data: any): SequenceAcademiqueProps {
+  private sequenceToProps(data: AcademicSequence): SequenceAcademiqueProps {
     return {
       id: data.id,
       academicPeriodId: data.academicPeriodId,

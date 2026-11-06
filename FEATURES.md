@@ -264,6 +264,12 @@
 - **Schéma** : `MatriculeImportJob`, `InscriptionMinesec`
 - **Interactions** : import Excel (`parserMatriculeExcel`), synchronisation carte scolaire (`SyncFromCarteScolaireUseCase`), correspondance floue (`stringSimilarity`, `ConfirmerCorrespondanceFuzzyUseCase`)
 
+### Identité globale élève (Phase 1B)
+- `StudentIdentity` porte le matricule MINESEC normalisé et unique globalement ; `StudentProfile` reste propre à chaque établissement et y est rattaché par `identityId`.
+- `StudentProfile.schoolId` est obligatoire et cohérent avec `User.schoolId` par contrainte de clé étrangère composite.
+- Un élève sans matricule n'est pas détecté entre établissements.
+- Un retour dans l'école d'origine réutilise le profil existant, le réactive si nécessaire et crée une nouvelle `Enrollment` pour l'année concernée ; aucun second profil n'est créé.
+
 ## 33. APEE (association des parents)
 
 **Objectif** : transactions et dépenses de l'association des parents d'élèves.

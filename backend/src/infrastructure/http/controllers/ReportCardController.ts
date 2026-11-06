@@ -279,7 +279,7 @@ export class ReportCardController {
       // est ESM-only et n'exporte plus de fonction factory callable (`archiver('zip', ...)`) —
       // seulement des classes nommées (ZipArchive, TarArchive...). Le `require('archiver')`
       // ci-dessus retournait l'objet Module entier, jamais une fonction — cette route n'a donc
-      // jamais produit le moindre ZIP, dans aucun environnement (le cast `as any` d'origine sur
+      // jamais produit le moindre ZIP, dans aucun environnement (le cast non typé d'origine sur
       // reportCard masquait ce fait, mais n'en était pas la cause : TypeError à l'exécution).
       const archive = new ZipArchive({ zlib: { level: 6 } });
       archive.pipe(res);
@@ -295,7 +295,7 @@ export class ReportCardController {
           logoUrl: settings.schoolLogoUrl ?? undefined,
           studentName,
           // Bug indépendant : ReportCard n'a pas de relation `class` directe (uniquement via
-          // student.studentProfile.enrollmentsYearScoped.class) — `(reportCard as any).class` était toujours
+          // student.studentProfile.enrollmentsYearScoped.class) — le cast `as` non typé était toujours
           // undefined, chaque PDF exporté affichait "—" au lieu du vrai nom de classe.
           className: reportCard.student.studentProfile?.enrollmentsYearScoped?.[0]?.class?.name ?? '—',
           periodName: reportCard.academicPeriod?.name ?? '—',

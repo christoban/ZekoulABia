@@ -66,11 +66,11 @@ export const markOverdueLoans = inngest.createFunction(
     if (toMark.length === 0) return { updated: 0 };
 
     await step.run("update-overdue-loans", async () => {
-      await useCase.markOverdue(toMark.map((l) => (l as any).id));
+      await useCase.markOverdue(toMark.map((l) => l.id));
     });
 
     await step.run("notify-overdue-loans", async () => {
-      await useCase.notifyOverdue(toMark as any);
+      await useCase.notifyOverdue(toMark);
     });
 
     return { updated: toMark.length };

@@ -53,7 +53,7 @@ beforeAll(async () => {
   const studentExact = await creerUtilisateurTest(prismaTest, schoolId, { role: 'STUDENT', suffix: 'ndzi-jean' });
   studentExactUserId = studentExact.id;
   await prismaTest.user.update({ where: { id: studentExact.id }, data: { firstName: 'Jean', lastName: 'Ndzi' } });
-  const profileExact = await prismaTest.studentProfile.create({ data: { userId: studentExact.id } });
+  const profileExact = await prismaTest.studentProfile.create({ data: { userId: studentExact.id, schoolId } });
   studentExactProfileId = profileExact.id;
 
   // Élève à correspondance approximative (variante orthographique du nom, même date de naissance).
@@ -61,7 +61,7 @@ beforeAll(async () => {
   studentFuzzyUserId = studentFuzzy.id;
   await prismaTest.user.update({ where: { id: studentFuzzy.id }, data: { firstName: 'Marie', lastName: 'Mballa' } });
   const profileFuzzy = await prismaTest.studentProfile.create({
-    data: { userId: studentFuzzy.id, dateOfBirth: new Date('2011-05-05') },
+    data: { userId: studentFuzzy.id, schoolId, dateOfBirth: new Date('2011-05-05') },
   });
   studentFuzzyProfileId = profileFuzzy.id;
 
@@ -70,7 +70,7 @@ beforeAll(async () => {
   studentFlagUserId = studentFlag.id;
   await prismaTest.user.update({ where: { id: studentFlag.id }, data: { firstName: 'Paul', lastName: 'Ngoh' } });
   const profileFlag = await prismaTest.studentProfile.create({
-    data: { userId: studentFlag.id, dateOfBirth: new Date('2012-03-03') },
+    data: { userId: studentFlag.id, schoolId, dateOfBirth: new Date('2012-03-03') },
   });
   studentFlagProfileId = profileFlag.id;
 });
@@ -96,9 +96,9 @@ describe('Import matricules + fuzzy matching — bout en bout', () => {
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet([
       ['nom', 'prenom', 'dateNaissance', 'matricule'],
-      ['Ndzi', 'Jean', '', 'MAT-EXACT-001'],
-      ['Mbala', 'Marie', '05/05/2011', 'MAT-FUZZY-002'],
-      ['Ngo', 'Paul', '03/03/2012', 'MAT-FUZZY-003'],
+      ['Ndzi', 'Jean', '', 'MATEXACT001'],
+      ['Mbala', 'Marie', '05/05/2011', 'MATFUZZY002'],
+      ['Ngo', 'Paul', '03/03/2012', 'MATFUZZY003'],
     ]);
     XLSX.utils.book_append_sheet(wb, ws, 'Matricules');
     const buffer: Buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
@@ -130,7 +130,7 @@ describe('Import matricules + fuzzy matching — bout en bout', () => {
     ligneFuzzySignalee = fuzzyForPaul!.ligne;
 
     const profileExact = await prismaTest.studentProfile.findUnique({ where: { id: studentExactProfileId } });
-    expect(profileExact?.matricule).toBe('MAT-EXACT-001');
+    expect(profileExact?.matricule).toBe('MATEXACT001');
     expect(profileExact?.matriculeMatchType).toBe('EXACT');
 
     // Les candidats fuzzy ne doivent PAS être matriculés tant que l'admin n'a pas tranché.
@@ -151,10 +151,10 @@ describe('Import matricules + fuzzy matching — bout en bout', () => {
 
     if (!body.success) throw new Error(`Échec confirmation fuzzy : ${body.message ?? JSON.stringify(body)}`);
     expect(res.status).toBe(200);
-    expect(body.data!.matricule).toBe('MAT-FUZZY-002');
+    expect(body.data!.matricule).toBe('MATFUZZY002');
 
     const profile = await prismaTest.studentProfile.findUnique({ where: { id: studentFuzzyProfileId } });
-    expect(profile?.matricule).toBe('MAT-FUZZY-002');
+    expect(profile?.matricule).toBe('MATFUZZY002');
     expect(profile?.matriculeMatchType).toBe('FUZZY_CONFIRMED');
 
     const job = await prismaTest.matriculeImportJob.findUnique({ where: { id: jobId } });

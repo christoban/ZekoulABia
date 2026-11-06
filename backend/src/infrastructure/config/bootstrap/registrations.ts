@@ -42,6 +42,7 @@ import { creerAnnouncementRoutes } from '@infrastructure/http/routes/announcemen
 import { BabillardController } from '@infrastructure/http/controllers/BabillardController';
 import { creerBabillardRoutes } from '@infrastructure/http/routes/babillard.routes';
 import { PrismaPublicationRepository } from '@infrastructure/persistence/prisma/PrismaPublicationRepository';
+import { PrismaBabillardContextRepository } from '@infrastructure/persistence/prisma/PrismaBabillardContextRepository';
 import { CreerPublicationUseCase } from '@application/babillard/CreerPublicationUseCase';
 import { ModifierPublicationUseCase } from '@application/babillard/ModifierPublicationUseCase';
 import { SupprimerPublicationUseCase } from '@application/babillard/SupprimerPublicationUseCase';
@@ -98,7 +99,7 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
     c.studentGroup.retirerAssignationSalle,
     new AIActionAuditAdapter(prisma),
     c.class.listerEleves,
-    undefined as any,
+    undefined,
     c.class.genererTableauHonneur,
     c.class.genererTableauHonneurAnnuel,
     c.activityLog,
@@ -261,6 +262,7 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
 
   // ── Babillard Officiel (nouvelle architecture) ──────────────────────────────
   const publicationRepository = new PrismaPublicationRepository(p);
+  const babillardContextRepository = new PrismaBabillardContextRepository(p);
   const inngestEventPublisher = new InngestEventPublisher();
   const creerPublicationUseCase = new CreerPublicationUseCase(publicationRepository, inngestEventPublisher);
   const modifierPublicationUseCase = new ModifierPublicationUseCase(publicationRepository);
@@ -272,8 +274,8 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
   const uploaderPjUseCase = new UploaderPieceJointeUseCase();
 
   const babillardController = new BabillardController(
-    p,
     publicationRepository,
+    babillardContextRepository,
     creerPublicationUseCase,
     modifierPublicationUseCase,
     supprimerPublicationUseCase,

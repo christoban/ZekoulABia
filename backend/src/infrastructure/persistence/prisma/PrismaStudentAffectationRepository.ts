@@ -154,7 +154,7 @@ export class PrismaStudentAffectationRepository implements StudentAffectationRep
     });
 
     const eleves: EleveALevelRef[] = links
-      .map((l: any) => ({
+      .map((l) => ({
         id: l.student.user.id,
         firstName: l.student.user.firstName,
         lastName: l.student.user.lastName,

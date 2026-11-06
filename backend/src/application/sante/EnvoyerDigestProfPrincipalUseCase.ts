@@ -1,3 +1,4 @@
+import { messageErreur } from '@application/shared/messageErreur';
 import type { HealthJobsRepository } from '@domain/ports/repositories/HealthJobsRepository';
 import type { NotificationService } from '@domain/ports/services/NotificationService';
 
@@ -7,7 +8,7 @@ export class EnvoyerDigestProfPrincipalUseCase {
   private async notifierPersonnelDirect(userId: string, schoolId: string, titre: string, corps: string) {
     await this.notificationService
       .envoyer({ schoolId, userId, type: "STUDENT_RISK_ALERT", titre, corps, urgency: "NORMAL" })
-      .catch((err: any) => console.error("[HealthAlert] personnel:", err?.message));
+      .catch((err) => console.error("[HealthAlert] personnel:", messageErreur(err)));
   }
 
   async execute(): Promise<{ digestSent: boolean }> {
@@ -15,9 +16,9 @@ export class EnvoyerDigestProfPrincipalUseCase {
 
     for (const school of schools) {
       const config = await this.healthJobsRepository.getSchoolConfig(school.id);
-      if ((config as any)?.aiAlertsEnabled === false) continue;
-      const warningThreshold = (config as any)?.aiRiskThreshold ?? 50;
-      const criticalThreshold = (config as any)?.aiRiskThresholdCritical ?? 30;
+      if (config?.aiAlertsEnabled === false) continue;
+      const warningThreshold = config?.aiRiskThreshold ?? 50;
+      const criticalThreshold = config?.aiRiskThresholdCritical ?? 30;
 
       type Digest = { critiques: string[]; vigilances: string[]; chutes: string[] };
       const parPP = new Map<string, Digest>();

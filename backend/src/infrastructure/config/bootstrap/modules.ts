@@ -1,4 +1,5 @@
 import type { Application } from 'express';
+import type { LoanStatus, Prisma } from '@prisma/client';
 import { prisma } from '@infrastructure/persistence/prisma/prisma.client';
 import { AIActionAuditAdapter } from '@infrastructure/services/ai/AIActionAuditAdapter';
 import { PrismaDisciplineRepository } from '@infrastructure/persistence/prisma/PrismaDisciplineRepository';
@@ -31,7 +32,7 @@ export function registerModulesRoutes(app: Application, p: typeof prisma = prism
       const { search, category, page = '1', limit = '50' } = req.query as Record<string, string>;
       const pageNum = Math.max(1, parseInt(page));
       const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
-      const where: any = {
+      const where: Prisma.BookWhereInput = {
         schoolId,
         ...(category ? { category } : {}),
         ...(search ? { OR: [
@@ -122,7 +123,7 @@ export function registerModulesRoutes(app: Application, p: typeof prisma = prism
       const { status = 'ACTIVE', page = '1', limit = '30' } = req.query as Record<string, string>;
       const pageNum = Math.max(1, parseInt(page));
       const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
-      const where: any = { schoolId, ...(status ? { status } : {}) };
+      const where: Prisma.BookLoanWhereInput = { schoolId, ...(status ? { status: status as LoanStatus } : {}) };
       const [total, loans] = await Promise.all([
         p.bookLoan.count({ where }),
         p.bookLoan.findMany({
@@ -307,7 +308,7 @@ export function registerModulesRoutes(app: Application, p: typeof prisma = prism
 
       const pageNum = Math.max(1, parseInt(page));
       const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
-      const where: any = {
+      const where: Prisma.InvoiceWhereInput = {
         schoolId,
         studentId: studentId ? studentId : { in: childUserIds },
       };

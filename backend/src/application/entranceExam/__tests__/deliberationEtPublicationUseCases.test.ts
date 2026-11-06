@@ -3,6 +3,7 @@ import { SimulerDeliberationConcoursUseCase } from '../SimulerDeliberationConcou
 import { PublierResultatsConcoursUseCase } from '../PublierResultatsConcoursUseCase';
 import { ConsulterResultatPublicUseCase } from '../ConsulterResultatPublicUseCase';
 import { FinaliserAdmissionsConcoursUseCase } from '../FinaliserAdmissionsConcoursUseCase';
+import type { CreerSqueletteOnboardingUseCase } from '../../eleveOnboarding/CreerSqueletteOnboardingUseCase';
 import type {
   EntranceExamRepository,
   EntranceSessionData,
@@ -199,7 +200,7 @@ describe('FinaliserAdmissionsConcoursUseCase', () => {
       },
     };
 
-    const useCase = new FinaliserAdmissionsConcoursUseCase(repo, mockCreerSquelette as any);
+    const useCase = new FinaliserAdmissionsConcoursUseCase(repo, mockCreerSquelette as unknown as CreerSqueletteOnboardingUseCase);
     const res = await useCase.execute({
       schoolId: 'sch-1',
       sessionId: 'sess-1',

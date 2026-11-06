@@ -461,7 +461,7 @@ export function buildStaffActionCatalog(deps: StaffActionDeps): ActionDefinition
         const resultLabel = fiches.length === 0
           ? `Aucun élève à risque élevé/critique en orientation pour ${label}.`
           : `${fiches.length} élève(s) à risque pour ${label} : ` +
-            fiches.map((f: any) => `${f.student.firstName ?? ''} ${f.student.lastName ?? ''} (${f.riskLevel})`.trim()).join(', ');
+            fiches.map((f) => `${f.student.firstName ?? ''} ${f.student.lastName ?? ''} (${f.riskLevel})`.trim()).join(', ');
         return { resultLabel, section: 'orientation' };
       },
       async undo() {

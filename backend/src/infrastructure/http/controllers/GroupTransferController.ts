@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
+import { messageErreur } from '@application/shared/messageErreur';
 import { CreerDemandeTransfertGroupeUseCase } from '../../../application/schoolGroup/CreerDemandeTransfertGroupeUseCase';
 import { ListerDemandesTransfertGroupeUseCase } from '../../../application/schoolGroup/ListerDemandesTransfertGroupeUseCase';
 import { RechercherPersonneEcoleGroupeUseCase } from '../../../application/schoolGroup/RechercherPersonneEcoleGroupeUseCase';
@@ -26,8 +27,8 @@ export class GroupTransferController {
         groupId, requestedByOwnerId: ownerId, type, sourceSchoolId, targetSchoolId, sourceUserId,
       });
       res.status(201).json({ success: true, data: demande });
-    } catch (error: any) {
-      res.status(400).json({ success: false, message: error.message || 'Erreur' });
+    } catch (error) {
+      res.status(400).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 
@@ -40,8 +41,8 @@ export class GroupTransferController {
       }
       const data = await this.listerUseCase.execute(groupId);
       res.json({ success: true, data });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message || 'Erreur' });
+    } catch (error) {
+      res.status(500).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 
@@ -61,8 +62,8 @@ export class GroupTransferController {
       }
       const data = await this.rechercherUseCase.execute({ groupId, schoolId, role, recherche });
       res.json({ success: true, data });
-    } catch (error: any) {
-      res.status(400).json({ success: false, message: error.message || 'Erreur' });
+    } catch (error) {
+      res.status(400).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 }

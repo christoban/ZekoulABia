@@ -48,10 +48,10 @@ export class ValiderLotOnboardingUseCase {
           validatorRole: cmd.validatorRole,
         });
         valides.push(id);
-      } catch (err: any) {
+      } catch (err) {
         echecs.push({
           id,
-          motif: err?.message || 'Erreur lors de la validation',
+          motif: err instanceof Error ? err.message : 'Erreur lors de la validation',
         });
       }
     }

@@ -42,7 +42,7 @@ const signer = (userId: string, role: string) =>
 
 async function creerEleveActifClasse(): Promise<string> {
   const eleve = await creerUtilisateurTest(prismaTest, schoolId, { role: 'STUDENT' });
-  const profile = await prismaTest.studentProfile.create({ data: { userId: eleve.id } });
+  const profile = await prismaTest.studentProfile.create({ data: { userId: eleve.id, schoolId } });
   await prismaTest.enrollment.create({
     data: {
       studentId: profile.id,
@@ -94,7 +94,7 @@ beforeAll(async () => {
 
   // L'élève principal est inscrit dans la classe (sinon destinatairesAutorises ne le
   // rattache à aucun enseignant)
-  const studentProfile = await prismaTest.studentProfile.create({ data: { userId: studentId } });
+  const studentProfile = await prismaTest.studentProfile.create({ data: { userId: studentId, schoolId } });
   await prismaTest.enrollment.create({
     data: {
       studentId: studentProfile.id,

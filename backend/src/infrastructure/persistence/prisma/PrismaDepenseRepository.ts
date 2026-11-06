@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, Expense } from '@prisma/client';
 import { Depense } from '@domain/entities/Depense';
 import type { DepenseRepository } from '@domain/ports/repositories/DepenseRepository';
 
@@ -78,7 +78,7 @@ export class PrismaDepenseRepository implements DepenseRepository {
     await this.prisma.expense.delete({ where: { id } });
   }
 
-  private toDomain(data: any): Depense {
+  private toDomain(data: Expense): Depense {
     return Depense.reconstituer({
       id: data.id,
       schoolId: data.schoolId,

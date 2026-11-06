@@ -59,7 +59,7 @@ export class DepartmentController {
         return;
       }
 
-      const data: any = {};
+      const data: { name?: string; color?: string; headId?: string | null } = {};
       if (name?.trim()) data.name = name.trim();
       if (color) data.color = color;
 

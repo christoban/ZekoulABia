@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { NotificationChannel, NotificationType, Prisma, PrismaClient, UserRole } from '@prisma/client';
 import type { HrJobsRepository, HrEmployeForRelance } from '@domain/ports/repositories/HrJobsRepository';
 
 export class PrismaHrJobsRepository implements HrJobsRepository {
@@ -6,7 +6,7 @@ export class PrismaHrJobsRepository implements HrJobsRepository {
 
   async listerEmployesActifs(): Promise<HrEmployeForRelance[]> {
     return this.prisma.user.findMany({
-      where: { isActive: true, role: { in: ['TEACHER', 'STAFF', 'ADMIN'] as any } },
+      where: { isActive: true, role: { in: ['TEACHER', 'STAFF', 'ADMIN'] as UserRole[] } },
       select: {
         id: true, schoolId: true, firstName: true, lastName: true, email: true, createdAt: true, role: true,
         school: { select: { name: true } },
@@ -28,11 +28,11 @@ export class PrismaHrJobsRepository implements HrJobsRepository {
       data: {
         schoolId: data.schoolId,
         userId: data.userId,
-        type: data.type as any,
+        type: data.type as NotificationType,
         title: data.title,
         body: data.body,
-        channel: data.channel as any,
-        metadata: data.metadata as any,
+        channel: data.channel as NotificationChannel,
+        metadata: data.metadata as Prisma.InputJsonValue | undefined,
       },
     });
   }

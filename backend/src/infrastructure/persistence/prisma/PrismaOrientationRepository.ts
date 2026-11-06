@@ -1,5 +1,5 @@
 // ponytail: 602l → ~530l via helpers, single adapter <800l ceiling, split when 2nd impl or >800l
-import type { PrismaClient, Prisma } from '@prisma/client';
+import type { PrismaClient, Prisma, FicheOrientation as PrismaFicheOrientation } from '@prisma/client';
 import type { IOrientationRepository, FicheListItem, FicheDetail, EntretienDetail, TestDetail, RecommandationDetail, SuiviDetail, OrientationStats, ListeFichesFilters, CheckpointConfigDetail, AspirationDetail, SerieActuelleDetail, EleveAOrienterDetail } from '@domain/ports/repositories/IOrientationRepository';
 import { FicheOrientation } from '@domain/entities/FicheOrientation';
 import type { NiveauRisque, TypePreoccupation, TypeEntretien, MotifEntretien, StatutEntretien, TypeTest, StatutRecommandation, OrientationCheckpointType, ConfidenceLevel } from '@domain/entities/FicheOrientation';
@@ -112,8 +112,8 @@ export class PrismaOrientationRepository implements IOrientationRepository {
 
     const where = {
       ...this.ficheWhere(schoolId),
-      ...(riskLevel ? { riskLevel: riskLevel as any } : {}),
-      ...(status ? { status: status as any } : {}),
+      ...(riskLevel ? { riskLevel } : {}),
+      ...(status ? { status } : {}),
       ...(academicYearId ? { academicYearId } : {}),
       ...(classId ? { student: { studentProfile: { enrollmentsYearScoped: { some: { classId, status: 'ACTIVE', academicYear: { isCurrent: true } } } } } } : {}),
     } as Prisma.FicheOrientationWhereInput;
@@ -544,7 +544,7 @@ export class PrismaOrientationRepository implements IOrientationRepository {
     }));
   }
 
-  private toDomain(data: any): FicheOrientation {
+  private toDomain(data: PrismaFicheOrientation): FicheOrientation {
     return new FicheOrientation({
       id: data.id,
       studentId: data.studentId,

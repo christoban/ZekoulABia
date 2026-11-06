@@ -1,6 +1,7 @@
 /**
  * DOMAIN LAYER — Port Repository Invitation (SchoolInvite)
  */
+import type { JsonValue } from '@domain/types/enums';
 export interface InvitationProps {
   id: string;
   email: string;
@@ -32,7 +33,7 @@ export interface CompleteOnboardingCommand {
     admissionType?: string;
     plan: string;
     logoUrl: string | null;
-    onboardingConfig?: any;
+    onboardingConfig?: JsonValue | null;
     templateCode: string | null;
   };
   admin: { email: string; firstName: string; lastName: string; passwordHash: string };

@@ -8,6 +8,7 @@ import type { ListerHistoriqueSuiviEleveUseCase } from '@application/suivi/Liste
 import { SocketNotificationService } from '@infrastructure/services/notification/SocketNotificationService';
 import { notifierUtilisateurPush } from '@infrastructure/services/notification/PushNotificationService';
 import { notifierParentsPushDabord } from '@infrastructure/services/notification/PushFirstNotifier';
+import { messageErreur } from '@application/shared/messageErreur';
 
 const TITRES: Record<string, string> = {
   ENTRETIEN_PARENT: 'Entretien parent à programmer',
@@ -54,7 +55,7 @@ export class StudentFollowUpController {
     const socketService = new SocketNotificationService();
     await socketService
       .envoyer({ schoolId, userId, type: 'STUDENT_RISK_ALERT', titre, corps, urgency: 'NORMAL' })
-      .catch((err) => console.error('[Suivi] notif IN_APP:', err?.message));
+      .catch((err) => console.error('[Suivi] notif IN_APP:', messageErreur(err)));
     await notifierUtilisateurPush({ userId, title: titre, body: corps }).catch(() => {});
   }
 
@@ -69,7 +70,7 @@ export class StudentFollowUpController {
       // Le switch interne de CreerActionSuiviEleveUseCase n'a pas de `default` — un type hors
       // énumération n'y déclenche aucune vérification d'autorisation (donc rien d'exécuté),
       // mais échouait ensuite silencieusement en erreur Prisma peu claire (500) à la
-      // persistance. Le cast `as any` masquait cette absence de validation en amont.
+      // persistance. Le cast cast non typé masquait cette absence de validation en amont.
       const TYPES_VALIDES: FollowUpActionType[] = ['ENTRETIEN_PARENT', 'SIGNALEMENT_CONSEILLER', 'OBSERVATION', 'CONVOCATION_ELEVE'];
       if (!TYPES_VALIDES.includes(type as FollowUpActionType)) {
         res.status(400).json({ success: false, message: `type doit être : ${TYPES_VALIDES.join(', ')}` });
@@ -126,7 +127,7 @@ export class StudentFollowUpController {
           type: 'STUDENT_RISK_ALERT',
           titre: 'Entretien avec l\'établissement',
           corps,
-        }).catch((err) => console.error('[Suivi] notif parent entretien:', err?.message));
+        }).catch((err) => console.error('[Suivi] notif parent entretien:', messageErreur(err)));
       }
 
       // Convocation élève — surfacée dans son propre espace (StudentRecommendation, même
@@ -136,12 +137,13 @@ export class StudentFollowUpController {
         const dateStr = new Date(action.targetDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
         const corps = `${action.createdByName} souhaite te voir le ${dateStr}. Passe le voir dès que possible pour convenir d'un moment.`;
         void this.repo.createConvocation({ schoolId: user.schoolId, studentId: action.studentId, content: corps })
-          .catch((err) => console.error('[Suivi] notif élève convocation:', err?.message));
+          .catch((err) => console.error('[Suivi] notif élève convocation:', messageErreur(err)));
       }
 
       res.json({ success: true, data: action });
-    } catch (error: any) {
-      if (error?.message) { res.status(400).json({ success: false, message: error.message }); return; }
+    } catch (error) {
+      const msg = messageErreur(error);
+      if (msg) { res.status(400).json({ success: false, message: msg }); return; }
       next(error);
     }
   };
@@ -156,8 +158,9 @@ export class StudentFollowUpController {
         closingNote: closingNote ?? '',
       });
       res.json({ success: true, data: action });
-    } catch (error: any) {
-      if (error?.message) { res.status(400).json({ success: false, message: error.message }); return; }
+    } catch (error) {
+      const msg = messageErreur(error);
+      if (msg) { res.status(400).json({ success: false, message: msg }); return; }
       next(error);
     }
   };
@@ -169,8 +172,9 @@ export class StudentFollowUpController {
         userId: user.userId, schoolId: user.schoolId, role: user.role, permissions: user.permissions,
       });
       res.json({ success: true, data: actions });
-    } catch (error: any) {
-      if (error?.message) { res.status(403).json({ success: false, message: error.message }); return; }
+    } catch (error) {
+      const msg = messageErreur(error);
+      if (msg) { res.status(403).json({ success: false, message: msg }); return; }
       next(error);
     }
   };
@@ -194,8 +198,9 @@ export class StudentFollowUpController {
       }
 
       res.json({ success: true, data: action });
-    } catch (error: any) {
-      if (error?.message) { res.status(400).json({ success: false, message: error.message }); return; }
+    } catch (error) {
+      const msg = messageErreur(error);
+      if (msg) { res.status(400).json({ success: false, message: msg }); return; }
       next(error);
     }
   };
@@ -208,8 +213,9 @@ export class StudentFollowUpController {
         req.params.studentId as string,
       );
       res.json({ success: true, data: actions });
-    } catch (error: any) {
-      if (error?.message) { res.status(403).json({ success: false, message: error.message }); return; }
+    } catch (error) {
+      const msg = messageErreur(error);
+      if (msg) { res.status(403).json({ success: false, message: msg }); return; }
       next(error);
     }
   };

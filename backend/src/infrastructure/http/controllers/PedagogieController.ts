@@ -252,8 +252,8 @@ ${consignes}`,
 
       const cleanJson = resultat.reponseTexte.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
 
-      let parsed: any;
-      try { parsed = JSON.parse(cleanJson); } catch { res.json({ success: true, data: FALLBACK }); return; }
+      let parsed: { chapitreDetecte?: unknown; contenuRealise?: unknown; devoirsDonnes?: unknown; confidence?: unknown };
+      try { parsed = JSON.parse(cleanJson) as typeof parsed; } catch { res.json({ success: true, data: FALLBACK }); return; }
 
       res.json({
         success: true,

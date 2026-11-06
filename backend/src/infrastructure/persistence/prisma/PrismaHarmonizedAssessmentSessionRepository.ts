@@ -1,8 +1,8 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, HarmonizedAssessmentSession as PrismaHarmonizedAssessmentSession } from '@prisma/client';
 import type { HarmonizedAssessmentSessionRepository, SessionListItem } from '@domain/ports/repositories/HarmonizedAssessmentSessionRepository';
 import { HarmonizedAssessmentSession } from '@domain/entities/HarmonizedAssessmentSession';
 
-function toDomain(data: any): HarmonizedAssessmentSession {
+function toDomain(data: PrismaHarmonizedAssessmentSession): HarmonizedAssessmentSession {
   return HarmonizedAssessmentSession.reconstituer({
     id: data.id,
     schoolId: data.schoolId,

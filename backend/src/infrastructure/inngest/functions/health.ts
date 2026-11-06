@@ -19,7 +19,7 @@ export const computeStudentHealthScores = inngest.createFunction(
       const useCase = new CalculerScoresSanteUseCase(healthJobsRepository, santeRepository, iaService);
       return useCase.execute();
     });
-    for (const ev of events) await inngest.send(ev as any);
+    for (const ev of events) await inngest.send(ev as { name: string; data: Record<string, unknown> });
     return { computed: true };
   }
 );

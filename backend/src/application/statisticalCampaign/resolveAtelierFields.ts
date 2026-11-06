@@ -106,10 +106,10 @@ export function resolveAtelierFields(
         value: String(eq.designation),
         dataType: 'TEXT',
       });
-      if ((ATELIER_COLS as any).designationEn) {
+      if (ATELIER_COLS.designationEn) {
         cells.push({
           sheetName: ATELIER_SHEET,
-          cellReference: `${(ATELIER_COLS as any).designationEn}${row}`,
+          cellReference: `${ATELIER_COLS.designationEn}${row}`,
           value: String(eq.designation),
           dataType: 'TEXT',
         });
@@ -122,10 +122,10 @@ export function resolveAtelierFields(
         value: Number(eq.quantite) || 0,
         dataType: 'NUMBER',
       });
-      if ((ATELIER_COLS as any).quantiteEn) {
+      if (ATELIER_COLS.quantiteEn) {
         cells.push({
           sheetName: ATELIER_SHEET,
-          cellReference: `${(ATELIER_COLS as any).quantiteEn}${row}`,
+          cellReference: `${ATELIER_COLS.quantiteEn}${row}`,
           value: Number(eq.quantite) || 0,
           dataType: 'NUMBER',
         });
@@ -138,10 +138,10 @@ export function resolveAtelierFields(
         value: String(eq.etat),
         dataType: 'TEXT',
       });
-      if ((ATELIER_COLS as any).etatEquipementEn) {
+      if (ATELIER_COLS.etatEquipementEn) {
         cells.push({
           sheetName: ATELIER_SHEET,
-          cellReference: `${(ATELIER_COLS as any).etatEquipementEn}${row}`,
+          cellReference: `${ATELIER_COLS.etatEquipementEn}${row}`,
           value: String(eq.etat),
           dataType: 'TEXT',
         });
@@ -155,10 +155,10 @@ export function resolveAtelierFields(
         value: Number(entry.nombrePostesTravail) || 0,
         dataType: 'NUMBER',
       });
-      if ((ATELIER_COLS as any).nombrePostesEn) {
+      if (ATELIER_COLS.nombrePostesEn) {
         cells.push({
           sheetName: ATELIER_SHEET,
-          cellReference: `${(ATELIER_COLS as any).nombrePostesEn}${row}`,
+          cellReference: `${ATELIER_COLS.nombrePostesEn}${row}`,
           value: Number(entry.nombrePostesTravail) || 0,
           dataType: 'NUMBER',
         });

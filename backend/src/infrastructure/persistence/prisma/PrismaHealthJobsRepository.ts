@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, StaffPermissionType as PrismaStaffPermissionType } from '@prisma/client';
 import type {
   HealthJobsRepository,
   StudentContext,
@@ -51,9 +51,9 @@ export class PrismaHealthJobsRepository implements HealthJobsRepository {
     });
     return {
       nomComplet: profile ? `${profile.user.firstName} ${profile.user.lastName}` : "Élève",
-      classId: (profile?.enrollmentsYearScoped[0] as any)?.classId ?? null,
-      className: (profile?.enrollmentsYearScoped[0] as any)?.class?.name ?? null,
-      professorPrincipalId: (profile?.enrollmentsYearScoped[0] as any)?.class?.professorPrincipalId ?? null,
+      classId: profile?.enrollmentsYearScoped[0]?.classId ?? null,
+      className: profile?.enrollmentsYearScoped[0]?.class?.name ?? null,
+      professorPrincipalId: profile?.enrollmentsYearScoped[0]?.class?.professorPrincipalId ?? null,
     };
   }
 
@@ -85,7 +85,7 @@ export class PrismaHealthJobsRepository implements HealthJobsRepository {
 
   async findStaffByPermission(schoolId: string, permission: string): Promise<{ userId: string }[]> {
     return this.prisma.staffProfile.findMany({
-      where: { schoolId, permissions: { some: { permission: permission as any } } },
+      where: { schoolId, permissions: { some: { permission: permission as PrismaStaffPermissionType } } },
       select: { userId: true },
     }).catch(() => []);
   }
@@ -129,7 +129,7 @@ export class PrismaHealthJobsRepository implements HealthJobsRepository {
         },
       },
     });
-    return rows as any;
+    return rows;
   }
 
   async findSubjectsByIds(subjectIds: string[]): Promise<{ id: string; name: string }[]> {

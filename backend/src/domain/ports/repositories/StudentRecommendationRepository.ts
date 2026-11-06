@@ -15,7 +15,7 @@ export interface StudentRecommendationData {
 
 export interface StudentRecommendationRepository {
   create(data: Omit<StudentRecommendationData, 'id' | 'createdAt'>): Promise<StudentRecommendationData>;
-  findById(id: string, schoolId: string): Promise<any | null>;
-  findByStudent(studentId: string, schoolId: string): Promise<any[]>;
-  findByStudentAndSubject(studentId: string, subjectId: string, schoolId: string): Promise<any | null>;
+  findById(id: string, schoolId: string): Promise<StudentRecommendationData | null>;
+  findByStudent(studentId: string, schoolId: string): Promise<StudentRecommendationData[]>;
+  findByStudentAndSubject(studentId: string, subjectId: string, schoolId: string): Promise<StudentRecommendationData | null>;
 }

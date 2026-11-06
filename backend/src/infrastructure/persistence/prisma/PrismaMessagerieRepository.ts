@@ -1,4 +1,4 @@
-import type { PrismaClient, ModerationStatus } from '@prisma/client';
+import type { PrismaClient, Prisma, ModerationStatus } from '@prisma/client';
 import type {
   MessagerieRepository,
   ConversationRef,
@@ -11,6 +11,13 @@ import { whereProfilesParClasse, whereProfilesParClasses } from '@application/sh
 
 const TAILLE_PAGE = 30;
 const TAILLE_RATTRAPAGE_MAX = 200;
+
+type MessageAvecRelations = Prisma.MessageGetPayload<{
+  include: {
+    sender: { select: { id: true; firstName: true; lastName: true; role: true; staffProfile: { select: { title: true } } } };
+    readStatuses: { select: { userId: true; readAt: true } };
+  };
+}>;
 
 export class PrismaMessagerieRepository implements MessagerieRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -64,8 +71,8 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
         this.prisma.class.findMany({ where: { professorPrincipalId: userId }, select: { id: true } }),
       ]);
       return Array.from(new Set([
-        ...assignments.map((a: any) => a.classId),
-        ...classesPp.map((c: any) => c.id),
+        ...assignments.map((a) => a.classId),
+        ...classesPp.map((c) => c.id),
       ]));
     }
 
@@ -91,7 +98,7 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
       });
       return Array.from(new Set(
         children
-          .map((c: any) => c.studentProfile?.enrollmentsYearScoped?.[0]?.classId)
+          .map((c) => c.studentProfile?.enrollmentsYearScoped?.[0]?.classId)
           .filter((id: string | null | undefined): id is string => !!id),
       ));
     }
@@ -131,10 +138,10 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
         this.prisma.user.findMany({ where: { schoolId, role: { in: ['STAFF', 'ADMIN'] }, isActive: true }, select: { id: true } }),
       ]);
       return new Set<string>([
-        ...parentsLinks.map((p: any) => p.parentProfile.userId),
-        ...students.map((s: any) => s.userId),
-        ...colleagues.map((u: any) => u.id),
-        ...staffEtAdmin.map((u: any) => u.id),
+        ...parentsLinks.map((p) => p.parentProfile.userId),
+        ...students.map((s) => s.userId),
+        ...colleagues.map((u) => u.id),
+        ...staffEtAdmin.map((u) => u.id),
       ]);
     }
 
@@ -150,9 +157,9 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
     ]);
 
     return new Set<string>([
-      ...assignments.map((a: any) => a.teacherId),
-      ...classesPp.map((c: any) => c.professorPrincipalId as string),
-      ...staffEtAdmin.map((u: any) => u.id),
+      ...assignments.map((a) => a.teacherId),
+      ...classesPp.map((c) => c.professorPrincipalId as string),
+      ...staffEtAdmin.map((u) => u.id),
     ]);
   }
 
@@ -160,7 +167,7 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
     return this.prisma.message.findUnique({
       where: { id },
       include: { sender: { select: { id: true, firstName: true, lastName: true, role: true } } },
-    }) as Promise<MessageData | null>;
+    });
   }
 
   async creerMessage(data: { id: string; conversationId: string; senderId: string; content: string; moderationStatus: string }): Promise<MessageData> {
@@ -173,7 +180,7 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
         moderationStatus: data.moderationStatus as ModerationStatus,
       },
       include: { sender: { select: { id: true, firstName: true, lastName: true, role: true } } },
-    }) as Promise<MessageData>;
+    });
   }
 
   async trouverConversationPriveeExistante(schoolId: string, userA: string, userB: string): Promise<ConversationRef | null> {
@@ -266,7 +273,7 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
       }),
     ]);
 
-    const directionStaff = staff.filter((s: any) => {
+    const directionStaff = staff.filter((s) => {
       const title = (s.staffProfile?.title || '').toLowerCase();
       const isCenseur = /censeur|vice[- ]?principal|dean.*studies/i.test(title);
       const isOrientation = /orientation|counselor|conseill/i.test(title);
@@ -291,7 +298,7 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
     const upperRole = role.toUpperCase();
     if (upperRole === 'ADMIN' || upperRole === 'STAFF') {
       const classes = await this.prisma.class.findMany({ where: { schoolId }, select: { level: true, name: true } });
-      return Array.from(new Set(classes.map((c: any) => (c.level?.trim() || c.name.split(' ')[0]).trim()))).filter(Boolean);
+      return Array.from(new Set(classes.map((c) => (c.level?.trim() || c.name.split(' ')[0]).trim()))).filter(Boolean);
     }
     if (upperRole === 'STUDENT') {
       return [];
@@ -302,7 +309,7 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
       where: { id: { in: classIds } },
       select: { level: true, name: true },
     });
-    return Array.from(new Set(classes.map((c: any) => (c.level?.trim() || c.name.split(' ')[0]).trim()))).filter(Boolean);
+    return Array.from(new Set(classes.map((c) => (c.level?.trim() || c.name.split(' ')[0]).trim()))).filter(Boolean);
   }
 
   async estEnseignantDuNiveau(userId: string, schoolId: string, level: string): Promise<boolean> {
@@ -310,12 +317,12 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
       where: { schoolId, OR: [{ level }, { name: { startsWith: level } }] },
       select: { id: true, professorPrincipalId: true },
     });
-    const classIds = classes.map((c: any) => c.id);
+    const classIds = classes.map((c) => c.id);
     if (!classIds.length) return false;
 
     const [assignment, isPp] = await Promise.all([
       this.prisma.teachingAssignment.findFirst({ where: { classId: { in: classIds }, teacherId: userId }, select: { id: true } }),
-      classes.some((c: any) => c.professorPrincipalId === userId),
+      classes.some((c) => c.professorPrincipalId === userId),
     ]);
     return Boolean(assignment || isPp);
   }
@@ -325,7 +332,7 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
       where: { schoolId, OR: [{ level }, { name: { startsWith: level } }] },
       select: { id: true },
     });
-    const classIds = classes.map((c: any) => c.id);
+    const classIds = classes.map((c) => c.id);
     if (!classIds.length) return false;
 
     const count = await this.prisma.parentStudent.count({
@@ -362,7 +369,7 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
       where: { schoolId, type: 'CLASS_CHANNEL' },
       select: { classId: true },
     });
-    const existingClassIds = new Set(existingClassChannels.map((c: any) => c.classId));
+    const existingClassIds = new Set(existingClassChannels.map((c) => c.classId));
     const toCreateClass: Array<{
       schoolId: string;
       classId: string;
@@ -391,14 +398,14 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
 
     // 2. Canaux de parents (PARENT_CHANNEL) par NIVEAU (et non par classe)
     const distinctLevels = Array.from(
-      new Set(classes.map((c: any) => (c.level?.trim() || c.name.split(' ')[0]).trim())),
+      new Set(classes.map((c) => (c.level?.trim() || c.name.split(' ')[0]).trim())),
     ).filter(Boolean);
 
     const existingLevelChannels = await this.prisma.conversation.findMany({
       where: { schoolId, type: 'PARENT_CHANNEL', level: { in: distinctLevels } },
       select: { level: true },
     });
-    const existingLevels = new Set(existingLevelChannels.map((c: any) => c.level));
+    const existingLevels = new Set(existingLevelChannels.map((c) => c.level));
 
     const toCreateParents: Array<{
       schoolId: string;
@@ -494,9 +501,9 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
       where: { schoolId },
       select: { id: true, name: true, level: true },
     });
-    const nomParClasseId = new Map(allClasses.map((c: any) => [c.id, c.name]));
+    const nomParClasseId = new Map(allClasses.map((c) => [c.id, c.name]));
     const levelParClasseId = new Map(
-      allClasses.map((c: any) => [c.id, (c.level?.trim() || c.name.split(' ')[0]).trim()]),
+      allClasses.map((c) => [c.id, (c.level?.trim() || c.name.split(' ')[0]).trim()]),
     );
     const classIdsParLevel = new Map<string, string[]>();
     for (const cl of allClasses) {
@@ -512,7 +519,7 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
     const elevesParClasse = new Map<string, ParticipantFormat[]>();
     const parentsParClasse = new Map<string, ParticipantFormat[]>();
 
-    const classIdsAAfficher = allClasses.map((c: any) => c.id);
+    const classIdsAAfficher = allClasses.map((c) => c.id);
 
     if (classIdsAAfficher.length > 0) {
       const [assignments, classesWithPp, enrollments] = await Promise.all([
@@ -676,7 +683,7 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
     }
 
     const avecMeta = await Promise.all(
-      conversations.map(async (conversation: any) => {
+      conversations.map(async (conversation) => {
         const nonLus = await this.prisma.message.count({
           where: {
             conversationId: conversation.id,
@@ -709,7 +716,7 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
           }
           participantsList = Array.from(map.values());
         } else {
-          participantsList = conversation.participants.map((p: any) => ({
+          participantsList = conversation.participants.map((p) => ({
             id: p.user.id,
             firstName: p.user.firstName,
             lastName: p.user.lastName,
@@ -741,7 +748,7 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
       }),
     );
 
-    return avecMeta.sort((a: any, b: any) => {
+    return avecMeta.sort((a, b) => {
       const dateA = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
       const dateB = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
       return dateB - dateA;
@@ -764,7 +771,7 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
       readStatuses: { select: { userId: true, readAt: true } },
     };
 
-    const mapperMessage = (m: any): MessageData => ({
+    const mapperMessage = (m: MessageAvecRelations): MessageData => ({
       id: m.id,
       conversationId: m.conversationId,
       senderId: m.senderId,
@@ -781,7 +788,7 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
           }
         : undefined,
       readStatuses: m.readStatuses ?? [],
-      isRead: Array.isArray(m.readStatuses) && m.readStatuses.some((r: any) => r.userId !== m.senderId),
+      isRead: Array.isArray(m.readStatuses) && m.readStatuses.some((r) => r.userId !== m.senderId),
     });
 
     if (cmd.since) {
@@ -837,7 +844,7 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
         moderationReason: data.moderationReason,
       },
       include: { sender: { select: { id: true, firstName: true, lastName: true, role: true } } },
-    }) as Promise<MessageData>;
+    });
   }
 
   async trouverMessagesNonLus(conversationId: string, seuilDate: Date, userId: string): Promise<{ id: string }[]> {
@@ -904,7 +911,7 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
         this.prisma.class.findUnique({ where: { id: classId }, select: { professorPrincipalId: true } }),
       ]);
       const profIds = [
-        ...assignments.map((a: any) => a.teacherId),
+        ...assignments.map((a) => a.teacherId),
         ...(classePp?.professorPrincipalId ? [classePp.professorPrincipalId] : []),
       ];
       const studentIds = await this.listerElevesClasse(classId);
@@ -923,14 +930,14 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
           },
           select: { id: true, professorPrincipalId: true },
         });
-        const classIds = classesDuNiveau.map((c: any) => c.id);
+        const classIds = classesDuNiveau.map((c) => c.id);
         const assignments = await this.prisma.teachingAssignment.findMany({
           where: { classId: { in: classIds } },
           select: { teacherId: true },
         });
         profIds = [
-          ...assignments.map((a: any) => a.teacherId),
-          ...classesDuNiveau.map((c: any) => c.professorPrincipalId).filter((id): id is string => Boolean(id)),
+          ...assignments.map((a) => a.teacherId),
+          ...classesDuNiveau.map((c) => c.professorPrincipalId).filter((id): id is string => Boolean(id)),
         ];
         const parentLinks = await this.prisma.parentStudent.findMany({
           where: {
@@ -943,8 +950,8 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
           select: { parentProfile: { select: { userId: true } } },
         });
         parentIds = parentLinks
-          .map((pl: any) => pl.parentProfile?.userId)
-          .filter((id: any): id is string => Boolean(id));
+          .map((pl) => pl.parentProfile?.userId)
+          .filter((id): id is string => Boolean(id));
       } else if (conversation.classId) {
         const classId = conversation.classId;
         const [assignments, classePp] = await Promise.all([
@@ -952,7 +959,7 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
           this.prisma.class.findUnique({ where: { id: classId }, select: { professorPrincipalId: true } }),
         ]);
         profIds = [
-          ...assignments.map((a: any) => a.teacherId),
+          ...assignments.map((a) => a.teacherId),
           ...(classePp?.professorPrincipalId ? [classePp.professorPrincipalId] : []),
         ];
         parentIds = await this.listerParentsClasse(classId);
@@ -965,12 +972,12 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
       where: { conversationId, userId: { not: excludeUserId } },
       select: { userId: true },
     });
-    return participants.map((p: any) => p.userId);
+    return participants.map((p) => p.userId);
   }
 
   async listerEnseignantsClasse(classId: string): Promise<string[]> {
     const assignments = await this.prisma.teachingAssignment.findMany({ where: { classId }, select: { teacherId: true } });
-    return assignments.map((a: any) => a.teacherId);
+    return assignments.map((a) => a.teacherId);
   }
 
   async trouverProfesseurPrincipalClasse(classId: string): Promise<string | null> {
@@ -983,7 +990,7 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
       where: { ...whereProfilesParClasse(classId) },
       select: { userId: true },
     });
-    return students.map((s: any) => s.userId);
+    return students.map((s) => s.userId);
   }
 
   async listerParentsClasse(classId: string): Promise<string[]> {
@@ -991,7 +998,7 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
       where: { studentProfile: whereProfilesParClasse(classId) },
       select: { parentProfile: { select: { userId: true } } },
     });
-    return parentsLinks.map((p: any) => p.parentProfile.userId);
+    return parentsLinks.map((p) => p.parentProfile.userId);
   }
 
   async estEnseignantDeLaClasse(userId: string, classId: string): Promise<boolean> {
@@ -1100,7 +1107,7 @@ export class PrismaMessagerieRepository implements MessagerieRepository {
       take: limite,
     });
 
-    return users.map((u: any) => ({
+    return users.map((u) => ({
       id: u.id,
       firstName: u.firstName,
       lastName: u.lastName,

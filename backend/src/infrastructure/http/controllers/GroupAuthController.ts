@@ -6,6 +6,7 @@ import QRCode from 'qrcode';
 import { LoginGroupOwnerUseCase } from '../../../application/schoolGroup/LoginGroupOwnerUseCase';
 import { VerifyGroupOwnerMfaUseCase } from '../../../application/schoolGroup/VerifyGroupOwnerMfaUseCase';
 import type { SchoolGroupOwnerAuthRepository } from '@domain/ports/repositories/SchoolGroupOwnerAuthRepository';
+import { messageErreur } from '@application/shared/messageErreur';
 
 const getGroupOwnerSecret = (): string =>
   process.env.GROUP_OWNER_JWT_SECRET || process.env.JWT_SECRET || '';
@@ -26,8 +27,8 @@ export class GroupAuthController {
       }
       await this.loginUseCase.executeLogin(email, password);
       res.json({ success: true, message: 'Code de vérification envoyé par email' });
-    } catch (error: any) {
-      res.status(401).json({ success: false, message: error.message || 'Erreur de connexion' });
+    } catch (error) {
+      res.status(401).json({ success: false, message: messageErreur(error) || 'Erreur de connexion' });
     }
   };
 
@@ -71,8 +72,8 @@ export class GroupAuthController {
         });
         res.json({ success: true, mfaRequired: true, email: result.ownerEmail });
       }
-    } catch (error: any) {
-      res.status(401).json({ success: false, message: error.message || 'Code invalide' });
+    } catch (error) {
+      res.status(401).json({ success: false, message: messageErreur(error) || 'Code invalide' });
     }
   };
 
@@ -119,8 +120,8 @@ export class GroupAuthController {
       });
       res.clearCookie('temp_group_owner_token', { path: '/' });
       res.json({ success: true, message: 'Authentification réussie' });
-    } catch (error: any) {
-      res.status(401).json({ success: false, message: error.message || 'Code MFA invalide' });
+    } catch (error) {
+      res.status(401).json({ success: false, message: messageErreur(error) || 'Code MFA invalide' });
     }
   };
 
@@ -133,16 +134,16 @@ export class GroupAuthController {
       }
       await this.loginUseCase.executeResendOtp(email);
       res.json({ success: true, message: 'Nouveau code de vérification envoyé' });
-    } catch (error: any) {
-      res.status(400).json({ success: false, message: error.message || 'Erreur lors du renvoi' });
+    } catch (error) {
+      res.status(400).json({ success: false, message: messageErreur(error) || 'Erreur lors du renvoi' });
     }
   };
 
   me = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
       res.json({ success: true, data: req.groupOwner });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
+    } catch (error) {
+      res.status(500).json({ success: false, message: messageErreur(error) });
     }
   };
 
@@ -150,8 +151,8 @@ export class GroupAuthController {
     try {
       const data = await this.verifyMfaUseCase.getMfaStatus(req.groupOwner!.id);
       res.json({ success: true, data });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
+    } catch (error) {
+      res.status(500).json({ success: false, message: messageErreur(error) });
     }
   };
 
@@ -169,8 +170,8 @@ export class GroupAuthController {
       const qrDataUri: string = await QRCode.toDataURL(otpauthUrl);
 
       res.json({ success: true, data: { qrDataUri, manualKey: secret, otpauthUrl } });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message || 'Erreur' });
+    } catch (error) {
+      res.status(500).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 
@@ -208,8 +209,8 @@ export class GroupAuthController {
       });
 
       res.json({ success: true, data: { recoveryCodes: formatted } });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message || 'Erreur' });
+    } catch (error) {
+      res.status(500).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 
@@ -221,8 +222,8 @@ export class GroupAuthController {
       await this.ownerAuthRepository.deactivateMfa(owner.id);
 
       res.json({ success: true, message: 'MFA désactivé.' });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message || 'Erreur' });
+    } catch (error) {
+      res.status(500).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 
@@ -241,8 +242,8 @@ export class GroupAuthController {
       await this.ownerAuthRepository.updateMfaRecoveryCodes(owner.id, hashed);
 
       res.json({ success: true, data: { recoveryCodes: formatted } });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message || 'Erreur' });
+    } catch (error) {
+      res.status(500).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 
@@ -251,8 +252,8 @@ export class GroupAuthController {
       res.clearCookie('group_jwt', { path: '/' });
       res.clearCookie('temp_group_owner_token', { path: '/' });
       res.json({ success: true, message: 'Déconnexion réussie' });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
+    } catch (error) {
+      res.status(500).json({ success: false, message: messageErreur(error) });
     }
   };
 }

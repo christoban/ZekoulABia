@@ -1,3 +1,4 @@
+import { messageErreur } from '@application/shared/messageErreur';
 import type { Request, Response, NextFunction } from 'express';
 import type { ConnecterUtilisateurUseCase, RoleMismatchError, SchoolSuspendedError, MultipleAccountsError } from '@application/user/ConnecterUtilisateurUseCase';
 import type { LoginEmailOtpUseCase } from '@application/user/LoginEmailOtpUseCase';
@@ -105,7 +106,7 @@ export class UserAuthController {
         });
         return;
       }
-      if (error instanceof Error && error.message === 'ROLE_MISMATCH_MULTIPLE') {
+      if (error instanceof Error && messageErreur(error) === 'ROLE_MISMATCH_MULTIPLE') {
         res.status(422).json({
           success: false,
           code: 'ROLE_MISMATCH_MULTIPLE',
@@ -149,8 +150,8 @@ export class UserAuthController {
 
       const data = issueFinalSession(res, this.tokenService, base);
       res.json({ success: true, step: 'done', data });
-    } catch (error: any) {
-      res.status(401).json({ success: false, message: error.message || 'Code invalide' });
+    } catch (error) {
+      res.status(401).json({ success: false, message: messageErreur(error) || 'Code invalide' });
     }
   };
 
@@ -173,8 +174,8 @@ export class UserAuthController {
         phoneMasked: info.phoneMasked,
         emailMasked: info.emailMasked,
       });
-    } catch (error: any) {
-      res.status(400).json({ success: false, message: error.message || 'Erreur lors du renvoi' });
+    } catch (error) {
+      res.status(400).json({ success: false, message: messageErreur(error) || 'Erreur lors du renvoi' });
     }
   };
 
@@ -191,8 +192,8 @@ export class UserAuthController {
         message: `Code envoyé par SMS au ${info.phoneMasked || 'numéro associé'}`,
         phoneMasked: info.phoneMasked,
       });
-    } catch (error: any) {
-      res.status(400).json({ success: false, message: error.message || "Impossible d'envoyer le SMS" });
+    } catch (error) {
+      res.status(400).json({ success: false, message: messageErreur(error) || "Impossible d'envoyer le SMS" });
     }
   };
 
@@ -209,8 +210,8 @@ export class UserAuthController {
       await this.verifierMfaConnexion.execute(decoded.userId, code);
       const data = issueFinalSession(res, this.tokenService, decoded);
       res.json({ success: true, step: 'done', data });
-    } catch (error: any) {
-      res.status(401).json({ success: false, message: error.message || 'Code MFA invalide' });
+    } catch (error) {
+      res.status(401).json({ success: false, message: messageErreur(error) || 'Code MFA invalide' });
     }
   };
 
@@ -220,8 +221,8 @@ export class UserAuthController {
       const decoded = readPendingToken(req, 'pending_mfa_setup');
       const data = await this.mfaUseCase.firstMfaSetup(decoded.userId);
       res.json({ success: true, data });
-    } catch (error: any) {
-      const msg: string = error.message || 'Erreur';
+    } catch (error) {
+      const msg: string = messageErreur(error) || 'Erreur';
       const status = msg.includes('introuvable')
         ? 404
         : msg.includes('déjà activé')
@@ -246,8 +247,8 @@ export class UserAuthController {
       const { recoveryCodes } = await this.mfaUseCase.firstMfaEnable(decoded.userId, totpCode);
       const data = issueFinalSession(res, this.tokenService, decoded);
       res.json({ success: true, data: { ...data, recoveryCodes } });
-    } catch (error: any) {
-      const msg: string = error.message || 'Erreur';
+    } catch (error) {
+      const msg: string = messageErreur(error) || 'Erreur';
       const status = msg.includes('Aucune configuration')
         ? 400
         : msg.includes('déjà activé')
@@ -272,8 +273,8 @@ export class UserAuthController {
       }
       emettreJetonReauth(res, userId);
       res.json({ success: true });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message || 'Erreur' });
+    } catch (error) {
+      res.status(500).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 
@@ -325,8 +326,8 @@ export class UserAuthController {
           nomComplet: `${userAuth.user.firstName} ${userAuth.user.lastName}`,
         },
       });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message || 'Erreur lors du déverrouillage' });
+    } catch (error) {
+      res.status(500).json({ success: false, message: messageErreur(error) || 'Erreur lors du déverrouillage' });
     }
   };
 

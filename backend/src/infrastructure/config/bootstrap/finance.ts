@@ -41,11 +41,11 @@ export function registerFinanceRoutes(app: Application, prismaParam: typeof pris
   const p = prismaParam ?? prisma;
   const c = container;
 
-  const paiementRepositoryForFinance = new PrismaPaiementRepository(p as any);
-  const schoolRepositoryForFinance = new PrismaSchoolRepository(p as any);
-  const userRepositoryForFinance = new PrismaUserRepository(p as any);
-  const factureRepositoryForFinance = new PrismaFactureRepository(p as any);
-  const auditForFinance = new AIActionAuditAdapter(p as any);
+  const paiementRepositoryForFinance = new PrismaPaiementRepository(p);
+  const schoolRepositoryForFinance = new PrismaSchoolRepository(p);
+  const userRepositoryForFinance = new PrismaUserRepository(p);
+  const factureRepositoryForFinance = new PrismaFactureRepository(p);
+  const auditForFinance = new AIActionAuditAdapter(p);
   const notifForFinance = new SocketNotificationService();
 
   const financeController = new FinanceController(
@@ -67,7 +67,7 @@ export function registerFinanceRoutes(app: Application, prismaParam: typeof pris
     notifForFinance,
   );
 
-  const studentProfileRepositoryForFinance = new PrismaStudentProfileRepository(p as any);
+  const studentProfileRepositoryForFinance = new PrismaStudentProfileRepository(p);
   const consulterStatutFraisUseCase = new ConsulterStatutFraisEleveUseCase(
     factureRepositoryForFinance,
     userRepositoryForFinance,
@@ -78,27 +78,27 @@ export function registerFinanceRoutes(app: Application, prismaParam: typeof pris
   app.use('/api/v2/finance', creerFinanceRoutes(financeController, studentFeesStatusController));
 
   const departmentController = new DepartmentController(
-    new PrismaDepartmentRepository(p as any),
-    new PrismaStaffProfileRepository(p as any),
+    new PrismaDepartmentRepository(p),
+    new PrismaStaffProfileRepository(p),
     userRepositoryForFinance,
   );
   app.use('/api/v2/departments', creerDepartmentRoutes(departmentController));
 
   const statisticsController = new StatisticsController(
-    new PrismaStatisticsQueryRepository(p as any),
+    new PrismaStatisticsQueryRepository(p),
     auditForFinance,
-    (c as any).metric?.getMetric,
+    c.metric.getMetric,
   );
   app.use('/api/v2/statistics', creerStatisticsRoutes(statisticsController));
 
-  const broadcastService = new BroadcastService(p as any);
+  const broadcastService = new BroadcastService(p);
   const communicationsController = new CommunicationsController(broadcastService, auditForFinance);
   app.use('/api/v2/communications', creerCommunicationsRoutes(communicationsController));
 
-  const teachingAssignmentGeneratorRepository = new PrismaTeachingAssignmentGeneratorRepository(p as any);
+  const teachingAssignmentGeneratorRepository = new PrismaTeachingAssignmentGeneratorRepository(p);
   const genererAffectationsUseCase = new GenererAffectationsUseCase(teachingAssignmentGeneratorRepository);
   const teachingAssignmentController = new TeachingAssignmentController(
-    new PrismaRattachementEnseignantRepository(p as any),
+    new PrismaRattachementEnseignantRepository(p),
     genererAffectationsUseCase,
     auditForFinance,
     c.activityLog,
@@ -107,7 +107,7 @@ export function registerFinanceRoutes(app: Application, prismaParam: typeof pris
   app.use('/api/v2/teaching-assignments', creerTeachingAssignmentRoutes(teachingAssignmentController));
 
   const timetableGridConfigController = new TimetableGridConfigController(
-    new PrismaTimetableRepository(p as any),
+    new PrismaTimetableRepository(p),
     c.events.publisher,
   );
   app.use('/api/v2/timetable-grid-config', creerTimetableGridConfigRoutes(timetableGridConfigController));

@@ -1,5 +1,6 @@
 import type { FinanceJobsRepository } from '@domain/ports/repositories/FinanceJobsRepository';
 import type { NotificationService } from '@domain/ports/services/NotificationService';
+import { messageErreur } from '@application/shared/messageErreur';
 import type { SmsNotificationPort } from '@domain/ports/services/SmsNotificationPort';
 
 export class MarquerRetardsPretUseCase {
@@ -25,14 +26,14 @@ export class MarquerRetardsPretUseCase {
 
       await this.notificationService
         .envoyer({ schoolId: loan.schoolId, userId: loan.studentId, type: "LIBRARY_OVERDUE", titre, corps, urgency: "NORMAL" })
-        .catch((err: any) => console.error('[Library Overdue élève]', err?.message));
+        .catch((err) => console.error('[Library Overdue élève]', messageErreur(err)));
 
       await this.smsNotification.notifyOverdueBookSms({
         schoolId: loan.schoolId,
         studentId: loan.studentId,
         studentName,
         bookTitle: loan.book.title,
-      }).catch((err: any) => console.error('[Library Overdue SMS]', err?.message));
+      }).catch((err) => console.error('[Library Overdue SMS]', messageErreur(err)));
     }
   }
 

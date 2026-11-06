@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, SchoolTemplateVersion as PrismaSchoolTemplateVersion } from '@prisma/client';
 import type { SchoolTemplateVersion, SchoolTemplateVersionRepository } from '@domain/ports/repositories/SchoolTemplateVersionRepository';
 
 export class PrismaSchoolTemplateVersionRepository implements SchoolTemplateVersionRepository {
@@ -51,7 +51,7 @@ export class PrismaSchoolTemplateVersionRepository implements SchoolTemplateVers
     return rows.map((row) => this.toDomain(row));
   }
 
-  private toDomain(row: any): SchoolTemplateVersion {
+  private toDomain(row: PrismaSchoolTemplateVersion): SchoolTemplateVersion {
     return {
       id: row.id,
       templateCode: row.templateCode,

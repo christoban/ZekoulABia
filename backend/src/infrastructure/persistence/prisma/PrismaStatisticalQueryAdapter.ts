@@ -36,16 +36,18 @@ export class PrismaStatisticalQueryAdapter implements StatisticalQueryPort {
         lv2Subject: { select: { name: true } },
       },
     });
-    return students
-      .filter((s: any) => s.enrollmentsYearScoped?.[0]?.class)
-      .map((s: any): EleveEsgRow => ({
+    return students.flatMap((s): EleveEsgRow[] => {
+      const classe = s.enrollmentsYearScoped[0]?.class;
+      if (!classe) return [];
+      return [{
         gender: s.gender,
         dateOfBirth: s.dateOfBirth,
-        niveau: s.enrollmentsYearScoped[0].class.level,
-        serie: s.enrollmentsYearScoped[0].class.serie,
-        filiere: s.enrollmentsYearScoped[0].class.filiere,
+        niveau: classe.level,
+        serie: classe.serie,
+        filiere: classe.filiere,
         lv2Name: s.lv2Subject?.name ?? null,
-      }));
+      }];
+    });
   }
 
   async listerElevesPrimaire(schoolId: string): Promise<ElevePrimaireRow[]> {
@@ -70,13 +72,11 @@ export class PrismaStatisticalQueryAdapter implements StatisticalQueryPort {
         },
       },
     });
-    return students
-      .filter((s: any) => s.enrollmentsYearScoped?.[0]?.class)
-      .map((s: any): ElevePrimaireRow => ({
-        gender: s.gender,
-        dateOfBirth: s.dateOfBirth,
-        niveau: s.enrollmentsYearScoped[0].class.level,
-      }));
+    return students.flatMap((s): ElevePrimaireRow[] => {
+      const classe = s.enrollmentsYearScoped[0]?.class;
+      if (!classe) return [];
+      return [{ gender: s.gender, dateOfBirth: s.dateOfBirth, niveau: classe.level }];
+    });
   }
 
   async trouverEcole(schoolId: string): Promise<EcoleIdentification | null> {

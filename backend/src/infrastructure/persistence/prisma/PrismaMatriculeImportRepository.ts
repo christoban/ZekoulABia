@@ -4,6 +4,7 @@ import type {
   MatriculeImportJobData,
   StudentProfileMatriculeData,
 } from '@domain/ports/repositories/MatriculeImportRepository';
+import { validateNationalId } from '@application/matricule/normalizeNationalId';
 
 export class PrismaMatriculeImportRepository implements MatriculeImportRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -54,13 +55,19 @@ export class PrismaMatriculeImportRepository implements MatriculeImportRepositor
   }
 
   async mettreAJourMatricule(profileId: string, data: { matricule: string; matriculeSource: string; matriculeMatchType: string }): Promise<void> {
-    await this.prisma.studentProfile.update({
-      where: { id: profileId },
-      data: {
-        matricule: data.matricule,
-        matriculeSource: data.matriculeSource as MatriculeSource,
-        matriculeMatchType: data.matriculeMatchType,
-      },
+    const matricule = validateNationalId(data.matricule);
+    await this.prisma.$transaction(async (tx) => {
+      await tx.studentIdentity.createMany({ data: [{ nationalId: matricule }], skipDuplicates: true });
+      const identity = await tx.studentIdentity.findUniqueOrThrow({ where: { nationalId: matricule } });
+      await tx.studentProfile.update({
+        where: { id: profileId },
+        data: {
+          matricule,
+          identityId: identity.id,
+          matriculeSource: data.matriculeSource as MatriculeSource,
+          matriculeMatchType: data.matriculeMatchType,
+        },
+      });
     });
   }
 
@@ -72,10 +79,11 @@ export class PrismaMatriculeImportRepository implements MatriculeImportRepositor
   }
 
   async findByMatricules(schoolId: string, matricules: string[], classId: string): Promise<{ matricule: string; userId: string }[]> {
+    const normalizedMatricules = matricules.map(validateNationalId);
     const profiles = await this.prisma.studentProfile.findMany({
       where: {
         user: { schoolId },
-        matricule: { in: matricules },
+        matricule: { in: normalizedMatricules },
         enrollmentsYearScoped: { some: { classId, status: 'ACTIVE', academicYear: { isCurrent: true } } },
       },
       select: { matricule: true, userId: true },

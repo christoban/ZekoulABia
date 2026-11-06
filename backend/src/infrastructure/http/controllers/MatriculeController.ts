@@ -43,7 +43,7 @@ export class MatriculeController {
         return;
       }
 
-      const result = await this._importerMatricules.execute(schoolId, data, uploadedBy, file.originalname);
+      const result = await this._importerMatricules.execute(schoolId, data, uploadedBy, file.originalname, parseErrors);
       res.json({ success: true, data: { ...result, format, parseErrors } });
     } catch (err) { next(err); }
   };

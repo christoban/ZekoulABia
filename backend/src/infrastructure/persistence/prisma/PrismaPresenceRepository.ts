@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, Attendance, Prisma } from '@prisma/client';
 import { Presence } from '@domain/entities/Presence';
 import type { PresenceRepository, StatistiquesPresence, PresenceSmsRecord, FiltrePresences, PresenceLue, PresenceJustifiee } from '@domain/ports/repositories/PresenceRepository';
 import type { AttendanceStatus, AttendancePeriod } from '@domain/types/enums';
@@ -20,7 +20,9 @@ function whereFromFiltre(schoolId: string, filtre: FiltrePresences): Record<stri
   return where;
 }
 
-function toPresenceLue(data: any): PresenceLue {
+type AttendanceAvecClasse = Prisma.AttendanceGetPayload<{ include: { class: { select: { id: true; name: true } } } }>;
+
+function toPresenceLue(data: AttendanceAvecClasse): PresenceLue {
   return {
     id: data.id,
     schoolId: data.schoolId,
@@ -96,7 +98,7 @@ export class PrismaPresenceRepository implements PresenceRepository {
 
   async countAbsencesEtRetards(schoolId: string, studentId: string, academicPeriodId: string): Promise<number> {
     return this.prisma.attendance.count({
-      where: { schoolId, studentId, academicPeriodId, status: { in: ['ABSENT', 'ABSENT_JUSTIFIED'] as any } },
+      where: { schoolId, studentId, academicPeriodId, status: { in: ['ABSENT', 'ABSENT_JUSTIFIED'] } },
     });
   }
 
@@ -348,7 +350,7 @@ export class PrismaPresenceRepository implements PresenceRepository {
     };
   }
 
-  private toDomain(data: any): Presence {
+  private toDomain(data: Attendance): Presence {
     return Presence.reconstituer({
       id: data.id,
       schoolId: data.schoolId,

@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, UserRole } from '@prisma/client';
 import type {
   EleveOnboardingJobsRepository,
   OnboardingDossierForJobs,
@@ -19,9 +19,9 @@ export class PrismaEleveOnboardingJobsRepository implements EleveOnboardingJobsR
     const s = await this.prisma.schoolOnboardingSettings.findUnique({ where: { schoolId } });
     if (!s) return null;
     return {
-      reminderDelayDays: (s as any).reminderDelayDays ?? [3, 7],
-      escalationDelayDays: (s as any).escalationDelayDays ?? 10,
-      responsableRole: (s as any).responsableRole ?? 'ADMIN',
+      reminderDelayDays: s.reminderDelayDays ?? [3, 7],
+      escalationDelayDays: s.escalationDelayDays ?? 10,
+      responsableRole: s.responsableRole ?? 'ADMIN',
     };
   }
 
@@ -38,7 +38,7 @@ export class PrismaEleveOnboardingJobsRepository implements EleveOnboardingJobsR
 
   async trouverResponsables(schoolId: string, role: string): Promise<{ email: string | null; firstName: string }[]> {
     return this.prisma.user.findMany({
-      where: { schoolId, role: role as any },
+      where: { schoolId, role: role as UserRole },
       select: { email: true, firstName: true },
     }) as Promise<{ email: string | null; firstName: string }[]>;
   }

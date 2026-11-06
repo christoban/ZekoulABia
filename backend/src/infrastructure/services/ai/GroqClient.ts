@@ -1,4 +1,5 @@
 import { createGroq } from "@ai-sdk/groq";
+import { messageErreur } from '@application/shared/messageErreur';
 import { generateText } from "ai";
 
 const groq = createGroq({
@@ -37,8 +38,8 @@ export const generateWithGroq = async (prompt: string, systemPrompt?: string): P
       maxOutputTokens: 1000,
     });
     return cleanMarkdownArtifacts(text);
-  } catch (error: any) {
-    console.error("Groq error:", error.message);
+  } catch (error) {
+    console.error("Groq error:", messageErreur(error));
     throw new Error("Service IA temporairement indisponible");
   }
 };

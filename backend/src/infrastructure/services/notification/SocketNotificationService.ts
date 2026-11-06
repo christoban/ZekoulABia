@@ -1,13 +1,14 @@
 import type { NotificationService, EnvoiNotificationOptions } from '@domain/ports/services/NotificationService';
 import type { NotificationType as DomainNotificationType } from '@domain/types/enums';
 import type { EventPublisher } from '@domain/ports/services/EventPublisher';
-import type { NotificationType as PrismaNotificationType, UserRole, Prisma } from '@prisma/client';
+import type { NotificationType as PrismaNotificationType, NotificationChannel as PrismaNotificationChannel, UserRole, Prisma } from '@prisma/client';
 import { getIO } from '../../socket/SocketServer.ts';
 import { notifierUtilisateurPush, notifierUtilisateurPushAvecResultat } from './PushNotificationService.ts';
 import { getParentContacts } from '../sms/SmsNotificationService.ts';
 import { prisma } from '@infrastructure/persistence/prisma/prisma.client';
 import { PrismaPushSubscriptionRepository } from '@infrastructure/persistence/prisma/PrismaPushSubscriptionRepository';
 import { resoudreCanal } from '@domain/policies/NotificationRoutingPolicy';
+import { messageErreur } from '@application/shared/messageErreur';
 
 /**
  * Le `NotificationType` du domaine (port NotificationService, ex. ABSENCE_ALERT,
@@ -47,13 +48,13 @@ export class SocketNotificationService implements NotificationService {
   ): Promise<boolean> {
     const notif = await prisma.notification.findFirst({
       where: { id, userId, schoolId },
-      select: { id: true, [field]: true } as any,
+      select: { id: true, deliveredAt: true, confirmedAt: true, readAt: true },
     });
     if (!notif) return false;
-    if ((notif as any)[field]) return true;
-    await (prisma.notification.update as any)({
+    if (notif[field]) return true;
+    await prisma.notification.update({
       where: { id },
-      data: { [field]: new Date() },
+      data: { [field]: new Date() } as Prisma.NotificationUpdateInput,
     });
     return true;
   }
@@ -84,7 +85,7 @@ export class SocketNotificationService implements NotificationService {
       .catch(() => null);
     const prefs = prefRow ? { push: prefRow.push, sms: prefRow.sms, email: prefRow.email } : null;
     const hasActivePush = await pushSubscriptionRepo.hasActiveToken(options.userId);
-    const canaux: string[] = resoudreCanal(urgency, hasActivePush, prefs as any);
+    const canaux = resoudreCanal(urgency, hasActivePush, prefs);
 
     // Canaux EMAIL/SMS sont gérés séparément — on log et on retourne
     const hasInApp = canaux.includes('IN_APP');
@@ -108,7 +109,7 @@ export class SocketNotificationService implements NotificationService {
           title: options.titre,
           body: options.corps,
           metadata: (options.metadata ?? {}) as Prisma.InputJsonValue,
-          channel: (hasPush ? 'PUSH' : 'IN_APP') as any,
+          channel: (hasPush ? 'PUSH' : 'IN_APP') as PrismaNotificationChannel,
         },
       });
       notificationId = created.id;
@@ -157,7 +158,7 @@ export class SocketNotificationService implements NotificationService {
       }
     }
     if (socketEmitted && notificationId) {
-      await (prisma.notification.update as any)({
+      await prisma.notification.update({
         where: { id: notificationId },
         data: { deliveredAt: new Date() },
       }).catch(() => {});
@@ -231,7 +232,7 @@ export class SocketNotificationService implements NotificationService {
       const parents = await getParentContacts(opts.studentId);
       for (const parent of parents) {
         // notifierParents utilise resoudreCanal via envoyer (urgency = HIGH pour alertes parents)
-        await this.envoyer({ schoolId: opts.schoolId, userId: parent.userId, type: opts.type, titre: opts.titre, corps: opts.corps, urgency: 'HIGH' }).catch((err) => console.error('[PushFirst] parent:', (err as any)?.message));
+        await this.envoyer({ schoolId: opts.schoolId, userId: parent.userId, type: opts.type, titre: opts.titre, corps: opts.corps, urgency: 'HIGH' }).catch((err) => console.error('[PushFirst] parent:', messageErreur(err)));
         await notifierUtilisateurPushAvecResultat({ userId: parent.userId, title: opts.titre, body: opts.corps }).catch(() => ({ delivered: false }));
       }
     } catch (err) {

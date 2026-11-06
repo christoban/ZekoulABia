@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, Subject } from '@prisma/client';
 import type { MatiereRepository, MatiereProps, CoefficientMatiere } from '@domain/ports/repositories/MatiereRepository';
 
 export class PrismaMatiereRepository implements MatiereRepository {
@@ -214,7 +214,7 @@ export class PrismaMatiereRepository implements MatiereRepository {
     });
   }
 
-  private toProps(data: any): MatiereProps {
+  private toProps(data: Subject): MatiereProps {
     return {
       id: data.id,
       schoolId: data.schoolId,

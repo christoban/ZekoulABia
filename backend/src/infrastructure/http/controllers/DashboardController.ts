@@ -22,7 +22,7 @@ export class DashboardController {
         (log) => `${log.action} (${new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`
       );
 
-      let stats: any = {};
+      let stats: Record<string, unknown> = {};
 
       if (user.role === 'ADMIN') {
         const counts = await this.dashboardRepo.countAdminStats(schoolId);

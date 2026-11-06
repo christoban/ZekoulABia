@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
+import { messageErreur } from '@application/shared/messageErreur';
 import type { GroupTransferRepository } from '../../../domain/ports/repositories/GroupTransferRepository';
 import type { GroupeScolaireQueryRepository } from '../../../domain/ports/repositories/GroupeScolaireQueryRepository';
 import { ListerDemandesTransfertEntrantesUseCase } from '../../../application/schoolGroup/ListerDemandesTransfertEntrantesUseCase';
@@ -23,8 +24,8 @@ export class AdminGroupTransferController {
       const schoolId = req.user!.schoolId;
       const data = await this.listerEntrantesUseCase.execute(schoolId);
       res.json({ success: true, data });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message || 'Erreur' });
+    } catch (error) {
+      res.status(500).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 
@@ -69,8 +70,8 @@ export class AdminGroupTransferController {
           metadata: { schoolId },
         }).catch((err) => console.error('[AdminGroupTransfer] invite email enseignant:', err?.message));
       }
-    } catch (error: any) {
-      res.status(400).json({ success: false, message: error.message || 'Erreur' });
+    } catch (error) {
+      res.status(400).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 
@@ -80,8 +81,8 @@ export class AdminGroupTransferController {
       const demandeId = String(req.params.id);
       const data = await this.rejeterUseCase.execute({ demandeId, targetSchoolId: schoolId });
       res.json({ success: true, data });
-    } catch (error: any) {
-      res.status(400).json({ success: false, message: error.message || 'Erreur' });
+    } catch (error) {
+      res.status(400).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 }

@@ -27,7 +27,7 @@ export class CommunicationsController {
   // GET /api/v2/communications/broadcasts/preview?role=&classId=&level=&paymentStatus=
   preview = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const schoolId = (req.user as any).schoolId as string;
+      const schoolId = req.user!.schoolId;
       const { role, classId, level, paymentStatus } = req.query as {
         role?: string; classId?: string; level?: string; paymentStatus?: string;
       };
@@ -52,8 +52,8 @@ export class CommunicationsController {
   // POST /api/v2/communications/broadcast
   broadcast = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const schoolId = (req.user as any).schoolId as string;
-      const createdById = (req.user as any).userId as string | undefined;
+      const schoolId = req.user!.schoolId;
+      const createdById = req.user!.userId;
       const { target, channel, message } = req.body as {
         target: BroadcastTarget;
         channel: BroadcastChannel;
@@ -75,7 +75,7 @@ export class CommunicationsController {
 
       const resultat = await this.broadcastService.executer(schoolId, createdById, target, channel, message);
       this.audit.journaliser({
-        actorUserId: createdById!, actorRole: (req.user as any)?.role, schoolId,
+        actorUserId: createdById!, actorRole: req.user?.role, schoolId,
         actionName: 'diffuser_message', origin: 'UI_DIRECT', outcome: 'SUCCES',
         parametersSummary: { target, channel },
       });
@@ -86,11 +86,11 @@ export class CommunicationsController {
 
       res.json({ success: true, data: resultat });
     } catch (err) {
-      const user = (req as any).user;
+      const user = req.user;
       this.audit.journaliser({
         actorUserId: user?.userId, actorRole: user?.role, schoolId: user?.schoolId,
         actionName: 'diffuser_message', origin: 'UI_DIRECT', outcome: 'ERREUR',
-        refusalReason: err instanceof Error ? err.message : undefined, parametersSummary: (req as any).body,
+        refusalReason: err instanceof Error ? err.message : undefined, parametersSummary: req.body,
       });
       next(err);
     }
@@ -99,7 +99,7 @@ export class CommunicationsController {
   // GET /api/v2/communications/broadcasts?page=1&limit=20
   history = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const schoolId = (req.user as any).schoolId as string;
+      const schoolId = req.user!.schoolId;
       const page = Math.max(1, parseInt(String(req.query['page'] ?? 1)));
       const limit = Math.min(50, Math.max(1, parseInt(String(req.query['limit'] ?? 20))));
 

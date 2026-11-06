@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, StaffPermissionType } from '@prisma/client';
 import type { SuiviRBACRepository } from '@domain/ports/repositories/SuiviRBACRepository';
 
 const PERMISSIONS_CONSEILLER = ['MANAGE_ORIENTATION', 'MANAGE_PEDAGOGICAL_BRIEF'];
@@ -49,7 +49,7 @@ export class PrismaSuiviRBACRepository implements SuiviRBACRepository {
       where: {
         userId,
         schoolId,
-        permissions: { some: { permission: { in: [...PERMISSIONS_CONSEILLER] as any } } },
+        permissions: { some: { permission: { in: [...PERMISSIONS_CONSEILLER] as StaffPermissionType[] } } },
       },
       select: { id: true },
     });

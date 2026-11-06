@@ -43,7 +43,7 @@ export class ClasseController {
       this.audit.journaliser({
         actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
         // Bug indépendant : CreerClasseResultat expose `classeId`, jamais `id` — le cast `as
-        // any` masquait un ciblage d'audit toujours undefined pour cette action.
+        // cast non typé masquait un ciblage d'audit toujours undefined pour cette action.
         actionName: 'creer_classe', targetType: 'Class', targetId: resultat.classeId,
         origin: 'UI_DIRECT', outcome: 'SUCCES', parametersSummary: req.body,
       });

@@ -115,7 +115,7 @@ export class PrismaLv2ChoiceRepository implements Lv2ChoiceRepository {
   }
 
   async listerElevesDuNiveau(schoolId: string, level: string): Promise<{ studentUserId: string; studentName: string }[]> {
-    const eleves: any[] = await this.prisma.studentProfile.findMany({
+    const eleves = await this.prisma.studentProfile.findMany({
       where: {
         user: { schoolId },
         enrollmentsYearScoped: {
@@ -156,7 +156,7 @@ export class PrismaLv2ChoiceRepository implements Lv2ChoiceRepository {
     const classIds = classes.map((c) => c.id);
     const classByName = new Map(classes.map((c) => [c.id, c.name]));
 
-    const profiles: any[] = await this.prisma.studentProfile.findMany({
+    const profiles = await this.prisma.studentProfile.findMany({
       where: {
         enrollmentsYearScoped: {
           some: { classId: { in: classIds }, status: 'ACTIVE', academicYear: { isCurrent: true } },
@@ -175,13 +175,13 @@ export class PrismaLv2ChoiceRepository implements Lv2ChoiceRepository {
       },
     });
 
-    const submissions: any[] = await this.prisma.lv2ChoiceSubmission.findMany({
+    const submissions = await this.prisma.lv2ChoiceSubmission.findMany({
       where: { windowId: fenetreId },
       include: { chosenSubject: { select: { name: true } } },
     });
-    const subByStudent = new Map(submissions.map((s: any) => [s.studentProfileId, s]));
+    const subByStudent = new Map(submissions.map((s) => [s.studentProfileId, s]));
 
-    const students = profiles.map((p: any) => {
+    const students = profiles.map((p) => {
       const sub = subByStudent.get(p.id);
       const studentClassId = p.enrollmentsYearScoped?.[0]?.classId;
       return {

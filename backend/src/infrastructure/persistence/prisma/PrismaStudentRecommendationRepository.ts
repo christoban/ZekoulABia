@@ -17,20 +17,20 @@ export class PrismaStudentRecommendationRepository implements StudentRecommendat
     });
   }
 
-  async findById(id: string, schoolId: string): Promise<any | null> {
+  async findById(id: string, schoolId: string): Promise<StudentRecommendationData | null> {
     return this.prisma.studentRecommendation.findFirst({
       where: { id, schoolId },
     });
   }
 
-  async findByStudent(studentId: string, schoolId: string): Promise<any[]> {
+  async findByStudent(studentId: string, schoolId: string): Promise<StudentRecommendationData[]> {
     return this.prisma.studentRecommendation.findMany({
       where: { studentId, schoolId },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async findByStudentAndSubject(studentId: string, subjectId: string, schoolId: string): Promise<any | null> {
+  async findByStudentAndSubject(studentId: string, subjectId: string, schoolId: string): Promise<StudentRecommendationData | null> {
     return this.prisma.studentRecommendation.findFirst({
       where: { studentId, subjectId, schoolId },
     });

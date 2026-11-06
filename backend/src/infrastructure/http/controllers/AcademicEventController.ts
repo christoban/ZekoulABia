@@ -1,3 +1,4 @@
+import { messageErreur } from '@application/shared/messageErreur';
 import type { Request, Response, NextFunction } from 'express';
 import type { CreerEvenementAcademiqueUseCase } from '@application/academicEvent/CreerEvenementAcademiqueUseCase';
 import type { DeclencherEvenementUseCase } from '@application/academicEvent/DeclencherEvenementUseCase';
@@ -40,8 +41,8 @@ export class AcademicEventController {
         } : undefined,
       });
       res.status(201).json({ success: true, data: r });
-    } catch (error: any) {
-      res.status(400).json({ success: false, message: error?.message ?? 'Erreur' });
+    } catch (error) {
+      res.status(400).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 
@@ -79,8 +80,8 @@ export class AcademicEventController {
         closeDate: closeDate ? new Date(closeDate) : undefined,
       });
       res.json({ success: true, data: r });
-    } catch (error: any) {
-      res.status(400).json({ success: false, message: error?.message ?? 'Erreur' });
+    } catch (error) {
+      res.status(400).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 
@@ -99,8 +100,8 @@ export class AcademicEventController {
         nouvelleCloture: new Date(closeDate),
       });
       res.json({ success: true, data: r });
-    } catch (error: any) {
-      res.status(400).json({ success: false, message: error?.message ?? 'Erreur' });
+    } catch (error) {
+      res.status(400).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 
@@ -118,8 +119,8 @@ export class AcademicEventController {
         clotureParId: user.userId,
       });
       res.json({ success: true, data: r });
-    } catch (error: any) {
-      res.status(400).json({ success: false, message: error?.message ?? 'Erreur' });
+    } catch (error) {
+      res.status(400).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 }

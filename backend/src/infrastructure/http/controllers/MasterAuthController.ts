@@ -7,6 +7,7 @@ import { logMasterAuthAudit } from '../../services/audit/MasterAuthAuditService'
 import { LoginMasterUseCase } from '../../../application/masterAdmin/LoginMasterUseCase';
 import { VerifyMfaUseCase } from '../../../application/masterAdmin/VerifyMfaUseCase';
 import type { MasterUserAuthRepository } from '@domain/ports/repositories/MasterUserAuthRepository';
+import { messageErreur } from '@application/shared/messageErreur';
 
 const getMasterSecret = (): string =>
   process.env.MASTER_JWT_SECRET || process.env.JWT_SECRET || '';
@@ -28,9 +29,9 @@ export class MasterAuthController {
       await this.loginUseCase.executeLogin(email, password);
       void logMasterAuthAudit({ req, outcome: 'success', reason: 'login_otp_sent', email });
       res.json({ success: true, message: 'Code de vérification envoyé par email' });
-    } catch (error: any) {
+    } catch (error) {
       void logMasterAuthAudit({ req, outcome: 'failure', reason: 'login_failed', email: req.body?.email });
-      res.status(401).json({ success: false, message: error.message || 'Erreur de connexion' });
+      res.status(401).json({ success: false, message: messageErreur(error) || 'Erreur de connexion' });
     }
   };
 
@@ -75,9 +76,9 @@ export class MasterAuthController {
         });
         res.json({ success: true, mfaRequired: true, email: result.masterUserEmail });
       }
-    } catch (error: any) {
+    } catch (error) {
       void logMasterAuthAudit({ req, outcome: 'failure', reason: 'otp_verification_failed', email: req.body?.email });
-      res.status(401).json({ success: false, message: error.message || 'Code invalide' });
+      res.status(401).json({ success: false, message: messageErreur(error) || 'Code invalide' });
     }
   };
 
@@ -125,9 +126,9 @@ export class MasterAuthController {
       });
       res.clearCookie('temp_master_token', { path: '/' });
       res.json({ success: true, message: 'Authentification réussie' });
-    } catch (error: any) {
+    } catch (error) {
       void logMasterAuthAudit({ req, outcome: 'failure', reason: 'mfa_verification_failed', email: req.body?.email });
-      res.status(401).json({ success: false, message: error.message || 'Code MFA invalide' });
+      res.status(401).json({ success: false, message: messageErreur(error) || 'Code MFA invalide' });
     }
   };
 
@@ -141,16 +142,16 @@ export class MasterAuthController {
       await this.loginUseCase.executeResendOtp(email);
       void logMasterAuthAudit({ req, outcome: 'success', reason: 'otp_resend', email });
       res.json({ success: true, message: 'Nouveau code de vérification envoyé' });
-    } catch (error: any) {
-      res.status(400).json({ success: false, message: error.message || 'Erreur lors du renvoi' });
+    } catch (error) {
+      res.status(400).json({ success: false, message: messageErreur(error) || 'Erreur lors du renvoi' });
     }
   };
 
   me = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
       res.json({ success: true, data: req.masterUser });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
+    } catch (error) {
+      res.status(500).json({ success: false, message: messageErreur(error) });
     }
   };
 
@@ -158,8 +159,8 @@ export class MasterAuthController {
     try {
       const user = await this.verifyMfaUseCase.getMfaStatus(req.masterUser!.id);
       res.json({ success: true, data: user });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
+    } catch (error) {
+      res.status(500).json({ success: false, message: messageErreur(error) });
     }
   };
 
@@ -169,8 +170,8 @@ export class MasterAuthController {
       const result = await this.loginUseCase.executeSendPasswordChangeOtp(req.masterUser!.id);
       void logMasterAuthAudit({ req, outcome: 'success', reason: 'password_change_otp_sent', email: req.masterUser?.email });
       res.json({ success: true, message: `Code de vérification envoyé à ${result.email}` });
-    } catch (error: any) {
-      res.status(400).json({ success: false, message: error.message || 'Erreur' });
+    } catch (error) {
+      res.status(400).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 
@@ -185,9 +186,9 @@ export class MasterAuthController {
       const result = await this.loginUseCase.executeForgotPasswordOtp(email);
       void logMasterAuthAudit({ req, outcome: 'success', reason: 'forgot_password_otp_sent', email });
       res.json({ success: true, message: `Code de vérification envoyé à ${result.email}` });
-    } catch (error: any) {
+    } catch (error) {
       void logMasterAuthAudit({ req, outcome: 'failure', reason: 'forgot_password_request_failed', email: req.body?.email });
-      res.status(400).json({ success: false, message: error.message || 'Erreur' });
+      res.status(400).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 
@@ -202,9 +203,9 @@ export class MasterAuthController {
       await this.loginUseCase.executeResetForgottenPassword(email, newPassword, String(otp).trim());
       void logMasterAuthAudit({ req, outcome: 'success', reason: 'password_reset_via_forgot_password', email });
       res.json({ success: true, message: 'Mot de passe réinitialisé avec succès' });
-    } catch (error: any) {
+    } catch (error) {
       void logMasterAuthAudit({ req, outcome: 'failure', reason: 'forgot_password_confirm_failed', email: req.body?.email });
-      res.status(400).json({ success: false, message: error.message || 'Erreur' });
+      res.status(400).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 
@@ -219,9 +220,9 @@ export class MasterAuthController {
       await this.loginUseCase.executeChangePassword(req.masterUser!.id, newPassword, String(otp).trim());
       void logMasterAuthAudit({ req, outcome: 'success', reason: 'password_changed_from_security_dashboard', email: req.masterUser?.email });
       res.json({ success: true, message: 'Mot de passe modifié avec succès' });
-    } catch (error: any) {
+    } catch (error) {
       void logMasterAuthAudit({ req, outcome: 'failure', reason: 'password_change_failed', email: req.masterUser?.email });
-      res.status(400).json({ success: false, message: error.message || 'Erreur' });
+      res.status(400).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 
@@ -240,8 +241,8 @@ export class MasterAuthController {
       const qrDataUri: string = await QRCode.toDataURL(otpauthUrl);
 
       res.json({ success: true, data: { qrDataUri, manualKey: secret, otpauthUrl } });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message || 'Erreur' });
+    } catch (error) {
+      res.status(500).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 
@@ -282,8 +283,8 @@ export class MasterAuthController {
 
       void logMasterAuthAudit({ req, outcome: 'success', reason: 'mfa_enabled', email: masterUser.email });
       res.json({ success: true, data: { recoveryCodes: formatted } });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message || 'Erreur' });
+    } catch (error) {
+      res.status(500).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 
@@ -297,8 +298,8 @@ export class MasterAuthController {
 
       void logMasterAuthAudit({ req, outcome: 'success', reason: 'mfa_disabled', email: masterUser.email });
       res.json({ success: true, message: 'MFA désactivé.' });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message || 'Erreur' });
+    } catch (error) {
+      res.status(500).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 
@@ -319,8 +320,8 @@ export class MasterAuthController {
 
       void logMasterAuthAudit({ req, outcome: 'success', reason: 'recovery_codes_regenerated', email: masterUser.email });
       res.json({ success: true, data: { recoveryCodes: formatted } });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message || 'Erreur' });
+    } catch (error) {
+      res.status(500).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 
@@ -330,8 +331,8 @@ export class MasterAuthController {
       res.clearCookie('master_jwt', { path: '/' });
       res.clearCookie('temp_master_token', { path: '/' });
       res.json({ success: true, message: 'Déconnexion réussie' });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
+    } catch (error) {
+      res.status(500).json({ success: false, message: messageErreur(error) });
     }
   };
 }

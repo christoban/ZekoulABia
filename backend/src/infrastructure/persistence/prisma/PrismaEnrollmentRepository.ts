@@ -194,7 +194,7 @@ export class PrismaEnrollmentRepository implements EnrollmentRepository {
       select: { schoolId: true, academicYearId: true },
     });
     const profile = await this.prisma.studentProfile.create({
-      data: { userId: params.userId, ...params.extraProfileData },
+      data: { userId: params.userId, schoolId: cls.schoolId, ...params.extraProfileData },
     });
     await this.prisma.enrollment.create({
       data: {

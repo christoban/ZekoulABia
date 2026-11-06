@@ -57,7 +57,7 @@ export class PrismaGroupeScolaireQueryRepository implements GroupeScolaireQueryR
         ? {
             id: profil.id,
             niveau: profil.enrollmentsYearScoped?.[0]?.class?.level ?? null,
-            parentContacts: profil.parents.map((p: any) => ({
+            parentContacts: profil.parents.map((p) => ({
               email: p.parentProfile.user.email,
               phone: p.parentProfile.user.phone,
             })),

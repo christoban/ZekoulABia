@@ -97,6 +97,7 @@ export class Paiement {
   get invoiceId(): string | undefined { return this.props.invoiceId; }
   get studentId(): string { return this.props.studentId; }
   get amount(): number { return this.props.amount; }
+  get phoneNumber(): string | undefined { return this.props.phoneNumber; }
   get status(): PaymentStatus { return this.props.status; }
   get feeType(): FeeType { return this.props.feeType; }
   get campayRef(): string | undefined { return this.props.campayRef; }

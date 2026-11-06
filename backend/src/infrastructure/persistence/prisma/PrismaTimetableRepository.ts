@@ -1,5 +1,5 @@
 // ponytail: 553l → ~500l via helpers, single adapter <800l ceiling, split when 2nd impl or >800l
-import type { PrismaClient } from '@prisma/client';
+import type { Prisma, PrismaClient, Timetable, TimetableSlot } from '@prisma/client';
 import { EmploiDuTemps } from '@domain/entities/EmploiDuTemps';
 import { CreneauHoraire } from '@domain/entities/CreneauHoraire';
 import type {
@@ -19,6 +19,10 @@ import type { TimetableStatus, SlotKind } from '@domain/types/enums';
 
 type TxClient = Parameters<Parameters<PrismaClient['$transaction']>[0]>[0];
 
+type SlotConflit = Prisma.TimetableSlotGetPayload<{
+  include: { timetable: { include: { class: { select: { name: true } } } } };
+}>;
+
 export class PrismaTimetableRepository implements TimetableRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
@@ -26,17 +30,17 @@ export class PrismaTimetableRepository implements TimetableRepository {
   private readonly conflitInclude = { timetable: { include: { class: { select: { name: true } } } } } as const;
   private readonly occupationSelect = { teacherId: true, roomId: true, dayOfWeek: true, startTime: true, endTime: true } as const;
   private readonly slotContexteInclude = { timetable: { select: { schoolId: true, classId: true, academicYearId: true } }, subject: { select: { name: true, restrictedToGroupId: true } } } as const;
-  private readonly eleveSelect: any = { id: true, firstName: true, lastName: true, studentProfile: { select: { id: true, lv2SubjectId: true, alevelSubjects: { select: { subjectId: true } } } } };
-  private readonly eleveOrder: any = [{ lastName: 'asc' }, { firstName: 'asc' }];
-  private readonly affectationSelect: any = { teacherId: true, subjectId: true, subject: { select: { subjectType: true, hoursPerWeek: true, name: true, blocDureeCases: true } } };
+  private readonly eleveSelect = { id: true, firstName: true, lastName: true, studentProfile: { select: { id: true, lv2SubjectId: true, alevelSubjects: { select: { subjectId: true } } } } } satisfies Prisma.UserSelect;
+  private readonly eleveOrder: Prisma.UserOrderByWithRelationInput[] = [{ lastName: 'asc' }, { firstName: 'asc' }];
+  private readonly affectationSelect = { teacherId: true, subjectId: true, subject: { select: { subjectType: true, hoursPerWeek: true, name: true, blocDureeCases: true } } } satisfies Prisma.TeachingAssignmentSelect;
 
-  private toEmploiDuTemps(data: any): EmploiDuTemps {
+  private toEmploiDuTemps(data: Timetable): EmploiDuTemps {
     return EmploiDuTemps.reconstituer({ id: data.id, schoolId: data.schoolId, classId: data.classId, academicYearId: data.academicYearId, status: data.status as TimetableStatus, generatedByAI: data.generatedByAI, createdAt: data.createdAt });
   }
-  private toConflitInfo(slots: any): CreneauConflitInfo[] {
-    return slots.map((s: any) => ({ id: s.id, startTime: s.startTime, endTime: s.endTime, classeNom: s.timetable.class.name }));
+  private toConflitInfo(slots: SlotConflit[]): CreneauConflitInfo[] {
+    return slots.map((s) => ({ id: s.id, startTime: s.startTime, endTime: s.endTime, classeNom: s.timetable.class.name }));
   }
-  private creneauToDomain(data: any): CreneauHoraire {
+  private creneauToDomain(data: TimetableSlot): CreneauHoraire {
     return CreneauHoraire.reconstituer({ id: data.id, timetableId: data.timetableId, subjectId: data.subjectId ?? undefined, teacherId: data.teacherId ?? undefined, dayOfWeek: data.dayOfWeek, startTime: data.startTime, endTime: data.endTime, roomId: data.roomId ?? undefined, kind: data.kind as SlotKind, subGroupId: data.subGroupId ?? undefined, groupId: data.groupId ?? undefined, isLV2Slot: data.isLV2Slot ?? false, isElectiveSlot: data.isElectiveSlot ?? false });
   }
   private normaliserPeriodesCoursParJour(valeur: unknown): Record<string, number> {
@@ -53,7 +57,7 @@ export class PrismaTimetableRepository implements TimetableRepository {
   private conflitWhereSalle(roomId: string, dayOfWeek: number, schoolId: string, excludeId?: string) {
     return { roomId, dayOfWeek, kind: 'CLASS' as const, timetable: this.timetableWhere(schoolId), ...(excludeId && { id: { not: excludeId } }) };
   }
-  private async queryConflits(client: { timetableSlot: { findMany: (args: any) => Promise<any[]> } }, where: any): Promise<CreneauConflitInfo[]> {
+  private async queryConflits(client: Pick<PrismaClient, 'timetableSlot'>, where: Prisma.TimetableSlotWhereInput): Promise<CreneauConflitInfo[]> {
     const slots = await client.timetableSlot.findMany({ where, include: this.conflitInclude });
     return this.toConflitInfo(slots);
   }
@@ -66,7 +70,7 @@ export class PrismaTimetableRepository implements TimetableRepository {
   private slotLotData(d: ReturnType<CreneauHoraire['toObject']>, managedBySolver: boolean) {
     return { id: d.id, timetableId: d.timetableId, subjectId: d.subjectId ?? null, teacherId: d.teacherId ?? null, dayOfWeek: d.dayOfWeek, startTime: d.startTime, endTime: d.endTime, roomId: d.roomId ?? null, groupId: d.groupId ?? null, isLV2Slot: d.isLV2Slot ?? false, kind: d.kind, managedBySolver };
   }
-  private async compterDansEcole(delegate: { count: (args: any) => Promise<number> }, ids: string[], schoolId: string): Promise<number> {
+  private async compterDansEcole(delegate: { count: (args: { where: { id: { in: string[] }; schoolId: string } }) => Promise<number> }, ids: string[], schoolId: string): Promise<number> {
     return delegate.count({ where: { id: { in: ids }, schoolId } });
   }
 
@@ -258,11 +262,11 @@ export class PrismaTimetableRepository implements TimetableRepository {
   }
 
   private async conflitsEnseignant(tx: TxClient, teacherId: string, dayOfWeek: number, schoolId: string): Promise<CreneauConflitInfo[]> {
-    return this.queryConflits(tx as any, this.conflitWhereEnseignant(teacherId, dayOfWeek, schoolId));
+    return this.queryConflits(tx, this.conflitWhereEnseignant(teacherId, dayOfWeek, schoolId));
   }
 
   private async conflitsSalle(tx: TxClient, roomId: string, dayOfWeek: number, schoolId: string): Promise<CreneauConflitInfo[]> {
-    return this.queryConflits(tx as any, this.conflitWhereSalle(roomId, dayOfWeek, schoolId));
+    return this.queryConflits(tx, this.conflitWhereSalle(roomId, dayOfWeek, schoolId));
   }
 
   private async nomEnseignant(tx: TxClient, teacherId: string): Promise<string | undefined> {
@@ -353,7 +357,7 @@ export class PrismaTimetableRepository implements TimetableRepository {
   }
 
   async findElevesClasseAvecProfils(schoolId: string, classId: string): Promise<EleveClasseAvecProfil[]> {
-    const eleves = await (this.prisma.user.findMany as any)({ where: { schoolId, role: 'STUDENT', isActive: true, studentProfile: { enrollmentsYearScoped: { some: { classId, status: 'ACTIVE', academicYear: { isCurrent: true } } } } }, select: this.eleveSelect, orderBy: this.eleveOrder });
+    const eleves = await this.prisma.user.findMany({ where: { schoolId, role: 'STUDENT', isActive: true, studentProfile: { enrollmentsYearScoped: { some: { classId, status: 'ACTIVE', academicYear: { isCurrent: true } } } } }, select: this.eleveSelect, orderBy: this.eleveOrder });
     return eleves.map(e => ({ id: e.id, firstName: e.firstName, lastName: e.lastName, studentProfileId: e.studentProfile?.id ?? null, lv2SubjectId: e.studentProfile?.lv2SubjectId ?? null, alevelSubjectIds: e.studentProfile?.alevelSubjects.map(a => a.subjectId) ?? [] }));
   }
 
@@ -362,7 +366,7 @@ export class PrismaTimetableRepository implements TimetableRepository {
     const subjectFilter = includeGrouped
       ? { restrictedToGroupId: null }
       : { restrictedToGroupId: null, studentGroups: { none: {} } };
-    const affectations = await (this.prisma.teachingAssignment.findMany as any)({
+    const affectations = await this.prisma.teachingAssignment.findMany({
       where: { classId, schoolId, subject: subjectFilter },
       select: {
         ...this.affectationSelect,
@@ -428,7 +432,7 @@ export class PrismaTimetableRepository implements TimetableRepository {
       },
       orderBy: { startTime: 'asc' },
     });
-    return slots.map((s: any) => ({
+    return slots.map((s) => ({
       id: s.id,
       startTime: s.startTime,
       endTime: s.endTime,

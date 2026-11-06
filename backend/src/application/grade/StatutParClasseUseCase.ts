@@ -1,5 +1,6 @@
 import type { NoteRepository, NoteFilters } from '@domain/ports/repositories/NoteRepository';
 import type { GradeValidationStatus } from '@domain/types/enums';
+import type { NoteProps } from '@domain/entities/Note';
 
 export interface StatutParClasseRequete {
   schoolId: string;
@@ -19,7 +20,7 @@ export interface StatutClasseResultat {
   stats: Record<GradeValidationStatus, number>;
   bySubject: Record<string, StatutSujet>;
   canGenerateReportCard: boolean;
-  grades: any[];
+  grades: NoteProps[];
 }
 
 export class StatutParClasseUseCase {

@@ -7,6 +7,10 @@ import {
   notifyOverdueInvoiceSms,
   notifyAbsenceThresholdSms,
   notifyOverdueBookSms,
+  notifyAdmissionProvisoireSms,
+  notifyConcoursNonAdmisSms,
+  notifyConcoursListeAttenteSms,
+  notifyConcoursPromotionSms,
   getParentContacts,
 } from './SmsNotificationService';
 
@@ -90,5 +94,49 @@ export class SmsNotificationAdapter implements SmsNotificationPort {
       } catch {}
     }
     await notifyOverdueBookSms({ ...opts, phones: opts.phones ?? [] });
+  }
+
+  async notifyAdmissionProvisoireSms(opts: {
+    schoolId: string;
+    candidateName: string;
+    parentPhone: string | null;
+    schoolName?: string;
+    level?: string;
+    examName?: string;
+    nextStep?: string;
+  }): Promise<void> {
+    await notifyAdmissionProvisoireSms(opts);
+  }
+
+  async notifyConcoursNonAdmisSms(opts: {
+    schoolId: string;
+    candidateName: string;
+    parentPhone: string | null;
+    schoolName?: string;
+    level?: string;
+  }): Promise<void> {
+    await notifyConcoursNonAdmisSms(opts);
+  }
+
+  async notifyConcoursListeAttenteSms(opts: {
+    schoolId: string;
+    candidateName: string;
+    parentPhone: string | null;
+    schoolName?: string;
+    level?: string;
+    rank?: number;
+  }): Promise<void> {
+    await notifyConcoursListeAttenteSms(opts);
+  }
+
+  async notifyConcoursPromotionSms(opts: {
+    schoolId: string;
+    candidateName: string;
+    parentPhone: string | null;
+    schoolName?: string;
+    level?: string;
+    examName?: string;
+  }): Promise<void> {
+    await notifyConcoursPromotionSms(opts);
   }
 }

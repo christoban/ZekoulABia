@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, FeePlan } from '@prisma/client';
 import { PlanFrais } from '@domain/entities/PlanFrais';
 import type { PlanFraisRepository } from '@domain/ports/repositories/PlanFraisRepository';
 import type { FeeType, FeePlanStatus } from '@domain/types/enums';
@@ -103,7 +103,7 @@ export class PrismaPlanFraisRepository implements PlanFraisRepository {
     await this.prisma.feePlan.delete({ where: { id } });
   }
 
-  private toDomain(data: any): PlanFrais {
+  private toDomain(data: FeePlan): PlanFrais {
     return PlanFrais.reconstituer({
       id: data.id,
       schoolId: data.schoolId,

@@ -75,7 +75,7 @@ export const checkAcademicEvents = inngest.createFunction(
         notificationPort,
         smsPort: new SmsNotificationAdapter(),
       });
-      const schoolId = (event as any)?.data?.schoolId as string | undefined;
+      const schoolId = (event as { data?: { schoolId?: string } }).data?.schoolId;
       return useCase.execute(schoolId ? { schoolId } : undefined);
     });
     return { checked: true };
@@ -99,7 +99,7 @@ export const checkOrientationCheckpoints = inngest.createFunction(
         userRepository: new PrismaUserRepository(prisma),
         personnelNotificationPort,
       });
-      const schoolId = (event as any)?.data?.schoolId as string | undefined;
+      const schoolId = (event as { data?: { schoolId?: string } }).data?.schoolId;
       return useCase.execute(schoolId ? { schoolId } : undefined);
     });
     return { checked: true };
@@ -147,19 +147,19 @@ export const handleTimetableSeancesAppliquees = inngest.createFunction(
     // Notification admin (isolée par schoolId).
     await step.run("notify-admins", async () => {
       const userRepository = new PrismaUserRepository(prisma);
-      const admins = await userRepository.findByRole(schoolId, "ADMIN" as any);
-      const actifs = (admins as any[]).filter((u: any) => u.isActive !== false);
+      const admins = await userRepository.findByRole(schoolId, "ADMIN");
+      const actifs = admins.filter((u) => u.isActive !== false);
       const cibles = actifs.length > 0 ? actifs : admins;
       const notificationService = new SocketNotificationService();
-      for (const admin of cibles as any[]) {
+      for (const admin of cibles) {
         await notificationService
           .envoyer({
             schoolId,
-            userId: (admin as any).id,
-            type: "SYSTEM" as any,
+            userId: admin.id,
+            type: "SYSTEM",
             titre: "Emploi du temps appliqué",
              corps: `${toutesSeances.length} séance(s) appliquée(s).`,
-            urgency: "NORMAL" as any,
+            urgency: "NORMAL",
           })
           .catch(() => {});
       }
@@ -296,7 +296,7 @@ export const checkYearEndClosingProximity = inngest.createFunction(
       const now = new Date();
 
       // Récupérer le calendrier officiel national actif
-      const officialCal = await (prisma as any).officialAcademicCalendar.findFirst({
+      const officialCal = await prisma.officialAcademicCalendar.findFirst({
         where: { active: true },
         orderBy: { createdAt: 'desc' },
       });

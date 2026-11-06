@@ -8,6 +8,7 @@
  */
 import type { PaiementMinesecRepository } from '@domain/ports/repositories/PaiementMinesecRepository';
 import { GenererPaiementsMinesecUseCase } from './GenererPaiementsMinesecUseCase';
+import { messageErreur } from '@application/shared/messageErreur';
 import type { GenererPaiementsEcoleCommande, GenererPaiementsEcoleResultat } from './types';
 
 export class GenererPaiementsMinesecPourEcoleUseCase {
@@ -38,7 +39,7 @@ export class GenererPaiementsMinesecPourEcoleUseCase {
         if (r.enrollmentCreated) resultat.enrollmentsCrees++;
         resultat.paiementsGeneres += r.generated;
         resultat.paiementsIgnores += r.skipped;
-      } catch (err: any) {
+      } catch (err) {
         resultat.erreurs.push(`Élève ${eleve.id}: ${err.message}`);
       }
     }

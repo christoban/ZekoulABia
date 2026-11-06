@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, Class } from '@prisma/client';
 import { Classe } from '@domain/entities/Classe';
 import type { ClasseRepository } from '@domain/ports/repositories/ClasseRepository';
 
@@ -167,7 +167,7 @@ export class PrismaClasseRepository implements ClasseRepository {
     return this.prisma.class.findFirst({ where: { id, schoolId, deletedAt: { not: null } }, select: { id: true } });
   }
 
-  private toDomain(data: any): Classe {
+  private toDomain(data: Class): Classe {
     return Classe.reconstituer({
       id: data.id,
       schoolId: data.schoolId,

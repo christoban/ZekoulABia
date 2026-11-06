@@ -1,4 +1,4 @@
-import type { PrismaClient, Prisma } from '@prisma/client';
+import type { PrismaClient, Prisma, OnboardingStatus, UserRole } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { generateTemporaryPassword } from '@domain/services/PasswordGenerator';
 import { formatNumeroInterne } from '@domain/services/NumeroInterneGenerator';
@@ -32,11 +32,11 @@ export class PrismaEleveOnboardingRepository implements EleveOnboardingRepositor
         tokenExpiryDays: data.tokenExpiryDays ?? 14,
         reminderDelayDays: data.reminderDelayDays ?? [3, 7],
         escalationDelayDays: data.escalationDelayDays ?? 10,
-        responsableRole: (data.responsableRole ?? 'ADMIN') as any,
+        responsableRole: (data.responsableRole ?? 'ADMIN') as UserRole,
         directAdmissionWithoutExam: data.directAdmissionWithoutExam ?? false,
         capacityBufferPercent: data.capacityBufferPercent ?? 0,
       },
-      update: data as any,
+      update: data as unknown as Prisma.SchoolOnboardingSettingsUpdateInput,
     });
   }
 
@@ -54,7 +54,7 @@ export class PrismaEleveOnboardingRepository implements EleveOnboardingRepositor
 
   async listOnboardings(schoolId: string, status?: string): Promise<OnboardingRecord[]> {
     return (await this.prisma.studentOnboarding.findMany({
-      where: { schoolId, ...(status ? { status: status as any } : {}) },
+      where: { schoolId, ...(status ? { status: status as OnboardingStatus } : {}) },
       orderBy: { createdAt: 'desc' },
       take: 100,
     })) as unknown as OnboardingRecord[];
@@ -304,6 +304,7 @@ export class PrismaEleveOnboardingRepository implements EleveOnboardingRepositor
       const studentProfile = await tx.studentProfile.create({
         data: {
           userId: studentUser.id,
+          schoolId: input.schoolId,
           studentStatus: 'ACTIVE',
           dateOfBirth: input.dateOfBirth,
           gender: input.gender,

@@ -478,12 +478,12 @@ describe("GradeController.importerDepuisExcel — troisième voie de saisie, sta
     const classeImport = await prismaTest.class.create({ data: { schoolId, name: '4ème Import', academicYearId } });
     const subjectImport = await prismaTest.subject.create({ data: { schoolId, name: 'SVT (import)', coefficient: 3 } });
     const student = await creerUtilisateurTest(prismaTest, schoolId, { role: 'STUDENT' });
-    await creerEleveAvecClasse(enrollmentRepo, { userId: student.id, classId: classeImport.id, enrolledById: student.id, extraProfileData: { matricule: 'IMP-0001' } });
+    await creerEleveAvecClasse(enrollmentRepo, { userId: student.id, classId: classeImport.id, enrolledById: student.id, extraProfileData: { matricule: 'IMP0001' } });
 
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet([
       ['matricule', 'note', 'observation'],
-      ['IMP-0001', 15, 'RAS'],
+      ['IMP0001', 15, 'RAS'],
     ]);
     XLSX.utils.book_append_sheet(wb, ws, 'Notes');
     const buffer: Buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });

@@ -8,6 +8,14 @@ interface ScannedCandidate {
   confidence: 'high' | 'medium' | 'low';
 }
 
+
+interface ScannedCandidateBrut {
+  firstName?: string;
+  lastName?: string;
+  examScore?: number;
+  confidence?: 'high' | 'medium' | 'low';
+}
+
 const CONSIGNES = `Pour chaque candidat visible, extrais :
 - firstName (prénom)
 - lastName (nom de famille)
@@ -61,15 +69,15 @@ ${CONSIGNES}`,
       return { candidats: [], warnings };
     }
 
-    let parsed: any;
+    let parsed: { candidats?: ScannedCandidateBrut[] };
     try {
-      parsed = JSON.parse(jsonMatch[0]);
+      parsed = JSON.parse(jsonMatch[0]) as { candidats?: ScannedCandidateBrut[] };
     } catch {
       warnings.push('Impossible de parser la réponse de l\'IA.');
       return { candidats: [], warnings };
     }
 
-    const candidats: ScannedCandidate[] = (parsed.candidats ?? []).map((c: any) => ({
+    const candidats: ScannedCandidate[] = (parsed.candidats ?? []).map((c) => ({
       firstName: String(c.firstName ?? '').trim(),
       lastName: String(c.lastName ?? '').trim(),
       examScore: typeof c.examScore === 'number' ? c.examScore : undefined,

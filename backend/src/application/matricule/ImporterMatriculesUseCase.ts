@@ -2,6 +2,8 @@ import type { MatriculeImportRepository, StudentProfileMatriculeData } from '@do
 import type { ImportMatriculeRow, ImportMatriculeResult, FuzzyMatchCandidate } from './types';
 import { normalizeForMatch, compareNames } from './stringSimilarity';
 import { parseDateFR as parseDateNaissance } from '../../shared/date/parseDateFR';
+import { messageErreur } from '@application/shared/messageErreur';
+import { validateNationalId } from './normalizeNationalId';
 
 /**
  * Seuil de similarité (0-1) pour classer une paire nom/prénom comme "correspondance
@@ -19,6 +21,7 @@ export class ImporterMatriculesUseCase {
     rows: ImportMatriculeRow[],
     uploadedBy: string,
     fileName: string,
+    parseErrors: string[] = [],
   ): Promise<ImportMatriculeResult> {
     // Créer le job de suivi
     const job = await this.matriculeRepository.creerJob({
@@ -53,7 +56,7 @@ export class ImporterMatriculesUseCase {
         } else if (result.action === 'FUZZY_PENDING') {
           fuzzyMatches.push(result.fuzzyMatch);
         }
-      } catch (err: any) {
+      } catch (err) {
         errors++;
         unmatchedDetails.push({
           ligne: row.ligne,
@@ -75,7 +78,7 @@ export class ImporterMatriculesUseCase {
       flaggedForCorrection: 0,
       unmatchedRows: unmatched,
       errorRows: errors,
-      resultDetails: { unmatched: unmatchedDetails, fuzzyMatches },
+      resultDetails: { unmatched: unmatchedDetails, fuzzyMatches, parseErrors },
       processedAt: new Date(),
     });
 
@@ -100,6 +103,7 @@ export class ImporterMatriculesUseCase {
     | { action: 'UPDATED' | 'CONFLICT' | 'ALREADY_MATCHED'; studentProfileId: string; userId: string; nom: string; prenom: string; matriculeActuel: string | null; matriculeNouveau: string }
     | { action: 'FUZZY_PENDING'; fuzzyMatch: FuzzyMatchCandidate }
   > {
+    const matricule = validateNationalId(row.matricule);
     const targetNom = normalizeForMatch(row.nom);
     const targetPrenom = normalizeForMatch(row.prenom);
 
@@ -116,26 +120,26 @@ export class ImporterMatriculesUseCase {
     });
 
     if (exact) {
-      if (exact.matricule === row.matricule) {
+      if (exact.matricule === matricule) {
         return {
           action: 'ALREADY_MATCHED', studentProfileId: exact.id, userId: exact.userId,
-          nom: row.nom, prenom: row.prenom, matriculeActuel: exact.matricule, matriculeNouveau: row.matricule,
+          nom: row.nom, prenom: row.prenom, matriculeActuel: exact.matricule, matriculeNouveau: matricule,
         };
       }
-      if (exact.matricule && exact.matricule !== row.matricule) {
+      if (exact.matricule && exact.matricule !== matricule) {
         return {
           action: 'CONFLICT', studentProfileId: exact.id, userId: exact.userId,
-          nom: row.nom, prenom: row.prenom, matriculeActuel: exact.matricule, matriculeNouveau: row.matricule,
+          nom: row.nom, prenom: row.prenom, matriculeActuel: exact.matricule, matriculeNouveau: matricule,
         };
       }
       await this.matriculeRepository.mettreAJourMatricule(exact.id, {
-        matricule: row.matricule,
+        matricule,
         matriculeSource: 'EXCEL_IMPORT',
         matriculeMatchType: 'EXACT',
       });
       return {
         action: 'UPDATED', studentProfileId: exact.id, userId: exact.userId,
-        nom: row.nom, prenom: row.prenom, matriculeActuel: null, matriculeNouveau: row.matricule,
+        nom: row.nom, prenom: row.prenom, matriculeActuel: null, matriculeNouveau: matricule,
       };
     }
 
@@ -168,7 +172,7 @@ export class ImporterMatriculesUseCase {
             nomBase: best.profile.user?.lastName ?? '',
             prenomBase: best.profile.user?.firstName ?? '',
             dateNaissance: row.dateNaissance ?? null,
-            matriculeNouveau: row.matricule,
+            matriculeNouveau: matricule,
             similarityPercent: Math.round(best.score * 100),
             status: 'PENDING',
           },

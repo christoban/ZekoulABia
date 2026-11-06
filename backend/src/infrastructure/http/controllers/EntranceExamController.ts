@@ -422,7 +422,7 @@ export class EntranceExamController {
     try {
       const schoolId = req.user!.schoolId;
       const sessionId = String(req.params['id']);
-      const { candidats } = req.body as { candidats: any[] };
+      const { candidats } = req.body as { candidats: Parameters<AjouterCandidatsConcoursUseCase['execute']>[0]['candidats'] };
       if (!candidats || !Array.isArray(candidats)) {
         res.status(400).json({ success: false, message: 'candidats (array) requis' });
         return;

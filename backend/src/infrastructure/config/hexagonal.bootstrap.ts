@@ -19,11 +19,11 @@ import { registerInfra } from './bootstrap/infra';
 export function bootstrapHexagonal(app: Application): void {
   const container = creerContainer();
   // Ordre conservé : grade -> user -> finance -> academic -> core -> hr -> infra (infra dernier = errorHandler + dev)
-  registerGrade(app, prisma, container as any);
-  registerUser(app, prisma, container as any);
-  registerFinance(app, prisma, container as any);
-  registerAcademic(app, prisma, container as any);
-  registerCore(app, prisma, container as any);
-  registerHr(app, prisma, container as any);
-  registerInfra(app, prisma, container as any);
+  registerGrade(app, prisma, container);
+  registerUser(app, prisma, container);
+  registerFinance(app, prisma, container);
+  registerAcademic(app, prisma, container);
+  registerCore(app, prisma, container);
+  registerHr(app, prisma, container);
+  registerInfra(app, prisma, container);
 }

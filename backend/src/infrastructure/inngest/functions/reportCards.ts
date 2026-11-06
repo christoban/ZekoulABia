@@ -17,6 +17,8 @@ import { PrismaTeachingAssignmentRepository } from "../../persistence/prisma/Pri
 import { PrismaStudentProfileRepository } from "../../persistence/prisma/PrismaStudentProfileRepository";
 import { DetecterChuteMoyenneUseCase, trouverSequencePrecedente } from "@application/grade/DetecterChuteMoyenneUseCase";
 import { GenererBulletinsInngestUseCase } from "@application/reportCard/GenererBulletinsInngestUseCase";
+import { ErreurNonRetriable } from "@application/shared/ErreurNonRetriable";
+import { NonRetriableError } from "inngest";
 
 import { NodemailerEmailService } from "@infrastructure/services/email/NodemailerEmailService";
 
@@ -65,9 +67,14 @@ export const generateReportCards = inngest.createFunction(
     );
 
     const { academicYear, academicPeriod, generatedStudents } = await step.run("generate-report-cards", async () => {
-      const result = await genererUseCase.generer({ yearId, periodId, classId, studentId });
-      if (!result.generatedStudents.length) return { academicYear: result.academicYear, academicPeriod: result.academicPeriod, generatedStudents: [] as string[] };
-      return { academicYear: result.academicYear, academicPeriod: result.academicPeriod, generatedStudents: result.generatedStudents };
+      try {
+        const result = await genererUseCase.generer({ yearId, periodId, classId, studentId });
+        if (!result.generatedStudents.length) return { academicYear: result.academicYear, academicPeriod: result.academicPeriod, generatedStudents: [] as string[] };
+        return { academicYear: result.academicYear, academicPeriod: result.academicPeriod, generatedStudents: result.generatedStudents };
+      } catch (err) {
+        if (err instanceof ErreurNonRetriable) throw new NonRetriableError(err.message);
+        throw err;
+      }
     });
 
     if (!generatedStudents.length) {

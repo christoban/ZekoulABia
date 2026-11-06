@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, Prisma } from '@prisma/client';
 import type {
   EmailLogQueryRepository,
   EmailLogListInput,
@@ -17,7 +17,7 @@ export class PrismaEmailLogQueryRepository implements EmailLogQueryRepository {
     return { logs: logs as EmailLogRow[], total };
   }
 
-  private buildWhere(input: EmailLogListInput): any {
+  private buildWhere(input: EmailLogListInput): Prisma.EmailLogWhereInput {
     return {
       ...(input.schoolId ? { schoolId: input.schoolId } : {}),
       ...(input.status ? { status: input.status } : {}),

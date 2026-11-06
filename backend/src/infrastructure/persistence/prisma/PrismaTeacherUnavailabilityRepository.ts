@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, TeacherUnavailability as PrismaTeacherUnavailability } from '@prisma/client';
 import { TeacherUnavailability } from '@domain/entities/TeacherUnavailability';
 import type { TeacherUnavailabilityRepository } from '@domain/ports/repositories/TeacherUnavailabilityRepository';
 
@@ -62,7 +62,7 @@ export class PrismaTeacherUnavailabilityRepository implements TeacherUnavailabil
     await this.prisma.teacherUnavailability.deleteMany({ where: { id, schoolId } });
   }
 
-  private toProps(data: any): {
+  private toProps(data: PrismaTeacherUnavailability): {
     id: string; schoolId: string; teacherId: string; dayOfWeek: number;
     startTime: string; endTime: string; reason: string | null; active: boolean; createdAt: Date;
   } {

@@ -304,6 +304,7 @@ async function main() {
     update: {},
     create: {
       userId: studentUser.id,
+      schoolId: school.id,
       matricule: 'DEMO-2025-001',
     },
   });

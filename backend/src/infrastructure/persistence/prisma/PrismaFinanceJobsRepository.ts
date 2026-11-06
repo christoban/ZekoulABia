@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, StaffPermissionType } from '@prisma/client';
 import type {
   FinanceJobsRepository,
   OverdueInvoiceDto,
@@ -68,7 +68,7 @@ export class PrismaFinanceJobsRepository implements FinanceJobsRepository {
 
   async findStaffByPermissionWithUser(schoolId: string, permission: string): Promise<StaffWithUserDto[]> {
     return this.prisma.staffProfile.findMany({
-      where: { schoolId, permissions: { some: { permission: permission as any } } },
+      where: { schoolId, permissions: { some: { permission: permission as StaffPermissionType } } },
       include: { user: { select: { id: true, email: true, firstName: true } } },
     }) as unknown as StaffWithUserDto[];
   }

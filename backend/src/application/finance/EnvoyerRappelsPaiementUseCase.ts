@@ -1,6 +1,7 @@
 import type { FinanceJobsRepository } from '@domain/ports/repositories/FinanceJobsRepository';
 import type { EmailService } from '@domain/ports/services/EmailService';
 import type { NotificationService } from '@domain/ports/services/NotificationService';
+import { messageErreur } from '@application/shared/messageErreur';
 import type { SmsNotificationPort } from '@domain/ports/services/SmsNotificationPort';
 
 export class EnvoyerRappelsPaiementUseCase {
@@ -72,12 +73,12 @@ export class EnvoyerRappelsPaiementUseCase {
         if (this.notificationService.notifierParents) {
           await this.notificationService.notifierParents({
             schoolId: invoice.schoolId, studentId: invoice.studentId, type: "PAYMENT_REMINDER", titre, corps,
-          }).catch((err: any) => console.error('[PushFirst] parent:', err?.message));
+          }).catch((err) => console.error('[PushFirst] parent:', messageErreur(err)));
         } else {
           for (const parent of parentRecipients) {
             await this.notificationService
               .envoyer({ schoolId: invoice.schoolId, userId: parent.userId, type: "PAYMENT_REMINDER", titre, corps, urgency: "NORMAL" })
-              .catch((err: any) => console.error('[PushFirst] IN_APP parent:', err?.message));
+              .catch((err) => console.error('[PushFirst] IN_APP parent:', messageErreur(err)));
           }
         }
         void this.smsNotification.notifyOverdueInvoiceSms({

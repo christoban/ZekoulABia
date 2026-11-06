@@ -5,8 +5,8 @@
  * Préserve exactement la logique historique du job "Generate-Report-Cards"
  * mais sans aucun `prisma.` direct : tout passe par les ports.
  */
-import { NonRetriableError } from "inngest";
-import type { AnneeAcademiqueRepository } from "@domain/ports/repositories/AnneeAcademiqueRepository";
+import { ErreurNonRetriable } from "@application/shared/ErreurNonRetriable";
+import type { AnneeAcademiqueRepository, AnneeAcademiqueProps, PeriodeAcademiqueProps } from "@domain/ports/repositories/AnneeAcademiqueRepository";
 import type { UserRepository } from "@domain/ports/repositories/UserRepository";
 import type { NoteRepository } from "@domain/ports/repositories/NoteRepository";
 import type { PresenceRepository } from "@domain/ports/repositories/PresenceRepository";
@@ -41,16 +41,16 @@ export class GenererBulletinsInngestUseCase {
     private readonly emailService: EmailService,
   ) {}
 
-  async generer(commande: GenererBulletinsInngestCommande): Promise<GenererBulletinsInngestResultat & { academicYear: any; academicPeriod: any }> {
+  async generer(commande: GenererBulletinsInngestCommande): Promise<GenererBulletinsInngestResultat & { academicYear: AnneeAcademiqueProps; academicPeriod: PeriodeAcademiqueProps }> {
     const { yearId, periodId, classId, studentId } = commande;
-    if (!periodId) throw new NonRetriableError("periodId is required");
+    if (!periodId) throw new ErreurNonRetriable("periodId is required");
 
     const academicYear = await this.anneeRepository.findById(yearId);
-    if (!academicYear) throw new NonRetriableError("Academic year not found");
+    if (!academicYear) throw new ErreurNonRetriable("Academic year not found");
 
     const periode = await this.anneeRepository.findPeriodeById(periodId, academicYear.schoolId);
-    if (!periode) throw new NonRetriableError("Academic period not found");
-    if (periode.academicYearId !== yearId) throw new NonRetriableError("Academic period not found");
+    if (!periode) throw new ErreurNonRetriable("Academic period not found");
+    if (periode.academicYearId !== yearId) throw new ErreurNonRetriable("Academic period not found");
 
     const students = await this.userRepository.findStudentsForBulletinGeneration(academicYear.schoolId, {
       classId: classId ?? null,
@@ -98,13 +98,13 @@ export class GenererBulletinsInngestUseCase {
       const subjectAverages: { subjectId: string; average: number; coefficient: number }[] = [];
       for (const [subjectId, subjectGrades] of gradesBySubject.entries()) {
         const validScores = subjectGrades
-          .map((g) => g.sequenceAverage ?? (g as any).sequenceScore)
+          .map((g) => g.sequenceAverage ?? g.sequenceScore)
           .filter((v): v is number => v !== null && v !== undefined);
         if (!validScores.length) continue;
         const avg = validScores.reduce((a, b) => a + b, 0) / validScores.length;
         const matiere = matiereParId.get(subjectId);
         // L'entité Note porte déjà le coefficient historique ; fallback sur matière
-        const coeff = Number((subjectGrades[0] as any).coefficient ?? matiere?.coefficient ?? 1);
+        const coeff = Number(subjectGrades[0].coefficient ?? matiere?.coefficient ?? 1);
         subjectAverages.push({ subjectId, average: avg, coefficient: coeff });
       }
 
@@ -152,7 +152,7 @@ export class GenererBulletinsInngestUseCase {
       for (const { subjectId, average, coefficient } of subjectAverages) {
         const subjectGrades = gradesBySubject.get(subjectId) || [];
         const matiere = matiereParId.get(subjectId);
-        const subjectName = matiere?.name || (subjectGrades[0] as any).__subject?.name || "";
+        const subjectName = matiere?.name || "";
         const seq1 = subjectGrades.find((g) => sequences[0] && g.sequenceId === sequences[0].id);
         const seq2 = subjectGrades.find((g) => sequences[1] && g.sequenceId === sequences[1].id);
 
@@ -160,8 +160,8 @@ export class GenererBulletinsInngestUseCase {
           subjectId,
           subjectName,
           coefficient,
-          seq1Score: (seq1 as any)?.sequenceScore ?? null,
-          seq2Score: (seq2 as any)?.sequenceScore ?? null,
+          seq1Score: seq1?.sequenceScore ?? null,
+          seq2Score: seq2?.sequenceScore ?? null,
           subjectAverage: Math.round(average * 100) / 100,
         });
       }
@@ -182,7 +182,7 @@ export class GenererBulletinsInngestUseCase {
     if (!params.generatedStudents.length) return { sent: 0 };
     let sent = 0;
     const school = await this.schoolRepository.findById(params.schoolId);
-    const subsystem = (school as any)?.subsystem ?? null;
+    const subsystem = school?.subsystem ?? null;
 
     for (const stdId of params.generatedStudents) {
       const ctx = await this.userRepository.findStudentNotificationContext(stdId);

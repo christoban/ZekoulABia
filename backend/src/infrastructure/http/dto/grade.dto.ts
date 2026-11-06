@@ -19,12 +19,13 @@ export interface SaisirNoteDto {
   maxValue?: number;
 }
 
-export function validerSaisirNoteDto(body: any): SaisirNoteDto {
+export function validerSaisirNoteDto(body: unknown): SaisirNoteDto {
+  const b = body as SaisirNoteDto & Record<string, unknown>;
   const erreurs: string[] = [];
-  if (!body.studentId) erreurs.push('studentId requis');
-  if (!body.subjectId) erreurs.push('subjectId requis');
-  if (!body.classId) erreurs.push('classId requis');
-  if (!body.sequenceId) erreurs.push('sequenceId requis');
+  if (!b.studentId) erreurs.push('studentId requis');
+  if (!b.subjectId) erreurs.push('subjectId requis');
+  if (!b.classId) erreurs.push('classId requis');
+  if (!b.sequenceId) erreurs.push('sequenceId requis');
 
   const scores = [
     'sequenceScore', 'classTestScore', 'terminalExamScore',
@@ -37,19 +38,19 @@ export function validerSaisirNoteDto(body: any): SaisirNoteDto {
   if (erreurs.length > 0) throw new Error(`Données invalides : ${erreurs.join(', ')}`);
 
   return {
-    studentId: body.studentId,
-    subjectId: body.subjectId,
-    classId: body.classId,
-    sequenceId: body.sequenceId,
-    sequenceScore: body.sequenceScore,
-    classTestScore: body.classTestScore,
-    terminalExamScore: body.terminalExamScore,
-    theoreticalScore: body.theoreticalScore,
-    practicalScore: body.practicalScore,
-    professionalAttitude: body.professionalAttitude,
-    oralScore: body.oralScore,
-    selfDevelopmentScore: body.selfDevelopmentScore,
-    coefficient: body.coefficient,
-    maxValue: body.maxValue,
+    studentId: b.studentId,
+    subjectId: b.subjectId,
+    classId: b.classId,
+    sequenceId: b.sequenceId,
+    sequenceScore: b.sequenceScore,
+    classTestScore: b.classTestScore,
+    terminalExamScore: b.terminalExamScore,
+    theoreticalScore: b.theoreticalScore,
+    practicalScore: b.practicalScore,
+    professionalAttitude: b.professionalAttitude,
+    oralScore: b.oralScore,
+    selfDevelopmentScore: b.selfDevelopmentScore,
+    coefficient: b.coefficient,
+    maxValue: b.maxValue,
   };
 }

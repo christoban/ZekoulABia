@@ -1,4 +1,5 @@
 import { type NextFunction, type Request, type Response } from "express";
+import { messageErreur } from '@application/shared/messageErreur';
 import bcrypt from "bcryptjs";
 import { verifySync } from "otplib";
 
@@ -157,7 +158,7 @@ export const requireMasterSensitiveAuth = async (
     });
 
     return next();
-  } catch (error: any) {
-    return res.status(500).json({ message: error.message || "Server error" });
+  } catch (error) {
+    return res.status(500).json({ message: messageErreur(error) || "Server error" });
   }
 };

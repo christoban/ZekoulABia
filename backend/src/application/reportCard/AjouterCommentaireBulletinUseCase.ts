@@ -46,9 +46,10 @@ export class AjouterCommentaireBulletinUseCase {
         void classePP;
       }
       if (!isPP) {
-        const err = new Error('Seul le Professeur Principal de cette classe ou un Admin peut écrire ce commentaire');
-        (err as any).status = 403;
-        throw err;
+        throw Object.assign(
+          new Error('Seul le Professeur Principal de cette classe ou un Admin peut écrire ce commentaire'),
+          { status: 403 },
+        );
       }
     }
 

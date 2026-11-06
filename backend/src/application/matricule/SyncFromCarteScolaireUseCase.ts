@@ -6,6 +6,7 @@
  */
 import type { MatriculeImportRepository } from '@domain/ports/repositories/MatriculeImportRepository';
 import type { PaiementMinesecRepository } from '@domain/ports/repositories/PaiementMinesecRepository';
+import { messageErreur } from '@application/shared/messageErreur';
 import type { CarteScolaireService } from '@domain/ports/services/CarteScolaireService';
 
 export interface SyncReport {
@@ -88,7 +89,7 @@ export class SyncFromCarteScolaireUseCase {
             // Vérification réussie et confirmée : réellement impayé sur cartescolaire.cm.
             report.elevesImpayes++;
           }
-        } catch (err: any) {
+        } catch (err) {
           report.errors.push(`${profile.matricule}: ${err.message}`);
         }
       }

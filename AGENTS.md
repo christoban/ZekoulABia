@@ -76,6 +76,13 @@ Si en lisant ou modifiant du code tu repères une violation d'une règle de la �
 - Toute communication avec l'extérieur passe par un `Port` (interface) implémenté par un `Adapter`
 - Communication entre moteurs/bounded contexts (Assessment, Scheduling, Onboarding...) : ports unidirectionnels + événements asynchrones (Inngest), jamais d'appel direct bidirectionnel entre deux moteurs
 
+### 4.3.1 Règles bloquantes d'architecture
+- `domain/` ne peut importer ni `application/`, ni `infrastructure/`, ni Prisma, Express ou un SDK technique.
+- `application/` ne peut importer ni `infrastructure/`, ni Prisma, Express ou un SDK technique. Elle dépend uniquement du domaine et de ports.
+- Un controller HTTP ne contient pas de logique métier, de requête Prisma ou d'appel SDK : il valide l'entrée, appelle un use case, puis mappe la réponse HTTP.
+- Toute intégration externe nouvelle passe par un port domaine/application, un adapter infrastructure et le wiring du container. Aucun raccourci direct depuis un use case.
+- Le test `backend/tests/unit/architectureGuard.test.ts` est bloquant : s'il échoue, la tâche n'est pas terminée et le guard ne doit pas être affaibli pour faire passer le code.
+
 ### 4.4 DRY (Don't Repeat Yourself)
 - Une seule source de vérité par calcul/règle métier
 - Avant d'écrire une nouvelle implémentation d'une logique existante, chercher si elle existe déjà (le bug de coefficient de notation venait de 8 implémentations dupliquées du même calcul)
@@ -110,7 +117,9 @@ Si en lisant ou modifiant du code tu repères une violation d'une règle de la �
 - Ne jamais confondre ça avec une réécriture hors-scope (voir §3 « Comment réagir »)
 
 ### 4.12 Conventions spécifiques à ZekoulABia (déjà établies — jamais à réinventer)
-- **Jamais de `as any`** — hook pre-commit tsc+eslint en place, n'alerte que sur les nouveaux `as any`. Si un typage pose vraiment problème, le signaler plutôt que de le contourner
+- **Zéro `any` par défaut dans tout le code source** : interdits aussi `any[]`, `Promise<any>`, `Promise<any | null>`, `Record<string, any>`, `Array<any>`, tuples contenant `any` et variantes équivalentes. Utiliser un type métier, `unknown` avec narrowing, un type Prisma dans l'adapter, ou un type structurel minimal dans un port.
+- **Échappatoire `any` exceptionnelle uniquement** : elle doit être indispensable, localisée, revue explicitement et porter sur la même ligne `// hex-allow-any: <raison concrète>`. Une échappatoire ne doit jamais masquer une erreur de contrat ou remplacer un vrai type.
+- **Aucun affaiblissement du guard** : si une nouvelle syntaxe de `any` échappe au guard, corriger le guard et supprimer les occurrences existantes avant de poursuivre. Ne pas ajouter d'exception globale, de fichier ignoré ou de regex plus étroite pour obtenir un résultat vert.
 - **Pattern propose/apply** pour toute action destructrice ou structurante (clôture d'année, application d'un emploi du temps généré) : une route `propose-X` qui ne persiste rien, une route `apply-X` qui écrit dans une transaction Prisma unique et atomique après confirmation explicite — jamais d'écriture directe silencieuse
 - **Idempotence explicite** : une action déjà effectuée doit renvoyer un 409 explicite, jamais recommencer silencieusement depuis zéro
 - **RBAC vérifié à chaque route sensible**, jamais supposé hérité d'un contrôle en amont — vérifier explicitement qui peut voir/modifier quoi (l'incident RBAC sur `students-health/risk-detection` en est l'exemple : n'importe quel Élève/Parent pouvait voir n'importe quel élève)
@@ -138,7 +147,7 @@ Si en lisant ou modifiant du code tu repères une violation d'une règle de la �
 - IA : **Groq** via `@ai-sdk/groq`, façade `generateWithGroq()` / `groqModel` (`backend/src/infrastructure/services/ai/GroqClient.ts`).
 - **Vérif TS** : `cd backend && ./node_modules/.bin/tsc --noEmit` (et/ou `frontend/`). **Jamais `npx tsc`.**
 - **Migrations** : `npx prisma migrate dev --name <nom> --skip-generate` (depuis `backend/`).
-- **`prisma generate`** : sous Fedora, ce n'est **plus un contournement obligatoire** — l'erreur `EPERM: operation not permitted, unlink ... query_engine-windows.dll.node` était propre à Windows (verrou de fichier `.dll` par l'OS et/ou un antivirus pendant que le process est chargé). Sous Linux, le moteur Prisma est un binaire `.so`, non soumis à ce verrouillage. `prisma generate` devrait donc s'exécuter normalement. Seule précaution qui reste valable : stopper le serveur dev/`prisma studio` avant de lancer la commande, pour éviter qu'un process ne tienne le fichier ouvert. Si un nouveau modèle n'est pas encore reconnu par le client généré, `(prisma as any).monModele` reste un repli valable en dernier recours, mais ne doit plus être systématique.
+- **`prisma generate`** : sous Fedora, ce n'est **plus un contournement obligatoire** — l'erreur `EPERM: operation not permitted, unlink ... query_engine-windows.dll.node` était propre à Windows (verrou de fichier `.dll` par l'OS et/ou un antivirus pendant que le process est chargé). Sous Linux, le moteur Prisma est un binaire `.so`, non soumis à ce verrouillage. `prisma generate` devrait donc s'exécuter normalement. Seule précaution qui reste valable : stopper le serveur dev/`prisma studio` avant de lancer la commande, pour éviter qu'un process ne tienne le fichier ouvert. Si un nouveau modèle n'est pas encore reconnu par le client généré, arrêter et signaler le problème : aucun `(prisma as any)` de repli n'est autorisé.
 - **Smoke tests** : fichier `_smoke_*.ts` **dans `backend/`** (jamais `/tmp`), `bun _smoke.ts`, puis **supprime-le**.
 - La recherche d'outil peut renvoyer « No matches » à tort → recoupe avec `grep -rn`.
 - Ne laisse **aucun fichier parasite**. *(Héritage Windows : le fichier `nul` généré par une redirection `> nul` n'a pas d'équivalent sous Fedora — `/dev/null` est utilisé nativement et ne crée pas de fichier parasite. Le point reste valable en général : ne pas laisser de fichiers temporaires oubliés.)*
@@ -191,6 +200,8 @@ Format recommandé dans le plan :
 ## 8. Vérification avant de terminer
 
 - **`tsc` clean** (backend et/ou frontend selon la tâche) — montre la sortie.
+- **Architecture guard** : depuis `backend/`, `bun test tests/unit/architectureGuard.test.ts` doit être vert à 100 %.
+- **Contrôle lexical `any`** : vérifier également `grep -rn '\bany\b' backend/src --include='*.ts'` et justifier chaque résultat autorisé ; le guard reste la preuve automatisée de référence.
 - **Smoke test** du chemin le plus risqué — montre la sortie. (Bulletins PDF : patcher `PDFDocument.prototype.text` pour capturer les libellés dessinés.)
 - **i18n** : si texte UI ajouté → parité fr/en vérifiée (mêmes clés).
 - **Non-régression** : re-vérifier les points listés dans la Definition of Done.

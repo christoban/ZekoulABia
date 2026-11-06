@@ -81,8 +81,8 @@ export class GenererRapportSyntheseMinedubUseCase {
   }
 
   private buildPdf(
-    school: any,
-    supplement: any,
+    school: NonNullable<Awaited<ReturnType<StatisticalQueryPort['trouverEcole']>>>,
+    supplement: Awaited<ReturnType<MinedubReportRepository['trouverSupplementPrimaire']>>,
     effectifsNiveau: Awaited<ReturnType<typeof resolveEffectifsParNiveau>>,
     effectifsAge: Awaited<ReturnType<typeof resolveEffectifsParAge>>,
     personnel: Awaited<ReturnType<typeof resolvePersonnelPrimaire>>['rows'],
@@ -136,9 +136,9 @@ export class GenererRapportSyntheseMinedubUseCase {
       // ── Élèves vulnérables ──
       this.sectionTitle(doc, '4. Élèves vulnérables (réfugiés, déplacés internes, handicapés)');
       if (supplement?.elevesVulnerablesDetail) {
-        const detail = supplement.elevesVulnerablesDetail as Record<string, any>;
-        const rows = Object.entries(detail).map(([niveau, v]: [string, any]) => [
-          niveau, String(v.refugiesF ?? 0), String(v.refugiesG ?? 0), String(v.deplacesF ?? 0), String(v.deplacesG ?? 0), String(v.handicapesF ?? 0), String(v.handicapesG ?? 0),
+        const detail = supplement.elevesVulnerablesDetail as Record<string, Record<string, unknown>>;
+        const rows = Object.entries(detail).map(([niveau, v]) => [
+          niveau, String(v['refugiesF'] ?? 0), String(v['refugiesG'] ?? 0), String(v['deplacesF'] ?? 0), String(v['deplacesG'] ?? 0), String(v['handicapesF'] ?? 0), String(v['handicapesG'] ?? 0),
         ]);
         this.table(doc, ['Niveau', 'Réf. F', 'Réf. G', 'Dépl. F', 'Dépl. G', 'Handi. F', 'Handi. G'], rows);
       } else {
@@ -162,7 +162,7 @@ export class GenererRapportSyntheseMinedubUseCase {
       // ── Infrastructures ──
       this.sectionTitle(doc, '6. Infrastructures');
       if (supplement?.infrastructuresDetail) {
-        const detail = supplement.infrastructuresDetail as Record<string, any>;
+        const detail = supplement.infrastructuresDetail as Record<string, Record<string, unknown>>;
         for (const infra of INFRA_LABELS) {
           const row = detail[infra.key];
           if (!row) continue;

@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { Grade, Prisma, PrismaClient } from '@prisma/client';
 import { Note } from '@domain/entities/Note';
 import type { NoteRepository, NoteNonValideeInfo, NoteFilters, PaginatedResult } from '@domain/ports/repositories/NoteRepository';
 import type { GradeValidationStatus } from '@domain/types/enums';
@@ -133,7 +133,7 @@ export class PrismaNoteRepository implements NoteRepository {
   }
 
   async find(filters: NoteFilters, page: number, limit: number): Promise<PaginatedResult<Note>> {
-    const where: any = { schoolId: filters.schoolId };
+    const where: Prisma.GradeWhereInput = { schoolId: filters.schoolId };
     if (filters.classId) where.classId = filters.classId;
     if (filters.subjectId) where.subjectId = filters.subjectId;
     if (filters.subjectIds) where.subjectId = { in: filters.subjectIds };
@@ -287,13 +287,7 @@ export class PrismaNoteRepository implements NoteRepository {
       },
       include: { subject: { select: { id: true, name: true, coefficient: true } } },
     });
-    // Conserve le subject inclus pour enrichissement côté use case (coefficient/name)
-    return data.map((d: any) => {
-      const note = this.toDomain(d);
-      // Attache subject en propriété non typée pour usage inngest historique (facultatif)
-      (note as any).__subject = d.subject;
-      return note;
-    });
+    return data.map((d) => this.toDomain(d));
   }
 
   async groupMoyennesPourPeriode(params: { schoolId: string; classId: string; academicYearId: string; sequenceIds: string[] }): Promise<Array<{ studentId: string; average: number }>> {
@@ -324,7 +318,7 @@ export class PrismaNoteRepository implements NoteRepository {
     return stats;
   }
 
-  private toDomain(data: any): Note {
+  private toDomain(data: Grade): Note {
     return Note.reconstituer({
       id: data.id,
       schoolId: data.schoolId,

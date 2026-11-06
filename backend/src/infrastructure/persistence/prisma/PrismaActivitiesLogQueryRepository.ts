@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, Prisma } from '@prisma/client';
 import type {
   ActivitiesLogQueryRepository,
   ActivityLogRow,
@@ -50,7 +50,7 @@ export class PrismaActivitiesLogQueryRepository implements ActivitiesLogQueryRep
     return this.prisma.activitiesLog.count({ where: this.buildWhere(input.schoolId, input.userId, input.search) });
   }
 
-  private buildWhere(schoolId: string | null, userId?: string | null, search?: string): any {
+  private buildWhere(schoolId: string | null, userId?: string | null, search?: string): Prisma.ActivitiesLogWhereInput {
     return {
       ...(schoolId ? { schoolId } : {}),
       ...(userId ? { userId } : {}),

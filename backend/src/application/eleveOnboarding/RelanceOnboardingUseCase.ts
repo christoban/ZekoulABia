@@ -1,3 +1,4 @@
+import type { StepRunner } from '@application/shared/StepRunner';
 import type { EleveOnboardingJobsRepository } from '@domain/ports/repositories/EleveOnboardingJobsRepository';
 import type { EmailService } from '@domain/ports/services/EmailService';
 import type { EmailTemplatePort } from '@domain/ports/services/EmailTemplatePort';
@@ -11,7 +12,7 @@ export class RelanceOnboardingUseCase {
     private readonly smsNotification: SmsNotificationPort,
   ) {}
 
-  async execute(step: any): Promise<{ reminded: number; escalated: number; expired: number; processedAt: string }> { // hex-allow-any: Inngest step
+  async execute(step: StepRunner): Promise<{ reminded: number; escalated: number; expired: number; processedAt: string }> {
     const dossiers = await this.repository.listerDossiersLinkSent();
 
     let reminded = 0;

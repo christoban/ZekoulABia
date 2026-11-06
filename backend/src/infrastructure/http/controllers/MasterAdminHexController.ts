@@ -129,7 +129,7 @@ export class MasterAdminHexController {
       const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
       const take = parseInt(limit as string);
 
-      const where: any = {};
+      const where: Record<string, unknown> = {};
       if (status) where.status = status;
       if (search) {
         where.OR = [
@@ -251,7 +251,7 @@ export class MasterAdminHexController {
       const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
       const take = parseInt(limit as string);
 
-      const where: any = {};
+      const where: Record<string, unknown> = {};
       if (action) {
         where.action = action;
       } else if (type === 'auth') {
@@ -282,7 +282,7 @@ export class MasterAdminHexController {
       const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
       const take = parseInt(limit as string);
 
-      const where: any = {};
+      const where: Record<string, unknown> = {};
       if (schoolId) where.schoolId = schoolId;
       if (search) {
         where.OR = [
@@ -400,7 +400,7 @@ export class MasterAdminHexController {
       const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
       const take = parseInt(limit, 10);
 
-      const where: any = {};
+      const where: Record<string, unknown> = {};
       if (schoolId) where.schoolId = schoolId;
       if (outcome) where.outcome = outcome;
       if (actorRole) where.actorRole = actorRole;

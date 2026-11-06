@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
+import { messageErreur } from '@application/shared/messageErreur';
 import { ObtenirKpisGroupeUseCase } from '../../../application/schoolGroup/ObtenirKpisGroupeUseCase';
 import { ListerEcolesGroupeUseCase } from '../../../application/schoolGroup/ListerEcolesGroupeUseCase';
 import { ObtenirDetailEcoleGroupeUseCase } from '../../../application/schoolGroup/ObtenirDetailEcoleGroupeUseCase';
@@ -19,8 +20,8 @@ export class GroupDashboardController {
       }
       const data = await this.obtenirKpisUseCase.execute(groupId);
       res.json({ success: true, data });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message || 'Erreur' });
+    } catch (error) {
+      res.status(500).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 
@@ -33,8 +34,8 @@ export class GroupDashboardController {
       }
       const data = await this.listerEcolesUseCase.execute(groupId);
       res.json({ success: true, data });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message || 'Erreur' });
+    } catch (error) {
+      res.status(500).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 
@@ -50,8 +51,8 @@ export class GroupDashboardController {
       }
       const data = await this.obtenirDetailEcoleUseCase.execute(schoolId);
       res.json({ success: true, data });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message || 'Erreur' });
+    } catch (error) {
+      res.status(500).json({ success: false, message: messageErreur(error) || 'Erreur' });
     }
   };
 }

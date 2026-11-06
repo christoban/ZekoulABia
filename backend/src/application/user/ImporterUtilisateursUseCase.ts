@@ -7,7 +7,14 @@ import type { ImportUtilisateursRepository } from '@domain/ports/repositories/Im
 import type { EmailService } from '@domain/ports/services/EmailService';
 import type { CredentialsNotificationPort } from '@domain/ports/services/CredentialsNotificationPort';
 import type { CreerClasseService } from '@domain/ports/services/CreerClasseService';
-import type { ImportTargetType, ImportConfirmResponse } from './dto/ImportUserDtos';
+import type {
+  ImportTargetType,
+  ImportConfirmResponse,
+  StudentImportRow,
+  StaffImportRow,
+  ParentImportRow,
+  ClasseImportRow,
+} from './dto/ImportUserDtos';
 import { traiterLigneStudent } from './handlers/StudentImportHandler';
 import { traiterLigneTeacher } from './handlers/TeacherImportHandler';
 import { traiterLigneStaff } from './handlers/StaffImportHandler';
@@ -162,7 +169,7 @@ export class ImporterUtilisateursUseCase {
                   credentialsNotifier: this.credentialsNotifier,
                 },
                 schoolId,
-                rawRow as any,
+                rawRow as unknown as ImportRow,
                 '',
                 false,
                 schoolName,
@@ -205,7 +212,7 @@ export class ImporterUtilisateursUseCase {
                   credentialsNotifier: this.credentialsNotifier,
                 },
                 schoolId,
-                rawRow as any,
+                rawRow as unknown as StaffImportRow,
                 '',
                 false,
                 schoolName,
@@ -225,7 +232,7 @@ export class ImporterUtilisateursUseCase {
                   credentialsNotifier: this.credentialsNotifier,
                 },
                 schoolId,
-                rawRow as any,
+                rawRow as unknown as ParentImportRow,
                 '',
                 false,
                 schoolName,
@@ -242,7 +249,7 @@ export class ImporterUtilisateursUseCase {
                   creerClasseUseCase: this.creerClasseUseCase,
                 },
                 schoolId,
-                rawRow as any,
+                rawRow as unknown as ClasseImportRow,
               ),
             );
             break;

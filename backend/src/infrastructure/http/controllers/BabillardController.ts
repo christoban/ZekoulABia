@@ -7,7 +7,6 @@ import { type Request, type Response, type NextFunction } from 'express';
 import path from 'path';
 import fs from 'fs';
 import sanitizeHtml from 'sanitize-html';
-import type { PrismaClient } from '@prisma/client';
 import type { CreerPublicationUseCase } from '../../../application/babillard/CreerPublicationUseCase';
 import type { ModifierPublicationUseCase } from '../../../application/babillard/ModifierPublicationUseCase';
 import type { SupprimerPublicationUseCase } from '../../../application/babillard/SupprimerPublicationUseCase';
@@ -16,7 +15,10 @@ import type { MarquerPublicationLueUseCase } from '../../../application/babillar
 import type { EpinglerPublicationUseCase } from '../../../application/babillard/EpinglerPublicationUseCase';
 import type { CalculerStatistiquesLectureUseCase } from '../../../application/babillard/CalculerStatistiquesLectureUseCase';
 import type { UploaderPieceJointeUseCase } from '../../../application/babillard/UploaderPieceJointeUseCase';
-import type { PublicationRepository } from '../../../domain/ports/repositories/PublicationRepository';
+import type { PublicationRepository, PublicationFiltres } from '../../../domain/ports/repositories/PublicationRepository';
+import type { PublicationProps } from '../../../domain/entities/Publication';
+import { messageErreur } from '@application/shared/messageErreur';
+import type { BabillardContextRepository } from '../../../domain/ports/repositories/BabillardContextRepository';
 import { peutVoir, type UtilisateurContexte } from '../../../domain/rules/BabillardVisibilityRules';
 import { peutPublierBabillard } from '../../../domain/rules/BabillardPermissionRules';
 
@@ -39,8 +41,8 @@ export const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
 
 export class BabillardController {
   constructor(
-    private readonly prisma: PrismaClient,
     private readonly repo: PublicationRepository,
+    private readonly contextRepo: BabillardContextRepository,
     private readonly creerPublication: CreerPublicationUseCase,
     private readonly modifierPublication: ModifierPublicationUseCase,
     private readonly supprimerPublication: SupprimerPublicationUseCase,
@@ -55,11 +57,13 @@ export class BabillardController {
     try {
       const user = await this.buildUtilisateurContexte(req);
       const rawFiltre = (req.query.tab ?? req.query.filtre) as string | undefined;
-      let filtre: any = rawFiltre;
-      if (rawFiltre === 'all') filtre = 'tous';
-      else if (rawFiltre === 'pinned') filtre = 'une';
-      else if (rawFiltre === 'unread') filtre = 'nonLus';
-      else if (rawFiltre === 'for_me') filtre = 'pourMoi';
+      const filtre = (
+        rawFiltre === 'all' ? 'tous'
+        : rawFiltre === 'pinned' ? 'une'
+        : rawFiltre === 'unread' ? 'nonLus'
+        : rawFiltre === 'for_me' ? 'pourMoi'
+        : rawFiltre
+      ) as PublicationFiltres['filtre'];
 
       const categorie = req.query.categorie as string | undefined;
       const recherche = (req.query.q ?? req.query.recherche) as string | undefined;
@@ -170,8 +174,8 @@ export class BabillardController {
       });
 
       res.status(201).json({ success: true, data: publication.props });
-    } catch (err: any) {
-      if (err.message === 'FORBIDDEN_PUBLISH_ANNOUNCEMENT') {
+    } catch (err) {
+      if (messageErreur(err) === 'FORBIDDEN_PUBLISH_ANNOUNCEMENT') {
         res.status(403).json({ success: false, message: 'Seule la direction est habilitée à publier sur le Babillard Officiel.' });
         return;
       }
@@ -185,7 +189,7 @@ export class BabillardController {
       const id = String(req.params.id);
       const body = req.body;
 
-      const updateData: any = {};
+      const updateData: Partial<PublicationProps> = {};
       if (body.titre || body.title) updateData.titre = (body.titre ?? body.title).trim();
       if (body.corps || body.content) {
         updateData.corps = sanitizeHtml(body.corps ?? body.content, SANITIZE_OPTIONS);
@@ -208,8 +212,8 @@ export class BabillardController {
       });
 
       res.json({ success: true, data: modifiee.props });
-    } catch (err: any) {
-      if (err.message === 'FORBIDDEN_UPDATE_PUBLICATION') {
+    } catch (err) {
+      if (messageErreur(err) === 'FORBIDDEN_UPDATE_PUBLICATION') {
         res.status(403).json({ success: false, message: 'Action non autorisée sur cette publication.' });
         return;
       }
@@ -223,8 +227,8 @@ export class BabillardController {
       const id = String(req.params.id);
       await this.supprimerPublication.execute({ user, id });
       res.json({ success: true, message: 'Publication supprimée.' });
-    } catch (err: any) {
-      if (err.message === 'FORBIDDEN_DELETE_PUBLICATION') {
+    } catch (err) {
+      if (messageErreur(err) === 'FORBIDDEN_DELETE_PUBLICATION') {
         res.status(403).json({ success: false, message: 'Action non autorisée.' });
         return;
       }
@@ -250,8 +254,8 @@ export class BabillardController {
       const epinglee = req.body.epinglee !== undefined ? !!req.body.epinglee : true;
       const publication = await this.epinglerPublication.execute(user, id, epinglee);
       res.json({ success: true, data: publication.props });
-    } catch (err: any) {
-      if (err.message === 'FORBIDDEN_PIN_PUBLICATION') {
+    } catch (err) {
+      if (messageErreur(err) === 'FORBIDDEN_PIN_PUBLICATION') {
         res.status(403).json({ success: false, message: 'Non autorisé à épingler.' });
         return;
       }
@@ -265,8 +269,8 @@ export class BabillardController {
       const id = String(req.params.id);
       const stats = await this.calculerStats.execute(user, id);
       res.json({ success: true, data: stats });
-    } catch (err: any) {
-      if (err.message === 'FORBIDDEN_VIEW_STATISTICS') {
+    } catch (err) {
+      if (messageErreur(err) === 'FORBIDDEN_VIEW_STATISTICS') {
         res.status(403).json({ success: false, message: 'Accès aux statistiques réservé à l’auteur et à la direction.' });
         return;
       }
@@ -299,16 +303,16 @@ export class BabillardController {
       });
 
       res.status(201).json({ success: true, data: pieceJointe });
-    } catch (err: any) {
-      if (err.message === 'INVALID_FILE_SIGNATURE') {
+    } catch (err) {
+      if (messageErreur(err) === 'INVALID_FILE_SIGNATURE') {
         res.status(400).json({ success: false, message: 'Format de fichier non autorisé. Formats acceptés : PDF, PNG, JPG, WebP.' });
         return;
       }
-      if (err.message === 'FILE_TOO_LARGE') {
+      if (messageErreur(err) === 'FILE_TOO_LARGE') {
         res.status(400).json({ success: false, message: 'Le fichier dépasse la taille maximale autorisée (10 Mo).' });
         return;
       }
-      if (err.message === 'FORBIDDEN_UPLOAD_ATTACHMENT') {
+      if (messageErreur(err) === 'FORBIDDEN_UPLOAD_ATTACHMENT') {
         res.status(403).json({ success: false, message: 'Non autorisé à ajouter des pièces jointes.' });
         return;
       }
@@ -392,69 +396,11 @@ export class BabillardController {
 
   private async buildUtilisateurContexte(req: Request): Promise<UtilisateurContexte> {
     const user = req.user!;
-    let classeIds: string[] = [];
-    let niveauIds: string[] = [];
-    let enseigneDansClasseIds: string[] = [];
-    let titre: string | null = null;
-
-    if (user.role?.toUpperCase() === 'STAFF') {
-      const profile = await this.prisma.staffProfile.findUnique({
-        where: { userId: user.userId },
-        select: { title: true },
-      });
-      titre = profile?.title ?? null;
-    } else if (user.role?.toUpperCase() === 'STUDENT') {
-      const enrollment = await this.prisma.enrollment.findFirst({
-        where: { student: { userId: user.userId }, status: 'ACTIVE', schoolId: user.schoolId },
-        select: { classId: true, class: { select: { level: true } } },
-      });
-      if (enrollment) {
-        classeIds = [enrollment.classId];
-        if (enrollment.class?.level) niveauIds = [enrollment.class.level];
-      }
-    } else if (user.role?.toUpperCase() === 'PARENT') {
-      const parentProfile = await this.prisma.parentProfile.findUnique({
-        where: { userId: user.userId },
-        include: {
-          children: {
-            include: {
-              studentProfile: {
-                include: {
-                  enrollmentsYearScoped: {
-                    where: { status: 'ACTIVE', schoolId: user.schoolId },
-                    include: { class: true },
-                  },
-                },
-              },
-            },
-          },
-        },
-      });
-      if (parentProfile) {
-        for (const ch of parentProfile.children) {
-          for (const en of ch.studentProfile.enrollmentsYearScoped) {
-            classeIds.push(en.classId);
-            if (en.class?.level) niveauIds.push(en.class.level);
-          }
-        }
-      }
-    } else if (user.role?.toUpperCase() === 'TEACHER') {
-      const assignments = await this.prisma.teachingAssignment.findMany({
-        where: { teacherId: user.userId, schoolId: user.schoolId },
-        select: { classId: true },
-      });
-      enseigneDansClasseIds = assignments.map((a) => a.classId);
-    }
-
-    return {
+    return this.contextRepo.chargerUtilisateurContexte({
       userId: user.userId,
       schoolId: user.schoolId,
       role: user.role,
       permissions: user.permissions,
-      titre,
-      classeIds,
-      niveauIds,
-      enseigneDansClasseIds,
-    };
+    });
   }
 }

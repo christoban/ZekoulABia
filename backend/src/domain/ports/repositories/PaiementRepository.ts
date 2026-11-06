@@ -42,7 +42,7 @@ export interface PaiementRepository {
   update(paiement: Paiement): Promise<void>;
 
   // Reçu — FinanceController.genererRecu / envoyerRecuParEmail (même include)
-  findRecuData(paymentId: string): Promise<any | null>;
+  findRecuData(paymentId: string): Promise<PaiementRecuData | null>;
 
   /**
    * Encaissement en espèces ATOMIQUE (V3.2) : crée le paiement SUCCESS et met à jour
@@ -53,4 +53,32 @@ export interface PaiementRepository {
    * @returns total payé cumulé (paiements SUCCESS) après cet encaissement.
    */
   encaisserCash(paiement: Paiement, facture: Facture): Promise<number>;
+}
+
+export interface PaiementRecuData {
+  id: string;
+  schoolId: string;
+  amount: number;
+  method: string;
+  paidAt: Date | null;
+  createdAt: Date;
+  campayRef?: string | null;
+  operatorRef?: string | null;
+  student?: {
+    id: string;
+    email: string | null;
+    firstName: string;
+    lastName: string;
+    studentProfile?: {
+      matricule?: string | null;
+      enrollmentsYearScoped?: { class?: { name: string } | null }[];
+    } | null;
+  } | null;
+  invoice?: {
+    amount: number;
+    description?: string | null;
+    feePlan?: { name: string } | null;
+    payments?: { amount: number }[];
+  } | null;
+  school?: { name: string } | null;
 }

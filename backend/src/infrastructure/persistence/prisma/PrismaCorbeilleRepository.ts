@@ -1,11 +1,12 @@
 import type { PrismaClient } from '@prisma/client';
 import type { CorbeilleRepository } from '@domain/ports/repositories/CorbeilleRepository';
+import { messageErreur } from '@application/shared/messageErreur';
 
 export class PrismaCorbeilleRepository implements CorbeilleRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   async purgerUtilisateurs(cutoff: Date): Promise<{ count: number }> {
-    const db = this.prisma as any;
+    const db = this.prisma;
     const users = await db.user.findMany({
       where: { deletedAt: { not: null, lt: cutoff } },
       select: {
@@ -61,15 +62,15 @@ export class PrismaCorbeilleRepository implements CorbeilleRepository {
           db.user.delete({ where: { id: u.id } }),
         ]);
         count++;
-      } catch (err: any) {
-        console.error(`[PurgeCorbeille] utilisateur ${u.id}:`, err?.message);
+      } catch (err) {
+        console.error(`[PurgeCorbeille] utilisateur ${u.id}:`, messageErreur(err));
       }
     }
     return { count };
   }
 
   async purgerClasses(cutoff: Date): Promise<{ count: number }> {
-    const db = this.prisma as any;
+    const db = this.prisma;
     const classes = await db.class.findMany({
       where: { deletedAt: { not: null, lt: cutoff } },
       select: { id: true, schoolId: true },
@@ -77,7 +78,7 @@ export class PrismaCorbeilleRepository implements CorbeilleRepository {
     let count = 0;
     for (const c of classes) {
       try {
-        await db.$transaction(async (tx: any) => {
+        await db.$transaction(async (tx) => {
           await tx.attendance.deleteMany({ where: { schoolId: c.schoolId, classId: c.id } });
           await tx.grade.deleteMany({ where: { schoolId: c.schoolId, classId: c.id } });
           await tx.classCouncilSession.deleteMany({ where: { schoolId: c.schoolId, classId: c.id } });
@@ -91,15 +92,15 @@ export class PrismaCorbeilleRepository implements CorbeilleRepository {
           await tx.class.delete({ where: { id: c.id } });
         });
         count++;
-      } catch (err: any) {
-        console.error(`[PurgeCorbeille] classe ${c.id}:`, err?.message);
+      } catch (err) {
+        console.error(`[PurgeCorbeille] classe ${c.id}:`, messageErreur(err));
       }
     }
     return { count };
   }
 
   async purgerMatieres(cutoff: Date): Promise<{ count: number }> {
-    const db = this.prisma as any;
+    const db = this.prisma;
     const subjects = await db.subject.findMany({
       where: { deletedAt: { not: null, lt: cutoff } },
       select: { id: true },
@@ -120,8 +121,8 @@ export class PrismaCorbeilleRepository implements CorbeilleRepository {
           db.subject.delete({ where: { id: s.id } }),
         ]);
         count++;
-      } catch (err: any) {
-        console.error(`[PurgeCorbeille] matière ${s.id}:`, err?.message);
+      } catch (err) {
+        console.error(`[PurgeCorbeille] matière ${s.id}:`, messageErreur(err));
       }
     }
     return { count };

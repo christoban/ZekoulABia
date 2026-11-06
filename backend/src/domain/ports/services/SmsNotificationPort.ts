@@ -55,4 +55,40 @@ export interface SmsNotificationPort {
     bookTitle: string;
     phones?: string[];
   }): Promise<void>;
+
+  notifyAdmissionProvisoireSms(opts: {
+    schoolId: string;
+    candidateName: string;
+    parentPhone: string | null;
+    schoolName?: string;
+    level?: string;
+    examName?: string;
+    nextStep?: string;
+  }): Promise<void>;
+
+  notifyConcoursNonAdmisSms(opts: {
+    schoolId: string;
+    candidateName: string;
+    parentPhone: string | null;
+    schoolName?: string;
+    level?: string;
+  }): Promise<void>;
+
+  notifyConcoursListeAttenteSms(opts: {
+    schoolId: string;
+    candidateName: string;
+    parentPhone: string | null;
+    schoolName?: string;
+    level?: string;
+    rank?: number;
+  }): Promise<void>;
+
+  notifyConcoursPromotionSms(opts: {
+    schoolId: string;
+    candidateName: string;
+    parentPhone: string | null;
+    schoolName?: string;
+    level?: string;
+    examName?: string;
+  }): Promise<void>;
 }

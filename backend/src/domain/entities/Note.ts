@@ -104,6 +104,7 @@ export class Note {
   get classId(): string { return this.props.classId; }
   get sequenceId(): string { return this.props.sequenceId; }
   get validationStatus(): GradeValidationStatus { return this.props.validationStatus; }
+  get sequenceScore(): number | undefined { return this.props.sequenceScore; }
   get sequenceAverage(): number | undefined { return this.props.sequenceAverage; }
   get coefficient(): number { return this.props.coefficient; }
   get maxValue(): number { return this.props.maxValue; }

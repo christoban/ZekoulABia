@@ -28,8 +28,8 @@ export class PrismaSanteEleveRepository implements SanteEleveRepository {
         where: { studentId, academicYearId, status: 'ACTIVE' },
         select: { class: { select: { level: true } } },
       });
-      const level = (enrollment as any)?.class?.level ?? null;
-      if (school) hasCoefficientBySubject = resolveHasCoefficientForClass(school as any, level);
+      const level = enrollment?.class?.level ?? null;
+      if (school) hasCoefficientBySubject = resolveHasCoefficientForClass(school, level);
     } catch {
       // best-effort fallback
     }

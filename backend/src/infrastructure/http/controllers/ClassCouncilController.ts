@@ -60,7 +60,7 @@ export class ClassCouncilController {
       res.status(201).json(result);
     } catch (error) {
       if (error instanceof Error && error.name === 'ConflictError') {
-        res.status(409).json({ message: error.message, ...(error as any).details });
+        res.status(409).json({ message: error.message, ...(error as Error & { details?: Record<string, unknown> }).details });
         return;
       }
       if (error instanceof Error && error.name === 'NotFoundError') {
@@ -177,7 +177,7 @@ export class ClassCouncilController {
       if (!decisions.length) { res.status(400).json({ message: 'decisions (tableau) est requis' }); return; }
 
       const validDecisions = ['PASS', 'REPEAT', 'DELIBERATION'];
-      const invalide = decisions.find((d: any) => !validDecisions.includes(d.decision));
+      const invalide = (decisions as { decision: string; studentId: string }[]).find((d) => !validDecisions.includes(d.decision));
       if (invalide) {
         res.status(400).json({ message: `decision doit être : ${validDecisions.join(', ')} (reçu "${invalide.decision}" pour l'élève ${invalide.studentId})` });
         return;

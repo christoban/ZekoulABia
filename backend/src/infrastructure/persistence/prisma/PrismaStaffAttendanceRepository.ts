@@ -4,6 +4,9 @@ import type {
   StaffAttendanceData,
   CreerStaffAttendanceInput,
   StaffAttendanceSettingsData,
+  StaffAttendanceRoomConfig,
+  StaffAttendanceSlotCourant,
+  MiseAJourStaffAttendanceSettings,
   StaffAttendanceStatut,
 } from '@domain/ports/repositories/StaffAttendanceRepository';
 
@@ -94,5 +97,70 @@ export class PrismaStaffAttendanceRepository implements StaffAttendanceRepositor
       select: { qrEnabled: true },
     });
     return room?.qrEnabled ?? false;
+  }
+
+  async listerSalles(schoolId: string): Promise<StaffAttendanceRoomConfig[]> {
+    return this.prisma.room.findMany({
+      where: { schoolId },
+      select: { id: true, name: true, qrEnabled: true },
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  async trouverCreneauCourant(teacherId: string, schoolId: string, maintenant: Date): Promise<StaffAttendanceSlotCourant | null> {
+    const dayOfWeek = (maintenant.getDay() + 6) % 7;
+    const nowHHMM = `${String(maintenant.getHours()).padStart(2, '0')}:${String(maintenant.getMinutes()).padStart(2, '0')}`;
+    const slot = await this.prisma.timetableSlot.findFirst({
+      where: {
+        teacherId,
+        dayOfWeek,
+        startTime: { lte: nowHHMM },
+        endTime: { gt: nowHHMM },
+        timetable: { schoolId, status: 'PUBLISHED' },
+      },
+      include: {
+        subject: { select: { name: true } },
+        timetable: { select: { class: { select: { name: true } } } },
+        room: { select: { id: true, name: true, qrEnabled: true } },
+      },
+    });
+    if (!slot) return null;
+    return {
+      id: slot.id,
+      subjectName: slot.subject?.name ?? null,
+      className: slot.timetable?.class?.name ?? null,
+      roomId: slot.room?.id ?? null,
+      roomName: slot.room?.name ?? null,
+      qrEnabled: slot.room?.qrEnabled ?? false,
+    };
+  }
+
+  async mettreAJourSettings(schoolId: string, data: MiseAJourStaffAttendanceSettings): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.staffAttendanceSettings.upsert({
+        where: { schoolId },
+        create: {
+          schoolId,
+          gpsRadiusMeters: data.gpsRadiusMeters ?? 75,
+          qrTokenTtlSeconds: data.qrTokenTtlSeconds ?? 120,
+          schoolLatitude: data.schoolLatitude ?? null,
+          schoolLongitude: data.schoolLongitude ?? null,
+        },
+        update: {
+          ...(data.gpsRadiusMeters !== undefined ? { gpsRadiusMeters: data.gpsRadiusMeters } : {}),
+          ...(data.qrTokenTtlSeconds !== undefined ? { qrTokenTtlSeconds: data.qrTokenTtlSeconds } : {}),
+          ...(data.schoolLatitude !== undefined ? { schoolLatitude: data.schoolLatitude } : {}),
+          ...(data.schoolLongitude !== undefined ? { schoolLongitude: data.schoolLongitude } : {}),
+        },
+      });
+      if (Array.isArray(data.roomsQrConfig)) {
+        for (const item of data.roomsQrConfig) {
+          await tx.room.updateMany({
+            where: { id: item.roomId, schoolId },
+            data: { qrEnabled: item.qrEnabled },
+          });
+        }
+      }
+    });
   }
 }

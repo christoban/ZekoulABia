@@ -1,8 +1,10 @@
-import type { PrismaClient } from '@prisma/client';
+import type { Prisma, PrismaClient } from '@prisma/client';
 import { Bulletin } from '@domain/entities/Bulletin';
 import type { BulletinValidationStatus } from '@domain/types/enums';
 import type { BulletinRepository, BulletinAvecContexteClasse, BulletinEnrichi, BulletinExportData } from '@domain/ports/repositories/BulletinRepository';
 import type { BulletinTemplate, ReportCardStatus } from '@domain/types/enums';
+
+type ReportCardAvecLignes = Prisma.ReportCardGetPayload<{ include: { subjectLines: true } }>;
 
 export class PrismaBulletinRepository implements BulletinRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -77,7 +79,7 @@ export class PrismaBulletinRepository implements BulletinRepository {
           },
         },
       },
-    }) as any;
+    });
     if (!data) return null;
     const bulletin = this.toDomain(data);
     const professorPrincipalId = data.student?.studentProfile?.enrollmentsYearScoped?.[0]?.class?.professorPrincipalId ?? null;
@@ -106,7 +108,7 @@ export class PrismaBulletinRepository implements BulletinRepository {
           },
         },
       },
-    }) as any;
+    });
     if (!data) return null;
     const bulletin = this.toDomain(data);
     const professorPrincipalId = data.student?.studentProfile?.enrollmentsYearScoped?.[0]?.class?.professorPrincipalId ?? null;
@@ -126,7 +128,7 @@ export class PrismaBulletinRepository implements BulletinRepository {
       where: { studentId, schoolId, ...(excludeBulletinId ? { id: { not: excludeBulletinId } } : {}) },
       orderBy: { createdAt: 'desc' },
       select: { generalAverage: true },
-    }) as any;
+    });
     if (!data) return null;
     return { generalAverage: data.generalAverage ?? null };
   }
@@ -337,14 +339,14 @@ export class PrismaBulletinRepository implements BulletinRepository {
       where: {
         schoolId: params.schoolId,
         academicPeriodId: params.academicPeriodId,
-        student: { studentProfile: whereProfilesParClasse(params.classId) as any },
+        student: { studentProfile: whereProfilesParClasse(params.classId) },
         generalAverage: { not: null },
       },
       include: { student: { select: { firstName: true, lastName: true } } },
       orderBy: { generalAverage: 'desc' },
       take: params.top,
     });
-    return rows.map((r: any) => ({ student: r.student, generalAverage: r.generalAverage!, mention: r.mention ?? null }));
+    return rows.map((r) => ({ student: r.student, generalAverage: r.generalAverage!, mention: r.mention ?? null }));
   }
 
   async findForAnnual(params: { classId: string; schoolId: string; periodIds: string[] }): Promise<{ studentId: string; student: { firstName: string; lastName: string }; generalAverage: number | null }[]> {
@@ -353,11 +355,11 @@ export class PrismaBulletinRepository implements BulletinRepository {
       where: {
         schoolId: params.schoolId,
         academicPeriodId: { in: params.periodIds },
-        student: { studentProfile: whereProfilesParClasse(params.classId) as any },
+        student: { studentProfile: whereProfilesParClasse(params.classId) },
       },
       include: { student: { select: { firstName: true, lastName: true } } },
     });
-    return rows.map((r: any) => ({ studentId: r.studentId, student: r.student, generalAverage: r.generalAverage ?? null }));
+    return rows.map((r) => ({ studentId: r.studentId, student: r.student, generalAverage: r.generalAverage ?? null }));
   }
 
   async findForExport(schoolId: string, academicPeriodId: string, classId?: string): Promise<BulletinExportData[]> {
@@ -484,7 +486,7 @@ export class PrismaBulletinRepository implements BulletinRepository {
     });
   }
 
-  private toDomain(data: any): Bulletin {
+  private toDomain(data: ReportCardAvecLignes): Bulletin {
     return Bulletin.reconstituer({
       id: data.id,
       schoolId: data.schoolId,
@@ -508,7 +510,7 @@ export class PrismaBulletinRepository implements BulletinRepository {
       isGenerated: data.isGenerated,
       pdfUrl: data.pdfUrl ?? undefined,
       createdAt: data.createdAt,
-      lignesMatiere: (data.subjectLines ?? []).map((l: any) => ({
+      lignesMatiere: (data.subjectLines ?? []).map((l) => ({
         id: l.id,
         subjectId: l.subjectId,
         subjectName: l.subjectName,

@@ -6,14 +6,15 @@
  * SDK directement (architecture hexagonale).
  */
 import type { EventPublisher } from '@domain/ports/services/EventPublisher';
+import { messageErreur } from '@application/shared/messageErreur';
 import { inngest } from '../inngest/client';
 
 export class InngestEventPublisher implements EventPublisher {
   async emit(eventName: string, data: Record<string, unknown>): Promise<void> {
     try {
       await inngest.send({ name: eventName, data });
-    } catch (err: any) {
-      console.warn(`[InngestEventPublisher] Événement '${eventName}' non transmis (Inngest hors ligne ou clé absente):`, err?.message || err);
+    } catch (err) {
+      console.warn(`[InngestEventPublisher] Événement '${eventName}' non transmis (Inngest hors ligne ou clé absente):`, messageErreur(err) || err);
     }
   }
 }

@@ -17,11 +17,11 @@ import { Prisma } from '@prisma/client';
 
 const MODELES_AVEC_SOFT_DELETE = new Set(['User', 'Class', 'Subject', 'Room']);
 
-function injecterFiltre(model: string, args: any) {
+function injecterFiltre<T>(model: string, args: T): T {
   if (!MODELES_AVEC_SOFT_DELETE.has(model)) return args;
-  const where = args?.where ?? {};
+  const where = (args as { where?: Record<string, unknown> })?.where ?? {};
   if ('deletedAt' in where) return args;
-  return { ...args, where: { ...where, deletedAt: null } };
+  return { ...args, where: { ...where, deletedAt: null } } as T;
 }
 
 export const softDeleteExtension = Prisma.defineExtension({

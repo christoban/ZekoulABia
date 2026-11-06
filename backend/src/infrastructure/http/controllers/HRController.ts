@@ -5,7 +5,8 @@ import type { SchoolRepository } from '@domain/ports/repositories/SchoolReposito
 import type { SectionRepository } from '@domain/ports/repositories/SectionRepository';
 import type { StaffProfileRepository } from '@domain/ports/repositories/StaffProfileRepository';
 import type { LeaveRepository } from '@domain/ports/repositories/LeaveRepository';
-import type { EmployeeFileRepository } from '@domain/ports/repositories/EmployeeFileRepository';
+import type { EmployeeFileData, EmployeeFileRepository } from '@domain/ports/repositories/EmployeeFileRepository';
+import type { AuthPayload } from '../middlewares/auth';
 import type { CareerEventRepository } from '@domain/ports/repositories/CareerEventRepository';
 import type { StaffAttendanceRepository } from '@domain/ports/repositories/StaffAttendanceRepository';
 import type { MissionOrderRepository } from '@domain/ports/repositories/MissionOrderRepository';
@@ -75,7 +76,7 @@ export class HRController {
     return req.user?.schoolId;
   }
 
-  private getCurrentUser(req: Request): any {
+  private getCurrentUser(req: Request): AuthPayload | undefined {
     return req.user;
   }
 
@@ -120,7 +121,7 @@ export class HRController {
       const schoolId = this.getSchoolId(req);
       const users = await this.userRepository.findEmployees(schoolId);
       const files = await this.employeeFileRepository.findManyByUserIds(users.map((employee) => employee.id));
-      const fileByUserId = new Map<string, any>(files.map((file: any) => [file.userId, file]));
+      const fileByUserId = new Map<string, EmployeeFileData>(files.map((file) => [file.userId, file]));
 
       res.json({
         success: true,
@@ -142,7 +143,7 @@ export class HRController {
 
       const users = await this.userRepository.findEmployees(schoolId, true);
       const files = await this.employeeFileRepository.findManyByUserIds(users.map((u) => u.id));
-      const fileByUserId = new Map<string, any>(files.map((f: any) => [f.userId, f]));
+      const fileByUserId = new Map<string, EmployeeFileData>(files.map((f) => [f.userId, f]));
 
       const workbook = new ExcelJS.Workbook();
       const sheet = workbook.addWorksheet('Liste nominale');
@@ -260,7 +261,7 @@ export class HRController {
         schoolId,
         dateNaissance: body.dateNaissance ? normalizeDateInput(body.dateNaissance) : null,
         gender: null,
-        diplomes: (body.diplomes ?? []) as any,
+        diplomes: body.diplomes ?? [],
         numeroCNPS: body.numeroCNPS?.trim() || null,
         typeContrat: body.typeContrat?.trim() || null,
         dateEmbauche: body.dateEmbauche ? normalizeDateInput(body.dateEmbauche) : null,
@@ -287,7 +288,7 @@ export class HRController {
 
       const result = await this.ajouterEvenementCarriereUseCase.execute({
         schoolId,
-        demandeurId: this.getCurrentUser(req)?.userId ?? this.getCurrentUser(req)?.id ?? '',
+        demandeurId: this.getCurrentUser(req)?.userId ?? '',
         userId: employeeId,
         type: body.type ?? '',
         date: body.date ? normalizeDateInput(body.date) : (new Date('') as unknown as Date),
@@ -306,7 +307,7 @@ export class HRController {
 
       const result = await this.listerEvenementsCarriereUseCase.execute({
         schoolId,
-        demandeurId: this.getCurrentUser(req)?.userId ?? this.getCurrentUser(req)?.id ?? '',
+        demandeurId: this.getCurrentUser(req)?.userId ?? '',
         userId: employeeId,
       });
       res.json({ success: true, data: result.events });
@@ -373,7 +374,7 @@ export class HRController {
       res.status(201).json({
         success: true,
         data: results.filter(Boolean),
-        meta: { recordedBy: currentUser?.id ?? null, date: normalizedDate.toISOString() },
+        meta: { recordedBy: currentUser?.userId ?? null, date: normalizedDate.toISOString() },
       });
     } catch (error) {
       next(error);
@@ -405,7 +406,7 @@ export class HRController {
 
       const result = await this.creerDemandeCongeUseCase.execute({
         schoolId,
-        demandeurId: currentUser?.userId ?? currentUser?.id ?? '',
+        demandeurId: currentUser?.userId ?? '',
         demandeurRole: currentUser?.role,
         userId: body.userId ?? '',
         type: body.type ?? '',
@@ -428,7 +429,7 @@ export class HRController {
 
       const result = await this.traiterDemandeCongeUseCase.execute({
         schoolId,
-        demandeurId: currentUser?.userId ?? currentUser?.id ?? '',
+        demandeurId: currentUser?.userId ?? '',
         demandeurRole: currentUser?.role,
         leaveRequestId: String(id),
         statut: (body.statut ?? '') as 'APPROVED' | 'REJECTED',
@@ -447,7 +448,7 @@ export class HRController {
 
       const result = await this.listerDemandesCongeUseCase.lister({
         schoolId,
-        demandeurId: currentUser?.userId ?? currentUser?.id ?? '',
+        demandeurId: currentUser?.userId ?? '',
         demandeurRole: currentUser?.role,
         filtreUserId: userId,
       });
@@ -464,7 +465,7 @@ export class HRController {
 
       const result = await this.listerDemandesCongeUseCase.obtenirSolde({
         schoolId,
-        demandeurId: this.getCurrentUser(req)?.userId ?? this.getCurrentUser(req)?.id ?? '',
+        demandeurId: this.getCurrentUser(req)?.userId ?? '',
         userId,
       });
       res.json({ success: true, data: result });
@@ -499,7 +500,7 @@ export class HRController {
         numeroCNPS: file?.numeroCNPS ?? null,
         typeContrat: file?.typeContrat ?? null,
         echelonActuel: file?.echelonActuel ?? null,
-        signataire: currentUser?.nomComplet ?? currentUser?.firstName ?? null,
+        signataire: null,
         language: lang,
       });
 
@@ -535,7 +536,7 @@ export class HRController {
         numeroCNPS: file?.numeroCNPS ?? null,
         typeContrat: file?.typeContrat ?? null,
         echelonActuel: file?.echelonActuel ?? null,
-        signataire: currentUser?.nomComplet ?? currentUser?.firstName ?? null,
+        signataire: null,
         language: lang,
       });
 
@@ -552,7 +553,7 @@ export class HRController {
 
       const result = await this.creerOrdreMissionUseCase.execute({
         schoolId,
-        demandeurId: this.getCurrentUser(req)?.userId ?? this.getCurrentUser(req)?.id ?? '',
+        demandeurId: this.getCurrentUser(req)?.userId ?? '',
         userId: body.userId ?? '',
         motif: body.motif ?? '',
         lieu: body.lieu ?? '',

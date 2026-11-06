@@ -49,7 +49,7 @@ export class PebsExamController {
       });
       this.audit.journaliser({
         actorUserId: req.user!.userId, actorRole: req.user!.role, schoolId,
-        // Bug indépendant : execute() retourne { sessionId }, jamais `id` — le cast `as any`
+        // Bug indépendant : execute() retourne { sessionId }, jamais `id` — le cast non typé
         // masquait un ciblage d'audit toujours undefined pour cette action.
         actionName: 'creer_session_selection_pebs', targetType: 'PebsExamSession', targetId: result.sessionId,
         origin: 'UI_DIRECT', outcome: 'SUCCES', parametersSummary: req.body,

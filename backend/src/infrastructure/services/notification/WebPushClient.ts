@@ -1,4 +1,5 @@
 import webpush from "web-push";
+import { messageErreur } from '@application/shared/messageErreur';
 
 const PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || "";
 const PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "";
@@ -53,13 +54,13 @@ export const sendPush = async (input: SendPushInput): Promise<SendPushResult> =>
       JSON.stringify({ title: input.title, body: input.body, data: input.data ?? {} }),
     );
     return { status: "sent" };
-  } catch (error: any) {
+  } catch (error) {
     // 410 Gone / 404 Not Found = souscription expirée ou révoquée côté navigateur —
     // jamais une erreur à traiter comme un échec transitoire, l'appelant doit la supprimer.
-    const statusCode = error?.statusCode;
+    const statusCode = (error as { statusCode?: number }).statusCode;
     if (statusCode === 410 || statusCode === 404) {
       return { status: "expired" };
     }
-    return { status: "failed", error: error?.message || "Unknown push error" };
+    return { status: "failed", error: messageErreur(error) || "Unknown push error" };
   }
 };

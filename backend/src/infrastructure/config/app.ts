@@ -46,7 +46,7 @@ export function creerApp(): Application {
     container.attendance.userRepository,
     container.attendance.parentRepository,
     container.school.matiereRepository,
-    new AIActionAuditAdapter(prisma as any),
+    new AIActionAuditAdapter(prisma),
   );
 
   const onboardingController = new SchoolOnboardingController(
@@ -64,7 +64,7 @@ export function creerApp(): Application {
     container.school.sectionRepository,
     container.reportCard.bulletinRepository,
     container.reportCard.parentRepository,
-    new AIActionAuditAdapter(prisma as any),
+    new AIActionAuditAdapter(prisma),
   );
 
   app.use('/api/v2/grades', creerGradeRoutes(gradeController));

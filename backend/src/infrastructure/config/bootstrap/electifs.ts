@@ -216,15 +216,15 @@ export function registerElectifsRoutes(app: Application, p: typeof prisma = pris
         orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
       });
 
-      const eleves = students.map((s: any) => ({
+      const eleves = students.map((s) => ({
         id: s.id,
         firstName: s.firstName,
         lastName: s.lastName,
         pebsFiliere: s.studentProfile?.pebsFiliere ?? null,
       }));
 
-      const pebsCount = eleves.filter((e: any) => e.pebsFiliere !== null).length;
-      const nonPEBSCount = eleves.filter((e: any) => e.pebsFiliere === null).length;
+      const pebsCount = eleves.filter((e) => e.pebsFiliere !== null).length;
+      const nonPEBSCount = eleves.filter((e) => e.pebsFiliere === null).length;
 
       journaliserActionIA(p, {
         actorUserId: req.user!.userId, actorRole: req.user!.role, schoolId,
@@ -329,7 +329,7 @@ export function registerElectifsRoutes(app: Application, p: typeof prisma = pris
         select: { subject: { select: { id: true, name: true } } },
         orderBy: { subject: { name: 'asc' } },
       });
-      const subjects = links.map((l: any) => ({ id: l.subject.id, name: l.subject.name }));
+      const subjects = links.map((l) => ({ id: l.subject.id, name: l.subject.name }));
       res.json({ success: true, data: { subjects, count: subjects.length } });
     } catch (err) { next(err); }
   });
@@ -345,7 +345,7 @@ export function registerElectifsRoutes(app: Application, p: typeof prisma = pris
 
       // Matières A-Level disponibles de l'établissement (matières de l'école dont le nom est un sujet A-Level officiel)
       const officialALevel = await p.aLevelSubject.findMany({ select: { subjectName: true } });
-      const officialNames: string[] = officialALevel.map((a: any) => a.subjectName);
+      const officialNames: string[] = officialALevel.map((a) => a.subjectName);
       const availableSubjects = await p.subject.findMany({
         where: { schoolId, name: { in: officialNames } },
         select: { id: true, name: true },
@@ -366,8 +366,8 @@ export function registerElectifsRoutes(app: Application, p: typeof prisma = pris
         data: {
           className: classe.name,
           availableSubjects,
-          students: students.map((s: any) => {
-            const subjects = (s.studentProfile?.alevelSubjects ?? []).map((a: any) => a.subject);
+          students: students.map((s) => {
+            const subjects = (s.studentProfile?.alevelSubjects ?? []).map((a) => a.subject);
             return { id: s.id, firstName: s.firstName, lastName: s.lastName, subjects, count: subjects.length };
           }),
         },
@@ -427,7 +427,7 @@ export function registerElectifsRoutes(app: Application, p: typeof prisma = pris
       const classe = await p.class.findFirst({ where: { id: classId, schoolId }, select: { id: true, name: true } });
       if (!classe) { res.status(404).json({ success: false, message: 'Classe introuvable' }); return; }
 
-      const allStudents: any[] = await p.user.findMany({
+      const allStudents = await p.user.findMany({
         where: { schoolId, role: 'STUDENT', isActive: true, ...whereElevesParClasse(classId) },
         select: {
           id: true, firstName: true, lastName: true,
@@ -438,7 +438,7 @@ export function registerElectifsRoutes(app: Application, p: typeof prisma = pris
 
       const total = allStudents.length;
       let mode: 'FULL' | 'LV2' | 'ALEVEL' = 'FULL';
-      let filtered: any[] = allStudents;
+      let filtered = allStudents;
       let lv2Fallback = false; // matière LV2 uniforme sans affectation individuelle → toute la classe
 
       if (subjectId) {
@@ -461,7 +461,7 @@ export function registerElectifsRoutes(app: Application, p: typeof prisma = pris
             const isOfficialALevel = await p.aLevelSubject.findUnique({ where: { subjectName: subject.name }, select: { subjectName: true } });
             if (isOfficialALevel) {
               mode = 'ALEVEL';
-              filtered = allStudents.filter(s => (s.studentProfile?.alevelSubjects ?? []).some((a: any) => a.subjectId === subjectId));
+              filtered = allStudents.filter(s => (s.studentProfile?.alevelSubjects ?? []).some((a) => a.subjectId === subjectId));
             }
           }
         }

@@ -52,8 +52,8 @@ export function registerGradeRoutes(app: Application, prismaParam: typeof prisma
     new AIActionAuditAdapter(p),
   );
 
-  const timetableGenerationRuns = new PrismaTimetableGenerationRunRepository(p as any);
-  const timetableGenerationTargets = new PrismaTimetableGenerationTargetProvider(p as any);
+  const timetableGenerationRuns = new PrismaTimetableGenerationRunRepository(p);
+  const timetableGenerationTargets = new PrismaTimetableGenerationTargetProvider(p);
   const timetableGenerationGlobal = new ProposerEmploisDuTempsGlobalUseCase(
     timetableGenerationTargets,
     timetableGenerationRuns,

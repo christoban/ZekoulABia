@@ -6,10 +6,11 @@
  * seuil configurable par école (SchoolConfig.subjectDropThreshold, défaut 3).
  * Si chute >= seuil → notification enseignant + conseil IA persisté.
  */
+import { messageErreur } from '@application/shared/messageErreur';
 import type { NoteRepository } from '@domain/ports/repositories/NoteRepository';
 import type { NotificationService } from '@domain/ports/services/NotificationService';
 import type { IAService } from '@domain/ports/services/IAService';
-import type { AnneeAcademiqueRepository } from '@domain/ports/repositories/AnneeAcademiqueRepository';
+import type { AnneeAcademiqueRepository, SequenceAcademiqueProps } from '@domain/ports/repositories/AnneeAcademiqueRepository';
 import type { StudentRecommendationRepository } from '@domain/ports/repositories/StudentRecommendationRepository';
 import type { MatiereRepository } from '@domain/ports/repositories/MatiereRepository';
 import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolConfigRepository';
@@ -44,7 +45,7 @@ export async function trouverSequencePrecedente(
   anneeRepository: AnneeAcademiqueRepository,
   sequenceId: string,
   schoolId: string,
-): Promise<any> {
+): Promise<SequenceAcademiqueProps | null> {
   const courante = await anneeRepository.findSequenceById(sequenceId, schoolId);
   if (!courante) return null;
 
@@ -160,7 +161,7 @@ export class DetecterChuteMoyenneUseCase {
         titre: `Chute en ${resultat.matiere}`,
         corps: resultat.corpsIndividuel,
         urgency: 'HIGH',
-      }).catch((err) => console.error('[DetecterChute] notification:', (err as any)?.message));
+      }).catch((err) => console.error('[DetecterChute] notification:', messageErreur(err)));
     }
     return resultat;
   }
@@ -192,7 +193,7 @@ export class DetecterChuteMoyenneUseCase {
           corps,
           urgency: 'HIGH',
         })
-        .catch((err) => console.error('[DetecterChute batch] notification:', (err as any)?.message));
+        .catch((err) => console.error('[DetecterChute batch] notification:', messageErreur(err)));
     }
 
     return { enseignantsNotifies: parEnseignant.size, parEnseignant };
@@ -224,8 +225,8 @@ export class DetecterChuteMoyenneUseCase {
         content,
       });
       return content;
-    } catch (err: any) {
-      console.error('[Conseil IA]', err?.message);
+    } catch (err) {
+      console.error('[Conseil IA]', messageErreur(err));
       return null;
     }
   }

@@ -7,8 +7,7 @@
  *
  * Usage :
  *   cd backend
- *   DATABASE_URL="postgresql://postgres:2005@localhost:5432/zekoulabia_test?schema=public" \
- *     bun scripts/seed_dossier6.ts
+ *   DATABASE_URL="<url-de-la-base-de-test>" bun scripts/seed_dossier6.ts
  *
  * GARDE-FOUS : production refusée + refus explicite de toute base dont le nom
  * ne contient pas `_test`. Le script est idempotent (upsert sur clés
@@ -332,6 +331,7 @@ async function main() {
       update: { matricule: e.matricule, numeroInterne: e.matricule },
       create: {
         userId: user.id,
+        schoolId: school.id,
         matricule: e.matricule,
         numeroInterne: e.matricule,
         dateOfBirth: new Date(`201${2 + Math.floor(i / 2)}-0${(i % 2) + 1}-15`),

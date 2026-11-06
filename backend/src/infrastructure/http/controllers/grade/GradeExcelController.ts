@@ -107,14 +107,14 @@ export class GradeExcelController {
 
       const wb = XLSX.read(file.buffer, { type: 'buffer' });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json<any[]>(ws, { header: 1, defval: '' });
+      const rows = XLSX.utils.sheet_to_json<string[]>(ws, { header: 1, defval: '' });
 
       if (rows.length < 2) {
         res.status(400).json({ success: false, message: 'Le fichier est vide ou ne contient pas de données' });
         return;
       }
 
-      const headers = (rows[0] as string[]).map((h) => h.toString().toLowerCase().trim());
+      const headers = rows[0].map((h) => h.toString().toLowerCase().trim());
       const matriculeIdx = headers.findIndex((h) => h.includes('matricule'));
       const noteIdx = headers.findIndex((h) => h.includes('note'));
       const obsIdx = headers.findIndex((h) => h.includes('observation'));

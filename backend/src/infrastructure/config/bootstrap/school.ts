@@ -631,13 +631,14 @@ export function registerSchoolRoutes(app: Application, prismaParam: typeof prism
       const fromDate = (req.query['from']     as string | undefined)?.trim();
       const toDate   = (req.query['to']       as string | undefined)?.trim();
 
-      const where: Record<string, any> = { schoolId };
-      if (userId) where['userId'] = userId;
-      if (action) where['action'] = { contains: action, mode: 'insensitive' };
+      const where: Prisma.ActivitiesLogWhereInput = { schoolId };
+      if (userId) where.userId = userId;
+      if (action) where.action = { contains: action, mode: 'insensitive' };
       if (fromDate || toDate) {
-        where['createdAt'] = {};
-        if (fromDate) where['createdAt']['gte'] = new Date(fromDate);
-        if (toDate)   where['createdAt']['lte'] = new Date(toDate + 'T23:59:59');
+        where.createdAt = {
+          ...(fromDate ? { gte: new Date(fromDate) } : {}),
+          ...(toDate ? { lte: new Date(toDate + 'T23:59:59') } : {}),
+        };
       }
 
       const [logs, total] = await Promise.all([

@@ -116,10 +116,9 @@ const NOMS_ESCAPE_HATCH = [
 ];
 
 // ---------------------------------------------------------------------------
-// Détection générique de "any" utilisé comme paramètre/retour/propriété de type
-// (volontairement plus large que "as any" : couvre aussi ": any", "<any>",
-// "Promise<any>", "(x: any)" etc. — c'est le mécanisme du contournement,
-// peu importe la syntaxe utilisée pour l'exprimer)
+// Détection lexicale de tout "any" utilisé dans le code. Les commentaires et
+// chaînes sont retirés avant analyse ; l'unique exception de code est le
+// marqueur explicite hex-allow-any porté par la même ligne.
 // ---------------------------------------------------------------------------
 
 interface OccurrenceAny {
@@ -130,11 +129,16 @@ interface OccurrenceAny {
 
 function trouverAnyNonJustifies(dir: string, racineRelative: string): OccurrenceAny[] {
   const violations: OccurrenceAny[] = [];
-  const reAny = /:\s*any\b|<\s*any\s*>|as\s+any\b/;
   for (const fichier of listerFichiersTs(dir)) {
     const lignes = readFileSync(fichier, 'utf8').split('\n');
     lignes.forEach((ligne, idx) => {
-      if (reAny.test(ligne) && !ligneEstJustifiee(ligne)) {
+      if (ligneEstJustifiee(ligne)) return;
+      const code = ligne
+        .replace(/(['"`])(?:\\.|(?!\1).)*\1/g, '')
+        .replace(/\/\*.*?\*\//g, '')
+        .replace(/\/\/.*$/, '');
+      if (/^\s*(?:\/\/|\/\*|\*|\*\/)/.test(ligne) || !/\bany\b/.test(code)) return;
+      if (/\bany\b/.test(code)) {
         violations.push({ fichier: relative(racineRelative, fichier), ligneNo: idx + 1, ligne: ligne.trim() });
       }
     });
@@ -258,6 +262,15 @@ describe('Garde-fou hexagonal — aucun "any" non justifié comme échappatoire 
     expect(
       violations,
       `"any" non justifié dans application/ (ajoutez "// hex-allow-any: <raison>" si vraiment nécessaire) :\n${message}`,
+    ).toEqual([]);
+  });
+
+  it('infrastructure/ ne contient aucun "any" non justifié', () => {
+    const violations = trouverAnyNonJustifies(INFRA, INFRA);
+    const message = violations.map(v => `${v.fichier}:${v.ligneNo} → ${v.ligne}`).join('\n');
+    expect(
+      violations,
+      `"any" non justifié dans infrastructure/ (ajoutez "// hex-allow-any: <raison>" si vraiment nécessaire) :\n${message}`,
     ).toEqual([]);
   });
 });

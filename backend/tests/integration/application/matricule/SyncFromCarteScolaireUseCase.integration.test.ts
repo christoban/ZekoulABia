@@ -46,17 +46,17 @@ beforeAll(async () => {
 
   const studentPaye = await creerUtilisateurTest(prismaTest, schoolId, { role: 'STUDENT', suffix: 'sync-paye' });
   studentPayeUserId = studentPaye.id;
-  const profilePaye = await prismaTest.studentProfile.create({ data: { userId: studentPaye.id, matricule: 'SYNC-PAYE-001', studentStatus: 'ACTIVE' } });
+  const profilePaye = await prismaTest.studentProfile.create({ data: { userId: studentPaye.id, schoolId, matricule: 'SYNC-PAYE-001', studentStatus: 'ACTIVE' } });
   studentPayeProfileId = profilePaye.id;
 
   const studentImpaye = await creerUtilisateurTest(prismaTest, schoolId, { role: 'STUDENT', suffix: 'sync-impaye' });
   studentImpayeUserId = studentImpaye.id;
-  const profileImpaye = await prismaTest.studentProfile.create({ data: { userId: studentImpaye.id, matricule: 'SYNC-IMPAYE-002', studentStatus: 'ACTIVE' } });
+  const profileImpaye = await prismaTest.studentProfile.create({ data: { userId: studentImpaye.id, schoolId, matricule: 'SYNC-IMPAYE-002', studentStatus: 'ACTIVE' } });
   studentImpayeProfileId = profileImpaye.id;
 
   const studentEchec = await creerUtilisateurTest(prismaTest, schoolId, { role: 'STUDENT', suffix: 'sync-echec' });
   studentEchecUserId = studentEchec.id;
-  const profileEchec = await prismaTest.studentProfile.create({ data: { userId: studentEchec.id, matricule: 'SYNC-ECHEC-003', studentStatus: 'ACTIVE' } });
+  const profileEchec = await prismaTest.studentProfile.create({ data: { userId: studentEchec.id, schoolId, matricule: 'SYNC-ECHEC-003', studentStatus: 'ACTIVE' } });
   studentEchecProfileId = profileEchec.id;
 
   const enrollmentPaye = await prismaTest.inscriptionMinesec.create({

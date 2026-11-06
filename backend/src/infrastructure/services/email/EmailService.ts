@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { messageErreur } from '@application/shared/messageErreur';
 import { Resend } from "resend";
 import { prisma } from '../../../config/prisma.ts';
 import type { EmailEventType } from '../../../types/email.ts';
@@ -261,18 +262,18 @@ export const sendTransactionalEmail = async (
         messageId = sent.messageId;
         usedProvider = "smtp";
         console.log(`[Email] SMTP SUCCÈS messageId=${sent.messageId}`);
-      } catch (smtpErr: any) {
-        console.error(`[Email] ERREUR SMTP:`, smtpErr?.message, smtpErr?.code, smtpErr?.response);
+      } catch (smtpErr) {
+        console.error(`[Email] ERREUR SMTP:`, messageErreur(smtpErr), (smtpErr as { code?: string }).code, (smtpErr as { response?: string }).response);
         cachedTransporter = null;
         throw smtpErr;
       }
     }
-  } catch (error: any) {
+  } catch (error) {
     status = "failed";
-    errorMessage = error?.message || "Unknown email error";
+    errorMessage = messageErreur(error) || "Unknown email error";
     console.error("Email send failed:", {
       message: errorMessage,
-      code: error?.code,
+      code: (error as { code?: string }).code,
       recipientEmail,
       template: input.template,
       eventType: input.eventType,

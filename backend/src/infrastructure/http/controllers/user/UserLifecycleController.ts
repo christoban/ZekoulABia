@@ -106,9 +106,9 @@ export class UserLifecycleController {
       }
 
       const jwt = await import('jsonwebtoken');
-      let payload: any;
+      let payload: { type?: string; sub?: string; email?: string };
       try {
-        payload = jwt.default.verify(token, process.env.JWT_SECRET!);
+        payload = jwt.default.verify(token, process.env.JWT_SECRET!) as { type?: string; sub?: string; email?: string };
       } catch {
         res.status(401).json({ success: false, message: 'Lien invalide ou expiré. Contactez votre administrateur.' });
         return;
@@ -166,9 +166,9 @@ export class UserLifecycleController {
       }
 
       const jwt = await import('jsonwebtoken');
-      let payload: any;
+      let payload: { type?: string; sub?: string; email?: string };
       try {
-        payload = jwt.default.verify(token, process.env.JWT_SECRET!);
+        payload = jwt.default.verify(token, process.env.JWT_SECRET!) as { type?: string; sub?: string; email?: string };
       } catch {
         res.status(401).json({ success: false, message: 'Lien invalide ou expiré. Contactez votre administrateur.' });
         return;

@@ -12,7 +12,7 @@
  */
 import type { Request, Response, NextFunction } from 'express';
 import type { PointerPresenceEnseignantUseCase } from '@application/staffAttendance/PointerPresenceEnseignantUseCase';
-import type { StaffAttendanceRepository } from '@domain/ports/repositories/StaffAttendanceRepository';
+import type { StaffAttendanceRepository, StaffAttendanceSlotCourant } from '@domain/ports/repositories/StaffAttendanceRepository';
 import type { AIActionAuditPort } from '@domain/ports/services/AIActionAuditPort';
 
 export class StaffAttendanceController {
@@ -20,7 +20,6 @@ export class StaffAttendanceController {
     private readonly pointerUseCase: PointerPresenceEnseignantUseCase,
     private readonly staffAttendanceRepository: StaffAttendanceRepository,
     private readonly audit: AIActionAuditPort,
-    private readonly prisma?: any,
   ) {}
 
   // GET /api/v2/staff-attendance/status — état du jour pour l'enseignant connecté
@@ -50,49 +49,16 @@ export class StaffAttendanceController {
       // Vérification des salles avec QR code dans l'école
       let qrConfigured = false;
       let rooms: { id: string; name: string; qrEnabled: boolean }[] = [];
-      if (this.prisma) {
-        try {
-          rooms = await this.prisma.room.findMany({
-            where: { schoolId },
-            select: { id: true, name: true, qrEnabled: true },
-            orderBy: { name: 'asc' },
-          });
-          qrConfigured = rooms.some(r => r.qrEnabled);
-        } catch { /* ignore */ }
-      }
+      try {
+        rooms = await this.staffAttendanceRepository.listerSalles(schoolId);
+        qrConfigured = rooms.some(r => r.qrEnabled);
+      } catch { /* ignore */ }
 
       // Recherche d'un éventuel créneau de cours en ce moment pour l'enseignant
-      let currentSlot: { id: string; subjectName: string | null; className: string | null; roomId: string | null; roomName: string | null; qrEnabled: boolean } | null = null;
-      if (this.prisma) {
-        try {
-          const dayOfWeek = (now.getDay() + 6) % 7;
-          const nowHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-          const slot = await this.prisma.timetableSlot.findFirst({
-            where: {
-              teacherId,
-              dayOfWeek,
-              startTime: { lte: nowHHMM },
-              endTime: { gt: nowHHMM },
-              timetable: { schoolId, status: 'PUBLISHED' },
-            },
-            include: {
-              subject: { select: { name: true } },
-              class: { select: { name: true } },
-              room: { select: { id: true, name: true, qrEnabled: true } },
-            },
-          });
-          if (slot) {
-            currentSlot = {
-              id: slot.id,
-              subjectName: slot.subject?.name ?? null,
-              className: slot.class?.name ?? null,
-              roomId: slot.room?.id ?? null,
-              roomName: slot.room?.name ?? null,
-              qrEnabled: slot.room?.qrEnabled ?? false,
-            };
-          }
-        } catch { /* ignore */ }
-      }
+      let currentSlot: StaffAttendanceSlotCourant | null = null;
+      try {
+        currentSlot = await this.staffAttendanceRepository.trouverCreneauCourant(teacherId, schoolId, now);
+      } catch { /* ignore */ }
 
       // Recommandation du mode selon les disponibilités
       let recommendedMode: 'QR' | 'GPS' | 'MANUEL' = 'MANUEL';
@@ -193,14 +159,7 @@ export class StaffAttendanceController {
       const schoolId = req.user!.schoolId;
       const settings = await this.staffAttendanceRepository.getSettings(schoolId);
 
-      let rooms: { id: string; name: string; qrEnabled: boolean }[] = [];
-      if (this.prisma) {
-        rooms = await this.prisma.room.findMany({
-          where: { schoolId },
-          select: { id: true, name: true, qrEnabled: true },
-          orderBy: { name: 'asc' },
-        });
-      }
+      const rooms = await this.staffAttendanceRepository.listerSalles(schoolId);
 
       res.json({
         success: true,
@@ -226,33 +185,13 @@ export class StaffAttendanceController {
         roomsQrConfig?: { roomId: string; qrEnabled: boolean }[];
       };
 
-      if (this.prisma) {
-        await this.prisma.staffAttendanceSettings.upsert({
-          where: { schoolId },
-          create: {
-            schoolId,
-            gpsRadiusMeters: gpsRadiusMeters ?? 75,
-            qrTokenTtlSeconds: qrTokenTtlSeconds ?? 120,
-            schoolLatitude: schoolLatitude ?? null,
-            schoolLongitude: schoolLongitude ?? null,
-          },
-          update: {
-            ...(gpsRadiusMeters !== undefined ? { gpsRadiusMeters } : {}),
-            ...(qrTokenTtlSeconds !== undefined ? { qrTokenTtlSeconds } : {}),
-            ...(schoolLatitude !== undefined ? { schoolLatitude } : {}),
-            ...(schoolLongitude !== undefined ? { schoolLongitude } : {}),
-          },
-        });
-
-        if (Array.isArray(roomsQrConfig)) {
-          for (const item of roomsQrConfig) {
-            await this.prisma.room.updateMany({
-              where: { id: item.roomId, schoolId },
-              data: { qrEnabled: item.qrEnabled },
-            });
-          }
-        }
-      }
+      await this.staffAttendanceRepository.mettreAJourSettings(schoolId, {
+        gpsRadiusMeters,
+        schoolLatitude,
+        schoolLongitude,
+        qrTokenTtlSeconds,
+        roomsQrConfig,
+      });
 
       const updated = await this.staffAttendanceRepository.getSettings(schoolId);
       res.json({ success: true, data: updated });

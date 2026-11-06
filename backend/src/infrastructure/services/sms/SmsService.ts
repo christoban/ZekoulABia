@@ -1,4 +1,5 @@
 import axios from "axios";
+import { messageErreur } from '@application/shared/messageErreur';
 
 const BASE_URL = process.env.TECHSOFT_BASE_URL || "https://app.techsoft-sms.com/api/http";
 const API_KEY = process.env.TECHSOFT_API_KEY || "";
@@ -28,8 +29,8 @@ export const sendSMS = async (to: string, message: string): Promise<{ success: b
       return { success: true, msgId: uid };
     }
     return { success: false, error: data.message || "Erreur inconnue" };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error) {
+    return { success: false, error: messageErreur(error) };
   }
 };
 
@@ -115,8 +116,8 @@ export const sendSms = async (input: SendSmsInput): Promise<SendSmsResult> => {
       status: "failed",
       error: data.message || "Echec d'envoi TechSoft",
     };
-  } catch (error: any) {
-    return { status: "failed", error: error?.message || "Unknown SMS error" };
+  } catch (error) {
+    return { status: "failed", error: messageErreur(error) || "Unknown SMS error" };
   }
 };
 
@@ -148,10 +149,10 @@ export const getSmsDeliveryStatus = async (providerMessageId: string) => {
       error: data.message || "Erreur récupération statut",
       raw: data,
     };
-  } catch (error: any) {
+  } catch (error) {
     return {
       status: "failed",
-      error: error?.message || "Unknown SMS status error",
+      error: messageErreur(error) || "Unknown SMS status error",
     };
   }
 };

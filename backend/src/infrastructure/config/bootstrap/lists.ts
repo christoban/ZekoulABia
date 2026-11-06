@@ -1,4 +1,5 @@
 import type { Application } from 'express';
+import type { FeeType, InvoiceStatus, Prisma, UserRole } from '@prisma/client';
 import { prisma } from '@infrastructure/persistence/prisma/prisma.client';
 import { creerContainer } from '@infrastructure/config/container';
 import { requireAuth, requireRole } from '../../http/middlewares/auth';
@@ -22,9 +23,9 @@ export function registerListsRoutes(app: Application, p: typeof prisma = prisma,
       const isAdmin = req.user!.role === 'ADMIN';
       const pageNum = Math.max(1, parseInt(page));
       const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
-      const where: any = {
+      const where: Prisma.UserWhereInput = {
         schoolId,
-        ...(role ? { role } : {}),
+        ...(role ? { role: role as UserRole } : {}),
         ...(classId && role === 'STUDENT' ? whereElevesParClasse(classId) : {}),
         ...(search ? { OR: [
           { firstName: { contains: search, mode: 'insensitive' } },
@@ -461,7 +462,7 @@ export function registerListsRoutes(app: Application, p: typeof prisma = prisma,
         });
       }
 
-      const profileData: any = {};
+      const profileData: Prisma.StudentProfileUpdateInput = {};
       if (dateOfBirth !== undefined) {
         profileData.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : null;
       }
@@ -522,7 +523,7 @@ export function registerListsRoutes(app: Application, p: typeof prisma = prisma,
         });
       }
 
-      const profileData: any = {};
+      const profileData: Prisma.StudentProfileUpdateInput = {};
       if (dateOfBirth !== undefined) {
         profileData.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : null;
       }
@@ -553,7 +554,7 @@ export function registerListsRoutes(app: Application, p: typeof prisma = prisma,
       const userId   = req.user!.userId;
       const role     = req.user!.role;
 
-      let whereClause: any = { schoolId };
+      let whereClause: Prisma.ClassWhereInput = { schoolId };
 
       if (role === 'TEACHER') {
         const assignments = await p.teachingAssignment.findMany({
@@ -722,7 +723,7 @@ export function registerListsRoutes(app: Application, p: typeof prisma = prisma,
       }
 
       // ── Vue Catalogue ──
-      let whereClause: any = { schoolId };
+      let whereClause: Prisma.SubjectWhereInput = { schoolId };
 
       if (role === 'TEACHER') {
         whereClause = {
@@ -860,10 +861,10 @@ export function registerListsRoutes(app: Application, p: typeof prisma = prisma,
       const { status, feeType, page = '1', limit = '50' } = req.query as Record<string, string>;
       const pageNum = Math.max(1, parseInt(page));
       const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
-      const where: any = {
+      const where: Prisma.InvoiceWhereInput = {
         schoolId,
-        ...(status ? { status } : {}),
-        ...(feeType ? { feePlan: { feeType } } : {}),
+        ...(status ? { status: status as InvoiceStatus } : {}),
+        ...(feeType ? { feePlan: { feeType: feeType as FeeType } } : {}),
       };
       const [total, invoices] = await Promise.all([
         p.invoice.count({ where }),

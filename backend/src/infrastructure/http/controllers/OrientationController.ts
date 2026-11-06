@@ -18,6 +18,7 @@ import type { IOrientationRepository } from '@domain/ports/repositories/IOrienta
 import type { AnneeAcademiqueRepository } from '@domain/ports/repositories/AnneeAcademiqueRepository';
 import type { ParentRepository } from '@domain/ports/repositories/ParentRepository';
 import type { AIActionAuditPort } from '@domain/ports/services/AIActionAuditPort';
+import type { AuthPayload } from '../middlewares/auth';
 
 const TYPES_PREOCCUPATION: TypePreoccupation[] = ['SCOLAIRE', 'COMPORTEMENTAL', 'FAMILIAL', 'PROFESSIONNEL', 'SANTE', 'AUTRE'];
 
@@ -43,7 +44,8 @@ export class OrientationController {
     private readonly parentRepo: ParentRepository,
   ) {}
 
-  private checkPermission(user: any, res: Response): boolean {
+  private checkPermission(user: AuthPayload | undefined, res: Response): boolean {
+    if (!user) { res.status(401).json({ success: false, message: 'Authentification requise' }); return false; }
     if (user.role === 'ADMIN') return true;
     const perms: string[] = user.permissions ?? [];
     if (!perms.includes('MANAGE_ORIENTATION')) {
@@ -95,7 +97,7 @@ export class OrientationController {
         res.status(400).json({ success: false, message: 'studentId et academicYearId requis' });
         return;
       }
-      // mainConcern circulait vers Prisma sans validation (cast `as any`) — une valeur hors
+      // mainConcern circulait vers Prisma sans validation (cast cast non typé) — une valeur hors
       // énumération levait une PrismaClientValidationError (500) plutôt qu'un 400 propre.
       if (mainConcern !== undefined && !TYPES_PREOCCUPATION.includes(mainConcern as TypePreoccupation)) {
         res.status(400).json({ success: false, message: `mainConcern doit être : ${TYPES_PREOCCUPATION.join(', ')}` });

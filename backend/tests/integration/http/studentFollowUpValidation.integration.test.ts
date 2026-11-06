@@ -48,7 +48,7 @@ beforeAll(async () => {
 
   const student = await creerUtilisateurTest(prismaTest, schoolId, { role: 'STUDENT' });
   studentUserId = student.id;
-  await prismaTest.studentProfile.create({ data: { userId: student.id } });
+  await prismaTest.studentProfile.create({ data: { userId: student.id, schoolId } });
 });
 
 afterAll(async () => {

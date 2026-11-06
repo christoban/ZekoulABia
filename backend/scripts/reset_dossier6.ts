@@ -13,8 +13,7 @@
  *   3. les comptes, puis l'établissement.
  *
  * Usage :
- *   DATABASE_URL="postgresql://postgres:2005@localhost:5432/zekoulabia_test?schema=public" \
- *     bun scripts/reset_dossier6.ts
+ *   DATABASE_URL="<url-de-la-base-de-test>" bun scripts/reset_dossier6.ts
  */
 
 import { PrismaClient } from '@prisma/client';

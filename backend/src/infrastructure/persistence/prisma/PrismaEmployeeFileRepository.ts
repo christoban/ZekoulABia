@@ -19,8 +19,8 @@ export class PrismaEmployeeFileRepository implements EmployeeFileRepository {
   async save(data: EmployeeFileData): Promise<EmployeeFileData> {
     return this.prisma.employeeFile.upsert({
       where: { userId: data.userId },
-      create: { userId: data.userId, schoolId: data.schoolId, dateNaissance: data.dateNaissance, gender: data.gender, diplomes: (data.diplomes ?? []) as any, numeroCNPS: data.numeroCNPS, typeContrat: data.typeContrat, dateEmbauche: data.dateEmbauche, echelonActuel: data.echelonActuel, documentsUrls: (data.documentsUrls ?? []) as any },
-      update: { dateNaissance: data.dateNaissance, gender: data.gender, diplomes: (data.diplomes ?? []) as any, numeroCNPS: data.numeroCNPS, typeContrat: data.typeContrat, dateEmbauche: data.dateEmbauche, echelonActuel: data.echelonActuel, documentsUrls: (data.documentsUrls ?? []) as any },
+      create: { userId: data.userId, schoolId: data.schoolId, dateNaissance: data.dateNaissance, gender: data.gender, diplomes: (data.diplomes ?? []) as unknown as Prisma.InputJsonValue, numeroCNPS: data.numeroCNPS, typeContrat: data.typeContrat, dateEmbauche: data.dateEmbauche, echelonActuel: data.echelonActuel, documentsUrls: (data.documentsUrls ?? []) as unknown as Prisma.InputJsonValue },
+      update: { dateNaissance: data.dateNaissance, gender: data.gender, diplomes: (data.diplomes ?? []) as unknown as Prisma.InputJsonValue, numeroCNPS: data.numeroCNPS, typeContrat: data.typeContrat, dateEmbauche: data.dateEmbauche, echelonActuel: data.echelonActuel, documentsUrls: (data.documentsUrls ?? []) as unknown as Prisma.InputJsonValue },
     });
   }
 

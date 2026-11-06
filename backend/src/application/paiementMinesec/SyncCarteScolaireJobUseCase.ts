@@ -1,7 +1,9 @@
+import type { StepRunner } from '@application/shared/StepRunner';
 import type { MinesecJobsRepository } from '@domain/ports/repositories/MinesecJobsRepository';
 import type { MatriculeImportRepository } from '@domain/ports/repositories/MatriculeImportRepository';
 import type { PaiementMinesecRepository } from '@domain/ports/repositories/PaiementMinesecRepository';
 import type { CarteScolaireService } from '@domain/ports/services/CarteScolaireService';
+import { messageErreur } from '@application/shared/messageErreur';
 import { SyncFromCarteScolaireUseCase } from '../matricule/SyncFromCarteScolaireUseCase';
 
 function yearLabelFor(year: { startDate: Date; endDate: Date | null }): string {
@@ -20,7 +22,7 @@ export class SyncCarteScolaireJobUseCase {
     this.syncUseCase = new SyncFromCarteScolaireUseCase(matriculeRepository, paiementRepository, carteScolaireService);
   }
 
-  async execute(step?: any): Promise<{ results: { schoolId: string; schoolName: string; report: unknown }[]; syncedAt: string }> {
+  async execute(step?: StepRunner): Promise<{ results: { schoolId: string; schoolName: string; report: unknown }[]; syncedAt: string }> {
     const schools = await this.minesecJobsRepository.listerEcolesActives();
     const results: { schoolId: string; schoolName: string; report: unknown }[] = [];
 
@@ -31,8 +33,8 @@ export class SyncCarteScolaireJobUseCase {
       try {
         const report = await this.syncUseCase.execute(school.id, yearLabelFor(year));
         results.push({ schoolId: school.id, schoolName: school.name, report });
-      } catch (err: any) {
-        results.push({ schoolId: school.id, schoolName: school.name, report: { error: err.message } });
+      } catch (err) {
+        results.push({ schoolId: school.id, schoolName: school.name, report: { error: messageErreur(err) } });
       }
       if (step) await step.sleep('pause-ecole', '1s');
     }

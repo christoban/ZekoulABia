@@ -11,6 +11,6 @@ export interface TeachingAssignmentData {
 }
 
 export interface TeachingAssignmentRepository {
-  findByClassSubjectAndSchool(classId: string, subjectId: string, schoolId: string): Promise<any | null>;
-  findUnique(classId: string, subjectId: string, schoolId?: string): Promise<any | null>;
+  findByClassSubjectAndSchool(classId: string, subjectId: string, schoolId: string): Promise<TeachingAssignmentData | null>;
+  findUnique(classId: string, subjectId: string, schoolId?: string): Promise<TeachingAssignmentData | null>;
 }

@@ -36,7 +36,7 @@ export class CoreDomainController {
       if (!year) { res.status(404).json({ message: 'Année académique introuvable' }); return; }
 
       // orderIndex requis par le schéma, sans défaut — jamais fourni par ce endpoint jusqu'ici
-      // (masqué par un `as any`, échouait avec une violation NOT NULL à chaque appel réel).
+      // (masqué par un cast non typé, échouait avec une violation NOT NULL à chaque appel réel).
       // Repris du nombre de périodes déjà existantes pour cette année : place la nouvelle période
       // à la suite des autres.
       const periodesExistantes = await this.coreDomainRepo.countPeriods(academicYearId);

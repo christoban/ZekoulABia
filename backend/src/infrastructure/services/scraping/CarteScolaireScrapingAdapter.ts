@@ -32,6 +32,7 @@
 import * as cheerio from 'cheerio';
 import { parseDateFR } from '../../../shared/date/parseDateFR.ts';
 import type { CarteScolaireService, RechercheMatriculeResult, CarteScolairePaymentStatus } from '@domain/ports/services/CarteScolaireService';
+import { messageErreur } from '@application/shared/messageErreur';
 
 const BASE_URL = 'https://cartescolaire.cm';
 const FORM_URL = `${BASE_URL}/minesec`;
@@ -48,7 +49,7 @@ interface SessionContext {
 }
 
 export class CarteScolaireScrapingAdapter implements CarteScolaireService {
-  private cache = new Map<string, CacheEntry<any>>();
+  private cache = new Map<string, CacheEntry<unknown>>();
   private errorCount = 0;
   private circuitOpenUntil = 0;
   private lastRequestTime = 0;
@@ -100,7 +101,7 @@ export class CarteScolaireScrapingAdapter implements CarteScolaireService {
       this.cache.delete(key);
       return null;
     }
-    return entry.data;
+    return entry.data as T;
   }
 
   private setCache<T>(key: string, data: T, ttlMs: number): void {
@@ -142,8 +143,8 @@ export class CarteScolaireScrapingAdapter implements CarteScolaireService {
 
       if (!cookie || !token) return null;
       return { cookie, token };
-    } catch (err: any) {
-      console.error('[CarteScolaire] chargerFormulaire échoué:', err.message);
+    } catch (err) {
+      console.error('[CarteScolaire] chargerFormulaire échoué:', messageErreur(err));
       return null;
     }
   }
@@ -179,9 +180,9 @@ export class CarteScolaireScrapingAdapter implements CarteScolaireService {
 
       if (result.trouve) this.setCache(cacheKey, result, this.matriculeCacheTtlMs);
       return result;
-    } catch (err: any) {
+    } catch (err) {
       this.recordError();
-      console.error(`[CarteScolaire] rechercherMatricule échoué pour "${studentName}":`, err.message);
+      console.error(`[CarteScolaire] rechercherMatricule échoué pour "${studentName}":`, messageErreur(err));
       return notFound;
     }
   }
@@ -261,9 +262,9 @@ export class CarteScolaireScrapingAdapter implements CarteScolaireService {
       this.setCache(cacheKey, status, this.paymentCacheTtlMs);
       this.recordSuccess();
       return status;
-    } catch (err: any) {
+    } catch (err) {
       this.recordError();
-      console.error(`[CarteScolaire] checkPaiementStatus échoué pour ${matricule}:`, err.message);
+      console.error(`[CarteScolaire] checkPaiementStatus échoué pour ${matricule}:`, messageErreur(err));
       return defaultResult;
     }
   }

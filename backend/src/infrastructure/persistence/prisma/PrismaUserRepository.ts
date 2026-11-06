@@ -1,26 +1,45 @@
 // ponytail: 674l → 360l via helpers, single adapter <800l ceiling, split when 2nd impl or >800l
-import type { PrismaClient } from '@prisma/client';
+import type { Prisma, PrismaClient } from '@prisma/client';
 import { User } from '@domain/entities/User';
 import type { UserRepository, AuthUserData, EmployeeDetail } from '@domain/ports/repositories/UserRepository';
-import type { StaffPermissionType, UserRole } from '@domain/types/enums';
+import type { StaffPermissionType, UserAccessMode, UserRole } from '@domain/types/enums';
 import { whereElevesParClasse } from '@application/shared/studentEnrollment';
+
+type UtilisateurBrut = {
+  id: string;
+  schoolId: string;
+  role: string;
+  email: string | null;
+  phone: string | null;
+  firstName: string;
+  lastName: string;
+  avatarUrl: string | null;
+  isActive: boolean;
+  mustChangePassword: boolean;
+  refreshTokenVersion: number;
+  lastLogin: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  accessMode: UserAccessMode;
+  staffProfile?: { sectionId: string | null; permissions?: Array<{ permission: StaffPermissionType }> } | null;
+};
 
 export class PrismaUserRepository implements UserRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   private readonly staffInclude = { staffProfile: { include: { permissions: true } } } as const;
-  private readonly employeeSelect: any = {
+  private readonly employeeSelect = {
     id: true, firstName: true, lastName: true, email: true, phone: true, role: true, createdAt: true, updatedAt: true,
     teacherProfile: { select: { id: true, specialization: true, supervisedSubjectIds: true } },
     staffProfile: { select: { id: true, title: true, sectionId: true } },
     school: { select: { id: true, name: true, subsystem: true } },
-  };
-  private toDomainList(data: any[]): User[] { return data.map((item) => this.toDomain(item)); }
-  private async findDomain(where: any): Promise<User | null> {
+  } satisfies Prisma.UserSelect;
+  private toDomainList(data: UtilisateurBrut[]): User[] { return data.map((item) => this.toDomain(item)); }
+  private async findDomain(where: Prisma.UserWhereInput): Promise<User | null> {
     const data = await this.prisma.user.findFirst({ where, include: this.staffInclude });
     return data ? this.toDomain(data) : null;
   }
-  private async patchUser(id: string, data: any): Promise<void> { await this.prisma.user.update({ where: { id }, data }); }
+  private async patchUser(id: string, data: Prisma.UserUpdateInput): Promise<void> { await this.prisma.user.update({ where: { id }, data }); }
   private async assertUserExists(id: string): Promise<void> {
     const u = await this.prisma.user.findUnique({ where: { id }, select: { id: true } });
     if (!u) throw new Error('Utilisateur introuvable');
@@ -114,7 +133,14 @@ export class PrismaUserRepository implements UserRepository {
     const d = user.toObject();
     await this.prisma.user.create({ data: { ...this.baseUserData(d), passwordHash: profilData.passwordHash } });
     if (d.role === 'STUDENT') {
-      const studentProfile = await this.prisma.studentProfile.create({ data: { userId: d.id, dateOfBirth: profilData.dateOfBirth ?? null, gender: profilData.gender ?? null } });
+      const studentProfile = await this.prisma.studentProfile.create({
+        data: {
+          userId: d.id,
+          schoolId: d.schoolId,
+          dateOfBirth: profilData.dateOfBirth ?? null,
+          gender: profilData.gender ?? null,
+        },
+      });
       if (profilData.classeId) {
         const classe = await this.prisma.class.findUnique({ where: { id: profilData.classeId }, select: { schoolId: true, academicYearId: true } });
         if (classe) await this.prisma.enrollment.create({ data: { studentId: studentProfile.id, classId: profilData.classeId, academicYearId: classe.academicYearId, schoolId: classe.schoolId, enrolledById: d.id, status: 'ACTIVE' } });
@@ -297,9 +323,9 @@ export class PrismaUserRepository implements UserRepository {
   }
 
   async findStudentsForBulletinGeneration(schoolId: string, filters: { classId?: string | null; studentId?: string | null }): Promise<Array<{ id: string; firstName: string; lastName: string; email: string | null; classId: string | null }>> {
-    const where: any = { schoolId, role: 'STUDENT' as const, isActive: true, ...(filters.studentId ? { id: filters.studentId } : {}), ...(filters.classId ? whereElevesParClasse(filters.classId) : {}) };
+    const where: Prisma.UserWhereInput = { schoolId, role: 'STUDENT', isActive: true, ...(filters.studentId ? { id: filters.studentId } : {}), ...(filters.classId ? whereElevesParClasse(filters.classId) : {}) };
     const data = await this.prisma.user.findMany({ where, select: { id: true, firstName: true, lastName: true, email: true, studentProfile: { select: { enrollmentsYearScoped: { where: { status: 'ACTIVE' as const, academicYear: { isCurrent: true } }, select: { classId: true }, take: 1 } } } } });
-    return data.map((u: any) => ({ id: u.id, firstName: u.firstName, lastName: u.lastName, email: u.email ?? null, classId: u.studentProfile?.enrollmentsYearScoped?.[0]?.classId ?? null }));
+    return data.map((u) => ({ id: u.id, firstName: u.firstName, lastName: u.lastName, email: u.email ?? null, classId: u.studentProfile?.enrollmentsYearScoped?.[0]?.classId ?? null }));
   }
 
   async findStudentNotificationContext(studentId: string): Promise<{ id: string; firstName: string; lastName: string; email: string | null; sectionCode: string | null; parents: Array<{ email: string; userId: string }> } | null> {
@@ -316,8 +342,8 @@ export class PrismaUserRepository implements UserRepository {
       },
     });
     if (!student) return null;
-    const sectionCode = (student as any).studentProfile?.enrollmentsYearScoped?.[0]?.class?.section?.code ?? null;
-    const parents = ((student as any).studentProfile?.parents ?? []).map((p: any) => p.parentProfile?.user ? { email: p.parentProfile.user.email, userId: p.parentProfile.user.id } : null).filter((r: any): r is { email: string; userId: string } => Boolean(r?.email));
+    const sectionCode = student.studentProfile?.enrollmentsYearScoped?.[0]?.class?.section?.code ?? null;
+    const parents = (student.studentProfile?.parents ?? []).map((p) => p.parentProfile?.user ? { email: p.parentProfile.user.email, userId: p.parentProfile.user.id } : null).filter((r): r is { email: string; userId: string } => Boolean(r?.email));
     return { id: student.id, firstName: student.firstName, lastName: student.lastName, email: student.email ?? null, sectionCode, parents };
   }
 
@@ -391,8 +417,8 @@ export class PrismaUserRepository implements UserRepository {
     });
   }
 
-  private toDomain(data: any): User {
-    const permissions: StaffPermissionType[] = data.staffProfile?.permissions?.map((p: { permission: StaffPermissionType }) => p.permission) ?? [];
+  private toDomain(data: UtilisateurBrut): User {
+    const permissions: StaffPermissionType[] = data.staffProfile?.permissions?.map((p) => p.permission) ?? [];
     return User.reconstituer({ id: data.id, schoolId: data.schoolId, role: data.role as UserRole, email: data.email ?? undefined, phone: data.phone ?? undefined, firstName: data.firstName, lastName: data.lastName, avatarUrl: data.avatarUrl ?? undefined, isActive: data.isActive, mustChangePassword: data.mustChangePassword ?? false, refreshTokenVersion: data.refreshTokenVersion, lastLogin: data.lastLogin ?? undefined, createdAt: data.createdAt, updatedAt: data.updatedAt, accessMode: data.accessMode ?? 'FULL_ACCESS', staffPermissions: permissions, staffSectionId: data.staffProfile?.sectionId ?? undefined });
   }
 }

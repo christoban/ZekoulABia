@@ -42,7 +42,7 @@ export class AnnouncementController {
         authorId: user.userId,
         role: user.role,
         staffTitle,
-        permissions: (user as any).permissions ?? [],
+        permissions: user.permissions ?? [],
         title: title ?? '',
         content: content ?? '',
         targetRoles: Array.isArray(targetRoles) ? targetRoles : [],

@@ -24,6 +24,7 @@ import { CreerSqueletteOnboardingUseCase } from '@application/eleveOnboarding/Cr
 import { ValiderOnboardingUseCase } from '@application/eleveOnboarding/ValiderOnboardingUseCase';
 import { SimulerDeliberationConcoursUseCase } from '@application/entranceExam/SimulerDeliberationConcoursUseCase';
 import { EstimerCampagneSmsPublicationUseCase } from '@application/entranceExam/EstimerCampagneSmsPublicationUseCase';
+import { SmsNotificationAdapter } from '@infrastructure/services/sms/SmsNotificationAdapter';
 import { PublierResultatsConcoursUseCase } from '@application/entranceExam/PublierResultatsConcoursUseCase';
 import { ProposerSaisieLotCepUseCase } from '@application/entranceExam/ProposerSaisieLotCepUseCase';
 import { AppliquerSaisieLotCepUseCase } from '@application/entranceExam/AppliquerSaisieLotCepUseCase';
@@ -95,11 +96,12 @@ describe('Scénario complet E2E : Concours d\'entrée -> CEP -> Promotion -> Onb
       { logActivity: async () => {} } as any,
     );
 
+    const smsNotification = new SmsNotificationAdapter();
     simulerDeliberationUC = new SimulerDeliberationConcoursUseCase(entranceRepo);
     estimerSmsUC = new EstimerCampagneSmsPublicationUseCase(entranceRepo, schoolRepo);
-    publierUC = new PublierResultatsConcoursUseCase(entranceRepo, schoolRepo);
+    publierUC = new PublierResultatsConcoursUseCase(entranceRepo, smsNotification, schoolRepo);
     proposerCepUC = new ProposerSaisieLotCepUseCase(entranceRepo);
-    appliquerCepUC = new AppliquerSaisieLotCepUseCase(entranceRepo, creerSqueletteOnboardingUC, schoolRepo);
+    appliquerCepUC = new AppliquerSaisieLotCepUseCase(entranceRepo, creerSqueletteOnboardingUC, smsNotification, schoolRepo);
   });
 
   afterAll(async () => {

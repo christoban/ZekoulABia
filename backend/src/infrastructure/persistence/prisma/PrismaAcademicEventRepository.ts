@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { AcademicEventCategory, AcademicEventStatus, Prisma, PrismaClient } from '@prisma/client';
 import type { AcademicEventRepository, AcademicEventData, AcademicEventListData } from '@domain/ports/repositories/AcademicEventRepository';
 
 export class PrismaAcademicEventRepository implements AcademicEventRepository {
@@ -24,14 +24,14 @@ export class PrismaAcademicEventRepository implements AcademicEventRepository {
         schoolId: data.schoolId,
         createdById: data.createdById,
         type: data.type,
-        category: data.category as any,
+        category: data.category as AcademicEventCategory,
         title: data.title,
         description: data.description ?? null,
         targetRoles: data.targetRoles,
         level: data.level ?? null,
         openDate: data.openDate ?? null,
         closeDate: data.closeDate ?? null,
-        status: data.status as any,
+        status: data.status as AcademicEventStatus,
         linkedResourceId: data.linkedResourceId ?? null,
         entranceExamSessionId: data.entranceExamSessionId ?? null,
       },
@@ -57,7 +57,7 @@ export class PrismaAcademicEventRepository implements AcademicEventRepository {
   }): Promise<void> {
     await this.prisma.academicEvent.update({
       where: { id },
-      data: data as any,
+      data: data as Prisma.AcademicEventUpdateInput,
     });
   }
 
@@ -125,19 +125,19 @@ export class PrismaAcademicEventRepository implements AcademicEventRepository {
   }
 
   async mettreAJourRappel(id: string, date: Date): Promise<void> {
-    await this.prisma.academicEvent.update({ where: { id }, data: { reminderSentAt: date } as any });
+    await this.prisma.academicEvent.update({ where: { id }, data: { reminderSentAt: date } });
   }
 
   async mettreAJourCloture(id: string, closeDate: Date): Promise<void> {
-    await this.prisma.academicEvent.update({ where: { id }, data: { closeDate } as any });
+    await this.prisma.academicEvent.update({ where: { id }, data: { closeDate } });
   }
 
   async mettreAJourStatutEtRessource(id: string, data: { status: string; linkedResourceId: string | null }): Promise<void> {
-    await this.prisma.academicEvent.update({ where: { id }, data: { status: data.status as any, linkedResourceId: data.linkedResourceId } as any });
+    await this.prisma.academicEvent.update({ where: { id }, data: { status: data.status as AcademicEventStatus, linkedResourceId: data.linkedResourceId } });
   }
 
   async cloturerParIds(ids: string[]): Promise<void> {
     if (ids.length === 0) return;
-    await this.prisma.academicEvent.updateMany({ where: { id: { in: ids } }, data: { status: 'CLOSED' as any } });
+    await this.prisma.academicEvent.updateMany({ where: { id: { in: ids } }, data: { status: 'CLOSED' } });
   }
 }

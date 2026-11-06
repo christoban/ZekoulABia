@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, Room as PrismaRoom } from '@prisma/client';
 import { Room } from '@domain/entities/Room';
 import type { RoomRepository } from '@domain/ports/repositories/RoomRepository';
 import type { RoomType, RoomStatus } from '@domain/types/enums';
@@ -74,7 +74,7 @@ export class PrismaRoomRepository implements RoomRepository {
     });
   }
 
-  private toDomain(data: any): Room {
+  private toDomain(data: PrismaRoom): Room {
     return Room.reconstituer({
       id: data.id,
       schoolId: data.schoolId,

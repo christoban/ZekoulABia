@@ -4,14 +4,14 @@ import type { TeachingAssignmentRepository } from '@domain/ports/repositories/Te
 export class PrismaTeachingAssignmentRepository implements TeachingAssignmentRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async findByClassSubjectAndSchool(classId: string, subjectId: string, schoolId: string): Promise<any | null> {
+  async findByClassSubjectAndSchool(classId: string, subjectId: string, schoolId: string) {
     return this.prisma.teachingAssignment.findFirst({
       where: { classId, subjectId, schoolId },
       include: { subject: { select: { id: true, name: true } } },
     });
   }
 
-  async findUnique(classId: string, subjectId: string, schoolId?: string): Promise<any | null> {
+  async findUnique(classId: string, subjectId: string, schoolId?: string) {
     const assignment = await this.prisma.teachingAssignment.findUnique({
       where: {
         classId_subjectId: { classId, subjectId },

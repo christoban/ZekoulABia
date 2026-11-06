@@ -37,7 +37,7 @@ export function creerTaskRoutes(
         schoolId: req.user!.schoolId,
         scope,
         userId: req.user!.userId,
-        status: status as any,
+        status: status as Parameters<ListerTasksUseCase['execute']>[0]['status'],
       });
       res.json({ success: true, data: tasks.map((t) => t.toObject()) });
     } catch (error) {

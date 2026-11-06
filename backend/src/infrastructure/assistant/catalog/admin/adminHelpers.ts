@@ -45,8 +45,8 @@ export async function resolveEntranceExamSession(
     select: { id: true, name: true },
   });
   const target = norm(name);
-  let matches = sessions.filter((s: any) => norm(s.name) === target);
-  if (matches.length === 0) matches = sessions.filter((s: any) => norm(s.name).includes(target));
+  let matches = sessions.filter((s) => norm(s.name) === target);
+  if (matches.length === 0) matches = sessions.filter((s) => norm(s.name).includes(target));
   if (matches.length === 0)
     throw new Error(`Aucune session de concours nommée « ${name} » n'existe dans votre établissement.`);
   if (matches.length > 1)
@@ -60,8 +60,8 @@ export async function resolvePebsSession(ctx: ActionContext, name: string): Prom
     select: { id: true, name: true },
   });
   const target = norm(name);
-  let matches = sessions.filter((s: any) => norm(s.name) === target);
-  if (matches.length === 0) matches = sessions.filter((s: any) => norm(s.name).includes(target));
+  let matches = sessions.filter((s) => norm(s.name) === target);
+  if (matches.length === 0) matches = sessions.filter((s) => norm(s.name).includes(target));
   if (matches.length === 0)
     throw new Error(`Aucune session PEBS nommée « ${name} » n'existe dans votre établissement.`);
   if (matches.length > 1)

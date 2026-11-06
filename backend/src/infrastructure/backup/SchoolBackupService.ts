@@ -38,10 +38,8 @@ const exists = async (path: string) => {
 
 const toStamp = (date: Date) => date.toISOString().replace(/[:.]/g, '-');
 
-const getPrisma = (prisma: PrismaClient) => prisma as PrismaClient & Record<string, any>;
-
 export const buildPayload = async (prisma: PrismaClient, schoolId: string) => {
-  const db = getPrisma(prisma);
+  const db = prisma;
   const [
     school,
     schoolSettings,
@@ -247,7 +245,7 @@ export const getLatestSchoolBackup = async (schoolId: string) => {
 // prématurée. Décision : tout conserver, ne rien purger, tant que ce log ne gagne pas
 // significativement plus de points d'écriture.
 export const purgeSchoolLogsByRetention = async (prisma: PrismaClient, schoolId: string) => {
-  const db = getPrisma(prisma);
+  const db = prisma;
   const settings = await prisma.schoolSettings.findUnique({
     where: { schoolId },
     select: { logRetentionDays: true },

@@ -44,7 +44,7 @@ beforeAll(async () => {
   if (!templateExiste) {
     throw new Error(
       "SchoolTemplate 'LYCEE_FR' introuvable dans zekoulabia_test — lancez d'abord : " +
-      'DATABASE_URL="postgresql://postgres:123456@localhost:5432/zekoulabia_test?schema=public" bunx prisma db seed',
+      'DATABASE_URL doit être défini vers la base de test avant : bunx prisma db seed',
     );
   }
 

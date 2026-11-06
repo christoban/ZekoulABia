@@ -5,6 +5,7 @@ import type { UserRepository } from '@domain/ports/repositories/UserRepository';
 import type { SchoolRepository } from '@domain/ports/repositories/SchoolRepository';
 import { passwordError } from '../../../../domain/security/PasswordPolicy';
 import { sendTransactionalEmail } from '../../../services/email/EmailService.ts';
+import { messageErreur } from '@application/shared/messageErreur';
 
 export class UserMfaPasswordController {
   constructor(
@@ -19,8 +20,8 @@ export class UserMfaPasswordController {
       const userId = req.user?.userId;
       const data = await this.mfaUseCase.mfaStatus(userId);
       res.json({ success: true, data });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
+    } catch (error) {
+      res.status(500).json({ success: false, message: messageErreur(error) });
     }
   };
 
@@ -30,8 +31,8 @@ export class UserMfaPasswordController {
       const userId = req.user?.userId;
       const data = await this.mfaUseCase.mfaReconfigureStart(userId);
       res.json({ success: true, data });
-    } catch (error: any) {
-      const msg: string = error.message || 'Erreur';
+    } catch (error) {
+      const msg: string = messageErreur(error) || 'Erreur';
       const status = msg.includes("Configurez d'abord") ? 400 : 500;
       res.status(status).json({ success: false, message: msg });
     }
@@ -48,8 +49,8 @@ export class UserMfaPasswordController {
       }
       const data = await this.mfaUseCase.mfaReconfigureConfirm(userId, totpCode);
       res.json({ success: true, data });
-    } catch (error: any) {
-      const msg: string = error.message || 'Erreur';
+    } catch (error) {
+      const msg: string = messageErreur(error) || 'Erreur';
       const status = msg.includes('Aucune reconfiguration') ? 400 : msg.includes('TOTP invalide') ? 401 : 500;
       res.status(status).json({ success: false, message: msg });
     }
@@ -61,8 +62,8 @@ export class UserMfaPasswordController {
       const userId = req.user?.userId;
       const data = await this.mfaUseCase.mfaRegenCodes(userId);
       res.json({ success: true, data });
-    } catch (error: any) {
-      const msg: string = error.message || 'Erreur';
+    } catch (error) {
+      const msg: string = messageErreur(error) || 'Erreur';
       const status = msg.includes('MFA non actif') ? 400 : 500;
       res.status(status).json({ success: false, message: msg });
     }
@@ -81,7 +82,7 @@ export class UserMfaPasswordController {
       const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
 
       // Helper: send reset email for a given user
-      const sendResetEmail = async (user: any, school: any) => {
+      const sendResetEmail = async (user: { id: string; email: string; firstName: string; lastName: string }, school: { id: string; subdomain: string }) => {
         const plainToken = randomBytes(32).toString('hex');
         const tokenHash = createHash('sha256').update(plainToken).digest('hex');
         const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1h
@@ -189,10 +190,10 @@ export class UserMfaPasswordController {
 
       try {
         await this.userRepository.reinitialiserMotDePasse(tokenHash, passwordHash);
-      } catch (e: any) {
+      } catch (e) {
         res.status(400).json({
           success: false,
-          message: e.message || 'Lien invalide ou expiré. Demandez un nouveau lien.',
+          message: messageErreur(e) || 'Lien invalide ou expiré. Demandez un nouveau lien.',
         });
         return;
       }

@@ -46,7 +46,7 @@ beforeAll(async () => {
   if (!tarifExiste) {
     throw new Error(
       `TarifMinesecReference introuvable pour ${ANNEE_SCOLAIRE} dans zekoulabia_test — lancez d'abord : ` +
-      'DATABASE_URL="postgresql://postgres:123456@localhost:5432/zekoulabia_test?schema=public" bunx prisma db seed',
+      'DATABASE_URL doit être défini vers la base de test avant : bunx prisma db seed',
     );
   }
 
@@ -78,7 +78,7 @@ beforeAll(async () => {
   studentUserId = student.id;
   const profile = await creerEleveAvecClasse(enrollmentRepo, {
     userId: student.id, classId: classe.id, enrolledById: student.id,
-    extraProfileData: { matricule: 'MAT-2025-0001', matriculeVerifieAt: new Date() },
+    extraProfileData: { matricule: 'MAT20250001', matriculeVerifieAt: new Date() },
   });
   studentProfileId = profile.id;
 });

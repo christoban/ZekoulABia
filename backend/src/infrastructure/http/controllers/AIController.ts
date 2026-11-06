@@ -6,7 +6,6 @@ import type { CompareRisquePredictionsUseCase } from '@application/ai/CompareRis
 import type { CalculerIndiceSanteUseCase } from '@application/ai/CalculerIndiceSanteUseCase';
 import type { EnrollmentRepository } from '@domain/ports/repositories/EnrollmentRepository';
 import type { AIContextQueryRepository } from '@domain/ports/repositories/AIContextQueryRepository';
-import type { PrismaClient } from '@prisma/client';
 import { getClassIdActuelEleve } from '@application/shared/studentEnrollment';
 
 export class AIController {
@@ -15,7 +14,6 @@ export class AIController {
     private readonly enrollmentRepository: EnrollmentRepository,
     private readonly compareRisquePredictions?: CompareRisquePredictionsUseCase,
     private readonly calculerIndiceSante?: CalculerIndiceSanteUseCase,
-    private readonly prisma?: PrismaClient,
   ) {}
 
   /** Résout la langue de l'école courante (via son sous-système) pour les prompts Groq. */
@@ -142,12 +140,9 @@ export class AIController {
       let students = await this.contextRepo.findStudentsByClass(schoolId, classId);
 
       // Recalcul à la demande (ex: clic sur "Actualiser les scores" sur le dashboard)
-      if (req.query.recalculate === 'true' && this.calculerIndiceSante && this.prisma) {
+      if (req.query.recalculate === 'true' && this.calculerIndiceSante) {
         try {
-          const currentYear = await this.prisma.academicYear.findFirst({
-            where: { schoolId, isCurrent: true },
-            select: { id: true },
-          });
+          const currentYear = await this.contextRepo.findCurrentAcademicYear(schoolId);
           if (currentYear) {
             for (const s of students) {
               try {
@@ -441,8 +436,9 @@ export class AIController {
         res.status(400).json({ message: 'studentName et average requis' });
         return;
       }
-      const weakSubjects = (subjectLines || []).filter((s: any) => (s.subjectAverage ?? 0) < 10).map((s: any) => s.subjectName).slice(0, 3);
-      const strongSubjects = (subjectLines || []).filter((s: any) => (s.subjectAverage ?? 0) >= 14).map((s: any) => s.subjectName).slice(0, 3);
+      const lignes = (subjectLines ?? []) as { subjectAverage?: number; subjectName?: string }[];
+      const weakSubjects = lignes.filter((s) => (s.subjectAverage ?? 0) < 10).map((s) => s.subjectName).slice(0, 3);
+      const strongSubjects = lignes.filter((s) => (s.subjectAverage ?? 0) >= 14).map((s) => s.subjectName).slice(0, 3);
       // Le commentaire doit être dans la langue DU BULLETIN. Si l'appelant (frontend) connaît la
       // langue du template, il peut la passer en `language` ; sinon on la déduit du sous-système.
       const bodyLang = req.body.language;

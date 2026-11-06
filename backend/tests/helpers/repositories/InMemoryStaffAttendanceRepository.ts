@@ -3,6 +3,9 @@ import type {
   StaffAttendanceData,
   CreerStaffAttendanceInput,
   StaffAttendanceSettingsData,
+  StaffAttendanceRoomConfig,
+  StaffAttendanceSlotCourant,
+  MiseAJourStaffAttendanceSettings,
   StaffAttendanceStatut,
 } from '@domain/ports/repositories/StaffAttendanceRepository';
 
@@ -103,5 +106,25 @@ export class InMemoryStaffAttendanceRepository implements StaffAttendanceReposit
 
   async salleQrEnabled(roomId: string, schoolId: string): Promise<boolean> {
     return this.qrEnabledByRoom.get(roomId) ?? false;
+  }
+
+  async listerSalles(_schoolId: string): Promise<StaffAttendanceRoomConfig[]> {
+    return [];
+  }
+
+  async trouverCreneauCourant(_teacherId: string, _schoolId: string, _maintenant: Date): Promise<StaffAttendanceSlotCourant | null> {
+    return null;
+  }
+
+  async mettreAJourSettings(schoolId: string, data: MiseAJourStaffAttendanceSettings): Promise<void> {
+    const current = await this.getSettings(schoolId);
+    this.settings.set(schoolId, {
+      ...current,
+      ...(data.gpsRadiusMeters !== undefined ? { gpsRadiusMeters: data.gpsRadiusMeters } : {}),
+      ...(data.qrTokenTtlSeconds !== undefined ? { qrTokenTtlSeconds: data.qrTokenTtlSeconds } : {}),
+      ...(data.schoolLatitude !== undefined ? { schoolLatitude: data.schoolLatitude } : {}),
+      ...(data.schoolLongitude !== undefined ? { schoolLongitude: data.schoolLongitude } : {}),
+    });
+    for (const item of data.roomsQrConfig ?? []) this.qrEnabledByRoom.set(item.roomId, item.qrEnabled);
   }
 }

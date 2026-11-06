@@ -29,9 +29,10 @@ export class GenererCommentaireIAUseCase {
     if (commande.demandeurId && commande.demandeurRole) {
       const role = (commande.demandeurRole as string).toUpperCase();
       if (role !== 'ADMIN' && enriched.professorPrincipalId !== commande.demandeurId) {
-        const err = new Error('Seul le Professeur Principal de cette classe ou un Admin peut générer ce commentaire');
-        (err as any).status = 403;
-        throw err;
+        throw Object.assign(
+          new Error('Seul le Professeur Principal de cette classe ou un Admin peut générer ce commentaire'),
+          { status: 403 },
+        );
       }
     }
 

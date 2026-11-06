@@ -1,9 +1,9 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, Prisma, Task as PrismaTask } from '@prisma/client';
 import type { TaskRepository } from '@domain/ports/repositories/TaskRepository';
-import type { Task, TaskStatus } from '@domain/entities/Task';
+import type { Task, TaskComment, TaskStatus } from '@domain/entities/Task';
 import { Task as TaskEntity } from '@domain/entities/Task';
 
-function toDomain(data: any): Task {
+function toDomain(data: PrismaTask): Task {
   return TaskEntity.reconstituer({
     id: data.id,
     schoolId: data.schoolId,
@@ -14,7 +14,7 @@ function toDomain(data: any): Task {
     dueDate: data.dueDate,
     status: data.status,
     attachments: data.attachments,
-    comments: Array.isArray(data.comments) ? data.comments : [],
+    comments: Array.isArray(data.comments) ? (data.comments as unknown as TaskComment[]) : [],
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
   });
@@ -57,7 +57,7 @@ export class PrismaTaskRepository implements TaskRepository {
         dueDate: obj.dueDate,
         status: obj.status,
         attachments: obj.attachments,
-        comments: obj.comments as any,
+        comments: obj.comments as unknown as Prisma.InputJsonValue,
       },
     });
   }
@@ -73,7 +73,7 @@ export class PrismaTaskRepository implements TaskRepository {
         dueDate: obj.dueDate,
         status: obj.status,
         attachments: obj.attachments,
-        comments: obj.comments as any,
+        comments: obj.comments as unknown as Prisma.InputJsonValue,
         updatedAt: obj.updatedAt,
       },
     });

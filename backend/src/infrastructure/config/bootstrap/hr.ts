@@ -190,7 +190,7 @@ export function registerHrRoutes(app: Application, prismaParam: typeof prisma = 
   const traiterCongeService = new TraiterCongeServiceAdapter(c.hr.leaveRepository);
   const traiterDemandeCongeUseCase = new TraiterDemandeCongeUseCase(
     traiterCongeService,
-    new AIActionAuditAdapter(p as any),
+    new AIActionAuditAdapter(p),
     c.hr.leaveRepository,
   );
   const listerDemandesCongeUseCase = new ListerDemandesCongeUseCase(
@@ -211,7 +211,7 @@ export function registerHrRoutes(app: Application, prismaParam: typeof prisma = 
     c.hr.careerEventRepository,
     c.hr.staffAttendanceRepository,
     c.hr.missionOrderRepository,
-    new AIActionAuditAdapter(p as any),
+    new AIActionAuditAdapter(p),
     ajouterEvenementCarriereUseCase,
     listerEvenementsCarriereUseCase,
     creerDemandeCongeUseCase,
@@ -229,8 +229,7 @@ export function registerHrRoutes(app: Application, prismaParam: typeof prisma = 
   const staffAttendanceController = new StaffAttendanceController(
     c.staffAttendance.pointerPresenceEnseignant,
     c.staffAttendance.staffAttendanceRepository,
-    new AIActionAuditAdapter(p as any),
-    p as any,
+    new AIActionAuditAdapter(p),
   );
   app.use('/api/v2/staff-attendance', creerStaffAttendanceRoutes(staffAttendanceController));
 

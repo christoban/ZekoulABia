@@ -1,10 +1,6 @@
 import type { EntranceExamRepository } from '@domain/ports/repositories/EntranceExamRepository';
 import type { SchoolRepository } from '@domain/ports/repositories/SchoolRepository';
-import {
-  notifyAdmissionProvisoireSms,
-  notifyConcoursListeAttenteSms,
-  notifyConcoursNonAdmisSms,
-} from '@infrastructure/services/sms/SmsNotificationService';
+import type { SmsNotificationPort } from '@domain/ports/services/SmsNotificationPort';
 
 export interface PublierResultatsCommande {
   schoolId: string;
@@ -24,6 +20,7 @@ export interface PublierResultatsResultat {
 export class PublierResultatsConcoursUseCase {
   constructor(
     private readonly entranceRepository: EntranceExamRepository,
+    private readonly smsNotification: SmsNotificationPort,
     private readonly schoolRepository?: SchoolRepository,
   ) {}
 
@@ -71,7 +68,7 @@ export class PublierResultatsConcoursUseCase {
 
         if (c.admissionStatus === 'ADMIS_PROVISOIRE' || c.admissionStatus === 'ADMIS') {
           smsPromises.push(
-            notifyAdmissionProvisoireSms({
+            this.smsNotification.notifyAdmissionProvisoireSms({
               schoolId: cmd.schoolId,
               candidateName,
               parentPhone,
@@ -83,7 +80,7 @@ export class PublierResultatsConcoursUseCase {
           smsSent++;
         } else if (c.admissionStatus === 'LISTE_ATTENTE') {
           smsPromises.push(
-            notifyConcoursListeAttenteSms({
+            this.smsNotification.notifyConcoursListeAttenteSms({
               schoolId: cmd.schoolId,
               candidateName,
               parentPhone,
@@ -95,7 +92,7 @@ export class PublierResultatsConcoursUseCase {
           smsSent++;
         } else if (c.admissionStatus === 'NON_ADMIS' || c.admissionStatus === 'REFUSE') {
           smsPromises.push(
-            notifyConcoursNonAdmisSms({
+            this.smsNotification.notifyConcoursNonAdmisSms({
               schoolId: cmd.schoolId,
               candidateName,
               parentPhone,

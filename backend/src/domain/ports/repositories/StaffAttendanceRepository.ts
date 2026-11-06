@@ -40,6 +40,29 @@ export interface CreerStaffAttendanceInput {
   longitude?: number | null;
 }
 
+export interface StaffAttendanceRoomConfig {
+  id: string;
+  name: string;
+  qrEnabled: boolean;
+}
+
+export interface StaffAttendanceSlotCourant {
+  id: string;
+  subjectName: string | null;
+  className: string | null;
+  roomId: string | null;
+  roomName: string | null;
+  qrEnabled: boolean;
+}
+
+export interface MiseAJourStaffAttendanceSettings {
+  gpsRadiusMeters?: number;
+  qrTokenTtlSeconds?: number;
+  schoolLatitude?: number | null;
+  schoolLongitude?: number | null;
+  roomsQrConfig?: { roomId: string; qrEnabled: boolean }[];
+}
+
 export interface StaffAttendanceSettingsData {
   schoolId: string;
   gpsRadiusMeters: number;
@@ -72,4 +95,13 @@ export interface StaffAttendanceRepository {
 
   /** QrEnabled d'une salle. */
   salleQrEnabled(roomId: string, schoolId: string): Promise<boolean>;
+
+  /** Salles de l'école avec leur configuration QR. */
+  listerSalles(schoolId: string): Promise<StaffAttendanceRoomConfig[]>;
+
+  /** Créneau de cours en cours pour un enseignant à un instant donné. */
+  trouverCreneauCourant(teacherId: string, schoolId: string, maintenant: Date): Promise<StaffAttendanceSlotCourant | null>;
+
+  /** Met à jour les réglages GPS/QR de l'école et la configuration QR des salles. */
+  mettreAJourSettings(schoolId: string, data: MiseAJourStaffAttendanceSettings): Promise<void>;
 }

@@ -1,4 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
+import type { AuthPayload } from '../middlewares/auth';
+import type { PlanFraisACopier } from '@application/finance/CopierPlansFraisAnneePrecedenteUseCase';
 import type { CreerPlanFraisUseCase } from '@application/finance/CreerPlanFraisUseCase';
 import type { ModifierPlanFraisUseCase } from '@application/finance/ModifierPlanFraisUseCase';
 import type { ChangerStatutPlanFraisUseCase } from '@application/finance/ChangerStatutPlanFraisUseCase';
@@ -149,7 +151,7 @@ async function buildRecuPdf(payment: {
 
 async function envoyerRecuParEmail(paiementRepository: PaiementRepository, paymentId: string): Promise<void> {
   try {
-    const payment = await paiementRepository.findRecuData(paymentId) as any;
+    const payment = await paiementRepository.findRecuData(paymentId);
     if (!payment || !payment.student?.email) return;
 
     const pdfBuffer = await buildRecuPdf(payment);
@@ -198,11 +200,11 @@ export class FinanceController {
   // STAFF doit avoir MANAGE_FINANCE.
   // ADMIN est autorisé sur l'approbation/validation ou rejet de plan (workflow de publication).
   // Pour la gestion financière directe quotidienne, elle est réservée à l'Intendant / Économe.
-  private async checkFinancePermission(user: any, res: Response, allowAdmin = false): Promise<boolean> {
-    const perms: string[] = user.permissions ?? [];
+  private async checkFinancePermission(user: AuthPayload | undefined, res: Response, allowAdmin = false): Promise<boolean> {
+    const perms: string[] = user?.permissions ?? [];
     if (perms.includes('MANAGE_FINANCE')) return true;
 
-    if (user.role === 'ADMIN') {
+    if (user?.role === 'ADMIN') {
       if (allowAdmin) return true;
       res.status(403).json({
         success: false,
@@ -302,7 +304,7 @@ export class FinanceController {
       this.audit.journaliser({
         actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
         // Bug indépendant : CreerPlanFraisResultat expose `planId`, jamais `id` — le cast `as
-        // any` masquait un ciblage d'audit toujours undefined pour cette action.
+        // cast non typé masquait un ciblage d'audit toujours undefined pour cette action.
         actionName: 'creer_plan_frais', targetType: 'FeePlan', targetId: resultat.planId,
         origin: 'UI_DIRECT', outcome: 'SUCCES', parametersSummary: req.body,
       });
@@ -328,7 +330,7 @@ export class FinanceController {
     try {
       const user = req.user;
       if (!(await this.checkFinancePermission(user, res))) return;
-      const { targetAcademicYearId, plans } = req.body as { targetAcademicYearId?: string; plans?: any[] };
+      const { targetAcademicYearId, plans } = req.body as { targetAcademicYearId?: string; plans?: PlanFraisACopier[] };
 
       if (!targetAcademicYearId) {
         res.status(400).json({ success: false, message: 'targetAcademicYearId requis' });
@@ -573,7 +575,7 @@ export class FinanceController {
               studentId: paiement.studentId,
               studentName: student ? `${student.firstName} ${student.lastName}`.trim() : '',
               amount: paiement.amount,
-              parentPhone: phone_number ?? (paiement as any).phoneNumber ?? undefined,
+              parentPhone: phone_number ?? paiement.phoneNumber ?? undefined,
             })
             void envoyerRecuParEmail(this.paiementRepository, paiement.id)
           } catch (err) {

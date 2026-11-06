@@ -102,7 +102,7 @@ export const computeMoyenneGenerale: MetricComputeFn = async (dims, ctx: MetricC
     const school = await ctx.schoolRepository.findById(dims.schoolId);
     const classe = await ctx.classeRepository.findById(dims.classId);
     if (school && classe) {
-      hasCoefficientBySubject = resolveHasCoefficientForClass(school as any, (classe as any).level ?? null);
+      hasCoefficientBySubject = resolveHasCoefficientForClass(school, classe.level ?? null);
     }
   } catch {
     // best-effort fallback

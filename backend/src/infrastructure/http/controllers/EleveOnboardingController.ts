@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
+import { messageErreur } from '@application/shared/messageErreur';
 import type { DispositifOS } from '@application/eleveOnboarding/types';
 import type { EleveOnboardingRepository } from '@domain/ports/repositories/EleveOnboardingRepository';
 import type { SchoolRepository } from '@domain/ports/repositories/SchoolRepository';
@@ -118,8 +119,8 @@ export class EleveOnboardingController {
           parentADispositif: onboarding.parentADispositif,
         },
       });
-    } catch (err: any) {
-      res.status(400).json({ success: false, message: err.message || 'Lien invalide' });
+    } catch (err) {
+      res.status(400).json({ success: false, message: messageErreur(err) || 'Lien invalide' });
     }
   };
 
@@ -140,8 +141,8 @@ export class EleveOnboardingController {
         token, nom, prenom, dateNaissance, donneesComplementaires, eleveADispositif, parentADispositif,
       });
       res.json({ success: true, data: result });
-    } catch (err: any) {
-      res.status(400).json({ success: false, message: err.message || 'Soumission impossible' });
+    } catch (err) {
+      res.status(400).json({ success: false, message: messageErreur(err) || 'Soumission impossible' });
     }
   };
 

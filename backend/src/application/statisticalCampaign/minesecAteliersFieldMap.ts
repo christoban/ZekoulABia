@@ -54,4 +54,4 @@ export function isAtelierMappingReady(): boolean {
 }
 
 // Déprécié — gardé pour compatibilité import existant (vide depuis V2.14 suite)
-export const ATELIER_GRID_BLOCKS: any[] = [];
+export const ATELIER_GRID_BLOCKS: readonly unknown[] = [];

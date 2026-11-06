@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
+import { messageErreur } from '@application/shared/messageErreur';
 import fs from 'fs';
 import path from 'path';
 import type { StatisticalCampaignRepository } from '@domain/ports/repositories/StatisticalCampaignRepository';
@@ -94,7 +95,7 @@ export class StatisticalCampaignController {
       const generatedByUserId = req.user!.userId;
       const result = await this._genererDeclaration.execute({ schoolId, generatedByUserId });
       res.json({ success: true, data: result });
-    } catch (err: any) {
+    } catch (err) {
       if (err instanceof LibreOfficeUnavailableError || err instanceof LibreOfficeConversionError) {
         res.status(503).json({
           success: false,
@@ -104,7 +105,7 @@ export class StatisticalCampaignController {
       }
       res.status(400).json({
         success: false,
-        message: err?.message || 'Erreur lors de la génération de la déclaration statistique',
+        message: messageErreur(err) || 'Erreur lors de la génération de la déclaration statistique',
       });
     }
   };

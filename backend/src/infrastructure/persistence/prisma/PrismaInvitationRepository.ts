@@ -1,4 +1,4 @@
-import type { PrismaClient, PlanType, SchoolSubsystem, EducationType, SchoolOwnership } from '@prisma/client';
+import type { PrismaClient, PlanType, SchoolSubsystem, EducationType, SchoolOwnership, SchoolInvite } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import type {
   InvitationRepository,
@@ -124,7 +124,7 @@ export class PrismaInvitationRepository implements InvitationRepository {
     return { schoolId: updated.id };
   }
 
-  private toProps(data: any): InvitationProps {
+  private toProps(data: SchoolInvite): InvitationProps {
     return {
       id: data.id,
       email: data.email,

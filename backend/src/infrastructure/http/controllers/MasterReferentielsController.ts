@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { prisma } from '@infrastructure/persistence/prisma/prisma.client';
 import { logMasterAction } from '../../services/audit/MasterAuthAuditService.ts';
-import type { TypeFraisMinesec } from '@prisma/client';
+import type { TypeFraisMinesec } from '@domain/types/enums';
 
 export class MasterReferentielsController {
   // ─── 1. Synthèse globale & Alerte Proactive ─────────────────────────────

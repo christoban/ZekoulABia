@@ -67,9 +67,9 @@ ${CONSIGNES}`,
       return { analyse: null, warnings };
     }
 
-    let parsed: any;
+    let parsed: Record<string, unknown>;
     try {
-      parsed = JSON.parse(jsonMatch[0]);
+      parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
     } catch {
       warnings.push("Impossible de parser la réponse de l'IA. Veuillez réessayer avec une image plus claire.");
       return { analyse: null, warnings };

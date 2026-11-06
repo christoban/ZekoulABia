@@ -58,7 +58,7 @@ export class AttendanceController {
         recordedById: user.userId,
         date: new Date(date),
         period: period as AttendancePeriod,
-        presences: presences.map((p: any) => ({
+        presences: presences.map((p: { studentId: string; statut: string }) => ({
           studentId: p.studentId,
           statut: normalizeStatus(p.statut),
         })),

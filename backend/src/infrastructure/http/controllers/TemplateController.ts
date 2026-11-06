@@ -64,7 +64,7 @@ export class TemplateController {
 
       XLSX.utils.book_append_sheet(wb, ws, 'Élèves');
 
-      const instrLines: any[][] = [
+      const instrLines: string[][] = [
         ['INSTRUCTIONS — Import des élèves'],
         [''],
         ['Colonnes obligatoires : nom, prenom'],

@@ -69,7 +69,7 @@ export class InscrireEleveUseCase {
     const classId = cmd.classId ?? onboarding.classId;
     if (!classId) throw new Error('Aucune classe définie pour ce dossier — précisez-en une avant d’inscrire');
 
-    const submitted = (onboarding.submittedData ?? {}) as Record<string, any>;
+    const submitted = (onboarding.submittedData ?? {}) as Record<string, unknown>;
     const nom = String(submitted.nom || onboarding.nomProvisoire);
     const prenom = String(submitted.prenom || '');
     const dateOfBirth = typeof submitted.dateNaissance === 'string' ? parseDateFR(submitted.dateNaissance) : null;
