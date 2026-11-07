@@ -44,6 +44,14 @@ import { relanceOnboarding } from "./infrastructure/inngest/functions/eleveOnboa
 import { relanceProfilRH } from "./infrastructure/inngest/functions/hrSelfServiceJobs.ts";
 import { exporterOffsiteNocturne } from "./infrastructure/inngest/functions/backupOffsiteJob.ts";
 import { escaladerNotificationUrgente } from "./infrastructure/inngest/functions/notificationJobs.ts";
+import {
+  traiterAutoApprobationTransferts,
+  traiterExpirationConsentementsTransferts,
+  traiterGenerationInstantanesTransferts,
+  traiterMarquageTransferts,
+  traiterRelancesConsentementTransferts,
+  purgerSnapshotsTransferts,
+} from "./infrastructure/inngest/functions/studentTransferJobs.ts";
 import { initSocket } from "./infrastructure/socket/SocketServer.ts";
 import { bootstrapHexagonal } from './infrastructure/config/hexagonal.bootstrap';
 import { prisma } from '@infrastructure/persistence/prisma/prisma.client';
@@ -188,6 +196,12 @@ app.use(
       syncCarteScolaire,
       relancePaiements,
       auditMatricules,
+      traiterAutoApprobationTransferts,
+      traiterExpirationConsentementsTransferts,
+      traiterGenerationInstantanesTransferts,
+      traiterMarquageTransferts,
+      traiterRelancesConsentementTransferts,
+      purgerSnapshotsTransferts,
       relanceOnboarding,
       relanceProfilRH,
       exporterOffsiteNocturne,

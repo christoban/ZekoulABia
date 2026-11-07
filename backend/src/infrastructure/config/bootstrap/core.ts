@@ -14,6 +14,7 @@ import { OrientationController } from '@infrastructure/http/controllers/Orientat
 import { MatriculeController } from '@infrastructure/http/controllers/MatriculeController';
 import { EleveOnboardingController } from '@infrastructure/http/controllers/EleveOnboardingController';
 import { EleveOnboardingDossierController } from '@infrastructure/http/controllers/EleveOnboardingDossierController';
+import { StudentTransferController } from '@infrastructure/http/controllers/StudentTransferController';
 import { StudentFollowUpController } from '@infrastructure/http/controllers/StudentFollowUpController';
 import { AssistantController } from '@infrastructure/http/controllers/AssistantController';
 import { PrismaSearchQueryRepository } from '@infrastructure/persistence/prisma/PrismaSearchQueryRepository';
@@ -31,6 +32,17 @@ import { PrismaLv2ChoiceRepository } from '@infrastructure/persistence/prisma/Pr
 import { PrismaAnneeAcademiqueRepository } from '@infrastructure/persistence/prisma/PrismaAnneeAcademiqueRepository';
 import { PrismaStudentAffectationRepository } from '@infrastructure/persistence/prisma/PrismaStudentAffectationRepository';
 import { PrismaParentRepository } from '@infrastructure/persistence/prisma/PrismaParentRepository';
+import { PrismaTransferRequestRepository } from '@infrastructure/persistence/prisma/PrismaTransferRequestRepository';
+import { PrismaGuardianConsentAdapter } from '@infrastructure/persistence/prisma/PrismaGuardianConsentAdapter';
+import { PrismaGuardianConsentIssuerAdapter } from '@infrastructure/persistence/prisma/PrismaGuardianConsentIssuerAdapter';
+import { PrismaTransferAuditAdapter } from '@infrastructure/persistence/prisma/PrismaTransferAuditAdapter';
+import { PrismaTransferSnapshotBuilder } from '@infrastructure/persistence/prisma/PrismaTransferSnapshotBuilder';
+import { PrismaTransferFeatureFlagAdapter } from '@infrastructure/persistence/prisma/PrismaTransferFeatureFlagAdapter';
+import { PrismaCrossSchoolTransferGatewayAdapter } from '@infrastructure/persistence/prisma/PrismaCrossSchoolTransferGatewayAdapter';
+import { PrismaStudentTransferLifecycleRepository } from '@infrastructure/persistence/prisma/PrismaStudentTransferLifecycleRepository';
+import { PrismaStudentGuardianRepository } from '@infrastructure/persistence/prisma/PrismaStudentGuardianRepository';
+import { PrismaGuardianPhoneOtpAdapter } from '@infrastructure/persistence/prisma/PrismaGuardianPhoneOtpAdapter';
+import { TransferSnapshotEncryptionAdapter } from '@infrastructure/backup/TransferSnapshotEncryptionAdapter';
 import { PrismaStudentGroupSetRepository } from '@infrastructure/persistence/prisma/PrismaStudentGroupSetRepository';
 import { PrismaStudentGroupRepository } from '@infrastructure/persistence/prisma/PrismaStudentGroupRepository';
 import { PrismaStudentGroupMembershipRepository } from '@infrastructure/persistence/prisma/PrismaStudentGroupMembershipRepository';
@@ -44,6 +56,15 @@ import { ClorreActionSuiviUseCase } from '@application/suivi/ClorreActionSuiviUs
 import { ListerActionsEnCoursUseCase } from '@application/suivi/ListerActionsEnCoursUseCase';
 import { AssignerActionSuiviUseCase } from '@application/suivi/AssignerActionSuiviUseCase';
 import { ListerHistoriqueSuiviEleveUseCase } from '@application/suivi/ListerHistoriqueSuiviEleveUseCase';
+import { DetecterIdentiteTransfertUseCase } from '@application/studentTransfer/DetecterIdentiteTransfertUseCase';
+import { CreerDemandeTransfertUseCase } from '@application/studentTransfer/CreerDemandeTransfertUseCase';
+import { EnregistrerConsentementTransfertUseCase } from '@application/studentTransfer/EnregistrerConsentementTransfertUseCase';
+import { DeciderDemandeTransfertUseCase } from '@application/studentTransfer/DeciderDemandeTransfertUseCase';
+import { RevoquerConsentementTransfertUseCase } from '@application/studentTransfer/RevoquerConsentementTransfertUseCase';
+import { AnnulerDemandeTransfertUseCase } from '@application/studentTransfer/AnnulerDemandeTransfertUseCase';
+import { ConsulterDossierTransfertUseCase } from '@application/studentTransfer/ConsulterDossierTransfertUseCase';
+import { AssocierProfilCibleTransfertUseCase } from '@application/studentTransfer/AssocierProfilCibleTransfertUseCase';
+import { ConfigurerTuteurPrincipalUseCase } from '@application/studentTransfer/ConfigurerTuteurPrincipalUseCase';
 import { AffecterLV2EleveUseCase } from '@application/student/AffecterLV2EleveUseCase';
 import { AffecterLV2EnMasseUseCase } from '@application/student/AffecterLV2EnMasseUseCase';
 import { AffecterPEBSEleveUseCase } from '@application/student/AffecterPEBSEleveUseCase';
@@ -56,7 +77,10 @@ import { buildStaffActionCatalog } from '@infrastructure/assistant/catalog/staff
 import { buildParentActionCatalog } from '@infrastructure/assistant/catalog/parentActionCatalog';
 import { buildStudentActionCatalog } from '@infrastructure/assistant/catalog/studentActionCatalog';
 import { notifierEvenementAcademique } from '@infrastructure/services/notification/AcademicEventNotificationService';
+import { creerStudentTransferRoutes } from '@infrastructure/http/routes/studentTransfer.routes';
 import { SmsNotificationAdapter } from '@infrastructure/services/sms/SmsNotificationAdapter';
+import { TransferConsentNotificationAdapter } from '@infrastructure/services/sms/TransferConsentNotificationAdapter';
+import { EmettreConsentementTransfertUseCase } from '@application/studentTransfer/EmettreConsentementTransfertUseCase';
 import { executerBroadcast } from '@infrastructure/services/communication/BroadcastService';
 import { calculerAlertesRetardProgramme } from '@infrastructure/services/pedagogie/AlerteRetardProgrammeService';
 import { notifyDisciplineSms, DISCIPLINE_TYPE_LABELS } from '../../services/sms/SmsNotificationService';
@@ -164,6 +188,45 @@ export function registerCoreRoutes(app: Application, prismaParam: typeof prisma 
   app.use('/api/v2/matricules', creerMatriculeRoutes(matriculeController));
   // Route orpheline retrouvée : la méthode existait sur le controller mais n'était montée nulle part.
   app.patch('/api/v2/students/:id/matricule', requireAuth, requireRole('ADMIN', 'STAFF'), matriculeController.updateMatricule);
+
+  // ── Transfert inter-écoles ──────────────────────────────────────────────
+  const transferRequestRepository = new PrismaTransferRequestRepository(p);
+  const transferAudit = new PrismaTransferAuditAdapter(p);
+  const transferEncryption = new TransferSnapshotEncryptionAdapter();
+  const transferSnapshotBuilder = new PrismaTransferSnapshotBuilder(p, transferEncryption);
+  const transferGateway = new PrismaCrossSchoolTransferGatewayAdapter(p);
+  const transferFeatureFlag = new PrismaTransferFeatureFlagAdapter(p);
+  const transferController = new StudentTransferController(
+    transferFeatureFlag,
+    transferRequestRepository,
+    new DetecterIdentiteTransfertUseCase(transferGateway),
+    new CreerDemandeTransfertUseCase(transferRequestRepository, transferAudit),
+    new EnregistrerConsentementTransfertUseCase(
+      transferRequestRepository,
+      new PrismaGuardianConsentAdapter(p),
+      transferAudit,
+    ),
+    new DeciderDemandeTransfertUseCase(transferRequestRepository, transferAudit),
+    new RevoquerConsentementTransfertUseCase(
+      transferRequestRepository,
+      new PrismaGuardianConsentAdapter(p),
+      transferAudit,
+    ),
+    new AnnulerDemandeTransfertUseCase(transferRequestRepository, transferAudit),
+    new ConsulterDossierTransfertUseCase(transferRequestRepository, transferSnapshotBuilder, transferEncryption, transferAudit),
+    new EmettreConsentementTransfertUseCase(
+      new PrismaGuardianConsentIssuerAdapter(p),
+      new TransferConsentNotificationAdapter(p),
+    ),
+    new AssocierProfilCibleTransfertUseCase(
+      transferRequestRepository,
+      new PrismaStudentTransferLifecycleRepository(p),
+      transferAudit,
+    ),
+    new ConfigurerTuteurPrincipalUseCase(new PrismaStudentGuardianRepository(p)),
+    new PrismaGuardianPhoneOtpAdapter(p),
+  );
+  app.use('/api/v2/student-transfers', creerStudentTransferRoutes(transferController));
 
   // ── Onboarding Auto-Service Élèves ──────────────────────────────────────
   // Préfixe distinct de /api/v2/onboarding (déjà pris par l'onboarding d'établissement,

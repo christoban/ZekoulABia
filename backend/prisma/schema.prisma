@@ -239,6 +239,12 @@ model School {
   correctionAssignments        CorrectionAssignment[]
   tasks                        Task[]
   documentRequirements         EnrollmentDocumentRequirement[]
+  transferRequestsSource       TransferRequest[]              @relation("TransferSourceSchool")
+  transferRequestsTarget       TransferRequest[]              @relation("TransferTargetSchool")
+  transferAuditEventsActor     TransferAuditEvent[]           @relation("TransferAuditActorSchool")
+  transferAuditEventsSource   TransferAuditEvent[]           @relation("TransferAuditSourceSchool")
+  transferAuditEventsTarget   TransferAuditEvent[]           @relation("TransferAuditTargetSchool")
+  transferDossierAccessLogs   TransferDossierAccessLog[]     @relation("TransferAccessSchool")
 }
 
 model SchoolInvite {
@@ -281,6 +287,7 @@ model SchoolConfig {
   offlineModeEnabled               Boolean          @default(true)
   aiAlertsEnabled                  Boolean          @default(true)
   messageModeration                Boolean          @default(false)
+  studentTransferEnabled           Boolean          @default(false)
   /// Échappatoire explicite et traçable : true par défaut (l'école a un vrai conseiller
   /// d'orientation dédié). Réglé à false uniquement si un établissement précis n'a
   /// effectivement personne dans ce rôle — jamais le comportement par défaut.
@@ -613,6 +620,10 @@ model User {
   notifications                   Notification[]              @relation("UserNotifications")
   notificationPreference          NotificationPreference?
   pushSubscriptions               PushSubscription[]
+  transferRequestsCreated         TransferRequest[]            @relation("TransferRequestedBy")
+  transferRequestsRejected        TransferRequest[]            @relation("TransferRejectedBy")
+  transferAuditEvents             TransferAuditEvent[]         @relation("TransferAuditActor")
+  transferDossierAccessLogs       TransferDossierAccessLog[]   @relation("TransferAccessUser")
   offlineQueueItems               OfflineQueue[]              @relation("UserOfflineQueue")
   timetableSlots                  TimetableSlot[]             @relation("TeacherSlots")
   promotionsDecided               StudentPromotion[]          @relation("PromotionDecidedBy")
@@ -727,6 +738,8 @@ model StudentProfile {
   anonymatCodes         AnonymatCode[]
   school                School                      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   identity              StudentIdentity?            @relation(fields: [identityId], references: [id])
+  transferRequestsSource TransferRequest[]          @relation("TransferSourceProfile")
+  transferRequestsTarget TransferRequest[]          @relation("TransferTargetProfile")
 
   // L'unicité conditionnelle identityId/schoolId est créée par migration SQL
   // car Prisma ne modélise pas les index uniques partiels PostgreSQL.
@@ -741,6 +754,122 @@ model StudentIdentity {
   nationalId String           @unique
   createdAt  DateTime         @default(now())
   profiles   StudentProfile[]
+  transferRequests TransferRequest[]
+}
+
+model TransferRequest {
+  id                    String               @id @default(cuid())
+  identityId            String
+  sourceSchoolId        String
+  targetSchoolId        String
+  sourceStudentProfileId String
+  targetStudentProfileId String?
+  requestedByUserId     String
+  academicYearTarget    String
+  status                TransferRequestStatus @default(PENDING_GUARDIAN)
+  requestedAt           DateTime             @default(now())
+  guardianDecisionAt    DateTime?
+  sourceDecisionAt      DateTime?
+  completedAt           DateTime?
+  parentExpiresAt       DateTime
+  sourceAutoApprovalAt  DateTime?
+  rejectionReason       String?
+  rejectedBy            String?
+
+  identity              StudentIdentity      @relation(fields: [identityId], references: [id])
+  sourceSchool          School               @relation("TransferSourceSchool", fields: [sourceSchoolId], references: [id])
+  targetSchool          School               @relation("TransferTargetSchool", fields: [targetSchoolId], references: [id])
+  sourceStudentProfile  StudentProfile       @relation("TransferSourceProfile", fields: [sourceStudentProfileId], references: [id])
+  targetStudentProfile  StudentProfile?      @relation("TransferTargetProfile", fields: [targetStudentProfileId], references: [id])
+  requestedBy           User                 @relation("TransferRequestedBy", fields: [requestedByUserId], references: [id])
+  rejectedByUser        User?                @relation("TransferRejectedBy", fields: [rejectedBy], references: [id])
+  consents              TransferConsent[]
+  snapshot              TransferDossierSnapshot?
+  auditEvents           TransferAuditEvent[]
+
+  @@index([sourceSchoolId, status])
+  @@index([targetSchoolId, status])
+  @@index([identityId, status])
+  @@index([parentExpiresAt, status])
+}
+
+model TransferConsent {
+  id                 String               @id @default(cuid())
+  transferRequestId  String
+  consenterType      TransferConsenterType
+  consenterRef       String
+  decision           TransferConsentDecision @default(PENDING)
+  channel            TransferConsentChannel
+  decidedAt          DateTime?
+  consentTextVersion String
+  scopeAccepted      Boolean
+  ipAddress          String?
+  tokenHash          String               @unique
+  tokenExpiresAt     DateTime
+  otpHash            String
+  otpAttempts        Int                  @default(0)
+  consumedAt         DateTime?
+  notificationKey    String               @unique
+  smsSentAt          DateTime?
+  smsProviderMessageId String?
+
+  transferRequest TransferRequest @relation(fields: [transferRequestId], references: [id])
+
+  @@index([transferRequestId, decision])
+}
+
+model TransferDossierSnapshot {
+  id                String   @id @default(cuid())
+  transferRequestId String   @unique
+  payloadEncrypted  String   @db.Text
+  schemaVersion     String
+  categories        String[]
+  checksum          String
+  generatedAt       DateTime @default(now())
+  deleteAfter       DateTime
+
+  transferRequest TransferRequest          @relation(fields: [transferRequestId], references: [id], onDelete: Cascade)
+  accessLogs      TransferDossierAccessLog[]
+
+  @@index([deleteAfter])
+}
+
+model TransferAuditEvent {
+  id             String   @id @default(cuid())
+  transferRequestId String
+  eventType      String
+  actorUserId    String?
+  actorSchoolId  String
+  sourceSchoolId String
+  targetSchoolId String
+  stateBefore    String
+  stateAfter     String
+  metadata       Json
+  createdAt      DateTime @default(now())
+
+  transferRequest TransferRequest @relation(fields: [transferRequestId], references: [id], onDelete: Cascade)
+  actorUser       User?           @relation("TransferAuditActor", fields: [actorUserId], references: [id])
+  actorSchool     School          @relation("TransferAuditActorSchool", fields: [actorSchoolId], references: [id])
+  sourceSchool    School          @relation("TransferAuditSourceSchool", fields: [sourceSchoolId], references: [id])
+  targetSchool    School          @relation("TransferAuditTargetSchool", fields: [targetSchoolId], references: [id])
+
+  @@index([transferRequestId, createdAt])
+  @@index([actorSchoolId, createdAt])
+}
+
+model TransferDossierAccessLog {
+  id         String   @id @default(cuid())
+  snapshotId String
+  userId     String
+  schoolId   String
+  accessedAt DateTime @default(now())
+
+  snapshot TransferDossierSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  user     User                    @relation("TransferAccessUser", fields: [userId], references: [id])
+  school   School                  @relation("TransferAccessSchool", fields: [schoolId], references: [id])
+
+  @@index([snapshotId, accessedAt])
+  @@index([schoolId, userId, accessedAt])
 }
 
 enum MatriculeSource {
@@ -793,6 +922,11 @@ model ParentStudent {
   studentProfileId     String
   relation             ParentStudentRelation @default(AUTRE)
   contactPrincipal     Boolean               @default(false)
+  phoneVerified        Boolean               @default(false)
+  phoneVerifiedAt      DateTime?
+  phoneOtpHash         String?
+  phoneOtpExpiresAt    DateTime?
+  phoneOtpAttempts     Int                   @default(0)
   responsableFinancier Boolean               @default(false)
   parentProfile        ParentProfile         @relation(fields: [parentProfileId], references: [id])
   studentProfile       StudentProfile        @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
@@ -2702,6 +2836,9 @@ enum StaffPermissionType {
   MANAGE_CLASSES
   MANAGE_STUDENT_ASSIGNMENTS
   MANAGE_TEACHING_ASSIGNMENTS
+  TRANSFER_REQUEST
+  TRANSFER_APPROVE
+  TRANSFER_DOSSIER_VIEW
 }
 
 enum AcademicYearStatus {
@@ -2998,6 +3135,35 @@ enum StudentStatus {
   GRADUATED
   LEFT
   TRANSFERRED
+}
+
+enum TransferRequestStatus {
+  PENDING_GUARDIAN
+  PENDING_SOURCE
+  REFUSED_BY_GUARDIAN
+  REFUSED_BY_SOURCE
+  EXPIRED
+  REVOKED
+  APPROVED
+  COMPLETED
+  CANCELLED
+}
+
+enum TransferConsenterType {
+  GUARDIAN
+  ADULT_STUDENT
+}
+
+enum TransferConsentDecision {
+  PENDING
+  ACCEPTED
+  REFUSED
+  REVOKED
+}
+
+enum TransferConsentChannel {
+  LINK_OTP
+  ASSISTED_BY_STAFF
 }
 
 // ── Module Orientation ──────────────────────────────────────────────────────

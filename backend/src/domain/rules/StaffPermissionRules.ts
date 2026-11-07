@@ -24,7 +24,7 @@ export const PERMISSIONS_PAR_TITRE: Record<string, StaffPermissionType[]> = {
     'MANAGE_ANONYMAT',
     'MANAGE_CLASSES',
     'MANAGE_STUDENT_ASSIGNMENTS',
-    'MANAGE_TEACHING_ASSIGNMENTS',
+    'MANAGE_TEACHING_ASSIGNMENTS', 'TRANSFER_DOSSIER_VIEW',
   ],
   'Surveillant Général': [
     'MANAGE_ATTENDANCE', 'MANAGE_DISCIPLINE', 'MANAGE_INCIDENTS',
@@ -42,9 +42,9 @@ export const PERMISSIONS_PAR_TITRE: Record<string, StaffPermissionType[]> = {
     'GENERATE_PEDAGOGICAL_REPORTS', 'MANAGE_CE_REPORTS', 'MANAGE_PEDAGOGICAL_BRIEF',
   ],
   'Documentaliste': ['MANAGE_LIBRARY'],
-  "Conseiller d'Orientation": ['MANAGE_ORIENTATION'],
+  "Conseiller d'Orientation": ['MANAGE_ORIENTATION', 'TRANSFER_DOSSIER_VIEW'],
   'Comptable-Matières': ['MANAGE_PATRIMOINE', 'MANAGE_DEGRADATIONS'],
-  'Secrétaire': ['MANAGE_ENROLLMENT', 'GENERATE_REPORTS'],
+  'Secrétaire': ['MANAGE_ENROLLMENT', 'GENERATE_REPORTS', 'TRANSFER_REQUEST'],
 
   // ── Technique francophone (en plus du pool secondaire FR) ──────────────────
   'Chef des Travaux': [
@@ -63,7 +63,7 @@ export const PERMISSIONS_PAR_TITRE: Record<string, StaffPermissionType[]> = {
   ],
   'Conseiller Pédagogique': [
     'VIEW_SUPERVISED_GRADES', 'SUPERVISE_LESSON_PLANS',
-    'GENERATE_PEDAGOGICAL_REPORTS', 'MANAGE_PEDAGOGICAL_BRIEF',
+    'GENERATE_PEDAGOGICAL_REPORTS', 'MANAGE_PEDAGOGICAL_BRIEF', 'TRANSFER_DOSSIER_VIEW',
   ],
 
   // ── Secondaire anglophone ───────────────────────────────────────────────────
@@ -90,8 +90,8 @@ export const PERMISSIONS_PAR_TITRE: Record<string, StaffPermissionType[]> = {
     'GENERATE_PEDAGOGICAL_REPORTS', 'MANAGE_CE_REPORTS', 'MANAGE_PEDAGOGICAL_BRIEF',
   ],
   'Librarian': ['MANAGE_LIBRARY'],
-  'Guidance Counsellor': ['MANAGE_ORIENTATION'],
-  'School Secretary': ['MANAGE_ENROLLMENT', 'GENERATE_REPORTS'],
+  'Guidance Counsellor': ['MANAGE_ORIENTATION', 'TRANSFER_DOSSIER_VIEW'],
+  'School Secretary': ['MANAGE_ENROLLMENT', 'GENERATE_REPORTS', 'TRANSFER_REQUEST'],
 
   // ── Primaire anglophone ─────────────────────────────────────────────────────
   'Deputy Head Teacher': [
@@ -108,7 +108,7 @@ export const PERMISSIONS_PAR_TITRE: Record<string, StaffPermissionType[]> = {
   // Nom confirmé par l'utilisateur, pas vérifié contre un référentiel MINESEC officiel.
   'Pedagogic Coordinator': [
     'VIEW_SUPERVISED_GRADES', 'SUPERVISE_LESSON_PLANS',
-    'GENERATE_PEDAGOGICAL_REPORTS', 'MANAGE_PEDAGOGICAL_BRIEF',
+    'GENERATE_PEDAGOGICAL_REPORTS', 'MANAGE_PEDAGOGICAL_BRIEF', 'TRANSFER_DOSSIER_VIEW',
   ],
 };
 

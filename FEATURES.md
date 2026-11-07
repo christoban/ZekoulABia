@@ -270,7 +270,24 @@
 - Un élève sans matricule n'est pas détecté entre établissements.
 - Un retour dans l'école d'origine réutilise le profil existant, le réactive si nécessaire et crée une nouvelle `Enrollment` pour l'année concernée ; aucun second profil n'est créé.
 
-## 33. APEE (association des parents)
+## 33. Transfert d'élève inter-écoles
+
+**Objectif** : préparer un transfert entre établissements indépendants, avec identité MINESEC globale, tuteur principal vérifié et isolation stricte entre écoles. Ce module est distinct de `schoolGroup`.
+
+- **Phase 1C implémentée** : majorité civile fixée à 21 ans, sélection d'un tuteur enregistré dans la même école, téléphone vérifié obligatoire et unicité du tuteur principal par élève.
+- **Phase 1D prête pour la phase 2** : `CrossSchoolTransferGatewayPort` ne permet qu'une détection minimale et la construction d'un instantané après `APPROVED`, entre deux écoles distinctes. L'adapter Prisma de l'instantané sera ajouté avec les modèles dédiés de la phase 2.
+- **Phase 1E** : permissions `TRANSFER_REQUEST`, `TRANSFER_APPROVE` et `TRANSFER_DOSSIER_VIEW` synchronisées entre backend, Prisma et cache frontend ; secrétaire, censeur et conseiller pédagogique sont mappés selon leur responsabilité.
+- **Phase 1F** : transition source autorisée uniquement après `COMPLETED`, accès élève conservé en lecture seule et historique notes/présences/paiements préservé par contrat.
+- **Phase 1G** : snapshot en liste blanche avec checksum SHA-256, chiffrement AES-256-GCM via le mécanisme existant et suppression prévue à échéance.
+- **Phase 1H** : fixture déterministe à deux écoles avec identité, tuteur, note verrouillée, bulletin publié et données exclues.
+- **Phase 2** : modèles `TransferRequest`, `TransferConsent`, `TransferDossierSnapshot`, `TransferAuditEvent` et `TransferDossierAccessLog`, index d'unicité active par identité et trigger append-only pour l'audit.
+- **Phase 3** : produits dérivés dédiés et use cases pour créer une demande (matricule national), enregistrer le consentement (décision + canal `LINK_OTP`/`ASSISTED_BY_STAFF`), le révoquer par jeton, décider côté source, auto-approuver, expirer, annuler, lister (envoyées/reçues), générer/consulter le dossier déchiffré avec re-vérification du checksum, associer le profil cible, relancer (J+3/J+10), purger les snapshots échus et marquer l'élève transféré.
+- **Phase 4** : adapters Prisma transactionnels, émission automatisée du lien signé + OTP par SMS avec hash en base (TTL 48 h, usage unique, 5 essais), envoi idempotent et repli SMS existant, API `/api/v2/student-transfers` (routes consent/revoke non authentifiées mais à secret + OTP, le reste sous RBAC), feature flag par école désactivé par défaut et jobs Inngest : auto-approbation, expiration, génération d'instantané, marquage TRANSFERRED, relances J+3/J+10 et purge nocturne.
+- **Backend** : `app/studentTransfer/*` (use cases + `guardianPolicy`, `snapshotContract`, `transferStateMachine`, `transferAccessPolicy`, `config`), `StudentGuardianRepository`, `StudentTransferLifecycleRepository`, `TransferRequestRepository`, `CrossSchoolTransferGatewayPort` (détection minimale), `PrismaStudentGuardianRepository`, `PrismaGuardianPhoneOtpAdapter`, `PrismaStudentTransferLifecycleRepository`, `StudentTransferController`
+- **Schéma** : `ParentStudent.phoneVerified`, `ParentStudent.phoneVerifiedAt`, OTP tuteur (`phoneOtpHash/ExpiresAt/Attempts`), index unique partiel sur `contactPrincipal`
+- **À venir (Phase 5)** : gating app large `canMutateCurrentData = false` pour l'élève TRANSFERRED, frontend et parcours d'achat complet.
+
+## 34. APEE (association des parents)
 
 **Objectif** : transactions et dépenses de l'association des parents d'élèves.
 
