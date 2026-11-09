@@ -11,7 +11,7 @@ import { AutoApprouverDemandeTransfertUseCase } from '@application/studentTransf
 import { ExpirerDemandeTransfertUseCase } from '@application/studentTransfer/ExpirerDemandeTransfertUseCase';
 import { GenererInstantaneTransfertUseCase } from '@application/studentTransfer/GenererInstantaneTransfertUseCase';
 import { MarquerEleveTransfereUseCase } from '@application/studentTransfer/MarquerEleveTransfereUseCase';
-import { RappelerConsentementTransfertUseCase } from '@application/studentTransfer/RappelerConsentementTransfertUseCase';
+import { RappelerConsentementTransfertUseCase, choisirJourRelance } from '@application/studentTransfer/RappelerConsentementTransfertUseCase';
 import { SupprimerInstantanesExpiresUseCase } from '@application/studentTransfer/SupprimerInstantanesExpiresUseCase';
 import { messageErreur } from '@application/shared/messageErreur';
 
@@ -140,15 +140,14 @@ export const traiterRelancesConsentementTransferts = inngest.createFunction(
     let processed = 0;
     for (const request of pending) {
       const jours = Math.floor((maintenant.getTime() - request.requestedAt.getTime()) / 86_400_000);
-      if (jours < 3) continue;
-      const already = (day: number) => prisma.transferAuditEvent.findFirst({
+      const dejaFait = (day: number) => prisma.transferAuditEvent.findFirst({
         where: {
           transferRequestId: request.id,
           eventType: 'GUARDIAN_CONSENT_REMINDER',
           metadata: { path: ['day'], equals: day },
         },
       });
-      const day = jours >= 10 && !(await already(10)) ? 10 : jours >= 3 && !(await already(3)) ? 3 : null;
+      const day = choisirJourRelance(jours, Boolean(await dejaFait(3)), Boolean(await dejaFait(10)));
       if (day === null) continue;
       try {
         await useCase.execute({

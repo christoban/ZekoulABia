@@ -43,4 +43,14 @@ describe('DetecterIdentiteTransfertUseCase', () => {
     })).rejects.toThrow('alphanumérique');
     expect(gateway.lookupCalls).toBe(0);
   });
+
+  it('identité sans matricule (vide, espaces) : aucune détection inter-écoles (Phase 6)', async () => {
+    const gateway = new FakeGateway();
+    const useCase = new DetecterIdentiteTransfertUseCase(gateway);
+
+    for (const nationalId of ['', '   ']) {
+      await expect(useCase.execute({ nationalId, targetSchoolId: 'school-b' })).rejects.toThrow('alphanumérique');
+    }
+    expect(gateway.lookupCalls).toBe(0);
+  });
 });

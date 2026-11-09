@@ -11,6 +11,22 @@ export interface RappelerConsentementTransfertCommand {
   now?: Date;
 }
 
+/**
+ * Source unique du choix du jour de relance (J+3 / J+10) : 10 prime s'il est
+ * déjà atteint, une relance déjà journalisée à ce jour n'est jamais rejouée
+ * (idempotence des jobs — déduplication par l'événement d'audit `day`), et une
+ * J+10 déjà envoyée interdit toute relance J+3 rétroactive.
+ */
+export function choisirJourRelance(
+  joursDepuisDemande: number,
+  dejaFait3: boolean,
+  dejaFait10: boolean,
+): 3 | 10 | null {
+  if (joursDepuisDemande >= 10) return dejaFait10 ? null : 10;
+  if (joursDepuisDemande >= 3) return dejaFait3 ? null : 3;
+  return null;
+}
+
 /** Relance J+3 / J+10 : régénère le lien + OTP (même notificationKey) puis renvoie le SMS. */
 export class RappelerConsentementTransfertUseCase {
   constructor(
