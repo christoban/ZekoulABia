@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'bun:test';
-import type { TransferRequestRecord, TransferRequestRepositoryPort } from '../../../../src/domain/ports/repositories/TransferRequestRepository.ts';
+import type { TransferRequestRecord, TransferRequestRepositoryPort, CompletedTransferBrief, TargetSentBrief, SourceReceivedBrief } from '../../../../src/domain/ports/repositories/TransferRequestRepository.ts';
 import type { TransferAuditEventInput, TransferAuditPort } from '../../../../src/domain/ports/services/TransferAuditPort.ts';
 import type { TransferSnapshotBuildResult, TransferSnapshotBuilderPort } from '../../../../src/domain/ports/services/TransferSnapshotBuilderPort.ts';
 import type { TransferSnapshotEncryptionPort } from '../../../../src/domain/ports/services/TransferSnapshotEncryptionPort.ts';
 import type { GuardianConsentPort } from '../../../../src/domain/ports/services/GuardianConsentPort.ts';
+import type { ConsentChallengeState } from '../../../../src/domain/ports/services/GuardianConsentPort.ts';
 import type { StudentTransferLifecycleRepository } from '../../../../src/domain/ports/repositories/StudentTransferLifecycleRepository.ts';
 import { AutoApprouverDemandeTransfertUseCase } from '../../../../src/application/studentTransfer/AutoApprouverDemandeTransfertUseCase.ts';
 import { ExpirerDemandeTransfertUseCase } from '../../../../src/application/studentTransfer/ExpirerDemandeTransfertUseCase.ts';
@@ -28,8 +29,9 @@ class FakeRepository implements TransferRequestRepositoryPort {
   async findById(): Promise<TransferRequestRecord> { return this.request; }
   async findActiveByIdentityByNationalId(): Promise<TransferRequestRecord | null> { return this.request; }
   async createPendingGuardian(): Promise<TransferRequestRecord> { return this.request; }
-  async listSentByTarget(): Promise<TransferRequestRecord[]> { return []; }
-  async listReceivedBySource(): Promise<TransferRequestRecord[]> { return []; }
+  async listSentByTarget(): Promise<TargetSentBrief[]> { return []; }
+  async listReceivedBySource(): Promise<SourceReceivedBrief[]> { return []; }
+  async listCompletedForTargetSchool(): Promise<CompletedTransferBrief[]> { return []; }
   async transitionIfCurrent(command: { id: string; expectedStatus: TransferRequestRecord['status']; nextStatus: TransferRequestRecord['status']; patch?: Partial<TransferRequestRecord> }): Promise<TransferRequestRecord | null> {
     if (this.request.id !== command.id || this.request.status !== command.expectedStatus) return null;
     this.request = { ...this.request, ...command.patch, status: command.nextStatus };
@@ -61,6 +63,10 @@ class FakeConsent implements GuardianConsentPort {
 
   async revokeIfHolder(input: { token: string }): Promise<{ consenterType: 'GUARDIAN' | 'ADULT_STUDENT'; consenterRef: string } | null> {
     return input.token === 'parent-token' ? this.titre : null;
+  }
+
+  async describeIfHolder(): Promise<ConsentChallengeState | null> {
+    return { status: 'PENDING', expiresAt: new Date('2026-11-10T12:00:00.000Z') };
   }
 }
 

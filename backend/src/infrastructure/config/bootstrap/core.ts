@@ -65,6 +65,8 @@ import { AnnulerDemandeTransfertUseCase } from '@application/studentTransfer/Ann
 import { ConsulterDossierTransfertUseCase } from '@application/studentTransfer/ConsulterDossierTransfertUseCase';
 import { AssocierProfilCibleTransfertUseCase } from '@application/studentTransfer/AssocierProfilCibleTransfertUseCase';
 import { ConfigurerTuteurPrincipalUseCase } from '@application/studentTransfer/ConfigurerTuteurPrincipalUseCase';
+import { ListerHistoriqueTransfertsUseCase } from '@application/studentTransfer/ListerHistoriqueTransfertsUseCase';
+import { ConsulterEtatConsentementTransfertUseCase } from '@application/studentTransfer/ConsulterEtatConsentementTransfertUseCase';
 import { AffecterLV2EleveUseCase } from '@application/student/AffecterLV2EleveUseCase';
 import { AffecterLV2EnMasseUseCase } from '@application/student/AffecterLV2EnMasseUseCase';
 import { AffecterPEBSEleveUseCase } from '@application/student/AffecterPEBSEleveUseCase';
@@ -224,6 +226,8 @@ export function registerCoreRoutes(app: Application, prismaParam: typeof prisma 
       transferAudit,
     ),
     new ConfigurerTuteurPrincipalUseCase(new PrismaStudentGuardianRepository(p)),
+    new ListerHistoriqueTransfertsUseCase(transferRequestRepository),
+    new ConsulterEtatConsentementTransfertUseCase(new PrismaGuardianConsentAdapter(p)),
     new PrismaGuardianPhoneOtpAdapter(p),
   );
   app.use('/api/v2/student-transfers', creerStudentTransferRoutes(transferController));

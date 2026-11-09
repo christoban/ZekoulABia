@@ -8,7 +8,7 @@ import {
   Compass, IdCard, ShieldAlert,
   Megaphone, MessageCircle,
   ScanSearch, Users, Settings, ChevronDown, ChevronRight,
-  BarChart3, UserPlus, Award, RefreshCw, Camera, X,
+  BarChart3, UserPlus, Award, RefreshCw, Camera, X, ArrowRightLeft,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -93,6 +93,14 @@ export default function StaffSidebar({
 
   // Admissions & Concours (Secrétaire / Bursar / Intendant)
   const admissionsItems: NavItem[] = []
+  if (can('transferts')) {
+    admissionsItems.push({
+      id: 'transferts',
+      icon: ArrowRightLeft,
+      label: tnav('sidebar.studentTransfers') ?? 'Transferts d élèves',
+      badge: badges.transferts,
+    })
+  }
   if (can('inscriptions')) {
     admissionsItems.push({
       id: 'inscriptions',

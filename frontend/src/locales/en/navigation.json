@@ -80,7 +80,8 @@
     "parent_healthTracking": "School & Health Tracking",
     "parent_academicProfile": "Academic Profile",
     "parent_childProfile": "Child's School Profile",
-    "menu": "More"
+    "menu": "More",
+    "studentTransfers": "Student transfers"
   },
   "group": {
     "admin": "Administration & Accounts",

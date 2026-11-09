@@ -1,6 +1,7 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { Prisma, type PrismaClient, type TransferConsentDecision } from '@prisma/client';
 import type {
+  ConsentChallengeState,
   GuardianConsentPort,
   VerifiedTransferConsent,
 } from '@domain/ports/services/GuardianConsentPort';
@@ -64,6 +65,22 @@ export class PrismaGuardianConsentAdapter implements GuardianConsentPort {
       scopeAccepted: consent.scopeAccepted,
       ipAddress: consent.ipAddress,
     };
+  }
+
+  async describeIfHolder(input: { token: string; requestId: string }): Promise<ConsentChallengeState | null> {
+    const consent = await this.prisma.transferConsent.findUnique({
+      where: { tokenHash: hash(input.token) },
+    });
+    if (!consent || consent.transferRequestId !== input.requestId) return null;
+
+    const status: ConsentChallengeState['status'] = consent.consumedAt
+      ? 'DECIDED'
+      : consent.decision === 'REVOKED'
+        ? 'REVOKED'
+        : consent.tokenExpiresAt <= new Date()
+          ? 'EXPIRED'
+          : 'PENDING';
+    return { status, expiresAt: consent.tokenExpiresAt };
   }
 
   async revokeIfHolder(input: { token: string; requestId: string }): Promise<{

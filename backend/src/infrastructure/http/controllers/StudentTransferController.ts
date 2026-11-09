@@ -9,6 +9,8 @@ import type { DetecterIdentiteTransfertUseCase } from '@application/studentTrans
 import type { EnregistrerConsentementTransfertUseCase } from '@application/studentTransfer/EnregistrerConsentementTransfertUseCase';
 import type { EmettreConsentementTransfertUseCase } from '@application/studentTransfer/EmettreConsentementTransfertUseCase';
 import type { RevoquerConsentementTransfertUseCase } from '@application/studentTransfer/RevoquerConsentementTransfertUseCase';
+import type { ListerHistoriqueTransfertsUseCase } from '@application/studentTransfer/ListerHistoriqueTransfertsUseCase';
+import type { ConsulterEtatConsentementTransfertUseCase } from '@application/studentTransfer/ConsulterEtatConsentementTransfertUseCase';
 import type { TransferFeatureFlagPort } from '@domain/ports/services/TransferFeatureFlagPort';
 import type { GuardianPhoneOtpPort } from '@domain/ports/services/GuardianPhoneOtpPort';
 import type { TransferRequestRepositoryPort } from '@domain/ports/repositories/TransferRequestRepository';
@@ -28,6 +30,8 @@ export class StudentTransferController {
     private readonly emitConsent: EmettreConsentementTransfertUseCase,
     private readonly linkTargetProfile: AssocierProfilCibleTransfertUseCase,
     private readonly configureGuardianUseCase: ConfigurerTuteurPrincipalUseCase,
+    private readonly listHistory: ListerHistoriqueTransfertsUseCase,
+    private readonly describeConsentState: ConsulterEtatConsentementTransfertUseCase,
     private readonly phoneOtp: GuardianPhoneOtpPort,
   ) {}
 
@@ -182,6 +186,29 @@ export class StudentTransferController {
         otp: String(req.body.otp ?? ''),
       });
       res.json({ success: true });
+    } catch (error) { next(error); }
+  };
+
+  /** Bloc Censeur / Conseiller B — demandes COMPLETED cibles (jeton jamais consommé ici). */
+  history = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const data = await this.listHistory.execute(req.user!.schoolId);
+      res.json({ success: true, data });
+    } catch (error) { next(error); }
+  };
+
+  /** Page publique du tuteur — état du challenge sans le consommer. */
+  consentStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const state = await this.describeConsentState.execute({
+        token: String(req.query.token ?? ''),
+        requestId: String(req.params.requestId),
+      });
+      if (!state) {
+        res.status(404).json({ success: false, message: 'Lien de consentement invalide.' });
+        return;
+      }
+      res.json({ success: true, data: state });
     } catch (error) { next(error); }
   };
 }

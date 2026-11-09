@@ -1,6 +1,9 @@
 import { Prisma, type PrismaClient, type TransferRequestStatus as PrismaTransferRequestStatus } from '@prisma/client';
 import type {
+  CompletedTransferBrief,
   CreateTransferRequestCommand,
+  SourceReceivedBrief,
+  TargetSentBrief,
   TransferRequestRecord,
   TransferRequestRepositoryPort,
 } from '@domain/ports/repositories/TransferRequestRepository';
@@ -50,22 +53,54 @@ export class PrismaTransferRequestRepository implements TransferRequestRepositor
     return request ? mapRequest(request) : null;
   }
 
-  async listSentByTarget(targetSchoolId: string): Promise<TransferRequestRecord[]> {
+  async listSentByTarget(targetSchoolId: string): Promise<TargetSentBrief[]> {
     const requests = await this.prisma.transferRequest.findMany({
       where: { targetSchoolId },
       orderBy: { requestedAt: 'desc' },
       take: 100,
+      include: { sourceSchool: { select: { name: true } } },
     });
-    return requests.map(mapRequest);
+    return requests.map(request => ({ ...mapRequest(request), sourceSchoolName: request.sourceSchool.name }));
   }
 
-  async listReceivedBySource(sourceSchoolId: string): Promise<TransferRequestRecord[]> {
+  async listReceivedBySource(sourceSchoolId: string): Promise<SourceReceivedBrief[]> {
     const requests = await this.prisma.transferRequest.findMany({
       where: { sourceSchoolId },
       orderBy: { requestedAt: 'desc' },
       take: 100,
+      include: {
+        targetSchool: { select: { name: true } },
+        consents: { select: { decision: true, tokenExpiresAt: true }, orderBy: { tokenExpiresAt: 'desc' }, take: 1 },
+      },
     });
-    return requests.map(mapRequest);
+    return requests.map(request => ({
+      ...mapRequest(request),
+      targetSchoolName: request.targetSchool.name,
+      consenterDecision: (request.consents[0]?.decision ?? null) as SourceReceivedBrief['consenterDecision'],
+      consenterExpiresAt: request.consents[0]?.tokenExpiresAt ?? null,
+    }));
+  }
+
+  async listCompletedForTargetSchool(targetSchoolId: string): Promise<CompletedTransferBrief[]> {
+    const requests = await this.prisma.transferRequest.findMany({
+      where: { targetSchoolId, status: 'COMPLETED', targetStudentProfileId: { not: null } },
+      orderBy: { completedAt: 'desc' },
+      take: 100,
+      select: {
+        id: true,
+        completedAt: true,
+        targetStudentProfileId: true,
+        sourceSchool: { select: { name: true } },
+        snapshot: { select: { id: true } },
+      },
+    });
+    return requests.map(request => ({
+      id: request.id,
+      completedAt: request.completedAt,
+      sourceSchoolName: request.sourceSchool.name,
+      snapshotId: request.snapshot?.id ?? null,
+      targetStudentProfileId: request.targetStudentProfileId,
+    }));
   }
 
   async createPendingGuardian(command: CreateTransferRequestCommand): Promise<TransferRequestRecord> {

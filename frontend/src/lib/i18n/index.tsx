@@ -19,6 +19,7 @@ import frDiscipline from '@/locales/fr/discipline.json'
 import frErrors from '@/locales/fr/errors.json'
 import frOnboarding from '@/locales/fr/onboarding.json'
 import frHrSelfService from '@/locales/fr/hrSelfService.json'
+import frStudentTransfer from '@/locales/fr/studentTransfer.json'
 
 // Dictionnaires EN importés STATIQUEMENT eux aussi (l'import() dynamique s'avère peu fiable
 // selon le navigateur/appareil — un toggle de langue qui « ne fait rien » sur mobile en était
@@ -36,18 +37,19 @@ import enDiscipline from '@/locales/en/discipline.json'
 import enErrors from '@/locales/en/errors.json'
 import enOnboarding from '@/locales/en/onboarding.json'
 import enHrSelfService from '@/locales/en/hrSelfService.json'
+import enStudentTransfer from '@/locales/en/studentTransfer.json'
 
 export type Language = 'fr' | 'en'
 type Dictionary = Record<string, any>
 type Namespace =
   | 'common' | 'navigation' | 'admin' | 'teacher' | 'staff'
   | 'parent' | 'student' | 'grades' | 'finance' | 'discipline' | 'errors'
-  | 'onboarding' | 'hrSelfService'
+  | 'onboarding' | 'hrSelfService' | 'studentTransfer'
 
 const ALL_NAMESPACES: Namespace[] = [
   'common', 'navigation', 'admin', 'teacher', 'staff',
   'parent', 'student', 'grades', 'finance', 'discipline', 'errors',
-  'onboarding', 'hrSelfService',
+  'onboarding', 'hrSelfService', 'studentTransfer',
 ]
 
 // Dictionnaires complets FR et EN, prêts synchrones dès le chargement du module.
@@ -56,12 +58,14 @@ const FR_DICTS: Record<Namespace, Dictionary> = {
   staff: frStaff, parent: frParent, student: frStudent, grades: frGrades,
   finance: frFinance, discipline: frDiscipline, errors: frErrors, onboarding: frOnboarding,
   hrSelfService: frHrSelfService,
+  studentTransfer: frStudentTransfer,
 }
 const EN_DICTS: Record<Namespace, Dictionary> = {
   common: enCommon, navigation: enNavigation, admin: enAdmin, teacher: enTeacher,
   staff: enStaff, parent: enParent, student: enStudent, grades: enGrades,
   finance: enFinance, discipline: enDiscipline, errors: enErrors, onboarding: enOnboarding,
   hrSelfService: enHrSelfService,
+  studentTransfer: enStudentTransfer,
 }
 
 const DICTS_BY_LANG: Record<Language, Record<Namespace, Dictionary>> = { fr: FR_DICTS, en: EN_DICTS }

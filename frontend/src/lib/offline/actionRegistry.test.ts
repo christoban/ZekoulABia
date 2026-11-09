@@ -13,6 +13,22 @@ describe('Offline Action Registry — Phase 5', () => {
     expect(OPERATION_RISK_LEVEL.EXAM_PUBLISH).toBe('FORT');
   });
 
+  it('refuse TOUTES les actions de transfert inter-écoles hors-ligne (Plan Transfert Phase 5)', () => {
+    for (const type of [
+      'STUDENT_TRANSFER_REQUEST',
+      'STUDENT_TRANSFER_CONSENT',
+      'STUDENT_TRANSFER_DECISION',
+      'STUDENT_TRANSFER_CANCEL',
+      'STUDENT_TRANSFER_REVOKE',
+    ] as const) {
+      expect(OPERATION_RISK_LEVEL[type]).toBe('FORT');
+      let attrape: Error | null = null;
+      try { throw new OfflineActionRefusedError(type) } catch (e) { attrape = e as Error }
+      expect(attrape instanceof OfflineActionRefusedError).toBe(true);
+      expect(attrape?.message.includes(type)).toBe(true);
+    }
+  });
+
   it('instancie OfflineActionRefusedError avec le nom du type refusé', () => {
     const err = new OfflineActionRefusedError('ENROLLMENT_VALIDATE');
     expect(err instanceof Error).toBe(true);

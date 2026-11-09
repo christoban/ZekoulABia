@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'bun:test';
 import type {
+  CompletedTransferBrief,
   CreateTransferRequestCommand,
+  SourceReceivedBrief,
+  TargetSentBrief,
   TransferRequestRecord,
   TransferRequestRepositoryPort,
 } from '../../../../src/domain/ports/repositories/TransferRequestRepository.ts';
 import type { TransferSnapshotBuildResult } from '../../../../src/domain/ports/services/TransferSnapshotBuilderPort.ts';
 import type { TransferAuditEventInput, TransferAuditPort } from '../../../../src/domain/ports/services/TransferAuditPort.ts';
-import type { GuardianConsentPort, VerifiedTransferConsent } from '../../../../src/domain/ports/services/GuardianConsentPort.ts';
+import type { GuardianConsentPort, ConsentChallengeState, VerifiedTransferConsent } from '../../../../src/domain/ports/services/GuardianConsentPort.ts';
 import { CreerDemandeTransfertUseCase } from '../../../../src/application/studentTransfer/CreerDemandeTransfertUseCase.ts';
 import { EnregistrerConsentementTransfertUseCase } from '../../../../src/application/studentTransfer/EnregistrerConsentementTransfertUseCase.ts';
 import { DeciderDemandeTransfertUseCase } from '../../../../src/application/studentTransfer/DeciderDemandeTransfertUseCase.ts';
@@ -57,8 +60,9 @@ class FakeTransferRepository implements TransferRequestRepositoryPort {
     return this.request;
   }
 
-  async listSentByTarget(): Promise<TransferRequestRecord[]> { return []; }
-  async listReceivedBySource(): Promise<TransferRequestRecord[]> { return []; }
+  async listSentByTarget(): Promise<TargetSentBrief[]> { return []; }
+  async listReceivedBySource(): Promise<SourceReceivedBrief[]> { return []; }
+  async listCompletedForTargetSchool(): Promise<CompletedTransferBrief[]> { return []; }
 
   async transitionIfCurrent(command: {
     id: string;
@@ -105,6 +109,10 @@ class FakeConsentPort implements GuardianConsentPort {
 
   async revokeIfHolder(): Promise<{ consenterType: 'GUARDIAN' | 'ADULT_STUDENT'; consenterRef: string } | null> {
     return null;
+  }
+
+  async describeIfHolder(): Promise<ConsentChallengeState | null> {
+    return { status: 'PENDING', expiresAt: new Date('2026-11-10T12:00:00.000Z') };
   }
 }
 

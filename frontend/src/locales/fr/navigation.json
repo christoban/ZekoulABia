@@ -80,7 +80,8 @@
     "parent_healthTracking": "Suivi scolaire & Santé",
     "parent_academicProfile": "Profil académique",
     "parent_childProfile": "Dossier scolaire de l'enfant",
-    "menu": "Plus"
+    "menu": "Plus",
+    "studentTransfers": "Transferts inter-écoles"
   },
   "group": {
     "admin": "Administration & Comptes",

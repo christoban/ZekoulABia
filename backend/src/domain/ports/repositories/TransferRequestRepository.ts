@@ -31,12 +31,36 @@ export interface CreateTransferRequestCommand {
   sourceAutoApprovalAt: Date | null;
 }
 
+/** Vue cible utilisée par l'écran « Historique d'avant transfert » (TRANSFER_DOSSIER_VIEW). */
+export interface CompletedTransferBrief {
+  id: string;
+  completedAt: Date | null;
+  sourceSchoolName: string;
+  snapshotId: string | null;
+  targetStudentProfileId: string | null;
+}
+
+/** Liste de l'école cible — l'école d'origine est nommée pour l'affichage. */
+export interface TargetSentBrief extends TransferRequestRecord {
+  sourceSchoolName: string;
+}
+
+/** Liste de l'école d'origine — l'école cible est nommée pour l'affichage. */
+export interface SourceReceivedBrief extends TransferRequestRecord {
+  targetSchoolName: string;
+  /** Dernier challenge de consentement connu pour l'écran admin (état du tuteur). */
+  consenterDecision: 'PENDING' | 'ACCEPTED' | 'REFUSED' | 'REVOKED' | null;
+  consenterExpiresAt: Date | null;
+}
+
 export interface TransferRequestRepositoryPort {
   findById(id: string): Promise<TransferRequestRecord | null>;
   findActiveByIdentityByNationalId(nationalId: string): Promise<TransferRequestRecord | null>;
   createPendingGuardian(command: CreateTransferRequestCommand): Promise<TransferRequestRecord>;
-  listSentByTarget(targetSchoolId: string): Promise<TransferRequestRecord[]>;
-  listReceivedBySource(sourceSchoolId: string): Promise<TransferRequestRecord[]>;
+  listSentByTarget(targetSchoolId: string): Promise<TargetSentBrief[]>;
+  listReceivedBySource(sourceSchoolId: string): Promise<SourceReceivedBrief[]>;
+  /** Demandes COMPLETED dont cette école est la cible — arrière-plan du bloc Censeur/Conseiller B. */
+  listCompletedForTargetSchool(targetSchoolId: string): Promise<CompletedTransferBrief[]>;
   transitionIfCurrent(command: {
     id: string;
     expectedStatus: TransferRequestStatus;

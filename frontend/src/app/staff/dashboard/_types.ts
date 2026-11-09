@@ -8,6 +8,7 @@ export type StaffSection =
   | 'mon-profil-rh' | 'apee' | 'notifications' | 'babillard' | 'messagerie' | 'moderation-messagerie'
   | 'classes' | 'eleves-affectations' | 'import-eleves'
   | 'inscriptions' | 'concours' | 'eleves-familles'
+  | 'transferts'
   | 'configuration' | 'rapports'
 
 export interface SessionUser {
@@ -38,6 +39,7 @@ export const ALL_STAFF_SECTIONS: StaffSection[] = [
   'mon-profil-rh', 'apee', 'notifications', 'babillard', 'messagerie', 'moderation-messagerie',
   'classes', 'eleves-affectations', 'import-eleves',
   'inscriptions', 'concours', 'eleves-familles',
+  'transferts',
   'configuration', 'rapports',
 ]
 
@@ -70,6 +72,8 @@ export const PERM_TO_SECTION: { perm: string; section: StaffSection }[] = [
   { perm: 'MANAGE_ORIENTATION',         section: 'suivi-eleves'     },
   { perm: 'MANAGE_PEDAGOGICAL_BRIEF',   section: 'suivi-eleves'     },
   { perm: 'MANAGE_ANONYMAT',            section: 'anonymat'         },
+  { perm: 'TRANSFER_REQUEST',           section: 'transferts'       },
+  { perm: 'TRANSFER_DOSSIER_VIEW',      section: 'transferts'       },
 ]
 
 export const STAFF_TITLE_TRANSLATIONS: Record<string, { fr: string; en: string }> = {

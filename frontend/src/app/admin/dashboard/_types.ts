@@ -4,7 +4,7 @@ export type AdminSection =
   | 'council' | 'academic-events' | 'finance' | 'ai' | 'statistics' | 'communications' | 'babillard' | 'messagerie' | 'settings'
   | 'bulletin-validation'
   | 'sync-offline'
-  | 'pedagogie' | 'rh' | 'lv2-choice' | 'entrance-exams' | 'pebs-exams' | 'matricules' | 'school-payments' | 'eleve-onboarding' | 'minesec-stats' | 'minedub-stats' | 'ministerial-stats' | 'notifications' | 'group-transfers' | 'corbeille'
+  | 'pedagogie' | 'rh' | 'lv2-choice' | 'entrance-exams' | 'pebs-exams' | 'matricules' | 'school-payments' | 'eleve-onboarding' | 'minesec-stats' | 'minedub-stats' | 'ministerial-stats'   | 'notifications' | 'group-transfers' | 'student-transfers' | 'corbeille'
   | 'org-pedagogy'
 
 export interface Toast {

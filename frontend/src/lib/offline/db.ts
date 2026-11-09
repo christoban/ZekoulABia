@@ -26,6 +26,13 @@ export interface PendingAction {
     | 'EXAM_PUBLISH'
     | 'FEE_PAYMENT_CASH'
     | 'EXPENSE_CREATE'
+    // Transferts inter-écoles — actions SENSIBLES, JAMAIS en file hors-ligne
+    // (Plan Transfert inter-écoles Phase 5 : refuse-strict, resynchronisation interdite).
+    | 'STUDENT_TRANSFER_REQUEST'
+    | 'STUDENT_TRANSFER_CONSENT'
+    | 'STUDENT_TRANSFER_DECISION'
+    | 'STUDENT_TRANSFER_CANCEL'
+    | 'STUDENT_TRANSFER_REVOKE'
   payload: unknown
   endpoint: string
   method: 'POST' | 'PATCH'

@@ -10,7 +10,11 @@ export function creerStudentTransferRoutes(controller: StudentTransferController
   router.post('/requests', requireAuth, requirePermission('TRANSFER_REQUEST'), sensitiveWriteLimiter, controller.create);
   router.get('/requests', requireAuth, requirePermission('TRANSFER_REQUEST'), controller.listSent);
   router.get('/source/requests', requireAuth, requirePermission('TRANSFER_APPROVE'), controller.listReceived);
+  // Bloc Censeur / Conseiller B (Phase 5) — lecture seule, permission dédiée dossier.
+  router.get('/requests/history', requireAuth, requirePermission('TRANSFER_DOSSIER_VIEW'), controller.history);
   router.post('/requests/:requestId/consent', authLimiter, controller.consent);
+  // État du challenge (page publique tuteur) — authLimiter car consommateur de jeton par requête.
+  router.get('/requests/:requestId/consent/status', authLimiter, controller.consentStatus);
   router.post('/requests/:requestId/decide', requireAuth, requirePermission('TRANSFER_APPROVE'), sensitiveWriteLimiter, controller.decide);
   router.post('/requests/:requestId/revoke', authLimiter, controller.revoke);
   router.post('/requests/:requestId/cancel', requireAuth, requirePermission('TRANSFER_REQUEST'), sensitiveWriteLimiter, controller.cancel);

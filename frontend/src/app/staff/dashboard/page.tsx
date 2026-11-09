@@ -46,6 +46,7 @@ import SectionConcoursStaff from './_components/SectionConcoursStaff'
 import SectionConfigurationStaff from './_components/SectionConfigurationStaff'
 import SectionRapportsStaff from './_components/SectionRapportsStaff'
 import SectionElevesFamillesStaff from './_components/SectionElevesFamillesStaff'
+import SectionTransfertsStaff from './_components/SectionTransfertsStaff'
 import { useRouter } from 'next/navigation'
 import { useT } from '@/lib/i18n'
 
@@ -490,6 +491,12 @@ export default function StaffDashboard() {
           {visitedSections.has('eleves-familles') && can('eleves-familles') && (
             <div style={{ display: section === 'eleves-familles' ? 'contents' : 'none' }}>
               <SectionElevesFamillesStaff onToast={showToast} />
+            </div>
+          )}
+
+          {visitedSections.has('transferts') && can('transferts') && (
+            <div style={{ display: section === 'transferts' ? 'contents' : 'none' }}>
+              <SectionTransfertsStaff sessionUser={sessionUser} onToast={showToast} />
             </div>
           )}
 

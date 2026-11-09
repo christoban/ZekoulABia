@@ -32,6 +32,15 @@ export const OPERATION_RISK_LEVEL: Record<PendingActionType, RiskLevel> = {
   EXAM_PUBLISH: 'FORT',
   FEE_PAYMENT_CASH: 'MOYEN',
   EXPENSE_CREATE: 'MOYEN',
+  // Transferts inter-écoles (Phase 5) : consentement signé, décision d'école, annulation et
+  // révocation sont des transitions de machine d'états atomiques côté serveur — aucune
+  // resynchronisation possible sans risquer un double envoi ou un contournement du flux
+  // SMS/OTP. TOUJOURS refusées hors-ligne.
+  STUDENT_TRANSFER_REQUEST: 'FORT',
+  STUDENT_TRANSFER_CONSENT: 'FORT',
+  STUDENT_TRANSFER_DECISION: 'FORT',
+  STUDENT_TRANSFER_CANCEL: 'FORT',
+  STUDENT_TRANSFER_REVOKE: 'FORT',
 }
 
 export class OfflineActionRefusedError extends Error {

@@ -33,6 +33,7 @@ import SectionAdminLV2Choice from './_components/SectionAdminLV2Choice'
 import SectionAdminEntranceExams from './_components/SectionAdminEntranceExams'
 import SectionAdminAcademicEvents from './_components/SectionAdminAcademicEvents'
 import SectionAdminGroupTransfers from './_components/SectionAdminGroupTransfers'
+import SectionAdminStudentTransfers from './_components/SectionAdminStudentTransfers'
 import SectionEleveOnboarding from './_components/SectionEleveOnboarding'
 import SectionMinesecStatistics from './_components/SectionMinesecStatistics'
 import SectionMinedubStatistics from './_components/SectionMinedubStatistics'
@@ -747,6 +748,11 @@ export default function AdminDashboard() {
           {visitedSections.has('group-transfers') && (
             <div style={{ display: section === 'group-transfers' ? 'contents' : 'none' }}>
               <SectionAdminGroupTransfers onToast={showToast} />
+            </div>
+          )}
+          {visitedSections.has('student-transfers') && (
+            <div style={{ display: section === 'student-transfers' ? 'contents' : 'none' }}>
+              <SectionAdminStudentTransfers onToast={showToast} />
             </div>
           )}
           {visitedSections.has('notifications') && (

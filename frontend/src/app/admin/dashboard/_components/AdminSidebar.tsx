@@ -185,6 +185,7 @@ export default function AdminSidebar({
       items: [
         { id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard') },
         { id: 'academic-events', icon: CalendarClock, label: tnav('sidebar.academicEvents') },
+        { id: 'student-transfers', icon: UserPlus, label: tnav('sidebar.studentTransfers') ?? 'Transferts inter-écoles' },
         ...(hasActivePebs ? [{ id: 'pebs-exams' as const, icon: Globe, label: tnav('sidebar.pebsExams') }] : []),
         ...(hasPendingGroupTransfers ? [{ id: 'group-transfers' as const, icon: ArrowRightLeft, label: tnav('sidebar.groupTransfers') }] : []),
         ...(activeEventTypes.includes('CHOIX_LV2') ? [{ id: 'lv2-choice' as const, icon: Languages, label: tnav('sidebar.lv2Choice') }] : []),
