@@ -7,9 +7,11 @@ import SectionOverview from './_components/SectionOverview'
 import SectionSchools from './_components/SectionSchools'
 import SectionReferentielsHub from './_components/SectionReferentielsHub'
 import SectionLogs from './_components/SectionLogs'
+import SectionModeTest from './_components/SectionModeTest'
 import MasterModals from './_components/MasterModals'
 import SchoolSlideOver from './_components/SchoolSlideOver'
 import MasterToast from './_components/MasterToast'
+import ModeTestBanner from '@/components/ModeTestBanner'
 import type { Section, SchoolTab, ModalId, Toast, KpiData, ActivityRow, SchoolRow } from './_types'
 import {
   fetchMe, fetchSchools, fetchSchoolDetail, fetchLogs, logout, fetchMasterMfaStatus,
@@ -285,6 +287,7 @@ export default function SuperAdminDashboard() {
         isMenuOpen={mobileMenuOpen}
         setIsMenuOpen={setMobileMenuOpen}
       />
+      <ModeTestBanner />
 
       <main className="flex-1 min-h-0 overflow-hidden pb-[calc(62px+env(safe-area-inset-bottom,0px))] md:pb-0" style={{ boxSizing: 'border-box' }}>
         <div style={{ display: section === 'overview' ? 'block' : 'none', height: '100%' }}>
@@ -331,6 +334,12 @@ export default function SuperAdminDashboard() {
         {visitedSections.has('logs') && (
           <div style={{ display: section === 'logs' ? 'block' : 'none', height: '100%' }}>
             <SectionLogs logs={logs} loading={logsLoading} onChangePwd={() => setModal('changePwd')} mfaEnabled={mfaEnabled} />
+          </div>
+        )}
+
+        {visitedSections.has('mode-test') && (
+          <div style={{ display: section === 'mode-test' ? 'block' : 'none', height: '100%' }}>
+            <SectionModeTest user={user} onToast={showToast} />
           </div>
         )}
       </main>

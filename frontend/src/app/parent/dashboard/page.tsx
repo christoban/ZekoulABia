@@ -32,6 +32,7 @@ import { useRouter } from 'next/navigation'
 import Babillard from '@/features/communication/Babillard'
 import Messagerie from '@/features/messagerie'
 import ChangePasswordModal from '@/components/ChangePasswordModal'
+import ModeTestBanner from '@/components/ModeTestBanner'
 
 interface SessionUser {
   userId: string
@@ -370,6 +371,7 @@ export default function ParentDashboard() {
           onLogout={logoutUser}
           onToast={showToast}
         />
+        <ModeTestBanner />
         <EventCenterWidget />
         <SoldeAlertBanner onNav={s => setSection(s as ParentSection)} />
 

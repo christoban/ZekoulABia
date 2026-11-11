@@ -52,6 +52,7 @@ import { useT } from '@/lib/i18n'
 import Babillard from '@/features/communication/Babillard'
 import Messagerie from '@/features/messagerie'
 import SectionOfflineStatus from '@/components/SectionOfflineStatus'
+import ModeTestBanner from '@/components/ModeTestBanner'
 
 let toastId = 0
 
@@ -599,6 +600,7 @@ export default function AdminDashboard() {
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
         <AdminTopbar title={t(`page.section_titles.${section}`)} onNavigate={s => setSection(s as AdminSection)} onChangePassword={() => setChangePwdOpen(true)} onMenuClick={() => setMobileNavOpen(true)} sessionUser={sessionUser} onLogout={logoutUser} />
+        <ModeTestBanner />
         <EventCenterWidget onNav={s => setSection(s as AdminSection)} />
         <AnomaliesAlertBanner onNav={s => setSection(s as AdminSection)} />
 

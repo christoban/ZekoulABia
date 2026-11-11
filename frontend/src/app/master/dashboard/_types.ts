@@ -1,9 +1,9 @@
 import type { LucideIcon } from 'lucide-react'
-import type { MasterUserDto, SchoolDto, AuditLogDto, SchoolDetailDto } from './_api'
+import type { MasterUserDto, SchoolDto, AuditLogDto, SchoolDetailDto, PlatformSettingsDto, SuppressedOutboundMessageDto } from './_api'
 
-export type { MasterUserDto, SchoolDto, AuditLogDto, SchoolDetailDto }
+export type { MasterUserDto, SchoolDto, AuditLogDto, SchoolDetailDto, PlatformSettingsDto, SuppressedOutboundMessageDto }
 
-export type Section = 'overview' | 'schools' | 'referentiels' | 'logs'
+export type Section = 'overview' | 'schools' | 'referentiels' | 'logs' | 'mode-test'
 export type ReferentielModule = 'calendar' | 'bac' | 'templates' | 'progressions' | 'tarifs'
 export type SchoolTab = 'all' | 'pending' | 'approved' | 'active' | 'suspended' | 'draft' | 'rejected'
 export type LogTab = 'emails' | 'auth' | 'security'

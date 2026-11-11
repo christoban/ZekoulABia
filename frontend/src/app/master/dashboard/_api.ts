@@ -533,3 +533,38 @@ export async function logout(): Promise<void> {
   await apiFetch('/api/v2/master/auth/logout', { method: 'POST' })
 }
 
+// ─── MODE TEST (RÉGLAGE PLATEFORME ENVOIS SORTANTS) ────────────────────────
+
+export interface PlatformSettingsDto {
+  outboundMessagingEnabled: boolean
+}
+
+export interface SuppressedOutboundMessageDto {
+  id: string
+  channel: string
+  eventType: string
+  recipientMasked: string
+  createdAt: string
+}
+
+export async function fetchPlatformSettings(): Promise<PlatformSettingsDto> {
+  const res = await apiFetch<PlatformSettingsDto>('/api/v2/master/platform-settings')
+  if (!res.data) throw new Error('Réglages plateforme introuvables')
+  return res.data
+}
+
+export async function updatePlatformSettings(outboundMessagingEnabled: boolean): Promise<PlatformSettingsDto> {
+  const res = await apiFetch<PlatformSettingsDto>('/api/v2/master/platform-settings', {
+    method: 'PATCH',
+    body: JSON.stringify({ outboundMessagingEnabled }),
+  })
+  if (!res.data) throw new Error('Erreur lors de la mise à jour du mode test')
+  return res.data
+}
+
+export async function fetchSuppressedOutboundMessages(limit = 100): Promise<SuppressedOutboundMessageDto[]> {
+  const res = await apiFetch<SuppressedOutboundMessageDto[]>(`/api/v2/master/platform-settings/messages-supprimes?limit=${limit}`)
+  return res.data ?? []
+}
+
+

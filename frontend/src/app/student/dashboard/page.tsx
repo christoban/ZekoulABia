@@ -31,6 +31,7 @@ import { useRouter } from 'next/navigation'
 import Babillard from '@/features/communication/Babillard'
 import Messagerie from '@/features/messagerie'
 import ChangePasswordModal from '@/components/ChangePasswordModal'
+import ModeTestBanner from '@/components/ModeTestBanner'
 import { formatStudentTimetableData } from '@/lib/timetableSlotGrouping'
 import { resolveOrientationEligibility } from '@/lib/orientationEligibility'
 
@@ -404,6 +405,7 @@ export default function StudentDashboard() {
           onLogout={logoutUser}
           onToast={showToast}
         />
+        <ModeTestBanner />
         <EventCenterWidget />
         <HealthAlertBanner onNav={s => setSection(s as StudentSection)} />
 

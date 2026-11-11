@@ -35,6 +35,7 @@ import { useRouter } from 'next/navigation'
 import Babillard from '@/features/communication/Babillard'
 import Messagerie from '@/features/messagerie'
 import SectionOfflineStatus from '@/components/SectionOfflineStatus'
+import ModeTestBanner from '@/components/ModeTestBanner'
 
 interface SessionUser {
   userId: string
@@ -437,6 +438,7 @@ export default function TeacherDashboard() {
           user={user}
           onLogout={logoutUser}
         />
+        <ModeTestBanner />
         <EventCenterWidget />
 
         {/* Contenu */}

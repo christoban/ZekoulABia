@@ -21,6 +21,7 @@ const NAV: { id: Section; label: string; dotColor: string }[] = [
   { id: 'schools',      label: 'Écoles',                   dotColor: '#d97706' },
   { id: 'referentiels', label: 'Référentiels Nationaux',   dotColor: '#60a5fa' },
   { id: 'logs',         label: 'Logs & Sécurité',          dotColor: '#94a3b8' },
+  { id: 'mode-test',    label: 'Mode test',                dotColor: '#ef4444' },
 ]
 
 function initials(name: string): string {

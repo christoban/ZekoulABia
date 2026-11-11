@@ -47,6 +47,7 @@ import SectionConfigurationStaff from './_components/SectionConfigurationStaff'
 import SectionRapportsStaff from './_components/SectionRapportsStaff'
 import SectionElevesFamillesStaff from './_components/SectionElevesFamillesStaff'
 import SectionTransfertsStaff from './_components/SectionTransfertsStaff'
+import ModeTestBanner from '@/components/ModeTestBanner'
 import { useRouter } from 'next/navigation'
 import { useT } from '@/lib/i18n'
 
@@ -462,6 +463,7 @@ export default function StaffDashboard() {
           sessionUser={sessionUser}
           onLogout={logoutUser}
         />
+        <ModeTestBanner />
         <EventCenterWidget />
         <APEEAlertBanner visible={can('apee')} onNav={s => navTo(s as StaffSection)} />
 

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
@@ -26,71 +26,9 @@ interface DashStats {
 
 type RoleFilter = 'ALL' | 'DIRECTION' | 'CENSEUR' | 'INTENDANCE' | 'SECRETARIAT'
 
-interface ModeTestSettings {
-  outboundMessagingEnabled: boolean
-}
-
-interface SuppressedOutboundMessageEntry {
-  id: string
-  channel: string
-  eventType: string
-  recipientMasked: string
-  createdAt: string
-}
-
 export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
   const t = useT('admin')
   const [activityRoleFilter, setActivityRoleFilter] = useState<RoleFilter>('ALL')
-  const [modeTest, setModeTest] = useState<ModeTestSettings | null>(null)
-  const [modeTestLoading, setModeTestLoading] = useState(true)
-  const [modeTestSaving, setModeTestSaving] = useState(false)
-  const [messagesSupprimes, setMessagesSupprimes] = useState<SuppressedOutboundMessageEntry[]>([])
-
-  const chargerModeTest = useCallback(async (): Promise<ModeTestSettings> => {
-    const res = await fetchApi('/api/v2/master/platform-settings', { credentials: 'include' })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.message || 'Erreur serveur')
-    return data.data as ModeTestSettings
-  }, [])
-
-  const chargerMessagesSupprimes = useCallback(async (): Promise<SuppressedOutboundMessageEntry[]> => {
-    const res = await fetchApi('/api/v2/master/platform-settings/messages-supprimes?limit=100', { credentials: 'include' })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.message || 'Erreur serveur')
-    return data.data as SuppressedOutboundMessageEntry[]
-  }, [])
-
-  useEffect(() => {
-    let cancelled = false
-    const load = async () => {
-      try {
-        const settings = await chargerModeTest()
-        if (cancelled) return
-        setModeTest(settings)
-        const msgs = await chargerMessagesSupprimes()
-        if (!cancelled) setMessagesSupprimes(msgs)
-      } catch {
-        if (!cancelled) setModeTest(null)
-      }
-    }
-    load()
-    return () => { cancelled = true }
-  }, [chargerModeTest, chargerMessagesSupprimes])
-
-  const basculerModeTest = async (value: boolean) => {
-    setModeTestSaving(true)
-    try {
-      const res = await fetchApi('/api/v2/master/platform-settings', { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ outboundMessagingEnabled: value }) })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Erreur serveur')
-      setModeTest({ outboundMessagingEnabled: value })
-      onToast(t('dashboard.mode_test.toggled'), 'success')
-    } catch (err) {
-      onToast(err instanceof Error ? err.message : t('dashboard.mode_test.toggle_error'), 'error')
-    } finally {
-      setModeTestSaving(false)
-    }
-  }
 
   const fetchStatsFn = useCallback(async (): Promise<DashStats> => {
     const res = await fetchApi('/api/v2/dashboard/stats', { credentials: 'include' })
@@ -169,45 +107,6 @@ export default function SectionDashboard({ onNav, onInvite, onToast }: Props) {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Mode test - reglage plateforme outboundMessagingEnabled */}
-      <div style={{ background: modeTest && !modeTest.outboundMessagingEnabled ? 'var(--red-light)' : 'var(--surface)', border: `1px solid ${modeTest && !modeTest.outboundMessagingEnabled ? 'rgba(220,38,38,0.25)' : 'var(--border)'}`, borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <ShieldAlert size={20} style={{ color: modeTest && !modeTest.outboundMessagingEnabled ? 'var(--red)' : 'var(--green)' }} />
-            <div>
-              <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--text)' }}>{t('dashboard.mode_test.title')}</div>
-              <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 2 }}>{modeTest ? (modeTest.outboundMessagingEnabled ? t('dashboard.mode_test.status_active') : t('dashboard.mode_test.status_disabled')) : t('dashboard.mode_test.loading')}</div>
-            </div>
-          </div>
-          <button
-            onClick={() => modeTest && basculerModeTest(!modeTest.outboundMessagingEnabled)}
-            disabled={modeTestSaving || !modeTest}
-            style={{ padding: '8px 14px', borderRadius: 9, border: 'none', background: modeTest && !modeTest.outboundMessagingEnabled ? 'linear-gradient(135deg,var(--primary),var(--primary-hover))' : 'var(--bg2)', color: modeTest && !modeTest.outboundMessagingEnabled ? 'white' : 'var(--text2)', fontWeight: 800, fontSize: 12.5, cursor: modeTestSaving || !modeTest ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: modeTestSaving || !modeTest ? 0.6 : 1 }}
-          >
-            {modeTestSaving ? t('dashboard.mode_test.saving') : modeTest && !modeTest.outboundMessagingEnabled ? t('dashboard.mode_test.toggle_on') : t('dashboard.mode_test.toggle_off')}
-          </button>
-        </div>
-        <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.5 }}>{t('dashboard.mode_test.desc')}</div>
-      </div>
-
-      {/* Messages supprimes (mode test) */}
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
-        <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--text)', marginBottom: 8 }}>{t('dashboard.mode_test.messages_title')}</div>
-        {messagesSupprimes.length === 0 ? (
-          <div style={{ fontSize: 12, color: 'var(--text3)' }}>{t('dashboard.mode_test.messages_empty')}</div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {messagesSupprimes.map(m => (
-              <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 12, padding: '8px 10px', background: 'var(--bg2)', borderRadius: 8, flexWrap: 'wrap' }}>
-                <span style={{ color: 'var(--text2)', fontWeight: 600 }}>{m.eventType}</span>
-                <span style={{ color: 'var(--text3)' }}>{m.channel} - {m.recipientMasked}</span>
-                <span style={{ color: 'var(--text3)' }}>{new Date(m.createdAt).toLocaleString('fr-FR')}</span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Loading */}

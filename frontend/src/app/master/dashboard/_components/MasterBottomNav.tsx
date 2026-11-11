@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { LayoutDashboard, School, ShieldCheck, Shield, Menu } from 'lucide-react'
+import { LayoutDashboard, School, ShieldCheck, Shield, ShieldAlert, Menu } from 'lucide-react'
 import type { Section } from '../_types'
 
 interface Props {
@@ -47,6 +47,13 @@ const NAV_ITEMS: BottomNavItem[] = [
     label: "Sécurité",
     icon: Shield,
     dotColor: '#94a3b8',
+  },
+  {
+    id: 'mode-test',
+    section: 'mode-test',
+    label: "Mode test",
+    icon: ShieldAlert,
+    dotColor: '#ef4444',
   },
   {
     id: 'menu',
