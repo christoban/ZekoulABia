@@ -34,19 +34,19 @@ interface Props {
 const ROLE_LABELS: Record<MasterTeamRole, { label: string; desc: string; bg: string; color: string }> = {
   SUPER_ADMIN: {
     label: 'Super Admin',
-    desc: 'Accès total (équipe, mode test global, toutes les écoles, journaux)',
+    desc: 'Fondateur unique : accès total (Équipe Master, Mode test Global, toutes les écoles, journaux)',
     bg: 'rgba(168, 85, 247, 0.14)',
     color: '#7e22ce',
   },
   PLATFORM_ADMIN: {
     label: 'Platform Admin',
-    desc: 'Coéquipier testeur / Opérateur : crée et gère ses écoles + référentiels + mode test sur ses écoles',
+    desc: 'Bras droit opérationnel : voit et gère toutes les écoles + Référentiels Nationaux + Mode test par école',
     bg: 'rgba(37, 99, 235, 0.12)',
     color: '#1d4ed8',
   },
   SCHOOL_MANAGER: {
     label: 'School Manager',
-    desc: 'Intégration / Commercial : crée et gère uniquement ses écoles et celles qui lui sont assignées',
+    desc: 'Testeur / Commercial : crée ses écoles, ne voit et ne gère que ses propres écoles (ou assignées) + Mode test sur ses écoles',
     bg: 'rgba(217, 119, 6, 0.14)',
     color: '#b45309',
   },
@@ -473,10 +473,9 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                     fontSize: 13,
                   }}
                 >
-                  <option value="PLATFORM_ADMIN">PLATFORM_ADMIN (Coéquipier testeur / Opérateur)</option>
-                  <option value="SCHOOL_MANAGER">SCHOOL_MANAGER (Écoles créées ou assignées)</option>
+                  <option value="PLATFORM_ADMIN">PLATFORM_ADMIN (Bras droit : toutes les écoles + Référentiels)</option>
+                  <option value="SCHOOL_MANAGER">SCHOOL_MANAGER (Testeur / Commercial : ses écoles uniquement)</option>
                   <option value="SUPPORT">SUPPORT (Lecture & assistance MFA)</option>
-                  {isOwner && <option value="SUPER_ADMIN">SUPER_ADMIN (Co-administrateur)</option>}
                 </select>
               </div>
             </div>
@@ -635,11 +634,10 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                             <option value="PLATFORM_ADMIN">PLATFORM_ADMIN</option>
                             <option value="SCHOOL_MANAGER">SCHOOL_MANAGER</option>
                             <option value="SUPPORT">SUPPORT</option>
-                            {isOwner && <option value="SUPER_ADMIN">SUPER_ADMIN</option>}
                           </select>
                         )}
 
-                        {member.role !== 'SUPER_ADMIN' && (
+                        {(member.role === 'SCHOOL_MANAGER' || member.role === 'SUPPORT') && (
                           <button
                             type="button"
                             disabled={isBusy}

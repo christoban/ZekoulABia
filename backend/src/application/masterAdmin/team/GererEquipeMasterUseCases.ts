@@ -61,8 +61,10 @@ export class CreerMembreEquipeMasterUseCase {
       throw new MasterAdminValidationError('Rôle Master invalide');
     }
 
-    if (command.role === 'SUPER_ADMIN' && !command.actorIsOwner) {
-      throw new MasterTeamForbiddenError('Seul le propriétaire fondateur peut créer un compte SUPER_ADMIN');
+    if (command.role === 'SUPER_ADMIN') {
+      throw new MasterTeamForbiddenError(
+        'Le rôle SUPER_ADMIN est strictement réservé au propriétaire fondateur unique de la plateforme',
+      );
     }
 
     const existing = await this.repo.findByEmail(email);
@@ -78,7 +80,7 @@ export class CreerMembreEquipeMasterUseCase {
       name,
       passwordHash,
       role: command.role,
-      isSuperAdmin: command.role === 'SUPER_ADMIN',
+      isSuperAdmin: false,
       isOwner: false,
       assignedSchoolIds: Array.from(new Set(command.assignedSchoolIds ?? [])),
     });
@@ -141,10 +143,15 @@ export class ModifierMembreEquipeMasterUseCase {
       throw new MasterAdminValidationError('Rôle Master invalide');
     }
 
-    // Seul le propriétaire fondateur peut promouvoir/rétrograder/suspendre un SUPER_ADMIN
-    if ((target.role === 'SUPER_ADMIN' || command.role === 'SUPER_ADMIN') && !command.actorIsOwner) {
+    if (command.role === 'SUPER_ADMIN') {
       throw new MasterTeamForbiddenError(
-        'Seul le propriétaire fondateur peut promouvoir, modifier ou suspendre un SUPER_ADMIN',
+        'Le rôle SUPER_ADMIN est strictement réservé au propriétaire fondateur unique de la plateforme',
+      );
+    }
+
+    if (target.role === 'SUPER_ADMIN' && !command.actorIsOwner) {
+      throw new MasterTeamForbiddenError(
+        'Seul le propriétaire fondateur peut modifier ou suspendre un SUPER_ADMIN',
       );
     }
 

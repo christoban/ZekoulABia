@@ -3,6 +3,7 @@ import type { GetPlatformSettingsUseCase } from '@application/masterAdmin/GetPla
 import type { UpdatePlatformSettingsUseCase } from '@application/masterAdmin/UpdatePlatformSettingsUseCase';
 import type { ListerMessagesSupprimesUseCase } from '@application/masterAdmin/ListerMessagesSupprimesUseCase';
 import {
+  aVueGlobaleEcolesMaster,
   estSuperAdminMaster,
   verifierAccesGestionEcoleMaster,
 } from '@application/masterAdmin/masterSchoolAccess';
@@ -110,7 +111,7 @@ export class PlatformSettingsController {
         : null;
 
       const master = req.masterUser;
-      if (!estSuperAdminMaster(master)) {
+      if (!aVueGlobaleEcolesMaster(master)) {
         if (!schoolId || !this.queryRepo) {
           res.json({ success: true, data: [] });
           return;

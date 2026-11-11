@@ -21,8 +21,9 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
   const t = useT('admin')
 
   const isSuperAdmin = user?.role === 'super_admin'
+  const hasGlobalSchoolView = isSuperAdmin || user?.role === 'platform_admin'
   const canManageSchools =
-    isSuperAdmin || user?.role === 'platform_admin' || user?.role === 'school_manager'
+    hasGlobalSchoolView || user?.role === 'school_manager'
 
   const [modeTest, setModeTest] = useState<boolean | null>(null)
   const [disabledSchoolIds, setDisabledSchoolIds] = useState<string[]>([])
@@ -36,10 +37,10 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
 
   const chargerMessagesSupprimes = useCallback(async (schoolIdFilter?: string) => {
     if (!canManageSchools) return
-    const effectiveFilter = isSuperAdmin
+    const effectiveFilter = hasGlobalSchoolView
       ? schoolIdFilter || null
       : schoolIdFilter || schools[0]?.id || null
-    if (!isSuperAdmin && !effectiveFilter) {
+    if (!hasGlobalSchoolView && !effectiveFilter) {
       setMessagesSupprimes([])
       return
     }
@@ -52,7 +53,7 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
     } finally {
       setMessagesSupprimesLoading(false)
     }
-  }, [canManageSchools, isSuperAdmin, schools])
+  }, [canManageSchools, hasGlobalSchoolView, schools])
 
   const chargerModeTest = useCallback(async () => {
     if (!canManageSchools) return
@@ -67,10 +68,10 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
   }, [canManageSchools, chargerMessagesSupprimes, filtreEcoleMessages])
 
   useEffect(() => {
-    if (!isSuperAdmin && !filtreEcoleMessages && schools.length > 0) {
+    if (!hasGlobalSchoolView && !filtreEcoleMessages && schools.length > 0) {
       setFiltreEcoleMessages(schools[0].id)
     }
-  }, [isSuperAdmin, filtreEcoleMessages, schools])
+  }, [hasGlobalSchoolView, filtreEcoleMessages, schools])
 
   useEffect(() => {
     void chargerModeTest()
@@ -529,7 +530,7 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
                   color: 'var(--text-primary)',
                 }}
               >
-                {isSuperAdmin && <option value="">Tous les établissements</option>}
+                {hasGlobalSchoolView && <option value="">Tous les établissements</option>}
                 {schools.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}

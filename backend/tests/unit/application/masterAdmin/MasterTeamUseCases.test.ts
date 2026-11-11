@@ -160,15 +160,15 @@ describe('Gestion de l’équipe Master & Protection du Propriétaire (isOwner)'
     expect(audits[0]?.action).toBe('master_user_created');
   });
 
-  it('interdit à un SUPER_ADMIN non-propriétaire de créer ou promouvoir un SUPER_ADMIN', async () => {
+  it('interdit la création ou la promotion d’un second SUPER_ADMIN (le fondateur reste l’unique SUPER_ADMIN)', async () => {
     const { repo } = creerMemoireMasterTeamRepo([ownerRecord, secondarySuperAdmin, testerRecord]);
     const creerUc = new CreerMembreEquipeMasterUseCase(repo);
     const modifierUc = new ModifierMembreEquipeMasterUseCase(repo);
 
     await expect(
       creerUc.execute({
-        actorId: secondarySuperAdmin.id,
-        actorIsOwner: false,
+        actorId: ownerRecord.id,
+        actorIsOwner: true,
         email: 'autre.super@zekoulabia.cm',
         name: 'Autre Super',
         role: 'SUPER_ADMIN',
@@ -177,8 +177,8 @@ describe('Gestion de l’équipe Master & Protection du Propriétaire (isOwner)'
 
     await expect(
       modifierUc.execute({
-        actorId: secondarySuperAdmin.id,
-        actorIsOwner: false,
+        actorId: ownerRecord.id,
+        actorIsOwner: true,
         targetId: testerRecord.id,
         role: 'SUPER_ADMIN',
       }),
@@ -228,25 +228,28 @@ describe('Gestion de l’équipe Master & Protection du Propriétaire (isOwner)'
 });
 
 describe('Isolation des écoles par opérateur Master (masterSchoolAccess)', () => {
-  it('autorise SUPER_ADMIN à voir et gérer toutes les écoles', () => {
+  it('autorise SUPER_ADMIN et PLATFORM_ADMIN (bras droit) à voir et gérer toutes les écoles', () => {
     const superOp = { id: 'owner-1', role: 'super_admin', isOwner: true, assignedSchoolIds: [] };
+    const platformOp = { id: 'plat-1', role: 'platform_admin', assignedSchoolIds: [] };
+
     expect(peutVoirEcoleMaster(superOp, 'school-tester-1', 'tester-1')).toBe(true);
     expect(peutGererEcoleMaster(superOp, 'school-tester-1', 'tester-1')).toBe(true);
-    expect(peutGererEcoleMaster(superOp, 'school-other', 'owner-1')).toBe(true);
+    expect(peutVoirEcoleMaster(platformOp, 'school-other', 'owner-1')).toBe(true);
+    expect(peutGererEcoleMaster(platformOp, 'school-other', 'owner-1')).toBe(true);
   });
 
-  it('autorise PLATFORM_ADMIN et SCHOOL_MANAGER uniquement sur leurs écoles créées ou assignées', () => {
-    const platformOp = {
+  it('isole SCHOOL_MANAGER uniquement sur ses écoles créées ou assignées', () => {
+    const schoolManagerOp = {
       id: 'tester-1',
-      role: 'platform_admin',
+      role: 'school_manager',
       assignedSchoolIds: ['school-assigned'],
     };
 
-    expect(peutVoirEcoleMaster(platformOp, 'school-tester-1', 'tester-1')).toBe(true);
-    expect(peutGererEcoleMaster(platformOp, 'school-tester-1', 'tester-1')).toBe(true);
-    expect(peutGererEcoleMaster(platformOp, 'school-assigned', 'owner-1')).toBe(true);
-    expect(peutVoirEcoleMaster(platformOp, 'school-other', 'owner-1')).toBe(false);
-    expect(peutGererEcoleMaster(platformOp, 'school-other', 'owner-1')).toBe(false);
+    expect(peutVoirEcoleMaster(schoolManagerOp, 'school-tester-1', 'tester-1')).toBe(true);
+    expect(peutGererEcoleMaster(schoolManagerOp, 'school-tester-1', 'tester-1')).toBe(true);
+    expect(peutGererEcoleMaster(schoolManagerOp, 'school-assigned', 'owner-1')).toBe(true);
+    expect(peutVoirEcoleMaster(schoolManagerOp, 'school-other', 'owner-1')).toBe(false);
+    expect(peutGererEcoleMaster(schoolManagerOp, 'school-other', 'owner-1')).toBe(false);
   });
 
   it('autorise SUPPORT en lecture seule mais interdit toute gestion/modification d’école', () => {

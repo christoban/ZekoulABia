@@ -11,6 +11,7 @@ import type { SynchroniserMatieresEcoleUseCase } from '@application/masterAdmin/
 import type { ReinitialiserMfaUtilisateurUseCase } from '@application/masterAdmin/ReinitialiserMfaUtilisateurUseCase';
 import { MasterAdminNotFoundError, MasterAdminValidationError } from '@application/masterAdmin/errors';
 import {
+  aVueGlobaleEcolesMaster,
   estSuperAdminMaster,
   peutVoirEcoleMaster,
   verifierAccesGestionEcoleMaster,
@@ -168,8 +169,8 @@ export class MasterAdminHexController {
         });
       }
 
-      // Isolation par créateur / assignation pour les rôles non super_admin
-      if (master && !estSuperAdminMaster(master)) {
+      // Isolation par créateur / assignation pour les rôles sans vue globale (SCHOOL_MANAGER, SUPPORT ciblé)
+      if (master && !aVueGlobaleEcolesMaster(master)) {
         const assigned = master.assignedSchoolIds ?? [];
         if (master.role === 'support') {
           if (assigned.length > 0) {

@@ -11,13 +11,22 @@ export function estSuperAdminMaster(operateur?: MasterOperatorContext | null): b
   return operateur?.role === 'super_admin' || operateur?.role === 'SUPER_ADMIN';
 }
 
+export function aVueGlobaleEcolesMaster(operateur?: MasterOperatorContext | null): boolean {
+  if (!operateur) return false;
+  return (
+    estSuperAdminMaster(operateur) ||
+    operateur.role === 'platform_admin' ||
+    operateur.role === 'PLATFORM_ADMIN'
+  );
+}
+
 export function peutGererEcoleMaster(
   operateur: MasterOperatorContext | null | undefined,
   schoolId: string,
   createdByMasterId?: string | null,
 ): boolean {
   if (!operateur) return false;
-  if (estSuperAdminMaster(operateur)) return true;
+  if (aVueGlobaleEcolesMaster(operateur)) return true;
   if (operateur.role === 'support' || operateur.role === 'SUPPORT') return false;
 
   const assigned = operateur.assignedSchoolIds ?? [];
@@ -32,7 +41,7 @@ export function peutVoirEcoleMaster(
   createdByMasterId?: string | null,
 ): boolean {
   if (!operateur) return false;
-  if (estSuperAdminMaster(operateur)) return true;
+  if (aVueGlobaleEcolesMaster(operateur)) return true;
 
   const assigned = operateur.assignedSchoolIds ?? [];
   if (operateur.role === 'support' || operateur.role === 'SUPPORT') {
