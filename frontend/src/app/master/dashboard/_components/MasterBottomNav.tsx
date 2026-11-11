@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { LayoutDashboard, School, ShieldCheck, Shield, ShieldAlert, Users, Menu } from 'lucide-react'
+import { LayoutDashboard, Building2, BookOpen, Shield, FlaskConical, Users } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import type { Section } from '../_types'
 
@@ -9,16 +9,14 @@ interface Props {
   currentSection: Section
   userRole?: string
   onNav: (section: Section) => void
-  onOpenMenu: () => void
+  onOpenMenu?: () => void
 }
 
 interface BottomNavItem {
-  id: Section | 'menu'
-  section?: Section
+  id: Section
+  section: Section
   labelKey: string
   icon: React.ComponentType<{ size?: number; className?: string; strokeWidth?: number }>
-  isMenuTrigger?: boolean
-  dotColor?: string
 }
 
 const NAV_ITEMS: BottomNavItem[] = [
@@ -27,52 +25,40 @@ const NAV_ITEMS: BottomNavItem[] = [
     section: 'overview',
     labelKey: 'nav.overview_short',
     icon: LayoutDashboard,
-    dotColor: '#4ade80',
   },
   {
     id: 'schools',
     section: 'schools',
     labelKey: 'nav.schools',
-    icon: School,
-    dotColor: '#d97706',
+    icon: Building2,
   },
   {
     id: 'referentiels',
     section: 'referentiels',
     labelKey: 'nav.referentiels_short',
-    icon: ShieldCheck,
-    dotColor: '#60a5fa',
+    icon: BookOpen,
   },
   {
     id: 'logs',
     section: 'logs',
     labelKey: 'nav.logs_short',
     icon: Shield,
-    dotColor: '#94a3b8',
   },
   {
     id: 'mode-test',
     section: 'mode-test',
     labelKey: 'nav.mode_test',
-    icon: ShieldAlert,
-    dotColor: '#ef4444',
+    icon: FlaskConical,
   },
   {
     id: 'team',
     section: 'team',
     labelKey: 'nav.team_short',
     icon: Users,
-    dotColor: '#a855f7',
-  },
-  {
-    id: 'menu',
-    labelKey: 'nav.account',
-    icon: Menu,
-    isMenuTrigger: true,
   },
 ]
 
-export default function MasterBottomNav({ currentSection, userRole, onNav, onOpenMenu }: Props) {
+export default function MasterBottomNav({ currentSection, userRole, onNav }: Props) {
   const t = useT('master')
 
   const visibleItems = NAV_ITEMS.filter((item) => {
@@ -94,20 +80,14 @@ export default function MasterBottomNav({ currentSection, userRole, onNav, onOpe
     >
       <div className="flex items-center justify-around px-1 max-w-lg mx-auto overflow-x-auto">
         {visibleItems.map((item) => {
-          const isActive = !item.isMenuTrigger && item.section === currentSection
+          const isActive = item.section === currentSection
           const Icon = item.icon
 
           return (
             <button
               key={item.id}
               type="button"
-              onClick={() => {
-                if (item.isMenuTrigger) {
-                  onOpenMenu()
-                } else if (item.section) {
-                  onNav(item.section)
-                }
-              }}
+              onClick={() => onNav(item.section)}
               className="flex flex-col items-center justify-center gap-0.5 py-1 px-1 rounded-xl border-none bg-transparent cursor-pointer min-w-[46px] flex-1"
               style={{
                 WebkitTapHighlightColor: 'transparent',
@@ -121,22 +101,9 @@ export default function MasterBottomNav({ currentSection, userRole, onNav, onOpe
                 }}
               >
                 <Icon size={16} strokeWidth={isActive ? 2.4 : 1.8} />
-                {item.dotColor && !isActive && (
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: 4,
-                      right: 5,
-                      width: 5,
-                      height: 5,
-                      borderRadius: '50%',
-                      background: item.dotColor,
-                    }}
-                  />
-                )}
               </div>
               <span
-                className="text-[9.5px] tracking-tight truncate max-w-[58px]"
+                className="text-[9.5px] tracking-tight truncate max-w-[62px]"
                 style={{
                   fontWeight: isActive ? 800 : 600,
                   color: isActive ? 'var(--text)' : 'var(--text3)',

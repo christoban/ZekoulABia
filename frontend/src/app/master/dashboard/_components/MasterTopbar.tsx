@@ -175,23 +175,25 @@ export default function MasterTopbar({
   }
 
   return (
-    <header style={{
-      height: 56,
-      background: 'var(--sidebar-bg)',
-      borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
-      display: 'flex',
-      alignItems: 'center',
-      padding: '0 24px',
-      gap: 12,
-      flexShrink: 0,
-      position: 'sticky',
-      top: 0,
-      left: 0,
-      right: 0,
-      zIndex: 60,
-      width: '100%',
-      boxSizing: 'border-box',
-    }}>
+    <header
+      className="px-3.5 md:px-6"
+      style={{
+        height: 56,
+        background: 'var(--sidebar-bg)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        flexShrink: 0,
+        position: 'sticky',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 60,
+        width: '100%',
+        boxSizing: 'border-box',
+      }}
+    >
       {/* Brand + Badge */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
         <div style={{
@@ -449,7 +451,7 @@ export default function MasterTopbar({
           <Menu size={16} />
         </button>
 
-        {/* MENU DÉROULANT DU PROFIL (avec overlay léger et ombre franche pour détacher les plans) */}
+        {/* MENU DÉROULANT DU PROFIL (compact sur mobile w-[236px], plus large sur desktop sm:w-[304px]) */}
         {isDropdownOpen && (
           <>
             <div
@@ -462,51 +464,48 @@ export default function MasterTopbar({
               }}
             />
             <div
+              className="w-[236px] sm:w-[304px] p-2.5 sm:p-3.5"
               style={{
                 position: 'absolute',
-                top: 'calc(100% + 10px)',
+                top: 'calc(100% + 8px)',
                 right: 0,
-                width: 328,
                 maxWidth: 'calc(100vw - 24px)',
                 background: 'var(--surface)',
-                borderRadius: 14,
+                borderRadius: 13,
                 boxShadow: '0 20px 48px -8px rgba(0, 0, 0, 0.45), 0 8px 20px rgba(0, 0, 0, 0.25)',
                 border: '1px solid var(--border2)',
-                padding: 14,
                 zIndex: 100,
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 8,
+                gap: 6,
               }}
             >
-              {/* En-tête Profil : Nom + Badge de rôle sur la ligne 1, Email complet non tronqué sur la ligne 2 */}
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+              {/* En-tête Profil : Nom + Badge de rôle sur la ligne 1, Email sur la ligne 2 */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9, paddingBottom: 10, borderBottom: '1px solid var(--border)' }}>
                 <div
+                  className="w-8 h-8 sm:w-10 sm:h-10 text-xs sm:text-[15px]"
                   style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 10,
+                    borderRadius: 9,
                     background: 'linear-gradient(135deg,#f59e0b,#ef4444)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: 'white',
                     fontWeight: 800,
-                    fontSize: 15,
                     flexShrink: 0,
                   }}
                 >
                   {user ? initials(user.name) : '?'}
                 </div>
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                    <span className="text-[13px] sm:text-[14px]" style={{ fontWeight: 800, color: 'var(--text)' }}>
                       {user?.name ?? 'Master'}
                     </span>
                     <span style={{
-                      fontSize: 10.5,
+                      fontSize: 10,
                       fontWeight: 800,
-                      padding: '2px 7px',
+                      padding: '1px 6px',
                       borderRadius: 999,
                       background: 'var(--amber-light)',
                       color: 'var(--amber)',
@@ -517,13 +516,13 @@ export default function MasterTopbar({
                   </div>
                   <div
                     title={user?.email ?? ''}
+                    className="text-[11px] sm:text-[12px]"
                     style={{
-                      fontSize: 12,
                       color: 'var(--text2)',
                       fontWeight: 600,
-                      marginTop: 3,
+                      marginTop: 2,
                       wordBreak: 'break-all',
-                      lineHeight: 1.35,
+                      lineHeight: 1.3,
                     }}
                   >
                     {user?.email ?? ''}
@@ -531,7 +530,7 @@ export default function MasterTopbar({
                 </div>
               </div>
 
-              {/* Ligne 2FA actionnable (sans la mention inutile "SECURITY") */}
+              {/* Ligne 2FA actionnable */}
               <button
                 type="button"
                 onClick={() => handleAction(() => onNav('logs'))}
@@ -539,28 +538,29 @@ export default function MasterTopbar({
                   outline: 'none',
                   background: mfaEnabled ? 'var(--green-light)' : 'var(--red-light)',
                   border: `1px solid ${mfaEnabled ? 'rgba(74, 222, 128, 0.3)' : 'rgba(248, 113, 113, 0.35)'}`,
-                  borderRadius: 9,
-                  padding: '9px 12px',
+                  borderRadius: 8,
+                  padding: '7px 10px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
+                  gap: 6,
                   cursor: 'pointer',
                   fontFamily: 'inherit',
                   width: '100%',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
                   {mfaEnabled ? (
-                    <ShieldCheck size={16} color="var(--green)" />
+                    <ShieldCheck size={15} color="var(--green)" style={{ flexShrink: 0 }} />
                   ) : (
-                    <ShieldAlert size={16} color="var(--red)" />
+                    <ShieldAlert size={15} color="var(--red)" style={{ flexShrink: 0 }} />
                   )}
-                  <span style={{ fontSize: 12.5, fontWeight: 800, color: mfaEnabled ? 'var(--green)' : 'var(--red)' }}>
+                  <span className="text-[11.5px] sm:text-[12.5px]" style={{ fontWeight: 800, color: mfaEnabled ? 'var(--green)' : 'var(--red)', whiteSpace: 'nowrap' }}>
                     {mfaEnabled ? t('topbar.mfa_totp_active') : t('topbar.mfa_totp_inactive')}
                   </span>
                 </div>
                 {!mfaEnabled && (
-                  <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--red)' }}>
+                  <span className="text-[11px] sm:text-[12px]" style={{ fontWeight: 800, color: 'var(--red)', whiteSpace: 'nowrap' }}>
                     {t('topbar.mfa_enable_cta')}
                   </span>
                 )}
@@ -571,11 +571,11 @@ export default function MasterTopbar({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '6px 10px',
+                padding: '5px 8px',
                 borderRadius: 8,
               }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
-                  <Globe size={15} color="var(--text2)" />
+                <span className="text-[12px] sm:text-[13px]" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontWeight: 600, color: 'var(--text)' }}>
+                  <Globe size={14} color="var(--text2)" />
                   {t('topbar.language')}
                 </span>
                 <div
@@ -584,7 +584,7 @@ export default function MasterTopbar({
                   style={{
                     display: 'inline-flex',
                     background: 'var(--bg2)',
-                    borderRadius: 7,
+                    borderRadius: 6,
                     padding: 2,
                     gap: 2,
                   }}
@@ -597,13 +597,13 @@ export default function MasterTopbar({
                         type="button"
                         onClick={() => { if (!active) changeLanguage(l) }}
                         style={{
-                          padding: '3px 10px',
-                          borderRadius: 5,
+                          padding: '2px 8px',
+                          borderRadius: 4,
                           border: 'none',
                           outline: 'none',
                           background: active ? 'var(--primary)' : 'transparent',
                           color: active ? '#ffffff' : 'var(--text2)',
-                          fontSize: 11.5,
+                          fontSize: 11,
                           fontWeight: 800,
                           textTransform: 'uppercase',
                           cursor: active ? 'default' : 'pointer',
@@ -620,17 +620,17 @@ export default function MasterTopbar({
               <button
                 type="button"
                 onClick={() => setTheme(isDark ? 'light' : 'dark')}
+                className="text-[12px] sm:text-[13px]"
                 style={{
                   outline: 'none',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 8,
-                  padding: '8px 10px',
+                  gap: 7,
+                  padding: '6px 8px',
                   borderRadius: 8,
                   background: 'transparent',
                   color: 'var(--text)',
                   border: 'none',
-                  fontSize: 13,
                   fontWeight: 600,
                   cursor: 'pointer',
                   fontFamily: 'inherit',
@@ -638,7 +638,7 @@ export default function MasterTopbar({
                   width: '100%',
                 }}
               >
-                {isDark ? <Sun size={15} color="var(--amber)" /> : <Moon size={15} color="var(--text2)" />}
+                {isDark ? <Sun size={14} color="var(--amber)" /> : <Moon size={14} color="var(--text2)" />}
                 <span>{isDark ? t('topbar.theme_light') : t('topbar.theme_dark')}</span>
               </button>
 
@@ -646,17 +646,17 @@ export default function MasterTopbar({
                 <button
                   type="button"
                   onClick={() => handleAction(onChangePwd)}
+                  className="text-[12px] sm:text-[13px]"
                   style={{
                     outline: 'none',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 8,
-                    padding: '8px 10px',
+                    gap: 7,
+                    padding: '6px 8px',
                     borderRadius: 8,
                     background: 'transparent',
                     color: 'var(--text)',
                     border: 'none',
-                    fontSize: 13,
                     fontWeight: 600,
                     cursor: 'pointer',
                     fontFamily: 'inherit',
@@ -664,37 +664,37 @@ export default function MasterTopbar({
                     width: '100%',
                   }}
                 >
-                  <KeyRound size={15} color="var(--text2)" />
+                  <KeyRound size={14} color="var(--text2)" />
                   <span>{t('topbar.change_password')}</span>
                 </button>
               )}
 
               <div style={{ height: 1, background: 'var(--border)', margin: '2px 0' }} />
 
-              {/* Déconnexion (contraste élevé en mode clair comme en mode sombre) */}
+              {/* Déconnexion */}
               <button
                 id="edu-logout-btn"
                 type="button"
                 onClick={() => handleAction(onLogout)}
+                className="text-[12px] sm:text-[13px]"
                 style={{
                   outline: 'none',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: 8,
-                  padding: '9px 12px',
-                  borderRadius: 9,
+                  gap: 7,
+                  padding: '7px 10px',
+                  borderRadius: 8,
                   background: 'var(--red-light)',
                   color: 'var(--red)',
                   border: '1px solid rgba(248, 113, 113, 0.35)',
-                  fontSize: 13,
                   fontWeight: 800,
                   cursor: 'pointer',
                   fontFamily: 'inherit',
                   width: '100%',
                 }}
               >
-                <LogOut size={15} />
+                <LogOut size={14} />
                 <span>{t('topbar.logout_full')}</span>
               </button>
             </div>
