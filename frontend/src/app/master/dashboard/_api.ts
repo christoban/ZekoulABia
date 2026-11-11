@@ -537,6 +537,7 @@ export async function logout(): Promise<void> {
 
 export interface PlatformSettingsDto {
   outboundMessagingEnabled: boolean
+  disabledSchoolIds?: string[]
 }
 
 export interface SuppressedOutboundMessageDto {
@@ -544,6 +545,7 @@ export interface SuppressedOutboundMessageDto {
   channel: string
   eventType: string
   recipientMasked: string
+  schoolId?: string | null
   createdAt: string
 }
 
@@ -553,17 +555,25 @@ export async function fetchPlatformSettings(): Promise<PlatformSettingsDto> {
   return res.data
 }
 
-export async function updatePlatformSettings(outboundMessagingEnabled: boolean): Promise<PlatformSettingsDto> {
+export async function updatePlatformSettings(
+  outboundMessagingEnabled: boolean,
+  schoolId?: string | null,
+): Promise<PlatformSettingsDto> {
   const res = await apiFetch<PlatformSettingsDto>('/api/v2/master/platform-settings', {
     method: 'PATCH',
-    body: JSON.stringify({ outboundMessagingEnabled }),
+    body: JSON.stringify(schoolId ? { outboundMessagingEnabled, schoolId } : { outboundMessagingEnabled }),
   })
   if (!res.data) throw new Error('Erreur lors de la mise à jour du mode test')
   return res.data
 }
 
-export async function fetchSuppressedOutboundMessages(limit = 100): Promise<SuppressedOutboundMessageDto[]> {
-  const res = await apiFetch<SuppressedOutboundMessageDto[]>(`/api/v2/master/platform-settings/messages-supprimes?limit=${limit}`)
+export async function fetchSuppressedOutboundMessages(
+  limit = 100,
+  schoolId?: string | null,
+): Promise<SuppressedOutboundMessageDto[]> {
+  const params = new URLSearchParams({ limit: String(limit) })
+  if (schoolId) params.set('schoolId', schoolId)
+  const res = await apiFetch<SuppressedOutboundMessageDto[]>(`/api/v2/master/platform-settings/messages-supprimes?${params}`)
   return res.data ?? []
 }
 

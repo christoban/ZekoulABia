@@ -1,3 +1,9 @@
+export interface OutboundMessagingContext {
+  schoolId?: string | null;
+  recipientEmail?: string | null;
+  recipientPhone?: string | null;
+}
+
 export interface OutboundMessagingPolicy {
-  estActive(): Promise<boolean>;
+  estActive(contexte?: OutboundMessagingContext): Promise<boolean>;
 }

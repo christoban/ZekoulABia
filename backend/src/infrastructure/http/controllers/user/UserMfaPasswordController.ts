@@ -83,7 +83,7 @@ export class UserMfaPasswordController {
       const normalizedEmail = email.toLowerCase().trim();
       const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
 
-      // Mode test (réglage plateforme outboundMessagingEnabled désactivé) : aucun jeton
+      // Mode test (réglage global plateforme désactivé) : aucun jeton
       // créé, aucun email déclenché — réponse identique au cas nominal (anti-énumération).
       if (!(await this.politiqueEnvoiSortant.estActive())) {
         res.json({ success: true, message: 'Si ce compte existe, un email de réinitialisation a été envoyé.' });
@@ -92,6 +92,10 @@ export class UserMfaPasswordController {
 
       // Helper: send reset email for a given user
       const sendResetEmail = async (user: { id: string; email: string; firstName: string; lastName: string }, school: { id: string; subdomain: string }) => {
+        // Mode test par établissement : aucun jeton créé ni email déclenché si cet établissement est en mode test
+        if (!(await this.politiqueEnvoiSortant.estActive({ schoolId: school.id }))) {
+          return;
+        }
         const plainToken = randomBytes(32).toString('hex');
         const tokenHash = createHash('sha256').update(plainToken).digest('hex');
         const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1h

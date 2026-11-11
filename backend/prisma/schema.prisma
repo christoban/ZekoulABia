@@ -41,6 +41,7 @@ model MasterUser {
 model PlatformSettings {
   id                       String   @id
   outboundMessagingEnabled Boolean  @default(true)
+  disabledSchoolIds        String[] @default([])
   updatedAt                DateTime @updatedAt
 }
 
@@ -51,9 +52,11 @@ model SuppressedOutboundMessage {
   channel         String
   eventType       String
   recipientMasked String
+  schoolId        String?
   createdAt       DateTime @default(now())
 
   @@index([createdAt])
+  @@index([schoolId])
 }
 
 // ─── Module Groupe Scolaire (Phase A — fondations) ─────────────────────────

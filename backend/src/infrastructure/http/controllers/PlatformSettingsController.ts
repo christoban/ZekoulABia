@@ -19,10 +19,23 @@ export class PlatformSettingsController {
     }
   };
 
-  getPublicStatus = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+  getPublicStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const data = await this.obtenir.execute();
-      res.json({ outboundMessagingEnabled: data.outboundMessagingEnabled });
+      const disabledSchoolIds = data.disabledSchoolIds ?? [];
+      const schoolId = typeof req.query.schoolId === 'string' && req.query.schoolId.trim().length > 0
+        ? req.query.schoolId.trim()
+        : null;
+
+      const outboundMessagingEnabled = schoolId
+        ? data.outboundMessagingEnabled && !disabledSchoolIds.includes(schoolId)
+        : data.outboundMessagingEnabled;
+
+      res.json({
+        outboundMessagingEnabled,
+        globalOutboundMessagingEnabled: data.outboundMessagingEnabled,
+        disabledSchoolCount: disabledSchoolIds.length,
+      });
     } catch (error) {
       next(error);
     }
@@ -36,8 +49,13 @@ export class PlatformSettingsController {
         return;
       }
 
+      const schoolId = typeof req.body?.schoolId === 'string' && req.body.schoolId.trim().length > 0
+        ? req.body.schoolId.trim()
+        : null;
+
       const data = await this.mettreAJour.execute({
         outboundMessagingEnabled: value,
+        schoolId,
         masterUserId: req.masterUser!.id,
         ipAddress: req.ip,
       });
@@ -50,7 +68,10 @@ export class PlatformSettingsController {
   listerMessagesSupprimes = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const limite = typeof req.query.limit === 'string' ? Number(req.query.limit) : undefined;
-      const data = await this.listerMessagesSupprimesUseCase.execute(limite);
+      const schoolId = typeof req.query.schoolId === 'string' && req.query.schoolId.trim().length > 0
+        ? req.query.schoolId.trim()
+        : null;
+      const data = await this.listerMessagesSupprimesUseCase.execute(limite, schoolId);
       res.json({ success: true, data });
     } catch (error) {
       next(error);

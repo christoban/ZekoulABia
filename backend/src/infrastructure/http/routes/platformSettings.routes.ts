@@ -4,7 +4,7 @@ import { authorizeMaster, protectMaster } from '../middlewares/authMultiTenant';
 
 export function creerPlatformSettingsRoutes(controller: PlatformSettingsController): Router {
   const router = Router();
-  router.get('/', protectMaster, authorizeMaster(['super_admin', 'platform_admin']), controller.get);
+  router.get('/', protectMaster, authorizeMaster(['super_admin']), controller.get);
   router.patch('/', protectMaster, authorizeMaster(['super_admin']), controller.update);
   router.get('/messages-supprimes', protectMaster, authorizeMaster(['super_admin']), controller.listerMessagesSupprimes);
   return router;

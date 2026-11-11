@@ -9,12 +9,18 @@ const RETENTION_JOURS = 7;
 export class PrismaSuppressedOutboundMessageRepository implements SuppressedOutboundMessageRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async enregistrer(params: { channel: string; eventType: string; recipientMasked: string }): Promise<void> {
+  async enregistrer(params: {
+    channel: string;
+    eventType: string;
+    recipientMasked: string;
+    schoolId?: string | null;
+  }): Promise<void> {
     await this.prisma.suppressedOutboundMessage.create({
       data: {
         channel: params.channel,
         eventType: params.eventType,
         recipientMasked: params.recipientMasked,
+        schoolId: params.schoolId ?? null,
       },
     });
     // Purge opportuniste de la rétention 7 jours — évite un job dédié.
@@ -23,11 +29,19 @@ export class PrismaSuppressedOutboundMessageRepository implements SuppressedOutb
     });
   }
 
-  async lister(limit: number): Promise<SuppressedOutboundMessageEntry[]> {
+  async lister(limit: number, schoolId?: string | null): Promise<SuppressedOutboundMessageEntry[]> {
     return this.prisma.suppressedOutboundMessage.findMany({
+      where: schoolId ? { schoolId } : undefined,
       orderBy: { createdAt: 'desc' },
       take: limit,
-      select: { id: true, channel: true, eventType: true, recipientMasked: true, createdAt: true },
+      select: {
+        id: true,
+        channel: true,
+        eventType: true,
+        recipientMasked: true,
+        schoolId: true,
+        createdAt: true,
+      },
     });
   }
 }

@@ -222,8 +222,8 @@ export class ConnecterUtilisateurUseCase {
     user.enregistrerConnexion();
     await this.userRepository.update(user);
 
-    // 4bis. Mode test : réglage désactivé → session directe après mot de passe.
-    const envoiSortantActif = await this.politiqueEnvoiSortant.estActive();
+    // 4bis. Mode test (global ou établissement) : réglage désactivé → session directe après mot de passe.
+    const envoiSortantActif = await this.politiqueEnvoiSortant.estActive({ schoolId: user.schoolId });
 
     // 5. Générer les tokens
     const tokens = this.tokenService.genererTokens({

@@ -20,12 +20,14 @@ export async function enregistrerMessageSupprime(params: {
   channel: string;
   eventType: string;
   recipient: string;
+  schoolId?: string | null;
 }): Promise<void> {
   try {
     await depot.enregistrer({
       channel: params.channel,
       eventType: params.eventType,
       recipientMasked: masquerDestinataire(params.recipient),
+      schoolId: params.schoolId ?? null,
     });
   } catch (error) {
     // Jamais bloquant : la suppression d'envoi ne doit pas faire échouer le flux métier.

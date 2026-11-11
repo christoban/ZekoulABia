@@ -4,5 +4,6 @@ export interface PlatformSettingsAuditPort {
     ipAddress?: string | null;
     avant: boolean;
     apres: boolean;
+    schoolId?: string | null;
   }): Promise<void>;
 }

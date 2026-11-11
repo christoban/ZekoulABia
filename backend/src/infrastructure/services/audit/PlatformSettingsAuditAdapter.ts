@@ -9,13 +9,18 @@ export class PlatformSettingsAuditAdapter implements PlatformSettingsAuditPort {
     ipAddress?: string | null;
     avant: boolean;
     apres: boolean;
+    schoolId?: string | null;
   }): Promise<void> {
     await this.prisma.masterAuthAudit.create({
       data: {
         masterUserId: params.masterUserId,
-        action: 'action:platform_settings_outbound_messaging_changed',
+        action: params.schoolId
+          ? 'action:platform_settings_school_outbound_messaging_changed'
+          : 'action:platform_settings_outbound_messaging_changed',
         description: JSON.stringify({
           setting: 'outboundMessagingEnabled',
+          scope: params.schoolId ? 'school' : 'global',
+          ...(params.schoolId ? { schoolId: params.schoolId } : {}),
           avant: params.avant,
           apres: params.apres,
         }),

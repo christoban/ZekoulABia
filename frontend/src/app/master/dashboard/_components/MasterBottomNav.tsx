@@ -6,6 +6,7 @@ import type { Section } from '../_types'
 
 interface Props {
   currentSection: Section
+  userRole?: string
   onNav: (section: Section) => void
   onOpenMenu: () => void
 }
@@ -63,7 +64,11 @@ const NAV_ITEMS: BottomNavItem[] = [
   },
 ]
 
-export default function MasterBottomNav({ currentSection, onNav, onOpenMenu }: Props) {
+export default function MasterBottomNav({ currentSection, userRole, onNav, onOpenMenu }: Props) {
+  const visibleItems = NAV_ITEMS.filter(
+    (item) => item.id !== 'mode-test' || userRole === 'super_admin'
+  )
+
   return (
     <nav
       aria-label="Navigation mobile Super Admin"
@@ -75,7 +80,7 @@ export default function MasterBottomNav({ currentSection, onNav, onOpenMenu }: P
       }}
     >
       <div className="flex items-center justify-around px-1 max-w-lg mx-auto">
-        {NAV_ITEMS.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = !item.isMenuTrigger && item.section === currentSection
           const Icon = item.icon
 

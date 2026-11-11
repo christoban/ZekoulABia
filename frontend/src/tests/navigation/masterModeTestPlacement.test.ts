@@ -4,10 +4,10 @@ import path from 'path'
 import frCommon from '@/locales/fr/common.json'
 import enCommon from '@/locales/en/common.json'
 
-describe('Chantier E — Placement Mode test dans le dashboard Master & Bandeau global', () => {
+describe('Chantier E — Mode test Global + Par Établissement (exclusif super_admin) & Bandeau global', () => {
   const srcRoot = path.resolve(__dirname, '../..')
 
-  it('monte SectionModeTest dans le dashboard Master et utilise le client _api.ts', () => {
+  it('monte SectionModeTest dans le dashboard Master uniquement pour super_admin et utilise _api.ts', () => {
     const masterPage = fs.readFileSync(path.join(srcRoot, 'app/master/dashboard/page.tsx'), 'utf8')
     const masterApi = fs.readFileSync(path.join(srcRoot, 'app/master/dashboard/_api.ts'), 'utf8')
     const sectionModeTest = fs.readFileSync(
@@ -16,12 +16,14 @@ describe('Chantier E — Placement Mode test dans le dashboard Master & Bandeau 
     )
 
     expect(masterPage).toContain('SectionModeTest')
+    expect(masterPage).toContain("user?.role === 'super_admin'")
     expect(masterPage).toContain("section === 'mode-test'")
     expect(masterApi).toContain('/api/v2/master/platform-settings')
     expect(masterApi).toContain('/api/v2/master/platform-settings/messages-supprimes')
     expect(sectionModeTest).toContain('fetchPlatformSettings')
     expect(sectionModeTest).toContain('updatePlatformSettings')
     expect(sectionModeTest).toContain('fetchSuppressedOutboundMessages')
+    expect(sectionModeTest).toContain('basculerModeTestEcole')
   })
 
   it('retire totalement le bloc Mode test et les appels Master de SectionDashboard (Admin école)', () => {
@@ -35,21 +37,31 @@ describe('Chantier E — Placement Mode test dans le dashboard Master & Bandeau 
     expect(adminSectionDashboard).not.toContain('outboundMessagingEnabled')
   })
 
-  it('applique le contrôle d’accès super_admin / platform_admin dans SectionModeTest', () => {
+  it('verrouille la visibilité et l’accès au seul super_admin (navigation + composant)', () => {
+    const topbar = fs.readFileSync(
+      path.join(srcRoot, 'app/master/dashboard/_components/MasterTopbar.tsx'),
+      'utf8',
+    )
+    const bottomNav = fs.readFileSync(
+      path.join(srcRoot, 'app/master/dashboard/_components/MasterBottomNav.tsx'),
+      'utf8',
+    )
     const sectionModeTest = fs.readFileSync(
       path.join(srcRoot, 'app/master/dashboard/_components/SectionModeTest.tsx'),
       'utf8',
     )
 
-    expect(sectionModeTest).toContain("user?.role === 'super_admin' || user?.role === 'platform_admin'")
+    expect(topbar).toContain("n.id !== 'mode-test' || user?.role === 'super_admin'")
+    expect(bottomNav).toContain("item.id !== 'mode-test' || userRole === 'super_admin'")
     expect(sectionModeTest).toContain("const isSuperAdmin = user?.role === 'super_admin'")
-    expect(sectionModeTest).toContain('Lecture seule (super_admin requis)')
+    expect(sectionModeTest).not.toContain('platform_admin')
   })
 
-  it('utilise uniquement l’endpoint public en lecture seule dans ModeTestBanner et le monte sur Master et les dashboards écoles', () => {
+  it('utilise uniquement l’endpoint public (scopé par schoolId) dans ModeTestBanner et le monte sur Master et les dashboards écoles', () => {
     const banner = fs.readFileSync(path.join(srcRoot, 'components/ModeTestBanner.tsx'), 'utf8')
 
     expect(banner).toContain('/api/v2/platform-settings/public')
+    expect(banner).toContain('schoolId=')
     expect(banner).not.toContain('/api/v2/master/platform-settings')
 
     const dashboards = [
@@ -72,4 +84,3 @@ describe('Chantier E — Placement Mode test dans le dashboard Master & Bandeau 
     expect((enCommon.login.mode_test_bandeau_msg as string).length).toBeGreaterThan(0)
   })
 })
-

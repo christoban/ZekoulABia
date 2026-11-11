@@ -108,7 +108,7 @@ export default function MasterTopbar({
 
       {/* Desktop horizontal navigation */}
       <nav className="hidden md:flex" style={{ gap: 6, margin: '0 12px' }}>
-        {NAV.map(n => (
+        {NAV.filter(n => n.id !== 'mode-test' || user?.role === 'super_admin').map(n => (
           <button key={n.id} onClick={() => onNav(n.id)}
             style={{
               padding: '6px 12px', borderRadius: 8,

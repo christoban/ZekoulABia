@@ -18,12 +18,16 @@ function normalizePhone(raw: string): string {
 }
 
 // ─── ENVOYER UN SMS ──────────────────────────────────────────
-export const sendSMS = async (to: string, message: string): Promise<{ success: boolean; msgId?: string; error?: string }> => {
+export const sendSMS = async (
+  to: string,
+  message: string,
+  schoolId?: string | null,
+): Promise<{ success: boolean; msgId?: string; error?: string }> => {
   // Mode test — interception en un seul endroit, au plus bas niveau : couvre aussi
   // le job d'escalade SMS qui relit le réglage de fait au moment de l'envoi.
-  if (!(await estEnvoiSortantActif())) {
+  if (!(await estEnvoiSortantActif({ schoolId, recipientPhone: to }))) {
     console.log(`[Mode test] envoi supprimé (sms) → ${to}`);
-    await enregistrerMessageSupprime({ channel: 'SMS', eventType: 'sms', recipient: to });
+    await enregistrerMessageSupprime({ channel: 'SMS', eventType: 'sms', recipient: to, schoolId });
     return { success: true, msgId: MSG_ID_SUPPRIME };
   }
   try {
@@ -49,10 +53,19 @@ export const sendSMS = async (to: string, message: string): Promise<{ success: b
 };
 
 // ─── ENVOYER SMS EN MASSE (max 100 numéros par lot) ──────────
-export const sendBulkSMS = async (numbers: string[], message: string): Promise<{ success: number; failed: number }> => {
-  if (!(await estEnvoiSortantActif())) {
+export const sendBulkSMS = async (
+  numbers: string[],
+  message: string,
+  schoolId?: string | null,
+): Promise<{ success: number; failed: number }> => {
+  if (!(await estEnvoiSortantActif({ schoolId, recipientPhone: numbers[0] }))) {
     console.log(`[Mode test] envoi supprimé (sms bulk) → ${numbers.length} destinataires`);
-    await enregistrerMessageSupprime({ channel: 'SMS_BULK', eventType: 'sms_bulk', recipient: `destinataires:${numbers.length}` });
+    await enregistrerMessageSupprime({
+      channel: 'SMS_BULK',
+      eventType: 'sms_bulk',
+      recipient: `destinataires:${numbers.length}`,
+      schoolId,
+    });
     return { success: numbers.length, failed: 0 };
   }
   const chunks: string[][] = [];
@@ -96,6 +109,7 @@ export const sendBulkSMS = async (numbers: string[], message: string): Promise<{
 type SendSmsInput = {
   to: string;
   message: string;
+  schoolId?: string | null;
 };
 
 type SendSmsResult = {
@@ -111,9 +125,14 @@ export const isSmsConfigured = () => Boolean(API_KEY);
 export const sendSms = async (input: SendSmsInput): Promise<SendSmsResult> => {
   // Mode test — intercepté avant la vérification de clé : quand le réglage est
   // désactivé, le comportement d'envoi est le même clé présente ou absente.
-  if (!(await estEnvoiSortantActif())) {
+  if (!(await estEnvoiSortantActif({ schoolId: input.schoolId, recipientPhone: input.to }))) {
     console.log(`[Mode test] envoi supprimé (sms) → ${input.to}`);
-    await enregistrerMessageSupprime({ channel: 'SMS', eventType: 'sms', recipient: input.to });
+    await enregistrerMessageSupprime({
+      channel: 'SMS',
+      eventType: 'sms',
+      recipient: input.to,
+      schoolId: input.schoolId,
+    });
     return { status: "sent", providerMessageId: MSG_ID_SUPPRIME };
   }
 

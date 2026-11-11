@@ -190,9 +190,18 @@ export const sendTransactionalEmail = async (
     // mime un succès ("sent", messageId "suppressed") pour que les appelants ne déclenchent
     // ni erreur ni repli ; la trace réelle est dans la ligne de log + la table des messages
     // supprimés (métadonnées seulement).
-    if (!MASTER_SECURITY_EMAIL_EVENTS.has(input.eventType) && !(await estEnvoiSortantActif())) {
+    const schoolIdMeta = resolveSchoolId(input.metadata);
+    if (
+      !MASTER_SECURITY_EMAIL_EVENTS.has(input.eventType) &&
+      !(await estEnvoiSortantActif({ schoolId: schoolIdMeta, recipientEmail }))
+    ) {
       console.log(`[Mode test] envoi supprimé (email) → ${recipientEmail} (${input.eventType})`);
-      await enregistrerMessageSupprime({ channel: 'EMAIL', eventType: input.eventType, recipient: input.recipientEmail });
+      await enregistrerMessageSupprime({
+        channel: 'EMAIL',
+        eventType: input.eventType,
+        recipient: input.recipientEmail,
+        schoolId: schoolIdMeta,
+      });
       return { status: "sent", messageId: "suppressed" };
     }
 

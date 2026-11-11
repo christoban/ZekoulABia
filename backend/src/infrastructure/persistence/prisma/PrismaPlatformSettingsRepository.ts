@@ -15,14 +15,34 @@ export class PrismaPlatformSettingsRepository implements PlatformSettingsReposit
       create: { id: SINGLETON_ID },
       update: {},
     });
-    return settings;
+    return {
+      ...settings,
+      disabledSchoolIds: settings.disabledSchoolIds ?? [],
+    };
   }
 
   async updateOutboundMessaging(enabled: boolean): Promise<PlatformSettings> {
-    return this.prisma.platformSettings.upsert({
+    const settings = await this.prisma.platformSettings.upsert({
       where: { id: SINGLETON_ID },
       create: { id: SINGLETON_ID, outboundMessagingEnabled: enabled },
       update: { outboundMessagingEnabled: enabled },
     });
+    return {
+      ...settings,
+      disabledSchoolIds: settings.disabledSchoolIds ?? [],
+    };
+  }
+
+  async updateDisabledSchools(disabledSchoolIds: string[]): Promise<PlatformSettings> {
+    const uniques = Array.from(new Set(disabledSchoolIds.filter((id) => typeof id === 'string' && id.trim().length > 0)));
+    const settings = await this.prisma.platformSettings.upsert({
+      where: { id: SINGLETON_ID },
+      create: { id: SINGLETON_ID, disabledSchoolIds: uniques },
+      update: { disabledSchoolIds: uniques },
+    });
+    return {
+      ...settings,
+      disabledSchoolIds: settings.disabledSchoolIds ?? [],
+    };
   }
 }

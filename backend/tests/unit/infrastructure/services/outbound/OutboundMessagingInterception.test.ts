@@ -26,6 +26,16 @@ class PolitiqueDesactivee implements OutboundMessagingPolicy {
   }
 }
 
+class PolitiqueParEcole implements OutboundMessagingPolicy {
+  constructor(private readonly ecolesEnModeTest: Set<string>) {}
+  async estActive(contexte?: { schoolId?: string | null }): Promise<boolean> {
+    if (contexte?.schoolId && this.ecolesEnModeTest.has(contexte.schoolId)) {
+      return false;
+    }
+    return true;
+  }
+}
+
 const creerReponseFactice = () => {
   const reponse = {
     statusCode: 200,
@@ -100,6 +110,22 @@ describe('Interception des envois sortants en mode test', () => {
       process.env.RESEND_API_KEY = resendOriginal;
       process.env.SMTP_HOST = smtpHostOriginal;
     }
+  });
+
+  it('mode test par établissement : supprime uniquement les envois de l’école en mode test', async () => {
+    definirOutboundMessagingPolicy(new PolitiqueParEcole(new Set(['ecole-demo'])));
+    const smsDemo = await sendSMS('+237690123456', 'message demo', 'ecole-demo');
+    expect(smsDemo).toEqual({ success: true, msgId: 'suppressed' });
+
+    const emailDemo = await sendTransactionalEmail({
+      recipientEmail: 'prof@demo.cm',
+      subject: 'Invitation',
+      html: '<p>Bienvenue</p>',
+      template: 'invite',
+      eventType: 'user_invite',
+      metadata: { schoolId: 'ecole-demo' },
+    });
+    expect(emailDemo).toEqual({ status: 'sent', messageId: 'suppressed' });
   });
 });
 

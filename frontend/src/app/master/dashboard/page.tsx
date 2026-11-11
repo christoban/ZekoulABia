@@ -337,9 +337,9 @@ export default function SuperAdminDashboard() {
           </div>
         )}
 
-        {visitedSections.has('mode-test') && (
+        {visitedSections.has('mode-test') && user?.role === 'super_admin' && (
           <div style={{ display: section === 'mode-test' ? 'block' : 'none', height: '100%' }}>
-            <SectionModeTest user={user} onToast={showToast} />
+            <SectionModeTest user={user} schools={schools} onToast={showToast} />
           </div>
         )}
       </main>
@@ -347,6 +347,7 @@ export default function SuperAdminDashboard() {
       {/* Mobile Bottom Navigation (< md) intégrée dans le flux flex vertical */}
       <MasterBottomNav
         currentSection={section}
+        userRole={user?.role}
         onNav={setSection}
         onOpenMenu={() => setMobileMenuOpen(prev => !prev)}
       />

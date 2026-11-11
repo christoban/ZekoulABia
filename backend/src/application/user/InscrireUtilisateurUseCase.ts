@@ -119,7 +119,7 @@ export class InscrireUtilisateurUseCase {
     }
 
     const envoiSortantActif = this.politiqueEnvoiSortant
-      ? await this.politiqueEnvoiSortant.estActive()
+      ? await this.politiqueEnvoiSortant.estActive({ schoolId: commande.schoolId })
       : true;
 
     return {

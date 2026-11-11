@@ -6,6 +6,20 @@ import { useT } from '@/lib/i18n'
 
 const PUBLIC_PLATFORM_SETTINGS_ENDPOINT = '/api/v2/platform-settings/public'
 
+function readCurrentSchoolId(): string | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem('user')
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as { schoolId?: string }
+    return typeof parsed?.schoolId === 'string' && parsed.schoolId.trim().length > 0
+      ? parsed.schoolId.trim()
+      : null
+  } catch {
+    return null
+  }
+}
+
 export default function ModeTestBanner() {
   const t = useT('common')
   const [outboundMessagingEnabled, setOutboundMessagingEnabled] = useState<boolean>(true)
@@ -15,7 +29,11 @@ export default function ModeTestBanner() {
 
     const load = async () => {
       try {
-        const res = await fetch(PUBLIC_PLATFORM_SETTINGS_ENDPOINT)
+        const schoolId = readCurrentSchoolId()
+        const url = schoolId
+          ? `${PUBLIC_PLATFORM_SETTINGS_ENDPOINT}?schoolId=${encodeURIComponent(schoolId)}`
+          : PUBLIC_PLATFORM_SETTINGS_ENDPOINT
+        const res = await fetch(url)
         if (!res.ok) return
         const data = (await res.json()) as { outboundMessagingEnabled?: boolean }
         if (!cancelled && typeof data.outboundMessagingEnabled === 'boolean') {
@@ -71,4 +89,3 @@ export default function ModeTestBanner() {
     </div>
   )
 }
-
