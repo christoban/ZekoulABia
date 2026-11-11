@@ -180,8 +180,8 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
   }
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', padding: '16px 14px 48px', boxSizing: 'border-box', WebkitOverflowScrolling: 'touch' }}>
-      <div style={{ maxWidth: 960, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ height: '100%', overflowY: 'auto', padding: '20px 24px 48px', boxSizing: 'border-box', WebkitOverflowScrolling: 'touch' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {/* En-tête */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Users,
   UserPlus,
@@ -16,6 +16,8 @@ import {
   MailCheck,
   Eye,
   EyeOff,
+  MoreHorizontal,
+  X,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import {
@@ -44,8 +46,8 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
     SUPER_ADMIN: {
       label: 'Super Admin',
       desc: t('team.role_super_desc'),
-      bg: 'rgba(168, 85, 247, 0.14)',
-      color: '#a855f7',
+      bg: 'var(--amber-light)',
+      color: 'var(--primary)',
     },
     PLATFORM_ADMIN: {
       label: 'Platform Admin',
@@ -67,9 +69,23 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
     },
   }
 
+  const formatCreatedLabel = (count: number) => {
+    if (count === 0) return t('team.created_zero')
+    if (count === 1) return t('team.created_one')
+    return t('team.created_other', { count })
+  }
+
+  const formatAssignedLabel = (count: number) => {
+    if (count === 0) return t('team.assigned_zero')
+    if (count === 1) return t('team.assigned_one')
+    return t('team.assigned_other', { count })
+  }
+
   const [members, setMembers] = useState<MasterTeamMemberDto[]>([])
   const [loading, setLoading] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const menuContainerRef = useRef<HTMLDivElement | null>(null)
 
   // Création d'un membre
   const [showCreateForm, setShowCreateForm] = useState(false)
@@ -109,6 +125,24 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
   useEffect(() => {
     void chargerEquipe()
   }, [chargerEquipe])
+
+  useEffect(() => {
+    if (!openMenuId) return
+    const handleOutside = (e: MouseEvent) => {
+      if (menuContainerRef.current && !menuContainerRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null)
+      }
+    }
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenMenuId(null)
+    }
+    document.addEventListener('mousedown', handleOutside)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('mousedown', handleOutside)
+      document.removeEventListener('keydown', handleKey)
+    }
+  }, [openMenuId])
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -165,6 +199,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
   }
 
   const handleToggleActive = async (member: MasterTeamMemberDto) => {
+    setOpenMenuId(null)
     setBusyId(member.id)
     try {
       const nextActive = !member.isActive
@@ -182,6 +217,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
   }
 
   const handleResetPassword = async (member: MasterTeamMemberDto) => {
+    setOpenMenuId(null)
     setBusyId(member.id)
     try {
       const res = await resetMasterTeamMemberPassword(member.id)
@@ -206,6 +242,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
   }
 
   const handleDelete = async (member: MasterTeamMemberDto) => {
+    setOpenMenuId(null)
     setBusyId(member.id)
     try {
       await deleteMasterTeamMember(member.id)
@@ -244,7 +281,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
 
   if (!isSuperAdmin) {
     return (
-      <div style={{ padding: 16 }}>
+      <div style={{ padding: '20px 24px' }}>
         <div
           style={{
             background: 'var(--surface)',
@@ -255,25 +292,26 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
             fontSize: 13,
           }}
         >
-          Accès strictement réservé au Fondateur (`super_admin`).
+          Accès strictement réservé au Fondateur (Super Admin).
         </div>
       </div>
     )
   }
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', padding: '16px 14px 48px', boxSizing: 'border-box', WebkitOverflowScrolling: 'touch' }}>
-      <div style={{ maxWidth: 1020, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {/* En-tête */}
+    <div style={{ height: '100%', overflowY: 'auto', padding: '20px 24px 48px', boxSizing: 'border-box', WebkitOverflowScrolling: 'touch' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* En-tête aligné à gauche sur la grille 24px */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div
               style={{
-                width: 38,
-                height: 38,
+                width: 40,
+                height: 40,
                 borderRadius: 10,
-                background: 'rgba(168, 85, 247, 0.14)',
-                color: '#a855f7',
+                background: 'var(--amber-light)',
+                border: '1px solid rgba(217, 119, 6, 0.25)',
+                color: 'var(--primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -283,10 +321,10 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
               <Users size={20} />
             </div>
             <div>
-              <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>
+              <h1 style={{ margin: 0, fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>
                 {t('team.title')}
               </h1>
-              <p style={{ margin: '2px 0 0', fontSize: 12.5, color: 'var(--text2)' }}>
+              <p style={{ margin: '3px 0 0', fontSize: 13, color: 'var(--text3)' }}>
                 {t('team.subtitle')}
               </p>
             </div>
@@ -300,14 +338,15 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
-                padding: '8px 12px',
-                borderRadius: 8,
-                border: '1px solid var(--border)',
+                padding: '8px 13px',
+                borderRadius: 9,
+                border: '1px solid var(--border2)',
                 background: 'var(--surface)',
-                color: 'var(--text)',
-                fontSize: 12,
+                color: 'var(--text2)',
+                fontSize: 12.5,
                 fontWeight: 700,
                 cursor: 'pointer',
+                fontFamily: 'inherit',
               }}
             >
               <RefreshCw size={14} />
@@ -320,15 +359,17 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: 6,
-                padding: '8px 14px',
-                borderRadius: 8,
+                gap: 7,
+                padding: '8px 16px',
+                borderRadius: 9,
                 border: 'none',
                 background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))',
+                boxShadow: '0 2px 8px rgba(142,42,58,0.18)',
                 color: '#fff',
-                fontSize: 12.5,
+                fontSize: 13,
                 fontWeight: 800,
                 cursor: 'pointer',
+                fontFamily: 'inherit',
               }}
             >
               <UserPlus size={15} />
@@ -337,22 +378,22 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
           </div>
         </div>
 
-        {/* Bandeau de confirmation d'envoi de l'email d'invitation au membre */}
+        {/* Bandeau de confirmation d'envoi de l'email d'invitation au membre (croix légère + bouton Copier secondaire non concurrent) */}
         {revealedCredentials && (
           <div
             style={{
               background: 'var(--green-light)',
-              border: '1.5px solid var(--green)',
+              border: '1px solid rgba(34, 197, 94, 0.35)',
               borderRadius: 12,
               padding: '14px 16px',
               display: 'flex',
               flexDirection: 'column',
-              gap: 10,
+              gap: 8,
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 800, color: 'var(--green)' }}>
-                <MailCheck size={18} />
+                <MailCheck size={18} style={{ flexShrink: 0 }} />
                 <span>
                   {t('team.email_sent_title', {
                     name: revealedCredentials.name,
@@ -360,88 +401,95 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                   })}
                 </span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  onClick={() => setShowFallbackPwd((v) => !v)}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    background: 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 6,
-                    padding: '4px 10px',
-                    fontSize: 11.5,
-                    fontWeight: 700,
-                    color: 'var(--text)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {showFallbackPwd ? <EyeOff size={13} /> : <Eye size={13} />}
-                  {showFallbackPwd ? t('team.hide_fallback_pwd') : t('team.show_fallback_pwd')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRevealedCredentials(null)}
-                  style={{
-                    background: 'transparent',
-                    border: '1px solid var(--green)',
-                    borderRadius: 6,
-                    padding: '4px 10px',
-                    fontSize: 11.5,
-                    fontWeight: 700,
-                    color: 'var(--green)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {t('team.dismiss_banner')}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setRevealedCredentials(null)}
+                aria-label={t('team.dismiss_banner')}
+                title={t('team.dismiss_banner')}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: 6,
+                  padding: 4,
+                  color: 'var(--text2)',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <X size={16} />
+              </button>
             </div>
 
-            <div style={{ fontSize: 12.5, color: 'var(--text)' }}>
+            <div style={{ fontSize: 12.5, color: 'var(--text2)', lineHeight: 1.5 }}>
               {t('team.email_sent_desc')}
             </div>
 
-            {showFallbackPwd && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', paddingTop: 4 }}>
-                <code
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: 8,
-                    background: 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    fontSize: 13.5,
-                    fontWeight: 800,
-                    color: 'var(--text)',
-                    letterSpacing: 0.5,
-                  }}
-                >
-                  {revealedCredentials.temporaryPassword}
-                </code>
-                <button
-                  type="button"
-                  onClick={() => void copyPassword(revealedCredentials.temporaryPassword)}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '6px 12px',
-                    borderRadius: 8,
-                    border: 'none',
-                    background: 'var(--primary)',
-                    color: '#fff',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {copied ? <Check size={14} /> : <Copy size={14} />}
-                  {copied ? t('team.copied') : t('team.copy')}
-                </button>
-              </div>
-            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', paddingTop: 2 }}>
+              <button
+                type="button"
+                onClick={() => setShowFallbackPwd((v) => !v)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border2)',
+                  borderRadius: 7,
+                  padding: '5px 11px',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: 'var(--text2)',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                {showFallbackPwd ? <EyeOff size={13} /> : <Eye size={13} />}
+                {showFallbackPwd ? t('team.hide_fallback_pwd') : t('team.show_fallback_pwd')}
+              </button>
+
+              {showFallbackPwd && (
+                <>
+                  <code
+                    style={{
+                      padding: '5px 12px',
+                      borderRadius: 7,
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border2)',
+                      fontSize: 13,
+                      fontWeight: 800,
+                      color: 'var(--text)',
+                      letterSpacing: 0.4,
+                    }}
+                  >
+                    {revealedCredentials.temporaryPassword}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={() => void copyPassword(revealedCredentials.temporaryPassword)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '5px 11px',
+                      borderRadius: 7,
+                      border: '1px solid var(--border2)',
+                      background: 'var(--surface)',
+                      color: 'var(--text)',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    {copied ? <Check size={13} color="var(--green)" /> : <Copy size={13} />}
+                    {copied ? t('team.copied') : t('team.copy')}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         )}
 
@@ -453,7 +501,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
               background: 'var(--surface)',
               border: '1px solid var(--border)',
               borderRadius: 12,
-              padding: 16,
+              padding: 18,
               display: 'flex',
               flexDirection: 'column',
               gap: 14,
@@ -481,6 +529,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                     background: 'var(--bg2)',
                     color: 'var(--text)',
                     fontSize: 13,
+                    fontFamily: 'inherit',
                   }}
                 />
               </div>
@@ -502,6 +551,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                     background: 'var(--bg2)',
                     color: 'var(--text)',
                     fontSize: 13,
+                    fontFamily: 'inherit',
                   }}
                 />
               </div>
@@ -521,6 +571,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                     background: 'var(--bg2)',
                     color: 'var(--text)',
                     fontSize: 13,
+                    fontFamily: 'inherit',
                   }}
                 >
                   <option value="PLATFORM_ADMIN">{t('team.role_platform_option')}</option>
@@ -539,14 +590,15 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                 type="button"
                 onClick={() => setShowCreateForm(false)}
                 style={{
-                  padding: '8px 12px',
+                  padding: '8px 14px',
                   borderRadius: 8,
-                  border: '1px solid var(--border)',
+                  border: '1px solid var(--border2)',
                   background: 'var(--surface)',
-                  color: 'var(--text)',
+                  color: 'var(--text2)',
                   fontSize: 12.5,
                   fontWeight: 700,
                   cursor: 'pointer',
+                  fontFamily: 'inherit',
                 }}
               >
                 {t('team.cancel')}
@@ -558,11 +610,12 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                   padding: '8px 16px',
                   borderRadius: 8,
                   border: 'none',
-                  background: 'var(--green)',
+                  background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))',
                   color: '#fff',
                   fontSize: 12.5,
                   fontWeight: 800,
                   cursor: creating ? 'wait' : 'pointer',
+                  fontFamily: 'inherit',
                 }}
               >
                 {creating ? t('team.creating') : t('team.submit_create')}
@@ -573,11 +626,12 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
 
         {/* Liste des membres */}
         <div
+          ref={menuContainerRef}
           style={{
             background: 'var(--surface)',
             border: '1px solid var(--border)',
             borderRadius: 12,
-            padding: 16,
+            padding: 18,
           }}
         >
           <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', marginBottom: 12 }}>
@@ -596,6 +650,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                 const isSelf = member.id === user?.id
                 const canModifyTarget =
                   !member.isOwner && (member.role !== 'SUPER_ADMIN' || isOwner)
+                const isMenuOpen = openMenuId === member.id
 
                 return (
                   <div
@@ -603,15 +658,16 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                     style={{
                       border: '1px solid var(--border)',
                       borderRadius: 10,
-                      padding: '12px 14px',
+                      padding: '12px 16px',
                       background: member.isActive ? 'var(--bg)' : 'rgba(239, 68, 68, 0.06)',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: 10,
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                      <div style={{ minWidth: 200, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+                      {/* Colonne Infos Membre : aucun badge "Actif" redondant, aucun mot coupé */}
+                      <div style={{ minWidth: 240, flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                           <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>
                             {member.name}
@@ -629,176 +685,187 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                                 background: 'var(--amber-light)',
                                 color: 'var(--amber)',
                                 border: '1px solid rgba(217, 119, 6, 0.25)',
+                                whiteSpace: 'nowrap',
                               }}
                             >
                               <Crown size={12} />
-                              {/* Propriétaire (Fondateur) */}
                               {t('team.owner_badge')}
                             </span>
                           )}
-                          <span
-                            style={{
-                              fontSize: 11,
-                              fontWeight: 800,
-                              padding: '2px 8px',
-                              borderRadius: 999,
-                              background: roleMeta.bg,
-                              color: roleMeta.color,
-                            }}
-                          >
-                            {roleMeta.label}
-                          </span>
-                          <span
-                            style={{
-                              fontSize: 11,
-                              fontWeight: 700,
-                              padding: '2px 8px',
-                              borderRadius: 999,
-                              background: member.isActive ? 'var(--green-light)' : 'var(--red-light)',
-                              color: member.isActive ? 'var(--green)' : 'var(--red)',
-                            }}
-                          >
-                            {member.isActive ? t('team.active') : t('team.suspended')}
-                          </span>
+                          {/* Afficher le badge de rôle uniquement si le membre n'a pas de sélecteur de rôle à droite */}
+                          {!canModifyTarget && (
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 800,
+                                padding: '2px 8px',
+                                borderRadius: 999,
+                                background: roleMeta.bg,
+                                color: roleMeta.color,
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {roleMeta.label}
+                            </span>
+                          )}
+                          {/* Afficher le statut uniquement quand le membre N'EST PAS actif */}
+                          {!member.isActive && (
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 800,
+                                padding: '2px 8px',
+                                borderRadius: 999,
+                                background: 'var(--red-light)',
+                                color: 'var(--red)',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {t('team.suspended')}
+                            </span>
+                          )}
                         </div>
-                        <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 4, wordBreak: 'break-all' }}>
-                          {member.email} ·{' '}
-                          {t('team.schools_stats', {
-                            created: member.createdSchoolsCount,
-                            assigned: member.assignedSchoolIds.length,
-                          })}
+
+                        {/* Métadonnées avec pluriel propre et sans coupure au milieu des mots */}
+                        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, fontSize: 12.5, color: 'var(--text2)', marginTop: 4 }}>
+                          <span style={{ whiteSpace: 'nowrap' }}>{member.email}</span>
+                          <span style={{ color: 'var(--text3)' }}>·</span>
+                          <span style={{ whiteSpace: 'nowrap' }}>
+                            {formatCreatedLabel(member.createdSchoolsCount)}
+                          </span>
+                          <span style={{ color: 'var(--text3)' }}>·</span>
+                          <span style={{ whiteSpace: 'nowrap' }}>
+                            {formatAssignedLabel(member.assignedSchoolIds.length)}
+                          </span>
                         </div>
                       </div>
 
-                      {/* Actions */}
-                      <div className="w-full sm:w-auto" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                        {canModifyTarget && (
+                      {/* Colonne Actions : sélecteur de rôle lisible + menu déroulant ⋯ */}
+                      {canModifyTarget && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, position: 'relative' }}>
                           <select
                             disabled={isBusy}
                             value={member.role}
                             onChange={(e) => void handleRoleChange(member, e.target.value as MasterTeamRole)}
                             style={{
-                              padding: '6px 8px',
-                              borderRadius: 7,
-                              border: '1px solid var(--border)',
-                              background: 'var(--surface)',
-                              color: 'var(--text)',
-                              fontSize: 12,
-                              fontWeight: 700,
-                            }}
-                          >
-                            <option value="PLATFORM_ADMIN">PLATFORM_ADMIN</option>
-                            <option value="SCHOOL_MANAGER">SCHOOL_MANAGER</option>
-                            <option value="SUPPORT">SUPPORT</option>
-                          </select>
-                        )}
-
-                        {(member.role === 'SCHOOL_MANAGER' || member.role === 'SUPPORT') && (
-                          <button
-                            type="button"
-                            disabled={isBusy}
-                            onClick={() => {
-                              if (editingSchoolsMemberId === member.id) {
-                                setEditingSchoolsMemberId(null)
-                              } else {
-                                setEditingSchoolsMemberId(member.id)
-                                setEditingSchoolIds(member.assignedSchoolIds)
-                              }
-                            }}
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 5,
                               padding: '6px 10px',
-                              borderRadius: 7,
-                              border: '1px solid var(--border)',
+                              borderRadius: 8,
+                              border: '1px solid var(--border2)',
                               background: 'var(--surface)',
                               color: 'var(--text)',
-                              fontSize: 12,
+                              fontSize: 12.5,
                               fontWeight: 700,
+                              fontFamily: 'inherit',
                               cursor: 'pointer',
                             }}
                           >
-                            <Building2 size={13} />
-                            {t('team.assign_schools')}
-                          </button>
-                        )}
+                            <option value="PLATFORM_ADMIN">Platform Admin</option>
+                            <option value="SCHOOL_MANAGER">School Manager</option>
+                            <option value="SUPPORT">Support</option>
+                          </select>
 
-                        {canModifyTarget && (
-                          <>
-                            <button
-                              type="button"
-                              disabled={isBusy}
-                              onClick={() => void handleResetPassword(member)}
-                              title={t('team.reset_pwd_title')}
+                          <button
+                            type="button"
+                            disabled={isBusy}
+                            aria-label={t('team.actions_menu')}
+                            onClick={() => setOpenMenuId(isMenuOpen ? null : member.id)}
+                            style={{
+                              width: 34,
+                              height: 34,
+                              borderRadius: 8,
+                              border: '1px solid var(--border2)',
+                              background: isMenuOpen ? 'var(--bg2)' : 'var(--surface)',
+                              color: 'var(--text2)',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <MoreHorizontal size={16} />
+                          </button>
+
+                          {isMenuOpen && (
+                            <div
                               style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 5,
-                                padding: '6px 10px',
-                                borderRadius: 7,
-                                border: '1px solid var(--border)',
+                                position: 'absolute',
+                                right: 0,
+                                top: 'calc(100% + 6px)',
+                                minWidth: 230,
                                 background: 'var(--surface)',
-                                color: 'var(--text)',
-                                fontSize: 12,
-                                fontWeight: 700,
-                                cursor: 'pointer',
+                                border: '1px solid var(--border2)',
+                                borderRadius: 10,
+                                boxShadow: '0 10px 26px rgba(0, 0, 0, 0.16)',
+                                padding: 5,
+                                zIndex: 80,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 2,
                               }}
                             >
-                              <KeyRound size={13} />
-                              {t('team.reset_pwd')}
-                            </button>
+                              {(member.role === 'SCHOOL_MANAGER' || member.role === 'SUPPORT') && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenMenuId(null)
+                                    if (editingSchoolsMemberId === member.id) {
+                                      setEditingSchoolsMemberId(null)
+                                    } else {
+                                      setEditingSchoolsMemberId(member.id)
+                                      setEditingSchoolIds(member.assignedSchoolIds)
+                                    }
+                                  }}
+                                  style={menuItemStyle}
+                                >
+                                  <Building2 size={14} />
+                                  <span>{t('team.assign_schools')}</span>
+                                </button>
+                              )}
 
-                            {!isSelf && (
                               <button
                                 type="button"
-                                disabled={isBusy}
-                                onClick={() => void handleToggleActive(member)}
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: 5,
-                                  padding: '6px 10px',
-                                  borderRadius: 7,
-                                  border: '1px solid var(--border)',
-                                  background: 'var(--surface)',
-                                  color: member.isActive ? 'var(--amber)' : 'var(--green)',
-                                  fontSize: 12,
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                                }}
+                                onClick={() => void handleResetPassword(member)}
+                                title={t('team.reset_pwd_title')}
+                                style={menuItemStyle}
                               >
-                                {member.isActive ? <Ban size={13} /> : <CheckCircle2 size={13} />}
-                                {member.isActive ? t('team.suspend') : t('team.reactivate')}
+                                <KeyRound size={14} />
+                                <span>{t('team.reset_pwd')}</span>
                               </button>
-                            )}
 
-                            {!isSelf && (
-                              <button
-                                type="button"
-                                disabled={isBusy}
-                                onClick={() => void handleDelete(member)}
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: 5,
-                                  padding: '6px 10px',
-                                  borderRadius: 7,
-                                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                                  background: 'var(--red-light)',
-                                  color: 'var(--red)',
-                                  fontSize: 12,
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                                }}
-                              >
-                                <Trash2 size={13} />
-                                {t('team.delete')}
-                              </button>
-                            )}
-                          </>
-                        )}
-                      </div>
+                              {!isSelf && (
+                                <button
+                                  type="button"
+                                  onClick={() => void handleToggleActive(member)}
+                                  style={{
+                                    ...menuItemStyle,
+                                    color: member.isActive ? 'var(--amber)' : 'var(--green)',
+                                  }}
+                                >
+                                  {member.isActive ? <Ban size={14} /> : <CheckCircle2 size={14} />}
+                                  <span>{member.isActive ? t('team.suspend') : t('team.reactivate')}</span>
+                                </button>
+                              )}
+
+                              {!isSelf && (
+                                <>
+                                  <div style={{ height: 1, background: 'var(--border)', margin: '4px 2px' }} />
+                                  <button
+                                    type="button"
+                                    onClick={() => void handleDelete(member)}
+                                    style={{
+                                      ...menuItemStyle,
+                                      color: 'var(--red)',
+                                    }}
+                                  >
+                                    <Trash2 size={14} />
+                                    <span>{t('team.delete')}</span>
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Sélecteur d'écoles assignées */}
@@ -866,6 +933,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                               color: 'var(--text)',
                               fontSize: 12,
                               cursor: 'pointer',
+                              fontFamily: 'inherit',
                             }}
                           >
                             {t('team.cancel')}
@@ -883,6 +951,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                               fontSize: 12,
                               fontWeight: 700,
                               cursor: 'pointer',
+                              fontFamily: 'inherit',
                             }}
                           >
                             {t('team.save')}
@@ -899,4 +968,21 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
       </div>
     </div>
   )
+}
+
+const menuItemStyle: React.CSSProperties = {
+  padding: '8px 10px',
+  borderRadius: 7,
+  background: 'transparent',
+  border: 'none',
+  color: 'var(--text)',
+  fontSize: 12.5,
+  fontWeight: 700,
+  fontFamily: 'inherit',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  textAlign: 'left',
+  width: '100%',
 }

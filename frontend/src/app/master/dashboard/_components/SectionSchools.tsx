@@ -61,7 +61,7 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
   const filtered = activeTab === 'all' ? schools : schools.filter(s => s.status === activeTab)
 
   return (
-    <div style={{ padding: '16px', height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+    <div style={{ padding: '20px 24px', height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexShrink: 0, flexWrap: 'wrap', gap: 10 }}>
         <div>
           <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>

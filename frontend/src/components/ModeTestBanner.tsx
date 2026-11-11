@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Shield } from 'lucide-react'
+import { FlaskConical } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 
 const PUBLIC_PLATFORM_SETTINGS_ENDPOINT = '/api/v2/platform-settings/public'
@@ -20,7 +20,11 @@ function readCurrentSchoolId(): string | null {
   }
 }
 
-export default function ModeTestBanner() {
+interface Props {
+  onManageClick?: () => void
+}
+
+export default function ModeTestBanner({ onManageClick }: Props = {}) {
   const t = useT('common')
   const [outboundMessagingEnabled, setOutboundMessagingEnabled] = useState<boolean>(true)
 
@@ -72,20 +76,44 @@ export default function ModeTestBanner() {
         flexShrink: 0,
         width: '100%',
         boxSizing: 'border-box',
-        padding: '8px 16px',
-        background: 'var(--red-light)',
-        borderBottom: '1px solid rgba(220, 38, 38, 0.25)',
-        color: 'var(--red)',
+        padding: '8px 24px',
+        background: 'var(--amber-light)',
+        borderBottom: '1px solid rgba(217, 119, 6, 0.35)',
+        color: 'var(--amber)',
         fontSize: 12.5,
         fontWeight: 700,
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
+        justifyContent: 'space-between',
+        gap: 12,
+        flexWrap: 'wrap',
       }}
     >
-      <Shield size={15} strokeWidth={2} style={{ flexShrink: 0 }} />
-      <span>{t('login.mode_test_bandeau_msg')}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+        <FlaskConical size={16} strokeWidth={2} style={{ flexShrink: 0 }} />
+        <span>{t('login.mode_test_bandeau_msg')}</span>
+      </div>
+      {onManageClick && (
+        <button
+          type="button"
+          onClick={onManageClick}
+          style={{
+            background: 'rgba(217, 119, 6, 0.14)',
+            border: '1px solid rgba(217, 119, 6, 0.35)',
+            borderRadius: 6,
+            padding: '4px 10px',
+            color: 'var(--amber)',
+            fontSize: 11.5,
+            fontWeight: 800,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+          }}
+        >
+          {t('login.mode_test_bandeau_cta')}
+        </button>
+      )}
     </div>
   )
 }

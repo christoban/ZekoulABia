@@ -16,7 +16,7 @@ export default function SectionOverview({ kpi, activity, onInvite, onGoToSchools
   const t = useT('master')
 
   return (
-    <div style={{ padding: '16px 16px 40px 16px', overflowY: 'auto', height: '100%', boxSizing: 'border-box', WebkitOverflowScrolling: 'touch' }}>
+    <div style={{ padding: '20px 24px 48px', overflowY: 'auto', height: '100%', boxSizing: 'border-box', WebkitOverflowScrolling: 'touch' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
         <div>
           <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>
