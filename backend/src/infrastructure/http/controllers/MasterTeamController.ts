@@ -54,6 +54,7 @@ export class MasterTeamController {
           member: data.member,
           temporaryPassword: data.motDePasseTemporaire,
           motDePasseTemporaire: data.motDePasseTemporaire,
+          emailSent: data.emailSent,
         },
       });
     } catch (error) {
@@ -107,6 +108,7 @@ export class MasterTeamController {
           member: data.member,
           temporaryPassword: data.motDePasseTemporaire,
           motDePasseTemporaire: data.motDePasseTemporaire,
+          emailSent: data.emailSent,
         },
       });
     } catch (error) {

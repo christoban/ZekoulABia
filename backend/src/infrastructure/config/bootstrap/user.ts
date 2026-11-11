@@ -183,11 +183,58 @@ export function registerUserRoutes(app: Application, prismaParam: typeof prisma 
   app.use('/api/v2/master/auth', creerMasterAuthRoutes(masterAuthController));
 
   const masterTeamRepository = new PrismaMasterTeamRepository(p);
+  const envoyerEmailMembreMaster = async ({
+    recipientEmail,
+    recipientName,
+    role,
+    temporaryPassword,
+    isReset,
+  }: {
+    recipientEmail: string;
+    recipientName: string;
+    role: string;
+    temporaryPassword: string;
+    isReset?: boolean;
+  }) => {
+    const frontendBase = (process.env.FRONTEND_URL ?? 'http://localhost:3000').replace(/\/$/, '');
+    const loginUrl = `${frontendBase}/master/login`;
+    const subject = isReset
+      ? 'ZekoulABia Master — Réinitialisation de votre mot de passe temporaire'
+      : 'ZekoulABia Master — Invitation à rejoindre le Hub de Contrôle';
+    const html = `
+      <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; border: 1px solid #e5d8cc; border-radius: 12px; background: #fbf7f2; color: #2a1a15;">
+        <h2 style="margin-top: 0; color: #3a2419;">${isReset ? 'Nouveau mot de passe temporaire Master' : 'Bienvenue dans l’équipe Master ZekoulABia'}</h2>
+        <p>Bonjour <strong>${recipientName}</strong>,</p>
+        <p>${
+          isReset
+            ? 'Votre mot de passe d’accès au Hub de Contrôle Master ZekoulABia a été réinitialisé par le Super Administrateur.'
+            : `Un compte opérateur Master (rôle : <strong>${role}</strong>) vient d’être créé pour vous sur ZekoulABia.`
+        }</p>
+        <div style="background: #ffffff; border: 1px solid #e5d8cc; border-radius: 8px; padding: 16px; margin: 16px 0;">
+          <p style="margin: 0 0 8px 0;"><strong>Identifiant (Email) :</strong> ${recipientEmail}</p>
+          <p style="margin: 0;"><strong>Mot de passe temporaire :</strong> <code style="font-size: 15px; font-weight: bold; background: #f4ece3; padding: 3px 8px; border-radius: 4px;">${temporaryPassword}</code></p>
+        </div>
+        <p style="margin: 20px 0;">
+          <a href="${loginUrl}" style="display: inline-block; background: #b4532a; color: #ffffff; text-decoration: none; font-weight: bold; padding: 10px 18px; border-radius: 8px;">Se connecter au portail Master</a>
+        </p>
+        <p style="font-size: 12px; color: #76645d;">Lien direct : <a href="${loginUrl}">${loginUrl}</a><br/>Lors de votre connexion, un code de sécurité (OTP) vous sera envoyé sur cette adresse email.</p>
+      </div>
+    `;
+    const result = await sendTransactionalEmail({
+      recipientEmail,
+      subject,
+      html,
+      template: isReset ? 'master-team-password-reset' : 'master-team-invite',
+      eventType: isReset ? 'master_team_password_reset' : 'master_team_invite',
+    });
+    return { sent: result.status === 'sent', error: result.error };
+  };
+
   const masterTeamController = new MasterTeamController(
     new ListerEquipeMasterUseCase(masterTeamRepository),
-    new CreerMembreEquipeMasterUseCase(masterTeamRepository),
+    new CreerMembreEquipeMasterUseCase(masterTeamRepository, envoyerEmailMembreMaster),
     new ModifierMembreEquipeMasterUseCase(masterTeamRepository),
-    new ReinitialiserMotDePasseMembreMasterUseCase(masterTeamRepository),
+    new ReinitialiserMotDePasseMembreMasterUseCase(masterTeamRepository, envoyerEmailMembreMaster),
     new SupprimerMembreEquipeMasterUseCase(masterTeamRepository),
   );
   app.use('/api/v2/master/team', creerMasterTeamRoutes(masterTeamController));

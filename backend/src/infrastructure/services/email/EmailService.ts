@@ -33,7 +33,12 @@ let cachedTransporter: nodemailer.Transporter | null = null;
 
 // Emails de sécurité du compte plateforme (décision 1) : le flux Master (OTP login,
 // OTP changement de mot de passe) reste actif même quand le mode test est désactivé.
-const MASTER_SECURITY_EMAIL_EVENTS = new Set<EmailEventType>(['master_login_otp', 'master_password_change_otp']);
+const MASTER_SECURITY_EMAIL_EVENTS = new Set<EmailEventType>([
+  'master_login_otp',
+  'master_password_change_otp',
+  'master_team_invite',
+  'master_team_password_reset',
+]);
 
 const getSmtpConfig = () => {
   const host = process.env.SMTP_HOST;

@@ -9,6 +9,7 @@ import Badge from './Badge'
 import type { AuditLogDto } from '../_types'
 import type { EmailLogDto, AIActionAuditLogDto } from '../_api'
 import { fetchLogs, fetchEmailLogs, fetchAIActionAuditLog, mfaSetup, mfaEnable, mfaDisable, mfaRegenCodes, resetUserMfa } from '../_api'
+import { useT } from '@/lib/i18n'
 
 interface Props {
   logs: AuditLogDto[]
@@ -115,7 +116,7 @@ const ACTION_BADGE: Record<string, 'event-success' | 'event-warning' | 'event-er
 }
 
 const tdStyle: React.CSSProperties = {
-  padding: '8px 12px', fontSize: 12, color: '#6b5c45', verticalAlign: 'middle',
+  padding: '8px 12px', fontSize: 12, color: 'var(--text2)', verticalAlign: 'middle',
 }
 
 // ── Composant SecurityTab (MFA + mot de passe) ───────────────────────────────
@@ -174,8 +175,8 @@ function SecurityTab({ mfaEnabled, onChangePwd, onMfaChange }: {
   const [showDisablePwd, setShowDisablePwd] = useState(false)
 
   const inp: React.CSSProperties = {
-    width: '100%', padding: '10px 14px', background: 'var(--bg2)', border: '1px solid #d4c8b8',
-    borderRadius: 8, color: '#1a1209', fontSize: 13, fontFamily: 'inherit', fontWeight: 600,
+    width: '100%', padding: '10px 14px', background: 'var(--bg2)', border: '1px solid var(--border2)',
+    borderRadius: 8, color: 'var(--text)', fontSize: 13, fontFamily: 'inherit', fontWeight: 600,
     outline: 'none', boxSizing: 'border-box',
   }
   const btnGreen: React.CSSProperties = {
@@ -184,7 +185,7 @@ function SecurityTab({ mfaEnabled, onChangePwd, onMfaChange }: {
     fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(142,42,58,0.18)',
   }
   const btnGray: React.CSSProperties = {
-    padding: '9px 14px', background: 'white', color: '#6b5c45', border: '1px solid #d4c8b8',
+    padding: '9px 14px', background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border2)',
     borderRadius: 9, fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
   }
   const btnRed: React.CSSProperties = {
@@ -246,19 +247,19 @@ function SecurityTab({ mfaEnabled, onChangePwd, onMfaChange }: {
     finally { setLoading(false) }
   }
 
-  const fieldLabel: React.CSSProperties = { fontSize: 11, fontWeight: 800, color: '#6b5c45', marginBottom: 5, display: 'block', textTransform: 'uppercase', letterSpacing: '0.4px' }
+  const fieldLabel: React.CSSProperties = { fontSize: 11, fontWeight: 800, color: 'var(--text2)', marginBottom: 5, display: 'block', textTransform: 'uppercase', letterSpacing: '0.4px' }
 
   return (
     <div style={{ maxWidth: 620, display: 'flex', flexDirection: 'column', gap: 16 }}>
 
       {/* ── Mot de passe ── */}
-      <div style={{ background: 'white', borderRadius: 10, border: '1px solid #e8e0d4', overflow: 'hidden' }}>
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid #e8e0d4', display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <KeyRound size={17} />
-          <span style={{ fontSize: 14, fontWeight: 800, color: '#1a1209' }}>Mot de passe</span>
+          <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>Mot de passe</span>
         </div>
         <div style={{ padding: '16px' }}>
-          <p style={{ fontSize: 13, color: '#6b5c45', lineHeight: 1.6, marginBottom: 14, marginTop: 0 }}>
+          <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6, marginBottom: 14, marginTop: 0 }}>
             Modifiez votre mot de passe master. Vous devrez saisir votre mot de passe actuel{mfaEnabled ? ' et votre code MFA' : ''}.
           </p>
           <button style={{ ...btnGreen, display: 'inline-flex', alignItems: 'center', gap: 8 }} onClick={onChangePwd}><KeyRound size={16} /> Changer le mot de passe</button>
@@ -266,11 +267,11 @@ function SecurityTab({ mfaEnabled, onChangePwd, onMfaChange }: {
       </div>
 
       {/* ── MFA ── */}
-      <div style={{ background: 'white', borderRadius: 10, border: '1px solid #e8e0d4', overflow: 'hidden' }}>
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid #e8e0d4', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Smartphone size={17} />
-            <span style={{ fontSize: 14, fontWeight: 800, color: '#1a1209' }}>Authentification à deux facteurs (MFA)</span>
+            <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>Authentification à deux facteurs (MFA)</span>
           </div>
           <span style={{ padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 800, background: mfaEnabled ? 'rgba(142,42,58,0.1)' : 'rgba(220,38,38,0.08)', color: mfaEnabled ? 'var(--primary)' : '#dc2626', border: `1px solid ${mfaEnabled ? 'rgba(142,42,58,0.25)' : 'rgba(220,38,38,0.2)'}`, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
             {mfaEnabled ? <><CheckCircle2 size={14} /> Actif</> : <><XCircle size={14} /> Inactif</>}
@@ -479,14 +480,14 @@ function SecurityTab({ mfaEnabled, onChangePwd, onMfaChange }: {
       </div>
 
       {/* ── Activité récente ── */}
-      <div style={{ background: 'white', borderRadius: 8, border: '1px solid #e8e0d4', overflow: 'hidden' }}>
-        <div style={{ padding: '18px 22px', borderBottom: '1px solid #e8e0d4', display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 8, border: '1px solid var(--border)', overflow: 'hidden' }}>
+        <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
           <Globe size={20} />
-          <span style={{ fontSize: 12, fontWeight: 800, color: '#1a1209' }}>Activité récente</span>
+          <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text)' }}>Activité récente</span>
         </div>
         <div style={{ padding: '10px 12px' }}>
-          <p style={{ fontSize: 11, color: '#a89478', margin: 0 }}>
-            Consultez l&apos;onglet <strong style={{ color: '#1a1209' }}>Authentification</strong> pour voir toutes les connexions et événements de sécurité en temps réel.
+          <p style={{ fontSize: 11, color: 'var(--text3)', margin: 0 }}>
+            Consultez l&apos;onglet <strong style={{ color: 'var(--text)' }}>Authentification</strong> pour voir toutes les connexions et événements de sécurité en temps réel.
           </p>
         </div>
       </div>
@@ -507,8 +508,8 @@ function AccountMfaResetPanel() {
   const [done, setDone] = useState(false)
 
   const inp: React.CSSProperties = {
-    width: '100%', padding: '11px 14px', background: 'var(--bg2)', border: '1.5px solid #d4c8b8',
-    borderRadius: 10, color: '#1a1209', fontSize: 13, fontFamily: 'inherit', fontWeight: 600,
+    width: '100%', padding: '11px 14px', background: 'var(--bg2)', border: '1.5px solid var(--border2)',
+    borderRadius: 10, color: 'var(--text)', fontSize: 13, fontFamily: 'inherit', fontWeight: 600,
     outline: 'none', boxSizing: 'border-box',
   }
   const btnRed: React.CSSProperties = {
@@ -534,13 +535,13 @@ function AccountMfaResetPanel() {
   }
 
   return (
-    <div style={{ background: 'white', borderRadius: 16, border: '1.5px solid #d4c8b8', overflow: 'hidden', marginTop: 24 }}>
-      <div style={{ padding: '16px 22px', borderBottom: '1.5px solid #e8e0d4', display: 'flex', alignItems: 'center', gap: 10 }}>
+    <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1.5px solid var(--border2)', overflow: 'hidden', marginTop: 24 }}>
+      <div style={{ padding: '16px 22px', borderBottom: '1.5px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
         <KeyRound size={22} color="#dc2626" />
-        <span style={{ fontSize: 14, fontWeight: 800, color: '#1a1209' }}>Débloquer le MFA d&apos;un compte</span>
+        <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>Débloquer le MFA d&apos;un compte</span>
       </div>
       <div style={{ padding: '16px 22px' }}>
-        <p style={{ fontSize: 12, color: '#6b5c45', marginTop: 0, marginBottom: 12, lineHeight: 1.5 }}>
+        <p style={{ fontSize: 12, color: 'var(--text2)', marginTop: 0, marginBottom: 12, lineHeight: 1.5 }}>
           À utiliser uniquement si un Admin/Staff/Enseignant a perdu l&apos;accès à son application d&apos;authentification
           ET à ses codes de récupération. Le compte devra reconfigurer entièrement son MFA (nouveau QR) à sa prochaine connexion.
         </p>
@@ -554,11 +555,11 @@ function AccountMfaResetPanel() {
             <CheckCircle2 size={16} /> MFA réinitialisé — le compte devra le reconfigurer à sa prochaine connexion.
           </div>
         )}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
           <input placeholder="Sous-domaine de l'école" value={subdomain} onChange={e => setSubdomain(e.target.value)} style={inp} />
           <input placeholder="Email du compte bloqué" value={targetEmail} onChange={e => setTargetEmail(e.target.value)} style={inp} />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           <input type="password" placeholder="Votre mot de passe Master" value={password} onChange={e => setPassword(e.target.value)} style={inp} />
           <input placeholder="Votre code MFA (si activé)" value={totpCode} onChange={e => setTotpCode(e.target.value)} style={inp} />
         </div>
@@ -573,7 +574,7 @@ function AccountMfaResetPanel() {
 function EmptyRow({ cols, msg }: { cols: number; msg: string }) {
   return (
     <tr>
-      <td colSpan={cols} style={{ padding: '16px 12px', textAlign: 'center', color: '#a89478', fontSize: 12 }}>
+      <td colSpan={cols} style={{ padding: '16px 12px', textAlign: 'center', color: 'var(--text3)', fontSize: 12 }}>
         {msg}
       </td>
     </tr>
@@ -581,6 +582,7 @@ function EmptyRow({ cols, msg }: { cols: number; msg: string }) {
 }
 
 export default function SectionLogs({ logs: initialLogs, loading: initialLoading, onChangePwd, mfaEnabled }: Props) {
+  const t = useT('master')
   const [tab, setTab] = useState<LogTab>('auth')
 
   // Logs actions
@@ -638,10 +640,10 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
     <div style={{ padding: '16px 16px 40px 16px', overflowY: 'auto', height: '100%', boxSizing: 'border-box', WebkitOverflowScrolling: 'touch' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
-          <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: '#1a1209' }}>
-            Logs &amp; Sécurité
+          <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>
+            {t('logs.title')}
           </div>
-          <div style={{ fontSize: 13, color: '#a89478', marginTop: 3 }}>Audit complet des actions et connexions</div>
+          <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 3 }}>{t('logs.subtitle')}</div>
         </div>
       </div>
 
@@ -651,29 +653,29 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
         maxWidth: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none'
       }}>
         {([
-          { id: 'auth'        as const, label: 'Authentification', icon: KeyRound },
-          { id: 'actions'     as const, label: 'Actions admin', icon: Zap },
-          { id: 'emails'      as const, label: 'Logs emails', icon: Mail },
-          { id: 'ai-security' as const, label: 'Sécurité IA', icon: Bot },
-          { id: 'security'    as const, label: 'Sécurité du compte', icon: Shield },
-        ] as { id: LogTab; label: string; icon: LucideIcon }[]).map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{
+          { id: 'auth'        as const, label: t('logs.tab_auth'), icon: KeyRound },
+          { id: 'actions'     as const, label: t('logs.tab_actions'), icon: Zap },
+          { id: 'emails'      as const, label: t('logs.tab_emails'), icon: Mail },
+          { id: 'ai-security' as const, label: t('logs.tab_ai'), icon: Bot },
+          { id: 'security'    as const, label: t('logs.tab_security'), icon: Shield },
+        ] as { id: LogTab; label: string; icon: LucideIcon }[]).map(tb => (
+          <button key={tb.id} onClick={() => setTab(tb.id)} style={{
             padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700,
-            background: tab === t.id ? 'white' : 'transparent',
-            color: tab === t.id ? '#1a1209' : '#a89478',
+            background: tab === tb.id ? 'var(--surface)' : 'transparent',
+            color: tab === tb.id ? 'var(--text)' : 'var(--text3)',
             border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-            boxShadow: tab === t.id ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+            boxShadow: tab === tb.id ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
             transition: 'all 0.12s',
             display: 'inline-flex', alignItems: 'center', gap: 6,
             flexShrink: 0, whiteSpace: 'nowrap'
-          }}><t.icon size={15} />{t.label}</button>
+          }}><tb.icon size={15} />{tb.label}</button>
         ))}
       </div>
 
       {/* ── ONGLET AUTHENTIFICATION ─────────────────────────────────────────── */}
       {tab === 'auth' && (
-        <div style={{ background: 'white', borderRadius: 10, border: '1px solid #e8e0d4', overflow: 'hidden' }}>
-          <div style={{ padding: '10px 14px', borderBottom: '1px solid #e8e0d4', fontSize: 12, color: '#a89478', fontWeight: 600 }}>
+        <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
+          <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', fontSize: 12, color: 'var(--text3)', fontWeight: 600 }}>
             Connexions, OTP, MFA — toutes les tentatives d&apos;authentification du compte master
           </div>
           <div style={{ overflowX: 'auto' }}>
@@ -681,7 +683,7 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
               <thead>
                 <tr>
                   {['Date / Heure', 'Événement', 'Compte', 'IP'].map(h => (
-                    <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: '#a89478', background: 'var(--bg2)', borderBottom: '1px solid #e8e0d4', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
+                    <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -691,7 +693,7 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
                   : authLogs.length === 0
                     ? <EmptyRow cols={4} msg="Aucun log d'authentification" />
                     : authLogs.map((log, i) => (
-                      <tr key={log.id} style={{ borderBottom: i < authLogs.length - 1 ? '1px solid #faf7f2' : 'none' }}>
+                      <tr key={log.id} style={{ borderBottom: i < authLogs.length - 1 ? '1px solid var(--border)' : 'none' }}>
                         <td style={tdStyle}>{new Date(log.createdAt).toLocaleString('fr-CM')}</td>
                         <td style={{ padding: '8px 12px', verticalAlign: 'middle' }}>
                           <Badge type={AUTH_BADGE[log.action] ?? 'event-info'}>
@@ -711,8 +713,8 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
 
       {/* ── ONGLET ACTIONS ADMIN ────────────────────────────────────────────── */}
       {tab === 'actions' && (
-        <div style={{ background: 'white', borderRadius: 10, border: '1px solid #e8e0d4', overflow: 'hidden' }}>
-          <div style={{ padding: '10px 14px', borderBottom: '1px solid #e8e0d4', fontSize: 12, color: '#a89478', fontWeight: 600 }}>
+        <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
+          <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', fontSize: 12, color: 'var(--text3)', fontWeight: 600 }}>
             Approbations, rejets, suspensions, invitations — toutes les actions décisives sur les écoles
           </div>
           <div style={{ overflowX: 'auto' }}>
@@ -720,7 +722,7 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
               <thead>
                 <tr>
                   {['Date / Heure', 'Action', 'Détail', 'IP'].map(h => (
-                    <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: '#a89478', background: 'var(--bg2)', borderBottom: '1px solid #e8e0d4', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
+                    <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -730,7 +732,7 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
                   : actionLogs.length === 0
                     ? <EmptyRow cols={4} msg="Aucune action enregistrée" />
                     : actionLogs.map((log, i) => (
-                      <tr key={log.id} style={{ borderBottom: i < actionLogs.length - 1 ? '1px solid #faf7f2' : 'none' }}>
+                      <tr key={log.id} style={{ borderBottom: i < actionLogs.length - 1 ? '1px solid var(--border)' : 'none' }}>
                         <td style={tdStyle}>{new Date(log.createdAt).toLocaleString('fr-CM')}</td>
                         <td style={{ padding: '8px 12px', verticalAlign: 'middle' }}>
                           <Badge type={ACTION_BADGE[log.action] ?? 'event-info'}>
@@ -756,15 +758,15 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {/* Barre de recherche */}
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'white', border: '1px solid #e8e0d4', borderRadius: 8, padding: '8px 12px', flex: 1 }}>
-              <Search size={15} color="#a89478" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 12px', flex: 1 }}>
+              <Search size={15} color="var(--text3)" />
               <input
                 type="text"
                 value={emailSearch}
                 onChange={e => setEmailSearch(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && loadEmailLogs(emailSearch)}
                 placeholder="Rechercher par email ou sujet..."
-                style={{ background: 'none', border: 'none', outline: 'none', fontSize: 13, color: '#1a1209', fontFamily: 'inherit', fontWeight: 600, width: '100%' }}
+                style={{ background: 'none', border: 'none', outline: 'none', fontSize: 13, color: 'var(--text)', fontFamily: 'inherit', fontWeight: 600, width: '100%' }}
               />
             </div>
             <button onClick={() => loadEmailLogs(emailSearch)}
@@ -773,8 +775,8 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
             </button>
           </div>
 
-          <div style={{ background: 'white', borderRadius: 10, border: '1px solid #e8e0d4', overflow: 'hidden' }}>
-            <div style={{ padding: '10px 14px', borderBottom: '1px solid #e8e0d4', fontSize: 12, color: '#a89478', fontWeight: 600 }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
+            <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', fontSize: 12, color: 'var(--text3)', fontWeight: 600 }}>
               Emails envoyés à travers toutes les écoles (OTP, bulletins, paiements, etc.)
             </div>
             <div style={{ overflowX: 'auto' }}>
@@ -782,7 +784,7 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
                 <thead>
                   <tr>
                     {['Date', 'Destinataire', 'Sujet', 'École', 'Statut', 'Provider'].map(h => (
-                      <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: '#a89478', background: 'var(--bg2)', borderBottom: '1px solid #e8e0d4', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
+                      <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -792,7 +794,7 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
                     : emailLogs.length === 0
                       ? <EmptyRow cols={6} msg="Aucun email enregistré. Les emails des écoles actives apparaissent ici." />
                       : emailLogs.map((log, i) => (
-                        <tr key={log.id} style={{ borderBottom: i < emailLogs.length - 1 ? '1px solid #faf7f2' : 'none' }}>
+                        <tr key={log.id} style={{ borderBottom: i < emailLogs.length - 1 ? '1px solid var(--border)' : 'none' }}>
                           <td style={{ ...tdStyle, whiteSpace: 'nowrap' }}>{new Date(log.createdAt).toLocaleString('fr-CM')}</td>
                           <td style={tdStyle}>{log.to}</td>
                           <td style={{ ...tdStyle, maxWidth: 240, wordBreak: 'break-word' }}>{log.subject}</td>
@@ -804,7 +806,7 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
                               </span>
                             </Badge>
                           </td>
-                          <td style={{ ...tdStyle, color: '#a89478', fontSize: 13 }}>{log.provider ?? '—'}</td>
+                          <td style={{ ...tdStyle, color: 'var(--text3)', fontSize: 13 }}>{log.provider ?? '—'}</td>
                         </tr>
                       ))
                   }
@@ -827,22 +829,22 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
 
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <select value={aiOutcomeFilter} onChange={e => { const v = e.target.value as typeof aiOutcomeFilter; setAiOutcomeFilter(v); loadAiLogs(v, aiOriginFilter) }}
-              style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #e8e0d4', fontSize: 12, fontWeight: 700, color: '#1a1209', fontFamily: 'inherit', background: 'white' }}>
+              style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 12, fontWeight: 700, color: 'var(--text)', fontFamily: 'inherit', background: 'var(--surface)' }}>
               <option value="">Tous les résultats</option>
               <option value="REFUSE">Refusées</option>
               <option value="ERREUR">Erreurs</option>
               <option value="SUCCES">Réussies</option>
             </select>
             <select value={aiOriginFilter} onChange={e => { const v = e.target.value as typeof aiOriginFilter; setAiOriginFilter(v); loadAiLogs(aiOutcomeFilter, v) }}
-              style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #e8e0d4', fontSize: 12, fontWeight: 700, color: '#1a1209', fontFamily: 'inherit', background: 'white' }}>
+              style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 12, fontWeight: 700, color: 'var(--text)', fontFamily: 'inherit', background: 'var(--surface)' }}>
               <option value="">Toute origine</option>
               <option value="AI_ASSISTANT">Copilot IA</option>
               <option value="UI_DIRECT">Interface classique</option>
             </select>
           </div>
 
-          <div style={{ background: 'white', borderRadius: 10, border: '1px solid #e8e0d4', overflow: 'hidden' }}>
-            <div style={{ padding: '10px 14px', borderBottom: '1px solid #e8e0d4', fontSize: 12, color: '#a89478', fontWeight: 600 }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
+            <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', fontSize: 12, color: 'var(--text3)', fontWeight: 600 }}>
               Actions sensibles exécutées via le copilot IA ou leur équivalent en interface classique
             </div>
             <div style={{ overflowX: 'auto' }}>
@@ -850,7 +852,7 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
                 <thead>
                   <tr>
                     {['Date / Heure', 'Action', 'Origine', 'Résultat', 'Rôle', 'École', 'Motif'].map(h => (
-                      <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: '#a89478', background: 'var(--bg2)', borderBottom: '1px solid #e8e0d4', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
+                      <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -860,9 +862,9 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
                     : aiLogs.length === 0
                       ? <EmptyRow cols={7} msg="Aucune entrée pour ce filtre" />
                       : aiLogs.map((log, i) => (
-                        <tr key={log.id} style={{ borderBottom: i < aiLogs.length - 1 ? '1px solid #faf7f2' : 'none' }}>
+                        <tr key={log.id} style={{ borderBottom: i < aiLogs.length - 1 ? '1px solid var(--border)' : 'none' }}>
                           <td style={{ ...tdStyle, whiteSpace: 'nowrap' }}>{new Date(log.timestamp).toLocaleString('fr-CM')}</td>
-                          <td style={{ ...tdStyle, fontWeight: 700, color: '#1a1209' }}>{log.actionName}</td>
+                          <td style={{ ...tdStyle, fontWeight: 700, color: 'var(--text)' }}>{log.actionName}</td>
                           <td style={tdStyle}>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                               {log.origin === 'AI_ASSISTANT' ? <Bot size={14} /> : <Zap size={14} />}
@@ -874,7 +876,7 @@ export default function SectionLogs({ logs: initialLogs, loading: initialLoading
                           </td>
                           <td style={tdStyle}>{log.actorRole}</td>
                           <td style={tdStyle}>{log.schoolId ?? '—'}</td>
-                          <td style={{ ...tdStyle, maxWidth: 280, wordBreak: 'break-word', color: '#a89478', fontSize: 13 }}>{log.refusalReason ?? '—'}</td>
+                          <td style={{ ...tdStyle, maxWidth: 280, wordBreak: 'break-word', color: 'var(--text3)', fontSize: 13 }}>{log.refusalReason ?? '—'}</td>
                         </tr>
                       ))
                   }

@@ -13,7 +13,11 @@ import {
   Copy,
   Check,
   Building2,
+  MailCheck,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
+import { useT } from '@/lib/i18n'
 import {
   fetchMasterTeam,
   createMasterTeamMember,
@@ -31,36 +35,37 @@ interface Props {
   onToast: (message: string, type: 'success' | 'error' | 'warning' | 'info') => void
 }
 
-const ROLE_LABELS: Record<MasterTeamRole, { label: string; desc: string; bg: string; color: string }> = {
-  SUPER_ADMIN: {
-    label: 'Super Admin',
-    desc: 'Fondateur unique : accès total (Équipe Master, Mode test Global, toutes les écoles, journaux)',
-    bg: 'rgba(168, 85, 247, 0.14)',
-    color: '#7e22ce',
-  },
-  PLATFORM_ADMIN: {
-    label: 'Platform Admin',
-    desc: 'Bras droit opérationnel : voit et gère toutes les écoles + Référentiels Nationaux + Mode test par école',
-    bg: 'rgba(37, 99, 235, 0.12)',
-    color: '#1d4ed8',
-  },
-  SCHOOL_MANAGER: {
-    label: 'School Manager',
-    desc: 'Testeur / Commercial : crée ses écoles, ne voit et ne gère que ses propres écoles (ou assignées) + Mode test sur ses écoles',
-    bg: 'rgba(217, 119, 6, 0.14)',
-    color: '#b45309',
-  },
-  SUPPORT: {
-    label: 'Support',
-    desc: 'Assistance aux écoles : lecture seule et déblocage MFA, aucune modification destructrice',
-    bg: 'rgba(100, 116, 139, 0.14)',
-    color: '#475569',
-  },
-}
-
 export default function SectionTeam({ user, schools, onToast }: Props) {
+  const t = useT('master')
   const isSuperAdmin = user?.role === 'super_admin'
   const isOwner = Boolean(user?.isOwner)
+
+  const ROLE_LABELS: Record<MasterTeamRole, { label: string; desc: string; bg: string; color: string }> = {
+    SUPER_ADMIN: {
+      label: 'Super Admin',
+      desc: t('team.role_super_desc'),
+      bg: 'rgba(168, 85, 247, 0.14)',
+      color: '#a855f7',
+    },
+    PLATFORM_ADMIN: {
+      label: 'Platform Admin',
+      desc: t('team.role_platform_desc'),
+      bg: 'rgba(59, 130, 246, 0.14)',
+      color: 'var(--blue)',
+    },
+    SCHOOL_MANAGER: {
+      label: 'School Manager',
+      desc: t('team.role_school_desc'),
+      bg: 'rgba(217, 119, 6, 0.14)',
+      color: 'var(--amber)',
+    },
+    SUPPORT: {
+      label: 'Support',
+      desc: t('team.role_support_desc'),
+      bg: 'rgba(100, 116, 139, 0.14)',
+      color: 'var(--text2)',
+    },
+  }
 
   const [members, setMembers] = useState<MasterTeamMemberDto[]>([])
   const [loading, setLoading] = useState(false)
@@ -74,13 +79,14 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
   const [newAssignedSchools, setNewAssignedSchools] = useState<string[]>([])
   const [creating, setCreating] = useState(false)
 
-  // Affichage unique du mot de passe temporaire
+  // Confirmation d'envoi par email + mot de passe de secours optionnel
   const [revealedCredentials, setRevealedCredentials] = useState<{
     email: string
     name: string
     temporaryPassword: string
-    title: string
+    emailSent: boolean
   } | null>(null)
+  const [showFallbackPwd, setShowFallbackPwd] = useState(false)
   const [copied, setCopied] = useState(false)
 
   // Édition des écoles assignées d'un membre existant
@@ -118,19 +124,24 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
         role: newRole,
         assignedSchoolIds: newAssignedSchools,
       })
+      const sent = res.emailSent !== false
       setRevealedCredentials({
         email: res.member.email,
         name: res.member.name,
         temporaryPassword: res.temporaryPassword,
-        title: 'Compte Master créé — Mot de passe temporaire (affiché une seule fois)',
+        emailSent: sent,
       })
+      setShowFallbackPwd(!sent)
       setCopied(false)
       setNewName('')
       setNewEmail('')
       setNewRole('PLATFORM_ADMIN')
       setNewAssignedSchools([])
       setShowCreateForm(false)
-      onToast(`Compte Master créé pour ${res.member.name}`, 'success')
+      onToast(
+        t('team.email_sent_title', { name: res.member.name, email: res.member.email }),
+        'success',
+      )
       await chargerEquipe()
     } catch (err) {
       onToast(err instanceof Error ? err.message : 'Erreur lors de la création', 'error')
@@ -144,7 +155,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
     setBusyId(member.id)
     try {
       await updateMasterTeamMember(member.id, { role: nextRole })
-      onToast(`Rôle de ${member.name} mis à jour (${ROLE_LABELS[nextRole].label})`, 'success')
+      onToast(`${member.name} → ${ROLE_LABELS[nextRole].label}`, 'success')
       await chargerEquipe()
     } catch (err) {
       onToast(err instanceof Error ? err.message : 'Erreur lors du changement de rôle', 'error')
@@ -159,7 +170,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
       const nextActive = !member.isActive
       await updateMasterTeamMember(member.id, { isActive: nextActive })
       onToast(
-        nextActive ? `Compte de ${member.name} réactivé` : `Compte de ${member.name} suspendu`,
+        nextActive ? `${member.name} : ${t('team.active')}` : `${member.name} : ${t('team.suspended')}`,
         nextActive ? 'success' : 'warning',
       )
       await chargerEquipe()
@@ -174,14 +185,19 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
     setBusyId(member.id)
     try {
       const res = await resetMasterTeamMemberPassword(member.id)
+      const sent = res.emailSent !== false
       setRevealedCredentials({
         email: res.member.email,
         name: res.member.name,
         temporaryPassword: res.temporaryPassword,
-        title: `Nouveau mot de passe temporaire pour ${res.member.name} (affiché une seule fois)`,
+        emailSent: sent,
       })
+      setShowFallbackPwd(!sent)
       setCopied(false)
-      onToast(`Mot de passe temporaire régénéré pour ${member.name}`, 'success')
+      onToast(
+        t('team.email_sent_title', { name: res.member.name, email: res.member.email }),
+        'success',
+      )
     } catch (err) {
       onToast(err instanceof Error ? err.message : 'Erreur lors de la réinitialisation', 'error')
     } finally {
@@ -193,7 +209,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
     setBusyId(member.id)
     try {
       await deleteMasterTeamMember(member.id)
-      onToast(`Compte Master de ${member.name} supprimé`, 'warning')
+      onToast(`${member.name} supprimé`, 'warning')
       await chargerEquipe()
     } catch (err) {
       onToast(err instanceof Error ? err.message : 'Erreur lors de la suppression', 'error')
@@ -220,7 +236,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
     try {
       await navigator.clipboard.writeText(pwd)
       setCopied(true)
-      onToast('Mot de passe temporaire copié dans le presse-papiers', 'info')
+      onToast(t('team.copied'), 'info')
     } catch {
       onToast('Impossible de copier automatiquement', 'warning')
     }
@@ -228,26 +244,26 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
 
   if (!isSuperAdmin) {
     return (
-      <div style={{ padding: 24 }}>
+      <div style={{ padding: 16 }}>
         <div
           style={{
             background: 'var(--surface)',
             border: '1px solid var(--border)',
             borderRadius: 12,
             padding: 20,
-            color: 'var(--text-secondary)',
+            color: 'var(--text2)',
             fontSize: 13,
           }}
         >
-          Accès strictement réservé aux Super Administrateurs (`super_admin`).
+          Accès strictement réservé au Fondateur (`super_admin`).
         </div>
       </div>
     )
   }
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', padding: '24px 20px 48px', boxSizing: 'border-box' }}>
-      <div style={{ maxWidth: 1020, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <div style={{ height: '100%', overflowY: 'auto', padding: '16px 14px 48px', boxSizing: 'border-box', WebkitOverflowScrolling: 'touch' }}>
+      <div style={{ maxWidth: 1020, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
         {/* En-tête */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -257,25 +273,26 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                 height: 38,
                 borderRadius: 10,
                 background: 'rgba(168, 85, 247, 0.14)',
-                color: '#7e22ce',
+                color: '#a855f7',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                flexShrink: 0,
               }}
             >
               <Users size={20} />
             </div>
             <div>
-              <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: 'var(--text-primary)' }}>
-                Équipe Master & Gouvernance des Rôles
+              <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>
+                {t('team.title')}
               </h1>
-              <p style={{ margin: '2px 0 0', fontSize: 12.5, color: 'var(--text-secondary)' }}>
-                Créez des comptes dédiés pour vos coéquipiers testeurs ou opérateurs sans partager votre compte Fondateur.
+              <p style={{ margin: '2px 0 0', fontSize: 12.5, color: 'var(--text2)' }}>
+                {t('team.subtitle')}
               </p>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div className="w-full sm:w-auto" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <button
               type="button"
               onClick={() => void chargerEquipe()}
@@ -287,18 +304,19 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                 borderRadius: 8,
                 border: '1px solid var(--border)',
                 background: 'var(--surface)',
-                color: 'var(--text-secondary)',
+                color: 'var(--text)',
                 fontSize: 12,
                 fontWeight: 700,
                 cursor: 'pointer',
               }}
             >
               <RefreshCw size={14} />
-              Rafraîchir
+              {t('team.refresh')}
             </button>
             <button
               type="button"
               onClick={() => setShowCreateForm((v) => !v)}
+              className="flex-1 sm:flex-initial justify-center"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -314,87 +332,116 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
               }}
             >
               <UserPlus size={15} />
-              {showCreateForm ? 'Fermer le formulaire' : '+ Nouveau membre Master'}
+              {showCreateForm ? t('team.close_form_btn') : t('team.new_member_btn')}
             </button>
           </div>
         </div>
 
-        {/* Bandeau d'affichage unique du mot de passe temporaire */}
+        {/* Bandeau de confirmation d'envoi de l'email d'invitation au membre */}
         {revealedCredentials && (
           <div
             style={{
-              background: '#fef3c7',
-              border: '1.5px solid #d97706',
+              background: 'var(--green-light)',
+              border: '1.5px solid var(--green)',
               borderRadius: 12,
-              padding: '16px 18px',
+              padding: '14px 16px',
               display: 'flex',
               flexDirection: 'column',
               gap: 10,
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-              <div style={{ fontSize: 13.5, fontWeight: 800, color: '#92400e' }}>
-                {revealedCredentials.title}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 800, color: 'var(--green)' }}>
+                <MailCheck size={18} />
+                <span>
+                  {t('team.email_sent_title', {
+                    name: revealedCredentials.name,
+                    email: revealedCredentials.email,
+                  })}
+                </span>
               </div>
-              <button
-                type="button"
-                onClick={() => setRevealedCredentials(null)}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid rgba(146, 64, 14, 0.3)',
-                  borderRadius: 6,
-                  padding: '4px 10px',
-                  fontSize: 11.5,
-                  fontWeight: 700,
-                  color: '#92400e',
-                  cursor: 'pointer',
-                }}
-              >
-                J’ai noté ce mot de passe
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowFallbackPwd((v) => !v)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 6,
+                    padding: '4px 10px',
+                    fontSize: 11.5,
+                    fontWeight: 700,
+                    color: 'var(--text)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {showFallbackPwd ? <EyeOff size={13} /> : <Eye size={13} />}
+                  {showFallbackPwd ? t('team.hide_fallback_pwd') : t('team.show_fallback_pwd')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRevealedCredentials(null)}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid var(--green)',
+                    borderRadius: 6,
+                    padding: '4px 10px',
+                    fontSize: 11.5,
+                    fontWeight: 700,
+                    color: 'var(--green)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {t('team.dismiss_banner')}
+                </button>
+              </div>
             </div>
-            <div style={{ fontSize: 12.5, color: '#78350f', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-              <span>
-                Membre : <strong>{revealedCredentials.name}</strong> ({revealedCredentials.email})
-              </span>
-              <code
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: 8,
-                  background: '#fff',
-                  border: '1px solid #f59e0b',
-                  fontSize: 14,
-                  fontWeight: 800,
-                  color: '#1a1209',
-                  letterSpacing: 0.6,
-                }}
-              >
-                {revealedCredentials.temporaryPassword}
-              </code>
-              <button
-                type="button"
-                onClick={() => void copyPassword(revealedCredentials.temporaryPassword)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '6px 12px',
-                  borderRadius: 8,
-                  border: 'none',
-                  background: '#92400e',
-                  color: '#fff',
-                  fontSize: 12,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                {copied ? <Check size={14} /> : <Copy size={14} />}
-                {copied ? 'Copié' : 'Copier'}
-              </button>
+
+            <div style={{ fontSize: 12.5, color: 'var(--text)' }}>
+              {t('team.email_sent_desc')}
             </div>
-            <div style={{ fontSize: 11.5, color: '#92400e' }}>
-              Important : la connexion au portail Master (`/master/login`) envoie toujours un code OTP par email. Chaque membre doit utiliser une vraie adresse email.
-            </div>
+
+            {showFallbackPwd && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', paddingTop: 4 }}>
+                <code
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: 8,
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    fontSize: 13.5,
+                    fontWeight: 800,
+                    color: 'var(--text)',
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  {revealedCredentials.temporaryPassword}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => void copyPassword(revealedCredentials.temporaryPassword)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 12px',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: 'var(--primary)',
+                    color: '#fff',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {copied ? <Check size={14} /> : <Copy size={14} />}
+                  {copied ? t('team.copied') : t('team.copy')}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -406,59 +453,61 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
               background: 'var(--surface)',
               border: '1px solid var(--border)',
               borderRadius: 12,
-              padding: 18,
+              padding: 16,
               display: 'flex',
               flexDirection: 'column',
               gap: 14,
             }}
           >
-            <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)' }}>
-              Créer un nouveau compte Master
+            <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>
+              {t('team.form_title')}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 4 }}>
-                  Nom complet *
+                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: 'var(--text2)', marginBottom: 4 }}>
+                  {t('team.label_name')}
                 </label>
                 <input
                   type="text"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  placeholder="Ex: Jean-Marc Testeur"
+                  placeholder={t('team.placeholder_name')}
                   style={{
                     width: '100%',
                     boxSizing: 'border-box',
                     padding: '8px 10px',
                     borderRadius: 8,
                     border: '1px solid var(--border)',
-                    background: 'var(--bg)',
+                    background: 'var(--bg2)',
+                    color: 'var(--text)',
                     fontSize: 13,
                   }}
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 4 }}>
-                  Adresse email réelle (pour OTP Master) *
+                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: 'var(--text2)', marginBottom: 4 }}>
+                  {t('team.label_email')}
                 </label>
                 <input
                   type="email"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
-                  placeholder="coequipier@domaine.com"
+                  placeholder={t('team.placeholder_email')}
                   style={{
                     width: '100%',
                     boxSizing: 'border-box',
                     padding: '8px 10px',
                     borderRadius: 8,
                     border: '1px solid var(--border)',
-                    background: 'var(--bg)',
+                    background: 'var(--bg2)',
+                    color: 'var(--text)',
                     fontSize: 13,
                   }}
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 4 }}>
-                  Rôle Master *
+                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: 'var(--text2)', marginBottom: 4 }}>
+                  {t('team.label_role')}
                 </label>
                 <select
                   value={newRole}
@@ -469,22 +518,23 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                     padding: '8px 10px',
                     borderRadius: 8,
                     border: '1px solid var(--border)',
-                    background: 'var(--bg)',
+                    background: 'var(--bg2)',
+                    color: 'var(--text)',
                     fontSize: 13,
                   }}
                 >
-                  <option value="PLATFORM_ADMIN">PLATFORM_ADMIN (Bras droit : toutes les écoles + Référentiels)</option>
-                  <option value="SCHOOL_MANAGER">SCHOOL_MANAGER (Testeur / Commercial : ses écoles uniquement)</option>
-                  <option value="SUPPORT">SUPPORT (Lecture & assistance MFA)</option>
+                  <option value="PLATFORM_ADMIN">{t('team.role_platform_option')}</option>
+                  <option value="SCHOOL_MANAGER">{t('team.role_school_option')}</option>
+                  <option value="SUPPORT">{t('team.role_support_option')}</option>
                 </select>
               </div>
             </div>
 
-            <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+            <div style={{ fontSize: 12, color: 'var(--text2)' }}>
               {ROLE_LABELS[newRole].desc}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
               <button
                 type="button"
                 onClick={() => setShowCreateForm(false)}
@@ -493,12 +543,13 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                   borderRadius: 8,
                   border: '1px solid var(--border)',
                   background: 'var(--surface)',
+                  color: 'var(--text)',
                   fontSize: 12.5,
                   fontWeight: 700,
                   cursor: 'pointer',
                 }}
               >
-                Annuler
+                {t('team.cancel')}
               </button>
               <button
                 type="submit"
@@ -514,7 +565,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                   cursor: creating ? 'wait' : 'pointer',
                 }}
               >
-                {creating ? 'Création...' : 'Créer et générer le mot de passe'}
+                {creating ? t('team.creating') : t('team.submit_create')}
               </button>
             </div>
           </form>
@@ -526,17 +577,17 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
             background: 'var(--surface)',
             border: '1px solid var(--border)',
             borderRadius: 12,
-            padding: 18,
+            padding: 16,
           }}
         >
-          <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 12 }}>
-            Membres de l’équipe Master ({members.length})
+          <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', marginBottom: 12 }}>
+            {t('team.members_title', { count: members.length })}
           </div>
 
           {loading ? (
-            <div style={{ fontSize: 13, color: 'var(--text-muted)', padding: '16px 0' }}>Chargement...</div>
+            <div style={{ fontSize: 13, color: 'var(--text3)', padding: '16px 0' }}>{t('team.loading')}</div>
           ) : members.length === 0 ? (
-            <div style={{ fontSize: 13, color: 'var(--text-muted)', padding: '16px 0' }}>Aucun membre trouvé.</div>
+            <div style={{ fontSize: 13, color: 'var(--text3)', padding: '16px 0' }}>{t('team.empty')}</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {members.map((member) => {
@@ -553,16 +604,16 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                       border: '1px solid var(--border)',
                       borderRadius: 10,
                       padding: '12px 14px',
-                      background: member.isActive ? 'var(--bg)' : 'rgba(239, 68, 68, 0.05)',
+                      background: member.isActive ? 'var(--bg)' : 'rgba(239, 68, 68, 0.06)',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: 10,
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                      <div>
+                      <div style={{ minWidth: 200, flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)' }}>
+                          <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>
                             {member.name}
                           </span>
                           {member.isOwner && (
@@ -575,13 +626,14 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                                 fontWeight: 800,
                                 padding: '2px 8px',
                                 borderRadius: 999,
-                                background: '#fef3c7',
-                                color: '#b45309',
-                                border: '1px solid rgba(180, 83, 9, 0.25)',
+                                background: 'var(--amber-light)',
+                                color: 'var(--amber)',
+                                border: '1px solid rgba(217, 119, 6, 0.25)',
                               }}
                             >
                               <Crown size={12} />
-                              Propriétaire (Fondateur)
+                              {/* Propriétaire (Fondateur) */}
+                              {t('team.owner_badge')}
                             </span>
                           )}
                           <span
@@ -606,17 +658,20 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                               color: member.isActive ? 'var(--green)' : 'var(--red)',
                             }}
                           >
-                            {member.isActive ? 'Actif' : 'Suspendu'}
+                            {member.isActive ? t('team.active') : t('team.suspended')}
                           </span>
                         </div>
-                        <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>
-                          {member.email} · {member.createdSchoolsCount} école(s) créée(s) ·{' '}
-                          {member.assignedSchoolIds.length} école(s) assignée(s)
+                        <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 4, wordBreak: 'break-all' }}>
+                          {member.email} ·{' '}
+                          {t('team.schools_stats', {
+                            created: member.createdSchoolsCount,
+                            assigned: member.assignedSchoolIds.length,
+                          })}
                         </div>
                       </div>
 
                       {/* Actions */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <div className="w-full sm:w-auto" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                         {canModifyTarget && (
                           <select
                             disabled={isBusy}
@@ -627,6 +682,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                               borderRadius: 7,
                               border: '1px solid var(--border)',
                               background: 'var(--surface)',
+                              color: 'var(--text)',
                               fontSize: 12,
                               fontWeight: 700,
                             }}
@@ -657,13 +713,14 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                               borderRadius: 7,
                               border: '1px solid var(--border)',
                               background: 'var(--surface)',
+                              color: 'var(--text)',
                               fontSize: 12,
                               fontWeight: 700,
                               cursor: 'pointer',
                             }}
                           >
                             <Building2 size={13} />
-                            Assigner écoles
+                            {t('team.assign_schools')}
                           </button>
                         )}
 
@@ -673,7 +730,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                               type="button"
                               disabled={isBusy}
                               onClick={() => void handleResetPassword(member)}
-                              title="Régénérer un mot de passe temporaire"
+                              title={t('team.reset_pwd_title')}
                               style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -682,13 +739,14 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                                 borderRadius: 7,
                                 border: '1px solid var(--border)',
                                 background: 'var(--surface)',
+                                color: 'var(--text)',
                                 fontSize: 12,
                                 fontWeight: 700,
                                 cursor: 'pointer',
                               }}
                             >
                               <KeyRound size={13} />
-                              Mdp temp.
+                              {t('team.reset_pwd')}
                             </button>
 
                             {!isSelf && (
@@ -704,14 +762,14 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                                   borderRadius: 7,
                                   border: '1px solid var(--border)',
                                   background: 'var(--surface)',
-                                  color: member.isActive ? '#d97706' : 'var(--green)',
+                                  color: member.isActive ? 'var(--amber)' : 'var(--green)',
                                   fontSize: 12,
                                   fontWeight: 700,
                                   cursor: 'pointer',
                                 }}
                               >
                                 {member.isActive ? <Ban size={13} /> : <CheckCircle2 size={13} />}
-                                {member.isActive ? 'Suspendre' : 'Réactiver'}
+                                {member.isActive ? t('team.suspend') : t('team.reactivate')}
                               </button>
                             )}
 
@@ -735,7 +793,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                                 }}
                               >
                                 <Trash2 size={13} />
-                                Supprimer
+                                {t('team.delete')}
                               </button>
                             )}
                           </>
@@ -756,42 +814,45 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                           gap: 8,
                         }}
                       >
-                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>
-                          Établissements supplémentaires assignés à {member.name} (en plus de ceux qu’il/elle a créés) :
+                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>
+                          {t('team.assign_schools_label', { name: member.name })}
                         </div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, maxHeight: 140, overflowY: 'auto' }}>
-                          {schools.map((s) => {
-                            const checked = editingSchoolIds.includes(s.id)
-                            return (
-                              <label
-                                key={s.id}
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: 6,
-                                  padding: '4px 9px',
-                                  borderRadius: 6,
-                                  border: `1px solid ${checked ? 'var(--primary)' : 'var(--border)'}`,
-                                  background: checked ? 'var(--green-light)' : 'var(--bg)',
-                                  fontSize: 12,
-                                  cursor: 'pointer',
-                                }}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={checked}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setEditingSchoolIds((prev) => [...prev, s.id])
-                                    } else {
-                                      setEditingSchoolIds((prev) => prev.filter((id) => id !== s.id))
-                                    }
+                          {schools
+                            .filter((s) => s.subdomain !== 'system' && !s.subdomain.startsWith('fixture-'))
+                            .map((s) => {
+                              const checked = editingSchoolIds.includes(s.id)
+                              return (
+                                <label
+                                  key={s.id}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    padding: '4px 9px',
+                                    borderRadius: 6,
+                                    border: `1px solid ${checked ? 'var(--primary)' : 'var(--border)'}`,
+                                    background: checked ? 'var(--green-light)' : 'var(--bg)',
+                                    color: 'var(--text)',
+                                    fontSize: 12,
+                                    cursor: 'pointer',
                                   }}
-                                />
-                                {s.name}
-                              </label>
-                            )
-                          })}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setEditingSchoolIds((prev) => [...prev, s.id])
+                                      } else {
+                                        setEditingSchoolIds((prev) => prev.filter((id) => id !== s.id))
+                                      }
+                                    }}
+                                  />
+                                  {s.name}
+                                </label>
+                              )
+                            })}
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                           <button
@@ -801,12 +862,13 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                               padding: '5px 10px',
                               borderRadius: 6,
                               border: '1px solid var(--border)',
-                              background: 'var(--bg)',
+                              background: 'var(--bg2)',
+                              color: 'var(--text)',
                               fontSize: 12,
                               cursor: 'pointer',
                             }}
                           >
-                            Annuler
+                            {t('team.cancel')}
                           </button>
                           <button
                             type="button"
@@ -823,7 +885,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                               cursor: 'pointer',
                             }}
                           >
-                            Enregistrer
+                            {t('team.save')}
                           </button>
                         </div>
                       </div>
@@ -838,4 +900,3 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
     </div>
   )
 }
-

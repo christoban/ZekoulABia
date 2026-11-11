@@ -43,10 +43,22 @@ export interface CreerMembreEquipeMasterCommand {
 export interface CreerMembreEquipeMasterResult {
   member: MasterTeamMember;
   motDePasseTemporaire: string;
+  emailSent: boolean;
 }
 
+export type EnvoyerEmailMembreMasterFn = (params: {
+  recipientEmail: string;
+  recipientName: string;
+  role: MasterRoleCode;
+  temporaryPassword: string;
+  isReset?: boolean;
+}) => Promise<{ sent: boolean; error?: string }>;
+
 export class CreerMembreEquipeMasterUseCase {
-  constructor(private readonly repo: MasterTeamRepository) {}
+  constructor(
+    private readonly repo: MasterTeamRepository,
+    private readonly envoyerEmail?: EnvoyerEmailMembreMasterFn,
+  ) {}
 
   async execute(command: CreerMembreEquipeMasterCommand): Promise<CreerMembreEquipeMasterResult> {
     const email = command.email?.trim().toLowerCase();
@@ -98,7 +110,23 @@ export class CreerMembreEquipeMasterUseCase {
       ipAddress: command.ipAddress ?? null,
     });
 
-    return { member, motDePasseTemporaire };
+    let emailSent = false;
+    if (this.envoyerEmail) {
+      try {
+        const res = await this.envoyerEmail({
+          recipientEmail: member.email,
+          recipientName: member.name,
+          role: member.role,
+          temporaryPassword: motDePasseTemporaire,
+          isReset: false,
+        });
+        emailSent = res.sent;
+      } catch {
+        emailSent = false;
+      }
+    }
+
+    return { member, motDePasseTemporaire, emailSent };
   }
 }
 
@@ -199,14 +227,17 @@ export class ModifierMembreEquipeMasterUseCase {
 }
 
 export class ReinitialiserMotDePasseMembreMasterUseCase {
-  constructor(private readonly repo: MasterTeamRepository) {}
+  constructor(
+    private readonly repo: MasterTeamRepository,
+    private readonly envoyerEmail?: EnvoyerEmailMembreMasterFn,
+  ) {}
 
   async execute(command: {
     actorId: string;
     actorIsOwner: boolean;
     targetId: string;
     ipAddress?: string | null;
-  }): Promise<{ member: MasterTeamMember; motDePasseTemporaire: string }> {
+  }): Promise<{ member: MasterTeamMember; motDePasseTemporaire: string; emailSent: boolean }> {
     const target = await this.repo.findById(command.targetId);
     if (!target) {
       throw new MasterAdminNotFoundError('Compte Master introuvable');
@@ -232,7 +263,23 @@ export class ReinitialiserMotDePasseMembreMasterUseCase {
       ipAddress: command.ipAddress ?? null,
     });
 
-    return { member: updated, motDePasseTemporaire };
+    let emailSent = false;
+    if (this.envoyerEmail) {
+      try {
+        const res = await this.envoyerEmail({
+          recipientEmail: updated.email,
+          recipientName: updated.name,
+          role: updated.role,
+          temporaryPassword: motDePasseTemporaire,
+          isReset: true,
+        });
+        emailSent = res.sent;
+      } catch {
+        emailSent = false;
+      }
+    }
+
+    return { member: updated, motDePasseTemporaire, emailSent };
   }
 }
 

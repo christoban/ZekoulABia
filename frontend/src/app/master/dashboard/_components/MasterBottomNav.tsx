@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { LayoutDashboard, School, ShieldCheck, Shield, ShieldAlert, Users, Menu } from 'lucide-react'
+import { useT } from '@/lib/i18n'
 import type { Section } from '../_types'
 
 interface Props {
@@ -14,7 +15,7 @@ interface Props {
 interface BottomNavItem {
   id: Section | 'menu'
   section?: Section
-  label: string
+  labelKey: string
   icon: React.ComponentType<{ size?: number; className?: string; strokeWidth?: number }>
   isMenuTrigger?: boolean
   dotColor?: string
@@ -24,54 +25,56 @@ const NAV_ITEMS: BottomNavItem[] = [
   {
     id: 'overview',
     section: 'overview',
-    label: "Aperçu",
+    labelKey: 'nav.overview_short',
     icon: LayoutDashboard,
     dotColor: '#4ade80',
   },
   {
     id: 'schools',
     section: 'schools',
-    label: "Écoles",
+    labelKey: 'nav.schools',
     icon: School,
     dotColor: '#d97706',
   },
   {
     id: 'referentiels',
     section: 'referentiels',
-    label: "Référentiels",
+    labelKey: 'nav.referentiels_short',
     icon: ShieldCheck,
     dotColor: '#60a5fa',
   },
   {
     id: 'logs',
     section: 'logs',
-    label: "Sécurité",
+    labelKey: 'nav.logs_short',
     icon: Shield,
     dotColor: '#94a3b8',
   },
   {
     id: 'mode-test',
     section: 'mode-test',
-    label: "Mode test",
+    labelKey: 'nav.mode_test',
     icon: ShieldAlert,
     dotColor: '#ef4444',
   },
   {
     id: 'team',
     section: 'team',
-    label: "Équipe",
+    labelKey: 'nav.team_short',
     icon: Users,
     dotColor: '#a855f7',
   },
   {
     id: 'menu',
-    label: "Compte",
+    labelKey: 'nav.account',
     icon: Menu,
     isMenuTrigger: true,
   },
 ]
 
 export default function MasterBottomNav({ currentSection, userRole, onNav, onOpenMenu }: Props) {
+  const t = useT('master')
+
   const visibleItems = NAV_ITEMS.filter((item) => {
     if (item.id === 'team') return userRole === 'super_admin'
     if (item.id === 'mode-test') return userRole === 'super_admin' || userRole === 'platform_admin' || userRole === 'school_manager'
@@ -81,15 +84,15 @@ export default function MasterBottomNav({ currentSection, userRole, onNav, onOpe
 
   return (
     <nav
-      aria-label="Navigation mobile Super Admin"
+      aria-label="Navigation mobile Master"
       className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--border)] shadow-[0_-2px_12px_rgba(0,0,0,0.08)]"
       style={{
         background: 'var(--surface)',
         paddingBottom: 'calc(6px + env(safe-area-inset-bottom, 0px))',
-        paddingTop: 6,
+        paddingTop: 5,
       }}
     >
-      <div className="flex items-center justify-around px-1 max-w-lg mx-auto">
+      <div className="flex items-center justify-around px-1 max-w-lg mx-auto overflow-x-auto">
         {visibleItems.map((item) => {
           const isActive = !item.isMenuTrigger && item.section === currentSection
           const Icon = item.icon
@@ -105,25 +108,25 @@ export default function MasterBottomNav({ currentSection, userRole, onNav, onOpe
                   onNav(item.section)
                 }
               }}
-              className="flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl border-none bg-transparent cursor-pointer min-w-[56px]"
+              className="flex flex-col items-center justify-center gap-0.5 py-1 px-1 rounded-xl border-none bg-transparent cursor-pointer min-w-[46px] flex-1"
               style={{
                 WebkitTapHighlightColor: 'transparent',
               }}
             >
               <div
-                className="w-10 h-7 rounded-full flex items-center justify-center transition-all duration-200 relative"
+                className="w-9 h-7 rounded-full flex items-center justify-center transition-all duration-200 relative"
                 style={{
                   background: isActive ? 'var(--sidebar-bg)' : 'transparent',
                   color: isActive ? '#ffffff' : 'var(--text3)',
                 }}
               >
-                <Icon size={17} strokeWidth={isActive ? 2.4 : 1.8} />
+                <Icon size={16} strokeWidth={isActive ? 2.4 : 1.8} />
                 {item.dotColor && !isActive && (
                   <span
                     style={{
                       position: 'absolute',
                       top: 4,
-                      right: 6,
+                      right: 5,
                       width: 5,
                       height: 5,
                       borderRadius: '50%',
@@ -133,13 +136,13 @@ export default function MasterBottomNav({ currentSection, userRole, onNav, onOpe
                 )}
               </div>
               <span
-                className="text-[10px] tracking-tight truncate max-w-[66px]"
+                className="text-[9.5px] tracking-tight truncate max-w-[58px]"
                 style={{
                   fontWeight: isActive ? 800 : 600,
                   color: isActive ? 'var(--text)' : 'var(--text3)',
                 }}
               >
-                {item.label}
+                {t(item.labelKey)}
               </span>
             </button>
           )

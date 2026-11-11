@@ -18,12 +18,20 @@ interface Props {
 }
 
 export default function SectionModeTest({ user, schools = [], onToast }: Props) {
-  const t = useT('admin')
+  const t = useT('master')
 
   const isSuperAdmin = user?.role === 'super_admin'
   const hasGlobalSchoolView = isSuperAdmin || user?.role === 'platform_admin'
   const canManageSchools =
     hasGlobalSchoolView || user?.role === 'school_manager'
+
+  const realSchools = useMemo(
+    () =>
+      schools.filter(
+        (s) => s.subdomain !== 'system' && !s.subdomain.startsWith('fixture-'),
+      ),
+    [schools],
+  )
 
   const [modeTest, setModeTest] = useState<boolean | null>(null)
   const [disabledSchoolIds, setDisabledSchoolIds] = useState<string[]>([])
@@ -39,7 +47,7 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
     if (!canManageSchools) return
     const effectiveFilter = hasGlobalSchoolView
       ? schoolIdFilter || null
-      : schoolIdFilter || schools[0]?.id || null
+      : schoolIdFilter || realSchools[0]?.id || null
     if (!hasGlobalSchoolView && !effectiveFilter) {
       setMessagesSupprimes([])
       return
@@ -53,7 +61,7 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
     } finally {
       setMessagesSupprimesLoading(false)
     }
-  }, [canManageSchools, hasGlobalSchoolView, schools])
+  }, [canManageSchools, hasGlobalSchoolView, realSchools])
 
   const chargerModeTest = useCallback(async () => {
     if (!canManageSchools) return
@@ -68,10 +76,10 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
   }, [canManageSchools, chargerMessagesSupprimes, filtreEcoleMessages])
 
   useEffect(() => {
-    if (!hasGlobalSchoolView && !filtreEcoleMessages && schools.length > 0) {
-      setFiltreEcoleMessages(schools[0].id)
+    if (!hasGlobalSchoolView && !filtreEcoleMessages && realSchools.length > 0) {
+      setFiltreEcoleMessages(realSchools[0].id)
     }
-  }, [hasGlobalSchoolView, filtreEcoleMessages, schools])
+  }, [hasGlobalSchoolView, filtreEcoleMessages, realSchools])
 
   useEffect(() => {
     void chargerModeTest()
@@ -92,8 +100,8 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
       )
       onToast(
         updated.outboundMessagingEnabled
-          ? 'Envois sortants globaux réactivés'
-          : 'Mode test global activé (envois sortants coupés sur toute la plateforme)',
+          ? t('mode_test.statut_actif')
+          : t('mode_test.statut_inactif'),
         updated.outboundMessagingEnabled ? 'success' : 'warning'
       )
       await chargerMessagesSupprimes(filtreEcoleMessages)
@@ -114,8 +122,8 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
       window.dispatchEvent(new CustomEvent('zekoulabia:mode-test-changed'))
       onToast(
         prochainEtatEnvoiActif
-          ? `Mode test désactivé pour ${schoolName} (envois sortants actifs)`
-          : `Mode test activé pour ${schoolName} (envois sortants coupés pour cet établissement)`,
+          ? `${schoolName} : ${t('mode_test.statut_actif')}`
+          : `${schoolName} : ${t('mode_test.active_badge')}`,
         prochainEtatEnvoiActif ? 'success' : 'warning'
       )
       await chargerMessagesSupprimes(filtreEcoleMessages)
@@ -128,17 +136,17 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
 
   const schoolNameById = useMemo(() => {
     const map = new Map<string, string>()
-    for (const s of schools) {
+    for (const s of realSchools) {
       map.set(s.id, s.name)
     }
     return map
-  }, [schools])
+  }, [realSchools])
 
   const filteredSchools = useMemo(() => {
     const q = schoolSearch.trim().toLowerCase()
     const list = !q
-      ? schools
-      : schools.filter(
+      ? realSchools
+      : realSchools.filter(
           (s) =>
             s.name.toLowerCase().includes(q) ||
             s.subdomain.toLowerCase().includes(q) ||
@@ -150,30 +158,30 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
       if (aInTest !== bInTest) return aInTest - bInTest
       return a.name.localeCompare(b.name, 'fr')
     })
-  }, [schools, schoolSearch, disabledSchoolIds])
+  }, [realSchools, schoolSearch, disabledSchoolIds])
 
   if (!canManageSchools) {
     return (
-      <div style={{ padding: 24 }}>
+      <div style={{ padding: 16 }}>
         <div
           style={{
             background: 'var(--surface)',
             border: '1px solid var(--border)',
             borderRadius: 12,
             padding: 20,
-            color: 'var(--text-secondary)',
+            color: 'var(--text2)',
             fontSize: 13,
           }}
         >
-          Accès réservé aux opérateurs autorisés (`super_admin`, `platform_admin`, `school_manager`).
+          {t('mode_test.restricted_access')}
         </div>
       </div>
     )
   }
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', padding: '24px 20px 48px', boxSizing: 'border-box' }}>
-      <div style={{ maxWidth: 960, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ height: '100%', overflowY: 'auto', padding: '16px 14px 48px', boxSizing: 'border-box', WebkitOverflowScrolling: 'touch' }}>
+      <div style={{ maxWidth: 960, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
         {/* En-tête */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -187,18 +195,19 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                flexShrink: 0,
               }}
             >
               <ShieldAlert size={20} />
             </div>
             <div>
-              <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: 'var(--text-primary)' }}>
-                {t('dashboard.mode_test_titre')}
+              <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>
+                {t('mode_test.titre')}
               </h1>
-              <p style={{ margin: '2px 0 0', fontSize: 12.5, color: 'var(--text-secondary)' }}>
+              <p style={{ margin: '2px 0 0', fontSize: 12.5, color: 'var(--text2)' }}>
                 {isSuperAdmin
-                  ? 'Contrôle Fondateur (super_admin) — Global Plateforme & Par Établissement'
-                  : 'Contrôle Mode test sur vos établissements créés ou assignés'}
+                  ? t('mode_test.subtitle_super')
+                  : t('mode_test.subtitle_operator')}
               </p>
             </div>
           </div>
@@ -214,14 +223,14 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
               borderRadius: 8,
               border: '1px solid var(--border)',
               background: 'var(--surface)',
-              color: 'var(--text-secondary)',
+              color: 'var(--text)',
               fontSize: 12,
               fontWeight: 700,
               cursor: 'pointer',
             }}
           >
             <RefreshCw size={14} />
-            {t('dashboard.mode_test_rafraichir')}
+            {t('mode_test.rafraichir')}
           </button>
         </div>
 
@@ -232,13 +241,13 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
               background: modeTest ? 'var(--surface)' : 'var(--red-light)',
               border: `1.5px solid ${modeTest ? 'var(--border)' : 'var(--red)'}`,
               borderRadius: 12,
-              padding: '18px 20px',
+              padding: '16px 18px',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span>1. Coupe-circuit Global Plateforme</span>
+              <div style={{ flex: 1, minWidth: 220 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span>{t('mode_test.global_title')}</span>
                   <span
                     style={{
                       fontSize: 11,
@@ -249,11 +258,11 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
                       color: modeTest ? 'var(--green)' : 'var(--red)',
                     }}
                   >
-                    {modeTest ? t('dashboard.mode_test_statut_actif') : t('dashboard.mode_test_statut_inactif')}
+                    {modeTest ? t('mode_test.statut_actif') : t('mode_test.statut_inactif')}
                   </span>
                 </div>
-                <div style={{ fontSize: 12.5, color: 'var(--text-secondary)', marginTop: 4 }}>
-                  {modeTest ? t('dashboard.mode_test_desc_actif') : t('dashboard.mode_test_desc_inactif')}
+                <div style={{ fontSize: 12.5, color: 'var(--text2)', marginTop: 4 }}>
+                  {modeTest ? t('mode_test.desc_actif') : t('mode_test.desc_inactif')}
                 </div>
               </div>
 
@@ -274,7 +283,7 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
                       cursor: modeTestBusy ? 'wait' : 'pointer',
                     }}
                   >
-                    {t('dashboard.mode_test_btn_desactiver')}
+                    {t('mode_test.btn_desactiver')}
                   </button>
                 ) : (
                   <button
@@ -292,7 +301,7 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
                       cursor: modeTestBusy ? 'wait' : 'pointer',
                     }}
                   >
-                    {t('dashboard.mode_test_btn_activer')}
+                    {t('mode_test.btn_activer')}
                   </button>
                 )
               ) : (
@@ -300,14 +309,15 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
                   style={{
                     fontSize: 11.5,
                     fontWeight: 700,
-                    color: 'var(--text-muted)',
-                    background: 'var(--bg)',
+                    color: 'var(--text2)',
+                    background: 'var(--bg2)',
                     border: '1px solid var(--border)',
                     padding: '6px 10px',
                     borderRadius: 8,
                   }}
                 >
-                  Réservé au Fondateur (super_admin)
+                  {/* Réservé au Fondateur (super_admin) */}
+                  {t('mode_test.reserved_founder')}
                 </span>
               )}
             </div>
@@ -329,9 +339,9 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
                 }}
               >
                 <div style={{ fontSize: 12.5, color: 'var(--red)', fontWeight: 600 }}>
-                  {t('dashboard.mode_test_confirm_texte')}
+                  {t('mode_test.confirm_texte')}
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <button
                     type="button"
                     disabled={modeTestBusy}
@@ -341,12 +351,13 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
                       borderRadius: 7,
                       border: '1px solid var(--border)',
                       background: 'var(--surface)',
+                      color: 'var(--text)',
                       fontSize: 12,
                       fontWeight: 600,
                       cursor: 'pointer',
                     }}
                   >
-                    {t('dashboard.mode_test_confirm_annuler')}
+                    {t('mode_test.confirm_annuler')}
                   </button>
                   <button
                     type="button"
@@ -363,7 +374,7 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
                       cursor: modeTestBusy ? 'wait' : 'pointer',
                     }}
                   >
-                    {t('dashboard.mode_test_confirm_oui')}
+                    {t('mode_test.confirm_oui')}
                   </button>
                 </div>
               </div>
@@ -377,59 +388,59 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
             background: 'var(--surface)',
             border: '1px solid var(--border)',
             borderRadius: 12,
-            padding: '18px 20px',
+            padding: '16px 18px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ flex: 1, minWidth: 220 }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <Building2 size={16} />
-                <span>2. Mode test ciblé par établissement</span>
+                <span>{t('mode_test.per_school_title')}</span>
                 <span
                   style={{
                     fontSize: 11,
                     fontWeight: 700,
                     padding: '2px 8px',
                     borderRadius: 999,
-                    background: disabledSchoolIds.length > 0 ? 'var(--red-light)' : 'var(--bg)',
-                    color: disabledSchoolIds.length > 0 ? 'var(--red)' : 'var(--text-secondary)',
+                    background: disabledSchoolIds.length > 0 ? 'var(--red-light)' : 'var(--bg2)',
+                    color: disabledSchoolIds.length > 0 ? 'var(--red)' : 'var(--text2)',
                   }}
                 >
-                  {disabledSchoolIds.length} établissement(s) en mode test
+                  {t('mode_test.per_school_badge', { count: disabledSchoolIds.length })}
                 </span>
               </div>
-              <div style={{ fontSize: 12.5, color: 'var(--text-secondary)', marginTop: 4 }}>
-                Idéal en production pour les écoles de démonstration ou de formation : seuls les établissements activés ci-dessous contournent la 2FA, les OTP email et les SMS.
+              <div style={{ fontSize: 12.5, color: 'var(--text2)', marginTop: 4 }}>
+                {t('mode_test.per_school_desc')}
               </div>
             </div>
 
-            <div style={{ position: 'relative', minWidth: 240 }}>
-              <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <div className="w-full sm:w-auto" style={{ position: 'relative', minWidth: 220 }}>
+              <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)' }} />
               <input
                 type="text"
                 value={schoolSearch}
                 onChange={(e) => setSchoolSearch(e.target.value)}
-                placeholder="Rechercher une école..."
+                placeholder={t('mode_test.search_school')}
                 style={{
                   width: '100%',
                   boxSizing: 'border-box',
-                  padding: '7px 10px 7px 30px',
+                  padding: '8px 10px 8px 30px',
                   borderRadius: 8,
                   border: '1px solid var(--border)',
-                  background: 'var(--bg)',
+                  background: 'var(--bg2)',
                   fontSize: 12.5,
-                  color: 'var(--text-primary)',
+                  color: 'var(--text)',
                 }}
               />
             </div>
           </div>
 
           {filteredSchools.length === 0 ? (
-            <div style={{ fontSize: 12.5, color: 'var(--text-muted)', padding: '12px 0' }}>
-              Aucun établissement trouvé.
+            <div style={{ fontSize: 12.5, color: 'var(--text3)', padding: '12px 0' }}>
+              {t('mode_test.no_school')}
             </div>
           ) : (
-            <div style={{ maxHeight: 280, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
               {filteredSchools.map((school) => {
                 const ecoleEnModeTest = disabledSchoolIds.includes(school.id)
                 const effectifEnModeTest = modeTest === false || ecoleEnModeTest
@@ -442,7 +453,7 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      gap: 12,
+                      gap: 10,
                       padding: '10px 12px',
                       borderRadius: 10,
                       border: `1px solid ${ecoleEnModeTest ? 'var(--red)' : 'var(--border)'}`,
@@ -450,10 +461,10 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
                       flexWrap: 'wrap',
                     }}
                   >
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ minWidth: 180, flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                         <span>{school.name}</span>
-                        <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                        <span style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'monospace' }}>
                           ({school.subdomain})
                         </span>
                         {effectifEnModeTest && (
@@ -467,12 +478,12 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
                               color: 'var(--red)',
                             }}
                           >
-                            {modeTest === false ? 'Mode test (via Global)' : 'Mode test actif'}
+                            {modeTest === false ? t('mode_test.via_global') : t('mode_test.active_badge')}
                           </span>
                         )}
                       </div>
-                      <div style={{ fontSize: 11.5, color: 'var(--text-secondary)', marginTop: 2 }}>
-                        {school.city ?? 'Ville non renseignée'} · Statut : {school.status}
+                      <div style={{ fontSize: 11.5, color: 'var(--text2)', marginTop: 2 }}>
+                        {school.city ?? t('mode_test.city_unknown')} · {t('mode_test.status_label')} : {school.status}
                       </div>
                     </div>
 
@@ -480,8 +491,9 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
                       type="button"
                       disabled={busy}
                       onClick={() => void basculerModeTestEcole(school.id, school.name, ecoleEnModeTest)}
+                      className="w-full sm:w-auto"
                       style={{
-                        padding: '6px 12px',
+                        padding: '7px 12px',
                         borderRadius: 8,
                         border: ecoleEnModeTest ? 'none' : '1px solid var(--red)',
                         background: ecoleEnModeTest ? 'var(--green)' : 'var(--surface)',
@@ -489,9 +501,10 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
                         fontSize: 12,
                         fontWeight: 700,
                         cursor: busy ? 'wait' : 'pointer',
+                        textAlign: 'center',
                       }}
                     >
-                      {ecoleEnModeTest ? 'Réactiver les envois' : 'Mettre en mode test'}
+                      {ecoleEnModeTest ? t('mode_test.btn_enable_school_sends') : t('mode_test.btn_put_in_test')}
                     </button>
                   </div>
                 )
@@ -506,14 +519,14 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
             background: 'var(--surface)',
             border: '1px solid var(--border)',
             borderRadius: 12,
-            padding: '18px 20px',
+            padding: '16px 18px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 8, flexWrap: 'wrap' }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)' }}>
-              3. {t('dashboard.mode_test_supprimes_titre')}
+            <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>
+              3. {t('mode_test.supprimes_titre')}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="w-full sm:w-auto" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <select
                 value={filtreEcoleMessages}
                 onChange={(e) => {
@@ -521,17 +534,18 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
                   setFiltreEcoleMessages(val)
                   void chargerMessagesSupprimes(val)
                 }}
+                className="flex-1 sm:flex-initial"
                 style={{
-                  padding: '5px 10px',
+                  padding: '6px 10px',
                   borderRadius: 7,
                   border: '1px solid var(--border)',
-                  background: 'var(--bg)',
+                  background: 'var(--bg2)',
                   fontSize: 12,
-                  color: 'var(--text-primary)',
+                  color: 'var(--text)',
                 }}
               >
-                {hasGlobalSchoolView && <option value="">Tous les établissements</option>}
-                {schools.map((s) => (
+                {hasGlobalSchoolView && <option value="">{t('mode_test.all_schools')}</option>}
+                {realSchools.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
                   </option>
@@ -542,53 +556,86 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
                 disabled={messagesSupprimesLoading}
                 onClick={() => void chargerMessagesSupprimes(filtreEcoleMessages)}
                 style={{
-                  padding: '5px 10px',
+                  padding: '6px 10px',
                   borderRadius: 7,
                   border: '1px solid var(--border)',
-                  background: 'var(--bg)',
+                  background: 'var(--bg2)',
+                  color: 'var(--text)',
                   fontSize: 12,
                   fontWeight: 600,
                   cursor: messagesSupprimesLoading ? 'wait' : 'pointer',
                 }}
               >
-                {t('dashboard.mode_test_rafraichir')}
+                {t('mode_test.rafraichir')}
               </button>
             </div>
           </div>
 
           {messagesSupprimes.length === 0 ? (
-            <div style={{ fontSize: 12.5, color: 'var(--text-muted)', padding: '12px 0' }}>
-              {t('dashboard.mode_test_supprimes_vide')}
+            <div style={{ fontSize: 12.5, color: 'var(--text3)', padding: '12px 0' }}>
+              {t('mode_test.supprimes_vide')}
             </div>
           ) : (
-            <div style={{ maxHeight: 340, overflowY: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
-                <thead>
-                  <tr style={{ textAlign: 'left', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>
-                    <th style={{ padding: '8px 10px' }}>{t('dashboard.mode_test_col_date')}</th>
-                    <th style={{ padding: '8px 10px' }}>{t('dashboard.mode_test_col_canal')}</th>
-                    <th style={{ padding: '8px 10px' }}>{t('dashboard.mode_test_col_type')}</th>
-                    <th style={{ padding: '8px 10px' }}>Établissement</th>
-                    <th style={{ padding: '8px 10px' }}>{t('dashboard.mode_test_col_destinataire')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {messagesSupprimes.map((m) => (
-                    <tr key={m.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                      <td style={{ padding: '8px 10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                        {new Date(m.createdAt).toLocaleString()}
-                      </td>
-                      <td style={{ padding: '8px 10px', fontWeight: 700 }}>{m.channel}</td>
-                      <td style={{ padding: '8px 10px', color: 'var(--text-secondary)' }}>{m.eventType}</td>
-                      <td style={{ padding: '8px 10px', color: 'var(--text-secondary)' }}>
-                        {m.schoolId ? (schoolNameById.get(m.schoolId) ?? m.schoolId) : 'Global / Non rattaché'}
-                      </td>
-                      <td style={{ padding: '8px 10px', fontFamily: 'monospace' }}>{m.recipientMasked}</td>
+            <>
+              {/* Vue Mobile (< md) : cartes empilées natives */}
+              <div className="block md:hidden" style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 340, overflowY: 'auto' }}>
+                {messagesSupprimes.map((m) => (
+                  <div
+                    key={m.id}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      border: '1px solid var(--border)',
+                      background: 'var(--bg)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 4,
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--text)' }}>{m.channel} · {m.eventType}</span>
+                      <span style={{ fontSize: 11, color: 'var(--text3)' }}>{new Date(m.createdAt).toLocaleString()}</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--text2)' }}>
+                      {m.schoolId ? (schoolNameById.get(m.schoolId) ?? m.schoolId) : t('mode_test.unattached')}
+                    </div>
+                    <div style={{ fontSize: 11.5, fontFamily: 'monospace', color: 'var(--text)' }}>
+                      {m.recipientMasked}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Vue Desktop (>= md) : tableau */}
+              <div className="hidden md:block" style={{ maxHeight: 340, overflowY: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+                  <thead>
+                    <tr style={{ textAlign: 'left', color: 'var(--text3)', borderBottom: '1px solid var(--border)' }}>
+                      <th style={{ padding: '8px 10px' }}>{t('mode_test.col_date')}</th>
+                      <th style={{ padding: '8px 10px' }}>{t('mode_test.col_canal')}</th>
+                      <th style={{ padding: '8px 10px' }}>{t('mode_test.col_type')}</th>
+                      <th style={{ padding: '8px 10px' }}>{t('mode_test.col_school')}</th>
+                      <th style={{ padding: '8px 10px' }}>{t('mode_test.col_destinataire')}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {messagesSupprimes.map((m) => (
+                      <tr key={m.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td style={{ padding: '8px 10px', color: 'var(--text2)', whiteSpace: 'nowrap' }}>
+                          {new Date(m.createdAt).toLocaleString()}
+                        </td>
+                        <td style={{ padding: '8px 10px', fontWeight: 700, color: 'var(--text)' }}>{m.channel}</td>
+                        <td style={{ padding: '8px 10px', color: 'var(--text2)' }}>{m.eventType}</td>
+                        <td style={{ padding: '8px 10px', color: 'var(--text2)' }}>
+                          {m.schoolId ? (schoolNameById.get(m.schoolId) ?? m.schoolId) : t('mode_test.unattached')}
+                        </td>
+                        <td style={{ padding: '8px 10px', fontFamily: 'monospace', color: 'var(--text)' }}>{m.recipientMasked}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </div>

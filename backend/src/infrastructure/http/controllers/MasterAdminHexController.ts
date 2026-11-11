@@ -157,7 +157,10 @@ export class MasterAdminHexController {
       const take = parseInt(limit as string);
       const master = req.masterUser;
 
-      const andConditions: Record<string, unknown>[] = [];
+      const andConditions: Record<string, unknown>[] = [
+        { subdomain: { not: 'system' } },
+        { NOT: { subdomain: { startsWith: 'fixture-' } } },
+      ];
       if (status) andConditions.push({ status });
       if (search) {
         andConditions.push({

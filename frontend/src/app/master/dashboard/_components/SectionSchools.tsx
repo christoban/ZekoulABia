@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Search, Check, X, MoreHorizontal, Eye, Pencil, Ban, Trash2, RotateCw, Mail, Undo2, CheckCircle2 } from 'lucide-react'
 import Badge from './Badge'
 import type { SchoolTab, SchoolRow, ConfirmActionTarget } from '../_types'
+import { useT } from '@/lib/i18n'
 
 interface Props {
   schools: SchoolRow[]
@@ -22,16 +23,6 @@ interface Props {
   onConfirmAction: (target: ConfirmActionTarget) => void
 }
 
-const TABS: { id: SchoolTab; label: string; urgent?: boolean }[] = [
-  { id: 'all',       label: 'Toutes' },
-  { id: 'pending',   label: 'À approuver', urgent: true },
-  { id: 'approved',  label: 'Approuvées' },
-  { id: 'active',    label: 'Actives' },
-  { id: 'suspended', label: 'Suspendues' },
-  { id: 'draft',     label: 'Invitations en cours' },
-  { id: 'rejected',  label: 'Rejetées' },
-]
-
 const STATUS_LABELS: Record<string, string> = {
   active:    'ACTIVE',
   pending:   'À APPROUVER',
@@ -44,7 +35,18 @@ const STATUS_LABELS: Record<string, string> = {
 const PLAN_LABELS: Record<string, string> = { deco: 'Découverte', std: 'Standard', prem: 'Premium' }
 
 export default function SectionSchools({ schools, loading, activeTab, onTabChange, searchTerm, onSearchChange, onInvite, onApprove, onReject, onSuspend, onDelete, onViewDetails, onToast, onRefresh, onConfirmAction }: Props) {
+  const t = useT('master')
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+
+  const TABS: { id: SchoolTab; label: string; urgent?: boolean }[] = [
+    { id: 'all',       label: t('schools.tab_all') },
+    { id: 'pending',   label: t('schools.tab_pending'), urgent: true },
+    { id: 'approved',  label: t('schools.tab_approved') },
+    { id: 'active',    label: t('schools.tab_active') },
+    { id: 'suspended', label: t('schools.tab_suspended') },
+    { id: 'draft',     label: t('schools.tab_draft') },
+    { id: 'rejected',  label: t('schools.tab_rejected') },
+  ]
 
   const countsByTab: Record<SchoolTab, number> = {
     all:       schools.length,
@@ -62,25 +64,25 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
     <div style={{ padding: '16px', height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexShrink: 0, flexWrap: 'wrap', gap: 10 }}>
         <div>
-          <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: '#1a1209' }}>
-            Gestion des Écoles
+          <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>
+            {t('schools.title')}
           </div>
-          <div style={{ fontSize: 13, color: '#a89478', marginTop: 3 }}>{schools.length} établissements au total</div>
+          <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 3 }}>{t('schools.subtitle', { count: schools.length })}</div>
         </div>
-        <button onClick={onInvite} style={btnPrimary}>+ Inviter une école</button>
+        <button onClick={onInvite} style={btnPrimary}>{t('schools.invite_btn')}</button>
       </div>
 
-      <div style={{ background: 'white', borderRadius: 10, border: '1px solid #e8e0d4', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Horizontally scrollable tabs on small screens */}
         <div style={{
-          display: 'flex', background: 'white', borderBottom: '2px solid #e8e0d4', padding: '0 10px',
+          display: 'flex', background: 'var(--surface)', borderBottom: '2px solid var(--border)', padding: '0 10px',
           flexShrink: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none'
         }}>
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => onTabChange(tab.id)}
               style={{
                 padding: '10px 12px', fontSize: 13, fontWeight: 700,
-                color: activeTab === tab.id ? 'var(--primary)' : '#a89478',
+                color: activeTab === tab.id ? 'var(--primary)' : 'var(--text3)',
                 background: 'none', border: 'none',
                 borderBottom: activeTab === tab.id ? '2px solid var(--primary)' : '2px solid transparent',
                 marginBottom: -2, cursor: 'pointer', whiteSpace: 'nowrap',
@@ -91,17 +93,17 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
               <span style={{
                 fontSize: 11, fontWeight: 800, padding: '2px 7px', borderRadius: 6,
                 background: activeTab === tab.id ? 'var(--green-light)' : 'var(--bg2)',
-                color: activeTab === tab.id ? 'var(--primary-hover)' : tab.urgent && countsByTab[tab.id] > 0 ? '#92400e' : '#a89478'
+                color: activeTab === tab.id ? 'var(--primary-hover)' : tab.urgent && countsByTab[tab.id] > 0 ? '#92400e' : 'var(--text3)'
               }}>{countsByTab[tab.id]}</span>
             </button>
           ))}
         </div>
 
-        <div style={{ padding: '10px 14px', borderBottom: '1px solid #e8e0d4', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg2)', border: '1px solid #e8e0d4', borderRadius: 8, padding: '7px 12px', flex: 1, minWidth: 200 }}>
-            <Search size={15} color="#a89478" />
-            <input type="text" value={searchTerm} onChange={e => onSearchChange(e.target.value)} placeholder="Rechercher par nom, sous-domaine, email..."
-              style={{ background: 'none', border: 'none', outline: 'none', fontSize: 13, color: '#1a1209', fontFamily: 'inherit', fontWeight: 600, width: '100%' }} />
+        <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 8, padding: '7px 12px', flex: 1, minWidth: 200 }}>
+            <Search size={15} color="var(--text3)" />
+            <input type="text" value={searchTerm} onChange={e => onSearchChange(e.target.value)} placeholder={t('schools.search_placeholder')}
+              style={{ background: 'none', border: 'none', outline: 'none', fontSize: 13, color: 'var(--text)', fontFamily: 'inherit', fontWeight: 600, width: '100%' }} />
           </div>
         </div>
 
@@ -110,27 +112,30 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
           {/* Mobile view (< md) */}
           <div className="block md:hidden" style={{ padding: '10px 10px 40px 10px' }}>
             {loading ? (
-              <div style={{ padding: '24px 8px', textAlign: 'center', color: '#a89478', fontSize: 13 }}>Chargement...</div>
+              <div style={{ padding: '24px 8px', textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>{t('schools.loading')}</div>
             ) : filtered.length === 0 ? (
-              <div style={{ padding: '24px 8px', textAlign: 'center', color: '#a89478', fontSize: 13 }}>Aucune école trouvée</div>
+              <div style={{ padding: '24px 8px', textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>{t('schools.empty')}</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {filtered.map((school) => (
                   <div key={school.id} style={{
-                    background: 'white', border: '1px solid #e8e0d4', borderRadius: 8,
+                    background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8,
                     padding: '12px', display: 'flex', flexDirection: 'column', gap: 8
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                       <div>
-                        <div style={{ fontWeight: 700, color: '#1a1209', fontSize: 14 }}>{school.name}</div>
-                        <div style={{ fontSize: 12, color: '#a89478', marginTop: 1 }}>{school.subdomain} · {school.type}</div>
+                        <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 14 }}>{school.name}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 1 }}>
+                          {school.subdomain} · {school.type}
+                          {school.createdByMaster ? ` · ${t('schools.created_by', { name: school.createdByMaster.name })}` : ''}
+                        </div>
                       </div>
                       <Badge type={school.status}>{STATUS_LABELS[school.status] ?? school.status.toUpperCase()}</Badge>
                     </div>
 
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', fontSize: 12, color: '#6b5c45' }}>
-                      <Badge type={`plan-${school.plan}` as any}>{PLAN_LABELS[school.plan] ?? school.plan}</Badge>
-                      {school.adminEmail && <span style={{ fontSize: 11, color: '#a89478' }}>✉ {school.adminEmail}</span>}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', fontSize: 12, color: 'var(--text2)' }}>
+                      <Badge type={`plan-${school.plan}` as 'plan-deco' | 'plan-std' | 'plan-prem'}>{PLAN_LABELS[school.plan] ?? school.plan}</Badge>
+                      {school.adminEmail && <span style={{ fontSize: 11, color: 'var(--text3)' }}>✉ {school.adminEmail}</span>}
                     </div>
 
                     <div style={{ display: 'flex', gap: 6, marginTop: 4, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -138,11 +143,11 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
                         onClick={() => onViewDetails(school.id)}
                         style={{
                           padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 700,
-                          background: 'white', color: '#6b5c45', border: '1px solid #d4c8b8',
+                          background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border2)',
                           cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, minHeight: 34
                         }}
                       >
-                        <Eye size={13} /> Détails
+                        <Eye size={13} /> {t('schools.details_btn')}
                       </button>
 
                       {school.status === 'pending' && (
@@ -156,7 +161,7 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
                               display: 'inline-flex', alignItems: 'center', gap: 5, minHeight: 34
                             }}
                           >
-                            <Check size={13} /> Approuver
+                            <Check size={13} /> {t('schools.approve_btn')}
                           </button>
                           <button
                             onClick={() => onReject(school.id)}
@@ -166,7 +171,7 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
                               cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, minHeight: 34
                             }}
                           >
-                            <X size={13} /> Rejeter
+                            <X size={13} /> {t('schools.reject_btn')}
                           </button>
                         </>
                       )}
@@ -176,8 +181,8 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
                         <button
                           onClick={() => setOpenDropdown(openDropdown === school.id ? null : school.id)}
                           style={{
-                            background: 'none', border: '1px solid #d4c8b8', borderRadius: 6,
-                            padding: '6px 10px', cursor: 'pointer', fontSize: 12, color: '#6b5c45',
+                            background: 'none', border: '1px solid var(--border2)', borderRadius: 6,
+                            padding: '6px 10px', cursor: 'pointer', fontSize: 12, color: 'var(--text2)',
                             display: 'flex', alignItems: 'center', minHeight: 34
                           }}
                         >
@@ -186,16 +191,16 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
                         {openDropdown === school.id && (
                           <div style={{
                             position: 'absolute', right: 0, top: 'calc(100% + 4px)',
-                            background: 'white', border: '1px solid #d4c8b8', borderRadius: 8,
+                            background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 8,
                             boxShadow: '0 5px 16px rgba(0,0,0,0.15)', minWidth: 200, zIndex: 100, overflow: 'hidden'
                           }}>
                             {/* Écoles ACTIVES */}
                             {school.status === 'active' && (
                               <>
                                 <DropdownItem onClick={() => { onToast('Fonctionnalité à venir', 'info'); setOpenDropdown(null) }}><Pencil size={13} /> Modifier les infos</DropdownItem>
-                                <div style={{ height: 1, background: '#e8e0d4', margin: '4px 0' }} />
+                                <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
                                 <DropdownItem onClick={() => { onSuspend(school.id, school.name, school.subdomain); setOpenDropdown(null) }} danger><Ban size={13} /> Suspendre</DropdownItem>
-                                <div style={{ height: 1, background: '#e8e0d4', margin: '4px 0' }} />
+                                <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
                                 <DropdownItem onClick={() => { onDelete(school.id, school.name); setOpenDropdown(null) }} danger><Trash2 size={13} /> Supprimer définitivement</DropdownItem>
                               </>
                             )}
@@ -217,7 +222,7 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
                                     },
                                   })
                                 }} color="var(--primary)"><CheckCircle2 size={13} /> Réactiver</DropdownItem>
-                                <div style={{ height: 1, background: '#e8e0d4', margin: '4px 0' }} />
+                                <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
                                 <DropdownItem onClick={() => { onDelete(school.id, school.name); setOpenDropdown(null) }} danger><Trash2 size={13} /> Supprimer définitivement</DropdownItem>
                               </>
                             )}
@@ -239,7 +244,7 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
                                     },
                                   })
                                 }} color="#1d4ed8"><RotateCw size={13} /> Réexaminer la demande</DropdownItem>
-                                <div style={{ height: 1, background: '#e8e0d4', margin: '4px 0' }} />
+                                <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
                                 <DropdownItem onClick={() => { onDelete(school.id, school.name); setOpenDropdown(null) }} danger><Trash2 size={13} /> Supprimer définitivement</DropdownItem>
                               </>
                             )}
@@ -260,7 +265,7 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
                                     },
                                   })
                                 }} color="var(--primary)"><Mail size={13} /> Renvoyer l'invitation</DropdownItem>
-                                <div style={{ height: 1, background: '#e8e0d4', margin: '4px 0' }} />
+                                <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
                                 <DropdownItem onClick={() => { onDelete(school.id, school.name); setOpenDropdown(null) }} danger><Trash2 size={13} /> Supprimer définitivement</DropdownItem>
                               </>
                             )}
@@ -282,7 +287,7 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
                                     },
                                   })
                                 }} color="#92400e"><Undo2 size={13} /> Annuler l'approbation</DropdownItem>
-                                <div style={{ height: 1, background: '#e8e0d4', margin: '4px 0' }} />
+                                <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
                                 <DropdownItem onClick={() => { onDelete(school.id, school.name); setOpenDropdown(null) }} danger><Trash2 size={13} /> Supprimer définitivement</DropdownItem>
                               </>
                             )}
@@ -305,8 +310,8 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 850 }}>
             <thead>
               <tr>
-                {['École', 'Type', 'Plan', 'Statut', 'Admin', 'Invitation', 'Créée le', 'Actions'].map(h => (
-                  <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: '#a89478', background: 'var(--bg2)', borderBottom: '1px solid #e8e0d4', textTransform: 'uppercase', letterSpacing: '0.4px', whiteSpace: 'nowrap', position: 'sticky', top: 0, zIndex: 1 }}>
+                {[t('schools.col_school'), t('schools.col_type'), t('schools.col_plan'), t('schools.col_status'), t('schools.col_admin'), t('schools.col_invite'), t('schools.col_created'), t('schools.col_actions')].map(h => (
+                  <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.4px', whiteSpace: 'nowrap', position: 'sticky', top: 0, zIndex: 1 }}>
                     {h}
                   </th>
                 ))}
@@ -314,36 +319,36 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={8} style={{ padding: '16px 8px', textAlign: 'center', color: '#a89478', fontSize: 12 }}>Chargement...</td></tr>
+                <tr><td colSpan={8} style={{ padding: '16px 8px', textAlign: 'center', color: 'var(--text3)', fontSize: 12 }}>{t('schools.loading')}</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={8} style={{ padding: '16px 8px', textAlign: 'center', color: '#a89478', fontSize: 12 }}>Aucune école trouvée</td></tr>
+                <tr><td colSpan={8} style={{ padding: '16px 8px', textAlign: 'center', color: 'var(--text3)', fontSize: 12 }}>{t('schools.empty')}</td></tr>
               ) : filtered.map((school) => (
-                <tr key={school.id} style={{ borderBottom: '1px solid #faf7f2' }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#fdfaf6'}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'white'}>
+                <tr key={school.id} style={{ borderBottom: '1px solid var(--border)' }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg2)'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
                   <td style={{ padding: '6px 8px', verticalAlign: 'middle' }}>
-                    <div style={{ fontWeight: 700, color: '#1a1209', fontSize: 13 }}>{school.name}</div>
-                    <div style={{ fontSize: 11, color: '#a89478', marginTop: 1, fontWeight: 500 }}>
+                    <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 13 }}>{school.name}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1, fontWeight: 500 }}>
                       {school.subdomain}
-                      {school.createdByMaster ? ` · par ${school.createdByMaster.name}` : ''}
+                      {school.createdByMaster ? ` · ${t('schools.created_by', { name: school.createdByMaster.name })}` : ''}
                     </div>
                   </td>
                   <td style={tdStyle}>{school.type}</td>
                   <td style={{ padding: '6px 8px', verticalAlign: 'middle' }}>
-                    <Badge type={`plan-${school.plan}` as any}>{PLAN_LABELS[school.plan] ?? school.plan}</Badge>
+                    <Badge type={`plan-${school.plan}` as 'plan-deco' | 'plan-std' | 'plan-prem'}>{PLAN_LABELS[school.plan] ?? school.plan}</Badge>
                   </td>
                   <td style={{ padding: '6px 8px', verticalAlign: 'middle' }}>
                     <Badge type={school.status}>{STATUS_LABELS[school.status] ?? school.status.toUpperCase()}</Badge>
                   </td>
-                  <td style={tdStyle}>{school.adminEmail || <span style={{ color: '#c8bfb2' }}>—</span>}</td>
+                  <td style={tdStyle}>{school.adminEmail || <span style={{ color: 'var(--text3)' }}>—</span>}</td>
                   <td style={{ padding: '6px 8px', verticalAlign: 'middle' }}>
                     {school.status === 'draft' ? (
                       <>
-                        <Badge type="pending">En attente</Badge>
-                        {school.inviteExpiry && <div style={{ fontSize: 10, color: '#a89478', marginTop: 1, fontWeight: 500 }}>Expire {school.inviteExpiry}</div>}
+                        <Badge type="pending">{t('schools.pending_badge')}</Badge>
+                        {school.inviteExpiry && <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 1, fontWeight: 500 }}>{t('schools.expires', { date: school.inviteExpiry })}</div>}
                       </>
                     ) : (
-                      <span style={{ color: '#c8bfb2', fontSize: 11 }}>—</span>
+                      <span style={{ color: 'var(--text3)', fontSize: 11 }}>—</span>
                     )}
                   </td>
                   <td style={tdStyle}>{school.createdAt}</td>
@@ -357,13 +362,13 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
                       )}
                       <div style={{ position: 'relative' }}>
                         <button onClick={() => setOpenDropdown(openDropdown === school.id ? null : school.id)}
-                          style={{ background: 'none', border: '1px solid #d4c8b8', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 11, color: '#6b5c45', transition: 'all 0.12s', display: 'flex', alignItems: 'center' }}>
+                          style={{ background: 'none', border: '1px solid var(--border2)', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 11, color: 'var(--text2)', transition: 'all 0.12s', display: 'flex', alignItems: 'center' }}>
                           <MoreHorizontal size={13} />
                         </button>
                         {openDropdown === school.id && (
                           <div style={{
                             position: 'absolute', right: 0, top: 'calc(100% + 4px)',
-                            background: 'white', border: '1px solid #d4c8b8', borderRadius: 8,
+                            background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 8,
                             boxShadow: '0 5px 16px rgba(0,0,0,0.1)', minWidth: 190, zIndex: 100, overflow: 'hidden'
                           }}>
                             <DropdownItem onClick={() => { onViewDetails(school.id); setOpenDropdown(null) }}><Eye size={13} /> Voir les détails</DropdownItem>
@@ -372,9 +377,9 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
                             {school.status === 'active' && (
                               <>
                                 <DropdownItem onClick={() => { onToast('Fonctionnalité à venir', 'info'); setOpenDropdown(null) }}><Pencil size={13} /> Modifier les infos</DropdownItem>
-                                <div style={{ height: 1, background: '#e8e0d4', margin: '4px 0' }} />
+                                <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
                                 <DropdownItem onClick={() => { onSuspend(school.id, school.name, school.subdomain); setOpenDropdown(null) }} danger><Ban size={13} /> Suspendre</DropdownItem>
-                                <div style={{ height: 1, background: '#e8e0d4', margin: '4px 0' }} />
+                                <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
                                 <DropdownItem onClick={() => { onDelete(school.id, school.name); setOpenDropdown(null) }} danger><Trash2 size={13} /> Supprimer définitivement</DropdownItem>
                               </>
                             )}
@@ -382,7 +387,7 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
                             {/* ── Écoles SUSPENDUES ─────────────────────────── */}
                             {school.status === 'suspended' && (
                               <>
-                                <div style={{ height: 1, background: '#e8e0d4', margin: '4px 0' }} />
+                                <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
                                 <DropdownItem onClick={() => {
                                   setOpenDropdown(null)
                                   onConfirmAction({
@@ -397,7 +402,7 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
                                     },
                                   })
                                 }} color="var(--primary)"><CheckCircle2 size={13} /> Réactiver</DropdownItem>
-                                <div style={{ height: 1, background: '#e8e0d4', margin: '4px 0' }} />
+                                <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
                                 <DropdownItem onClick={() => { onDelete(school.id, school.name); setOpenDropdown(null) }} danger><Trash2 size={13} /> Supprimer définitivement</DropdownItem>
                               </>
                             )}
@@ -405,7 +410,7 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
                             {/* ── Écoles REJETÉES ───────────────────────────── */}
                             {school.status === 'rejected' && (
                               <>
-                                <div style={{ height: 1, background: '#e8e0d4', margin: '4px 0' }} />
+                                <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
                                 <DropdownItem onClick={() => {
                                   setOpenDropdown(null)
                                   onConfirmAction({
@@ -420,7 +425,7 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
                                     },
                                   })
                                 }} color="#1d4ed8"><RotateCw size={13} /> Réexaminer la demande</DropdownItem>
-                                <div style={{ height: 1, background: '#e8e0d4', margin: '4px 0' }} />
+                                <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
                                 <DropdownItem onClick={() => { onDelete(school.id, school.name); setOpenDropdown(null) }} danger><Trash2 size={13} /> Supprimer définitivement</DropdownItem>
                               </>
                             )}
@@ -428,7 +433,7 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
                             {/* ── Écoles en INVITATION (draft) ─────────────── */}
                             {school.status === 'draft' && (
                               <>
-                                <div style={{ height: 1, background: '#e8e0d4', margin: '4px 0' }} />
+                                <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
                                 <DropdownItem onClick={() => {
                                   setOpenDropdown(null)
                                   onConfirmAction({
@@ -442,7 +447,7 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
                                     },
                                   })
                                 }} color="var(--primary)"><Mail size={13} /> Renvoyer l'invitation</DropdownItem>
-                                <div style={{ height: 1, background: '#e8e0d4', margin: '4px 0' }} />
+                                <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
                                 <DropdownItem onClick={() => { onDelete(school.id, school.name); setOpenDropdown(null) }} danger><Trash2 size={13} /> Supprimer définitivement</DropdownItem>
                               </>
                             )}
@@ -450,7 +455,7 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
                             {/* ── Écoles À APPROUVER (pending) ─────────────── */}
                             {school.status === 'pending' && (
                               <>
-                                <div style={{ height: 1, background: '#e8e0d4', margin: '4px 0' }} />
+                                <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
                                 <DropdownItem onClick={() => { onDelete(school.id, school.name); setOpenDropdown(null) }} danger><Trash2 size={13} /> Supprimer définitivement</DropdownItem>
                               </>
                             )}
@@ -458,7 +463,7 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
                             {/* ── Écoles APPROUVÉES (approved) ─────────────── */}
                             {school.status === 'approved' && (
                               <>
-                                <div style={{ height: 1, background: '#e8e0d4', margin: '4px 0' }} />
+                                <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
                                 <DropdownItem onClick={() => {
                                   setOpenDropdown(null)
                                   onConfirmAction({
@@ -473,7 +478,7 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
                                     },
                                   })
                                 }} color="#92400e"><Undo2 size={13} /> Annuler l'approbation</DropdownItem>
-                                <div style={{ height: 1, background: '#e8e0d4', margin: '4px 0' }} />
+                                <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
                                 <DropdownItem onClick={() => { onDelete(school.id, school.name); setOpenDropdown(null) }} danger><Trash2 size={13} /> Supprimer définitivement</DropdownItem>
                               </>
                             )}
@@ -497,12 +502,12 @@ function DropdownItem({ children, onClick, danger, color }: { children: React.Re
   return (
     <div onClick={onClick} style={{
       padding: '8px 12px', fontSize: 13, fontWeight: 600,
-      color: danger ? '#dc2626' : color ?? '#6b5c45',
+      color: danger ? '#dc2626' : color ?? 'var(--text2)',
       cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
       transition: 'background 0.1s'
     }}
       onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = danger ? '#fee2e2' : 'var(--bg2)'}
-      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'white'}>
+      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
       {children}
     </div>
   )
@@ -514,4 +519,4 @@ const btnPrimary: React.CSSProperties = {
   border: 'none', cursor: 'pointer', fontFamily: 'inherit',
   boxShadow: '0 2px 8px rgba(142,42,58,0.18)', display: 'inline-flex', alignItems: 'center', gap: 6
 }
-const tdStyle: React.CSSProperties = { padding: '8px 12px', fontSize: 12, color: '#6b5c45', verticalAlign: 'middle' }
+const tdStyle: React.CSSProperties = { padding: '8px 12px', fontSize: 12, color: 'var(--text2)', verticalAlign: 'middle' }

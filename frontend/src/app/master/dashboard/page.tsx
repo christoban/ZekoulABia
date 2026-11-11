@@ -150,7 +150,10 @@ export default function SuperAdminDashboard() {
     try {
       const status = tab ? TAB_STATUS_MAP[tab] : TAB_STATUS_MAP[schoolTab]
       const res = await fetchSchools({ status, search, limit: 100 })
-      setSchools(res.data.map(toSchoolRow))
+      const visibleSchools = res.data.filter(
+        s => s.subdomain !== 'system' && !s.subdomain.startsWith('fixture-')
+      )
+      setSchools(visibleSchools.map(toSchoolRow))
     } catch {
       showToast('Erreur lors du chargement des écoles', 'error')
     } finally {

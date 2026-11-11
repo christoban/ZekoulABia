@@ -610,8 +610,8 @@ export async function createMasterTeamMember(body: {
   name: string
   role: MasterTeamRole
   assignedSchoolIds?: string[]
-}): Promise<{ member: MasterTeamMemberDto; temporaryPassword: string }> {
-  const res = await apiFetch<{ member: MasterTeamMemberDto; temporaryPassword: string }>('/api/v2/master/team', {
+}): Promise<{ member: MasterTeamMemberDto; temporaryPassword: string; emailSent?: boolean }> {
+  const res = await apiFetch<{ member: MasterTeamMemberDto; temporaryPassword: string; emailSent?: boolean }>('/api/v2/master/team', {
     method: 'POST',
     body: JSON.stringify(body),
   })
@@ -638,8 +638,8 @@ export async function updateMasterTeamMember(
 
 export async function resetMasterTeamMemberPassword(
   id: string,
-): Promise<{ member: MasterTeamMemberDto; temporaryPassword: string }> {
-  const res = await apiFetch<{ member: MasterTeamMemberDto; temporaryPassword: string }>(
+): Promise<{ member: MasterTeamMemberDto; temporaryPassword: string; emailSent?: boolean }> {
+  const res = await apiFetch<{ member: MasterTeamMemberDto; temporaryPassword: string; emailSent?: boolean }>(
     `/api/v2/master/team/${id}/reset-password`,
     { method: 'POST', body: '{}' },
   )

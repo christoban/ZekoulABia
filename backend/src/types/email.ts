@@ -12,6 +12,8 @@ export type EmailEventType =
   | "school_invite"
   | "master_login_otp"
   | "master_password_change_otp"
+  | "master_team_invite"
+  | "master_team_password_reset"
   | "group_login_otp"
   | "user_login_otp"
   | "contact_request"

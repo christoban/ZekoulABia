@@ -44,6 +44,8 @@
   --text2: #76645D;           /* Texte secondaire : sous-titres, libellés de champs (labels), descriptions et aides */
   --text3: #9E8C84;           /* Texte tertiaire : textes d'exemple dans les champs vides (placeholders), dates discrètes */
   --text-muted: var(--text2); /* Alias pointant vers la couleur de texte secondaire estompée */
+  --text-primary: var(--text);
+  --text-secondary: var(--text2);
 
   /* ── 5. COULEUR DE MARQUE & BOUTONS D'ACTION (PRIMARY & ACCENT) ── */
   --primary: #B4532A;                      /* Couleur principale de la marque : boutons 'Enregistrer', 'Créer', liens et onglets actifs */
@@ -157,6 +159,8 @@
   --text2: #B8A49B;           /* Texte secondaire estompé (descriptions, libellés) */
   --text3: #8D7970;           /* Texte tertiaire discret (champs vides, dates secondaires) */
   --text-muted: var(--text2);
+  --text-primary: var(--text);
+  --text-secondary: var(--text2);
 
   /* ── 5. COULEUR DE MARQUE & BOUTONS D'ACTION EN MODE SOMBRE ── */
   --primary: #B4532A;                      /* Couleur d'action principale en mode nuit */

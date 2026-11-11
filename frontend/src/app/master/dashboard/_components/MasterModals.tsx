@@ -37,9 +37,10 @@ function ModalWrap({ children, size = 'md' }: { children: React.ReactNode; size?
   const maxW = size === 'sm' ? 440 : size === 'lg' ? 660 : 480
   return (
     <div style={{
-      background: 'white', borderRadius: 16, padding: '24px 28px',
+      background: 'var(--surface)', borderRadius: 16, padding: '24px 28px',
       maxWidth: maxW, width: '92%', maxHeight: '85vh', overflowY: 'auto',
-      position: 'relative', animation: 'popIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both'
+      position: 'relative', animation: 'popIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both',
+      border: '1px solid var(--border)'
     }}>
       {children}
     </div>
@@ -50,19 +51,19 @@ function ModalHeader({ title, sub, onClose, danger, icon: Icon }: { title: strin
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 }}>
       <div>
-        <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: danger ? '#dc2626' : '#1a1209', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: danger ? '#dc2626' : 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
           {Icon && <Icon size={18} />}{title}
         </div>
-        {sub && <div style={{ fontSize: 12, color: '#6b5c45', marginTop: 3 }}>{sub}</div>}
+        {sub && <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 3 }}>{sub}</div>}
       </div>
-      <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid #d4c8b8', background: 'none', cursor: 'pointer', color: '#a89478', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><X size={16} /></button>
+      <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border2)', background: 'none', cursor: 'pointer', color: 'var(--text3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><X size={16} /></button>
     </div>
   )
 }
 
 function ModalFooter({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18, paddingTop: 14, borderTop: '1px solid #e8e0d4' }}>
+    <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18, paddingTop: 14, borderTop: '1px solid var(--border)' }}>
       {children}
     </div>
   )
@@ -71,16 +72,16 @@ function ModalFooter({ children }: { children: React.ReactNode }) {
 function Field({ label, hint, children }: { label: string; hint?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 16 }}>
-      <label style={{ fontSize: 11, fontWeight: 800, color: '#6b5c45', marginBottom: 6, display: 'block', letterSpacing: '0.4px', textTransform: 'uppercase' }}>{label}</label>
+      <label style={{ fontSize: 11, fontWeight: 800, color: 'var(--text2)', marginBottom: 6, display: 'block', letterSpacing: '0.4px', textTransform: 'uppercase' }}>{label}</label>
       {children}
-      {hint && <div style={{ fontSize: 11, color: '#a89478', marginTop: 4 }}>{hint}</div>}
+      {hint && <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>{hint}</div>}
     </div>
   )
 }
 
 function FieldInput({ placeholder, type = 'text', value, onChange, style, autoComplete = 'off', showToggle }: { placeholder?: string; type?: string; value?: string; onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void; style?: React.CSSProperties; autoComplete?: string; showToggle?: boolean }) {
   const [show, setShow] = useState(false)
-  const base: React.CSSProperties = { width: '100%', padding: '10px 14px', background: 'var(--bg2)', border: '1px solid #d4c8b8', borderRadius: 8, color: '#1a1209', fontSize: 13, fontFamily: 'inherit', fontWeight: 600, outline: 'none', ...style }
+  const base: React.CSSProperties = { width: '100%', padding: '10px 14px', background: 'var(--bg2)', border: '1px solid var(--border2)', borderRadius: 8, color: 'var(--text)', fontSize: 13, fontFamily: 'inherit', fontWeight: 600, outline: 'none', ...style }
   if (showToggle && type === 'password') {
     return (
       <div style={{ position: 'relative' }}>
@@ -109,7 +110,7 @@ function BtnPrimary({ onClick, children, disabled, type = 'button' }: { onClick?
 
 function BtnSecondary({ onClick, children }: { onClick?: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" onClick={onClick} style={{ padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 800, background: 'white', color: '#6b5c45', border: '1px solid #d4c8b8', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+    <button type="button" onClick={onClick} style={{ padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
       {children}
     </button>
   )
@@ -122,8 +123,8 @@ function SchoolSummary({ initials: init, name, meta, danger }: { initials: strin
         {init}
       </div>
       <div>
-        <div style={{ fontSize: 14, fontWeight: 800, color: '#1a1209' }}>{name}</div>
-        <div style={{ fontSize: 12, color: '#a89478', marginTop: 2 }}>{meta}</div>
+        <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>{name}</div>
+        <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{meta}</div>
       </div>
     </div>
   )
@@ -626,26 +627,26 @@ function InviteForm({ selectedPlan, onPlanChange, loading, onCancel, onDone, onE
           <FieldInput placeholder="Lycée de Bafia" value={schoolName} onChange={e => setSchoolName(e.target.value)} />
         </Field>
         <Field label="Plan tarifaire">
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {[
               { id: 'deco' as const, name: 'Découverte', desc: 'Gratuit · 50 élèves max' },
               { id: 'std' as const, name: 'Standard', desc: '300 élèves · Toutes fonctions' },
               { id: 'prem' as const, name: 'Premium', desc: 'Illimité · IA + Mobile Money' },
             ].map(plan => (
               <div key={plan.id} onClick={() => onPlanChange(plan.id)} style={{
-                flex: 1, padding: 10, border: `1.5px solid ${selectedPlan === plan.id ? 'var(--primary)' : '#d4c8b8'}`,
+                flex: '1 1 120px', padding: 10, border: `1.5px solid ${selectedPlan === plan.id ? 'var(--primary)' : 'var(--border2)'}`,
                 borderRadius: 10, textAlign: 'center', cursor: 'pointer',
-                background: selectedPlan === plan.id ? 'var(--green-light)' : 'white',
+                background: selectedPlan === plan.id ? 'var(--green-light)' : 'var(--surface)',
                 transition: 'all 0.15s'
               }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: '#1a1209' }}>{plan.name}</div>
-                <div style={{ fontSize: 10, color: '#a89478', marginTop: 2 }}>{plan.desc}</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>{plan.name}</div>
+                <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>{plan.desc}</div>
               </div>
             ))}
           </div>
         </Field>
         <ModalFooter>
-          <button type="button" onClick={onCancel} style={{ padding: '9px 14px', borderRadius: 10, fontSize: 11, fontWeight: 800, background: 'white', color: '#6b5c45', border: '1px solid #d4c8b8', cursor: 'pointer', fontFamily: 'inherit' }}>Annuler</button>
+          <button type="button" onClick={onCancel} style={{ padding: '9px 14px', borderRadius: 10, fontSize: 11, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>Annuler</button>
           <button type="submit" disabled={loading} style={{ padding: '9px 14px', borderRadius: 10, fontSize: 11, fontWeight: 800, background: loading ? '#6b7280' : 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: loading ? 'none' : '0 2px 8px rgba(142,42,58,0.18)' }}>
             Continuer →
           </button>
@@ -660,10 +661,10 @@ function InviteForm({ selectedPlan, onPlanChange, loading, onCancel, onDone, onE
       <input type="text" autoComplete="username" aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} />
       <input type="password" autoComplete="new-password" aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} />
       <div style={{ background: 'var(--bg2)', borderRadius: 14, padding: 16, marginBottom: 16 }}>
-        <div style={{ fontSize: 12, color: '#a89478', marginBottom: 4 }}>Établissement</div>
-        <div style={{ fontSize: 13, fontWeight: 800, color: '#1a1209' }}>{schoolName}</div>
-        <div style={{ fontSize: 12, color: '#a89478', marginTop: 10, marginBottom: 4 }}>Email</div>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#1a1209' }}>{email}</div>
+        <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 4 }}>Établissement</div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>{schoolName}</div>
+        <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 10, marginBottom: 4 }}>Email</div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)' }}>{email}</div>
       </div>
 
       <Field label="Mot de passe master *" hint="Confirmez votre identité pour envoyer l'invitation">

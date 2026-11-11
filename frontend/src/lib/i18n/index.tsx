@@ -9,6 +9,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import frCommon from '@/locales/fr/common.json'
 import frNavigation from '@/locales/fr/navigation.json'
 import frAdmin from '@/locales/fr/admin.json'
+import frMaster from '@/locales/fr/master.json'
 import frTeacher from '@/locales/fr/teacher.json'
 import frStaff from '@/locales/fr/staff.json'
 import frParent from '@/locales/fr/parent.json'
@@ -27,6 +28,7 @@ import frStudentTransfer from '@/locales/fr/studentTransfer.json'
 import enCommon from '@/locales/en/common.json'
 import enNavigation from '@/locales/en/navigation.json'
 import enAdmin from '@/locales/en/admin.json'
+import enMaster from '@/locales/en/master.json'
 import enTeacher from '@/locales/en/teacher.json'
 import enStaff from '@/locales/en/staff.json'
 import enParent from '@/locales/en/parent.json'
@@ -42,26 +44,26 @@ import enStudentTransfer from '@/locales/en/studentTransfer.json'
 export type Language = 'fr' | 'en'
 type Dictionary = Record<string, any>
 type Namespace =
-  | 'common' | 'navigation' | 'admin' | 'teacher' | 'staff'
+  | 'common' | 'navigation' | 'admin' | 'master' | 'teacher' | 'staff'
   | 'parent' | 'student' | 'grades' | 'finance' | 'discipline' | 'errors'
   | 'onboarding' | 'hrSelfService' | 'studentTransfer'
 
 const ALL_NAMESPACES: Namespace[] = [
-  'common', 'navigation', 'admin', 'teacher', 'staff',
+  'common', 'navigation', 'admin', 'master', 'teacher', 'staff',
   'parent', 'student', 'grades', 'finance', 'discipline', 'errors',
   'onboarding', 'hrSelfService', 'studentTransfer',
 ]
 
 // Dictionnaires complets FR et EN, prêts synchrones dès le chargement du module.
 const FR_DICTS: Record<Namespace, Dictionary> = {
-  common: frCommon, navigation: frNavigation, admin: frAdmin, teacher: frTeacher,
+  common: frCommon, navigation: frNavigation, admin: frAdmin, master: frMaster, teacher: frTeacher,
   staff: frStaff, parent: frParent, student: frStudent, grades: frGrades,
   finance: frFinance, discipline: frDiscipline, errors: frErrors, onboarding: frOnboarding,
   hrSelfService: frHrSelfService,
   studentTransfer: frStudentTransfer,
 }
 const EN_DICTS: Record<Namespace, Dictionary> = {
-  common: enCommon, navigation: enNavigation, admin: enAdmin, teacher: enTeacher,
+  common: enCommon, navigation: enNavigation, admin: enAdmin, master: enMaster, teacher: enTeacher,
   staff: enStaff, parent: enParent, student: enStudent, grades: enGrades,
   finance: enFinance, discipline: enDiscipline, errors: enErrors, onboarding: enOnboarding,
   hrSelfService: enHrSelfService,

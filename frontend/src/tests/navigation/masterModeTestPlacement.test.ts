@@ -3,11 +3,26 @@ import fs from 'fs'
 import path from 'path'
 import frCommon from '@/locales/fr/common.json'
 import enCommon from '@/locales/en/common.json'
+import frMaster from '@/locales/fr/master.json'
+import enMaster from '@/locales/en/master.json'
 
-describe('Chantier E — Mode test Global + Par Établissement (exclusif super_admin) & Bandeau global', () => {
+function flattenKeys(obj: Record<string, unknown>, prefix = ''): string[] {
+  const keys: string[] = []
+  for (const [k, v] of Object.entries(obj)) {
+    const next = prefix ? `${prefix}.${k}` : k
+    if (v && typeof v === 'object' && !Array.isArray(v)) {
+      keys.push(...flattenKeys(v as Record<string, unknown>, next))
+    } else {
+      keys.push(next)
+    }
+  }
+  return keys.sort()
+}
+
+describe('Chantier E — Mode test Global + Par Établissement, i18n master.json FR/EN & gouvernance Master', () => {
   const srcRoot = path.resolve(__dirname, '../..')
 
-  it('monte SectionModeTest dans le dashboard Master uniquement pour super_admin et utilise _api.ts', () => {
+  it('monte SectionModeTest dans le dashboard Master pour les rôles autorisés et utilise _api.ts', () => {
     const masterPage = fs.readFileSync(path.join(srcRoot, 'app/master/dashboard/page.tsx'), 'utf8')
     const masterApi = fs.readFileSync(path.join(srcRoot, 'app/master/dashboard/_api.ts'), 'utf8')
     const sectionModeTest = fs.readFileSync(
@@ -37,7 +52,7 @@ describe('Chantier E — Mode test Global + Par Établissement (exclusif super_a
     expect(adminSectionDashboard).not.toContain('outboundMessagingEnabled')
   })
 
-  it('verrouille le coupe-circuit global au seul super_admin, ouvre le mode test par école aux opérateurs autorisés, et réserve SectionTeam au super_admin', () => {
+  it('verrouille le coupe-circuit global au seul super_admin, intègre LanguageSwitch/ThemeToggle et réserve SectionTeam au super_admin', () => {
     const topbar = fs.readFileSync(
       path.join(srcRoot, 'app/master/dashboard/_components/MasterTopbar.tsx'),
       'utf8',
@@ -56,12 +71,27 @@ describe('Chantier E — Mode test Global + Par Établissement (exclusif super_a
     )
 
     expect(topbar).toContain("if (id === 'team') return role === 'super_admin'")
+    expect(topbar).toContain('LanguageSwitch')
+    expect(topbar).toContain('ThemeToggle')
     expect(bottomNav).toContain("if (item.id === 'team') return userRole === 'super_admin'")
     expect(sectionModeTest).toContain("const isSuperAdmin = user?.role === 'super_admin'")
-    expect(sectionModeTest).toContain('Réservé au Fondateur (super_admin)')
+    expect(sectionModeTest).toContain("useT('master')")
+    expect(sectionModeTest).toContain("t('mode_test.reserved_founder')")
+    expect(sectionModeTest).not.toContain("t('dashboard.mode_test_")
     expect(sectionTeam).toContain('fetchMasterTeam')
     expect(sectionTeam).toContain('createMasterTeamMember')
-    expect(sectionTeam).toContain('Propriétaire (Fondateur)')
+    expect(sectionTeam).toContain("useT('master')")
+    expect(sectionTeam).toContain("t('team.owner_badge')")
+  })
+
+  it('assure la parité stricte FR/EN du namespace dédié master.json et aucune clé brute dans Mode test', () => {
+    const frKeys = flattenKeys(frMaster as unknown as Record<string, unknown>)
+    const enKeys = flattenKeys(enMaster as unknown as Record<string, unknown>)
+    expect(frKeys).toEqual(enKeys)
+    expect(frMaster.mode_test.titre).toBe('Mode test & Coupe-circuit des envois sortants')
+    expect(enMaster.mode_test.titre).toBe('Test Mode & Outbound Messaging Kill-Switch')
+    expect(frMaster.team.owner_badge).toBe('Propriétaire (Fondateur)')
+    expect(enMaster.team.owner_badge).toBe('Owner (Founder)')
   })
 
   it('utilise uniquement l’endpoint public (scopé par schoolId) dans ModeTestBanner et le monte sur Master et les dashboards écoles', () => {
