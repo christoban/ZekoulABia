@@ -521,13 +521,15 @@ function InviteForm({ selectedPlan, onPlanChange, loading, onCancel, onDone, onE
   onDone: (msg: string) => void
   onError: (msg: string) => void
 }) {
-  const [step, setStep] = useState<'details' | 'confirm'>('details')
+  const [step, setStep] = useState<'details' | 'confirm' | 'done'>('details')
   const [email, setEmail] = useState('')
   const [schoolName, setSchoolName] = useState('')
   const [password, setPassword] = useState('')
   const [mfaCode, setMfaCode] = useState('')
   const [mfaEnabled, setMfaEnabled] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [activationUrl, setActivationUrl] = useState<string | null>(null)
+  const [copiedUrl, setCopiedUrl] = useState(false)
 
   useEffect(() => {
     fetchMasterMfaStatus()
@@ -549,18 +551,69 @@ function InviteForm({ selectedPlan, onPlanChange, loading, onCancel, onDone, onE
 
     setSubmitting(true)
     try {
-      await inviteSchool({
+      const res = await inviteSchool({
         email,
         schoolName,
         plan: PLAN_MAP[selectedPlan],
         sensitiveAuth: { password: password.trim(), ...(mfaEnabled && { code: mfaCode.trim() }) },
       })
-      onDone(`Invitation envoyée à ${email}`)
+      if (res?.activationUrl) {
+        setActivationUrl(res.activationUrl)
+        setStep('done')
+      } else {
+        onDone(`Invitation envoyée à ${email}`)
+      }
     } catch (err: any) {
       onError(err.message || 'Erreur lors de l\'invitation')
     } finally {
       setSubmitting(false)
     }
+  }
+
+  if (step === 'done' && activationUrl) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ background: '#ecfdf5', border: '1px solid #10b981', borderRadius: 12, padding: 14 }}>
+          <div style={{ fontSize: 13.5, fontWeight: 800, color: '#065f46', marginBottom: 4 }}>
+            Invitation créée pour {schoolName}
+          </div>
+          <div style={{ fontSize: 12, color: '#047857' }}>
+            Si l’adresse <strong>{email}</strong> est fictive (test), copiez directement le lien d’activation ci-dessous pour finaliser l’onboarding de l’école :
+          </div>
+          <div style={{ marginTop: 10, padding: '8px 10px', background: '#fff', border: '1px solid #a7f3d0', borderRadius: 8, fontSize: 11.5, fontFamily: 'monospace', wordBreak: 'break-all', color: '#1a1209' }}>
+            {activationUrl}
+          </div>
+          <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(activationUrl)
+                  setCopiedUrl(true)
+                } catch { /* ignore */ }
+              }}
+              style={{
+                padding: '7px 12px',
+                borderRadius: 8,
+                border: 'none',
+                background: '#059669',
+                color: '#fff',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              {copiedUrl ? 'Lien copié !' : 'Copier le lien d’activation'}
+            </button>
+          </div>
+        </div>
+        <ModalFooter>
+          <BtnPrimary onClick={() => onDone(`Invitation créée pour ${schoolName}`)}>
+            Terminer
+          </BtnPrimary>
+        </ModalFooter>
+      </div>
+    )
   }
 
   if (step === 'details') {

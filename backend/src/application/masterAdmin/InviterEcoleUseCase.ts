@@ -28,6 +28,7 @@ export interface InviterEcoleResultat {
   token: string;
   expiresAt: Date;
   schoolId: string;
+  activationUrl: string;
 }
 
 export class InviterEcoleUseCase {
@@ -68,6 +69,7 @@ export class InviterEcoleUseCase {
         educationType: 'GENERAL',
         ownership: 'PRIVATE_SECULAR',
         plan: commande.plan,
+        createdByMasterId: commande.masterAdminId,
       });
 
       await this.schoolRepository.save(school);
@@ -117,6 +119,7 @@ export class InviterEcoleUseCase {
       token: invitation.token,
       expiresAt,
       schoolId,
+      activationUrl,
     };
   }
 }

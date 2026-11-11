@@ -10,6 +10,11 @@ import type { ChangerStatutEcoleUseCase } from '@application/masterAdmin/Changer
 import type { SynchroniserMatieresEcoleUseCase } from '@application/masterAdmin/SynchroniserMatieresEcoleUseCase';
 import type { ReinitialiserMfaUtilisateurUseCase } from '@application/masterAdmin/ReinitialiserMfaUtilisateurUseCase';
 import { MasterAdminNotFoundError, MasterAdminValidationError } from '@application/masterAdmin/errors';
+import {
+  estSuperAdminMaster,
+  peutVoirEcoleMaster,
+  verifierAccesGestionEcoleMaster,
+} from '@application/masterAdmin/masterSchoolAccess';
 import type { MasterAdminQueryRepository } from '@domain/ports/repositories/MasterAdminQueryRepository';
 import type { PlanType, SchoolSubsystem } from '@domain/types/enums';
 import type { EventPublisher } from '@domain/ports/services/EventPublisher';
@@ -60,10 +65,27 @@ export class MasterAdminHexController {
     }
   };
 
+  private async verifierAccesGestion(req: Request, res: Response, schoolId: string): Promise<boolean> {
+    const check = await verifierAccesGestionEcoleMaster(this.queryRepo, req.masterUser, schoolId);
+    if (check.introuvable) {
+      res.status(404).json({ success: false, message: 'École introuvable' });
+      return false;
+    }
+    if (!check.autorise) {
+      res.status(403).json({
+        success: false,
+        message: "Vous n'êtes autorisé à gérer que les établissements que vous avez créés ou qui vous sont assignés",
+      });
+      return false;
+    }
+    return true;
+  }
+
   // POST /api/v2/master/schools/:id/suspend
   suspendreEcole = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const id = req.params.id as string;
+      if (!(await this.verifierAccesGestion(req, res, id))) return;
       const master = req.masterUser;
       await this.suspendre.execute(id);
       void logMasterAction({ req, masterUserId: master?.id, action: 'school_suspended', targetId: id, description: `École ${id} suspendue` });
@@ -77,6 +99,7 @@ export class MasterAdminHexController {
   reactiverEcole = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const id = req.params.id as string;
+      if (!(await this.verifierAccesGestion(req, res, id))) return;
       const master = req.masterUser;
       await this.reactiver.execute(id);
       void logMasterAction({ req, masterUserId: master?.id, action: 'school_reactivated', targetId: id, description: `École ${id} réactivée` });
@@ -90,6 +113,7 @@ export class MasterAdminHexController {
   rejeterEcole = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const id = req.params.id as string;
+      if (!(await this.verifierAccesGestion(req, res, id))) return;
       const master = req.masterUser;
       const { motif } = req.body;
       if (!motif) {
@@ -107,13 +131,15 @@ export class MasterAdminHexController {
   // PATCH /api/v2/master/schools/:id/plan
   changerPlanEcole = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+      const id = req.params.id as string;
+      if (!(await this.verifierAccesGestion(req, res, id))) return;
       const { plan } = req.body;
       if (!plan) {
         res.status(400).json({ success: false, message: 'plan requis (DISCOVERY/STANDARD/PREMIUM/ETABLISSEMENT_PLUS)' });
         return;
       }
       await this.changerPlan.execute({
-        schoolId: req.params.id as string,
+        schoolId: id,
         nouveauPlan: plan as PlanType,
       });
       res.json({ success: true, message: `Plan changé vers ${plan}` });
@@ -128,16 +154,43 @@ export class MasterAdminHexController {
       const { status, search, page = '1', limit = '50' } = req.query;
       const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
       const take = parseInt(limit as string);
+      const master = req.masterUser;
 
-      const where: Record<string, unknown> = {};
-      if (status) where.status = status;
+      const andConditions: Record<string, unknown>[] = [];
+      if (status) andConditions.push({ status });
       if (search) {
-        where.OR = [
-          { name: { contains: search as string, mode: 'insensitive' } },
-          { subdomain: { contains: search as string, mode: 'insensitive' } },
-          { email: { contains: search as string, mode: 'insensitive' } },
-        ];
+        andConditions.push({
+          OR: [
+            { name: { contains: search as string, mode: 'insensitive' } },
+            { subdomain: { contains: search as string, mode: 'insensitive' } },
+            { email: { contains: search as string, mode: 'insensitive' } },
+          ],
+        });
       }
+
+      // Isolation par créateur / assignation pour les rôles non super_admin
+      if (master && !estSuperAdminMaster(master)) {
+        const assigned = master.assignedSchoolIds ?? [];
+        if (master.role === 'support') {
+          if (assigned.length > 0) {
+            andConditions.push({ id: { in: assigned } });
+          }
+        } else {
+          andConditions.push({
+            OR: [
+              { createdByMasterId: master.id },
+              ...(assigned.length > 0 ? [{ id: { in: assigned } }] : []),
+            ],
+          });
+        }
+      }
+
+      const where: Record<string, unknown> =
+        andConditions.length === 0
+          ? {}
+          : andConditions.length === 1
+            ? andConditions[0]
+            : { AND: andConditions };
 
       const [schools, total] = await Promise.all([
         this.queryRepo.listSchools(where, skip, take),
@@ -157,7 +210,19 @@ export class MasterAdminHexController {
   // GET /api/v2/master/schools/:id
   detailEcole = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const school = await this.queryRepo.findSchoolWithDetail(req.params.id as string);
+      const id = req.params.id as string;
+      const basic = await this.queryRepo.findSchoolBasic(id);
+      if (!basic) {
+        res.status(404).json({ success: false, message: 'École introuvable' });
+        return;
+      }
+
+      if (!peutVoirEcoleMaster(req.masterUser, basic.id, basic.createdByMasterId)) {
+        res.status(403).json({ success: false, message: "Accès non autorisé à cet établissement" });
+        return;
+      }
+
+      const school = await this.queryRepo.findSchoolWithDetail(id);
 
       if (!school) {
         res.status(404).json({ success: false, message: 'École introuvable' });
@@ -174,6 +239,7 @@ export class MasterAdminHexController {
   supprimerEcole = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const id = req.params.id as string;
+      if (!(await this.verifierAccesGestion(req, res, id))) return;
       const master = req.masterUser;
 
       const { schoolName } = await this.supprimerEcoleUC.execute(id);
@@ -189,6 +255,7 @@ export class MasterAdminHexController {
   renvoyerInvitation = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const id = req.params.id as string;
+      if (!(await this.verifierAccesGestion(req, res, id))) return;
       const { email, schoolName, newToken } = await this.renvoyerInvitationUC.execute(id);
 
       const frontendUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
@@ -198,7 +265,7 @@ export class MasterAdminHexController {
       void logMasterAction({ req, masterUserId: master?.id, action: 'school_invite_resent', targetId: id, description: `Invitation renvoyée à ${email} pour «${schoolName}»` });
 
       // Répondre immédiatement — l'email s'envoie en arrière-plan
-      res.json({ success: true, message: `Invitation renvoyée à ${email}` });
+      res.json({ success: true, message: `Invitation renvoyée à ${email}`, data: { activationUrl, token: newToken } });
 
       sendTransactionalEmail({
         recipientEmail: email,
@@ -212,6 +279,7 @@ export class MasterAdminHexController {
         `,
         template: 'school_invite',
         eventType: 'school_invite',
+        metadata: { schoolId: id },
       }).catch(err => console.error('[Email] Échec renvoi invitation:', err));
     } catch (error) {
       this.gererErreur(error, res, next);
@@ -222,6 +290,7 @@ export class MasterAdminHexController {
   annulerApprobationEcole = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const id = req.params.id as string;
+      if (!(await this.verifierAccesGestion(req, res, id))) return;
       const { schoolName } = await this.changerStatutUC.annulerApprobation(id);
       const master = req.masterUser;
       void logMasterAction({ req, masterUserId: master?.id, action: 'school_approval_cancelled', targetId: id, description: `«${schoolName}» approbation annulée (APPROVED → PENDING)` });
@@ -235,6 +304,7 @@ export class MasterAdminHexController {
   reexaminerEcole = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const id = req.params.id as string;
+      if (!(await this.verifierAccesGestion(req, res, id))) return;
       const { schoolName } = await this.changerStatutUC.reexaminer(id);
       const master = req.masterUser;
       void logMasterAction({ req, masterUserId: master?.id, action: 'school_reexamined', targetId: id, description: `«${schoolName}» remise en examen (REJECTED → PENDING)` });
@@ -258,6 +328,10 @@ export class MasterAdminHexController {
         where.NOT = { action: { startsWith: 'action:' } };
       } else if (type === 'actions') {
         where.action = { startsWith: 'action:' };
+      }
+
+      if (req.masterUser && !estSuperAdminMaster(req.masterUser)) {
+        where.masterUserId = req.masterUser.id;
       }
 
       const [logs, total] = await Promise.all([
@@ -312,6 +386,7 @@ export class MasterAdminHexController {
   syncSubjects = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const id = req.params.id as string;
+      if (!(await this.verifierAccesGestion(req, res, id))) return;
 
       const resultat = await this.synchroniserMatieresUC.execute(id);
 

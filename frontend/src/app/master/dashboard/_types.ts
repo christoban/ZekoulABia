@@ -1,9 +1,27 @@
 import type { LucideIcon } from 'lucide-react'
-import type { MasterUserDto, SchoolDto, AuditLogDto, SchoolDetailDto, PlatformSettingsDto, SuppressedOutboundMessageDto } from './_api'
+import type {
+  MasterUserDto,
+  SchoolDto,
+  AuditLogDto,
+  SchoolDetailDto,
+  PlatformSettingsDto,
+  SuppressedOutboundMessageDto,
+  MasterTeamMemberDto,
+  MasterTeamRole,
+} from './_api'
 
-export type { MasterUserDto, SchoolDto, AuditLogDto, SchoolDetailDto, PlatformSettingsDto, SuppressedOutboundMessageDto }
+export type {
+  MasterUserDto,
+  SchoolDto,
+  AuditLogDto,
+  SchoolDetailDto,
+  PlatformSettingsDto,
+  SuppressedOutboundMessageDto,
+  MasterTeamMemberDto,
+  MasterTeamRole,
+}
 
-export type Section = 'overview' | 'schools' | 'referentiels' | 'logs' | 'mode-test'
+export type Section = 'overview' | 'schools' | 'referentiels' | 'logs' | 'mode-test' | 'team'
 export type ReferentielModule = 'calendar' | 'bac' | 'templates' | 'progressions' | 'tarifs'
 export type SchoolTab = 'all' | 'pending' | 'approved' | 'active' | 'suspended' | 'draft' | 'rejected'
 export type LogTab = 'emails' | 'auth' | 'security'
@@ -39,6 +57,8 @@ export interface SchoolRow {
   inviteStatus: string
   inviteExpiry?: string
   createdAt: string
+  createdByMasterId?: string | null
+  createdByMaster?: { id: string; name: string; email: string; role: string } | null
 }
 
 export interface KpiData {

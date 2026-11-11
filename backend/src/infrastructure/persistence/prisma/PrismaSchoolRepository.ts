@@ -63,6 +63,7 @@ export class PrismaSchoolRepository implements SchoolRepository {
         onboardingConfig: data.onboardingConfig ?? undefined,
         saturdaySchedule: data.saturdaySchedule,
         contractEnd: data.contractEnd,
+        createdByMasterId: data.createdByMasterId ?? null,
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
       },
@@ -148,6 +149,7 @@ export class PrismaSchoolRepository implements SchoolRepository {
       adminGereInscriptions: data.adminGereInscriptions ?? false,
       adminGereFinances: data.adminGereFinances ?? true,
       contractEnd: data.contractEnd ?? undefined,
+      createdByMasterId: data.createdByMasterId ?? undefined,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     });

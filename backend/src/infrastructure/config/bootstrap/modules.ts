@@ -432,7 +432,7 @@ export function registerModulesRoutes(app: Application, p: typeof prisma = prism
   // → ne pas répéter protectMaster ici pour éviter la double requête MasterUser
   app.post(
     '/api/v2/master/schools/:id/approve',
-    authorizeMaster(['super_admin', 'platform_admin']),
+    authorizeMaster(['super_admin', 'platform_admin', 'school_manager']),
     requireMasterSensitiveAuth,
     onboardingControllerForMaster2.approuverEcole,
   );

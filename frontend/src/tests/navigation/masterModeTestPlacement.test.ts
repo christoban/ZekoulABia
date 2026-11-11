@@ -37,7 +37,7 @@ describe('Chantier E — Mode test Global + Par Établissement (exclusif super_a
     expect(adminSectionDashboard).not.toContain('outboundMessagingEnabled')
   })
 
-  it('verrouille la visibilité et l’accès au seul super_admin (navigation + composant)', () => {
+  it('verrouille le coupe-circuit global au seul super_admin, ouvre le mode test par école aux opérateurs autorisés, et réserve SectionTeam au super_admin', () => {
     const topbar = fs.readFileSync(
       path.join(srcRoot, 'app/master/dashboard/_components/MasterTopbar.tsx'),
       'utf8',
@@ -50,11 +50,18 @@ describe('Chantier E — Mode test Global + Par Établissement (exclusif super_a
       path.join(srcRoot, 'app/master/dashboard/_components/SectionModeTest.tsx'),
       'utf8',
     )
+    const sectionTeam = fs.readFileSync(
+      path.join(srcRoot, 'app/master/dashboard/_components/SectionTeam.tsx'),
+      'utf8',
+    )
 
-    expect(topbar).toContain("n.id !== 'mode-test' || user?.role === 'super_admin'")
-    expect(bottomNav).toContain("item.id !== 'mode-test' || userRole === 'super_admin'")
+    expect(topbar).toContain("if (id === 'team') return role === 'super_admin'")
+    expect(bottomNav).toContain("if (item.id === 'team') return userRole === 'super_admin'")
     expect(sectionModeTest).toContain("const isSuperAdmin = user?.role === 'super_admin'")
-    expect(sectionModeTest).not.toContain('platform_admin')
+    expect(sectionModeTest).toContain('Réservé au Fondateur (super_admin)')
+    expect(sectionTeam).toContain('fetchMasterTeam')
+    expect(sectionTeam).toContain('createMasterTeamMember')
+    expect(sectionTeam).toContain('Propriétaire (Fondateur)')
   })
 
   it('utilise uniquement l’endpoint public (scopé par schoolId) dans ModeTestBanner et le monte sur Master et les dashboards écoles', () => {

@@ -28,6 +28,7 @@ export interface SchoolProps {
   adminGereInscriptions?: boolean;
   adminGereFinances?: boolean;
   contractEnd?: Date;
+  createdByMasterId?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -46,6 +47,7 @@ export interface CreerSchoolProps {
   email?: string;
   templateCode?: string;
   onboardingConfig?: JsonValue | null;
+  createdByMasterId?: string | null;
 }
 
 export class School {
@@ -91,6 +93,7 @@ export class School {
   get onboardingConfig(): JsonValue | null | undefined { return this.props.onboardingConfig; }
   get adminGereInscriptions(): boolean { return this.props.adminGereInscriptions ?? false; }
   get adminGereFinances(): boolean { return this.props.adminGereFinances ?? true; }
+  get createdByMasterId(): string | null | undefined { return this.props.createdByMasterId; }
 
   // --- Méthodes métier ---
 

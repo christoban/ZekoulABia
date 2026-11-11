@@ -9,6 +9,7 @@ export interface EcoleDetail {
   status: string;
   onboardingConfig: unknown;
   templateCode: string | null;
+  createdByMasterId?: string | null;
 }
 
 export interface EcoleInvitePending {

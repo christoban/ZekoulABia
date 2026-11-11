@@ -73,6 +73,7 @@ async function bootstrapMaster() {
       name: "Ndzana Christophe",
       role: "SUPER_ADMIN",
       isSuperAdmin: true,
+      isOwner: true,
       isActive: true,
       mfaEnabled: false,      // MFA désactivée → à re-setup via l'interface
       mfaSecret: null,

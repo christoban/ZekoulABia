@@ -24,6 +24,8 @@ declare global {
         role: MasterUserRole;
         name?: string;
         isActive?: boolean;
+        isOwner?: boolean;
+        assignedSchoolIds?: string[];
       };
       groupOwner?: {
         id: string;
@@ -63,20 +65,35 @@ export const protectMaster = async (req: Request, res: Response, next: NextFunct
 
     const masterUser = await prisma.masterUser.findUnique({
       where: { id: decoded.id },
-      select: { id: true, email: true, name: true, isSuperAdmin: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isSuperAdmin: true,
+        isOwner: true,
+        isActive: true,
+        assignedSchoolIds: true,
+      },
     });
 
-    if (!masterUser) {
-      return res.status(401).json({ message: "Master account not authorized" });
+    if (!masterUser || !masterUser.isActive) {
+      return res.status(401).json({ message: "Master account not authorized or suspended" });
     }
+
+    const dbRole = masterUser.isSuperAdmin || masterUser.role === "SUPER_ADMIN"
+      ? "super_admin"
+      : (masterUser.role.toLowerCase() as MasterUserRole);
 
     req.masterUser = {
       id: masterUser.id,
       _id: masterUser.id,
       email: masterUser.email,
-      role: masterUser.isSuperAdmin ? "super_admin" : (decoded.role || "support"),
+      role: dbRole,
       name: masterUser.name,
-      isActive: true,
+      isActive: masterUser.isActive,
+      isOwner: masterUser.isOwner,
+      assignedSchoolIds: masterUser.assignedSchoolIds ?? [],
     };
 
     return next();

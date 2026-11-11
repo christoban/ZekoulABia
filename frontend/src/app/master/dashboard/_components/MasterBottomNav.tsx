@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { LayoutDashboard, School, ShieldCheck, Shield, ShieldAlert, Menu } from 'lucide-react'
+import { LayoutDashboard, School, ShieldCheck, Shield, ShieldAlert, Users, Menu } from 'lucide-react'
 import type { Section } from '../_types'
 
 interface Props {
@@ -57,6 +57,13 @@ const NAV_ITEMS: BottomNavItem[] = [
     dotColor: '#ef4444',
   },
   {
+    id: 'team',
+    section: 'team',
+    label: "Équipe",
+    icon: Users,
+    dotColor: '#a855f7',
+  },
+  {
     id: 'menu',
     label: "Compte",
     icon: Menu,
@@ -65,9 +72,12 @@ const NAV_ITEMS: BottomNavItem[] = [
 ]
 
 export default function MasterBottomNav({ currentSection, userRole, onNav, onOpenMenu }: Props) {
-  const visibleItems = NAV_ITEMS.filter(
-    (item) => item.id !== 'mode-test' || userRole === 'super_admin'
-  )
+  const visibleItems = NAV_ITEMS.filter((item) => {
+    if (item.id === 'team') return userRole === 'super_admin'
+    if (item.id === 'mode-test') return userRole === 'super_admin' || userRole === 'platform_admin' || userRole === 'school_manager'
+    if (item.id === 'referentiels') return userRole === 'super_admin' || userRole === 'platform_admin'
+    return true
+  })
 
   return (
     <nav

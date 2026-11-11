@@ -323,7 +323,10 @@ export default function SectionSchools({ schools, loading, activeTab, onTabChang
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'white'}>
                   <td style={{ padding: '6px 8px', verticalAlign: 'middle' }}>
                     <div style={{ fontWeight: 700, color: '#1a1209', fontSize: 13 }}>{school.name}</div>
-                    <div style={{ fontSize: 11, color: '#a89478', marginTop: 1, fontWeight: 500 }}>{school.subdomain}</div>
+                    <div style={{ fontSize: 11, color: '#a89478', marginTop: 1, fontWeight: 500 }}>
+                      {school.subdomain}
+                      {school.createdByMaster ? ` · par ${school.createdByMaster.name}` : ''}
+                    </div>
                   </td>
                   <td style={tdStyle}>{school.type}</td>
                   <td style={{ padding: '6px 8px', verticalAlign: 'middle' }}>

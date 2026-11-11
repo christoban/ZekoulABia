@@ -22,6 +22,7 @@ export class PrismaMasterAdminQueryRepository implements MasterAdminQueryReposit
       include: {
         invites: { where: { status: 'PENDING' }, take: 1, orderBy: { createdAt: 'desc' } },
         users: { where: { role: 'ADMIN', isActive: true }, take: 1, select: { email: true } },
+        createdByMaster: { select: { id: true, name: true, email: true, role: true } },
         _count: { select: { users: true, classes: true } },
       },
     });
@@ -36,6 +37,7 @@ export class PrismaMasterAdminQueryRepository implements MasterAdminQueryReposit
       where: { id },
       include: {
         invites: { orderBy: { createdAt: 'desc' }, take: 5 },
+        createdByMaster: { select: { id: true, name: true, email: true, role: true } },
         schoolConfig: true,
         schoolSettings: true,
         _count: { select: { users: true, classes: true, subjects: true, feePlans: true } },
@@ -46,7 +48,14 @@ export class PrismaMasterAdminQueryRepository implements MasterAdminQueryReposit
   async findSchoolBasic(id: string): Promise<EcoleDetail | null> {
     const row = await this.prisma.school.findUnique({
       where: { id },
-      select: { id: true, name: true, status: true, onboardingConfig: true, templateCode: true },
+      select: {
+        id: true,
+        name: true,
+        status: true,
+        onboardingConfig: true,
+        templateCode: true,
+        createdByMasterId: true,
+      },
     });
     return row ? {
       id: row.id,
@@ -54,6 +63,7 @@ export class PrismaMasterAdminQueryRepository implements MasterAdminQueryReposit
       status: row.status,
       onboardingConfig: row.onboardingConfig,
       templateCode: row.templateCode,
+      createdByMasterId: row.createdByMasterId,
     } : null;
   }
 
@@ -127,6 +137,7 @@ export class PrismaMasterAdminQueryRepository implements MasterAdminQueryReposit
 
   async supprimerEcole(id: string): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
+      await tx.schoolInvite.deleteMany({ where: { schoolId: id } });
       // TeacherSubject : la cascade School→Subject→TeacherSubject ne passe pas par schoolId direct
       await tx.teacherSubject.deleteMany({ where: { subject: { schoolId: id } } });
       // User.schoolId est nullable (SetNull par défaut) → les users resteraient orphelins sans cette ligne

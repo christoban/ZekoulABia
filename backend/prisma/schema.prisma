@@ -16,6 +16,7 @@ model MasterUser {
   assignedSchoolIds               String[]          @default([])
   isActive                        Boolean           @default(true)
   isSuperAdmin                    Boolean           @default(false)
+  isOwner                         Boolean           @default(false)
   mfaEnabled                      Boolean           @default(false)
   mfaSecret                       String?
   mfaTempSecret                   String?
@@ -33,6 +34,7 @@ model MasterUser {
   updatedAt                       DateTime          @updatedAt
   auditLogs                       MasterAuthAudit[]
   schoolInvites                   SchoolInvite[]
+  createdSchools                  School[]          @relation("SchoolCreatedByMaster")
 
   @@index([loginEmailOtpExpiresAt])
   @@index([passwordChangeEmailOtpExpiresAt])
@@ -172,6 +174,8 @@ model School {
   defaultMaxWeeklyHours        Int?
   createdAt                    DateTime                        @default(now())
   updatedAt                    DateTime                        @updatedAt
+  createdByMasterId            String?
+  createdByMaster              MasterUser?                     @relation("SchoolCreatedByMaster", fields: [createdByMasterId], references: [id], onDelete: SetNull)
   templateCode                 String?
   onboardingConfig             Json?
   sequences                    AcademicSequence[]

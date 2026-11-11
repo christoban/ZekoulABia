@@ -21,6 +21,8 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
   const t = useT('admin')
 
   const isSuperAdmin = user?.role === 'super_admin'
+  const canManageSchools =
+    isSuperAdmin || user?.role === 'platform_admin' || user?.role === 'school_manager'
 
   const [modeTest, setModeTest] = useState<boolean | null>(null)
   const [disabledSchoolIds, setDisabledSchoolIds] = useState<string[]>([])
@@ -33,20 +35,27 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
   const [messagesSupprimesLoading, setMessagesSupprimesLoading] = useState(false)
 
   const chargerMessagesSupprimes = useCallback(async (schoolIdFilter?: string) => {
-    if (!isSuperAdmin) return
+    if (!canManageSchools) return
+    const effectiveFilter = isSuperAdmin
+      ? schoolIdFilter || null
+      : schoolIdFilter || schools[0]?.id || null
+    if (!isSuperAdmin && !effectiveFilter) {
+      setMessagesSupprimes([])
+      return
+    }
     setMessagesSupprimesLoading(true)
     try {
-      const rows = await fetchSuppressedOutboundMessages(100, schoolIdFilter || null)
+      const rows = await fetchSuppressedOutboundMessages(100, effectiveFilter)
       setMessagesSupprimes(rows)
     } catch {
       setMessagesSupprimes([])
     } finally {
       setMessagesSupprimesLoading(false)
     }
-  }, [isSuperAdmin])
+  }, [canManageSchools, isSuperAdmin, schools])
 
   const chargerModeTest = useCallback(async () => {
-    if (!isSuperAdmin) return
+    if (!canManageSchools) return
     try {
       const settings = await fetchPlatformSettings()
       setModeTest(settings.outboundMessagingEnabled)
@@ -55,7 +64,13 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
     } catch {
       setModeTest(null)
     }
-  }, [isSuperAdmin, chargerMessagesSupprimes, filtreEcoleMessages])
+  }, [canManageSchools, chargerMessagesSupprimes, filtreEcoleMessages])
+
+  useEffect(() => {
+    if (!isSuperAdmin && !filtreEcoleMessages && schools.length > 0) {
+      setFiltreEcoleMessages(schools[0].id)
+    }
+  }, [isSuperAdmin, filtreEcoleMessages, schools])
 
   useEffect(() => {
     void chargerModeTest()
@@ -89,7 +104,7 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
   }
 
   const basculerModeTestEcole = async (schoolId: string, schoolName: string, prochainEtatEnvoiActif: boolean) => {
-    if (!isSuperAdmin) return
+    if (!canManageSchools) return
     setSchoolBusyId(schoolId)
     try {
       const updated = await updatePlatformSettings(prochainEtatEnvoiActif, schoolId)
@@ -136,7 +151,7 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
     })
   }, [schools, schoolSearch, disabledSchoolIds])
 
-  if (!isSuperAdmin) {
+  if (!canManageSchools) {
     return (
       <div style={{ padding: 24 }}>
         <div
@@ -149,7 +164,7 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
             fontSize: 13,
           }}
         >
-          Accès strictement réservé au fondateur (`super_admin`).
+          Accès réservé aux opérateurs autorisés (`super_admin`, `platform_admin`, `school_manager`).
         </div>
       </div>
     )
@@ -180,7 +195,9 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
                 {t('dashboard.mode_test_titre')}
               </h1>
               <p style={{ margin: '2px 0 0', fontSize: 12.5, color: 'var(--text-secondary)' }}>
-                Contrôle exclusif Fondateur (`super_admin`) — Global Plateforme & Par Établissement
+                {isSuperAdmin
+                  ? 'Contrôle Fondateur (super_admin) — Global Plateforme & Par Établissement'
+                  : 'Contrôle Mode test sur vos établissements créés ou assignés'}
               </p>
             </div>
           </div>
@@ -239,42 +256,58 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
                 </div>
               </div>
 
-              {modeTest ? (
-                <button
-                  type="button"
-                  disabled={modeTestBusy}
-                  onClick={() => setConfirmDesactivation(true)}
-                  style={{
-                    padding: '8px 14px',
-                    borderRadius: 8,
-                    border: '1px solid var(--red)',
-                    background: 'var(--surface)',
-                    color: 'var(--red)',
-                    fontSize: 12.5,
-                    fontWeight: 700,
-                    cursor: modeTestBusy ? 'wait' : 'pointer',
-                  }}
-                >
-                  {t('dashboard.mode_test_btn_desactiver')}
-                </button>
+              {isSuperAdmin ? (
+                modeTest ? (
+                  <button
+                    type="button"
+                    disabled={modeTestBusy}
+                    onClick={() => setConfirmDesactivation(true)}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: 8,
+                      border: '1px solid var(--red)',
+                      background: 'var(--surface)',
+                      color: 'var(--red)',
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      cursor: modeTestBusy ? 'wait' : 'pointer',
+                    }}
+                  >
+                    {t('dashboard.mode_test_btn_desactiver')}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={modeTestBusy}
+                    onClick={() => void basculerModeTestGlobal(true)}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: 'var(--green)',
+                      color: '#fff',
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      cursor: modeTestBusy ? 'wait' : 'pointer',
+                    }}
+                  >
+                    {t('dashboard.mode_test_btn_activer')}
+                  </button>
+                )
               ) : (
-                <button
-                  type="button"
-                  disabled={modeTestBusy}
-                  onClick={() => void basculerModeTestGlobal(true)}
+                <span
                   style={{
-                    padding: '8px 14px',
-                    borderRadius: 8,
-                    border: 'none',
-                    background: 'var(--green)',
-                    color: '#fff',
-                    fontSize: 12.5,
+                    fontSize: 11.5,
                     fontWeight: 700,
-                    cursor: modeTestBusy ? 'wait' : 'pointer',
+                    color: 'var(--text-muted)',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    padding: '6px 10px',
+                    borderRadius: 8,
                   }}
                 >
-                  {t('dashboard.mode_test_btn_activer')}
-                </button>
+                  Réservé au Fondateur (super_admin)
+                </span>
               )}
             </div>
 
@@ -496,7 +529,7 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
                   color: 'var(--text-primary)',
                 }}
               >
-                <option value="">Tous les établissements</option>
+                {isSuperAdmin && <option value="">Tous les établissements</option>}
                 {schools.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}

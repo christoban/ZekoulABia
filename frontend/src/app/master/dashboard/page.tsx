@@ -8,6 +8,7 @@ import SectionSchools from './_components/SectionSchools'
 import SectionReferentielsHub from './_components/SectionReferentielsHub'
 import SectionLogs from './_components/SectionLogs'
 import SectionModeTest from './_components/SectionModeTest'
+import SectionTeam from './_components/SectionTeam'
 import MasterModals from './_components/MasterModals'
 import SchoolSlideOver from './_components/SchoolSlideOver'
 import MasterToast from './_components/MasterToast'
@@ -47,7 +48,20 @@ function computeKpi(schools: SchoolRow[]): KpiData {
   }
 }
 
-function toSchoolRow(s: { id: string; name: string; subdomain: string; type: string; plan: string; status: string; email?: string | null; createdAt: string; invites?: { email: string; status: string; expiresAt: string }[]; users?: { email: string | null }[] }): SchoolRow {
+function toSchoolRow(s: {
+  id: string
+  name: string
+  subdomain: string
+  type: string
+  plan: string
+  status: string
+  email?: string | null
+  createdAt: string
+  createdByMasterId?: string | null
+  createdByMaster?: { id: string; name: string; email: string; role: string } | null
+  invites?: { email: string; status: string; expiresAt: string }[]
+  users?: { email: string | null }[]
+}): SchoolRow {
   const invite = s.invites?.[0]
   const hasPendingInvite = !!invite
   // Email admin : priorité school.email → user ADMIN → email invite
@@ -82,6 +96,8 @@ function toSchoolRow(s: { id: string; name: string; subdomain: string; type: str
     inviteStatus: hasPendingInvite ? invite!.status.toLowerCase() : '-',
     inviteExpiry: invite?.expiresAt ? new Date(invite.expiresAt).toLocaleDateString('fr-CM') : undefined,
     createdAt: new Date(s.createdAt).toLocaleDateString('fr-CM'),
+    createdByMasterId: s.createdByMasterId ?? null,
+    createdByMaster: s.createdByMaster ?? null,
   }
 }
 
@@ -337,9 +353,18 @@ export default function SuperAdminDashboard() {
           </div>
         )}
 
-        {visitedSections.has('mode-test') && user?.role === 'super_admin' && (
-          <div style={{ display: section === 'mode-test' ? 'block' : 'none', height: '100%' }}>
-            <SectionModeTest user={user} schools={schools} onToast={showToast} />
+        {visitedSections.has('mode-test') &&
+          (user?.role === 'super_admin' ||
+            user?.role === 'platform_admin' ||
+            user?.role === 'school_manager') && (
+            <div style={{ display: section === 'mode-test' ? 'block' : 'none', height: '100%' }}>
+              <SectionModeTest user={user} schools={schools} onToast={showToast} />
+            </div>
+          )}
+
+        {visitedSections.has('team') && user?.role === 'super_admin' && (
+          <div style={{ display: section === 'team' ? 'block' : 'none', height: '100%' }}>
+            <SectionTeam user={user} schools={schools} onToast={showToast} />
           </div>
         )}
       </main>

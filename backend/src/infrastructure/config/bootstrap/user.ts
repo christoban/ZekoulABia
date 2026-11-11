@@ -65,6 +65,16 @@ import { PrismaPlatformSettingsRepository } from '@infrastructure/persistence/pr
 import { PrismaSuppressedOutboundMessageRepository } from '@infrastructure/persistence/prisma/PrismaSuppressedOutboundMessageRepository';
 import { platformSettingsCachePartagee } from '@infrastructure/cache/PlatformSettingsCache';
 import { PlatformSettingsAuditAdapter } from '@infrastructure/services/audit/PlatformSettingsAuditAdapter';
+import { PrismaMasterTeamRepository } from '@infrastructure/persistence/prisma/PrismaMasterTeamRepository';
+import {
+  ListerEquipeMasterUseCase,
+  CreerMembreEquipeMasterUseCase,
+  ModifierMembreEquipeMasterUseCase,
+  ReinitialiserMotDePasseMembreMasterUseCase,
+  SupprimerMembreEquipeMasterUseCase,
+} from '@application/masterAdmin/team/GererEquipeMasterUseCases';
+import { MasterTeamController } from '@infrastructure/http/controllers/MasterTeamController';
+import { creerMasterTeamRoutes } from '@infrastructure/http/routes/masterTeam.routes';
 
 type Container = ReturnType<typeof creerContainer>;
 
@@ -171,6 +181,17 @@ export function registerUserRoutes(app: Application, prismaParam: typeof prisma 
   const verifyMfaUseCase = new VerifyMfaUseCase(masterUserAuthRepository);
   const masterAuthController = new MasterAuthController(loginMasterUseCase, verifyMfaUseCase, masterUserAuthRepository);
   app.use('/api/v2/master/auth', creerMasterAuthRoutes(masterAuthController));
+
+  const masterTeamRepository = new PrismaMasterTeamRepository(p);
+  const masterTeamController = new MasterTeamController(
+    new ListerEquipeMasterUseCase(masterTeamRepository),
+    new CreerMembreEquipeMasterUseCase(masterTeamRepository),
+    new ModifierMembreEquipeMasterUseCase(masterTeamRepository),
+    new ReinitialiserMotDePasseMembreMasterUseCase(masterTeamRepository),
+    new SupprimerMembreEquipeMasterUseCase(masterTeamRepository),
+  );
+  app.use('/api/v2/master/team', creerMasterTeamRoutes(masterTeamController));
+
   app.use('/api/v2/master', creerMasterAdminHexRoutes(masterAdminHexController));
 
   const platformSettingsRepository = new PrismaPlatformSettingsRepository(p);
@@ -183,6 +204,7 @@ export function registerUserRoutes(app: Application, prismaParam: typeof prisma 
       new PlatformSettingsAuditAdapter(p),
     ),
     new ListerMessagesSupprimesUseCase(new PrismaSuppressedOutboundMessageRepository(p)),
+    c.masterAdmin.queryRepository,
   );
   app.use('/api/v2/master/platform-settings', creerPlatformSettingsRoutes(platformSettingsController));
   app.use('/api/v2/platform-settings/public', creerPublicPlatformSettingsRoutes(platformSettingsController));

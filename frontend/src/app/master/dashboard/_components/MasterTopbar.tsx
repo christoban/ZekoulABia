@@ -22,7 +22,15 @@ const NAV: { id: Section; label: string; dotColor: string }[] = [
   { id: 'referentiels', label: 'Référentiels Nationaux',   dotColor: '#60a5fa' },
   { id: 'logs',         label: 'Logs & Sécurité',          dotColor: '#94a3b8' },
   { id: 'mode-test',    label: 'Mode test',                dotColor: '#ef4444' },
+  { id: 'team',         label: 'Équipe Master',            dotColor: '#a855f7' },
 ]
+
+function isNavVisible(id: Section, role?: string): boolean {
+  if (id === 'team') return role === 'super_admin'
+  if (id === 'mode-test') return role === 'super_admin' || role === 'platform_admin' || role === 'school_manager'
+  if (id === 'referentiels') return role === 'super_admin' || role === 'platform_admin'
+  return true
+}
 
 function initials(name: string): string {
   return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?'
@@ -108,7 +116,7 @@ export default function MasterTopbar({
 
       {/* Desktop horizontal navigation */}
       <nav className="hidden md:flex" style={{ gap: 6, margin: '0 12px' }}>
-        {NAV.filter(n => n.id !== 'mode-test' || user?.role === 'super_admin').map(n => (
+        {NAV.filter(n => isNavVisible(n.id, user?.role)).map(n => (
           <button key={n.id} onClick={() => onNav(n.id)}
             style={{
               padding: '6px 12px', borderRadius: 8,
