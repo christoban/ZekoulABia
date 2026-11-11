@@ -281,7 +281,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
 
   if (!isSuperAdmin) {
     return (
-      <div style={{ padding: '20px 24px' }}>
+      <div className="px-3.5 py-3.5 md:px-6 md:py-5">
         <div
           style={{
             background: 'var(--surface)',
@@ -299,11 +299,14 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
   }
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', padding: '20px 24px 48px', boxSizing: 'border-box', WebkitOverflowScrolling: 'touch' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div
+      className="px-3.5 pt-3.5 pb-6 md:px-6 md:pt-5 md:pb-12"
+      style={{ height: '100%', overflowY: 'auto', boxSizing: 'border-box', WebkitOverflowScrolling: 'touch' }}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {/* En-tête aligné à gauche sur la grille 24px */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: '1 1 220px' }}>
             <div
               style={{
                 width: 40,
@@ -320,11 +323,11 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
             >
               <Users size={20} />
             </div>
-            <div>
-              <h1 style={{ margin: 0, fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>
+            <div style={{ minWidth: 0 }}>
+              <h1 className="text-[18px] md:text-[20px]" style={{ margin: 0, fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
                 {t('team.title')}
               </h1>
-              <p style={{ margin: '3px 0 0', fontSize: 13, color: 'var(--text3)' }}>
+              <p style={{ margin: '2px 0 0', fontSize: 12.5, color: 'var(--text3)' }}>
                 {t('team.subtitle')}
               </p>
             </div>
@@ -334,11 +337,16 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
             <button
               type="button"
               onClick={() => void chargerEquipe()}
+              aria-label={t('team.refresh')}
+              title={t('team.refresh')}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: 6,
                 padding: '8px 13px',
+                minHeight: 38,
+                minWidth: 38,
                 borderRadius: 9,
                 border: '1px solid var(--border2)',
                 background: 'var(--surface)',
@@ -350,7 +358,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
               }}
             >
               <RefreshCw size={14} />
-              {t('team.refresh')}
+              <span className="hidden sm:inline">{t('team.refresh')}</span>
             </button>
             <button
               type="button"
@@ -361,6 +369,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                 alignItems: 'center',
                 gap: 7,
                 padding: '8px 16px',
+                minHeight: 38,
                 borderRadius: 9,
                 border: 'none',
                 background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))',
@@ -501,7 +510,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
               background: 'var(--surface)',
               border: '1px solid var(--border)',
               borderRadius: 12,
-              padding: 18,
+              padding: 'clamp(12px, 3.6vw, 18px)',
               display: 'flex',
               flexDirection: 'column',
               gap: 14,
@@ -631,7 +640,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
             background: 'var(--surface)',
             border: '1px solid var(--border)',
             borderRadius: 12,
-            padding: 18,
+            padding: 'clamp(12px, 3.6vw, 18px)',
           }}
         >
           <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', marginBottom: 12 }}>
@@ -658,7 +667,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                     style={{
                       border: '1px solid var(--border)',
                       borderRadius: 10,
-                      padding: '12px 16px',
+                      padding: '12px 14px',
                       background: member.isActive ? 'var(--bg)' : 'rgba(239, 68, 68, 0.06)',
                       display: 'flex',
                       flexDirection: 'column',
@@ -667,7 +676,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
                       {/* Colonne Infos Membre : aucun badge "Actif" redondant, aucun mot coupé */}
-                      <div style={{ minWidth: 240, flex: 1 }}>
+                      <div style={{ minWidth: 0, flex: '1 1 220px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                           <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>
                             {member.name}
@@ -728,7 +737,7 @@ export default function SectionTeam({ user, schools, onToast }: Props) {
 
                         {/* Métadonnées avec pluriel propre et sans coupure au milieu des mots */}
                         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, fontSize: 12.5, color: 'var(--text2)', marginTop: 4 }}>
-                          <span style={{ whiteSpace: 'nowrap' }}>{member.email}</span>
+                          <span style={{ wordBreak: 'break-all' }}>{member.email}</span>
                           <span style={{ color: 'var(--text3)' }}>·</span>
                           <span style={{ whiteSpace: 'nowrap' }}>
                             {formatCreatedLabel(member.createdSchoolsCount)}

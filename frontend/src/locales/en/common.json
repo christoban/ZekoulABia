@@ -278,6 +278,7 @@
     "choose_account_subtitle": "Choose the account you want to sign in with.",
     "copyright": "© {year} ZekoulABia · All rights reserved · School Management Platform",
     "mode_test_bandeau_msg": "Test mode active: outbound emails and SMS are disabled for school accounts. Login flows (password, MFA) remain available.",
+    "mode_test_bandeau_msg_short": "Test mode active · Outbound emails & SMS disabled",
     "mode_test_bandeau_cta": "Manage test mode →"
   },
   "messages": {

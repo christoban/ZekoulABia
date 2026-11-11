@@ -278,6 +278,7 @@
     "choose_account_subtitle": "Choisissez le compte avec lequel vous souhaitez vous connecter.",
     "copyright": "© {year} ZekoulABia · Tous droits réservés · Plateforme de gestion scolaire",
     "mode_test_bandeau_msg": "Mode test actif : les emails et SMS sortants sont désactivés pour les comptes d'école. Les flux de connexion (mot de passe, MFA) restent disponibles.",
+    "mode_test_bandeau_msg_short": "Mode test actif · Emails et SMS sortants désactivés",
     "mode_test_bandeau_cta": "Gérer le mode test →"
   },
   "messages": {

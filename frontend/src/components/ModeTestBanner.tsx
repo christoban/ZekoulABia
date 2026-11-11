@@ -72,26 +72,26 @@ export default function ModeTestBanner({ onManageClick }: Props = {}) {
     <div
       role="status"
       aria-live="polite"
+      className="px-3.5 py-2 md:px-6 md:py-2"
       style={{
         flexShrink: 0,
         width: '100%',
         boxSizing: 'border-box',
-        padding: '8px 24px',
         background: 'var(--amber-light)',
         borderBottom: '1px solid rgba(217, 119, 6, 0.35)',
         color: 'var(--amber)',
-        fontSize: 12.5,
+        fontSize: 12,
         fontWeight: 700,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: 12,
-        flexWrap: 'wrap',
+        gap: 10,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-        <FlaskConical size={16} strokeWidth={2} style={{ flexShrink: 0 }} />
-        <span>{t('login.mode_test_bandeau_msg')}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
+        <FlaskConical size={15} strokeWidth={2} style={{ flexShrink: 0 }} />
+        <span className="md:hidden truncate">{t('login.mode_test_bandeau_msg_short')}</span>
+        <span className="hidden md:inline">{t('login.mode_test_bandeau_msg')}</span>
       </div>
       {onManageClick && (
         <button

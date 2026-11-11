@@ -180,11 +180,14 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
   }
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', padding: '20px 24px 48px', boxSizing: 'border-box', WebkitOverflowScrolling: 'touch' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div
+      className="px-3.5 pt-3.5 pb-6 md:px-6 md:pt-5 md:pb-12"
+      style={{ height: '100%', overflowY: 'auto', boxSizing: 'border-box', WebkitOverflowScrolling: 'touch' }}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {/* En-tête */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
             <div
               style={{
                 width: 38,
@@ -200,11 +203,11 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
             >
               <ShieldAlert size={20} />
             </div>
-            <div>
-              <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>
+            <div style={{ minWidth: 0 }}>
+              <h1 className="text-[18px] md:text-[20px]" style={{ margin: 0, fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
                 {t('mode_test.titre')}
               </h1>
-              <p style={{ margin: '2px 0 0', fontSize: 12.5, color: 'var(--text2)' }}>
+              <p style={{ margin: '2px 0 0', fontSize: 12.5, color: 'var(--text3)' }}>
                 {isSuperAdmin
                   ? t('mode_test.subtitle_super')
                   : t('mode_test.subtitle_operator')}
@@ -215,22 +218,28 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
           <button
             type="button"
             onClick={() => void chargerModeTest()}
+            aria-label={t('mode_test.rafraichir')}
+            title={t('mode_test.rafraichir')}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: 6,
               padding: '7px 12px',
-              borderRadius: 8,
+              minHeight: 38,
+              minWidth: 38,
+              borderRadius: 9,
               border: '1px solid var(--border)',
               background: 'var(--surface)',
               color: 'var(--text)',
               fontSize: 12,
               fontWeight: 700,
               cursor: 'pointer',
+              flexShrink: 0,
             }}
           >
             <RefreshCw size={14} />
-            {t('mode_test.rafraichir')}
+            <span className="hidden sm:inline">{t('mode_test.rafraichir')}</span>
           </button>
         </div>
 
@@ -241,7 +250,7 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
               background: modeTest ? 'var(--surface)' : 'var(--red-light)',
               border: `1.5px solid ${modeTest ? 'var(--border)' : 'var(--red)'}`,
               borderRadius: 12,
-              padding: '16px 18px',
+              padding: 'clamp(12px, 3.6vw, 18px)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
@@ -272,9 +281,11 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
                     type="button"
                     disabled={modeTestBusy}
                     onClick={() => setConfirmDesactivation(true)}
+                    className="w-full sm:w-auto"
                     style={{
                       padding: '8px 14px',
-                      borderRadius: 8,
+                      minHeight: 38,
+                      borderRadius: 9,
                       border: '1px solid var(--red)',
                       background: 'var(--surface)',
                       color: 'var(--red)',
@@ -290,9 +301,11 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
                     type="button"
                     disabled={modeTestBusy}
                     onClick={() => void basculerModeTestGlobal(true)}
+                    className="w-full sm:w-auto"
                     style={{
                       padding: '8px 14px',
-                      borderRadius: 8,
+                      minHeight: 38,
+                      borderRadius: 9,
                       border: 'none',
                       background: 'var(--green)',
                       color: '#fff',
@@ -388,7 +401,7 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
             background: 'var(--surface)',
             border: '1px solid var(--border)',
             borderRadius: 12,
-            padding: '16px 18px',
+            padding: 'clamp(12px, 3.6vw, 18px)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
@@ -494,6 +507,7 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
                       className="w-full sm:w-auto"
                       style={{
                         padding: '7px 12px',
+                        minHeight: 36,
                         borderRadius: 8,
                         border: ecoleEnModeTest ? 'none' : '1px solid var(--red)',
                         background: ecoleEnModeTest ? 'var(--green)' : 'var(--surface)',
@@ -519,7 +533,7 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
             background: 'var(--surface)',
             border: '1px solid var(--border)',
             borderRadius: 12,
-            padding: '16px 18px',
+            padding: 'clamp(12px, 3.6vw, 18px)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 8, flexWrap: 'wrap' }}>
@@ -578,7 +592,7 @@ export default function SectionModeTest({ user, schools = [], onToast }: Props) 
           ) : (
             <>
               {/* Vue Mobile (< md) : cartes empilées natives */}
-              <div className="block md:hidden" style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 340, overflowY: 'auto' }}>
+              <div className="flex md:hidden" style={{ flexDirection: 'column', gap: 8, maxHeight: 340, overflowY: 'auto' }}>
                 {messagesSupprimes.map((m) => (
                   <div
                     key={m.id}
