@@ -15,18 +15,18 @@
     "more": "Plus"
   },
   "topbar": {
-    "mfa_active": "MFA actif",
-    "mfa_inactive": "MFA inactif",
-    "mfa_enable_cta": "Activer la MFA",
-    "mfa_totp_active": "2FA Actif (TOTP)",
-    "mfa_totp_inactive": "2FA Inactif",
+    "mfa_active": "2FA active",
+    "mfa_inactive": "2FA inactive",
+    "mfa_enable_cta": "Activer la 2FA →",
+    "mfa_totp_active": "2FA active (TOTP)",
+    "mfa_totp_inactive": "2FA inactive",
     "security_badge": "SÉCURITÉ",
     "invite_school": "Inviter un établissement",
     "change_password": "Modifier mon mot de passe",
-    "logout": "Déconnexion",
+    "logout": "Se déconnecter",
     "logout_full": "Se déconnecter",
-    "theme_light": "Mode clair",
-    "theme_dark": "Mode sombre",
+    "theme_light": "Passer en mode clair",
+    "theme_dark": "Passer en mode sombre",
     "language": "Langue"
   },
   "overview": {

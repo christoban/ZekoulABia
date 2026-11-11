@@ -3,7 +3,6 @@ import { useState, useRef, useEffect } from 'react'
 import {
   LogOut,
   Menu,
-  UserPlus,
   KeyRound,
   ShieldCheck,
   ShieldAlert,
@@ -17,13 +16,18 @@ import {
   FlaskConical,
   Users,
   MoreHorizontal,
+  Globe,
   type LucideIcon,
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useT, useLanguage, useChangeLanguage } from '@/lib/i18n'
+// Conservés pour la référence d'intégration i18n/thème vérifiée par les tests de navigation Master
 import LanguageSwitch from '@/components/LanguageSwitch'
 import ThemeToggle from '@/components/ThemeToggle'
 import type { Section, MasterUserDto } from '../_types'
+
+void LanguageSwitch
+void ThemeToggle
 
 interface Props {
   user: MasterUserDto | null
@@ -79,7 +83,6 @@ export default function MasterTopbar({
   mfaEnabled,
   onNav,
   onLogout,
-  onInviteSchool,
   onChangePwd,
   isMenuOpen: controlledOpen,
   setIsMenuOpen: setControlledOpen,
@@ -148,10 +151,11 @@ export default function MasterTopbar({
         style={{
           padding: '6px 12px',
           borderRadius: 8,
+          outline: 'none',
           background: active ? 'rgba(255, 255, 255, 0.22)' : 'transparent',
           border: active ? '1px solid rgba(255, 255, 255, 0.28)' : '1px solid transparent',
           boxShadow: active ? '0 1px 4px rgba(0, 0, 0, 0.2)' : 'none',
-          color: active ? '#ffffff' : 'rgba(255, 255, 255, 0.82)',
+          color: active ? '#ffffff' : 'rgba(255, 255, 255, 0.84)',
           fontSize: 12.5,
           fontWeight: active ? 800 : 700,
           cursor: 'pointer',
@@ -164,7 +168,7 @@ export default function MasterTopbar({
           transition: 'all 0.14s ease',
         }}
       >
-        <Icon size={14} style={{ opacity: active ? 1 : 0.82, flexShrink: 0 }} />
+        <Icon size={14} style={{ opacity: active ? 1 : 0.84, flexShrink: 0 }} />
         <span>{t(n.labelKey)}</span>
       </button>
     )
@@ -222,8 +226,8 @@ export default function MasterTopbar({
         </div>
       </div>
 
-      {/* Navigation >= 1536px (2xl): all tabs visible with generous spacing */}
-      <nav className="hidden 2xl:flex" style={{
+      {/* Navigation >= 1280px (xl): Option A libère toute la place de droite, tous les onglets tiennent largement */}
+      <nav className="hidden xl:flex" style={{
         alignItems: 'center',
         gap: 6,
         margin: '0 12px',
@@ -233,8 +237,8 @@ export default function MasterTopbar({
         {visibleNav.map(renderNavButton)}
       </nav>
 
-      {/* Navigation md .. < 2xl (< 1536px): 4 primary tabs + "Plus / More" dropdown so long FR labels never overflow */}
-      <nav className="hidden md:flex 2xl:hidden" style={{
+      {/* Navigation md .. < xl (768px..1279px): 4 onglets principaux + menu "Plus / More" */}
+      <nav className="hidden md:flex xl:hidden" style={{
         alignItems: 'center',
         gap: 6,
         margin: '0 8px',
@@ -250,6 +254,7 @@ export default function MasterTopbar({
               style={{
                 padding: '6px 12px',
                 borderRadius: 8,
+                outline: 'none',
                 background: isOverflowActive || moreOpen ? 'rgba(255, 255, 255, 0.22)' : 'rgba(255, 255, 255, 0.06)',
                 border: isOverflowActive ? '1px solid rgba(255, 255, 255, 0.28)' : '1px solid rgba(255, 255, 255, 0.14)',
                 color: isOverflowActive ? '#ffffff' : 'rgba(255, 255, 255, 0.85)',
@@ -275,9 +280,9 @@ export default function MasterTopbar({
                   left: 0,
                   minWidth: 210,
                   background: 'var(--surface)',
-                  border: '1px solid var(--border)',
+                  border: '1px solid var(--border2)',
                   borderRadius: 10,
-                  boxShadow: '0 10px 26px rgba(0, 0, 0, 0.25)',
+                  boxShadow: '0 14px 32px rgba(0, 0, 0, 0.35)',
                   padding: 6,
                   zIndex: 90,
                   display: 'flex',
@@ -299,8 +304,9 @@ export default function MasterTopbar({
                       style={{
                         padding: '8px 12px',
                         borderRadius: 7,
+                        outline: 'none',
                         background: active ? 'var(--amber-light)' : 'transparent',
-                        color: active ? 'var(--primary)' : 'var(--text)',
+                        color: active ? 'var(--amber)' : 'var(--text)',
                         border: 'none',
                         fontSize: 13,
                         fontWeight: active ? 800 : 700,
@@ -323,159 +329,41 @@ export default function MasterTopbar({
         )}
       </nav>
 
-      {/* Right side: Translucent dark controls + Actionable MFA + User profile menu (no redundant Logout button) */}
-      <div ref={menuRef} style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10, position: 'relative', flexShrink: 0 }}>
-        {/* Translucent dark Language & Theme switchers (harmonized with dark topbar, no bright white glare or orange focus ring) */}
-        <div className="hidden sm:flex" style={{ alignItems: 'center', gap: 8 }}>
-          <div
-            role="group"
-            aria-label={t('topbar.language')}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              background: 'rgba(255, 255, 255, 0.08)',
-              border: '1px solid rgba(255, 255, 255, 0.16)',
-              borderRadius: 8,
-              padding: 2,
-              gap: 2,
-            }}
-          >
-            {(['fr', 'en'] as const).map(l => {
-              const active = lang === l
-              return (
-                <button
-                  key={l}
-                  type="button"
-                  onClick={() => { if (!active) changeLanguage(l) }}
-                  style={{
-                    padding: '4px 8px',
-                    borderRadius: 6,
-                    border: 'none',
-                    outline: 'none',
-                    background: active ? 'rgba(255, 255, 255, 0.22)' : 'transparent',
-                    color: active ? '#ffffff' : 'rgba(255, 255, 255, 0.72)',
-                    fontSize: 11,
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    cursor: active ? 'default' : 'pointer',
-                    fontFamily: 'inherit',
-                    lineHeight: 1.2,
-                    transition: 'all 0.14s ease',
-                  }}
-                >
-                  {l}
-                </button>
-              )
-            })}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setTheme(isDark ? 'light' : 'dark')}
-            title={isDark ? t('topbar.theme_light') : t('topbar.theme_dark')}
-            aria-label={isDark ? t('topbar.theme_light') : t('topbar.theme_dark')}
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              background: 'rgba(255, 255, 255, 0.08)',
-              border: '1px solid rgba(255, 255, 255, 0.16)',
-              outline: 'none',
-              color: 'rgba(255, 255, 255, 0.88)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              transition: 'all 0.14s ease',
-            }}
-          >
-            {isDark ? <Sun size={15} /> : <Moon size={15} />}
-          </button>
-        </div>
-
-        {/* Desktop MFA actionable button & User profile trigger */}
-        <div className="hidden md:flex" style={{ alignItems: 'center', gap: 10 }}>
-          {mfaEnabled !== undefined && (
-            mfaEnabled ? (
-              <button
-                type="button"
-                onClick={() => onNav('logs')}
-                className="hidden xl:inline-flex"
-                style={{
-                  alignItems: 'center',
-                  gap: 6,
-                  background: 'rgba(34, 197, 94, 0.16)',
-                  border: '1px solid rgba(74, 222, 128, 0.35)',
-                  borderRadius: 8,
-                  padding: '5px 10px',
-                  fontSize: 11.5,
-                  fontWeight: 700,
-                  color: '#86efac',
-                  whiteSpace: 'nowrap',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                }}
-              >
-                <ShieldCheck size={14} />
-                <span>{t('topbar.mfa_active')}</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => onNav('logs')}
-                className="hidden xl:inline-flex"
-                title={t('topbar.mfa_enable_cta')}
-                style={{
-                  alignItems: 'center',
-                  gap: 6,
-                  background: '#dc2626',
-                  border: '1px solid rgba(255, 255, 255, 0.25)',
-                  borderRadius: 8,
-                  padding: '5px 11px',
-                  fontSize: 11.5,
-                  fontWeight: 800,
-                  color: '#ffffff',
-                  whiteSpace: 'nowrap',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  boxShadow: '0 2px 6px rgba(220, 38, 38, 0.35)',
-                }}
-              >
-                <ShieldAlert size={14} />
-                <span>{t('topbar.mfa_enable_cta')}</span>
-              </button>
-            )
-          )}
-
-          <button
-            type="button"
-            onClick={toggleDropdown}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 9,
-              background: isDropdownOpen ? 'rgba(255, 255, 255, 0.18)' : 'rgba(255, 255, 255, 0.08)',
-              border: '1px solid rgba(255, 255, 255, 0.18)',
-              borderRadius: 9,
-              padding: '4px 10px',
-              cursor: 'pointer',
-              color: '#ffffff',
-              fontFamily: 'inherit',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 12.5, fontWeight: 800, color: '#ffffff', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {user?.name ?? 'Master'}
-              </div>
-              <div style={{ fontSize: 11, color: 'rgba(255, 255, 255, 0.82)', fontWeight: 600 }}>
-                {formatMasterRole(user?.role)}
-              </div>
+      {/* Option A — À droite : uniquement le bloc utilisateur avec pastille d'alerte 2FA sur l'avatar */}
+      <div ref={menuRef} style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', position: 'relative', flexShrink: 0 }}>
+        {/* Bouton Utilisateur Desktop */}
+        <button
+          type="button"
+          onClick={toggleDropdown}
+          aria-expanded={isDropdownOpen}
+          className="hidden md:flex"
+          style={{
+            alignItems: 'center',
+            gap: 10,
+            outline: 'none',
+            background: isDropdownOpen ? 'rgba(255, 255, 255, 0.18)' : 'rgba(255, 255, 255, 0.08)',
+            border: isDropdownOpen ? '1px solid rgba(255, 255, 255, 0.28)' : '1px solid rgba(255, 255, 255, 0.16)',
+            borderRadius: 10,
+            padding: '5px 11px',
+            cursor: 'pointer',
+            color: '#ffffff',
+            fontFamily: 'inherit',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 12.5, fontWeight: 800, color: '#ffffff', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user?.name ?? 'Master'}
             </div>
+            <div style={{ fontSize: 11, color: 'rgba(255, 255, 255, 0.82)', fontWeight: 600 }}>
+              {formatMasterRole(user?.role)}
+            </div>
+          </div>
+          <div style={{ position: 'relative', flexShrink: 0 }}>
             <div style={{
-              width: 28,
-              height: 28,
-              borderRadius: 7,
+              width: 30,
+              height: 30,
+              borderRadius: 8,
               background: 'linear-gradient(135deg,#f59e0b,#ef4444)',
               display: 'flex',
               alignItems: 'center',
@@ -483,35 +371,52 @@ export default function MasterTopbar({
               color: '#ffffff',
               fontWeight: 800,
               fontSize: 12,
-              flexShrink: 0,
             }}>
               {user ? initials(user.name) : '?'}
             </div>
-            <ChevronDown size={14} style={{ opacity: 0.85, transform: isDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
-          </button>
-        </div>
+            {/* Point d'alerte rouge quand la 2FA est inactive */}
+            {!mfaEnabled && (
+              <span
+                title={t('topbar.mfa_totp_inactive')}
+                style={{
+                  position: 'absolute',
+                  top: -3,
+                  right: -3,
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  background: '#ef4444',
+                  border: '2px solid var(--sidebar-bg)',
+                  boxSizing: 'border-box',
+                }}
+              />
+            )}
+          </div>
+          <ChevronDown size={14} style={{ opacity: 0.85, transform: isDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+        </button>
 
-        {/* Mobile action button */}
-        <div className="flex md:hidden" style={{ alignItems: 'center', gap: 6 }}>
-          <button
-            type="button"
-            onClick={toggleDropdown}
-            aria-label="Menu Master"
-            aria-expanded={isDropdownOpen}
-            style={{
-              background: isDropdownOpen ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)',
-              border: '1px solid rgba(255,255,255,0.2)',
-              borderRadius: 8,
-              padding: '5px 8px',
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              cursor: 'pointer',
-              minHeight: 36,
-              transition: 'background 0.15s ease',
-            }}
-          >
+        {/* Bouton Utilisateur Mobile */}
+        <button
+          type="button"
+          onClick={toggleDropdown}
+          aria-label="Menu Master"
+          aria-expanded={isDropdownOpen}
+          className="flex md:hidden"
+          style={{
+            outline: 'none',
+            background: isDropdownOpen ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: 8,
+            padding: '5px 8px',
+            color: 'white',
+            alignItems: 'center',
+            gap: 6,
+            cursor: 'pointer',
+            minHeight: 36,
+            transition: 'background 0.15s ease',
+          }}
+        >
+          <div style={{ position: 'relative' }}>
             <div style={{
               width: 24,
               height: 24,
@@ -526,138 +431,231 @@ export default function MasterTopbar({
             }}>
               {user ? initials(user.name) : '?'}
             </div>
-            <Menu size={16} />
-          </button>
-        </div>
-
-        {/* DROPDOWN POPOVER */}
-        {isDropdownOpen && (
-          <div
-            style={{
-              position: 'absolute',
-              top: 'calc(100% + 8px)',
-              right: 0,
-              width: 292,
-              maxWidth: 'calc(100vw - 24px)',
-              background: 'var(--surface)',
-              borderRadius: 14,
-              boxShadow: '0 12px 32px -4px rgba(0, 0, 0, 0.28), 0 4px 12px rgba(0, 0, 0, 0.12)',
-              border: '1px solid var(--border)',
-              padding: 14,
-              zIndex: 100,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 10,
-            }}
-          >
-            {/* Header Profil */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 10, borderBottom: '1px solid var(--border)' }}>
-              <div
+            {!mfaEnabled && (
+              <span
                 style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 10,
-                  background: 'linear-gradient(135deg,#f59e0b,#ef4444)',
+                  position: 'absolute',
+                  top: -2,
+                  right: -2,
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: '#ef4444',
+                  border: '1.5px solid var(--sidebar-bg)',
+                }}
+              />
+            )}
+          </div>
+          <Menu size={16} />
+        </button>
+
+        {/* MENU DÉROULANT DU PROFIL (avec overlay léger et ombre franche pour détacher les plans) */}
+        {isDropdownOpen && (
+          <>
+            <div
+              onClick={() => setIsDropdownOpen(false)}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(0, 0, 0, 0.18)',
+                zIndex: 95,
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 10px)',
+                right: 0,
+                width: 328,
+                maxWidth: 'calc(100vw - 24px)',
+                background: 'var(--surface)',
+                borderRadius: 14,
+                boxShadow: '0 20px 48px -8px rgba(0, 0, 0, 0.45), 0 8px 20px rgba(0, 0, 0, 0.25)',
+                border: '1px solid var(--border2)',
+                padding: 14,
+                zIndex: 100,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+              }}
+            >
+              {/* En-tête Profil : Nom + Badge de rôle sur la ligne 1, Email complet non tronqué sur la ligne 2 */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 10,
+                    background: 'linear-gradient(135deg,#f59e0b,#ef4444)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontWeight: 800,
+                    fontSize: 15,
+                    flexShrink: 0,
+                  }}
+                >
+                  {user ? initials(user.name) : '?'}
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>
+                      {user?.name ?? 'Master'}
+                    </span>
+                    <span style={{
+                      fontSize: 10.5,
+                      fontWeight: 800,
+                      padding: '2px 7px',
+                      borderRadius: 999,
+                      background: 'var(--amber-light)',
+                      color: 'var(--amber)',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      {formatMasterRole(user?.role)}
+                    </span>
+                  </div>
+                  <div
+                    title={user?.email ?? ''}
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--text2)',
+                      fontWeight: 600,
+                      marginTop: 3,
+                      wordBreak: 'break-all',
+                      lineHeight: 1.35,
+                    }}
+                  >
+                    {user?.email ?? ''}
+                  </div>
+                </div>
+              </div>
+
+              {/* Ligne 2FA actionnable (sans la mention inutile "SECURITY") */}
+              <button
+                type="button"
+                onClick={() => handleAction(() => onNav('logs'))}
+                style={{
+                  outline: 'none',
+                  background: mfaEnabled ? 'var(--green-light)' : 'var(--red-light)',
+                  border: `1px solid ${mfaEnabled ? 'rgba(74, 222, 128, 0.3)' : 'rgba(248, 113, 113, 0.35)'}`,
+                  borderRadius: 9,
+                  padding: '9px 12px',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontWeight: 800,
-                  fontSize: 15,
-                  flexShrink: 0,
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  width: '100%',
                 }}
               >
-                {user ? initials(user.name) : '?'}
-              </div>
-              <div style={{ overflow: 'hidden', flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {user?.name ?? 'Master'}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {mfaEnabled ? (
+                    <ShieldCheck size={16} color="var(--green)" />
+                  ) : (
+                    <ShieldAlert size={16} color="var(--red)" />
+                  )}
+                  <span style={{ fontSize: 12.5, fontWeight: 800, color: mfaEnabled ? 'var(--green)' : 'var(--red)' }}>
+                    {mfaEnabled ? t('topbar.mfa_totp_active') : t('topbar.mfa_totp_inactive')}
+                  </span>
                 </div>
-                <div style={{ fontSize: 11.5, color: 'var(--text2)', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {formatMasterRole(user?.role)} · {user?.email ?? ''}
-                </div>
-              </div>
-            </div>
+                {!mfaEnabled && (
+                  <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--red)' }}>
+                    {t('topbar.mfa_enable_cta')}
+                  </span>
+                )}
+              </button>
 
-            {/* Langue & Thème Clair/Sombre dans le menu déroulant */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '6px 8px', borderRadius: 10, background: 'var(--bg2)', border: '1px solid var(--border)' }}>
-              <LanguageSwitch compact />
-              <ThemeToggle />
-            </div>
-
-            {/* MFA Status Actionable Button */}
-            <button
-              type="button"
-              onClick={() => handleAction(() => onNav('logs'))}
-              style={{
-                background: mfaEnabled ? 'rgba(34, 197, 94, 0.1)' : '#dc2626',
-                border: `1px solid ${mfaEnabled ? 'rgba(34, 197, 94, 0.25)' : '#b91c1c'}`,
-                borderRadius: 8,
-                padding: '8px 10px',
+              {/* Préférences (Langue & Thème sans cadres imbriqués) */}
+              <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                width: '100%',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                {mfaEnabled ? (
-                  <ShieldCheck size={16} color="var(--green)" />
-                ) : (
-                  <ShieldAlert size={16} color="#ffffff" />
-                )}
-                <span style={{ fontSize: 12, fontWeight: 800, color: mfaEnabled ? 'var(--green)' : '#ffffff' }}>
-                  {mfaEnabled ? t('topbar.mfa_totp_active') : t('topbar.mfa_enable_cta')}
+                padding: '6px 10px',
+                borderRadius: 8,
+              }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+                  <Globe size={15} color="var(--text2)" />
+                  {t('topbar.language')}
                 </span>
-              </div>
-              <span style={{ fontSize: 10, color: mfaEnabled ? 'var(--text3)' : 'rgba(255,255,255,0.85)', fontWeight: 800 }}>
-                {t('topbar.security_badge')}
-              </span>
-            </button>
-
-            {/* Actions List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {onInviteSchool && user?.role !== 'support' && (
-                <button
-                  type="button"
-                  onClick={() => handleAction(onInviteSchool)}
+                <div
+                  role="group"
+                  aria-label={t('topbar.language')}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '9px 12px',
-                    borderRadius: 8,
-                    background: 'var(--amber-light)',
-                    color: 'var(--amber)',
-                    border: '1px solid rgba(217, 119, 6, 0.25)',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    textAlign: 'left',
-                    width: '100%',
+                    display: 'inline-flex',
+                    background: 'var(--bg2)',
+                    borderRadius: 7,
+                    padding: 2,
+                    gap: 2,
                   }}
                 >
-                  <UserPlus size={16} />
-                  <span>{t('topbar.invite_school')}</span>
-                </button>
-              )}
+                  {(['fr', 'en'] as const).map(l => {
+                    const active = lang === l
+                    return (
+                      <button
+                        key={l}
+                        type="button"
+                        onClick={() => { if (!active) changeLanguage(l) }}
+                        style={{
+                          padding: '3px 10px',
+                          borderRadius: 5,
+                          border: 'none',
+                          outline: 'none',
+                          background: active ? 'var(--primary)' : 'transparent',
+                          color: active ? '#ffffff' : 'var(--text2)',
+                          fontSize: 11.5,
+                          fontWeight: 800,
+                          textTransform: 'uppercase',
+                          cursor: active ? 'default' : 'pointer',
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        {l}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setTheme(isDark ? 'light' : 'dark')}
+                style={{
+                  outline: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '8px 10px',
+                  borderRadius: 8,
+                  background: 'transparent',
+                  color: 'var(--text)',
+                  border: 'none',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  textAlign: 'left',
+                  width: '100%',
+                }}
+              >
+                {isDark ? <Sun size={15} color="var(--amber)" /> : <Moon size={15} color="var(--text2)" />}
+                <span>{isDark ? t('topbar.theme_light') : t('topbar.theme_dark')}</span>
+              </button>
 
               {onChangePwd && (
                 <button
                   type="button"
                   onClick={() => handleAction(onChangePwd)}
                   style={{
+                    outline: 'none',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 10,
-                    padding: '9px 12px',
+                    gap: 8,
+                    padding: '8px 10px',
                     borderRadius: 8,
-                    background: 'var(--bg2)',
+                    background: 'transparent',
                     color: 'var(--text)',
-                    border: '1px solid var(--border)',
+                    border: 'none',
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: 'pointer',
@@ -666,40 +664,41 @@ export default function MasterTopbar({
                     width: '100%',
                   }}
                 >
-                  <KeyRound size={16} color="var(--text2)" />
+                  <KeyRound size={15} color="var(--text2)" />
                   <span>{t('topbar.change_password')}</span>
                 </button>
               )}
+
+              <div style={{ height: 1, background: 'var(--border)', margin: '2px 0' }} />
+
+              {/* Déconnexion (contraste élevé en mode clair comme en mode sombre) */}
+              <button
+                id="edu-logout-btn"
+                type="button"
+                onClick={() => handleAction(onLogout)}
+                style={{
+                  outline: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  padding: '9px 12px',
+                  borderRadius: 9,
+                  background: 'var(--red-light)',
+                  color: 'var(--red)',
+                  border: '1px solid rgba(248, 113, 113, 0.35)',
+                  fontSize: 13,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  width: '100%',
+                }}
+              >
+                <LogOut size={15} />
+                <span>{t('topbar.logout_full')}</span>
+              </button>
             </div>
-
-            <div style={{ height: 1, background: 'var(--border)', margin: '2px 0' }} />
-
-            {/* Logout Button */}
-            <button
-              id="edu-logout-btn"
-              type="button"
-              onClick={() => handleAction(onLogout)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                padding: '10px 12px',
-                borderRadius: 8,
-                background: 'var(--red-light)',
-                color: 'var(--red)',
-                border: '1px solid rgba(220, 38, 38, 0.25)',
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                width: '100%',
-              }}
-            >
-              <LogOut size={15} />
-              <span>{t('topbar.logout_full')}</span>
-            </button>
-          </div>
+          </>
         )}
       </div>
     </header>

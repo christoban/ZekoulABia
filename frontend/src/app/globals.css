@@ -169,20 +169,20 @@
   --accent: #E3B04B;                       /* Accent doré en mode nuit */
 
   /* ── 6. COULEURS SÉMANTIQUES ADAPTÉES AU MODE SOMBRE ── */
-  --success: #4BA66F;         /* Vert succès ajusté pour ressortir parfaitement sur fond noir/marron sombre */
+  --success: #4ade80;         /* Vert succès clair à fort contraste sur --green-light (#14532d) et --surface */
   --green: var(--success);
-  --green2: #22c55e;
-  --green-light: #14532d;     /* Fond vert foncé pour badges de succès en mode nuit */
+  --green2: #86efac;
+  --green-light: rgba(20, 83, 45, 0.55); /* Fond vert sombre translucide en mode nuit */
 
-  --danger: #E05A32;          /* Rouge alerte ajusté pour être visible sans éblouir en mode nuit */
+  --danger: #f87171;          /* Rouge alerte clair à fort contraste sur --red-light (#450a0a) et --surface */
   --red: var(--danger);
-  --red-light: #450a0a;       /* Fond rouge très foncé pour alertes en mode nuit */
+  --red-light: rgba(127, 29, 29, 0.45);  /* Fond rouge sombre translucide en mode nuit */
 
-  --blue: #3b82f6;            /* Bleu information ajusté pour mode nuit */
-  --blue-light: #1e3a5f;      /* Fond bleu foncé pour badges d'information */
+  --blue: #60a5fa;            /* Bleu information clair adapté au mode nuit */
+  --blue-light: rgba(30, 58, 95, 0.55);  /* Fond bleu sombre translucide */
 
-  --amber: #f59e0b;           /* Ambre avertissement ajusté pour mode nuit */
-  --amber-light: #451a03;     /* Fond ambre foncé pour badges d'avertissement */
+  --amber: #fbbf24;           /* Ambre avertissement clair à fort contraste sur --amber-light */
+  --amber-light: rgba(120, 53, 15, 0.5); /* Fond ambre sombre translucide */
 
   --purple: #8b5cf6;          /* Violet adapté au mode nuit */
   --purple-light: #2e1065;    /* Fond violet foncé */
