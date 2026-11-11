@@ -19,6 +19,7 @@ import type { ClasseRepository } from '@domain/ports/repositories/ClasseReposito
 import type { EnrollmentRepository } from '@domain/ports/repositories/EnrollmentRepository';
 import type { AIActionAuditPort } from '@domain/ports/services/AIActionAuditPort';
 import type { ActivityLogPort } from '@domain/ports/services/ActivityLogPort';
+import type { OutboundMessagingPolicy } from '@domain/ports/services/OutboundMessagingPolicy';
 
 import { UserAuthController } from './user/UserAuthController';
 import { UserMfaPasswordController } from './user/UserMfaPasswordController';
@@ -64,6 +65,7 @@ export class UserController {
     audit: AIActionAuditPort,
     userRepository: UserRepository,
     mfaUseCase: MfaUseCase,
+    politiqueEnvoiSortant: OutboundMessagingPolicy,
     classeRepository: ClasseRepository,
     enrollmentRepository: EnrollmentRepository,
     activityLog?: ActivityLogPort,
@@ -86,6 +88,7 @@ export class UserController {
       mfaUseCase,
       userRepository,
       schoolRepository,
+      politiqueEnvoiSortant,
     );
 
     this.lifecycleController = new UserLifecycleController(

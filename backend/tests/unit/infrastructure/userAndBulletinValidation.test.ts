@@ -49,6 +49,7 @@ describe('UserController.myClass — retourne 404 quand l\'utilisateur n\'est PP
       {} as any, // audit
       {} as any, // userRepository
       {} as any, // mfaUseCase
+      {} as any, // politiqueEnvoiSortant
       classeRepo,
       {} as any, // enrollmentRepository
     );

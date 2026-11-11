@@ -10,6 +10,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { softDeleteExtension } from '@infrastructure/persistence/prisma/softDeleteExtension';
+import { politiqueEnvoiSortantPlateforme } from '@infrastructure/services/outbound/OutboundMessagingPolicy';
 
 // --- Adapters Persistence ---
 import { PrismaUserRepository } from '@infrastructure/persistence/prisma/PrismaUserRepository';
@@ -627,9 +628,9 @@ export function creerContainer() {
 
   // 9. Use Cases — User
   const connecterUtilisateurUseCase = new ConnecterUtilisateurUseCase(
-    userRepository, schoolRepository, tokenService
+    userRepository, schoolRepository, tokenService, politiqueEnvoiSortantPlateforme
   );
-  const inscrireUtilisateurUseCase = new InscrireUtilisateurUseCase(userRepository, credentialsNotificationService);
+  const inscrireUtilisateurUseCase = new InscrireUtilisateurUseCase(userRepository, credentialsNotificationService, politiqueEnvoiSortantPlateforme);
   const rafraichirTokenUseCase = new RafraichirTokenUseCase(
     userRepository, schoolRepository, tokenService
   );

@@ -6,6 +6,8 @@ import type { EmailEventType } from '../../../types/email.ts';
 import { PUSH_MIGRATED_EVENT_TYPES } from '../../../types/email.ts';
 import { notifierUtilisateurPushAvecResultat } from '../notification/PushNotificationService.ts';
 import { SocketNotificationService } from '../notification/SocketNotificationService.ts';
+import { estEnvoiSortantActif } from '../outbound/OutboundMessagingPolicy.ts';
+import { enregistrerMessageSupprime } from '../outbound/SuppressedOutboundMessageRecorder.ts';
 import type { NotificationType as DomainNotificationType } from "@domain/types/enums";
 
 const notificationService = new SocketNotificationService();
@@ -28,6 +30,10 @@ const EMAIL_EVENT_TO_DOMAIN_NOTIFICATION_TYPE: Partial<Record<EmailEventType, Do
 };
 
 let cachedTransporter: nodemailer.Transporter | null = null;
+
+// Emails de sécurité du compte plateforme (décision 1) : le flux Master (OTP login,
+// OTP changement de mot de passe) reste actif même quand le mode test est désactivé.
+const MASTER_SECURITY_EMAIL_EVENTS = new Set<EmailEventType>(['master_login_otp', 'master_password_change_otp']);
 
 const getSmtpConfig = () => {
   const host = process.env.SMTP_HOST;
@@ -72,25 +78,6 @@ export const isEmailConfigured = () => {
   if (isResendConfigured()) return true;
   const config = getSmtpConfig();
   return Boolean(config.host && config.port && config.user && config.pass);
-};
-
-// Dev mode - log email to console instead of sending
-export const devModeSendEmail = async (
-  recipientEmail: string,
-  subject: string,
-  html: string
-): Promise<{ status: "sent"; messageId: string }> => {
-  const otpMatch = html.match(/\b\d{6}\b/);
-  const linkMatch = html.match(/href="([^"]*(?:reset|token|verify)[^"]*)"/i);
-  console.log("\n" + "=".repeat(60));
-  console.log("📧 [DEV MODE] Email simulé (non envoyé):");
-  console.log("   To:", recipientEmail);
-  console.log("   Subject:", subject);
-  if (otpMatch) console.log("   OTP:", otpMatch[0]);
-  if (linkMatch) console.log("   Lien:", linkMatch[1]);
-  console.log("=".repeat(60) + "\n");
-
-  return { status: "sent", messageId: `dev-${Date.now()}` };
 };
 
 const getTransporter = () => {
@@ -198,19 +185,15 @@ export const sendTransactionalEmail = async (
       }
     }
 
-    // Dev mode — log to console
-    if (process.env.EMAIL_DISABLED === "true") {
-      const result = await devModeSendEmail(input.recipientEmail, input.subject, input.html);
-      status = "sent";
-      messageId = result.messageId;
-      usedProvider = "dev";
-      const schoolId = resolveSchoolId(input.metadata);
-      if (schoolId) {
-        await prisma.emailLog.create({
-          data: { schoolId, to: input.recipientEmail, subject: input.subject, status, provider: "dev" },
-        });
-      }
-      return { status, messageId };
+    // Mode test (réglage plateforme outboundMessagingEnabled) — interception en un seul
+    // endroit par canal, après le bloc push/in-app qui continue de fonctionner. Le retour
+    // mime un succès ("sent", messageId "suppressed") pour que les appelants ne déclenchent
+    // ni erreur ni repli ; la trace réelle est dans la ligne de log + la table des messages
+    // supprimés (métadonnées seulement).
+    if (!MASTER_SECURITY_EMAIL_EVENTS.has(input.eventType) && !(await estEnvoiSortantActif())) {
+      console.log(`[Mode test] envoi supprimé (email) → ${recipientEmail} (${input.eventType})`);
+      await enregistrerMessageSupprime({ channel: 'EMAIL', eventType: input.eventType, recipient: input.recipientEmail });
+      return { status: "sent", messageId: "suppressed" };
     }
 
     if (!isResendConfigured() && !isSmtpConfigured()) {

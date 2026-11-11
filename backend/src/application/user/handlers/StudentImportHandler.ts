@@ -14,8 +14,6 @@ import type { StudentImportRow, ImportRow } from '../dto/ImportUserDtos';
 import { generateTemporaryPassword } from '@domain/services/PasswordGenerator';
 import bcrypt from 'bcryptjs';
 
-const DEV_PASS = 'chris123456789';
-
 interface Dependencies {
   importRepository: ImportUtilisateursRepository;
   userRepository: UserRepository;

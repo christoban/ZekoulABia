@@ -5,6 +5,11 @@ import { InMemorySchoolRepository } from '../../../helpers/repositories/InMemory
 import { FakeTokenService } from '../../../helpers/services/FakeTokenService.ts';
 import { User } from '@domain/entities/User';
 import { School } from '@domain/entities/School';
+import type { OutboundMessagingPolicy } from '@domain/ports/services/OutboundMessagingPolicy';
+
+const politiqueEnvoi = (active: boolean): OutboundMessagingPolicy => ({
+  estActive: async () => active,
+});
 
 describe('ConnecterUtilisateurUseCase', () => {
   let userRepo: InMemoryUserRepository;
@@ -44,7 +49,7 @@ describe('ConnecterUtilisateurUseCase', () => {
     userRepo = new InMemoryUserRepository();
     schoolRepo = new InMemorySchoolRepository();
     tokenService = new FakeTokenService();
-    useCase = new ConnecterUtilisateurUseCase(userRepo, schoolRepo, tokenService);
+    useCase = new ConnecterUtilisateurUseCase(userRepo, schoolRepo, tokenService, politiqueEnvoi(true));
 
     schoolRepo.ajouter(ecoleActive);
     userRepo.ajouter(enseignant);
@@ -61,6 +66,40 @@ describe('ConnecterUtilisateurUseCase', () => {
     expect(resultat.role).toBe('TEACHER');
     expect(resultat.accessToken).toContain('user-1');
     expect(resultat.refreshToken).toContain('user-1');
+    expect(resultat.sessionDirecte).toBe(false);
+  });
+
+  it('mode test — réglage désactivé : renvoie sessionDirecte après vérification du mot de passe', async () => {
+    const useCaseModeTest = new ConnecterUtilisateurUseCase(
+      userRepo, schoolRepo, tokenService, politiqueEnvoi(false),
+    );
+    const resultat = await useCaseModeTest.execute({
+      email: 'prof@test.cm',
+      plainPassword: 'motdepasse',
+      schoolId: 'school-1',
+    });
+
+    expect(resultat.sessionDirecte).toBe(true);
+    expect(resultat.accessToken).toContain('user-1');
+  });
+
+  it('mode test — réglage désactivé : une école suspendue reste bloquée, pas de session directe', async () => {
+    const ecoleSuspendue = School.reconstituer({
+      ...ecoleActive.toObject(),
+      id: 'school-suspendue-test',
+      status: 'SUSPENDED',
+    });
+    schoolRepo.ajouter(ecoleSuspendue);
+    userRepo.ajouter(User.reconstituer({ ...enseignant.toObject(), id: 'user-suspendu-test', schoolId: 'school-suspendue-test' }));
+
+    const useCaseModeTest = new ConnecterUtilisateurUseCase(
+      userRepo, schoolRepo, tokenService, politiqueEnvoi(false),
+    );
+    await expect(useCaseModeTest.execute({
+      email: 'prof@test.cm',
+      plainPassword: 'motdepasse',
+      schoolId: 'school-suspendue-test',
+    })).rejects.toThrow('SCHOOL_SUSPENDED');
   });
 
   it("devrait rejeter si l'école est suspendue", async () => {
@@ -217,5 +256,45 @@ describe('ConnecterUtilisateurUseCase', () => {
         schoolId: 'school-1',
       }),
     ).rejects.toThrow("Ce compte ne dispose pas d'un accès de connexion direct.");
+  });
+  it('chantier F — verrouille temporairement le compte apres echecs de mot de passe (COMPTE_VERROUILLE)', async () => {
+    const userVerrouille = User.reconstituer({
+      ...enseignant.toObject(),
+      id: 'user-verrouille-1',
+      email: 'prof.verrouille@test.cm',
+      passwordFailures: 5,
+      lockedUntil: new Date(Date.now() + 15 * 60 * 1000),
+    });
+    userRepo.ajouter(userVerrouille);
+
+    await expect(
+      useCase.execute({
+        email: 'prof.verrouille@test.cm',
+        plainPassword: 'motdepasse',
+        schoolId: 'school-1',
+      }),
+    ).rejects.toThrow('COMPTE_VERROUILLE');
+  });
+
+  it('chantier F — un login reussi reinitialise les echecs mot de passe du compte', async () => {
+    const userAvecEchecs = User.reconstituer({
+      ...enseignant.toObject(),
+      id: 'user-3',
+      email: 'prof3@test.cm',
+      passwordFailures: 3,
+      lockedUntil: null,
+    });
+    userRepo.ajouter(userAvecEchecs);
+
+    const resultat = await useCase.execute({
+      email: 'prof3@test.cm',
+      plainPassword: 'motdepasse',
+      schoolId: 'school-1',
+    });
+
+    expect(resultat.userId).toBe('user-3');
+    const userApres = await userRepo.findById('user-3');
+    expect(userApres?.passwordFailures).toBe(0);
+    expect(userApres?.lockedUntil).toBeNull();
   });
 });

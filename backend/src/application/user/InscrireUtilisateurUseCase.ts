@@ -8,6 +8,7 @@ import type { UserRepository } from '@domain/ports/repositories/UserRepository';
 import type { UserRole, StaffPermissionType } from '@domain/types/enums';
 import { getPermissionsPourTitre } from '@domain/rules/StaffPermissionRules';
 import type { CredentialsNotificationPort } from '@domain/ports/services/CredentialsNotificationPort';
+import type { OutboundMessagingPolicy } from '@domain/ports/services/OutboundMessagingPolicy';
 import { generateTemporaryPassword } from '@domain/services/PasswordGenerator';
 import bcrypt from 'bcryptjs';
 
@@ -42,12 +43,19 @@ export interface InscrireUtilisateurResultat {
   userId: string;
   role: UserRole;
   nomComplet: string;
+  /**
+   * Mode test (réglage plateforme outboundMessagingEnabled désactivé) : le mot de passe
+   * temporaire est renvoyé UNE SEULE fois dans la réponse, à qui crée le compte (ADMIN
+   * d'école). Jamais stocké en clair — il part en hash bcrypt dans la base.
+   */
+  motDePasseTemporaire?: string;
 }
 
 export class InscrireUtilisateurUseCase {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly credentialsNotifier?: CredentialsNotificationPort,
+    private readonly politiqueEnvoiSortant?: OutboundMessagingPolicy,
   ) {}
 
   async execute(commande: InscrireUtilisateurCommande): Promise<InscrireUtilisateurResultat> {
@@ -110,10 +118,15 @@ export class InscrireUtilisateurUseCase {
       }
     }
 
+    const envoiSortantActif = this.politiqueEnvoiSortant
+      ? await this.politiqueEnvoiSortant.estActive()
+      : true;
+
     return {
       userId: user.id,
       role: user.role,
       nomComplet: user.nomComplet,
+      motDePasseTemporaire: envoiSortantActif ? undefined : temporaryPassword,
     };
   }
 }

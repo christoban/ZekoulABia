@@ -1,6 +1,6 @@
 import { messageErreur } from '@application/shared/messageErreur';
 import type { Request, Response, NextFunction } from 'express';
-import type { ConnecterUtilisateurUseCase, RoleMismatchError, SchoolSuspendedError, MultipleAccountsError } from '@application/user/ConnecterUtilisateurUseCase';
+import type { ConnecterUtilisateurUseCase, RoleMismatchError, SchoolSuspendedError, MultipleAccountsError, CompteVerrouilleError } from '@application/user/ConnecterUtilisateurUseCase';
 import type { LoginEmailOtpUseCase } from '@application/user/LoginEmailOtpUseCase';
 import type { VerifierMfaConnexionUseCase } from '@application/user/VerifierMfaConnexionUseCase';
 import type { MfaUseCase } from '@application/user/MfaUseCase';
@@ -65,8 +65,6 @@ export class UserAuthController {
         userId: userId || undefined,
       });
 
-      const envoi = await this.loginEmailOtp.envoyer(resultat.userId);
-
       const pendingPayload: Omit<PendingLoginPayload, 'tokenType'> = {
         userId: resultat.userId,
         schoolId: resultat.schoolId,
@@ -77,6 +75,17 @@ export class UserAuthController {
         roleMismatch: resultat.roleMismatch ?? false,
         redirectTo: resultat.redirectTo ?? null,
       };
+
+      // Mode test (réglage plateforme désactivé) : session émise après le mot de passe,
+      // sans étape OTP ni MFA — même shape de réponse que verifyLoginOtp en succès.
+      if (resultat.sessionDirecte) {
+        const data = issueFinalSession(res, this.tokenService, pendingPayload);
+        res.json({ success: true, step: 'done', data });
+        return;
+      }
+
+      const envoi = await this.loginEmailOtp.envoyer(resultat.userId);
+
       const token = signPendingToken(pendingPayload, 'pending_login', '10m');
       setPendingCookie(res, token, 10 * 60 * 1000);
 
@@ -112,6 +121,14 @@ export class UserAuthController {
           code: 'ROLE_MISMATCH_MULTIPLE',
           message: 'Le rôle sélectionné ne correspond à aucun compte dans cet établissement.',
           availableRoles: (error as RoleMismatchError).availableRoles,
+        });
+        return;
+      }
+      if (error instanceof Error && (error as CompteVerrouilleError).code === 'COMPTE_VERROUILLE') {
+        res.status(423).json({
+          success: false,
+          error: 'COMPTE_VERROUILLE',
+          message: 'Trop de tentatives. Compte temporairement verrouille. Reessayez dans 15 minutes.',
         });
         return;
       }

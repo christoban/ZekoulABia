@@ -38,6 +38,24 @@ model MasterUser {
   @@index([passwordChangeEmailOtpExpiresAt])
 }
 
+model PlatformSettings {
+  id                       String   @id
+  outboundMessagingEnabled Boolean  @default(true)
+  updatedAt                DateTime @updatedAt
+}
+
+// Mode test — messages sortants supprimés (email/SMS) : métadonnées seulement,
+// jamais de contenu (OTP, mot de passe, lien). Consultable par le super_admin, purgés après 7 jours.
+model SuppressedOutboundMessage {
+  id              String   @id @default(cuid())
+  channel         String
+  eventType       String
+  recipientMasked String
+  createdAt       DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 // ─── Module Groupe Scolaire (Phase A — fondations) ─────────────────────────
 // Voir Plan_Groupe_Scolaire_ZekoulABia.md section 1 : un SchoolGroupOwner n'est PAS un User
 // d'école — il n'a pas de schoolId unique (il en supervise plusieurs), donc un compte
@@ -548,6 +566,9 @@ model User {
   email                           String?
   phone                           String?
   passwordHash                    String?
+  // Verrouillage temporaire par compte apres echecs de mot de passe (chantier F)
+  passwordFailures               Int                         @default(0)
+  lockedUntil                    DateTime?
   resetPasswordToken              String?                     @unique
   resetPasswordTokenExpiry        DateTime?
   // Authentification renforcée (ADMIN/STAFF/TEACHER : MFA obligatoire · PARENT/STUDENT : email seul).

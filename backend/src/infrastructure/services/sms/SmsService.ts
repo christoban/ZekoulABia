@@ -1,5 +1,12 @@
 import axios from "axios";
 import { messageErreur } from '@application/shared/messageErreur';
+import { estEnvoiSortantActif } from '../outbound/OutboundMessagingPolicy.ts';
+import { enregistrerMessageSupprime } from '../outbound/SuppressedOutboundMessageRecorder.ts';
+
+// Marqueur d'envoi supprimé en mode test : mime un succès pour ne pas faire échouer
+// les flux appelants (OTP SMS, consentement, broadcast) ; la trace réelle est le log
+// + la table des messages supprimés.
+const MSG_ID_SUPPRIME = "suppressed";
 
 const BASE_URL = process.env.TECHSOFT_BASE_URL || "https://app.techsoft-sms.com/api/http";
 const API_KEY = process.env.TECHSOFT_API_KEY || "";
@@ -12,6 +19,13 @@ function normalizePhone(raw: string): string {
 
 // ─── ENVOYER UN SMS ──────────────────────────────────────────
 export const sendSMS = async (to: string, message: string): Promise<{ success: boolean; msgId?: string; error?: string }> => {
+  // Mode test — interception en un seul endroit, au plus bas niveau : couvre aussi
+  // le job d'escalade SMS qui relit le réglage de fait au moment de l'envoi.
+  if (!(await estEnvoiSortantActif())) {
+    console.log(`[Mode test] envoi supprimé (sms) → ${to}`);
+    await enregistrerMessageSupprime({ channel: 'SMS', eventType: 'sms', recipient: to });
+    return { success: true, msgId: MSG_ID_SUPPRIME };
+  }
   try {
     const response = await axios.post(`${BASE_URL}/sms/send`, {
       api_token: API_KEY,
@@ -36,6 +50,11 @@ export const sendSMS = async (to: string, message: string): Promise<{ success: b
 
 // ─── ENVOYER SMS EN MASSE (max 100 numéros par lot) ──────────
 export const sendBulkSMS = async (numbers: string[], message: string): Promise<{ success: number; failed: number }> => {
+  if (!(await estEnvoiSortantActif())) {
+    console.log(`[Mode test] envoi supprimé (sms bulk) → ${numbers.length} destinataires`);
+    await enregistrerMessageSupprime({ channel: 'SMS_BULK', eventType: 'sms_bulk', recipient: `destinataires:${numbers.length}` });
+    return { success: numbers.length, failed: 0 };
+  }
   const chunks: string[][] = [];
   for (let i = 0; i < numbers.length; i += 100) {
     chunks.push(numbers.slice(i, i + 100));
@@ -90,6 +109,14 @@ export const isSmsConfigured = () => Boolean(API_KEY);
 
 // ─── ENVOYER SMS (API secondaire compatible hexagonal) ───────
 export const sendSms = async (input: SendSmsInput): Promise<SendSmsResult> => {
+  // Mode test — intercepté avant la vérification de clé : quand le réglage est
+  // désactivé, le comportement d'envoi est le même clé présente ou absente.
+  if (!(await estEnvoiSortantActif())) {
+    console.log(`[Mode test] envoi supprimé (sms) → ${input.to}`);
+    await enregistrerMessageSupprime({ channel: 'SMS', eventType: 'sms', recipient: input.to });
+    return { status: "sent", providerMessageId: MSG_ID_SUPPRIME };
+  }
+
   if (!isSmsConfigured()) {
     return { status: "failed", error: "SMS API key is missing" };
   }

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
 import { InscrireUtilisateurUseCase } from '../../../../src/application/user/InscrireUtilisateurUseCase.ts';
 import { InMemoryUserRepository } from '../../../helpers/repositories/InMemoryUserRepository.ts';
+import type { OutboundMessagingPolicy } from '../../../../src/domain/ports/services/OutboundMessagingPolicy.ts';
 
 describe('InscrireUtilisateurUseCase', () => {
   let userRepo: InMemoryUserRepository;
@@ -91,5 +92,25 @@ describe('InscrireUtilisateurUseCase', () => {
     const user = await userRepo.findById(resultat.userId);
     expect(user?.aPermission('MANAGE_FINANCE')).toBe(true);
     expect(user?.aPermission('VALIDATE_GRADES')).toBe(false);
+  });
+
+  it('mode test désactivé : le mot de passe temporaire est renvoyé UNE SEULE fois dans la réponse', async () => {
+    const useCaseTest = new InscrireUtilisateurUseCase(userRepo, undefined, {
+      estActive: async () => false,
+    } as OutboundMessagingPolicy);
+
+    const resultat = await useCaseTest.execute(commandeBase);
+
+    expect(resultat.motDePasseTemporaire).toBeDefined();
+  });
+
+  it("mode actif : le mot de passe temporaire n'est pas renvoyé dans la réponse", async () => {
+    const useCaseActif = new InscrireUtilisateurUseCase(userRepo, undefined, {
+      estActive: async () => true,
+    } as OutboundMessagingPolicy);
+
+    const resultat = await useCaseActif.execute(commandeBase);
+
+    expect(resultat.motDePasseTemporaire).toBeUndefined();
   });
 });

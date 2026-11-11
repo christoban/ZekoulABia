@@ -224,6 +224,20 @@
       "generate_reports": "Generate Report Cards",
       "manage_classes": "Manage Classes",
       "invite_user": "Invite User"
+    },
+    "mode_test": {
+      "title": "Test mode - outbound messaging",
+      "status_active": "Mode active - outbound emails/SMS are sent",
+      "status_disabled": "Test mode - outbound emails/SMS are suppressed",
+      "desc": "Outbound sends to school accounts (2FA, OTP, notifications) are suppressed during the test phase. Master accounts and login flows remain active.",
+      "toggle_on": "Enable outbound messaging",
+      "toggle_off": "Disable outbound messaging (test mode)",
+      "toggled": "Test mode updated",
+      "toggle_error": "Failed to update test mode",
+      "saving": "Saving...",
+      "messages_title": "Suppressed messages",
+      "messages_empty": "No suppressed messages yet.",
+      "loading": "Loading test mode..."
     }
   },
   "users": {
@@ -543,7 +557,14 @@
       "delete": "Delete"
     },
     "no_users": "No users",
-    "search_placeholder": "Search…"
+    "search_placeholder": "Search…",
+    "test_mode_password": {
+      "title": "Test mode — temporary password",
+      "hint": "This password will never be shown again. Note it down and share it with the concerned person.",
+      "copy": "Copy",
+      "copied": "Copied!",
+      "close": "Close"
+    }
   },
   "classes": {
     "title": "Classes",

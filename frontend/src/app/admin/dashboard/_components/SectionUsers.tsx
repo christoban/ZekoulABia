@@ -102,12 +102,47 @@ interface InviteForm {
   showCustomPerms: boolean
   loading: boolean
   error: string
+  tempPassword: string
 }
 
 const EMPTY_FORM: InviteForm = {
   firstName: '', lastName: '', email: '', role: 'TEACHER',
   selectedTitles: [], customPerms: [], showCustomPerms: false,
-  loading: false, error: '',
+  loading: false, error: '', tempPassword: '',
+}
+
+// ── Mot de passe temporaire (mode test) : affiché UNE SEULE fois, puis perdu ──
+function PasswordOnceNotice({ password, onClose }: { password: string; onClose: () => void }) {
+  const t = useT('admin')
+  const [copied, setCopied] = useState(false)
+
+  const copier = async () => {
+    try {
+      await navigator.clipboard.writeText(password)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Clipboard indisponible (non-HTTPS) : le texte reste selectionnable manuellement.
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ padding: '10px 12px', background: 'var(--red-light)', borderRadius: 10, border: '1px solid rgba(220,38,38,0.2)', fontSize: 12.5, fontWeight: 700, color: 'var(--red)' }}>
+        {t('users.test_mode_password.title')}
+        <div style={{ fontWeight: 500, color: 'var(--text2)', marginTop: 2 }}>{t('users.test_mode_password.hint')}</div>
+      </div>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <code style={{ flex: 1, padding: '10px 12px', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 8, fontFamily: 'monospace', fontSize: 14, fontWeight: 700, letterSpacing: 0.5, userSelect: 'all', color: 'var(--text)' }}>{password}</code>
+        <button onClick={copier} style={{ padding: '9px 12px', borderRadius: 8, border: '1.5px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', cursor: 'pointer', fontWeight: 700, fontSize: 12, fontFamily: 'inherit' }}>
+          {copied ? t('users.test_mode_password.copied') : t('users.test_mode_password.copy')}
+        </button>
+      </div>
+      <button onClick={onClose} style={{ padding: '10px', borderRadius: 9, border: 'none', background: 'var(--bg2)', color: 'var(--text)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+        {t('users.test_mode_password.close')}
+      </button>
+    </div>
+  )
 }
 
 function InviteModal({ onClose, onSuccess, staffTitles }: { onClose: () => void; onSuccess: (msg: string) => void; staffTitles: StaffTitle[] }) {
@@ -172,8 +207,14 @@ function InviteModal({ onClose, onSuccess, staffTitles }: { onClose: () => void;
           }),
         }),
       })
-      const data = await res.json() as { success?: boolean; message?: string }
+      const data = await res.json() as { success?: boolean; message?: string; data?: { motDePasseTemporaire?: string } }
       if (!res.ok || !data.success) throw new Error(data.message ?? t('users.invite_modal.errors.unknown'))
+      const motDePasseTemporaire = data.data?.motDePasseTemporaire
+      if (motDePasseTemporaire) {
+        // Mode test : mot de passe temporaire renvoyé UNE SEULE fois — affiché, puis perdu.
+        set('tempPassword', motDePasseTemporaire)
+        return
+      }
       onSuccess(t('users.invite_modal.success').replace('{name}', `${form.firstName} ${form.lastName}`))
       onClose()
     } catch (err: unknown) {
@@ -209,6 +250,12 @@ function InviteModal({ onClose, onSuccess, staffTitles }: { onClose: () => void;
 
           <div className="mb-[14px] md:mb-[18px]" style={{ height: 1, background: 'var(--border)' }} />
 
+            {form.tempPassword && (
+              <PasswordOnceNotice password={form.tempPassword} onClose={() => onSuccess(t('users.invite_modal.success').replace('{name}', `${form.firstName} ${form.lastName}`))} />
+            )}
+
+            {!form.tempPassword && (
+            <>
           <div className="gap-[10px] md:gap-[14px]" style={{ display: 'flex', flexDirection: 'column' }}>
 
             {/* Nom + Prénom */}
@@ -332,8 +379,10 @@ function InviteModal({ onClose, onSuccess, staffTitles }: { onClose: () => void;
               {form.loading ? t('users.invite_modal.sending') : t('users.invite_modal.send')}
             </button>
           </div>
+            </>
+            )}
+          </div>
         </div>
-      </div>
     </>
   )
 }
@@ -796,6 +845,7 @@ export default function SectionUsers({ onToast, onNav }: Props) {
   const [docModal, setDocModal]     = useState(EMPTY_DOC_MODAL)
   const [createOpen, setCreateOpen] = useState(false)
   const [createForm, setCreateForm] = useState(EMPTY_CREATE_USER)
+  const [createTempPassword, setCreateTempPassword] = useState<string | null>(null)
   const [studioStudent, setStudioStudent] = useState<{
     id: string
     name?: string
@@ -1087,8 +1137,14 @@ export default function SectionUsers({ onToast, onNav }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
-      const data = await res.json()
+      const data = await res.json() as { success?: boolean; message?: string; data?: { motDePasseTemporaire?: string } }
       if (!res.ok) throw new Error(data.message || 'Erreur')
+      const motDePasseTemporaire = data.data?.motDePasseTemporaire
+      if (motDePasseTemporaire) {
+        // Mode test : mot de passe temporaire renvoyé UNE SEULE fois — affiché, puis perdu.
+        setCreateTempPassword(motDePasseTemporaire)
+        return
+      }
       onToast(t('users.create_modal.toast_success').replace('{name}', `${createForm.firstName} ${createForm.lastName}`), 'success')
       setCreateOpen(false)
       fetchUsers(ROLE_TABS[activeTab]?.role ?? '')
@@ -1669,10 +1725,14 @@ export default function SectionUsers({ onToast, onNav }: Props) {
 
       {/* ── Modal créer un utilisateur ── */}
       {createOpen && (
-        <div onClick={() => { setCreateOpen(false); setCreateForm(EMPTY_CREATE_USER) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div onClick={() => { setCreateOpen(false); setCreateTempPassword(null); setCreateForm(EMPTY_CREATE_USER) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()} className="px-5 py-5 md:px-7 md:py-6" style={{ background: 'var(--surface)', borderRadius: 16, width: 520, maxWidth: '94vw', maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
             <div className="text-[16px] md:text-[18px] mb-[12px] md:mb-[16px]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>{t('users.create_modal.title')}</div>
 
+            {createTempPassword ? (
+              <PasswordOnceNotice password={createTempPassword} onClose={() => { setCreateOpen(false); setCreateTempPassword(null); setCreateForm(EMPTY_CREATE_USER); fetchUsers(ROLE_TABS[activeTab]?.role ?? '') }} />
+            ) : (
+            <>
             <div className="gap-[10px] md:gap-[12px]" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
               <Field label={t('users.create_modal.first_name_label')}>
                 <input value={createForm.firstName} onChange={e => setCreate('firstName', e.target.value)} placeholder="Marie" className={sInCls} style={sIn} />
@@ -1768,6 +1828,8 @@ export default function SectionUsers({ onToast, onNav }: Props) {
                 {createForm.loading ? <Loader2 size={14} strokeWidth={2} className="animate-spin" /> : t('users.create_modal.btn_create')}
               </button>
             </div>
+            </>
+            )}
           </div>
         </div>
       )}

@@ -276,7 +276,8 @@
     "mfa_setup_continue": "Continue to my dashboard →",
     "choose_account_title": "Multiple accounts found",
     "choose_account_subtitle": "Choose the account you want to sign in with.",
-    "copyright": "© {year} ZekoulABia · All rights reserved · School Management Platform"
+    "copyright": "© {year} ZekoulABia · All rights reserved · School Management Platform",
+    "mode_test_bandeau_msg": null
   },
   "messages": {
     "operationSuccess": "Operation completed successfully",

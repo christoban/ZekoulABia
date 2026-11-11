@@ -33,6 +33,7 @@ import { PrismaSchoolGroupOwnerAuthRepository } from '@infrastructure/persistenc
 import { PrismaGroupTransferRepository } from '@infrastructure/persistence/prisma/PrismaGroupTransferRepository';
 import { PrismaGroupeScolaireQueryRepository } from '@infrastructure/persistence/prisma/PrismaGroupeScolaireQueryRepository';
 import { PrismaStaffProfileRepository } from '@infrastructure/persistence/prisma/PrismaStaffProfileRepository';
+import { politiqueEnvoiSortantPlateforme } from '@infrastructure/services/outbound/OutboundMessagingPolicy';
 import { DesignerAPUseCase } from '@application/user/DesignerAPUseCase';
 import { ActivityLogAdapter } from '@infrastructure/services/audit/ActivityLogAdapter';
 import { AIActionAuditAdapter } from '@infrastructure/services/ai/AIActionAuditAdapter';
@@ -55,6 +56,15 @@ import { LoginEmailOtpUseCase } from '@application/user/LoginEmailOtpUseCase';
 import { VerifierMfaConnexionUseCase } from '@application/user/VerifierMfaConnexionUseCase';
 import { MfaUseCase } from '@application/user/MfaUseCase';
 import { sendTransactionalEmail } from '../../services/email/EmailService';
+import { PlatformSettingsController } from '@infrastructure/http/controllers/PlatformSettingsController';
+import { creerPlatformSettingsRoutes, creerPublicPlatformSettingsRoutes } from '@infrastructure/http/routes/platformSettings.routes';
+import { GetPlatformSettingsUseCase } from '@application/masterAdmin/GetPlatformSettingsUseCase';
+import { UpdatePlatformSettingsUseCase } from '@application/masterAdmin/UpdatePlatformSettingsUseCase';
+import { ListerMessagesSupprimesUseCase } from '@application/masterAdmin/ListerMessagesSupprimesUseCase';
+import { PrismaPlatformSettingsRepository } from '@infrastructure/persistence/prisma/PrismaPlatformSettingsRepository';
+import { PrismaSuppressedOutboundMessageRepository } from '@infrastructure/persistence/prisma/PrismaSuppressedOutboundMessageRepository';
+import { platformSettingsCachePartagee } from '@infrastructure/cache/PlatformSettingsCache';
+import { PlatformSettingsAuditAdapter } from '@infrastructure/services/audit/PlatformSettingsAuditAdapter';
 
 type Container = ReturnType<typeof creerContainer>;
 
@@ -119,6 +129,7 @@ export function registerUserRoutes(app: Application, prismaParam: typeof prisma 
     auditForUser,
     userRepository,
     mfaUseCase,
+    politiqueEnvoiSortantPlateforme,
     classeRepositoryForUser,
     enrollmentRepositoryForUser,
     c.activityLog,
@@ -161,6 +172,20 @@ export function registerUserRoutes(app: Application, prismaParam: typeof prisma 
   const masterAuthController = new MasterAuthController(loginMasterUseCase, verifyMfaUseCase, masterUserAuthRepository);
   app.use('/api/v2/master/auth', creerMasterAuthRoutes(masterAuthController));
   app.use('/api/v2/master', creerMasterAdminHexRoutes(masterAdminHexController));
+
+  const platformSettingsRepository = new PrismaPlatformSettingsRepository(p);
+  const platformSettingsCache = platformSettingsCachePartagee;
+  const platformSettingsController = new PlatformSettingsController(
+    new GetPlatformSettingsUseCase(platformSettingsRepository, platformSettingsCache),
+    new UpdatePlatformSettingsUseCase(
+      platformSettingsRepository,
+      platformSettingsCache,
+      new PlatformSettingsAuditAdapter(p),
+    ),
+    new ListerMessagesSupprimesUseCase(new PrismaSuppressedOutboundMessageRepository(p)),
+  );
+  app.use('/api/v2/master/platform-settings', creerPlatformSettingsRoutes(platformSettingsController));
+  app.use('/api/v2/platform-settings/public', creerPublicPlatformSettingsRoutes(platformSettingsController));
 
   const masterReferentielsController = new MasterReferentielsController();
   app.use('/api/v2/master/referentiels', creerMasterReferentielsRoutes(masterReferentielsController));

@@ -13,6 +13,7 @@
 import type { UserRepository } from '@domain/ports/repositories/UserRepository';
 import type { SchoolRepository } from '@domain/ports/repositories/SchoolRepository';
 import type { TokenService } from '@domain/ports/services/TokenService';
+import type { OutboundMessagingPolicy } from '@domain/ports/services/OutboundMessagingPolicy';
 import type { StaffPermissionType } from '@domain/types/enums';
 
 export interface ConnecterUtilisateurCommande {
@@ -36,6 +37,10 @@ export interface SchoolSuspendedError extends Error {
 }
 
 /** Error('MULTIPLE_ACCOUNTS') — plusieurs comptes matchent email+password (écoles différentes). */
+export interface CompteVerrouilleError extends Error {
+  code: 'COMPTE_VERROUILLE';
+}
+
 export interface MultipleAccountsError extends Error {
   code: 'MULTIPLE_ACCOUNTS';
   accounts: Array<{
@@ -58,6 +63,13 @@ export interface ConnecterUtilisateurResultat {
   mustChangePassword: boolean;
   roleMismatch?: boolean;
   redirectTo?: string; // présent si ADMIN sur une école APPROVED → '/admin/configuration'
+  /**
+   * Mode test (réglage plateforme outboundMessagingEnabled désactivé) : le contrôleur
+   * émet la session immédiatement après le mot de passe, sans étape OTP ni MFA.
+   * Le flux Master (décision 1) n'est pas concerné — ce use case ne couvre que les
+   * comptes d'école. La limitation IP et les verrouillages OTP restent en place.
+   */
+  sessionDirecte?: boolean;
 }
 
 export class ConnecterUtilisateurUseCase {
@@ -65,6 +77,7 @@ export class ConnecterUtilisateurUseCase {
     private readonly userRepository: UserRepository,
     private readonly schoolRepository: SchoolRepository,
     private readonly tokenService: TokenService,
+    private readonly politiqueEnvoiSortant: OutboundMessagingPolicy,
   ) {}
 
   async execute(commande: ConnecterUtilisateurCommande): Promise<ConnecterUtilisateurResultat> {
@@ -115,6 +128,14 @@ export class ConnecterUtilisateurUseCase {
     const school = await this.schoolRepository.findById(schoolId);
     if (!school) throw new Error('École introuvable');
 
+    // Verrouillage temporaire par compte apres echecs de mot de passe (chantier F)
+    const userPourVerrouillage = await this.userRepository.findByEmail(commande.email, schoolId);
+    if (userPourVerrouillage?.estVerrouille) {
+      const err = new Error('COMPTE_VERROUILLE') as CompteVerrouilleError;
+      err.code = 'COMPTE_VERROUILLE';
+      throw err;
+    }
+
     // 2. Authentifier l'utilisateur EN PREMIER — le statut de l'école ne filtre pas les credentials
     let user = await this.userRepository.authentifier(
       commande.email,
@@ -133,6 +154,15 @@ export class ConnecterUtilisateurUseCase {
       );
 
       if (rolesDisponibles.length === 0) {
+        if (userPourVerrouillage) {
+          userPourVerrouillage.enregistrerEchecMotDePasse();
+          await this.userRepository.update(userPourVerrouillage);
+          if (userPourVerrouillage.estVerrouille) {
+            const err = new Error('COMPTE_VERROUILLE') as CompteVerrouilleError;
+            err.code = 'COMPTE_VERROUILLE';
+            throw err;
+          }
+        }
         throw new Error('Email ou mot de passe incorrect');
       }
 
@@ -151,7 +181,20 @@ export class ConnecterUtilisateurUseCase {
       roleMismatch = true;
     }
 
-    if (!user || !user.isActive) {
+    if (!user) {
+      if (userPourVerrouillage) {
+        userPourVerrouillage.enregistrerEchecMotDePasse();
+        await this.userRepository.update(userPourVerrouillage);
+        if (userPourVerrouillage.estVerrouille) {
+          const err = new Error('COMPTE_VERROUILLE') as CompteVerrouilleError;
+          err.code = 'COMPTE_VERROUILLE';
+          throw err;
+        }
+      }
+      throw new Error('Email ou mot de passe incorrect');
+    }
+
+    if (!user.isActive) {
       throw new Error('Email ou mot de passe incorrect');
     }
 
@@ -174,9 +217,13 @@ export class ConnecterUtilisateurUseCase {
     // → ActiverEtablissementUseCase après la Phase 2 d'onboarding).
     const adminSurEcoleApprouvee = user.estAdmin() && school.status === 'APPROVED';
 
-    // 4. Enregistrer le dernier login
+    // 4. Enregistrer le dernier login + reinitialiser echecs mot de passe
+    user.reinitialiserEchecsMotDePasse();
     user.enregistrerConnexion();
     await this.userRepository.update(user);
+
+    // 4bis. Mode test : réglage désactivé → session directe après mot de passe.
+    const envoiSortantActif = await this.politiqueEnvoiSortant.estActive();
 
     // 5. Générer les tokens
     const tokens = this.tokenService.genererTokens({
@@ -199,6 +246,7 @@ export class ConnecterUtilisateurUseCase {
       roleMismatch,
       // Indique au frontend où rediriger : ADMIN sur école APPROVED → configuration.
       redirectTo: adminSurEcoleApprouvee ? '/admin/configuration' : undefined,
+      sessionDirecte: !envoiSortantActif,
     };
   }
 }

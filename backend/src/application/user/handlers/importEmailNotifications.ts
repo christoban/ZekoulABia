@@ -1,28 +1,5 @@
 import type { EmailService } from '@domain/ports/services/EmailService';
 
-const DEV_PASS = 'chris123456789';
-
-export async function envoyerEmailDevMode(
-  emailService: EmailService,
-  email: string,
-  prenom: string,
-  nom: string,
-  schoolId: string,
-  schoolName: string,
-): Promise<void> {
-  try {
-    await emailService.envoyer({
-      destinataire: email,
-      sujet: `[DEV] Compte créé — ${schoolName}`,
-      contenuHtml: `<p>Bonjour ${prenom} ${nom},</p><p>Votre compte a été créé. Mot de passe dev : <strong>${DEV_PASS}</strong></p>`,
-      eventType: 'user_import',
-      metadata: { schoolId },
-    });
-  } catch {
-    // non bloquant
-  }
-}
-
 export async function envoyerEmailLienInvitation(
   emailService: EmailService,
   userId: string,

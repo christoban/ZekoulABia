@@ -224,6 +224,20 @@
       "generate_reports": "Générer bulletins",
       "manage_classes": "Gérer les classes",
       "invite_user": "Inviter utilisateur"
+    },
+    "mode_test": {
+      "title": "Mode test - messagerie sortante",
+      "status_active": "Mode actif - les emails/SMS sortants sont envoyes",
+      "status_disabled": "Mode test - les emails/SMS sortants sont supprimes",
+      "desc": "Les envois vers les comptes d'ecole (2FA, OTP, notifications) sont supprimes pendant la phase de test. Les comptes Master et les flux de connexion restent actifs.",
+      "toggle_on": "Activer les envois sortants",
+      "toggle_off": "Desactiver les envois sortants (mode test)",
+      "toggled": "Mode test mis a jour",
+      "toggle_error": "Erreur lors de la mise a jour du mode test",
+      "saving": "Sauvegarde...",
+      "messages_title": "Messages supprimes",
+      "messages_empty": "Aucun message supprime pour le moment.",
+      "loading": "Chargement du mode test..."
     }
   },
   "users": {
@@ -524,7 +538,14 @@
       "delete": "Supprimer"
     },
     "no_users": "Aucun utilisateur",
-    "search_placeholder": "Rechercher…"
+    "search_placeholder": "Rechercher…",
+    "test_mode_password": {
+      "title": "Mode test — mot de passe temporaire",
+      "hint": "Ce mot de passe ne sera plus jamais affiché. Notez-le et transmettez-le à la personne concernée.",
+      "copy": "Copier",
+      "copied": "Copié !",
+      "close": "Fermer"
+    }
   },
   "classes": {
     "title": "Classes",

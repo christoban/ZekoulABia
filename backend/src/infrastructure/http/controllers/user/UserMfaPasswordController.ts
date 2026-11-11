@@ -3,6 +3,7 @@ import { createHash, randomBytes } from 'crypto';
 import type { MfaUseCase } from '@application/user/MfaUseCase';
 import type { UserRepository } from '@domain/ports/repositories/UserRepository';
 import type { SchoolRepository } from '@domain/ports/repositories/SchoolRepository';
+import type { OutboundMessagingPolicy } from '@domain/ports/services/OutboundMessagingPolicy';
 import { passwordError } from '../../../../domain/security/PasswordPolicy';
 import { sendTransactionalEmail } from '../../../services/email/EmailService.ts';
 import { messageErreur } from '@application/shared/messageErreur';
@@ -12,6 +13,7 @@ export class UserMfaPasswordController {
     private readonly mfaUseCase: MfaUseCase,
     private readonly userRepository: UserRepository,
     private readonly schoolRepository: SchoolRepository,
+    private readonly politiqueEnvoiSortant: OutboundMessagingPolicy,
   ) {}
 
   // GET /api/v2/users/mfa/status
@@ -80,6 +82,13 @@ export class UserMfaPasswordController {
 
       const normalizedEmail = email.toLowerCase().trim();
       const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+
+      // Mode test (réglage plateforme outboundMessagingEnabled désactivé) : aucun jeton
+      // créé, aucun email déclenché — réponse identique au cas nominal (anti-énumération).
+      if (!(await this.politiqueEnvoiSortant.estActive())) {
+        res.json({ success: true, message: 'Si ce compte existe, un email de réinitialisation a été envoyé.' });
+        return;
+      }
 
       // Helper: send reset email for a given user
       const sendResetEmail = async (user: { id: string; email: string; firstName: string; lastName: string }, school: { id: string; subdomain: string }) => {

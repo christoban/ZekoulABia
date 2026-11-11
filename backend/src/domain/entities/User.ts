@@ -5,6 +5,9 @@
  */
 import type { UserRole, StaffPermissionType, UserAccessMode } from '@domain/types/enums';
 
+const SEUIL_ECHECS_MOT_DE_PASSE = 5;
+const DUREE_VERROU_MOT_DE_PASSE_MS = 15 * 60 * 1000;
+
 export interface UserProps {
   id: string;
   schoolId: string;
@@ -27,6 +30,9 @@ export interface UserProps {
   staffSectionId?: string;
   // IDs des classes dont l'utilisateur est Professeur Principal
   professorPrincipalClassIds?: string[];
+  // Verrouillage temporaire par compte apres echecs de mot de passe (chantier F)
+  passwordFailures?: number;
+  lockedUntil?: Date | null;
 }
 
 export interface CreerUserProps {
@@ -84,6 +90,9 @@ export class User {
   get accessMode(): UserAccessMode { return this.props.accessMode ?? 'FULL_ACCESS'; }
   get staffPermissions(): StaffPermissionType[] { return this.props.staffPermissions ?? []; }
   get nomComplet(): string { return `${this.props.firstName} ${this.props.lastName}`; }
+  get passwordFailures(): number { return this.props.passwordFailures ?? 0; }
+  get lockedUntil(): Date | null { return this.props.lockedUntil ?? null; }
+  get estVerrouille(): boolean { return this.props.lockedUntil !== null && this.props.lockedUntil !== undefined && this.props.lockedUntil > new Date(); }
 
   // --- Méthodes de rôle ---
 
@@ -125,6 +134,20 @@ export class User {
 
   enregistrerConnexion(): void {
     this.props.lastLogin = new Date();
+    this.props.updatedAt = new Date();
+  }
+
+  enregistrerEchecMotDePasse(): void {
+    this.props.passwordFailures = (this.props.passwordFailures ?? 0) + 1;
+    this.props.updatedAt = new Date();
+    if ((this.props.passwordFailures ?? 0) + 1 >= SEUIL_ECHECS_MOT_DE_PASSE) {
+      this.props.lockedUntil = new Date(Date.now() + DUREE_VERROU_MOT_DE_PASSE_MS);
+    }
+  }
+
+  reinitialiserEchecsMotDePasse(): void {
+    this.props.passwordFailures = 0;
+    this.props.lockedUntil = null;
     this.props.updatedAt = new Date();
   }
 

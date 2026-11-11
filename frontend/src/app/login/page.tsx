@@ -56,6 +56,7 @@ export default function LoginPage() {
   const [showPwd, setShowPwd]       = useState(false)
   const [loading, setLoading]       = useState(false)
   const [alert, setAlert]           = useState<{ msg: string; type: 'error' | 'warning' } | null>(null)
+  const [modeTestBandeau, setModeTestBandeau] = useState<string | null>(null)
   const [suspended, setSuspended]   = useState<{ schoolName: string } | null>(null)
   const [success, setSuccess]       = useState<SuccessInfo | null>(null)
   const [progress, setProgress]     = useState(false)
@@ -195,6 +196,22 @@ export default function LoginPage() {
     }
   }, [checkingSession])
 
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      try {
+        const res = await fetch('/api/v2/platform-settings/public')
+        const data = await res.json()
+        if (!res.ok) return
+        if (!cancelled) setModeTestBandeau(data.outboundMessagingEnabled ? null : t('login.mode_test_bandeau_msg'))
+      } catch {
+        // erreur reseau : pas de bandeau
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [t])
+
   // Empêcher le remplissage automatique du navigateur
   useEffect(() => {
     const tmr = setTimeout(() => { setEmail(''); setPassword('') }, 50)
@@ -292,6 +309,13 @@ export default function LoginPage() {
         return
       }
 
+      // Mode test — réglage plateforme désactivé : le backend émet la session après le
+      // mot de passe, sans étape de code (même shape que verify-login-otp en succès).
+      if (data.step === 'done') {
+        completeLogin(data.data)
+        return
+      }
+
       if (data.emailMasked) setEmailMasked(data.emailMasked)
       if (data.phoneMasked) setPhoneMasked(data.phoneMasked)
       setHasPhone(Boolean(data.hasPhone))
@@ -341,6 +365,11 @@ export default function LoginPage() {
       }
       setAccountChoices(null)
       setPendingCredentials(null)
+      // Mode test — réglage plateforme désactivé : session directe après le mot de passe.
+      if (data.step === 'done') {
+        completeLogin(data.data)
+        return
+      }
       if (data.emailMasked) setEmailMasked(data.emailMasked)
       if (data.phoneMasked) setPhoneMasked(data.phoneMasked)
       setHasPhone(Boolean(data.hasPhone))
@@ -832,6 +861,18 @@ export default function LoginPage() {
                 {t('login.right_subtitle')}
               </p>
             </div>
+
+            {modeTestBandeau && (
+              <div style={{
+                fontSize: 13, marginBottom: 16, padding: '10px 14px',
+                borderRadius: 8, fontWeight: 700,
+                display: 'flex', alignItems: 'center', gap: 8,
+                background: 'var(--red-light)', border: '1px solid rgba(217,72,31,0.2)',
+                color: 'var(--red)'
+              }}>
+                <Shield size={16} strokeWidth={2} style={{ flexShrink: 0 }} /><span>{modeTestBandeau}</span>
+              </div>
+            )}
 
             {alert && (
               <div style={{
