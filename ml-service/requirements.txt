@@ -1,13 +1,11 @@
-fastapi>=0.115
-uvicorn[standard]>=0.34
-pydantic>=2.10
-numpy>=1.26
-tabpfn>=2.0
+fastapi==0.141.1
+uvicorn[standard]==0.52.1
+pydantic==2.13.4
+numpy==2.5.1
+tabpfn==8.2.0
+httpx==0.28.1
 
-# OCR local (Partie C — pipeline scan document, voir README.md) — paddlepaddle est le framework
-# sous-jacent de paddleocr, installation lourde (~500 Mo, télécharge les poids du modèle au
-# premier lancement). Pas de dépendance GPU ici : usage CPU volontaire, cohérent avec un service
-# qui doit rester déployable sur une petite instance.
-paddlepaddle>=2.6
-paddleocr>=2.9
-Pillow>=10.0
+# OCR local (Partie C — pipeline scan document, voir README.md et main.py)
+paddlepaddle==3.3.1
+paddleocr==3.7.0
+Pillow==12.3.0

@@ -17,7 +17,7 @@ export class SMSController {
       if (!school) { res.status(404).json({ message: 'École introuvable' }); return; }
 
       const result = await this.traiterSmsPresence.execute(text, from, school.id);
-      console.log(`SMS from ${from}: ${text} → ${result.message}`);
+      console.info(`SMS from ${from}: ${text} → ${result.message}`);
       res.json(result);
     } catch (error) {
       next(error);

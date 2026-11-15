@@ -93,7 +93,7 @@ export class SocketNotificationService implements NotificationService {
     const hasSms = canaux.includes('SMS');
 
     if (!hasInApp && !hasPush && !canaux.includes('SMS')) {
-      console.log(`[Notification] ${canaux.join(',')} → ${options.userId} : ${options.titre}`);
+      console.info(`[Notification] ${canaux.join(',')} → ${options.userId} : ${options.titre}`);
       return;
     }
 
@@ -182,7 +182,7 @@ export class SocketNotificationService implements NotificationService {
     params: Parameters<NotificationService['envoyerAuRole']>[0]
   ): Promise<void> {
     if (params.canal && params.canal !== 'IN_APP' && !params.urgency) {
-      console.log(`[Notification] ${params.canal} → rôle ${params.role}@${params.schoolId} : ${params.titre} (canal ignoré, broadcast IN_APP)`);
+      console.info(`[Notification] ${params.canal} → rôle ${params.role}@${params.schoolId} : ${params.titre} (canal ignoré, broadcast IN_APP)`);
     }
     const urgency = params.urgency ?? 'NORMAL';
     const destinataires = await prisma.user.findMany({

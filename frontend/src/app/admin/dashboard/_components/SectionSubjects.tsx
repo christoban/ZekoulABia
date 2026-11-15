@@ -1606,7 +1606,7 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
             <button type="button"
               onClick={() => setAddClassOnly(false)}
               style={{ flex: 1, padding: '7px 10px', borderRadius: 8, fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                background: !addClassOnly ? 'white' : 'transparent',
+                background: !addClassOnly ? 'var(--surface)' : 'transparent',
                 color:      !addClassOnly ? 'var(--text)' : 'var(--text3)',
                 boxShadow:  !addClassOnly ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
               {t('subjects.class_view.add_modal.scope_all')}
@@ -1614,7 +1614,7 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
             <button type="button"
               onClick={() => setAddClassOnly(true)}
               style={{ flex: 1, padding: '7px 10px', borderRadius: 8, fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                background: addClassOnly ? 'white' : 'transparent',
+                background: addClassOnly ? 'var(--surface)' : 'transparent',
                 color:      addClassOnly ? 'var(--purple)' : 'var(--text3)',
                 boxShadow:  addClassOnly ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
               {t('subjects.class_view.add_modal.scope_only')}

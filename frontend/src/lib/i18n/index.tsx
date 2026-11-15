@@ -146,16 +146,20 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   function resolveKey(namespace: Namespace, key: string, params?: Record<string, string | number>): string {
-    if (!dicts) return params ? key.replace(/\{(\w+)\}/g, (_, k) => String(params[k] ?? `{${k}}`)) : key
+    if (!dicts) return ''
     const dict = dicts[namespace]
-    if (!dict) return key
-    let val: any = key.split('.').reduce((acc: any, part) => acc?.[part], dict)
+    if (!dict) return ''
+    const val: unknown = key.split('.').reduce<unknown>((acc, part) => {
+      if (acc !== null && typeof acc === 'object' && part in (acc as Record<string, unknown>)) {
+        return (acc as Record<string, unknown>)[part]
+      }
+      return undefined
+    }, dict)
     if (typeof val !== 'string') {
-      if (Array.isArray(val) || (typeof val === 'object' && val !== null)) return val
-      val = key
+      if (Array.isArray(val) || (typeof val === 'object' && val !== null)) return val as unknown as string
+      return ''
     }
-    if (params) val = val.replace(/\{(\w+)\}/g, (_match: string, k: string) => String(params[k] ?? `{${k}}`))
-    return val
+    return params ? val.replace(/\{(\w+)\}/g, (_match: string, k: string) => String(params[k] ?? `{${k}}`)) : val
   }
 
   const t = useCallback(

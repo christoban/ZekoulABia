@@ -216,7 +216,7 @@ export default function SectionCommunications({ onToast }: Props) {
             className="text-[12.5px] md:text-[14px] px-[14px] md:px-[20px] py-[8px] md:py-[7px]"
             style={{
               borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700,
-              background: tab === tb ? 'white' : 'transparent',
+              background: tab === tb ? 'var(--surface)' : 'transparent',
               color: tab === tb ? 'var(--text)' : 'var(--text3)',
               boxShadow: tab === tb ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
               transition: 'all 0.15s',

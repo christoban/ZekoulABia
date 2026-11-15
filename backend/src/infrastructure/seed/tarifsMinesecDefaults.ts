@@ -58,7 +58,7 @@ export async function seedTarifsMinesec(prisma: PrismaClient): Promise<void> {
       update: { montantFCFA: tarif.montantFCFA, description: tarif.description },
     });
   }
-  console.log(`✓ ${TARIFS_2025_2026.length} tarifs MINESEC seedés pour 2025-2026`);
+  console.info(`✓ ${TARIFS_2025_2026.length} tarifs MINESEC seedés pour 2025-2026`);
 }
 
 /**

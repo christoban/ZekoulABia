@@ -206,7 +206,7 @@ async function dispatchSms(
 
   if (!isSmsConfigured()) {
     const content = sensitive ? '[contenu sensible masqué]' : message
-    console.log(`[SMS-SIMULATION] À: ${phone} | Type: ${type} | Message: ${content}`)
+    console.info(`[SMS-SIMULATION] À: ${phone} | Type: ${type} | Message: ${content}`)
     await persistLog({ schoolId, to: phone, content, type, status: 'simulated', simulated: true })
     return
   }

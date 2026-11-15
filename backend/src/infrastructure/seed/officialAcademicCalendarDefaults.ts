@@ -80,5 +80,5 @@ export async function seedOfficialAcademicCalendar(prisma: PrismaClient): Promis
     },
   });
 
-  console.log(`✓ Calendrier académique officiel ${CALENDRIER_OFFICIEL_2026_2027.academicYear} (Arrêté conjoint) seedé`);
+  console.info(`✓ Calendrier académique officiel ${CALENDRIER_OFFICIEL_2026_2027.academicYear} (Arrêté conjoint) seedé`);
 }

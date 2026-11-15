@@ -1034,7 +1034,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
                       </thead>
                       <tbody>
                         {auditLogs.map((log, i) => (
-                          <tr key={log.id} style={{ background: i % 2 === 0 ? 'white' : 'var(--bg)' }}>
+                          <tr key={log.id} style={{ background: i % 2 === 0 ? 'var(--surface)' : 'var(--bg)' }}>
                             <td className={tdLogCls} style={{ ...tdLog, whiteSpace: 'nowrap' }}>{fmtDate(log.createdAt)}</td>
                             <td className={tdLogCls} style={{ ...tdLog, whiteSpace: 'nowrap' }}>
                               {log.user ? `${log.user.firstName} ${log.user.lastName}` : <span style={{ color: 'var(--border2)' }}>—</span>}

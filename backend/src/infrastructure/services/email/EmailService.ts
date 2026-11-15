@@ -200,7 +200,7 @@ export const sendTransactionalEmail = async (
       !MASTER_SECURITY_EMAIL_EVENTS.has(input.eventType) &&
       !(await estEnvoiSortantActif({ schoolId: schoolIdMeta, recipientEmail }))
     ) {
-      console.log(`[Mode test] envoi supprimé (email) → ${recipientEmail} (${input.eventType})`);
+      console.info(`[Mode test] envoi supprimé (email) → ${recipientEmail} (${input.eventType})`);
       await enregistrerMessageSupprime({
         channel: 'EMAIL',
         eventType: input.eventType,
@@ -218,7 +218,7 @@ export const sendTransactionalEmail = async (
     if (isResendConfigured()) {
       const resend = new Resend(process.env.RESEND_API_KEY);
       const from = resolveFromAddress(input.eventType, fromName);
-      console.log(`[Email] Resend → ${recipientEmail} from ${from}`);
+      console.info(`[Email] Resend → ${recipientEmail} from ${from}`);
       const { data: resendData, error: resendError } = await resend.emails.send({
         from,
         to: [input.recipientEmail],
@@ -239,13 +239,13 @@ export const sendTransactionalEmail = async (
       status = "sent";
       messageId = resendData?.id;
       usedProvider = "resend";
-      console.log(`[Email] Resend SUCCÈS id=${resendData?.id}`);
+      console.info(`[Email] Resend SUCCÈS id=${resendData?.id}`);
     } else {
       // SMTP (fallback si Resend absent)
       const smtpConfig = getSmtpConfig();
       const transporter = getTransporter();
       const fromAddress = process.env.SMTP_FROM || process.env.SMTP_USER;
-      console.log(`[Email] SMTP → ${recipientEmail} via ${smtpConfig.host}:${smtpConfig.port}`);
+      console.info(`[Email] SMTP → ${recipientEmail} via ${smtpConfig.host}:${smtpConfig.port}`);
       try {
         const sent = await transporter.sendMail({
           from: `${fromName} <${fromAddress}>`,
@@ -258,7 +258,7 @@ export const sendTransactionalEmail = async (
         status = "sent";
         messageId = sent.messageId;
         usedProvider = "smtp";
-        console.log(`[Email] SMTP SUCCÈS messageId=${sent.messageId}`);
+        console.info(`[Email] SMTP SUCCÈS messageId=${sent.messageId}`);
       } catch (smtpErr) {
         console.error(`[Email] ERREUR SMTP:`, messageErreur(smtpErr), (smtpErr as { code?: string }).code, (smtpErr as { response?: string }).response);
         cachedTransporter = null;

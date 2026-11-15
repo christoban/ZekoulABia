@@ -319,7 +319,7 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
   const sendSmsReminder = async (invoice: InvoiceItem) => {
     setSendingId(invoice.id)
     try {
-      const res = await fetchApi(`/api/v2/finance/invoices/${invoice.id}/remind-sms`, {
+      const res = await fetchApi(`/api/v2/finance/invoices/${invoice.id}/remind`, {
         method: 'POST', credentials: 'include',
       })
       const data = await res.json()

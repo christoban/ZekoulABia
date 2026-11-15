@@ -230,7 +230,7 @@ export class BroadcastService {
     const phone = normalizePhone(rawPhone);
     try {
       if (!isSmsConfigured()) {
-        console.log(`[SMS-BROADCAST-SIM] À: ${phone} | ${message}`);
+        console.info(`[SMS-BROADCAST-SIM] À: ${phone} | ${message}`);
         await this.prisma.smsLog.create({
           data: { schoolId, to: phone, content: message, type: 'BROADCAST', status: 'simulated', simulated: true },
         });

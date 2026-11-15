@@ -8,8 +8,7 @@
  *   Adapters (Prisma, services) → injectés dans → Use Cases → injectés dans → Controllers
  */
 
-import { PrismaClient } from '@prisma/client';
-import { softDeleteExtension } from '@infrastructure/persistence/prisma/softDeleteExtension';
+import { prisma } from '@infrastructure/persistence/prisma/prisma.client';
 import { politiqueEnvoiSortantPlateforme } from '@infrastructure/services/outbound/OutboundMessagingPolicy';
 
 // --- Adapters Persistence ---
@@ -468,11 +467,7 @@ import { RelancerParentsNonLusCarnetUseCase } from '@application/carnetLiaison/R
 // ─────────────────────────────────────────────
 
 export function creerContainer() {
-  // 1. Client Prisma (singleton) — connexion séparée de celle de prisma.client.ts (dette
-  // architecturale préexistante, pas corrigée ici), mais l'extension de soft-delete doit couvrir
-  // les DEUX pour que le filtre deletedAt:null soit vraiment universel (voir softDeleteExtension.ts).
-  const prisma = new PrismaClient().$extends(softDeleteExtension) as unknown as PrismaClient;
-
+  // 1. Client Prisma partagé (singleton avec softDeleteExtension, voir prisma.client.ts)
   // 2. Repositories
   const userRepository = new PrismaUserRepository(prisma);
   const schoolRepository = new PrismaSchoolRepository(prisma);

@@ -48,7 +48,7 @@ async function envoyerEtRapporter(opts: NotifierUtilisateurPushOptions): Promise
     if (!(await isPushEnabledForUser(opts.userId))) return { delivered: false }
 
     if (!isPushConfigured()) {
-      console.log(`[PUSH-SIMULATION] À: ${opts.userId} | ${opts.title} — ${opts.body}`)
+      console.info(`[PUSH-SIMULATION] À: ${opts.userId} | ${opts.title} — ${opts.body}`)
       return { delivered: false }
     }
 

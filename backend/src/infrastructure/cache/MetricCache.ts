@@ -32,15 +32,15 @@ export class MetricCache implements MetricCachePort {
     const k = stableKey(key, dims);
     const found = this.store.get(k);
     if (!found) {
-      console.log(`[MetricCache] metric_miss key=${key} schoolId=${dims.schoolId}`);
+      console.info(`[MetricCache] metric_miss key=${key} schoolId=${dims.schoolId}`);
       return null;
     }
     if (found.entry.expiresAt.getTime() <= Date.now()) {
       this.store.delete(k);
-      console.log(`[MetricCache] metric_miss key=${key} schoolId=${dims.schoolId} (expired)`);
+      console.info(`[MetricCache] metric_miss key=${key} schoolId=${dims.schoolId} (expired)`);
       return null;
     }
-    console.log(`[MetricCache] metric_hit key=${key} schoolId=${dims.schoolId}`);
+    console.info(`[MetricCache] metric_hit key=${key} schoolId=${dims.schoolId}`);
     return found.entry;
   }
 
@@ -66,7 +66,7 @@ export class MetricCache implements MetricCachePort {
         count++;
       }
     }
-    if (count > 0) console.log(`[MetricCache] invalidate key=${key} prefix=${JSON.stringify(dimsPrefix)} count=${count}`);
+    if (count > 0) console.info(`[MetricCache] invalidate key=${key} prefix=${JSON.stringify(dimsPrefix)} count=${count}`);
     return count;
   }
 
@@ -78,7 +78,7 @@ export class MetricCache implements MetricCachePort {
         count++;
       }
     }
-    if (count > 0) console.log(`[MetricCache] invalidateBySchool schoolId=${schoolId} count=${count}`);
+    if (count > 0) console.info(`[MetricCache] invalidateBySchool schoolId=${schoolId} count=${count}`);
     return count;
   }
 

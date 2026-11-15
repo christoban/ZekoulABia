@@ -26,7 +26,7 @@ export const sendSMS = async (
   // Mode test — interception en un seul endroit, au plus bas niveau : couvre aussi
   // le job d'escalade SMS qui relit le réglage de fait au moment de l'envoi.
   if (!(await estEnvoiSortantActif({ schoolId, recipientPhone: to }))) {
-    console.log(`[Mode test] envoi supprimé (sms) → ${to}`);
+    console.info(`[Mode test] envoi supprimé (sms) → ${to}`);
     await enregistrerMessageSupprime({ channel: 'SMS', eventType: 'sms', recipient: to, schoolId });
     return { success: true, msgId: MSG_ID_SUPPRIME };
   }
@@ -59,7 +59,7 @@ export const sendBulkSMS = async (
   schoolId?: string | null,
 ): Promise<{ success: number; failed: number }> => {
   if (!(await estEnvoiSortantActif({ schoolId, recipientPhone: numbers[0] }))) {
-    console.log(`[Mode test] envoi supprimé (sms bulk) → ${numbers.length} destinataires`);
+    console.info(`[Mode test] envoi supprimé (sms bulk) → ${numbers.length} destinataires`);
     await enregistrerMessageSupprime({
       channel: 'SMS_BULK',
       eventType: 'sms_bulk',
@@ -126,7 +126,7 @@ export const sendSms = async (input: SendSmsInput): Promise<SendSmsResult> => {
   // Mode test — intercepté avant la vérification de clé : quand le réglage est
   // désactivé, le comportement d'envoi est le même clé présente ou absente.
   if (!(await estEnvoiSortantActif({ schoolId: input.schoolId, recipientPhone: input.to }))) {
-    console.log(`[Mode test] envoi supprimé (sms) → ${input.to}`);
+    console.info(`[Mode test] envoi supprimé (sms) → ${input.to}`);
     await enregistrerMessageSupprime({
       channel: 'SMS',
       eventType: 'sms',

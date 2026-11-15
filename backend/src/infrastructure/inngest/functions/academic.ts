@@ -255,7 +255,7 @@ export const handleAssessmentScheduled = inngest.createFunction(
       const examRepo = new PrismaExamRepository(prisma);
       const exam = await examRepo.findById(examId);
       if (!exam) {
-        console.log(`[Handle-Assessment-Scheduled] Exam ${examId} introuvable — skip`);
+        console.info(`[Handle-Assessment-Scheduled] Exam ${examId} introuvable — skip`);
         return;
       }
 
@@ -265,7 +265,7 @@ export const handleAssessmentScheduled = inngest.createFunction(
       );
 
       if (!matchingScope) {
-        console.log(
+        console.info(
           `[Handle-Assessment-Scheduled] Aucun AssessmentScope pour subjectId=${subjectId}, classId=${classId}, yearId=${exam.academicYearId} — skip`,
         );
         return;

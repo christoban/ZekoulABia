@@ -498,7 +498,7 @@ export default function TeacherPresenceCheckIn({
                     padding: '6px 10px',
                     borderRadius: 6,
                     border: '1px solid var(--border)',
-                    background: 'white',
+                    background: 'var(--surface)',
                     fontSize: 12,
                     fontWeight: 700,
                     color: 'var(--text)',
@@ -526,7 +526,7 @@ export default function TeacherPresenceCheckIn({
                   padding: '8px 12px',
                   borderRadius: 6,
                   border: '1px solid var(--border)',
-                  background: 'white',
+                  background: 'var(--surface)',
                   fontSize: 12,
                   fontFamily: 'monospace',
                 }}
@@ -578,7 +578,7 @@ export default function TeacherPresenceCheckIn({
                 style={{
                   padding: '8px 14px',
                   borderRadius: 6,
-                  background: 'white',
+                  background: 'var(--surface)',
                   color: 'var(--text)',
                   border: '1px solid var(--border)',
                   fontSize: 12,

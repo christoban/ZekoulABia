@@ -126,7 +126,7 @@ checkLibreOfficeAvailable().then((h) => {
   if (!h.available) {
     console.warn(`[LibreOffice] Binaire indisponible au démarrage — la génération de déclarations statistiques MINESEC échouera : ${h.error}`);
   } else {
-    console.log(`[LibreOffice] Disponible (${h.version})`);
+    console.info(`[LibreOffice] Disponible (${h.version})`);
   }
 });
 
@@ -228,7 +228,7 @@ app.use((req, res, next) => {
 bootstrapHexagonal(app);
 initSocket(httpServer, allowedOrigins);
 httpServer.listen(PORT, () => {
-  console.log("Server is running on port 5000");
+  console.info("Server is running on port 5000");
 });
 // you can use any of these scripts in your package.json to run the server with nodemon or bun
 //    "dev" : "nodemon --exec bun run index.ts",
