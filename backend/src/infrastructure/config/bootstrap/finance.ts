@@ -71,6 +71,7 @@ export function registerFinanceRoutes(app: Application, prismaParam: typeof pris
       parentRepository: c.attendance.parentRepository,
       carnetRepository: c.carnetLiaison.repository,
       creerEntreeCarnet: c.carnetLiaison.creerEntree,
+      verifierStatutPaiement: c.finance.verifierStatutPaiement,
     },
   );
 

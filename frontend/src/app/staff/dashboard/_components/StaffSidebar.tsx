@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils'
 import { useT, useLanguage } from '@/lib/i18n'
 import { logoutUser } from '@/lib/userAuth'
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount'
+import { useUnreadBabillardCount } from '@/hooks/useUnreadBabillardCount'
 import ChangeAvatarModal from '@/components/ChangeAvatarModal'
 import type { StaffSection, SessionUser } from '../_types'
 import { getStaffDisplayTitle } from '../_types'
@@ -69,6 +70,7 @@ export default function StaffSidebar({
   const { lang } = useLanguage()
   const displayRoleTitle = getStaffDisplayTitle(sessionUser, lang)
   const messagesNonLus = useUnreadMessagesCount()
+  const babillardNonLus = useUnreadBabillardCount()
   const can = (s: StaffSection) => allowedSections.has(s)
 
   const [currentAvatar, setCurrentAvatar] = useState<string | null>(sessionUser?.avatarUrl ?? null)
@@ -150,7 +152,7 @@ export default function StaffSidebar({
   // Communication
   const commItems: NavItem[] = []
   if (can('messagerie'))       commItems.push({ id: 'messagerie', icon: MessageCircle, label: tnav('sidebar.messagerie'), ...(messagesNonLus > 0 ? { badge: String(messagesNonLus), badgeColor: 'red' as const } : {}) })
-  if (can('babillard'))        commItems.push({ id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard') })
+  if (can('babillard'))        commItems.push({ id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard'), ...(babillardNonLus > 0 ? { badge: String(babillardNonLus), badgeColor: 'amber' as const } : {}) })
   if (can('carnet-liaison'))   commItems.push({ id: 'carnet-liaison', icon: NotebookPen, label: tnav('sidebar.carnetLiaison') })
 
   // Configuration technique (uniquement si permission de structure d'établissement)

@@ -17,7 +17,6 @@ import SectionSettings from './_components/SectionSettings'
 import SectionCorbeille from './_components/SectionCorbeille'
 import NotificationCenter from '@/components/NotificationCenter'
 import SectionFinance from './_components/SectionFinance'
-import SectionPlaceholder from './_components/SectionPlaceholder'
 import AdminBottomNav from './_components/AdminBottomNav'
 import SectionAdminAttendance from './_components/SectionAdminAttendance'
 import SectionAdminCouncil from './_components/SectionAdminCouncil'
@@ -66,7 +65,6 @@ const ADMIN_SECTIONS: AdminSection[] = [
   'org-pedagogy',
 ]
 
-const PLACEHOLDERS: Partial<Record<AdminSection, { icon: string; desc: string }>> = {}
 
 interface SchoolInfo { id?: string; name: string; logoUrl: string | null; subdomain?: string; city?: string; phone?: string; email?: string; isPrimaire?: boolean | null }
 interface AdminBadges { users?: string; classes?: string; grades?: string; finance?: string; 'eleve-onboarding'?: string }
@@ -782,17 +780,6 @@ export default function AdminDashboard() {
             <div style={{ display: section === 'sync-offline' ? 'contents' : 'none' }}>
               <SectionOfflineStatus onToast={showToast} namespace="admin" />
             </div>
-          )}
-          {Object.entries(PLACEHOLDERS).map(([key, val]) =>
-            section === key ? (
-              <SectionPlaceholder
-                key={key}
-                title={t(`page.section_titles.${key}`)}
-                icon={val.icon}
-                description={val.desc}
-                onToast={showToast}
-              />
-            ) : null
           )}
         </main>
       </div>

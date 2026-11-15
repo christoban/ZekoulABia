@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { AuthPayload } from '../middlewares/auth';
 import type { PlanFraisACopier } from '@application/finance/CopierPlansFraisAnneePrecedenteUseCase';
+import type { VerifierStatutPaiementUseCase } from '@application/finance/VerifierStatutPaiementUseCase';
 import type { CreerPlanFraisUseCase } from '@application/finance/CreerPlanFraisUseCase';
 import type { ModifierPlanFraisUseCase } from '@application/finance/ModifierPlanFraisUseCase';
 import type { ChangerStatutPlanFraisUseCase } from '@application/finance/ChangerStatutPlanFraisUseCase';
@@ -28,6 +29,7 @@ import {
   dispatchCampaySuccessNotifications,
   dispatchCashSuccessHooks,
   handleFinanceControllerError,
+  handleVerifyMobilePaymentHelper,
   notifierCreationPlanFraisHelper,
   verifyCampayWebhookSignature,
 } from './helpers/financeControllerHelpers';
@@ -37,6 +39,7 @@ export interface FinanceControllerExtras {
   parentRepository?: ParentRepository;
   carnetRepository?: CarnetLiaisonRepository;
   creerEntreeCarnet?: CreerEntreeCarnetUseCase;
+  verifierStatutPaiement?: VerifierStatutPaiementUseCase;
 }
 
 export class FinanceController {
@@ -329,6 +332,13 @@ export class FinanceController {
     } catch (error) {
       handleFinanceControllerError(error, res, next);
     }
+  };
+
+  // POST /api/v2/finance/payments/mobile/verify
+  verifierStatutPaiementMobile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const user = req.user;
+    if (!(await this.checkFinancePermission(user, res, true))) return;
+    await handleVerifyMobilePaymentHelper({ req, res, next, user: user!, audit: this.audit, useCase: this.extras.verifierStatutPaiement });
   };
 
   // POST /api/v2/finance/payments/webhook/campay

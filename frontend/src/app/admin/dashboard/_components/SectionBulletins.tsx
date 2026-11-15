@@ -6,6 +6,8 @@ import { fetchApi } from '@/lib/fetchApi'
 import { getCachedData, putCachedData } from '@/lib/offline/db'
 import AnimatedBackground from '@/components/AnimatedBackground'
 import DelegationSupervisionBanner from './DelegationSupervisionBanner'
+import ExamensOfficielsPanel from '@/features/examens/ExamensOfficielsPanel'
+import BulletinAiCommentBtn from './BulletinAiCommentBtn'
 
 import type { AdminSection } from '../_types'
 
@@ -50,6 +52,7 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
   const [exporting, setExporting]           = useState(false)
   const [sending, setSending]               = useState(false)
   const [celebrate, setCelebrate]           = useState(false)
+  const [subTab, setSubTab]                 = useState<'bulletins' | 'examens'>('bulletins')
 
   // Auto-fermeture de l'écran de célébration (habillage ponctuel, pas un écran de travail)
   useEffect(() => {
@@ -290,10 +293,13 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
         </div>
       )}
 
-      <div className="mb-[12px] md:mb-[16px]">
-        <div className="text-[15px] md:text-[17px]" style={sTitle}>{t('bulletins.title')}</div>
-        <div className="text-[11px] md:text-[12px]" style={sSub}>Génération et distribution</div>
+      <div className="mb-[12px] md:mb-[16px]" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+        <div><div className="text-[15px] md:text-[17px]" style={sTitle}>{t('bulletins.title')}</div><div className="text-[11px] md:text-[12px]" style={sSub}>Génération et distribution</div></div>
+        <div style={{ display: 'flex', gap: 6 }}>{(['bulletins', 'examens'] as const).map(k => (
+          <button key={k} type="button" onClick={() => setSubTab(k)} style={{ ...(subTab === k ? btnPrim : btnSec), padding: '6px 12px', borderRadius: 8, fontSize: 12.5 }}>{k === 'bulletins' ? 'Bulletins scolaires' : 'Examens officiels'}</button>
+        ))}</div>
       </div>
+      {subTab === 'examens' ? <ExamensOfficielsPanel onToast={onToast} /> : (<>
 
       <DelegationSupervisionBanner actorTitle="Saisie : Titulaire de classe | Validation : Censeur & Direction" domainLabel="Bulletins & Évaluations" onNav={onNav} />
 
@@ -431,10 +437,10 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
                         </td>
                         <td style={tdSt}>{b.rank != null ? `${b.rank}e` : '—'}</td>
                         <td style={tdSt}>
-                          <button style={{ ...btnSec, display: 'inline-flex', alignItems: 'center', gap: 5 }}
-                            onClick={() => window.open(`/api/v2/report-cards/${b.id}/pdf`, '_blank')}>
-                            <Eye size={13} /> PDF
-                          </button>
+                          <div style={{ display: 'inline-flex', gap: 6, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                            <button style={{ ...btnSec, display: 'inline-flex', alignItems: 'center', gap: 5 }} onClick={() => window.open(`/api/v2/report-cards/${b.id}/pdf`, '_blank')}><Eye size={13} /> PDF</button>
+                            <BulletinAiCommentBtn studentName={b.student ? `${b.student.firstName} ${b.student.lastName}` : 'Élève'} average={b.generalAverage ?? null} className={className} onToast={onToast} />
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -456,17 +462,12 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
 
       {!loadingCheck && !check && (
         <div className="px-[20px] py-[32px] md:px-[28px] md:py-[44px]" style={{ background: 'var(--surface)', borderRadius: 12, border: '1.5px solid var(--border)', textAlign: 'center' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
-            <FileText size={32} className="md:hidden" /><FileText size={40} className="hidden md:block" />
-          </div>
-          <div className="text-[14px] md:text-[16px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
-            Sélectionnez une classe
-          </div>
-          <div className="text-[12px] md:text-[13px]" style={{ color: 'var(--text3)' }}>
-            Choisissez une classe et cliquez sur « Charger » pour voir les bulletins.
-          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><FileText size={32} className="md:hidden" /><FileText size={40} className="hidden md:block" /></div>
+          <div className="text-[14px] md:text-[16px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>Sélectionnez une classe</div>
+          <div className="text-[12px] md:text-[13px]" style={{ color: 'var(--text3)' }}>Choisissez une classe et cliquez sur « Charger » pour voir les bulletins.</div>
         </div>
       )}
+      </>)}
     </div>
   )
 }

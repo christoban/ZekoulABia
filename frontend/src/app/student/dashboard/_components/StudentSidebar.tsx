@@ -6,6 +6,7 @@ import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useT } from '@/lib/i18n'
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount'
+import { useUnreadBabillardCount } from '@/hooks/useUnreadBabillardCount'
 import ChangeAvatarModal from '@/components/ChangeAvatarModal'
 import { resolveOrientationEligibility } from '@/lib/orientationEligibility'
 import type { StudentSection, UserInfo } from '../_types'
@@ -42,6 +43,7 @@ export default function StudentSidebar({ current, onChange, schoolName, logoUrl,
   const tnav = useT('navigation')
   const tcommon = useT('common')
   const messagesNonLus = useUnreadMessagesCount()
+  const babillardNonLus = useUnreadBabillardCount()
 
   const orientationElig = resolveOrientationEligibility(
     user?.studentProfile?.class?.name,
@@ -89,7 +91,7 @@ export default function StudentSidebar({ current, onChange, schoolName, logoUrl,
         { id: 'profile', icon: UserCheck, label: 'Mon Dossier & Profil' },
         { id: 'documents', icon: FileBadge, label: tnav('sidebar.documents') || 'Mes Documents' },
         { id: 'library', icon: BookOpen, label: tnav('sidebar.myLibrary') },
-        { id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard') },
+        { id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard'), ...(babillardNonLus > 0 ? { badge: String(babillardNonLus), badgeColor: 'amber' as const } : {}) },
         { id: 'messagerie', icon: MessageCircle, label: tnav('sidebar.messagerie'), ...(messagesNonLus > 0 ? { badge: String(messagesNonLus), badgeColor: 'red' as const } : {}) },
       ]
     },

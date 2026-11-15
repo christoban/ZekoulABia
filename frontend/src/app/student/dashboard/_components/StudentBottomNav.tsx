@@ -5,6 +5,7 @@ import { LayoutDashboard, FileText, Calendar, MessageCircle, Menu } from 'lucide
 import type { StudentSection } from '../_types'
 import { useT } from '@/lib/i18n'
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount'
+import { useUnreadBabillardCount } from '@/hooks/useUnreadBabillardCount'
 
 interface Props {
   current: StudentSection
@@ -26,6 +27,8 @@ interface BottomNavItem {
 export default function StudentBottomNav({ current, onChange, onOpenMenu }: Props) {
   const t = useT('navigation')
   const unreadMessages = useUnreadMessagesCount()
+  const unreadBabillard = useUnreadBabillardCount()
+  const totalUnreadComm = unreadMessages + unreadBabillard
 
   const items: BottomNavItem[] = [
     {
@@ -59,7 +62,7 @@ export default function StudentBottomNav({ current, onChange, onOpenMenu }: Prop
       labelKey: 'sidebar.messagerie',
       fallbackLabel: 'Messages',
       icon: MessageCircle,
-      badge: unreadMessages > 0 ? unreadMessages : undefined,
+      badge: totalUnreadComm > 0 ? totalUnreadComm : undefined,
     },
     {
       id: 'more',

@@ -13,6 +13,8 @@ import type { CarnetLiaisonRepository } from '@domain/ports/repositories/CarnetL
 import type { CreerEntreeCarnetUseCase } from '@application/carnetLiaison/CreerEntreeCarnetUseCase';
 import type { ReceiptPdfRendererPort } from '@domain/ports/services/ReceiptPdfRendererPort';
 import type { AuthPayload } from '../../middlewares/auth';
+import type { VerifierStatutPaiementUseCase } from '@application/finance/VerifierStatutPaiementUseCase';
+import type { AIActionAuditPort } from '@domain/ports/services/AIActionAuditPort';
 import { sendTransactionalEmail } from '@infrastructure/services/email/EmailService';
 
 export function verifyCampayWebhookSignature(req: Request): boolean {
@@ -280,4 +282,42 @@ export function handleFinanceControllerError(error: unknown, res: Response, next
     }
   }
   next(error);
+}
+
+export async function handleVerifyMobilePaymentHelper(params: {
+  req: Request;
+  res: Response;
+  next: NextFunction;
+  user: AuthPayload;
+  audit: AIActionAuditPort;
+  useCase?: VerifierStatutPaiementUseCase;
+}): Promise<void> {
+  const { req, res, next, user, audit, useCase } = params;
+  if (!useCase) {
+    res.status(503).json({ success: false, message: 'Service de vérification Mobile Money indisponible' });
+    return;
+  }
+  const body = req.body as { invoiceId?: string; factureId?: string; paymentId?: string; campayRef?: string; campayReference?: string };
+  const invoiceId = body.invoiceId ?? body.factureId;
+  const campayRef = body.campayRef ?? body.campayReference;
+  if (!invoiceId && !body.paymentId && !campayRef) {
+    res.status(400).json({ success: false, message: 'invoiceId, paymentId ou campayRef requis' });
+    return;
+  }
+  try {
+    const resultat = await useCase.execute({
+      schoolId: user.schoolId,
+      invoiceId,
+      paymentId: body.paymentId,
+      campayRef,
+    });
+    audit.journaliser({
+      actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
+      actionName: 'verifier_statut_paiement_mobile', targetType: 'Payment', targetId: body.paymentId ?? invoiceId ?? campayRef,
+      origin: 'UI_DIRECT', outcome: 'SUCCES', parametersSummary: { invoiceId, paymentId: body.paymentId, campayRef, statut: resultat.statut },
+    });
+    res.json({ success: true, data: resultat });
+  } catch (error) {
+    handleFinanceControllerError(error, res, next);
+  }
 }

@@ -6,6 +6,7 @@ import { LogOut, Building2 } from 'lucide-react'
 import SectionGroupOverview, { type KpisGroupe } from './_components/SectionGroupOverview'
 import SectionGroupSchools, { type EcoleMembre } from './_components/SectionGroupSchools'
 import SectionGroupTransfers from './_components/SectionGroupTransfers'
+import GroupMfaSettings from './_components/GroupMfaSettings'
 
 const API_BASE = ''
 
@@ -23,7 +24,7 @@ export default function GroupDashboardPage() {
   const [kpis, setKpis] = useState<KpisGroupe | null>(null)
   const [schools, setSchools] = useState<EcoleMembre[]>([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<'overview' | 'transfers'>('overview')
+  const [tab, setTab] = useState<'overview' | 'transfers' | 'security'>('overview')
 
   useEffect(() => {
     (async () => {
@@ -87,14 +88,14 @@ export default function GroupDashboardPage() {
 
       <div style={{ padding: '0 32px', maxWidth: 1100, margin: '0 auto' }}>
         <div style={{ display: 'flex', gap: 4, paddingTop: 20 }}>
-          {(['overview', 'transfers'] as const).map((t) => (
+          {(['overview', 'transfers', 'security'] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)}
               style={{
                 padding: '10px 18px', border: 'none', borderRadius: '10px 10px 0 0', cursor: 'pointer', fontFamily: 'inherit',
                 fontWeight: 700, fontSize: 14, background: tab === t ? 'white' : 'transparent',
                 color: tab === t ? 'var(--primary)' : '#6b5c45',
               }}>
-              {t === 'overview' ? "Vue d'ensemble" : 'Transferts'}
+              {t === 'overview' ? "Vue d'ensemble" : t === 'transfers' ? 'Transferts' : 'Sécurité & 2FA'}
             </button>
           ))}
         </div>
@@ -108,6 +109,7 @@ export default function GroupDashboardPage() {
         <div style={{ display: tab === 'transfers' ? 'block' : 'none' }}>
           <SectionGroupTransfers schools={schools} />
         </div>
+        {tab === 'security' && <GroupMfaSettings />}
       </div>
     </div>
   )

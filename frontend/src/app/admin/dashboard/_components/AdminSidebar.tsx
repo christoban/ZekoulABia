@@ -12,6 +12,7 @@ import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useT } from '@/lib/i18n'
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount'
+import { useUnreadBabillardCount } from '@/hooks/useUnreadBabillardCount'
 import ChangeAvatarModal from '@/components/ChangeAvatarModal'
 import type { AdminSection } from '../_types'
 
@@ -97,6 +98,7 @@ export default function AdminSidebar({
   const tnav = useT('navigation')
   const tcommon = useT('common')
   const messagesNonLus = useUnreadMessagesCount()
+  const babillardNonLus = useUnreadBabillardCount()
   const displayName = schoolName || tcommon('brand.fallbackSchool')
   const initials = displayName.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('')
 
@@ -183,7 +185,7 @@ export default function AdminSidebar({
       id: 'communication',
       label: tnav('group.communication') ?? 'Communication & Vie Scolaire',
       items: [
-        { id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard') },
+        { id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard'), ...(babillardNonLus > 0 ? { badge: String(babillardNonLus), badgeColor: 'amber' as const } : {}) },
         { id: 'carnet-liaison', icon: NotebookPen, label: tnav('sidebar.carnetLiaison') },
         { id: 'academic-events', icon: CalendarClock, label: tnav('sidebar.academicEvents') },
         { id: 'student-transfers', icon: UserPlus, label: tnav('sidebar.studentTransfers') ?? 'Transferts inter-écoles' },

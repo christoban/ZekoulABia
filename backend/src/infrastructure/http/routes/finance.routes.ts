@@ -23,6 +23,7 @@ export function creerFinanceRoutes(
 
   // Paiements Mobile Money & Cash
   router.post('/payments/mobile', requireAuth, requireRole('ADMIN', 'STAFF'), controller.initierPaiementMobile);
+  router.post('/payments/mobile/verify', requireAuth, requireRole('ADMIN', 'STAFF'), controller.verifierStatutPaiementMobile);
   router.post('/payments/cash', requireAuth, requireRole('ADMIN', 'STAFF'), controller.creerPaiementCash);
   router.post('/payments/caution/:id/rembourser', requireAuth, requireRole('ADMIN', 'STAFF'), controller.rembourserCautionEleve);
 

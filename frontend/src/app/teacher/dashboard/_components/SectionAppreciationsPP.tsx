@@ -236,14 +236,31 @@ export default function SectionAppreciationsPP({ user: _user, classeId, classeNo
     try {
       const res = await fetchApi(`/api/v2/report-cards/${rcId}/generate-comment`, { method: 'POST', credentials: 'include' })
       const data = await res.json()
-      if (!res.ok || !data.success) throw new Error(data.message || 'Erreur')
-      setComments(c => ({ ...c, [rcId]: data.comment }))
+      if (res.ok && data.success && data.comment) {
+        setComments(c => ({ ...c, [rcId]: data.comment }))
+        return
+      }
+      const rc = reportCards.find(item => item.id === rcId)
+      if (!rc) throw new Error(data.message || 'Erreur')
+      const fallbackRes = await fetchApi('/api/v2/ai/bulletin-comment', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentName: rc.studentName,
+          average: rc.generalAverage ?? 10,
+          className: classeNom,
+        }),
+      })
+      const fallbackData = await fallbackRes.json()
+      if (!fallbackRes.ok || !fallbackData.comment) throw new Error(fallbackData.message || 'Erreur')
+      setComments(c => ({ ...c, [rcId]: fallbackData.comment }))
     } catch {
       setAiError(e => ({ ...e, [rcId]: true }))
     } finally {
       setGeneratingAI(g => { const n = { ...g }; delete n[rcId]; return n })
     }
-  }, [comments, t])
+  }, [comments, t, reportCards, classeNom])
 
   const isLocked = (rc: ReportCard) => rc.status === 'LOCKED' || rc.status === 'SENT'
 

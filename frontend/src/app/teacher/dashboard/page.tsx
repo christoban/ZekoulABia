@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import { FileText, FolderOpen } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
 import { logoutUser } from '@/lib/userAuth'
 import TeacherSidebar from './_components/TeacherSidebar'
 import TeacherTopbar from './_components/TeacherTopbar'
@@ -12,6 +10,7 @@ import SectionTeacherDashboard from './_components/SectionTeacherDashboard'
 import SectionTeacherClasses from './_components/SectionTeacherClasses'
 import SectionTeacherAttendance from './_components/SectionTeacherAttendance'
 import SectionTeacherGrades from './_components/SectionTeacherGrades'
+import SectionTeacherBulletins from './_components/SectionTeacherBulletins'
 import SectionTeacherTimetable from './_components/SectionTeacherTimetable'
 import SectionProfesseurPrincipal from './_components/SectionProfesseurPrincipal'
 import SectionAppreciationsPP from './_components/SectionAppreciationsPP'
@@ -59,10 +58,6 @@ const TEACHER_ASSISTANT_SUGGESTIONS = [
 ]
 
 let toastId = 0
-
-const PLACEHOLDERS: Partial<Record<TeacherSection, { icon: LucideIcon }>> = {
-  bulletins: { icon: FileText },
-}
 
 export default function TeacherDashboard() {
   const tnav = useT('navigation')
@@ -463,6 +458,11 @@ export default function TeacherDashboard() {
               <SectionTeacherGrades {...sProps} />
             </div>
           )}
+          {visitedSections.has('bulletins') && (
+            <div style={{ display: section === 'bulletins' ? 'contents' : 'none' }}>
+              <SectionTeacherBulletins onNav={s => setSection(s as TeacherSection)} onToast={showToast} />
+            </div>
+          )}
           {visitedSections.has('timetable') && (
             <div style={{ display: section === 'timetable' ? 'contents' : 'none' }}>
               <SectionTeacherTimetable {...sProps} />
@@ -569,21 +569,6 @@ export default function TeacherDashboard() {
             <div style={{ display: section === 'messagerie' ? 'contents' : 'none' }}>
               <Messagerie />
             </div>
-          )}
-          {Object.entries(PLACEHOLDERS).map(([key, val]) =>
-            section === key ? (
-              <div key={key} style={{ padding: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1.5px solid var(--border)', padding: 48, textAlign: 'center', maxWidth: 400 }}>
-                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}><val.icon size={48} /></div>
-                  <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
-                    {TITLES[key as TeacherSection]}
-                  </div>
-                  <div style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 500 }}>
-                    Section en cours de développement
-                  </div>
-                </div>
-              </div>
-            ) : null
           )}
         </main>
       </div>

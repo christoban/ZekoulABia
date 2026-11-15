@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import type { SessionUser } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
-import { AlertTriangle, Loader2, Smartphone, Wallet, Pencil, Banknote, Eye } from 'lucide-react'
+import { AlertTriangle, Loader2, Smartphone, Wallet, Pencil, Banknote, Eye, RefreshCw } from 'lucide-react'
 import SectionAPEEStaff from './SectionAPEEStaff'
 import SectionPlansStaff from './SectionPlansStaff'
 import { fmtCFA } from '@/components/finance/ModalOverlay'
@@ -52,6 +52,8 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
   const [page, setPage]         = useState(1)
   const [sendingId, setSendingId] = useState<string | null>(null)
   const [payingId, setPayingId]   = useState<string | null>(null)
+  const [verifyingId, setVerifyingId] = useState<string | null>(null)
+  const [pendingCampayRefs, setPendingCampayRefs] = useState<Record<string, string>>({})
 
   const [schoolInfo, setSchoolInfo] = useState<{ name: string; logoUrl: string | null } | null>(null)
   const [currentRecu, setCurrentRecu] = useState<RecuProvisoireData | null>(null)
@@ -163,23 +165,59 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
 
   useEffect(() => { setPage(1); fetchInvoices(1) }, [statusFilter, fetchInvoices])
 
+  const verifyMobileMoney = async (invoiceId: string, campayRef?: string) => {
+    setVerifyingId(invoiceId)
+    try {
+      const res = await fetchApi('/api/v2/finance/payments/mobile/verify', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoiceId, campayRef: campayRef || pendingCampayRefs[invoiceId] || undefined }),
+      })
+      const d = await res.json() as { success?: boolean; data?: { statut?: string; message?: string }; message?: string }
+      if (!res.ok) throw new Error(d.message || 'Erreur vérification Campay')
+      const statut = d.data?.statut
+      onToast(
+        d.data?.message || (statut === 'SUCCESS' ? 'Paiement Mobile Money confirmé !' : 'Toujours en attente sur le téléphone'),
+        statut === 'SUCCESS' ? 'success' : statut === 'FAILED' ? 'error' : 'info'
+      )
+      if (statut === 'SUCCESS' || statut === 'FAILED') {
+        setPendingCampayRefs(prev => { const next = { ...prev }; delete next[invoiceId]; return next })
+        void fetchInvoices(page)
+      }
+    } catch (err) {
+      onToast(err instanceof Error ? err.message : 'Erreur vérification Mobile Money', 'error')
+    } finally {
+      setVerifyingId(null)
+    }
+  }
+
   const initiateMobileMoney = async (invoice: InvoiceItem) => {
     const phone = prompt(t('finance.mobileMoneyPrompt', { firstName: invoice.student.firstName, lastName: invoice.student.lastName }))
     if (!phone?.trim()) return
+    const normalized = phone.trim().replace(/\s+/g, '')
+    const alreadyPaid = invoice.payments
+      .filter(p => p.status === 'COMPLETED' || p.status === 'SUCCESS' || p.status === 'PAID')
+      .reduce((s, p) => s + p.amount, 0)
+    const remaining = Math.max(1, invoice.amount - alreadyPaid)
+    const isMtn = normalized.startsWith('67') || normalized.startsWith('650') || normalized.startsWith('651') || normalized.startsWith('652') || normalized.startsWith('653') || normalized.startsWith('654') || normalized.startsWith('68')
     setPayingId(invoice.id)
     try {
       const res = await fetchApi('/api/v2/finance/payments/mobile', {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          invoiceId: invoice.id,
-          phone: phone.trim(),
-          amount: invoice.amount,
-          operator: phone.startsWith('67') || phone.startsWith('650') || phone.startsWith('651') || phone.startsWith('652') || phone.startsWith('653') || phone.startsWith('654') ? 'MTN' : 'ORANGE',
+          factureId: invoice.id,
+          studentId: invoice.student.id,
+          phoneNumber: normalized,
+          amount: remaining,
+          method: isMtn ? 'MTN_MOMO' : 'ORANGE_MONEY',
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Erreur serveur')
+      if (data.data?.campayRef) {
+        setPendingCampayRefs(prev => ({ ...prev, [invoice.id]: String(data.data.campayRef) }))
+      }
       onToast(t('finance.paymentInitiated'), 'info')
       fetchInvoices(page)
     } catch (err) {
@@ -552,6 +590,17 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
                           {payingId === inv.id ? <Loader2 size={13} className="animate-spin" /> : <Smartphone size={13} />}
                           Mobile Money
                         </button>
+                        {(Boolean(pendingCampayRefs[inv.id]) || inv.payments.some(p => p.status === 'PENDING')) && (
+                          <button
+                            style={{ ...btnSecSm, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, background: 'var(--amber-light)', color: 'var(--amber)', borderColor: 'var(--amber)' }}
+                            className="min-h-[38px] px-3 text-xs font-semibold"
+                            disabled={verifyingId === inv.id}
+                            onClick={() => verifyMobileMoney(inv.id)}
+                          >
+                            {verifyingId === inv.id ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+                            Vérifier Campay
+                          </button>
+                        )}
                         <button
                           style={btnSecSm}
                           className="min-h-[38px] px-3 text-xs font-semibold"
@@ -636,6 +685,17 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
                               >
                                 {payingId === inv.id ? <Loader2 size={11} className="animate-spin" /> : <Smartphone size={11} />}
                                 Mobile Money
+                              </button>
+                            )}
+                            {inv.status !== 'PAID' && (Boolean(pendingCampayRefs[inv.id]) || inv.payments.some(p => p.status === 'PENDING')) && (
+                              <button
+                                style={{ ...btnSecSm, display: 'flex', alignItems: 'center', gap: 4, background: 'var(--amber-light)', color: 'var(--amber)', borderColor: 'var(--amber)' }}
+                                disabled={verifyingId === inv.id}
+                                onClick={() => verifyMobileMoney(inv.id)}
+                                title="Vérifier le statut du paiement Campay"
+                              >
+                                {verifyingId === inv.id ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />}
+                                Vérifier Campay
                               </button>
                             )}
                             {inv.status !== 'PAID' && (

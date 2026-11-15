@@ -6,6 +6,7 @@ import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useT } from '@/lib/i18n'
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount'
+import { useUnreadBabillardCount } from '@/hooks/useUnreadBabillardCount'
 import ChangeAvatarModal from '@/components/ChangeAvatarModal'
 import type { ParentSection } from '../_types'
 
@@ -43,6 +44,7 @@ export default function ParentSidebar({ current, onChange, onLogout, user, schoo
   const tnav = useT('navigation')
   const tcommon = useT('common')
   const messagesNonLus = useUnreadMessagesCount()
+  const babillardNonLus = useUnreadBabillardCount()
 
   // ==========================================================================
   // CONFIGURATION DU MENU DE NAVIGATION (BARRE LATÉRALE PARENT)
@@ -77,7 +79,7 @@ export default function ParentSidebar({ current, onChange, onLogout, user, schoo
         { id: 'payments', icon: Smartphone, label: tnav('sidebar.payments') },
         { id: 'apee', icon: HandCoins, label: tnav('sidebar.apee') },
         { id: 'library', icon: BookOpen, label: tnav('sidebar.readings') },
-        { id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard') },
+        { id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard'), ...(babillardNonLus > 0 ? { badge: String(babillardNonLus), badgeColor: 'amber' as const } : {}) },
         { id: 'carnet-liaison', icon: NotebookPen, label: tnav('sidebar.carnetLiaison') },
         { id: 'messagerie', icon: MessageCircle, label: tnav('sidebar.messagerie'), ...(messagesNonLus > 0 ? { badge: String(messagesNonLus), badgeColor: 'red' as const } : {}) },
         // notifications retiré — redondant avec la cloche (permanente sur tous les écrans),

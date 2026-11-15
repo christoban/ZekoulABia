@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { fetchApi } from '@/lib/fetchApi';
 import { getCachedData, putCachedData } from '@/lib/offline/db';
+import { EVENEMENT_BABILLARD_NON_LUS_CHANGE } from '@/hooks/useUnreadBabillardCount';
 import { Publication, BABILLARD_CATEGORIES, CategorieDetails } from '../types';
 import AnnonceCardRenderer from '../renderers/AnnonceCardRenderer';
 import { BabillardReaderModal } from './BabillardReaderModal';
@@ -318,6 +319,7 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
     }));
     try {
       await fetchApi(`/api/v2/babillard/${id}/lu`, { method: 'POST' });
+      window.dispatchEvent(new Event(EVENEMENT_BABILLARD_NON_LUS_CHANGE));
     } catch (_) {}
   };
 

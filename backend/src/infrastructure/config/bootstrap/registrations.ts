@@ -2,7 +2,6 @@ import type { Application } from 'express';
 import { prisma } from '@infrastructure/persistence/prisma/prisma.client';
 import { AIActionAuditAdapter } from '@infrastructure/services/ai/AIActionAuditAdapter';
 import { PrismaDisciplineRepository } from '@infrastructure/persistence/prisma/PrismaDisciplineRepository';
-import { PrismaUserRepository } from '@infrastructure/persistence/prisma/PrismaUserRepository';
 import { creerContainer } from '@infrastructure/config/container';
 import { ClasseController } from '@infrastructure/http/controllers/ClasseController';
 import { SubjectController } from '@infrastructure/http/controllers/SubjectController';
@@ -20,7 +19,6 @@ import { PdfKitEntranceExamAdapter } from '@infrastructure/pdf/entranceExam/PdfK
 import { PebsExamController } from '@infrastructure/http/controllers/PebsExamController';
 import { PushNotificationController } from '@infrastructure/http/controllers/PushNotificationController';
 import { NotificationController } from '@infrastructure/http/controllers/NotificationController';
-import { AnnouncementController } from '@infrastructure/http/controllers/AnnouncementController';
 import { MessagerieController } from '@infrastructure/http/controllers/MessagerieController';
 import { APEEController } from '@infrastructure/http/controllers/APEEController';
 import { DisciplineCouncilController } from '@infrastructure/http/controllers/DisciplineCouncilController';
@@ -38,7 +36,6 @@ import { creerEntranceExamRoutes } from '@infrastructure/http/routes/entranceExa
 import { creerPebsExamRoutes } from '@infrastructure/http/routes/pebsExam.routes';
 import { creerPushNotificationRoutes } from '@infrastructure/http/routes/pushNotification.routes';
 import { creerNotificationRoutes } from '@infrastructure/http/routes/notification.routes';
-import { creerAnnouncementRoutes } from '@infrastructure/http/routes/announcement.routes';
 import { BabillardController } from '@infrastructure/http/controllers/BabillardController';
 import { creerBabillardRoutes } from '@infrastructure/http/routes/babillard.routes';
 import { CarnetLiaisonController } from '@infrastructure/http/controllers/CarnetLiaisonController';
@@ -57,7 +54,6 @@ import { InngestEventPublisher } from '@infrastructure/events/InngestEventPublis
 import { creerMessagerieRoutes } from '@infrastructure/http/routes/messagerie.routes';
 import { creerApeeRoutes } from '@infrastructure/http/routes/apee.routes';
 import { creerDisciplineCouncilRoutes } from '@infrastructure/http/routes/disciplineCouncil.routes';
-import { PrismaAnnouncementRepository } from '@infrastructure/persistence/prisma/PrismaAnnouncementRepository';
 import { PrismaMessagerieRepository } from '@infrastructure/persistence/prisma/PrismaMessagerieRepository';
 import { PrismaApeeRepository } from '@infrastructure/persistence/prisma/PrismaApeeRepository';
 import { PrismaLv2ChoiceRepository } from '@infrastructure/persistence/prisma/PrismaLv2ChoiceRepository';
@@ -67,10 +63,6 @@ import { PrismaRapportsScolariteRepository } from '@infrastructure/persistence/p
 import { GenererRapportsScolariteUseCase } from '@application/rapports/GenererRapportsScolariteUseCase';
 import { RapportsStaffController } from '@infrastructure/http/controllers/RapportsStaffController';
 import { creerRapportsStaffRoutes } from '@infrastructure/http/routes/rapportsStaff.routes';
-import { CreerAnnonceUseCase } from '@application/announcement/CreerAnnonceUseCase';
-import { ListerAnnoncesUseCase } from '@application/announcement/ListerAnnoncesUseCase';
-import { ModifierAnnonceUseCase } from '@application/announcement/ModifierAnnonceUseCase';
-import { SupprimerAnnonceUseCase } from '@application/announcement/SupprimerAnnonceUseCase';
 import { EnvoyerMessageUseCase } from '@application/messagerie/EnvoyerMessageUseCase';
 import { ListerConversationsUseCase } from '@application/messagerie/ListerConversationsUseCase';
 import { ListerMessagesUseCase } from '@application/messagerie/ListerMessagesUseCase';
@@ -247,20 +239,6 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
   const notificationController = new NotificationController(c.notification.service);
   app.use('/api/v2/notifications', creerNotificationRoutes(notificationController));
 
-  // ── Babillard numérique (rétrocompatibilité) ───────────────────────────────
-  const announcementRepository = new PrismaAnnouncementRepository(p);
-  const creerAnnonceUseCase = new CreerAnnonceUseCase(announcementRepository);
-  const listerAnnoncesUseCase = new ListerAnnoncesUseCase(announcementRepository);
-  const modifierAnnonceUseCase = new ModifierAnnonceUseCase(announcementRepository);
-  const supprimerAnnonceUseCase = new SupprimerAnnonceUseCase(announcementRepository);
-  const announcementController = new AnnouncementController(
-    new PrismaUserRepository(p),
-    creerAnnonceUseCase,
-    listerAnnoncesUseCase,
-    modifierAnnonceUseCase,
-    supprimerAnnonceUseCase,
-  );
-  app.use('/api/v2/announcements', creerAnnouncementRoutes(announcementController));
 
   // ── Babillard Officiel (nouvelle architecture) ──────────────────────────────
   const publicationRepository = new PrismaPublicationRepository(p);

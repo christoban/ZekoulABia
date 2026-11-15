@@ -255,6 +255,28 @@ export default function InvoiceDetailsModal({
     }
   }
 
+  const verifyMobilePayment = async (paymentId: string) => {
+    setBusy(true)
+    try {
+      const res = await fetchApi('/api/v2/finance/payments/mobile/verify', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoiceId, paymentId }),
+      })
+      const json = (await res.json()) as { success?: boolean; data?: { statut?: string; message?: string }; message?: string }
+      if (!res.ok) throw new Error(json.message || 'Erreur vérification Campay')
+      const st = json.data?.statut
+      onToast(json.data?.message || (st === 'SUCCESS' ? 'Paiement validé' : 'Statut vérifié'), st === 'SUCCESS' ? 'success' : st === 'FAILED' ? 'error' : 'info')
+      await loadDetails()
+      onUpdated()
+    } catch (err) {
+      onToast(err instanceof Error ? err.message : 'Erreur vérification Campay', 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div
       onClick={onClose}
@@ -452,6 +474,7 @@ export default function InvoiceDetailsModal({
               canManage={canManage}
               busy={busy}
               onCancelPayment={submitCancelPayment}
+              onVerifyPayment={verifyMobilePayment}
               onDownloadPdf={handlePdf}
               onToast={onToast}
             />

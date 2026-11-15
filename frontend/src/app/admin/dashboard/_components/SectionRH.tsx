@@ -7,6 +7,7 @@ import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 import { Users, Palmtree, CheckCircle2, FileText, AlertTriangle, ArrowLeft } from 'lucide-react'
 import SectionStaffAttendanceAVerifier from './SectionStaffAttendanceAVerifier'
+import SectionStaffAttendanceSettings from './SectionStaffAttendanceSettings'
 
 interface OnToast { (msg: string, type?: 'success' | 'error' | 'info' | 'warning'): void }
 
@@ -133,6 +134,22 @@ export default function SectionRH({ onToast }: { onToast: OnToast }) {
   const [selectedDetail, setSelectedDetail] = useState<EmployeeDetail | null>(null)
   const [loadingEmployees, setLoadingEmployees] = useState(false)
   const [loadingDetail, setLoadingDetail] = useState(false)
+  const [refreshingBalance, setRefreshingBalance] = useState(false)
+
+  const refreshLeaveBalance = async (employeeId: string) => {
+    setRefreshingBalance(true)
+    try {
+      const r = await fetchApi(`/api/v2/hr/leave-balance/${employeeId}`, { credentials: 'include' })
+      const d = await r.json()
+      if (!r.ok || !d.success || !d.data) throw new Error(d.message ?? t('rh.toast.errLoadFile'))
+      setSelectedDetail(prev => (prev && prev.employee.id === employeeId ? { ...prev, leaveBalance: d.data } : prev))
+      onToast(t('rh.refresh'), 'success')
+    } catch (err) {
+      onToast(err instanceof Error ? err.message : t('rh.toast.errLoadFile'), 'error')
+    } finally {
+      setRefreshingBalance(false)
+    }
+  }
 
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequestItem[]>([])
   const [loadingLeaves, setLoadingLeaves] = useState(false)
@@ -392,6 +409,17 @@ export default function SectionRH({ onToast }: { onToast: OnToast }) {
         const d = await res.json()
         if (!d.success) throw new Error(d.message ?? t('rh.toast.errMission'))
         onToast(t('rh.toast.missionCreated'), 'success')
+        if (d.data?.id) {
+          const pdfRes = await fetchApi(`/api/v2/hr/mission-orders/${d.data.id}/pdf`, { credentials: 'include' })
+          if (pdfRes.ok) {
+            const pdfBlob = await pdfRes.blob()
+            const link = document.createElement('a')
+            link.href = URL.createObjectURL(pdfBlob)
+            link.download = `mission-${docEmployeeId}.pdf`
+            link.click()
+            URL.revokeObjectURL(link.href)
+          }
+        }
         return
       }
 
@@ -686,10 +714,26 @@ export default function SectionRH({ onToast }: { onToast: OnToast }) {
                     </div>
                   </div>
                   <div>
-                    <div style={{ ...labelStyle, marginBottom: 6 }}>{t('rh.leaveBalance')}</div>
+                    <div style={{ ...labelStyle, marginBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>{t('rh.leaveBalance')}</span>
+                      <button type="button" disabled={refreshingBalance}
+                        onClick={() => refreshLeaveBalance(selectedDetail.employee.id)}
+                        style={{ ...chipStyle('var(--bg2)', 'var(--text2)'), border: 'none', cursor: 'pointer', fontSize: 10.5, padding: '2px 7px' }}>
+                        {refreshingBalance ? '…' : t('rh.refresh')}
+                      </button>
+                    </div>
                     <div style={{ border: '1px solid var(--bg2)', borderRadius: 8, padding: '9px 11px', background: 'var(--bg)', marginBottom: 10 }}>
                       <div style={{ fontWeight: 800, fontSize: 13, color: 'var(--text)' }}>{selectedDetail.leaveBalance.current ? t('rh.daysRemaining', { n: selectedDetail.leaveBalance.current.soldeRestant }) : '—'}</div>
                       <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 2 }}>{t('rh.year', { y: selectedDetail.leaveBalance.current?.annee ?? new Date().getFullYear() })}</div>
+                      {selectedDetail.leaveBalance.balances.length > 1 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
+                          {selectedDetail.leaveBalance.balances.map(b => (
+                            <span key={b.annee} style={{ fontSize: 10.5, padding: '2px 6px', borderRadius: 6, background: 'var(--bg2)', color: 'var(--text2)' }}>
+                              {b.annee}: {b.soldeRestant}/{b.soldeInitial}j
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div style={{ ...labelStyle, marginBottom: 6 }}>{t('rh.leaveRequests')}</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -867,6 +911,8 @@ export default function SectionRH({ onToast }: { onToast: OnToast }) {
               <SectionStaffAttendanceAVerifier onToast={onToast} />
             </div>
           </div>
+
+          <SectionStaffAttendanceSettings onToast={onToast} />
         </div>
       )}
 

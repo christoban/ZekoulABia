@@ -11,6 +11,7 @@ import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useT } from '@/lib/i18n'
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount'
+import { useUnreadBabillardCount } from '@/hooks/useUnreadBabillardCount'
 import ChangeAvatarModal from '@/components/ChangeAvatarModal'
 import type { TeacherSection, UserInfo } from '../_types'
 
@@ -35,7 +36,7 @@ interface NavGroup {
 // - 'icon' : icône importée de lucide-react
 // - 'label': titre affiché dans le menu
 // ==========================================================================
-function buildNav(user: UserInfo | null | undefined, pendingGrades: number | undefined, messagesNonLus: number, tnav: ReturnType<typeof useT>, tcommon: ReturnType<typeof useT>): NavGroup[] {
+function buildNav(user: UserInfo | null | undefined, pendingGrades: number | undefined, messagesNonLus: number, babillardNonLus: number, tnav: ReturnType<typeof useT>, tcommon: ReturnType<typeof useT>): NavGroup[] {
   const groups: NavGroup[] = [
     {
       items: [{ id: 'dashboard', icon: LayoutDashboard, label: tnav('sidebar.dashboard') }],
@@ -61,7 +62,7 @@ function buildNav(user: UserInfo | null | undefined, pendingGrades: number | und
     {
       label: tnav('group.communication'),
       items: [
-        { id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard') },
+        { id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard'), ...(babillardNonLus > 0 ? { badge: String(babillardNonLus), badgeColor: 'amber' as const } : {}) },
         { id: 'carnet-liaison', icon: NotebookPen, label: tnav('sidebar.carnetLiaison') },
         { id: 'messagerie', icon: MessageCircle, label: tnav('sidebar.messagerie'), ...(messagesNonLus > 0 ? { badge: String(messagesNonLus), badgeColor: 'red' as const } : {}) },
       ],
@@ -124,6 +125,7 @@ export default function TeacherSidebar({
   const tnav = useT('navigation')
   const tcommon = useT('common')
   const messagesNonLus = useUnreadMessagesCount()
+  const babillardNonLus = useUnreadBabillardCount()
   const displayName = schoolName || tcommon('brand.fallbackSchool')
   const initials = displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((w: string) => w[0].toUpperCase()).join('')
   const [currentAvatar, setCurrentAvatar] = useState<string | null>(user?.avatarUrl ?? null)
@@ -149,7 +151,7 @@ export default function TeacherSidebar({
   const userDisplayName = user ? `${user.firstName} ${user.lastName}` : tcommon('user.loading')
   const userInitials = user ? (user.firstName[0] || '') + (user.lastName[0] || '') : '??'
 
-  const nav = buildNav(user, pendingGrades, messagesNonLus, tnav, tcommon)
+  const nav = buildNav(user, pendingGrades, messagesNonLus, babillardNonLus, tnav, tcommon)
   const handleChange = (id: TeacherSection) => { onChange(id); onMobileClose?.() }
 
   const sidebarBody = (

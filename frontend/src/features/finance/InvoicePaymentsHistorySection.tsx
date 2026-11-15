@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Download, Copy, Ban } from 'lucide-react'
+import { Download, Copy, Ban, RefreshCw } from 'lucide-react'
 import { fmtCFA } from '@/components/finance/ModalOverlay'
 import type { PaymentDetailItem } from './financeExtendedTypes'
 
@@ -10,6 +10,7 @@ interface Props {
   canManage: boolean
   busy: boolean
   onCancelPayment: (paymentId: string, reason: string) => Promise<boolean>
+  onVerifyPayment?: (paymentId: string) => Promise<void>
   onDownloadPdf: (paymentId: string, duplicate: boolean) => Promise<void>
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
 }
@@ -19,6 +20,7 @@ export default function InvoicePaymentsHistorySection({
   canManage,
   busy,
   onCancelPayment,
+  onVerifyPayment,
   onDownloadPdf,
   onToast,
 }: Props) {
@@ -81,6 +83,20 @@ export default function InvoicePaymentsHistorySection({
                         <Copy size={11} /> Duplicata
                       </button>
                     </>
+                  )}
+                  {canManage && onVerifyPayment && p.status === 'PENDING' && (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void onVerifyPayment(p.id)}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 8px', borderRadius: 6,
+                        border: '1px solid var(--amber)', background: 'var(--amber-light)', color: 'var(--amber)',
+                        fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                      }}
+                    >
+                      <RefreshCw size={11} /> Vérifier Campay
+                    </button>
                   )}
                   {canManage && p.status === 'SUCCESS' && (
                     <button
