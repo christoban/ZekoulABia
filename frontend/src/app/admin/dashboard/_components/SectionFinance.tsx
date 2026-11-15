@@ -9,6 +9,8 @@ import DelegationSupervisionBanner from './DelegationSupervisionBanner'
 import FinanceDelegationBanner from '@/components/finance/FinanceDelegationBanner'
 import { fmtCFA } from '@/components/finance/ModalOverlay'
 import type { AdminSection } from '../_types'
+import InvoiceDetailsModal from '@/features/finance/InvoiceDetailsModal'
+import FinanceCashOpsPanel from '@/features/finance/FinanceCashOpsPanel'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
@@ -57,7 +59,8 @@ interface Pagination {
 }
 
 export default function SectionFinance({ onToast, onNav }: Props) {
-  const [tab, setTab] = useState<'supervision' | 'plans' | 'invoices'>('supervision')
+  const [tab, setTab] = useState<'supervision' | 'plans' | 'invoices' | 'closures'>('supervision')
+  const [detailsInvoice, setDetailsInvoice] = useState<{ id: string; studentName: string; feePlanName: string } | null>(null)
   const [plans, setPlans] = useState<FeePlan[]>([])
   const [invoices, setInvoices] = useState<InvoiceItem[]>([])
   const [pag, setPag] = useState<Pagination>({ total: 0, page: 1, pages: 1 })
@@ -265,7 +268,7 @@ export default function SectionFinance({ onToast, onNav }: Props) {
         className="gap-1 mb-3 md:mb-4 max-w-full overflow-x-auto no-scrollbar"
         style={{ display: 'flex', background: 'var(--bg2)', padding: 3, borderRadius: 10, width: 'fit-content' }}
       >
-        {(['supervision', 'plans', 'invoices'] as const).map((tabKey) => (
+        {(['supervision', 'plans', 'invoices', 'closures'] as const).map((tabKey) => (
           <button
             key={tabKey}
             onClick={() => setTab(tabKey)}
@@ -282,7 +285,13 @@ export default function SectionFinance({ onToast, onNav }: Props) {
               transition: 'all 0.12s',
             }}
           >
-            {tabKey === 'supervision' ? t('tabs.supervision') : tabKey === 'plans' ? t('tabs.plans') : t('tabs.invoices')}
+            {tabKey === 'supervision'
+              ? t('tabs.supervision')
+              : tabKey === 'plans'
+                ? t('tabs.plans')
+                : tabKey === 'invoices'
+                  ? t('tabs.invoices')
+                  : 'Clôtures & Rapprochement'}
           </button>
         ))}
       </div>
@@ -711,6 +720,22 @@ export default function SectionFinance({ onToast, onNav }: Props) {
                         Échéance : {new Date(inv.dueDate).toLocaleDateString('fr-FR')}
                       </div>
                     )}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDetailsInvoice({
+                          id: inv.id,
+                          studentName: `${inv.student.firstName} ${inv.student.lastName}`,
+                          feePlanName: inv.feePlan?.name ?? 'Frais de scolarité',
+                        })
+                      }
+                      style={{
+                        padding: '5px 10px', borderRadius: 7, border: '1px solid var(--border2)',
+                        background: 'var(--bg2)', color: 'var(--text)', fontSize: 11.5, fontWeight: 700, cursor: 'pointer',
+                      }}
+                    >
+                      Détails / Échéancier / Reçus
+                    </button>
                   </div>
                 )
               })}
@@ -726,6 +751,7 @@ export default function SectionFinance({ onToast, onNav }: Props) {
                     <th style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--text2)', textAlign: 'right' }}>Montant</th>
                     <th style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--text2)', textAlign: 'center' }}>Statut</th>
                     <th style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--text2)', textAlign: 'right' }}>Échéance</th>
+                    <th style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--text2)', textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -756,6 +782,24 @@ export default function SectionFinance({ onToast, onNav }: Props) {
                         </td>
                         <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--text3)' }}>
                           {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString('fr-FR') : '—'}
+                        </td>
+                        <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setDetailsInvoice({
+                                id: inv.id,
+                                studentName: `${inv.student.firstName} ${inv.student.lastName}`,
+                                feePlanName: inv.feePlan?.name ?? 'Frais de scolarité',
+                              })
+                            }
+                            style={{
+                              padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border2)',
+                              background: 'var(--surface)', color: 'var(--text)', fontSize: 11.5, fontWeight: 700, cursor: 'pointer',
+                            }}
+                          >
+                            Détails
+                          </button>
                         </td>
                       </tr>
                     )
@@ -788,6 +832,27 @@ export default function SectionFinance({ onToast, onNav }: Props) {
             </div>
           )}
         </>
+      )}
+      {/* Clôtures de caisse & rapprochement Mobile Money */}
+      {!loading && !error && tab === 'closures' && (
+        <FinanceCashOpsPanel
+          canManage={true}
+          invoices={invoices}
+          onReconciled={() => void fetchInvoices(page)}
+          onToast={onToast}
+        />
+      )}
+
+      {detailsInvoice && (
+        <InvoiceDetailsModal
+          invoiceId={detailsInvoice.id}
+          studentName={detailsInvoice.studentName}
+          feePlanName={detailsInvoice.feePlanName}
+          canManage={true}
+          onClose={() => setDetailsInvoice(null)}
+          onUpdated={() => void fetchInvoices(page)}
+          onToast={onToast}
+        />
       )}
     </div>
   )

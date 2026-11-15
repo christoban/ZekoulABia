@@ -7,6 +7,8 @@ import { useT } from '@/lib/i18n'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
 import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
+import { AttendanceDailyStatusPanel, AttendanceRepeatedAbsencesPanel } from '@/features/attendance/AttendanceSupervisionPanels'
+import { AttendanceRecordActions, type SharedAttendanceRecord } from '@/features/attendance/AttendanceRecordActions'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
@@ -14,12 +16,7 @@ interface Props {
 
 interface AttendanceStats { total: number; present: number; absent: number; late: number; attendanceRate: string }
 interface ClassItem { id: string; name: string }
-interface AttendanceRecord {
-  id: string; date: string; status: string; period: string
-  student: { id: string; firstName: string; lastName: string } | null
-  class: { id: string; name: string } | null
-  markedBy: { id: string; firstName: string; lastName: string } | null
-}
+type AttendanceRecord = SharedAttendanceRecord
 
 const STATUS_STYLE: Record<string, { bg: string; color: string; label: string; icon: LucideIcon }> = {
   PRESENT:          { bg: 'var(--green-light)', color: 'var(--green)', label: 'Présent', icon: Check },
@@ -37,6 +34,7 @@ export default function SectionAdminAttendance({ onToast }: Props) {
   const [date, setDate]             = useState(new Date().toISOString().slice(0, 10))
   const [loading, setLoading]       = useState(true)
   const [justifyingId, setJustifyingId] = useState<string | null>(null)
+  const [activeTab, setActiveTab]   = useState<'journal' | 'daily' | 'repeated'>('journal')
 
   const fetchStats = useCallback(async () => {
     try {
@@ -103,9 +101,9 @@ export default function SectionAdminAttendance({ onToast }: Props) {
     return () => window.removeEventListener('zekoulabia:data-changed', onChanged)
   }, [fetchRecords, fetchStats])
 
-  const justify = async (recordId: string) => {
+  const justify = async (recordId: string, approve = true) => {
     setJustifyingId(recordId)
-    const payload = { justification: "Justifiée par l'administration" }
+    const payload = { justification: approve ? "Justifiée par l'administration" : "Justificatif refusé par l'administration", approve }
 
     if (!navigator.onLine) {
       try {
@@ -197,6 +195,33 @@ export default function SectionAdminAttendance({ onToast }: Props) {
             </div>
           )}
 
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {[
+              { id: 'journal' as const, label: 'Journal & Justificatifs' },
+              { id: 'daily' as const, label: 'Appels du jour (Fait / Non fait)' },
+              { id: 'repeated' as const, label: 'Absences répétées' },
+            ].map((tb) => (
+              <button
+                key={tb.id}
+                type="button"
+                onClick={() => setActiveTab(tb.id)}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer border"
+                style={{
+                  background: activeTab === tb.id ? 'var(--primary)' : 'var(--surface)',
+                  color: activeTab === tb.id ? 'white' : 'var(--text2)',
+                  borderColor: activeTab === tb.id ? 'var(--primary)' : 'var(--border2)',
+                }}
+              >
+                {tb.label}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === 'daily' ? (
+            <AttendanceDailyStatusPanel date={date} />
+          ) : activeTab === 'repeated' ? (
+            <AttendanceRepeatedAbsencesPanel />
+          ) : (
           <div className="rounded-none md:rounded-[12px] border-0 md:border md:border-[1.5px] md:border-[var(--border)] bg-transparent md:bg-[var(--surface)]" style={{ overflow: 'hidden' }}>
             <div className="p-0 mb-3 md:p-[10px] md:px-[16px] md:mb-0 md:border-b md:border-[var(--border)]" style={{ display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center' }}>
               <select value={classId} onChange={e => setClassId(e.target.value)} className={`${filterStCls} flex-1 md:flex-none`} style={filterSt}>
@@ -245,15 +270,13 @@ export default function SectionAdminAttendance({ onToast }: Props) {
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
                         <span style={{ fontSize: 11, color: 'var(--text3)' }}>{r.markedBy ? `${r.markedBy.firstName} ${r.markedBy.lastName}` : '—'}</span>
-                        {r.status === 'ABSENT' && (
-                          <button
-                            className="min-h-[38px] px-3 text-xs font-bold"
-                            style={{ borderRadius: 8, background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid rgba(217,119,6,0.25)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                            onClick={() => justify(r.id)} disabled={justifyingId === r.id}>
-                            {justifyingId === r.id ? <Loader2 size={12} className="animate-spin" /> : <><ClipboardList size={12} /> Justifier</>}
-                          </button>
-                        )}
+                        <AttendanceRecordActions record={r} justifyingId={justifyingId} onJustify={justify} onCorrected={() => { fetchRecords(); fetchStats() }} onToast={onToast} />
                       </div>
+                      {r.justification && (
+                        <div className="mt-1.5 text-[11px] text-[var(--text2)] bg-[var(--bg)] px-2 py-1 rounded">
+                          Motif {r.justificationStatus === 'PENDING' ? '(en attente)' : ''} : {r.justification}
+                        </div>
+                      )}
                     </div>
                   )
                 })}
@@ -274,22 +297,20 @@ export default function SectionAdminAttendance({ onToast }: Props) {
                         <tr key={r.id}
                           onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
                           onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
-                          <td style={{ ...tdSt, fontWeight: 700, color: 'var(--text)' }}>{r.student ? `${r.student.firstName} ${r.student.lastName}` : '—'}</td>
+                          <td style={{ ...tdSt, fontWeight: 700, color: 'var(--text)' }}>
+                            {r.student ? `${r.student.firstName} ${r.student.lastName}` : '—'}
+                            {r.justification && <div className="text-[11px] font-normal text-[var(--text3)]">{r.justification}</div>}
+                          </td>
                           <td style={tdSt}>{r.class?.name ?? '—'}</td>
                           <td style={tdSt}>{new Date(r.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}</td>
                           <td style={tdSt}>{r.period}</td>
                           <td style={tdSt}>
                             <span style={{ padding: '2.5px 8px', borderRadius: 14, fontSize: 11.5, fontWeight: 700, background: st.bg, color: st.color, display: 'inline-flex', alignItems: 'center', gap: 4 }}><st.icon size={11} /> {st.label}</span>
+                            {r.previousStatus && <div className="text-[10px] text-[var(--text3)] mt-0.5">Corrigé ({r.previousStatus})</div>}
                           </td>
                           <td style={tdSt}>{r.markedBy ? `${r.markedBy.firstName} ${r.markedBy.lastName}` : '—'}</td>
                           <td style={tdSt}>
-                            {r.status === 'ABSENT' && (
-                              <button
-                                style={{ padding: '3.5px 9px', borderRadius: 6, fontSize: 11.5, fontWeight: 700, background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid rgba(217,119,6,0.25)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                                onClick={() => justify(r.id)} disabled={justifyingId === r.id}>
-                                {justifyingId === r.id ? <Loader2 size={11} className="animate-spin" /> : <><ClipboardList size={11} /> Justifier</>}
-                              </button>
-                            )}
+                            <AttendanceRecordActions record={r} justifyingId={justifyingId} onJustify={justify} onCorrected={() => { fetchRecords(); fetchStats() }} onToast={onToast} />
                           </td>
                         </tr>
                       )
@@ -300,6 +321,7 @@ export default function SectionAdminAttendance({ onToast }: Props) {
               </>
             )}
           </div>
+          )}
         </>
       )}
     </div>

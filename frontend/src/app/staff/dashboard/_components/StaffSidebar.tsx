@@ -8,7 +8,7 @@ import {
   Compass, IdCard, ShieldAlert,
   Megaphone, MessageCircle,
   ScanSearch, Users, Settings, ChevronDown, ChevronRight,
-  BarChart3, UserPlus, Award, RefreshCw, Camera, X, ArrowRightLeft,
+  BarChart3, UserPlus, Award, RefreshCw, Camera, X, ArrowRightLeft, NotebookPen,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -151,6 +151,7 @@ export default function StaffSidebar({
   const commItems: NavItem[] = []
   if (can('messagerie'))       commItems.push({ id: 'messagerie', icon: MessageCircle, label: tnav('sidebar.messagerie'), ...(messagesNonLus > 0 ? { badge: String(messagesNonLus), badgeColor: 'red' as const } : {}) })
   if (can('babillard'))        commItems.push({ id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard') })
+  if (can('carnet-liaison'))   commItems.push({ id: 'carnet-liaison', icon: NotebookPen, label: tnav('sidebar.carnetLiaison') })
 
   // Configuration technique (uniquement si permission de structure d'établissement)
   const hasConfigAccess = can('configuration')

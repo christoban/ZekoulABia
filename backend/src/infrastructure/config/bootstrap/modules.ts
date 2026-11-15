@@ -320,7 +320,23 @@ export function registerModulesRoutes(app: Application, p: typeof prisma = prism
           include: {
             student: { select: { id: true, firstName: true, lastName: true } },
             feePlan: { select: { id: true, name: true, feeType: true, amount: true } },
-            payments: { select: { id: true, amount: true, status: true, paidAt: true, method: true, feeType: true, cautionStatus: true, refundedAt: true } },
+            installments: { orderBy: { trancheNumber: 'asc' } },
+            discounts: { orderBy: { createdAt: 'desc' } },
+            payments: {
+              select: {
+                id: true,
+                amount: true,
+                status: true,
+                paidAt: true,
+                method: true,
+                feeType: true,
+                cautionStatus: true,
+                refundedAt: true,
+                receiptNumber: true,
+                provisionalReceiptNumber: true,
+                cancellationReason: true,
+              },
+            },
           },
           orderBy: { createdAt: 'desc' },
           skip: (pageNum - 1) * limitNum,
@@ -385,24 +401,38 @@ export function registerModulesRoutes(app: Application, p: typeof prisma = prism
         return;
       }
 
-      // Si invoiceId fourni, vérifier que la facture appartient bien à un enfant du parent
+      const parentProfile = await p.parentProfile.findUnique({
+        where: { userId },
+        include: { children: { include: { studentProfile: { select: { userId: true } } } } },
+      });
+      const childUserIds = (parentProfile?.children ?? [])
+        .map(c => c.studentProfile?.userId)
+        .filter((id): id is string => Boolean(id));
+
+      // Vérifier l'ownership sur invoiceId ET/OU paymentId / campayRef
       if (invoiceId) {
         const invoice = await p.invoice.findFirst({ where: { id: invoiceId, schoolId } });
         if (!invoice) {
           res.status(404).json({ success: false, message: 'Facture introuvable' });
           return;
         }
-
-        const parentProfile = await p.parentProfile.findUnique({
-          where: { userId },
-          include: { children: { include: { studentProfile: { select: { userId: true } } } } },
-        });
-        const childUserIds = (parentProfile?.children ?? [])
-          .map(c => c.studentProfile?.userId)
-          .filter((id): id is string => Boolean(id));
-
         if (!childUserIds.includes(invoice.studentId)) {
           res.status(403).json({ success: false, message: 'Accès refusé' });
+          return;
+        }
+      }
+
+      if (paymentId || campayRef) {
+        const payment = await p.payment.findFirst({
+          where: paymentId ? { id: paymentId } : { campayRef },
+          select: { id: true, schoolId: true, studentId: true },
+        });
+        if (!payment) {
+          res.status(404).json({ success: false, message: 'Paiement introuvable' });
+          return;
+        }
+        if (payment.schoolId !== schoolId || !childUserIds.includes(payment.studentId)) {
+          res.status(403).json({ success: false, message: 'Accès refusé à ce paiement' });
           return;
         }
       }
@@ -415,6 +445,55 @@ export function registerModulesRoutes(app: Application, p: typeof prisma = prism
       });
 
       res.status(200).json({ success: true, data: result });
+    } catch (err) { next(err); }
+  });
+
+  // POST /api/v2/parent/invoices/:id/promise — enregistrer une promesse de paiement par le parent
+  app.post('/api/v2/parent/invoices/:id/promise', requireAuth, requireRole('PARENT'), async (req, res, next) => {
+    try {
+      const userId = req.user!.userId;
+      const schoolId = req.user!.schoolId;
+      const invoiceId = req.params.id;
+      const { promisedDate, note } = req.body as { promisedDate?: string; note?: string };
+
+      if (!promisedDate) {
+        res.status(400).json({ success: false, message: 'Date de promesse requise' });
+        return;
+      }
+      const parsedDate = new Date(promisedDate);
+      if (Number.isNaN(parsedDate.getTime())) {
+        res.status(400).json({ success: false, message: 'Date de promesse invalide' });
+        return;
+      }
+
+      const invoice = await p.invoice.findFirst({ where: { id: invoiceId, schoolId } });
+      if (!invoice) {
+        res.status(404).json({ success: false, message: 'Facture introuvable' });
+        return;
+      }
+
+      const parentProfile = await p.parentProfile.findUnique({
+        where: { userId },
+        include: { children: { include: { studentProfile: { select: { userId: true } } } } },
+      });
+      const childUserIds = (parentProfile?.children ?? [])
+        .map(c => c.studentProfile?.userId)
+        .filter((id): id is string => Boolean(id));
+
+      if (!childUserIds.includes(invoice.studentId)) {
+        res.status(403).json({ success: false, message: 'Accès refusé à cette facture' });
+        return;
+      }
+
+      const updated = await c.finance.factureRepository.enregistrerPromessePaiement({
+        schoolId,
+        invoiceId: invoice.id,
+        promisedDate: parsedDate,
+        note: typeof note === 'string' ? note.trim() : undefined,
+        promisedByUserId: userId,
+      });
+
+      res.status(200).json({ success: true, data: updated.toObject() });
     } catch (err) { next(err); }
   });
 

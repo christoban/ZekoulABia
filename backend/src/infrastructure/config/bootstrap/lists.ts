@@ -854,10 +854,24 @@ export function registerListsRoutes(app: Application, p: typeof prisma = prisma,
     } catch (err) { next(err); }
   });
 
-  // GET /api/v2/finance/invoices?status=&feeType=&page= — liste des factures (ADMIN ou STAFF)
+  // GET /api/v2/finance/invoices?status=&feeType=&page= — liste des factures (ADMIN ou STAFF finance)
   app.get('/api/v2/finance/invoices', requireAuth, requireRole('ADMIN', 'STAFF'), async (req, res, next) => {
     try {
       const schoolId = req.user!.schoolId;
+      if (req.user!.role === 'STAFF') {
+        const staff = await p.staffProfile.findUnique({
+          where: { userId: req.user!.userId },
+          select: { permissions: { select: { permission: true } } },
+        });
+        const perms = (staff?.permissions ?? []).map((perm) => String(perm.permission));
+        if (!perms.includes('MANAGE_FINANCE') && !perms.includes('VALIDATE_PAYMENTS')) {
+          res.status(403).json({
+            success: false,
+            message: 'Permission MANAGE_FINANCE ou VALIDATE_PAYMENTS requise',
+          });
+          return;
+        }
+      }
       const { status, feeType, page = '1', limit = '50' } = req.query as Record<string, string>;
       const pageNum = Math.max(1, parseInt(page));
       const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
@@ -873,7 +887,23 @@ export function registerListsRoutes(app: Application, p: typeof prisma = prisma,
           include: {
             student: { select: { id: true, firstName: true, lastName: true } },
             feePlan: { select: { id: true, name: true, feeType: true, amount: true } },
-            payments: { select: { id: true, amount: true, status: true, paidAt: true, method: true, feeType: true, cautionStatus: true, refundedAt: true } },
+            payments: {
+              select: {
+                id: true,
+                amount: true,
+                status: true,
+                paidAt: true,
+                method: true,
+                feeType: true,
+                cautionStatus: true,
+                refundedAt: true,
+                receiptNumber: true,
+                provisionalReceiptNumber: true,
+                cancellationReason: true,
+              },
+            },
+            installments: { orderBy: { trancheNumber: 'asc' } },
+            discounts: true,
           },
           orderBy: { createdAt: 'desc' },
           skip: (pageNum - 1) * limitNum,

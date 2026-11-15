@@ -28,13 +28,17 @@ export class EnvoyerRappelsPaiementUseCase {
       if (!invoice.student?.email && parentRecipients.length === 0) continue;
 
       const daysUntilDue = Math.ceil((new Date(invoice.dueDate).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      const daysOverdue = daysUntilDue < 0 ? Math.abs(daysUntilDue) : 0;
 
       let subject = "";
       const isOverdue = daysUntilDue < 0;
       if (daysUntilDue === 7) subject = "Rappel : Paiement dû dans 7 jours";
-      else if (daysUntilDue === 3) subject = "Urgent : Paiement dû dans 3 jours";
-      else if (daysUntilDue === 0) subject = "Aujourd'hui : Dernier délai de paiement";
-      else if (isOverdue) subject = `Retard de paiement — ${Math.abs(daysUntilDue)} jour(s)`;
+      else if (daysUntilDue === 3) subject = "Urgent (J-3) : Paiement dû dans 3 jours";
+      else if (daysUntilDue === 0) subject = "Échéance aujourd'hui (J0) : Dernier délai de paiement";
+      else if (daysOverdue === 7) subject = "Relance J+7 : Retard de paiement — 7 jours";
+      else if (daysOverdue === 14) subject = "Relance J+14 : Retard de paiement — 14 jours";
+      else if (daysOverdue === 30) subject = "Mise en demeure J+30 : Retard de paiement — 30 jours";
+      else if (isOverdue) subject = `Retard de paiement — ${daysOverdue} jour(s)`;
       else continue;
 
       const label = invoice.feePlan?.name || invoice.description || "Facture";
@@ -65,11 +69,23 @@ export class EnvoyerRappelsPaiementUseCase {
         }
       }
 
-      if (isOverdue && invoice.studentId) {
+      const shouldNotifyPushAndSms =
+        daysUntilDue === 3 ||
+        daysUntilDue === 0 ||
+        daysOverdue === 7 ||
+        daysOverdue === 14 ||
+        daysOverdue === 30;
+
+      if (shouldNotifyPushAndSms && invoice.studentId) {
         const studentName = `${invoice.student?.firstName ?? ''} ${invoice.student?.lastName ?? ''}`.trim();
-        const daysOverdue = Math.abs(daysUntilDue);
-        const titre = "Facture en retard";
-        const corps = `Facture "${label}" de ${invoice.amount} XAF pour ${studentName} en retard de ${daysOverdue} jour(s).`;
+        const titre = daysUntilDue === 3
+          ? "Échéance scolarité J-3"
+          : daysUntilDue === 0
+            ? "Échéance scolarité aujourd'hui"
+            : `Relance impayé J+${daysOverdue}`;
+        const corps = isOverdue
+          ? `Facture "${label}" de ${invoice.amount} XAF pour ${studentName} en retard de ${daysOverdue} jour(s).`
+          : `Facture "${label}" de ${invoice.amount} XAF pour ${studentName} due le ${dueDateFormatted}.`;
         if (this.notificationService.notifierParents) {
           await this.notificationService.notifierParents({
             schoolId: invoice.schoolId, studentId: invoice.studentId, type: "PAYMENT_REMINDER", titre, corps,
@@ -77,7 +93,7 @@ export class EnvoyerRappelsPaiementUseCase {
         } else {
           for (const parent of parentRecipients) {
             await this.notificationService
-              .envoyer({ schoolId: invoice.schoolId, userId: parent.userId, type: "PAYMENT_REMINDER", titre, corps, urgency: "NORMAL" })
+              .envoyer({ schoolId: invoice.schoolId, userId: parent.userId, type: "PAYMENT_REMINDER", titre, corps, urgency: isOverdue ? "HIGH" : "NORMAL" })
               .catch((err) => console.error('[PushFirst] IN_APP parent:', messageErreur(err)));
           }
         }

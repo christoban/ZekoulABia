@@ -36,6 +36,7 @@ import EventCenterWidget from '@/features/communication/EventCenterWidget'
 import AssistantWidget from '../../admin/dashboard/_components/AssistantWidget'
 import SectionOfflineStatus from '@/components/SectionOfflineStatus'
 import Babillard from '@/features/communication/Babillard'
+import CarnetLiaisonView from '@/features/carnet-liaison/CarnetLiaisonView'
 import Messagerie from '@/features/messagerie'
 import SectionModerationMessagerie from './_components/SectionModerationMessagerie'
 import SectionClassesStaff from './_components/SectionClassesStaff'
@@ -77,7 +78,7 @@ export default function StaffDashboard() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [toasts, setToasts]             = useState<Toast[]>([])
   const [sessionUser, setSessionUser]   = useState<SessionUser | null>(null)
-  const [allowedSections, setAllowedSections] = useState<Set<StaffSection>>(new Set(['dashboard', 'mon-profil-rh', 'notifications', 'babillard', 'messagerie', 'moderation-messagerie', 'sync-offline', 'configuration']))
+  const [allowedSections, setAllowedSections] = useState<Set<StaffSection>>(new Set(['dashboard', 'mon-profil-rh', 'notifications', 'babillard', 'carnet-liaison', 'messagerie', 'moderation-messagerie', 'sync-offline', 'configuration']))
   const [schoolName, setSchoolName]     = useState<string | undefined>(undefined)
   const [logoUrl,    setLogoUrl]        = useState<string | null>(null)
   const [changePwdOpen, setChangePwdOpen] = useState(false)
@@ -608,6 +609,11 @@ export default function StaffDashboard() {
           {visitedSections.has('babillard') && (
             <div style={{ display: section === 'babillard' ? 'contents' : 'none' }}>
               <Babillard role={sessionUser?.role ?? 'STAFF'} title={tnav('sidebar.babillard')} subtitle={tnav('group.communication')} currentUserId={sessionUser?.userId} />
+            </div>
+          )}
+          {visitedSections.has('carnet-liaison') && (
+            <div style={{ display: section === 'carnet-liaison' ? 'contents' : 'none' }}>
+              <CarnetLiaisonView role="STAFF" onToast={showToast} />
             </div>
           )}
           {visitedSections.has('messagerie') && (

@@ -2,7 +2,7 @@
  * DOMAIN LAYER — Port Repository Facture (Invoice)
  */
 import type { Facture } from '@domain/entities/Facture';
-import type { InvoiceStatus } from '@domain/types/enums';
+import type { DiscountReasonType, InvoiceStatus } from '@domain/types/enums';
 
 export interface FactureEnRetard {
   studentId: string;
@@ -11,6 +11,56 @@ export interface FactureEnRetard {
   totalPaye: number;
   solde: number;
   nombreFacturesEnRetard: number;
+}
+
+export interface InstallmentInput {
+  trancheNumber?: number;
+  label: string;
+  amount: number;
+  dueDate: Date;
+}
+
+export interface InstallmentView {
+  id: string;
+  invoiceId: string;
+  trancheNumber: number;
+  label: string;
+  amount: number;
+  paidAmount: number;
+  dueDate: Date;
+  status: InvoiceStatus;
+}
+
+export interface DiscountInput {
+  schoolId: string;
+  invoiceId: string;
+  studentId: string;
+  reasonType: DiscountReasonType;
+  amount: number;
+  percentage?: number | null;
+  justification: string;
+  grantedById: string;
+}
+
+export interface DiscountView {
+  id: string;
+  schoolId: string;
+  invoiceId: string;
+  studentId: string;
+  reasonType: DiscountReasonType;
+  amount: number;
+  percentage: number | null;
+  justification: string;
+  grantedById: string;
+  createdAt: Date;
+}
+
+export interface PromisePaymentInput {
+  schoolId: string;
+  invoiceId: string;
+  promisedDate: Date;
+  note?: string;
+  promisedByUserId: string;
 }
 
 export interface FactureRepository {
@@ -42,4 +92,19 @@ export interface FactureRepository {
   save(facture: Facture): Promise<void>;
   update(facture: Facture): Promise<void>;
   delete(id: string): Promise<void>;
+
+  getInstallments(invoiceId: string): Promise<InstallmentView[]>;
+  getDiscounts(invoiceId: string): Promise<DiscountView[]>;
+  configurerEcheancier(
+    invoiceId: string,
+    schoolId: string,
+    tranches: InstallmentInput[],
+  ): Promise<{ invoiceId: string; netAmount: number; installments: InstallmentView[] }>;
+  appliquerRemise(input: DiscountInput): Promise<{
+    invoice: Facture;
+    discount: DiscountView;
+    installments: InstallmentView[];
+  }>;
+  enregistrerPromessePaiement(input: PromisePaymentInput): Promise<Facture>;
+  calculerAvoirDisponible(schoolId: string, studentId: string): Promise<number>;
 }

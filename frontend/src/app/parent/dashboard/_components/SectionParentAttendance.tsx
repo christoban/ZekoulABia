@@ -18,7 +18,10 @@ interface AttendanceRecord {
   date: string
   period: string
   status: 'PRESENT' | 'LATE' | 'ABSENT' | 'ABSENT_JUSTIFIED'
+  arrivedAt?: string | null
+  lateNote?: string | null
   justification?: string | null
+  justificationStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | null
   studentId: string
   student?: { id: string; name: string } | null
   markedBy?: { name: string; role: string } | null
@@ -63,6 +66,9 @@ export default function SectionParentAttendance({ onToast, userId }: Props) {
   const t = useT('parent')
   const [selectedChildIndex, setSelectedChildIndex] = useState(0)
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ABSENT' | 'LATE' | 'JUSTIFIED'>('ALL')
+  const [justifyingRecordId, setJustifyingRecordId] = useState<string | null>(null)
+  const [justificationDraft, setJustificationDraft] = useState('')
+  const [submittingJustif, setSubmittingJustif] = useState(false)
 
   // 1. Fetch enfants avec stats
   const cacheKeyChildren = userId ? `parent:children:${userId}` : 'parent:children:default'
@@ -88,10 +94,37 @@ export default function SectionParentAttendance({ onToast, userId }: Props) {
     return json.records ?? []
   }, [studentId])
 
-  const { data: journalData, loading: loadingJournal } = useCachedFetch<AttendanceRecord[]>(
+  const { data: journalData, loading: loadingJournal, refetch: refetchJournal } = useCachedFetch<AttendanceRecord[]>(
     cacheKeyJournal,
     fetchJournalFn
   )
+
+  const submitParentJustification = async (recordId: string) => {
+    if (justificationDraft.trim().length < 3) {
+      onToast('Veuillez préciser le motif (au moins 3 caractères).', 'warning')
+      return
+    }
+    setSubmittingJustif(true)
+    try {
+      const res = await fetchApi(`/api/v2/attendance/${recordId}/parent-justify`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ justification: justificationDraft.trim() }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.success) throw new Error(json.message || 'Erreur lors de la soumission')
+      onToast('Justificatif envoyé à la vie scolaire', 'success')
+      setJustifyingRecordId(null)
+      setJustificationDraft('')
+      refetchJournal()
+      refetchKids()
+    } catch (e) {
+      onToast(e instanceof Error ? e.message : 'Erreur réseau', 'error')
+    } finally {
+      setSubmittingJustif(false)
+    }
+  }
 
   const rawRecords = journalData ?? []
 
@@ -371,6 +404,15 @@ export default function SectionParentAttendance({ onToast, userId }: Props) {
                     {item.justification && (
                       <div className="text-xs text-[var(--text2)] italic bg-[var(--bg)] p-2 rounded-lg border border-[var(--border)]/40">
                         Motif : {item.justification}
+                        {item.justificationStatus === 'PENDING' && <span className="ml-2 font-bold text-[var(--amber)]">(En attente de validation)</span>}
+                        {item.justificationStatus === 'REJECTED' && <span className="ml-2 font-bold text-[var(--red)]">(Refusé)</span>}
+                      </div>
+                    )}
+
+                    {item.arrivedAt && (
+                      <div className="text-[11px] text-[var(--amber)] font-semibold">
+                        Arrivée enregistrée : {new Date(item.arrivedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                        {item.lateNote ? ` · ${item.lateNote}` : ''}
                       </div>
                     )}
 
@@ -378,6 +420,46 @@ export default function SectionParentAttendance({ onToast, userId }: Props) {
                       <div className="text-[11px] text-[var(--text3)]">
                         {t('attendanceJournal.recordedByCol')} : {item.markedBy.name}
                       </div>
+                    )}
+
+                    {(item.status === 'ABSENT' || item.status === 'LATE') && item.justificationStatus !== 'PENDING' && item.justificationStatus !== 'APPROVED' && (
+                      justifyingRecordId === item.id ? (
+                        <div className="flex flex-col sm:flex-row gap-2 pt-1.5">
+                          <input
+                            type="text"
+                            value={justificationDraft}
+                            onChange={(e) => setJustificationDraft(e.target.value)}
+                            placeholder="Expliquez le motif de l'absence ou du retard..."
+                            className="flex-1 h-8 px-2.5 rounded-lg border border-[var(--border2)] bg-[var(--bg)] text-xs text-[var(--text)]"
+                          />
+                          <div className="flex gap-1.5">
+                            <button
+                              type="button"
+                              disabled={submittingJustif}
+                              onClick={() => void submitParentJustification(item.id)}
+                              className="h-8 px-3 rounded-lg text-xs font-bold text-white cursor-pointer"
+                              style={{ background: 'var(--primary)' }}
+                            >
+                              {submittingJustif ? '...' : 'Envoyer'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { setJustifyingRecordId(null); setJustificationDraft('') }}
+                              className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--bg)] text-[var(--text2)] border border-[var(--border2)] cursor-pointer"
+                            >
+                              Annuler
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => { setJustifyingRecordId(item.id); setJustificationDraft('') }}
+                          className="mt-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[var(--amber-light)] text-[var(--amber)] border border-[var(--amber)]/30 cursor-pointer"
+                        >
+                          Justifier cette absence
+                        </button>
+                      )
                     )}
                   </div>
 

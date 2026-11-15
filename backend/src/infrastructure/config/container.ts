@@ -55,6 +55,7 @@ import { EmailTemplateAdapter } from '@infrastructure/services/email/EmailTempla
 import { RealtimeSocketAdapter } from '@infrastructure/socket/RealtimeSocketAdapter';
 import { SchedulingGridAdapter } from '@infrastructure/scheduling/SchedulingGridAdapter';
 import { InngestEventPublisher } from '@infrastructure/events/InngestEventPublisher';
+import { ReceiptPdfRenderer } from '@infrastructure/pdf/finance/ReceiptPdfRenderer';
 
 // --- Use Cases : Notes ---
 import { SaisirNoteUseCase } from '@application/grade/SaisirNoteUseCase';
@@ -222,6 +223,10 @@ import { RembourserCautionUseCase } from '@application/finance/RembourserCaution
 import { EnregistrerDepenseUseCase } from '@application/finance/EnregistrerDepenseUseCase';
 import { EnregistrerPaiementCashUseCase } from '@application/finance/EnregistrerPaiementCashUseCase';
 import { VerifierStatutPaiementUseCase } from '@application/finance/VerifierStatutPaiementUseCase';
+import { ConfigurerEcheancierFactureUseCase } from '@application/finance/ConfigurerEcheancierFactureUseCase';
+import { AppliquerRemiseEleveUseCase } from '@application/finance/AppliquerRemiseEleveUseCase';
+import { AnnulerPaiementUseCase } from '@application/finance/AnnulerPaiementUseCase';
+import { CloturerCaisseUseCase } from '@application/finance/CloturerCaisseUseCase';
 
 // --- Adapters Persistence Classe + Matière ---
 import { PrismaSousGroupeRepository } from '@infrastructure/persistence/prisma/PrismaSousGroupeRepository';
@@ -448,6 +453,16 @@ import { SaisirNotesAnonymesUseCase } from '../../application/assessment/SaisirN
 import { SoumettreCorrectionAnonymeUseCase } from '../../application/assessment/SoumettreCorrectionAnonymeUseCase';
 import { ReconcilierNotesAnonymesUseCase } from '../../application/assessment/ReconcilierNotesAnonymesUseCase';
 
+// --- Carnet de Liaison & Babillard ---
+import { PrismaCarnetLiaisonRepository } from '@infrastructure/persistence/prisma/PrismaCarnetLiaisonRepository';
+import { PrismaPublicationRepository } from '@infrastructure/persistence/prisma/PrismaPublicationRepository';
+import { PrismaBabillardContextRepository } from '@infrastructure/persistence/prisma/PrismaBabillardContextRepository';
+import { CreerEntreeCarnetUseCase } from '@application/carnetLiaison/CreerEntreeCarnetUseCase';
+import { ListerCarnetEleveUseCase } from '@application/carnetLiaison/ListerCarnetEleveUseCase';
+import { MarquerEntreeCarnetLueUseCase } from '@application/carnetLiaison/MarquerEntreeCarnetLueUseCase';
+import { RepondreEntreeCarnetUseCase } from '@application/carnetLiaison/RepondreEntreeCarnetUseCase';
+import { RelancerParentsNonLusCarnetUseCase } from '@application/carnetLiaison/RelancerParentsNonLusCarnetUseCase';
+
 // ─────────────────────────────────────────────
 // Factory principale
 // ─────────────────────────────────────────────
@@ -661,7 +676,7 @@ export function creerContainer() {
   );
   const genererFactureUseCase = new GenererFactureUseCase(factureRepository, planFraisRepository);
   const initierPaiementUseCase = new InitierPaiementMobileMoneyUseCase(
-    factureRepository, paiementRepository, campayPaiementService,
+    factureRepository, paiementRepository, campayPaiementService, schoolConfigRepository,
   );
   const traiterWebhookUseCase = new TraiterWebhookCampayUseCase(
     paiementRepository, factureRepository,
@@ -677,6 +692,11 @@ export function creerContainer() {
   const verifierStatutPaiementUseCase = new VerifierStatutPaiementUseCase(
     paiementRepository, factureRepository, campayPaiementService,
   );
+  const configurerEcheancierUseCase = new ConfigurerEcheancierFactureUseCase(factureRepository);
+  const appliquerRemiseUseCase = new AppliquerRemiseEleveUseCase(factureRepository);
+  const annulerPaiementUseCase = new AnnulerPaiementUseCase(paiementRepository);
+  const cloturerCaisseUseCase = new CloturerCaisseUseCase(paiementRepository);
+  const receiptPdfRenderer = new ReceiptPdfRenderer();
 
   // 11. Use Cases — Classe + Matière
   const sousGroupeRepository = new PrismaSousGroupeRepository(prisma);
@@ -988,6 +1008,39 @@ export function creerContainer() {
   const affecterPEBSEleveUseCase = new AffecterPEBSEleveUseCase(studentAffectationRepository, anneeRepository, studentGroupSetRepository, studentGroupRepository, studentGroupMembershipRepository);
   const affecterPEBSEnMasseUseCase = new AffecterPEBSEnMasseUseCase(studentAffectationRepository, anneeRepository, studentGroupSetRepository, studentGroupRepository, studentGroupMembershipRepository);
 
+  // 20. Carnet de liaison numérique
+  const carnetLiaisonRepository = new PrismaCarnetLiaisonRepository(prisma);
+  const publicationRepository = new PrismaPublicationRepository(prisma);
+  const babillardContextRepository = new PrismaBabillardContextRepository(prisma);
+  const creerEntreeCarnetUseCase = new CreerEntreeCarnetUseCase(
+    carnetLiaisonRepository,
+    parentRepository,
+    userRepository,
+    notificationService,
+    smsNotificationAdapter,
+  );
+  const listerCarnetEleveUseCase = new ListerCarnetEleveUseCase(
+    carnetLiaisonRepository,
+    parentRepository,
+    publicationRepository,
+    babillardContextRepository,
+  );
+  const marquerEntreeCarnetLueUseCase = new MarquerEntreeCarnetLueUseCase(
+    carnetLiaisonRepository,
+    parentRepository,
+  );
+  const repondreEntreeCarnetUseCase = new RepondreEntreeCarnetUseCase(
+    carnetLiaisonRepository,
+    parentRepository,
+    notificationService,
+    presenceRepository,
+  );
+  const relancerParentsNonLusCarnetUseCase = new RelancerParentsNonLusCarnetUseCase(
+    carnetLiaisonRepository,
+    notificationService,
+    smsNotificationAdapter,
+  );
+
   return {
     grade: {
       saisirNote: saisirNoteUseCase,
@@ -1007,6 +1060,8 @@ export function creerContainer() {
       presenceRepository,
       userRepository,
       parentRepository,
+      rattachementRepository,
+      schoolConfigRepository,
     },
     school: {
       onboarder: onboarderEcoleUseCase,
@@ -1184,6 +1239,11 @@ export function creerContainer() {
       copierPlansFraisAnneePrecedente: copierPlansFraisAnneePrecedenteUseCase,
       changerStatutPlanFrais: changerStatutPlanFraisUseCase,
       verifierStatutPaiement: verifierStatutPaiementUseCase,
+      configurerEcheancier: configurerEcheancierUseCase,
+      appliquerRemise: appliquerRemiseUseCase,
+      annulerPaiement: annulerPaiementUseCase,
+      cloturerCaisse: cloturerCaisseUseCase,
+      receiptPdfRenderer,
       factureRepository,
     },
     ai: {
@@ -1326,6 +1386,17 @@ export function creerContainer() {
     },
     notification: {
       service: notificationService,
+      sms: smsNotificationAdapter,
+    },
+    carnetLiaison: {
+      repository: carnetLiaisonRepository,
+      creerEntree: creerEntreeCarnetUseCase,
+      listerCarnet: listerCarnetEleveUseCase,
+      marquerLue: marquerEntreeCarnetLueUseCase,
+      repondreEntree: repondreEntreeCarnetUseCase,
+      relancerParents: relancerParentsNonLusCarnetUseCase,
+      publicationRepository,
+      babillardContextRepository,
     },
     assessment: {
       scopeRepository: assessmentScopeRepository,

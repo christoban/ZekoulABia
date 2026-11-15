@@ -2,7 +2,7 @@
  * DOMAIN LAYER — Port Repository Presence (Attendance)
  */
 import type { Presence } from '@domain/entities/Presence';
-import type { AttendanceStatus, AttendancePeriod } from '@domain/types/enums';
+import type { AttendanceStatus, AttendancePeriod, JustificationStatus } from '@domain/types/enums';
 
 export interface StatistiquesPresence {
   totalJours: number;
@@ -31,6 +31,8 @@ export interface FiltrePresences {
   dateDebut?: Date;
   dateFin?: Date;
   status?: AttendanceStatus;
+  period?: AttendancePeriod;
+  subjectId?: string;
   since?: Date;
 }
 
@@ -47,6 +49,17 @@ export interface PresenceLue {
   date: Date;
   status: AttendanceStatus;
   period: AttendancePeriod;
+  arrivedAt: Date | null;
+  lateNote: string | null;
+  justification: string | null;
+  justificationStatus: JustificationStatus | null;
+  justificationAttachmentUrl: string | null;
+  submittedByParentId: string | null;
+  previousStatus: AttendanceStatus | null;
+  updatedById: string | null;
+  updatedAt: Date | null;
+  clientRecordedAt: Date | null;
+  clockSkewSeconds: number | null;
   isOfflineSync: boolean;
   createdAt: Date;
   class: { id: string; name: string } | null;
@@ -55,6 +68,34 @@ export interface PresenceLue {
 /** Présence justifiée, enrichie de l'élève et de la classe — route justifierAbsence. */
 export interface PresenceJustifiee extends PresenceLue {
   student: { id: string; firstName: string; lastName: string } | null;
+}
+
+/** Statut de l'appel du jour par classe — Dashboard Direction / Censeur / Surveillant. */
+export interface DailyClassAttendanceStatus {
+  classId: string;
+  className: string;
+  level: string | null;
+  studentCount: number;
+  recordedCount: number;
+  presentCount: number;
+  absentCount: number;
+  lateCount: number;
+  isDone: boolean;
+  recordedAt: Date | null;
+  recordedBy: { id: string; firstName: string; lastName: string } | null;
+}
+
+/** Élève avec absences répétées dépassant le seuil configuré. */
+export interface RepeatedAbsenceStudent {
+  studentId: string;
+  firstName: string;
+  lastName: string;
+  classId: string;
+  className: string;
+  unjustifiedCount: number;
+  justifiedCount: number;
+  totalAbsences: number;
+  lastAbsenceDate: Date | null;
 }
 
 export interface PresenceRepository {
@@ -77,12 +118,27 @@ export interface PresenceRepository {
   // Écriture
   save(presence: Presence): Promise<void>;
   saveMany(presences: Presence[]): Promise<void>; // Enregistrement en bloc d'une classe
+  upsertMany(presences: Presence[], updatedById: string): Promise<Presence[]>;
   update(presence: Presence): Promise<void>;
+
+  /** Correction post-validation tracée d'un enregistrement individuel. */
+  correctStatus(
+    schoolId: string,
+    id: string,
+    data: { status: AttendanceStatus; arrivedAt?: Date | null; lateNote?: string | null; updatedById: string },
+  ): Promise<PresenceLue | null>;
+
+  /** Soumission d'un justificatif par un parent (reste en PENDING jusqu'à validation staff/admin). */
+  submitParentJustification(
+    schoolId: string,
+    id: string,
+    data: { parentUserId: string; justification: string; attachmentUrl?: string | null },
+  ): Promise<PresenceJustifiee | null>;
 
   /** Upsert d'enregistrements de présence (SMS) : crée ou met à jour selon l'existant. */
   synchroniserPresencesSms(records: PresenceSmsRecord[]): Promise<void>;
 
-  // Inngest — bulletins : ABSENT + LATE
+  // Inngest — bulletins : ABSENT + ABSENT_JUSTIFIED
   countAbsencesEtRetards(schoolId: string, studentId: string, academicPeriodId: string): Promise<number>;
 
   // T7/T8/T9 — taux de présence sur fenêtre de dates libre (copilot) — début du mois courant
@@ -96,6 +152,10 @@ export interface PresenceRepository {
 
   // Classe — liste élèves avec taux de présence
   findByClasseEtEleves(classId: string, studentIds: string[]): Promise<Array<{ studentId: string; status: string }>>;
+
+  // Direction / Surveillant : suivi journalier des appels faits / non faits + absences répétées
+  getDailyClassStatus(schoolId: string, date: Date, period?: AttendancePeriod): Promise<DailyClassAttendanceStatus[]>;
+  getRepeatedAbsences(schoolId: string, minAbsences: number, sinceDate: Date): Promise<RepeatedAbsenceStudent[]>;
 
   // Sync hors ligne
   findPresencesHorsLigneEnAttente(userId: string): Promise<Presence[]>;
@@ -113,10 +173,10 @@ export interface PresenceRepository {
   /** Recherche scopée à l'établissement — pour justifierAbsence. */
   findByIdDansEcole(schoolId: string, id: string): Promise<Presence | null>;
 
-  /** Justification d'une absence, retourne l'enregistrement mis à jour enrichi. */
+  /** Justification / validation ou rejet d'une absence, retourne l'enregistrement mis à jour enrichi. */
   justifierAbsence(
     schoolId: string,
     id: string,
-    data: { justification?: string; justifiedById: string; justifiedAt: Date },
+    data: { justification?: string; justifiedById: string; justifiedAt: Date; approve?: boolean },
   ): Promise<PresenceJustifiee | null>;
 }

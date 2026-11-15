@@ -14,6 +14,8 @@ import type { AttendanceStatus, AttendancePeriod } from '@domain/types/enums';
 export interface PresenceEleve {
   studentId: string;
   statut: AttendanceStatus;
+  arrivedAt?: Date;
+  lateNote?: string;
 }
 
 export interface EnregistrerPresenceCommande {
@@ -27,12 +29,17 @@ export interface EnregistrerPresenceCommande {
   period: AttendancePeriod;
   presences: PresenceEleve[];
   isOfflineSync?: boolean;
+  clientRecordedAt?: Date;
+  allowUpdate?: boolean;
 }
 
 export interface EnregistrerPresenceResultat {
   enregistrees: number;
   absents: string[];   // studentIds
   retards: string[];   // studentIds
+  createdOrUpdatedIds?: string[];
+  clockSkewWarning?: boolean;
+  maxClockSkewSeconds?: number;
 }
 
 export class EnregistrerPresenceUseCase {
@@ -69,9 +76,9 @@ export class EnregistrerPresenceUseCase {
     }
 
     // 2. Vérifier qu'une présence n'existe pas déjà pour ce créneau
-    //    (ignoré pour la synchronisation hors-ligne — la resynchronisation
-    //     d'un même créneau est intentionnelle et doit écraser l'existant)
-    if (!commande.isOfflineSync) {
+    //    (ignoré pour la synchronisation hors-ligne ou une mise à jour explicite)
+    const shouldUpsert = Boolean(commande.isOfflineSync || commande.allowUpdate);
+    if (!shouldUpsert) {
       const dejaEnregistree = await this.presenceRepository.existeDeja(
         commande.presences[0]?.studentId ?? '',
         commande.date,
@@ -98,28 +105,36 @@ export class EnregistrerPresenceUseCase {
         date: commande.date,
         status: p.statut,
         period: commande.period,
+        arrivedAt: p.arrivedAt,
+        lateNote: p.lateNote,
         isOfflineSync: commande.isOfflineSync ?? false,
+        clientRecordedAt: commande.clientRecordedAt,
       })
     );
 
-    // 4. Sauvegarder en bloc
-    await this.presenceRepository.saveMany(presencesACreer);
+    // 4. Sauvegarder ou mettre à jour en bloc (sans doublon)
+    let savedPresences = presencesACreer;
+    if (shouldUpsert) {
+      savedPresences = await this.presenceRepository.upsertMany(presencesACreer, commande.recordedById);
+    } else {
+      await this.presenceRepository.saveMany(presencesACreer);
+    }
 
     // 4bis. Invalidation MetricCache v1 (pilote) — taux_presence
     if (this.metricCache) {
       await this.metricCache.invalidate('taux_presence', { schoolId: commande.schoolId, classId: commande.classId });
     }
 
-    // 5. Identifier absents et retardataires
+    // 5. Identifier absents et retardataires (inclut PRESENT avec arrivedAt)
     const absents = commande.presences
       .filter(p => p.statut === 'ABSENT')
       .map(p => p.studentId);
 
     const retards = commande.presences
-      .filter(p => p.statut === 'LATE')
+      .filter(p => p.statut === 'LATE' || (p.statut === 'PRESENT' && Boolean(p.arrivedAt)))
       .map(p => p.studentId);
 
-    // 6. Notifier les parents des absents (si pas hors ligne)
+    // 6. Notifier les parents des absents (si pas hors ligne ; lors d'une synchro offline, le controller gère la file serveur)
     if (!commande.isOfflineSync) {
       for (const studentId of absents) {
         await this.notificationService.envoyer({
@@ -128,15 +143,26 @@ export class EnregistrerPresenceUseCase {
           type: 'ABSENCE_ALERT',
           titre: 'Absence enregistrée',
           corps: `Votre enfant a été marqué absent le ${commande.date.toLocaleDateString('fr-FR')}`,
+          canal: 'SMS',
           urgency: 'HIGH',
         });
       }
     }
 
+    const skews = presencesACreer
+      .map((p) => p.clockSkewSeconds)
+      .filter((s): s is number => typeof s === 'number');
+    const maxClockSkewSeconds = skews.length > 0
+      ? skews.reduce((acc, s) => (Math.abs(s) > Math.abs(acc) ? s : acc), 0)
+      : undefined;
+
     return {
-      enregistrees: presencesACreer.length,
+      enregistrees: savedPresences.length,
       absents,
       retards,
+      createdOrUpdatedIds: savedPresences.map((p) => p.id),
+      clockSkewWarning: maxClockSkewSeconds !== undefined ? Math.abs(maxClockSkewSeconds) > 900 : false,
+      maxClockSkewSeconds,
     };
   }
 }

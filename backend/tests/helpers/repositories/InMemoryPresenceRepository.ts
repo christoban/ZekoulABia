@@ -1,6 +1,15 @@
-import { Presence } from '@domain/entities/Presence';
-import type { PresenceRepository, StatistiquesPresence, PresenceSmsRecord, FiltrePresences, PresenceLue, PresenceJustifiee } from '@domain/ports/repositories/PresenceRepository';
-import type { AttendancePeriod } from '@domain/types/enums';
+import { Presence, type PresenceProps } from '@domain/entities/Presence';
+import type {
+  PresenceRepository,
+  StatistiquesPresence,
+  PresenceSmsRecord,
+  FiltrePresences,
+  PresenceLue,
+  PresenceJustifiee,
+  DailyClassAttendanceStatus,
+  RepeatedAbsenceStudent,
+} from '@domain/ports/repositories/PresenceRepository';
+import type { AttendancePeriod, AttendanceStatus } from '@domain/types/enums';
 
 export class InMemoryPresenceRepository implements PresenceRepository {
   private store = new Map<string, Presence>();
@@ -120,9 +129,9 @@ export class InMemoryPresenceRepository implements PresenceRepository {
     );
 
     const total = presences.length;
-    const presents = presences.filter(p => p.status === 'PRESENT').length;
+    const retards = presences.filter(p => p.status === 'LATE' || Boolean(p.toObject().arrivedAt)).length;
+    const presents = presences.filter(p => p.status === 'PRESENT' && !p.toObject().arrivedAt).length;
     const absents = presences.filter(p => p.status === 'ABSENT' || p.status === 'ABSENT_JUSTIFIED').length;
-    const retards = presences.filter(p => p.status === 'LATE').length;
 
     return {
       totalJours: total,
@@ -152,8 +161,124 @@ export class InMemoryPresenceRepository implements PresenceRepository {
     }
   }
 
+  async upsertMany(presences: Presence[], updatedById: string): Promise<Presence[]> {
+    const out: Presence[] = [];
+    for (const p of presences) {
+      const obj = p.toObject();
+      const existing = [...this.store.values()].find(
+        e =>
+          e.schoolId === obj.schoolId &&
+          e.studentId === obj.studentId &&
+          e.period === obj.period &&
+          e.date.toDateString() === obj.date.toDateString() &&
+          (e.subjectId ?? null) === (obj.subjectId ?? null)
+      );
+      if (existing) {
+        const prev = existing.toObject();
+        const next = Presence.reconstituer({
+          ...prev,
+          status: obj.status,
+          arrivedAt: obj.arrivedAt,
+          lateNote: obj.lateNote,
+          previousStatus: prev.status !== obj.status ? prev.status : prev.previousStatus,
+          updatedById,
+          updatedAt: new Date(),
+          isOfflineSync: obj.isOfflineSync,
+          syncedAt: obj.syncedAt ?? new Date(),
+          clientRecordedAt: obj.clientRecordedAt ?? prev.clientRecordedAt,
+          clockSkewSeconds: obj.clockSkewSeconds ?? prev.clockSkewSeconds,
+        });
+        this.store.set(existing.id, next);
+        out.push(next);
+      } else {
+        this.store.set(p.id, p);
+        out.push(p);
+      }
+    }
+    return out;
+  }
+
   async update(p: Presence): Promise<void> {
     this.store.set(p.id, p);
+  }
+
+  async correctStatus(
+    schoolId: string,
+    id: string,
+    data: { status: AttendanceStatus; arrivedAt?: Date | null; lateNote?: string | null; updatedById: string },
+  ): Promise<PresenceLue | null> {
+    const p = this.store.get(id);
+    if (!p || p.schoolId !== schoolId) return null;
+    const prev = p.toObject();
+    const updated = Presence.reconstituer({
+      ...prev,
+      status: data.status,
+      arrivedAt: data.arrivedAt === null ? undefined : (data.arrivedAt ?? prev.arrivedAt),
+      lateNote: data.lateNote === null ? undefined : (data.lateNote ?? prev.lateNote),
+      previousStatus: prev.status,
+      updatedById: data.updatedById,
+      updatedAt: new Date(),
+    });
+    this.store.set(id, updated);
+    return this.toPresenceLue(updated);
+  }
+
+  async submitParentJustification(
+    schoolId: string,
+    id: string,
+    data: { parentUserId: string; justification: string; attachmentUrl?: string | null },
+  ): Promise<PresenceJustifiee | null> {
+    const p = this.store.get(id);
+    if (!p || p.schoolId !== schoolId) return null;
+    const prev = p.toObject();
+    const updated = Presence.reconstituer({
+      ...prev,
+      justification: data.justification,
+      justificationAttachmentUrl: data.attachmentUrl ?? undefined,
+      submittedByParentId: data.parentUserId,
+      justificationStatus: 'PENDING',
+    });
+    this.store.set(id, updated);
+    return { ...this.toPresenceLue(updated), student: null };
+  }
+
+  async getDailyClassStatus(
+    _schoolId: string,
+    _date: Date,
+    _period?: AttendancePeriod,
+  ): Promise<DailyClassAttendanceStatus[]> {
+    return [];
+  }
+
+  async getRepeatedAbsences(
+    schoolId: string,
+    minAbsences: number,
+    sinceDate: Date,
+  ): Promise<RepeatedAbsenceStudent[]> {
+    const byStudent = new Map<string, RepeatedAbsenceStudent>();
+    for (const p of this.store.values()) {
+      if (p.schoolId !== schoolId || p.date < sinceDate) continue;
+      if (p.status !== 'ABSENT' && p.status !== 'ABSENT_JUSTIFIED') continue;
+      const cur = byStudent.get(p.studentId) ?? {
+        studentId: p.studentId,
+        firstName: '',
+        lastName: '',
+        classId: p.classId,
+        className: '',
+        unjustifiedCount: 0,
+        justifiedCount: 0,
+        totalAbsences: 0,
+        lastAbsenceDate: null,
+      };
+      if (p.status === 'ABSENT') cur.unjustifiedCount += 1;
+      else cur.justifiedCount += 1;
+      cur.totalAbsences += 1;
+      if (!cur.lastAbsenceDate || p.date > cur.lastAbsenceDate) {
+        cur.lastAbsenceDate = p.date;
+      }
+      byStudent.set(p.studentId, cur);
+    }
+    return [...byStudent.values()].filter(s => s.unjustifiedCount >= minAbsences || s.totalAbsences >= minAbsences);
   }
 
   async findByClasseEtEleves(classId: string, studentIds: string[]): Promise<Array<{ studentId: string; status: string }>> {
@@ -195,19 +320,26 @@ export class InMemoryPresenceRepository implements PresenceRepository {
   async justifierAbsence(
     schoolId: string,
     id: string,
-    data: { justification?: string; justifiedById: string; justifiedAt: Date },
+    data: { justification?: string; justifiedById: string; justifiedAt: Date; approve?: boolean },
   ): Promise<PresenceJustifiee | null> {
     const p = this.store.get(id);
     if (!p || p.schoolId !== schoolId) return null;
-    this.store.set(id, Presence.reconstituer({
-      ...p.toObject(),
-      status: 'ABSENT_JUSTIFIED',
-      justification: data.justification,
+    const approve = data.approve !== false;
+    const prev: PresenceProps = p.toObject();
+    const updated = Presence.reconstituer({
+      ...prev,
+      status: approve ? 'ABSENT_JUSTIFIED' : 'ABSENT',
+      justificationStatus: approve ? 'APPROVED' : 'REJECTED',
+      justification: data.justification ?? prev.justification,
       justifiedById: data.justifiedById,
       justifiedAt: data.justifiedAt,
-    } as any));
+      previousStatus: prev.status,
+      updatedById: data.justifiedById,
+      updatedAt: new Date(),
+    });
+    this.store.set(id, updated);
     return {
-      ...this.toPresenceLue(this.store.get(id)!),
+      ...this.toPresenceLue(updated),
       student: null,
     };
   }
@@ -222,6 +354,8 @@ export class InMemoryPresenceRepository implements PresenceRepository {
     if (filtre.dateDebut && p.date < filtre.dateDebut) return false;
     if (filtre.dateFin && p.date > filtre.dateFin) return false;
     if (filtre.status && p.status !== filtre.status) return false;
+    if (filtre.period && p.period !== filtre.period) return false;
+    if (filtre.subjectId && p.subjectId !== filtre.subjectId) return false;
     return true;
   }
 
@@ -239,6 +373,17 @@ export class InMemoryPresenceRepository implements PresenceRepository {
       date: obj.date,
       status: obj.status,
       period: obj.period,
+      arrivedAt: obj.arrivedAt ?? null,
+      lateNote: obj.lateNote ?? null,
+      justification: obj.justification ?? null,
+      justificationStatus: obj.justificationStatus ?? null,
+      justificationAttachmentUrl: obj.justificationAttachmentUrl ?? null,
+      submittedByParentId: obj.submittedByParentId ?? null,
+      previousStatus: obj.previousStatus ?? null,
+      updatedById: obj.updatedById ?? null,
+      updatedAt: obj.updatedAt ?? null,
+      clientRecordedAt: obj.clientRecordedAt ?? null,
+      clockSkewSeconds: obj.clockSkewSeconds ?? null,
       isOfflineSync: obj.isOfflineSync,
       createdAt: obj.createdAt,
       class: null,

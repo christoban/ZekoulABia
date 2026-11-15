@@ -76,6 +76,9 @@ export const OPERATION_CATEGORY: Record<PendingActionType, OperationCategory> = 
   EXAM_PUBLISH: 'DESTRUCTIF',
   FEE_PAYMENT_CASH: 'ECRITURE',
   EXPENSE_CREATE: 'ECRITURE',
+  CARNET_ENTRY_CREATE: 'ECRITURE',
+  CARNET_ACK_READ: 'ECRITURE',
+  CARNET_CONFIRM_RESPONSE: 'ECRITURE',
   // Transferts inter-écoles (Phase 5) — réversibilité interdite côté client, revalidation serveur.
   STUDENT_TRANSFER_REQUEST: 'DESTRUCTIF',
   STUDENT_TRANSFER_CONSENT: 'DESTRUCTIF',

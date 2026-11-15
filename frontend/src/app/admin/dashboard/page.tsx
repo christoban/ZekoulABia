@@ -50,6 +50,7 @@ import { OfflineIndicator } from '@/components/OfflineIndicator'
 import ChangePasswordModal from '@/components/ChangePasswordModal'
 import { useT } from '@/lib/i18n'
 import Babillard from '@/features/communication/Babillard'
+import CarnetLiaisonView from '@/features/carnet-liaison/CarnetLiaisonView'
 import Messagerie from '@/features/messagerie'
 import SectionOfflineStatus from '@/components/SectionOfflineStatus'
 import ModeTestBanner from '@/components/ModeTestBanner'
@@ -59,7 +60,7 @@ let toastId = 0
 const ADMIN_SECTIONS: AdminSection[] = [
   'dashboard', 'users', 'classes', 'subjects',
   'attendance', 'grades', 'bulletins', 'timetable',
-  'council', 'academic-events', 'finance', 'ai', 'statistics', 'communications', 'babillard', 'messagerie', 'settings', 'corbeille', 'sync-offline',
+  'council', 'academic-events', 'finance', 'ai', 'statistics', 'communications', 'babillard', 'carnet-liaison', 'messagerie', 'settings', 'corbeille', 'sync-offline',
   'bulletin-validation',
   'pedagogie', 'rh', 'lv2-choice', 'entrance-exams', 'pebs-exams', 'matricules', 'school-payments', 'eleve-onboarding', 'minesec-stats', 'minedub-stats', 'ministerial-stats', 'group-transfers',
   'org-pedagogy',
@@ -685,6 +686,11 @@ export default function AdminDashboard() {
           {visitedSections.has('babillard') && (
             <div style={{ display: section === 'babillard' ? 'contents' : 'none' }}>
               <Babillard role={sessionUser?.role ?? 'ADMIN'} title={t('page.section_titles.babillard')} subtitle={t('page.section_titles.babillard_subtitle')} currentUserId={sessionUser?.userId ?? sessionUser?.id} />
+            </div>
+          )}
+          {visitedSections.has('carnet-liaison') && (
+            <div style={{ display: section === 'carnet-liaison' ? 'contents' : 'none' }}>
+              <CarnetLiaisonView role="ADMIN" onToast={showToast} />
             </div>
           )}
           {visitedSections.has('messagerie') && (

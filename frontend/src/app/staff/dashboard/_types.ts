@@ -5,7 +5,7 @@ export type StaffSection =
   | 'library' | 'orientation' | 'departements' | 'suivi-eleves'
   | 'anonymat'
   | 'sync-offline'
-  | 'mon-profil-rh' | 'apee' | 'notifications' | 'babillard' | 'messagerie' | 'moderation-messagerie'
+  | 'mon-profil-rh' | 'apee' | 'notifications' | 'babillard' | 'carnet-liaison' | 'messagerie' | 'moderation-messagerie'
   | 'classes' | 'eleves-affectations' | 'import-eleves'
   | 'inscriptions' | 'concours' | 'eleves-familles'
   | 'transferts'
@@ -36,7 +36,7 @@ export const ALL_STAFF_SECTIONS: StaffSection[] = [
   'library', 'orientation', 'departements', 'suivi-eleves',
   'anonymat',
   'sync-offline',
-  'mon-profil-rh', 'apee', 'notifications', 'babillard', 'messagerie', 'moderation-messagerie',
+  'mon-profil-rh', 'apee', 'notifications', 'babillard', 'carnet-liaison', 'messagerie', 'moderation-messagerie',
   'classes', 'eleves-affectations', 'import-eleves',
   'inscriptions', 'concours', 'eleves-familles',
   'transferts',
@@ -97,6 +97,7 @@ export function getSectionsFromPermissions(permissions: string[]): Set<StaffSect
     'mon-profil-rh',
     'notifications',
     'babillard',
+    'carnet-liaison',
     'messagerie',
     'moderation-messagerie',
     'sync-offline',

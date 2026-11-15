@@ -11,6 +11,7 @@ import {
   notifyConcoursNonAdmisSms,
   notifyConcoursListeAttenteSms,
   notifyConcoursPromotionSms,
+  notifyGenericAlertSms,
   getParentContacts,
 } from './SmsNotificationService';
 
@@ -138,5 +139,13 @@ export class SmsNotificationAdapter implements SmsNotificationPort {
     examName?: string;
   }): Promise<void> {
     await notifyConcoursPromotionSms(opts);
+  }
+
+  async notifyGenericAlertSms(opts: {
+    schoolId: string;
+    phones: string[];
+    message: string;
+  }): Promise<void> {
+    await notifyGenericAlertSms(opts);
   }
 }

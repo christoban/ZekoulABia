@@ -65,7 +65,15 @@ export default function SectionStudentBulletins({ onToast, user }: Props) {
     setDownloading(id)
     try {
       const res = await fetchApi(`/api/v2/report-cards/${id}/pdf`, { credentials: 'include' })
-      if (!res.ok) { onToast(t('bulletins.toast_download_error'), 'error'); return }
+      if (!res.ok) {
+        const errBody = (await res.json().catch(() => null)) as { code?: string; message?: string } | null
+        if (res.status === 403 && errBody?.code === 'BULLETIN_BLOCKED_UNPAID_FEES') {
+          onToast(errBody.message || t('bulletins.toast_blocked_unpaid'), 'error')
+          return
+        }
+        onToast(t('bulletins.toast_download_error'), 'error')
+        return
+      }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')

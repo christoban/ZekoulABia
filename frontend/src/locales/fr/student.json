@@ -121,6 +121,7 @@
     "offline_label": "PDF indisponible hors-ligne",
     "toast_download_offline": "Téléchargement PDF indisponible hors-ligne",
     "toast_download_error": "Erreur de téléchargement",
+    "toast_blocked_unpaid": "Bulletin bloqué : frais de scolarité impayés",
     "toast_download_success": "Bulletin téléchargé"
   },
   "health_tracking": {

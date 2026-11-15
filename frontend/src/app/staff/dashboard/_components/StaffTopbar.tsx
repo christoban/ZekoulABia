@@ -19,6 +19,7 @@ const SECTION_KEY: Record<string, string> = {
   'eleves-affectations': 'elevesAffectations',
   'import-eleves': 'importEleves',
   'moderation-messagerie': 'moderationMessagerie',
+  'carnet-liaison': 'carnetLiaison',
   'mon-profil-rh': 'monProfilRh',
   'sync-offline': 'syncOffline',
   'configuration': 'configuration',

@@ -13,11 +13,16 @@ export interface FactureProps {
   schoolId: string;
   studentId: string;
   feePlanId?: string;
+  academicYearId?: string;
   amount: number;
+  grossAmount?: number;
+  discountTotal?: number;
   currency: string;
   dueDate?: Date;
   status: InvoiceStatus;
   description?: string;
+  promisedPaymentDate?: Date;
+  promisedPaymentNote?: string;
   createdAt: Date;
   updatedAt?: Date;
 }
@@ -26,7 +31,10 @@ export interface CreerFactureProps {
   schoolId: string;
   studentId: string;
   feePlanId?: string;
+  academicYearId?: string;
   amount: number;
+  grossAmount?: number;
+  discountTotal?: number;
   currency?: string;
   dueDate?: Date;
   description?: string;
@@ -37,10 +45,14 @@ export class Facture {
 
   static create(props: CreerFactureProps): Facture {
     if (props.amount <= 0) throw new Error('Le montant de la facture doit être supérieur à 0');
+    const rounded = Math.round(props.amount);
 
     return new Facture({
       ...props,
       id: crypto.randomUUID(),
+      amount: rounded,
+      grossAmount: props.grossAmount !== undefined ? Math.round(props.grossAmount) : rounded,
+      discountTotal: props.discountTotal ?? 0,
       currency: props.currency ?? 'XAF',
       status: 'PENDING',
       createdAt: new Date(),
@@ -56,11 +68,16 @@ export class Facture {
   get schoolId(): string { return this.props.schoolId; }
   get studentId(): string { return this.props.studentId; }
   get feePlanId(): string | undefined { return this.props.feePlanId; }
+  get academicYearId(): string | undefined { return this.props.academicYearId; }
   get amount(): number { return this.props.amount; }
+  get grossAmount(): number | undefined { return this.props.grossAmount; }
+  get discountTotal(): number | undefined { return this.props.discountTotal; }
   get currency(): string { return this.props.currency; }
   get description(): string | undefined { return this.props.description; }
   get status(): InvoiceStatus { return this.props.status; }
   get dueDate(): Date | undefined { return this.props.dueDate; }
+  get promisedPaymentDate(): Date | undefined { return this.props.promisedPaymentDate; }
+  get promisedPaymentNote(): string | undefined { return this.props.promisedPaymentNote; }
   get createdAt(): Date { return this.props.createdAt; }
   get updatedAt(): Date | undefined { return this.props.updatedAt; }
 

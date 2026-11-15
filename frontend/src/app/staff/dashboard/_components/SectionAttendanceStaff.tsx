@@ -6,6 +6,8 @@ import { useCachedFetch } from '@/hooks/useCachedFetch'
 import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
 import { CheckCircle2, Users, X, AlarmClock, Loader2, Search, AlertTriangle, Package } from 'lucide-react'
+import { AttendanceDailyStatusPanel, AttendanceRepeatedAbsencesPanel } from '@/features/attendance/AttendanceSupervisionPanels'
+import { AttendanceRecordActions, type SharedAttendanceRecord } from '@/features/attendance/AttendanceRecordActions'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
@@ -17,12 +19,7 @@ interface AttendanceStats {
 
 interface ClassItem { id: string; name: string }
 
-interface AttendanceRecord {
-  id: string; date: string; status: string; period: string
-  student: { id: string; firstName: string; lastName: string } | null
-  class: { id: string; name: string } | null
-  markedBy: { id: string; firstName: string; lastName: string } | null
-}
+type AttendanceRecord = SharedAttendanceRecord
 
 const STATUS_STYLE: Record<string, { bg: string; color: string }> = {
   PRESENT:          { bg: 'var(--green-light)', color: 'var(--green)' },
@@ -40,6 +37,7 @@ export default function SectionAttendanceStaff({ onToast }: Props) {
   const [date, setDate]             = useState(new Date().toISOString().slice(0, 10))
   const [loading, setLoading]       = useState(true)
   const [justifyingId, setJustifyingId] = useState<string | null>(null)
+  const [activeTab, setActiveTab]   = useState<'journal' | 'daily' | 'repeated'>('journal')
 
   const fetchStats = useCallback(async () => {
     try {
@@ -94,9 +92,9 @@ export default function SectionAttendanceStaff({ onToast }: Props) {
   const { data: recordsData, loading: loadingRecords, error, fromCache, cachedAt, refetch: fetchRecords } = useCachedFetch<AttendanceRecord[]>(`staff:attendance:${classId}:${date}`, fetchRecordsFn)
   const records = recordsData ?? []
 
-  const justify = async (recordId: string) => {
+  const justify = async (recordId: string, approve = true) => {
     setJustifyingId(recordId)
-    const payload = { justification: 'Justifiée par le personnel' }
+    const payload = { justification: approve ? 'Justifiée par le personnel' : 'Justificatif refusé par la vie scolaire', approve }
 
     if (!navigator.onLine) {
       try {
@@ -190,7 +188,33 @@ export default function SectionAttendanceStaff({ onToast }: Props) {
             </div>
           )}
 
-          {/* Filtres */}
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              { id: 'journal' as const, label: 'Journal & Justificatifs' },
+              { id: 'daily' as const, label: 'Appels du jour (Fait / Non fait)' },
+              { id: 'repeated' as const, label: 'Absences répétées' },
+            ].map((tb) => (
+              <button
+                key={tb.id}
+                type="button"
+                onClick={() => setActiveTab(tb.id)}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer border"
+                style={{
+                  background: activeTab === tb.id ? 'var(--primary)' : 'var(--surface)',
+                  color: activeTab === tb.id ? 'white' : 'var(--text2)',
+                  borderColor: activeTab === tb.id ? 'var(--primary)' : 'var(--border2)',
+                }}
+              >
+                {tb.label}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === 'daily' ? (
+            <AttendanceDailyStatusPanel date={date} />
+          ) : activeTab === 'repeated' ? (
+            <AttendanceRepeatedAbsencesPanel />
+          ) : (
           <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
             <div className="p-3 sm:px-4 sm:py-2.5 border-b border-[var(--border)] flex flex-col sm:flex-row gap-2.5 sm:items-center">
               <div className="flex flex-1 flex-col sm:flex-row gap-2">
@@ -256,16 +280,14 @@ export default function SectionAttendanceStaff({ onToast }: Props) {
                             Saisi par {r.markedBy.firstName} {r.markedBy.lastName}
                           </div>
                         )}
-                        {r.status === 'ABSENT' && (
-                          <div className="pt-1">
-                            <button
-                              style={{ width: '100%', minHeight: 38, borderRadius: 6, fontSize: 12, fontWeight: 700, background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid rgba(217,119,6,0.25)', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-                              onClick={() => justify(r.id)}
-                              disabled={justifyingId === r.id}>
-                              {justifyingId === r.id ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : t('attendance.justify')}
-                            </button>
+                        {r.justification && (
+                          <div className="text-[11px] text-[var(--text2)] bg-[var(--bg)] px-2 py-1 rounded">
+                            Motif {r.justificationStatus === 'PENDING' ? '(en attente)' : ''} : {r.justification}
                           </div>
                         )}
+                        <div className="pt-1">
+                          <AttendanceRecordActions record={r} justifyingId={justifyingId} onJustify={justify} onCorrected={() => { fetchRecords(); fetchStats() }} onToast={onToast} />
+                        </div>
                       </div>
                     )
                   })}
@@ -296,6 +318,7 @@ export default function SectionAttendanceStaff({ onToast }: Props) {
                             onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
                             <td style={{ ...tdSt, fontWeight: 700, color: 'var(--text)' }}>
                               {r.student ? `${r.student.firstName} ${r.student.lastName}` : '—'}
+                              {r.justification && <div className="text-[11px] font-normal text-[var(--text3)]">{r.justification}</div>}
                             </td>
                             <td style={tdSt}>{r.class?.name ?? '—'}</td>
                             <td style={tdSt}>{new Date(r.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}</td>
@@ -304,17 +327,11 @@ export default function SectionAttendanceStaff({ onToast }: Props) {
                               <span style={{ padding: '2.5px 8px', borderRadius: 14, fontSize: 11.5, fontWeight: 700, background: st.bg, color: st.color }}>
                                 {t(`attendance.${r.status === 'PRESENT' ? 'presentLabel' : r.status === 'ABSENT' ? 'absentLabel' : r.status === 'ABSENT_JUSTIFIED' ? 'justifiedLabel' : 'lateLabel'}`)}
                               </span>
+                              {r.previousStatus && <div className="text-[10px] text-[var(--text3)] mt-0.5">Corrigé ({r.previousStatus})</div>}
                             </td>
                             <td style={tdSt}>{r.markedBy ? `${r.markedBy.firstName} ${r.markedBy.lastName}` : '—'}</td>
                             <td style={tdSt}>
-                              {r.status === 'ABSENT' && (
-                                <button
-                                  style={{ padding: '3.5px 9px', borderRadius: 6, fontSize: 11.5, fontWeight: 700, background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid rgba(217,119,6,0.25)', cursor: 'pointer', fontFamily: 'inherit' }}
-                                  onClick={() => justify(r.id)}
-                                  disabled={justifyingId === r.id}>
-                                  {justifyingId === r.id ? <Loader2 size={11} strokeWidth={2} className="animate-spin" /> : t('attendance.justify')}
-                                </button>
-                              )}
+                              <AttendanceRecordActions record={r} justifyingId={justifyingId} onJustify={justify} onCorrected={() => { fetchRecords(); fetchStats() }} onToast={onToast} />
                             </td>
                           </tr>
                         );
@@ -325,6 +342,7 @@ export default function SectionAttendanceStaff({ onToast }: Props) {
               </>
             )}
           </div>
+          )}
         </>
       )}
     </div>

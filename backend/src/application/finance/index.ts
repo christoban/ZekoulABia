@@ -37,3 +37,21 @@ export type { ModifierPlanFraisCommande, ModifierPlanFraisResultat } from './Mod
 export { VerifierStatutPaiementUseCase } from './VerifierStatutPaiementUseCase';
 export type { VerifierStatutCommande, VerifierStatutResultat } from './VerifierStatutPaiementUseCase';
 
+export { ConfigurerEcheancierFactureUseCase } from './ConfigurerEcheancierFactureUseCase';
+export type {
+  ConfigurerEcheancierCommande,
+  ConfigurerEcheancierResultat,
+} from './ConfigurerEcheancierFactureUseCase';
+
+export { AppliquerRemiseEleveUseCase } from './AppliquerRemiseEleveUseCase';
+export type {
+  AppliquerRemiseCommande,
+  AppliquerRemiseResultat,
+} from './AppliquerRemiseEleveUseCase';
+
+export { AnnulerPaiementUseCase } from './AnnulerPaiementUseCase';
+export type { AnnulerPaiementCommande } from './AnnulerPaiementUseCase';
+
+export { CloturerCaisseUseCase } from './CloturerCaisseUseCase';
+export type { CloturerCaisseCommande } from './CloturerCaisseUseCase';
+

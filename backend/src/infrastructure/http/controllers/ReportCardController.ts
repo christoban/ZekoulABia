@@ -13,16 +13,20 @@ import type { AnneeAcademiqueRepository } from '@domain/ports/repositories/Annee
 import type { SectionRepository } from '@domain/ports/repositories/SectionRepository';
 import type { BulletinRepository } from '@domain/ports/repositories/BulletinRepository';
 import type { ParentRepository } from '@domain/ports/repositories/ParentRepository';
+import type { FactureRepository } from '@domain/ports/repositories/FactureRepository';
+import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolConfigRepository';
 import { BulletinBloqueError } from '@domain/errors/BulletinBloqueError';
 import type { BulletinTemplate } from '@domain/types/enums';
 import type { AIActionAuditPort } from '@domain/ports/services/AIActionAuditPort';
 import { notifyBulletinSms } from '@infrastructure/services/sms/SmsNotificationService';
 import { resolveLanguage } from '../../../domain/policies/LanguagePolicy';
-import { generateBulletinPdf } from '../../pdf/report-card/index';
-import { getMention } from '../../pdf/report-card/BulletinPdfHelpers';
 import { getEffectiveSchoolSettings } from '../../services/school-settings/SchoolSettingsService';
-
-const VERIFY_BASE = process.env.CLIENT_URL || 'http://localhost:3000';
+import {
+  extractCommentPromptMetrics,
+  filterParentReportCardsByUnpaidFees,
+  isBulletinBlockedByUnpaidFees,
+  renderReportCardPdfBuffer,
+} from './helpers/reportCardControllerHelpers';
 
 export class ReportCardController {
   constructor(
@@ -38,6 +42,8 @@ export class ReportCardController {
     private readonly audit: AIActionAuditPort,
     private readonly verifierUseCase?: VerifierDisponibiliteBulletinUseCase,
     private readonly listerUseCase?: ListerBulletinsUseCase,
+    private readonly factureRepository?: FactureRepository,
+    private readonly schoolConfigRepository?: SchoolConfigRepository,
   ) {}
 
   // POST /api/v2/report-cards/generate
@@ -81,14 +87,8 @@ export class ReportCardController {
       const generationStartedAt = new Date()
 
       const resultat = await this.generer.execute({
-        schoolId: user.schoolId,
-        classId,
-        academicPeriodId,
-        academicYearId,
-        template: template as BulletinTemplate,
-        nomEtablissement,
-        logoUrl,
-        demandeurId: user.userId,
+        schoolId: user.schoolId, classId, academicPeriodId, academicYearId,
+        template: template as BulletinTemplate, nomEtablissement, logoUrl, demandeurId: user.userId,
       });
 
       this.audit.journaliser({
@@ -106,16 +106,10 @@ export class ReportCardController {
             const period = await this.anneeRepository.findPeriodeById(academicPeriodId, schoolId)
             const periodName = period?.name ?? 'Période'
             const bulletins = await this.bulletinRepository.findRecentSince(schoolId, academicPeriodId, generationStartedAt)
-            await Promise.all(
-              bulletins.map((b) =>
-                notifyBulletinSms({
-                  schoolId,
-                  studentId: b.studentId,
-                  studentName: `${b.student.firstName ?? ''} ${b.student.lastName ?? ''}`.trim(),
-                  periodName,
-                }),
-              ),
-            )
+            await Promise.all(bulletins.map((b) => notifyBulletinSms({
+              schoolId, studentId: b.studentId, periodName,
+              studentName: `${b.student.firstName ?? ''} ${b.student.lastName ?? ''}`.trim(),
+            })))
           } catch (err) {
             console.error('[SMS Bulletin fire-and-forget]', err)
           }
@@ -145,14 +139,7 @@ export class ReportCardController {
     try {
       const user = req.user;
       let { classId, academicPeriodId, nomEtablissement, nomPeriode } = req.body;
-
-      if (!classId) {
-        res.status(400).json({
-          success: false,
-          message: 'classId requis',
-        });
-        return;
-      }
+      if (!classId) { res.status(400).json({ success: false, message: 'classId requis' }); return; }
 
       // Auto-résolution des paramètres manquants
       if (!academicPeriodId) {
@@ -161,24 +148,14 @@ export class ReportCardController {
           const periodes = await this.anneeRepository.findPeriodesByAnnee(currentYear.id);
           const currentPeriod = periodes.find(p => p.isCurrent) || periodes[0];
           academicPeriodId = currentPeriod?.id;
-          if (!nomPeriode && currentPeriod) {
-            nomPeriode = currentPeriod.name;
-          }
+          if (!nomPeriode && currentPeriod) nomPeriode = currentPeriod.name;
         }
       }
 
-      if (!academicPeriodId) {
-        res.status(400).json({
-          success: false,
-          message: 'academicPeriodId requis ou aucune période active trouvée',
-        });
-        return;
-      }
+      if (!academicPeriodId) { res.status(400).json({ success: false, message: 'academicPeriodId requis ou aucune période active trouvée' }); return; }
 
       const ecole = await this.schoolRepository.findById(user.schoolId);
-      if (!nomEtablissement) {
-        nomEtablissement = ecole?.name ?? 'Établissement';
-      }
+      if (!nomEtablissement) nomEtablissement = ecole?.name ?? 'Établissement';
 
       if (!nomPeriode) {
         const periode = await this.anneeRepository.findPeriodeById(academicPeriodId, user.schoolId);
@@ -275,64 +252,16 @@ export class ReportCardController {
       res.setHeader('Content-Type', 'application/zip');
       res.setHeader('Content-Disposition', `attachment; filename="bulletins-${classId}-${academicPeriodId}.zip"`);
 
-      // Bug indépendant trouvé en écrivant le test de cette route : archiver@8 (package.json)
-      // est ESM-only et n'exporte plus de fonction factory callable (`archiver('zip', ...)`) —
-      // seulement des classes nommées (ZipArchive, TarArchive...). Le `require('archiver')`
-      // ci-dessus retournait l'objet Module entier, jamais une fonction — cette route n'a donc
-      // jamais produit le moindre ZIP, dans aucun environnement (le cast non typé d'origine sur
-      // reportCard masquait ce fait, mais n'en était pas la cause : TypeError à l'exécution).
       const archive = new ZipArchive({ zlib: { level: 6 } });
       archive.pipe(res);
 
       for (const reportCard of reportCards) {
-        const studentName = `${reportCard.student.firstName} ${reportCard.student.lastName}`.trim();
-        const template = (reportCard.template ?? 'FR_SECONDARY') as BulletinTemplate;
-        const langue = resolveLanguage(reportCard.school?.subsystem, reportCard.section?.code ?? null);
-
-        const pdfBuffer = await generateBulletinPdf(template, {
-          schoolName: settings.schoolName ?? 'École',
-          schoolMotto: settings.schoolMotto ?? '',
-          logoUrl: settings.schoolLogoUrl ?? undefined,
-          studentName,
-          // Bug indépendant : ReportCard n'a pas de relation `class` directe (uniquement via
-          // student.studentProfile.enrollmentsYearScoped.class) — le cast `as` non typé était toujours
-          // undefined, chaque PDF exporté affichait "—" au lieu du vrai nom de classe.
-          className: reportCard.student.studentProfile?.enrollmentsYearScoped?.[0]?.class?.name ?? '—',
-          periodName: reportCard.academicPeriod?.name ?? '—',
-          yearName: reportCard.academicYear?.name ?? '—',
-          generalAverage: reportCard.generalAverage ?? 0,
-          rank: reportCard.rank,
-          totalStudents: reportCard.totalStudents,
-          absenceCount: reportCard.absenceCount,
-          language: langue,
-          mention: reportCard.mention ?? getMention(reportCard.generalAverage ?? 0, template, langue),
-          classMasterComment: reportCard.classMasterComment,
-          subjectLines: reportCard.subjectLines.map((line) => ({
-            subjectName: line.subjectName,
-            coefficient: line.coefficient,
-            seq1Score: line.seq1Score,
-            seq2Score: line.seq2Score,
-            compositionScore: line.compositionScore,
-            seq3Score: line.seq3Score,
-            seq4Score: line.seq4Score,
-            seq5Score: line.seq5Score,
-            seq6Score: line.seq6Score,
-            classTestScore: line.classTestScore,
-            terminalExamScore: line.terminalExamScore,
-            theoreticalScore: line.theoreticalScore,
-            practicalScore: line.practicalScore,
-            professionalAttitude: line.professionalAttitude,
-            oralScore: line.oralScore,
-            selfDevelopmentScore: line.selfDevelopmentScore,
-            subjectAverage: line.subjectAverage,
-            weightedScore: line.weightedScore,
-            teacherComment: line.teacherComment,
-            competenceLabel: line.competenceLabel,
-          })),
-          isOfficial: true,
-          verifyUrl: `${VERIFY_BASE}/verify/${reportCard.id}`,
-        });
-
+        const { pdfBuffer, studentName } = await renderReportCardPdfBuffer(
+          reportCard,
+          user.schoolId,
+          'ADMIN',
+          settings,
+        );
         archive.append(pdfBuffer, { name: `bulletin-${studentName.replace(/\s+/g, '-')}.pdf` });
       }
 
@@ -413,17 +342,11 @@ export class ReportCardController {
       }
 
       const previous = await this.bulletinRepository.findPreviousByStudent(reportCard.studentId, user.schoolId, reportCard.id);
-
-      let evolution: 'HAUSSE' | 'BAISSE' | 'STABLE' = 'STABLE';
-      if (previous?.generalAverage != null && reportCard.generalAverage != null) {
-        const diff = reportCard.generalAverage - previous.generalAverage;
-        evolution = diff > 0.5 ? 'HAUSSE' : diff < -0.5 ? 'BAISSE' : 'STABLE';
-      }
-
-      const subjectLines: { subjectName: string; subjectAverage: number | null }[] = (reportCard.lignesMatiere as unknown as { subjectName: string; subjectAverage: number | null }[]) ?? [];
-      const pointsForts = subjectLines.filter((s) => (s.subjectAverage ?? 0) >= 14).map((s) => s.subjectName).slice(0, 3);
-      const pointsFaibles = subjectLines.filter((s) => (s.subjectAverage ?? 0) < 10).map((s) => s.subjectName).slice(0, 3);
-
+      const { evolution, pointsForts, pointsFaibles } = extractCommentPromptMetrics(
+        previous?.generalAverage,
+        reportCard.generalAverage,
+        reportCard.lignesMatiere,
+      );
       const langue = resolveLanguage(enriched.schoolSubsystem, enriched.sectionCode);
       const nomEleve = `${enriched.studentFirstName ?? ''} ${enriched.studentLastName ?? ''}`.trim();
 
@@ -435,9 +358,7 @@ export class ReportCardController {
         pointsFaibles,
         langue: langue.toUpperCase() as 'FR' | 'EN',
       });
-
       await this.bulletinRepository.updateAiComment(reportCard.id, comment);
-
       res.json({ success: true, comment });
     } catch (error) {
       console.error('[genererCommentaireIA]', error);
@@ -451,33 +372,78 @@ export class ReportCardController {
       const user = req.user;
       const yearId = req.query.yearId as string | undefined;
       if (!this.listerUseCase) throw new Error('ListerBulletinsUseCase non câblé');
+      if (String(user.role).toUpperCase() === 'STUDENT') {
+        const blocked = await isBulletinBlockedByUnpaidFees({
+          schoolConfigRepository: this.schoolConfigRepository,
+          factureRepository: this.factureRepository,
+          schoolId: user.schoolId,
+          studentId: user.userId,
+        });
+        if (blocked) {
+          res.status(403).json({ success: false, code: 'BULLETIN_BLOCKED_UNPAID_FEES', message: 'Accès aux bulletins bloqué : solde de scolarité impayé' });
+          return;
+        }
+      }
       const result = await this.listerUseCase.mesBulletins({ schoolId: user.schoolId, studentId: user.userId, academicYearId: yearId });
       res.json(result);
-    } catch (error) {
-      next(error);
-    }
+    } catch (error) { next(error); }
   };
 
   // GET /api/v2/report-cards
   lister = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const user = req.user;
+      const role = (user.role as string).toUpperCase();
+      const studentIdQuery = req.query.studentId as string | undefined;
       if (!this.listerUseCase) throw new Error('ListerBulletinsUseCase non câblé');
+
+      if (role === 'STUDENT' || (role === 'PARENT' && studentIdQuery)) {
+        const targetStudentId = role === 'STUDENT' ? user.userId : studentIdQuery!;
+        if (role === 'PARENT' && !(await this.parentRepository.aAccesEleve(user.userId, targetStudentId))) {
+          res.status(403).json({ success: false, message: 'Non autorisé' });
+          return;
+        }
+        const blocked = await isBulletinBlockedByUnpaidFees({
+          schoolConfigRepository: this.schoolConfigRepository,
+          factureRepository: this.factureRepository,
+          schoolId: user.schoolId,
+          studentId: targetStudentId,
+        });
+        if (blocked) {
+          res.status(403).json({ success: false, code: 'BULLETIN_BLOCKED_UNPAID_FEES', message: 'Accès aux bulletins bloqué : solde de scolarité impayé' });
+          return;
+        }
+      }
+
       const result = await this.listerUseCase.lister({
         schoolId: user.schoolId,
-        role: (user.role as string).toUpperCase(),
+        role,
         userId: user.userId,
         page: Number(req.query.page) || 1,
         limit: Number(req.query.limit) || 10,
         academicYearId: req.query.yearId as string | undefined,
         academicPeriodId: req.query.periodId as string | undefined,
-        studentId: req.query.studentId as string | undefined,
+        studentId: studentIdQuery,
         classId: req.query.classId as string | undefined,
       });
+
+      if (role === 'PARENT' && !studentIdQuery) {
+        const feeCheck = await filterParentReportCardsByUnpaidFees({
+          schoolConfigRepository: this.schoolConfigRepository,
+          factureRepository: this.factureRepository,
+          schoolId: user.schoolId,
+          reportCards: result.reportCards,
+        });
+        if (feeCheck.blockedAll) {
+          res.status(403).json({ success: false, code: 'BULLETIN_BLOCKED_UNPAID_FEES', message: 'Accès aux bulletins bloqué : solde de scolarité impayé' });
+          return;
+        }
+        res.json({ ...result, reportCards: feeCheck.filtered });
+        return;
+      }
+
       res.json(result);
-    } catch (error) {
-      next(error);
-    }
+    } catch (error) { next(error); }
   };
 
   // GET /api/v2/report-cards/:id/pdf
@@ -485,80 +451,30 @@ export class ReportCardController {
     try {
       const user = req.user;
       const role: string = (user.role as string).toUpperCase();
-
       const reportCard = await this.bulletinRepository.findForPdf(req.params.id as string, user.schoolId);
-
-      if (!reportCard) {
-        res.status(404).json({ success: false, message: 'Bulletin introuvable' });
-        return;
-      }
-
-      if (role === 'STUDENT' && reportCard.studentId !== user.userId) {
+      if (!reportCard) { res.status(404).json({ success: false, message: 'Bulletin introuvable' }); return; }
+      if (role === 'STUDENT' && reportCard.studentId !== user.userId) { res.status(403).json({ success: false, message: 'Non autorisé' }); return; }
+      if (role === 'PARENT' && !(await this.parentRepository.aAccesEleve(user.userId, reportCard.studentId))) {
         res.status(403).json({ success: false, message: 'Non autorisé' });
         return;
       }
-      if (role === 'PARENT') {
-        const isParent = await this.parentRepository.aAccesEleve(user.userId, reportCard.studentId);
-        if (!isParent) {
-          res.status(403).json({ success: false, message: 'Non autorisé' });
+      if (role === 'STUDENT' || role === 'PARENT') {
+        const blocked = await isBulletinBlockedByUnpaidFees({
+          schoolConfigRepository: this.schoolConfigRepository,
+          factureRepository: this.factureRepository,
+          schoolId: user.schoolId,
+          studentId: reportCard.studentId,
+        });
+        if (blocked) {
+          res.status(403).json({ success: false, code: 'BULLETIN_BLOCKED_UNPAID_FEES', message: 'Téléchargement du bulletin bloqué en raison de frais de scolarité impayés' });
           return;
         }
       }
-
-      const settings = await getEffectiveSchoolSettings(user.schoolId);
-      const studentName = `${reportCard.student.firstName} ${reportCard.student.lastName}`.trim();
-      const periodName = reportCard.academicPeriod?.name ?? '—';
-      const template = (reportCard.template ?? 'FR_SECONDARY') as BulletinTemplate;
-      const langue = resolveLanguage(reportCard.school?.subsystem, reportCard.student?.studentProfile?.enrollmentsYearScoped?.[0]?.class?.section?.code ?? null);
-
-      const pdfBuffer = await generateBulletinPdf(template, {
-        schoolName: settings.schoolName ?? reportCard.school?.name ?? 'École',
-        schoolMotto: settings.schoolMotto ?? '',
-        logoUrl: settings.schoolLogoUrl ?? undefined,
-        studentName,
-        className: reportCard.student?.studentProfile?.enrollmentsYearScoped?.[0]?.class?.name ?? '—',
-        periodName,
-        yearName: reportCard.academicYear?.name ?? '—',
-        generalAverage: reportCard.generalAverage ?? 0,
-        rank: reportCard.rank,
-        totalStudents: reportCard.totalStudents,
-        absenceCount: reportCard.absenceCount,
-        language: langue,
-        mention: reportCard.mention ?? getMention(reportCard.generalAverage ?? 0, template, langue),
-        classMasterComment: reportCard.classMasterComment,
-        subjectLines: reportCard.subjectLines.map((line) => ({
-          subjectName: line.subjectName,
-          coefficient: line.coefficient,
-          seq1Score: line.seq1Score,
-          seq2Score: line.seq2Score,
-          compositionScore: line.compositionScore,
-          seq3Score: line.seq3Score,
-          seq4Score: line.seq4Score,
-          seq5Score: line.seq5Score,
-          seq6Score: line.seq6Score,
-          classTestScore: line.classTestScore,
-          terminalExamScore: line.terminalExamScore,
-          theoreticalScore: line.theoreticalScore,
-          practicalScore: line.practicalScore,
-          professionalAttitude: line.professionalAttitude,
-          oralScore: line.oralScore,
-          selfDevelopmentScore: line.selfDevelopmentScore,
-          subjectAverage: line.subjectAverage,
-          weightedScore: line.weightedScore,
-          teacherComment: line.teacherComment,
-          competenceLabel: line.competenceLabel,
-        })),
-        isOfficial: role !== 'PARENT',
-        verifyUrl: `${VERIFY_BASE}/verify/${reportCard.id}`,
-      });
-
-      const filename = `bulletin-${studentName.replace(/\s+/g, '-')}-${periodName.replace(/\s+/g, '-')}.pdf`;
+      const { pdfBuffer, filename } = await renderReportCardPdfBuffer(reportCard, user.schoolId, role);
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
       res.setHeader('Content-Length', pdfBuffer.length);
       res.end(pdfBuffer);
-    } catch (error) {
-      next(error);
-    }
+    } catch (error) { next(error); }
   };
 }

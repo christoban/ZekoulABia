@@ -22,6 +22,11 @@ export interface EnregistrerPaiementCashCommande {
   /** Montant effectivement encaissé. Peut être inférieur au total (paiement partiel). */
   montant: number;
   enregistreurId: string;
+  paidById?: string;
+  installmentId?: string;
+  provisionalReceiptNumber?: string;
+  clientRecordedAt?: Date | string;
+  allowOverpayment?: boolean;
   /** Version de la facture telle que lue par le client. Optionnel (compat. rétro). */
   baseUpdatedAt?: Date | string | null;
   /** Alias pour compat spec V3.2 (frontend envoie versionLocale/versionClient) */
@@ -31,6 +36,7 @@ export interface EnregistrerPaiementCashCommande {
 
 export interface EnregistrerPaiementCashResultat {
   paiementId: string;
+  receiptNumber?: string;
   nouveauStatutFacture: string;
   totalPaye: number;
   resteARegler: number;
@@ -74,20 +80,32 @@ export class EnregistrerPaiementCashUseCase {
       }
     }
 
+    const clientRecordedAt = commande.clientRecordedAt
+      ? (commande.clientRecordedAt instanceof Date ? commande.clientRecordedAt : new Date(commande.clientRecordedAt))
+      : undefined;
+
     // 2. Créer le paiement cash directement en SUCCESS
     const paiement = Paiement.creerCash({
       schoolId: commande.schoolId,
       invoiceId: commande.factureId,
       studentId: commande.studentId,
+      academicYearId: facture.academicYearId,
+      installmentId: commande.installmentId,
       amount: commande.montant,
       enregistreurId: commande.enregistreurId,
+      paidById: commande.paidById,
+      provisionalReceiptNumber: commande.provisionalReceiptNumber,
+      clientRecordedAt: clientRecordedAt && !Number.isNaN(clientRecordedAt.getTime()) ? clientRecordedAt : undefined,
     });
 
     // 3. Encaissement ATOMIQUE : re-vérifie le solde en transaction, met à jour la facture.
-    const totalPaye = await this.paiementRepository.encaisserCash(paiement, facture);
+    const totalPaye = await this.paiementRepository.encaisserCash(paiement, facture, {
+      allowOverpayment: commande.allowOverpayment,
+    });
 
     return {
       paiementId: paiement.id,
+      receiptNumber: paiement.receiptNumber,
       nouveauStatutFacture: facture.status,
       totalPaye,
       resteARegler: Math.max(0, facture.amount - totalPaye),

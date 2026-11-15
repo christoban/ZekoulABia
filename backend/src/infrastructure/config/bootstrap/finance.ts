@@ -2,6 +2,7 @@ import type { Application } from 'express';
 import { prisma } from '@infrastructure/persistence/prisma/prisma.client';
 import { creerContainer } from '@infrastructure/config/container';
 import { FinanceController } from '@infrastructure/http/controllers/FinanceController';
+import { FinanceOperationsController } from '@infrastructure/http/controllers/FinanceOperationsController';
 import { creerFinanceRoutes } from '@infrastructure/http/routes/finance.routes';
 import { DepartmentController } from '@infrastructure/http/controllers/DepartmentController';
 import { creerDepartmentRoutes } from '@infrastructure/http/routes/department.routes';
@@ -65,6 +66,26 @@ export function registerFinanceRoutes(app: Application, prismaParam: typeof pris
     userRepositoryForFinance,
     auditForFinance,
     notifForFinance,
+    {
+      receiptRenderer: c.finance.receiptPdfRenderer,
+      parentRepository: c.attendance.parentRepository,
+      carnetRepository: c.carnetLiaison.repository,
+      creerEntreeCarnet: c.carnetLiaison.creerEntree,
+    },
+  );
+
+  const financeOperationsController = new FinanceOperationsController(
+    factureRepositoryForFinance,
+    paiementRepositoryForFinance,
+    c.finance.configurerEcheancier,
+    c.finance.appliquerRemise,
+    c.finance.annulerPaiement,
+    c.finance.cloturerCaisse,
+    userRepositoryForFinance,
+    c.attendance.parentRepository,
+    auditForFinance,
+    notifForFinance,
+    c.notification.sms,
   );
 
   const studentProfileRepositoryForFinance = new PrismaStudentProfileRepository(p);
@@ -75,7 +96,7 @@ export function registerFinanceRoutes(app: Application, prismaParam: typeof pris
   );
   const studentFeesStatusController = new StudentFeesStatusController(consulterStatutFraisUseCase);
 
-  app.use('/api/v2/finance', creerFinanceRoutes(financeController, studentFeesStatusController));
+  app.use('/api/v2/finance', creerFinanceRoutes(financeController, studentFeesStatusController, financeOperationsController));
 
   const departmentController = new DepartmentController(
     new PrismaDepartmentRepository(p),

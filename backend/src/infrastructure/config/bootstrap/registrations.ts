@@ -41,6 +41,8 @@ import { creerNotificationRoutes } from '@infrastructure/http/routes/notificatio
 import { creerAnnouncementRoutes } from '@infrastructure/http/routes/announcement.routes';
 import { BabillardController } from '@infrastructure/http/controllers/BabillardController';
 import { creerBabillardRoutes } from '@infrastructure/http/routes/babillard.routes';
+import { CarnetLiaisonController } from '@infrastructure/http/controllers/CarnetLiaisonController';
+import { creerCarnetLiaisonRoutes } from '@infrastructure/http/routes/carnetLiaison.routes';
 import { PrismaPublicationRepository } from '@infrastructure/persistence/prisma/PrismaPublicationRepository';
 import { PrismaBabillardContextRepository } from '@infrastructure/persistence/prisma/PrismaBabillardContextRepository';
 import { CreerPublicationUseCase } from '@application/babillard/CreerPublicationUseCase';
@@ -264,7 +266,12 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
   const publicationRepository = new PrismaPublicationRepository(p);
   const babillardContextRepository = new PrismaBabillardContextRepository(p);
   const inngestEventPublisher = new InngestEventPublisher();
-  const creerPublicationUseCase = new CreerPublicationUseCase(publicationRepository, inngestEventPublisher);
+  const creerPublicationUseCase = new CreerPublicationUseCase(
+    publicationRepository,
+    inngestEventPublisher,
+    c.notification.service,
+    c.notification.sms,
+  );
   const modifierPublicationUseCase = new ModifierPublicationUseCase(publicationRepository);
   const supprimerPublicationUseCase = new SupprimerPublicationUseCase(publicationRepository);
   const listerPublicationsUseCase = new ListerPublicationsUseCase(publicationRepository);
@@ -284,8 +291,21 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
     epinglerPublicationUseCase,
     calculerStatsUseCase,
     uploaderPjUseCase,
+    c.notification.service,
+    c.notification.sms,
   );
   app.use('/api/v2/babillard', creerBabillardRoutes(babillardController));
+
+  // ── Carnet de liaison numérique (Primaire / Maternelle & suivi) ─────────────
+  const carnetLiaisonController = new CarnetLiaisonController(
+    c.carnetLiaison.creerEntree,
+    c.carnetLiaison.listerCarnet,
+    c.carnetLiaison.marquerLue,
+    c.carnetLiaison.repondreEntree,
+    c.carnetLiaison.relancerParents,
+    new AIActionAuditAdapter(p),
+  );
+  app.use('/api/v2/carnet-liaison', creerCarnetLiaisonRoutes(carnetLiaisonController));
 
   // ── Messagerie bidirectionnelle ──────────────────────────────────────────────
   const messagerieRepository = new PrismaMessagerieRepository(p);

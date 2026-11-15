@@ -62,6 +62,7 @@ function buildNav(user: UserInfo | null | undefined, pendingGrades: number | und
       label: tnav('group.communication'),
       items: [
         { id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard') },
+        { id: 'carnet-liaison', icon: NotebookPen, label: tnav('sidebar.carnetLiaison') },
         { id: 'messagerie', icon: MessageCircle, label: tnav('sidebar.messagerie'), ...(messagesNonLus > 0 ? { badge: String(messagesNonLus), badgeColor: 'red' as const } : {}) },
       ],
     },

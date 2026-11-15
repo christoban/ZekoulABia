@@ -21,20 +21,37 @@ export class TraiterWebhookCampayUseCase {
     }
 
     if (donnees.statut === 'SUCCESS') {
-      // 2a. Confirmer le paiement (entité vérifie la transition)
-      paiement.confirmer(donnees.campayRef, donnees.operateurRef);
-      await this.paiementRepository.update(paiement);
+      if (this.paiementRepository.confirmerMobileMoneyAtomique) {
+        const res = await this.paiementRepository.confirmerMobileMoneyAtomique(
+          paiement,
+          donnees.campayRef,
+          donnees.operateurRef,
+        );
+        if (paiement.invoiceId) {
+          const facture = await this.factureRepository.findById(paiement.invoiceId);
+          if (facture && facture.status !== 'CANCELLED') {
+            const repoTotal = await this.factureRepository.calculerTotalPayeAvecSucces(paiement.invoiceId);
+            const totalPaye = repoTotal > 0 ? repoTotal : res.totalPaye;
+            const prevStatus = facture.status;
+            facture.mettreAJourStatut(totalPaye);
+            if (facture.status !== prevStatus) {
+              await this.factureRepository.update(facture);
+            }
+          }
+        }
+      } else {
+        paiement.confirmer(donnees.campayRef, donnees.operateurRef);
+        await this.paiementRepository.update(paiement);
 
-      // 3. Recalculer le statut de la facture
-      // Correction du bug : calculerTotalPayeAvecSucces filtre uniquement SUCCESS
-      if (paiement.invoiceId) {
-        const facture = await this.factureRepository.findById(paiement.invoiceId);
-        if (facture) {
-          const totalPaye = await this.factureRepository.calculerTotalPayeAvecSucces(
-            paiement.invoiceId
-          );
-          facture.mettreAJourStatut(totalPaye);
-          await this.factureRepository.update(facture);
+        if (paiement.invoiceId) {
+          const facture = await this.factureRepository.findById(paiement.invoiceId);
+          if (facture) {
+            const totalPaye = await this.factureRepository.calculerTotalPayeAvecSucces(
+              paiement.invoiceId
+            );
+            facture.mettreAJourStatut(totalPaye);
+            await this.factureRepository.update(facture);
+          }
         }
       }
     } else {

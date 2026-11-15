@@ -74,12 +74,20 @@ export class PrismaParentRepository implements ParentRepository {
         const studentId = profil.userId;
         const classeActuelle = profil.enrollmentsYearScoped[0]?.class ?? null;
 
-        const [nbPresent, nbRetard, nbAbsent, total] = await Promise.all([
+        const [nbPresentStrict, nbRetard, nbAbsent, total] = await Promise.all([
           this.prisma.attendance.count({
-            where: { studentId, schoolId, status: 'PRESENT', date: { gte: dateDebut } },
+            where: { studentId, schoolId, status: 'PRESENT', arrivedAt: null, date: { gte: dateDebut } },
           }),
           this.prisma.attendance.count({
-            where: { studentId, schoolId, status: 'LATE', date: { gte: dateDebut } },
+            where: {
+              studentId,
+              schoolId,
+              date: { gte: dateDebut },
+              OR: [
+                { status: 'LATE' },
+                { status: 'PRESENT', arrivedAt: { not: null } },
+              ],
+            },
           }),
           this.prisma.attendance.count({
             where: { studentId, schoolId, status: 'ABSENT', date: { gte: dateDebut } },
@@ -91,10 +99,10 @@ export class PrismaParentRepository implements ParentRepository {
 
         // Retard ≠ absence au Cameroun : tauxPresence inclut les retards, tauxPonctualite non
         const tauxPresence = total > 0
-          ? Math.round(((nbPresent + nbRetard) / total) * 100)
+          ? Math.round(((nbPresentStrict + nbRetard) / total) * 100)
           : 100;
         const tauxPonctualite = total > 0
-          ? Math.round((nbPresent / total) * 100)
+          ? Math.round((nbPresentStrict / total) * 100)
           : 100;
 
         const dernierBulletin = await this.prisma.reportCard.findFirst({

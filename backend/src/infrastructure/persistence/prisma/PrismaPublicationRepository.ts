@@ -13,6 +13,8 @@ import type {
   PublicationRepository,
   PublicationFiltres,
   StatistiquesLecture,
+  DestinataireLectureItem,
+  LecturesDetailResult,
 } from '../../../domain/ports/repositories/PublicationRepository';
 import { peutVoir, type UtilisateurContexte } from '../../../domain/rules/BabillardVisibilityRules';
 
@@ -365,6 +367,11 @@ export class PrismaPublicationRepository implements PublicationRepository {
       lecturesCount,
       destinatairesEligiblesCount,
     };
+  }
+
+  async listerDestinatairesLecture(publication: Publication): Promise<LecturesDetailResult> {
+    const { queryPublicationRecipients } = await import('./helpers/publicationRecipientsQuery');
+    return queryPublicationRecipients(this.prisma, publication);
   }
 
   async enregistrerAudit(data: {

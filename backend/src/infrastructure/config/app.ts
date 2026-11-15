@@ -65,6 +65,10 @@ export function creerApp(): Application {
     container.reportCard.bulletinRepository,
     container.reportCard.parentRepository,
     new AIActionAuditAdapter(prisma),
+    container.reportCard.verifierDisponibilite,
+    container.reportCard.lister,
+    container.finance.factureRepository,
+    container.school.schoolConfigRepository,
   );
 
   app.use('/api/v2/grades', creerGradeRoutes(gradeController));

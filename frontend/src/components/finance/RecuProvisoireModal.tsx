@@ -1,11 +1,14 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import ModalOverlay, { fmtCFA } from './ModalOverlay'
-import { Printer, CheckCircle, AlertCircle, X } from 'lucide-react'
+import { Printer, CheckCircle, AlertCircle, X, Download, Copy } from 'lucide-react'
+import { downloadReceiptPdf } from '@/features/finance/financeExtendedTypes'
 
 export interface RecuProvisoireData {
   reference: string
+  provisionalReference?: string
+  paymentId?: string
   isOffline: boolean
   date: Date
   schoolName: string
@@ -25,7 +28,22 @@ interface Props {
 }
 
 export default function RecuProvisoireModal({ data, onClose }: Props) {
+  const [downloading, setDownloading] = useState(false)
+  const [pdfError, setPdfError] = useState<string | null>(null)
   if (!data) return null
+
+  const handleDownloadPdf = async (duplicate: boolean) => {
+    if (!data.paymentId) return
+    setDownloading(true)
+    setPdfError(null)
+    try {
+      await downloadReceiptPdf(data.paymentId, { duplicate })
+    } catch (err) {
+      setPdfError(err instanceof Error ? err.message : 'Erreur téléchargement PDF')
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   const handlePrint = () => {
     window.print()
@@ -180,6 +198,11 @@ export default function RecuProvisoireModal({ data, onClose }: Props) {
               <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text2)', fontFamily: 'monospace' }}>
                 RÉF : {data.reference}
               </span>
+              {data.provisionalReference && (
+                <div style={{ fontSize: 10.5, color: 'var(--text3)', fontFamily: 'monospace', marginTop: 2 }}>
+                  Réf. provisoire : {data.provisionalReference}
+                </div>
+              )}
             </div>
 
             {/* Détails élève & frais */}
@@ -243,8 +266,62 @@ export default function RecuProvisoireModal({ data, onClose }: Props) {
           </div>
         </div>
 
+        {pdfError && (
+          <div className="no-print" style={{ marginTop: 10, fontSize: 11.5, color: 'var(--red)', fontWeight: 600 }}>
+            {pdfError}
+          </div>
+        )}
+
         {/* Boutons d'action (masqués à l'impression) */}
-        <div className="no-print" style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+        <div className="no-print" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
+          {!data.isOffline && data.paymentId && (
+            <>
+              <button
+                type="button"
+                disabled={downloading}
+                onClick={() => void handleDownloadPdf(false)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  background: 'var(--green)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '10px 12px',
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                <Download size={15} />
+                Reçu officiel PDF
+              </button>
+              <button
+                type="button"
+                disabled={downloading}
+                onClick={() => void handleDownloadPdf(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  background: 'var(--bg2)',
+                  color: 'var(--text)',
+                  border: '1px solid var(--border2)',
+                  borderRadius: 8,
+                  padding: '10px 12px',
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                <Copy size={15} />
+                Duplicata
+              </button>
+            </>
+          )}
           <button
             type="button"
             onClick={handlePrint}

@@ -76,6 +76,7 @@
     "offline": "",
     "downloadUnavailable": "PDF download unavailable offline",
     "downloadError": "Download error",
+    "downloadBlockedUnpaid": "Report card blocked: please settle unpaid tuition fees",
     "downloaded": "Report card downloaded"
   },
   "attendance": {

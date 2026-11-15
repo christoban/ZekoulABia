@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LogOut, Users, FileText, ClipboardCheck, Calendar, Smartphone, BookOpen, Settings, HandCoins, X, Megaphone, MessageCircle, Camera, BookMarked, FileCheck, HeartPulse, TrendingUp, User } from 'lucide-react'
+import { LogOut, Users, FileText, ClipboardCheck, Calendar, Smartphone, BookOpen, Settings, HandCoins, X, Megaphone, MessageCircle, Camera, BookMarked, FileCheck, HeartPulse, TrendingUp, User, NotebookPen } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useT } from '@/lib/i18n'
@@ -78,6 +78,7 @@ export default function ParentSidebar({ current, onChange, onLogout, user, schoo
         { id: 'apee', icon: HandCoins, label: tnav('sidebar.apee') },
         { id: 'library', icon: BookOpen, label: tnav('sidebar.readings') },
         { id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard') },
+        { id: 'carnet-liaison', icon: NotebookPen, label: tnav('sidebar.carnetLiaison') },
         { id: 'messagerie', icon: MessageCircle, label: tnav('sidebar.messagerie'), ...(messagesNonLus > 0 ? { badge: String(messagesNonLus), badgeColor: 'red' as const } : {}) },
         // notifications retiré — redondant avec la cloche (permanente sur tous les écrans),
         // qui offre désormais un lien « Voir tout » vers cette même page.

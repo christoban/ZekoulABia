@@ -184,6 +184,7 @@ export default function AdminSidebar({
       label: tnav('group.communication') ?? 'Communication & Vie Scolaire',
       items: [
         { id: 'babillard', icon: Megaphone, label: tnav('sidebar.babillard') },
+        { id: 'carnet-liaison', icon: NotebookPen, label: tnav('sidebar.carnetLiaison') },
         { id: 'academic-events', icon: CalendarClock, label: tnav('sidebar.academicEvents') },
         { id: 'student-transfers', icon: UserPlus, label: tnav('sidebar.studentTransfers') ?? 'Transferts inter-écoles' },
         ...(hasActivePebs ? [{ id: 'pebs-exams' as const, icon: Globe, label: tnav('sidebar.pebsExams') }] : []),

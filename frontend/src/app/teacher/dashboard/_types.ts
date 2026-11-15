@@ -6,7 +6,7 @@ export type TeacherSection =
   | 'cahier-de-texte'
   | 'at-risk' | 'mon-suivi'
   | 'correction-anonyme'
-  | 'mon-profil-rh' | 'notifications' | 'babillard' | 'messagerie'
+  | 'mon-profil-rh' | 'notifications' | 'babillard' | 'carnet-liaison' | 'messagerie'
 
 export interface Toast {
   id: number

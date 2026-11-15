@@ -705,3 +705,18 @@ export async function notifyCredentialsSms(opts: {
     console.error('[SMS Identifiants] Erreur inattendue:', err)
   }
 }
+
+export async function notifyGenericAlertSms(opts: {
+  schoolId: string
+  phones: string[]
+  message: string
+}): Promise<void> {
+  try {
+    const phones = [...new Set(opts.phones.filter(Boolean))]
+    for (const phone of phones) {
+      await dispatchSms(opts.schoolId, phone, opts.message, 'ABSENCE')
+    }
+  } catch (err) {
+    console.error('[SMS Alerte générique] Erreur inattendue:', err)
+  }
+}

@@ -30,6 +30,7 @@ import EventCenterWidget from '@/features/communication/EventCenterWidget'
 import AssistantWidget from '../../admin/dashboard/_components/AssistantWidget'
 import { useRouter } from 'next/navigation'
 import Babillard from '@/features/communication/Babillard'
+import CarnetLiaisonView from '@/features/carnet-liaison/CarnetLiaisonView'
 import Messagerie from '@/features/messagerie'
 import ChangePasswordModal from '@/components/ChangePasswordModal'
 import ModeTestBanner from '@/components/ModeTestBanner'
@@ -42,7 +43,7 @@ interface SessionUser {
   permissions?: string[]
 }
 
-const PARENT_SECTIONS: ParentSection[] = ['children', 'child-profile', 'grades', 'attendance', 'homework', 'documents', 'health-tracking', 'academic-profile', 'payments', 'timetable', 'settings', 'library', 'apee', 'notifications', 'babillard', 'messagerie']
+const PARENT_SECTIONS: ParentSection[] = ['children', 'child-profile', 'grades', 'attendance', 'homework', 'documents', 'health-tracking', 'academic-profile', 'payments', 'timetable', 'settings', 'library', 'apee', 'notifications', 'babillard', 'carnet-liaison', 'messagerie']
 const PARENT_ASSISTANT_SUGGESTIONS = [
   'Quelles sont les dernières notes de mon enfant ?',
   'Mon enfant a-t-il des factures impayées ?',
@@ -72,6 +73,7 @@ export default function ParentDashboard() {
     settings:   tnav('pageTitle.parent_settings'),
     library:    tnav('pageTitle.parent_library'),
     babillard:  tnav('sidebar.babillard'),
+    'carnet-liaison': tnav('sidebar.carnetLiaison'),
     messagerie: tnav('sidebar.messagerie'),
   }
   const [section, setSection] = useState<ParentSection>('children')
@@ -447,6 +449,11 @@ export default function ParentDashboard() {
           {visitedSections.has('babillard') && (
             <div style={{ display: section === 'babillard' ? 'contents' : 'none' }}>
               <Babillard role={user?.role ?? 'PARENT'} title={tnav('sidebar.babillard')} subtitle={tnav('group.communication')} currentUserId={user?.id} />
+            </div>
+          )}
+          {visitedSections.has('carnet-liaison') && (
+            <div style={{ display: section === 'carnet-liaison' ? 'contents' : 'none' }}>
+              <CarnetLiaisonView role="PARENT" onToast={showToast} />
             </div>
           )}
           {visitedSections.has('messagerie') && (

@@ -32,6 +32,9 @@ export const OPERATION_RISK_LEVEL: Record<PendingActionType, RiskLevel> = {
   EXAM_PUBLISH: 'FORT',
   FEE_PAYMENT_CASH: 'MOYEN',
   EXPENSE_CREATE: 'MOYEN',
+  CARNET_ENTRY_CREATE: 'MOYEN',
+  CARNET_ACK_READ: 'MOYEN',
+  CARNET_CONFIRM_RESPONSE: 'MOYEN',
   // Transferts inter-écoles (Phase 5) : consentement signé, décision d'école, annulation et
   // révocation sont des transitions de machine d'états atomiques côté serveur — aucune
   // resynchronisation possible sans risquer un double envoi ou un contournement du flux

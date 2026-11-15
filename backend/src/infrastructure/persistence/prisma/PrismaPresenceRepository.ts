@@ -1,7 +1,26 @@
-import type { PrismaClient, Attendance, Prisma } from '@prisma/client';
+import type { PrismaClient, Attendance } from '@prisma/client';
 import { Presence } from '@domain/entities/Presence';
-import type { PresenceRepository, StatistiquesPresence, PresenceSmsRecord, FiltrePresences, PresenceLue, PresenceJustifiee } from '@domain/ports/repositories/PresenceRepository';
-import type { AttendanceStatus, AttendancePeriod } from '@domain/types/enums';
+import type {
+  PresenceRepository,
+  StatistiquesPresence,
+  PresenceSmsRecord,
+  FiltrePresences,
+  PresenceLue,
+  PresenceJustifiee,
+  DailyClassAttendanceStatus,
+  RepeatedAbsenceStudent,
+} from '@domain/ports/repositories/PresenceRepository';
+import type { AttendanceStatus, AttendancePeriod, JustificationStatus } from '@domain/types/enums';
+import {
+  correctAttendanceStatus,
+  endOfDayUtcFromDate,
+  justifyAttendanceAbsence,
+  queryDailyClassStatus,
+  queryRepeatedAbsences,
+  startOfDayUtcFromDate,
+  submitAttendanceParentJustification,
+  toPresenceLue,
+} from './helpers/presenceSupervisionOps';
 
 function whereFromFiltre(schoolId: string, filtre: FiltrePresences): Record<string, unknown> {
   const where: Record<string, unknown> = { schoolId };
@@ -16,29 +35,10 @@ function whereFromFiltre(schoolId: string, filtre: FiltrePresences): Record<stri
     };
   }
   if (filtre.status) where.status = filtre.status;
+  if (filtre.period) where.period = filtre.period;
+  if (filtre.subjectId) where.subjectId = filtre.subjectId;
   if (filtre.since) where.createdAt = { gt: filtre.since };
   return where;
-}
-
-type AttendanceAvecClasse = Prisma.AttendanceGetPayload<{ include: { class: { select: { id: true; name: true } } } }>;
-
-function toPresenceLue(data: AttendanceAvecClasse): PresenceLue {
-  return {
-    id: data.id,
-    schoolId: data.schoolId,
-    studentId: data.studentId,
-    classId: data.classId,
-    academicPeriodId: data.academicPeriodId ?? null,
-    subjectId: data.subjectId ?? null,
-    teacherId: data.teacherId ?? null,
-    recordedById: data.recordedById ?? null,
-    date: data.date,
-    status: data.status,
-    period: data.period,
-    isOfflineSync: data.isOfflineSync,
-    createdAt: data.createdAt,
-    class: data.class ? { id: data.class.id, name: data.class.name } : null,
-  };
 }
 
 export class PrismaPresenceRepository implements PresenceRepository {
@@ -153,9 +153,9 @@ export class PrismaPresenceRepository implements PresenceRepository {
     });
 
     const total = toutes.length;
-    const presents = toutes.filter(p => p.status === 'PRESENT').length;
+    const retards = toutes.filter(p => p.status === 'LATE' || Boolean(p.arrivedAt)).length;
+    const presents = toutes.filter(p => p.status === 'PRESENT' && !p.arrivedAt).length;
     const absents = toutes.filter(p => p.status === 'ABSENT' || p.status === 'ABSENT_JUSTIFIED').length;
-    const retards = toutes.filter(p => p.status === 'LATE').length;
 
     return {
       totalJours: total,
@@ -171,10 +171,9 @@ export class PrismaPresenceRepository implements PresenceRepository {
     date: Date,
     period: AttendancePeriod
   ): Promise<boolean> {
-    const debut = new Date(date);
-    debut.setHours(0, 0, 0, 0);
-    const fin = new Date(date);
-    fin.setHours(23, 59, 59, 999);
+    if (!studentId) return false;
+    const debut = startOfDayUtcFromDate(date);
+    const fin = endOfDayUtcFromDate(date);
 
     const count = await this.prisma.attendance.count({
       where: {
@@ -201,7 +200,12 @@ export class PrismaPresenceRepository implements PresenceRepository {
         date: data.date,
         status: data.status,
         period: data.period,
+        arrivedAt: data.arrivedAt ?? null,
+        lateNote: data.lateNote ?? null,
         isOfflineSync: data.isOfflineSync,
+        syncedAt: data.syncedAt ?? null,
+        clientRecordedAt: data.clientRecordedAt ?? null,
+        clockSkewSeconds: data.clockSkewSeconds ?? null,
         createdAt: data.createdAt,
       },
     });
@@ -222,11 +226,79 @@ export class PrismaPresenceRepository implements PresenceRepository {
         date: obj.date,
         status: obj.status,
         period: obj.period,
+        arrivedAt: obj.arrivedAt ?? null,
+        lateNote: obj.lateNote ?? null,
         isOfflineSync: obj.isOfflineSync,
+        syncedAt: obj.syncedAt ?? null,
+        clientRecordedAt: obj.clientRecordedAt ?? null,
+        clockSkewSeconds: obj.clockSkewSeconds ?? null,
         createdAt: obj.createdAt,
       };
     });
     await this.prisma.attendance.createMany({ data });
+  }
+
+  async upsertMany(presences: Presence[], updatedById: string): Promise<Presence[]> {
+    const saved: Presence[] = [];
+    await this.prisma.$transaction(async (tx) => {
+      for (const p of presences) {
+        const obj = p.toObject();
+        const debut = startOfDayUtcFromDate(obj.date);
+        const fin = endOfDayUtcFromDate(obj.date);
+        const existing = await tx.attendance.findFirst({
+          where: {
+            schoolId: obj.schoolId,
+            studentId: obj.studentId,
+            period: obj.period,
+            date: { gte: debut, lte: fin },
+            subjectId: obj.subjectId ?? null,
+          },
+        });
+
+        if (existing) {
+          const updated = await tx.attendance.update({
+            where: { id: existing.id },
+            data: {
+              status: obj.status,
+              arrivedAt: obj.arrivedAt ?? null,
+              lateNote: obj.lateNote ?? null,
+              previousStatus: existing.status !== obj.status ? existing.status : existing.previousStatus,
+              updatedById,
+              isOfflineSync: obj.isOfflineSync,
+              syncedAt: obj.syncedAt ?? new Date(),
+              clientRecordedAt: obj.clientRecordedAt ?? existing.clientRecordedAt,
+              clockSkewSeconds: obj.clockSkewSeconds ?? existing.clockSkewSeconds,
+            },
+          });
+          saved.push(this.toDomain(updated));
+        } else {
+          const created = await tx.attendance.create({
+            data: {
+              id: obj.id,
+              schoolId: obj.schoolId,
+              studentId: obj.studentId,
+              classId: obj.classId,
+              academicPeriodId: obj.academicPeriodId ?? null,
+              subjectId: obj.subjectId ?? null,
+              teacherId: obj.teacherId ?? null,
+              recordedById: obj.recordedById ?? null,
+              date: obj.date,
+              status: obj.status,
+              period: obj.period,
+              arrivedAt: obj.arrivedAt ?? null,
+              lateNote: obj.lateNote ?? null,
+              isOfflineSync: obj.isOfflineSync,
+              syncedAt: obj.syncedAt ?? null,
+              clientRecordedAt: obj.clientRecordedAt ?? null,
+              clockSkewSeconds: obj.clockSkewSeconds ?? null,
+              createdAt: obj.createdAt,
+            },
+          });
+          saved.push(this.toDomain(created));
+        }
+      }
+    });
+    return saved;
   }
 
   async update(presence: Presence): Promise<void> {
@@ -235,6 +307,8 @@ export class PrismaPresenceRepository implements PresenceRepository {
       where: { id: data.id },
       data: {
         status: data.status,
+        arrivedAt: data.arrivedAt ?? null,
+        lateNote: data.lateNote ?? null,
         isOfflineSync: data.isOfflineSync,
         syncedAt: data.syncedAt ?? null,
       },
@@ -322,32 +396,44 @@ export class PrismaPresenceRepository implements PresenceRepository {
     return this.toDomain(data);
   }
 
+  async correctStatus(
+    schoolId: string,
+    id: string,
+    data: { status: AttendanceStatus; arrivedAt?: Date | null; lateNote?: string | null; updatedById: string },
+  ): Promise<PresenceLue | null> {
+    return correctAttendanceStatus(this.prisma, schoolId, id, data);
+  }
+
+  async submitParentJustification(
+    schoolId: string,
+    id: string,
+    data: { parentUserId: string; justification: string; attachmentUrl?: string | null },
+  ): Promise<PresenceJustifiee | null> {
+    return submitAttendanceParentJustification(this.prisma, schoolId, id, data);
+  }
+
   async justifierAbsence(
     schoolId: string,
     id: string,
-    data: { justification?: string; justifiedById: string; justifiedAt: Date },
+    data: { justification?: string; justifiedById: string; justifiedAt: Date; approve?: boolean },
   ): Promise<PresenceJustifiee | null> {
-    const existant = await this.prisma.attendance.findFirst({ where: { schoolId, id } });
-    if (!existant) return null;
-    const updated = await this.prisma.attendance.update({
-      where: { id },
-      data: {
-        status: 'ABSENT_JUSTIFIED',
-        justification: data.justification,
-        justifiedById: data.justifiedById,
-        justifiedAt: data.justifiedAt,
-        // Le filtre `schoolId` n'est pas replable sur update() (pas unique) —
-        // l'existence a déjà été vérifiée scopée à l'école juste au-dessus.
-      },
-      include: {
-        class: { select: { id: true, name: true } },
-        student: { select: { id: true, firstName: true, lastName: true } },
-      },
-    });
-    return {
-      ...toPresenceLue(updated),
-      student: updated.student ? { id: updated.student.id, firstName: updated.student.firstName, lastName: updated.student.lastName } : null,
-    };
+    return justifyAttendanceAbsence(this.prisma, schoolId, id, data);
+  }
+
+  async getDailyClassStatus(
+    schoolId: string,
+    date: Date,
+    period?: AttendancePeriod,
+  ): Promise<DailyClassAttendanceStatus[]> {
+    return queryDailyClassStatus(this.prisma, schoolId, date, period);
+  }
+
+  async getRepeatedAbsences(
+    schoolId: string,
+    minAbsences: number,
+    sinceDate: Date,
+  ): Promise<RepeatedAbsenceStudent[]> {
+    return queryRepeatedAbsences(this.prisma, schoolId, minAbsences, sinceDate);
   }
 
   private toDomain(data: Attendance): Presence {
@@ -363,8 +449,21 @@ export class PrismaPresenceRepository implements PresenceRepository {
       date: data.date,
       status: data.status as AttendanceStatus,
       period: data.period as AttendancePeriod,
+      arrivedAt: data.arrivedAt ?? undefined,
+      lateNote: data.lateNote ?? undefined,
+      justification: data.justification ?? undefined,
+      justificationStatus: (data.justificationStatus ?? undefined) as JustificationStatus | undefined,
+      justificationAttachmentUrl: data.justificationAttachmentUrl ?? undefined,
+      submittedByParentId: data.submittedByParentId ?? undefined,
+      justifiedById: data.justifiedById ?? undefined,
+      justifiedAt: data.justifiedAt ?? undefined,
+      previousStatus: (data.previousStatus ?? undefined) as AttendanceStatus | undefined,
+      updatedById: data.updatedById ?? undefined,
+      updatedAt: data.updatedAt ?? undefined,
       isOfflineSync: data.isOfflineSync,
       syncedAt: data.syncedAt ?? undefined,
+      clientRecordedAt: data.clientRecordedAt ?? undefined,
+      clockSkewSeconds: data.clockSkewSeconds ?? undefined,
       createdAt: data.createdAt,
     });
   }

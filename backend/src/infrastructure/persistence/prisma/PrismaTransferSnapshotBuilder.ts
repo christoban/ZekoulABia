@@ -60,14 +60,20 @@ export class PrismaTransferSnapshotBuilder implements TransferSnapshotBuilderPor
     const yearNameById = new Map(academicYears.map(y => [y.id, y.name]));
     const attendanceByYear = new Map<string, { academicYear: string; justified: number; unjustified: number }>();
     for (const attendance of attendances) {
+      if (attendance.status !== 'ABSENT' && attendance.status !== 'ABSENT_JUSTIFIED') {
+        continue;
+      }
       const englobante = academicYears.find(
         year => attendance.date >= year.startDate && attendance.date <= year.endDate,
       );
       const key = englobante?.name ?? `${attendance.date.getUTCFullYear()}`;
       const current = attendanceByYear.get(key)
         ?? { academicYear: key, justified: 0, unjustified: 0 };
-      if (attendance.justification) current.justified += 1;
-      else current.unjustified += 1;
+      if (attendance.status === 'ABSENT_JUSTIFIED' || Boolean(attendance.justification)) {
+        current.justified += 1;
+      } else {
+        current.unjustified += 1;
+      }
       attendanceByYear.set(key, current);
     }
 

@@ -20,7 +20,10 @@ import type { PublicationProps } from '../../../domain/entities/Publication';
 import { messageErreur } from '@application/shared/messageErreur';
 import type { BabillardContextRepository } from '../../../domain/ports/repositories/BabillardContextRepository';
 import { peutVoir, type UtilisateurContexte } from '../../../domain/rules/BabillardVisibilityRules';
-import { peutPublierBabillard } from '../../../domain/rules/BabillardPermissionRules';
+import { peutPublierBabillard, peutGererToutesPublications } from '../../../domain/rules/BabillardPermissionRules';
+import type { NotificationService } from '@domain/ports/services/NotificationService';
+import type { SmsNotificationPort } from '@domain/ports/services/SmsNotificationPort';
+import { dispatchBabillardReminders } from './helpers/babillardReminderHelper';
 
 export const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   allowedTags: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'ul', 'ol', 'li', 'a', 'mark', 'span'],
@@ -50,7 +53,9 @@ export class BabillardController {
     private readonly marquerLue: MarquerPublicationLueUseCase,
     private readonly epinglerPublication: EpinglerPublicationUseCase,
     private readonly calculerStats: CalculerStatistiquesLectureUseCase,
-    private readonly uploaderPj: UploaderPieceJointeUseCase
+    private readonly uploaderPj: UploaderPieceJointeUseCase,
+    private readonly notificationService?: NotificationService,
+    private readonly smsNotification?: SmsNotificationPort,
   ) {}
 
   lister = async (req: Request, res: Response, next: NextFunction) => {
@@ -274,6 +279,78 @@ export class BabillardController {
         res.status(403).json({ success: false, message: 'Accès aux statistiques réservé à l’auteur et à la direction.' });
         return;
       }
+      next(err);
+    }
+  };
+
+  lecturesDetails = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = await this.buildUtilisateurContexte(req);
+      const id = String(req.params.id);
+      const pub = await this.repo.trouverParId(id, user.schoolId);
+      if (!pub) {
+        res.status(404).json({ success: false, message: 'Publication introuvable' });
+        return;
+      }
+      if (pub.auteurId !== user.userId && !peutGererToutesPublications(user)) {
+        res.status(403).json({ success: false, message: 'Accès réservé à l’auteur et à la direction.' });
+        return;
+      }
+      const details = await this.repo.listerDestinatairesLecture(pub);
+      res.json({
+        success: true,
+        data: {
+          lecturesCount: details.lecturesCount,
+          destinatairesEligiblesCount: details.destinatairesEligiblesCount,
+          vus: details.vus,
+          nonVus: details.nonVus,
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  relancerNonLus = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = await this.buildUtilisateurContexte(req);
+      const id = String(req.params.id);
+      const pub = await this.repo.trouverParId(id, user.schoolId);
+      if (!pub) {
+        res.status(404).json({ success: false, message: 'Publication introuvable' });
+        return;
+      }
+      if (pub.auteurId !== user.userId && !peutGererToutesPublications(user)) {
+        res.status(403).json({ success: false, message: 'Accès réservé à l’auteur et à la direction.' });
+        return;
+      }
+
+      const details = await this.repo.listerDestinatairesLecture(pub);
+      const requestedIds = Array.isArray(req.body?.userIds)
+        ? new Set((req.body.userIds as unknown[]).filter((x): x is string => typeof x === 'string'))
+        : null;
+      const targets = details.nonVus.filter(
+        (d) => d.userId !== user.userId && (!requestedIds || requestedIds.has(d.userId)),
+      );
+
+      const { notifiedCount, smsCount } = await dispatchBabillardReminders({
+        schoolId: user.schoolId,
+        pub,
+        targets,
+        notificationService: this.notificationService,
+        smsNotification: this.smsNotification,
+      });
+
+      await this.repo.enregistrerAudit({
+        schoolId: user.schoolId,
+        publicationId: pub.id,
+        userId: user.userId,
+        action: 'REMIND_UNREAD',
+        details: { notifiedCount, smsCount },
+      });
+
+      res.json({ success: true, data: { notifiedCount, smsCount } });
+    } catch (err) {
       next(err);
     }
   };

@@ -17,6 +17,7 @@ export interface VerifierStatutCommande {
 export interface VerifierStatutResultat {
   statut: 'SUCCESS' | 'PENDING' | 'FAILED';
   reference?: string;
+  receiptNumber?: string;
   montant?: number;
   operateur?: string;
   message?: string;
@@ -74,25 +75,44 @@ export class VerifierStatutPaiementUseCase {
         const resultatCampay = await this.paiementService.verifierStatut(paiement.campayRef);
 
         if (resultatCampay.statut === 'SUCCESS') {
-          // Confirmer le paiement
-          paiement.confirmer(resultatCampay.reference, resultatCampay.operateurRef);
-          await this.paiementRepository.update(paiement);
+          if (this.paiementRepository.confirmerMobileMoneyAtomique) {
+            const res = await this.paiementRepository.confirmerMobileMoneyAtomique(
+              paiement,
+              resultatCampay.reference,
+              resultatCampay.operateurRef,
+            );
+            if (paiement.invoiceId) {
+              const facture = await this.factureRepository.findById(paiement.invoiceId);
+              if (facture && facture.status !== 'CANCELLED') {
+                const repoTotal = await this.factureRepository.calculerTotalPayeAvecSucces(paiement.invoiceId);
+                const totalPaye = repoTotal > 0 ? repoTotal : res.totalPaye;
+                const prevStatus = facture.status;
+                facture.mettreAJourStatut(totalPaye);
+                if (facture.status !== prevStatus) {
+                  await this.factureRepository.update(facture);
+                }
+              }
+            }
+          } else {
+            paiement.confirmer(resultatCampay.reference, resultatCampay.operateurRef);
+            await this.paiementRepository.update(paiement);
 
-          // Mettre à jour la facture
-          if (paiement.invoiceId) {
-            const facture = await this.factureRepository.findById(paiement.invoiceId);
-            if (facture) {
-              const totalPaye = await this.factureRepository.calculerTotalPayeAvecSucces(
-                paiement.invoiceId
-              );
-              facture.mettreAJourStatut(totalPaye);
-              await this.factureRepository.update(facture);
+            if (paiement.invoiceId) {
+              const facture = await this.factureRepository.findById(paiement.invoiceId);
+              if (facture) {
+                const totalPaye = await this.factureRepository.calculerTotalPayeAvecSucces(
+                  paiement.invoiceId
+                );
+                facture.mettreAJourStatut(totalPaye);
+                await this.factureRepository.update(facture);
+              }
             }
           }
 
           return {
             statut: 'SUCCESS',
             reference: resultatCampay.reference,
+            receiptNumber: paiement.receiptNumber,
             montant: paiement.amount,
             operateur: resultatCampay.operateurRef,
             message: 'Paiement validé avec succès',

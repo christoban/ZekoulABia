@@ -50,6 +50,10 @@ export function registerGradeRoutes(app: Application, prismaParam: typeof prisma
     c.attendance.parentRepository,
     c.school.matiereRepository,
     new AIActionAuditAdapter(p),
+    c.attendance.rattachementRepository,
+    c.attendance.schoolConfigRepository,
+    c.carnetLiaison.repository,
+    c.carnetLiaison.creerEntree,
   );
 
   const timetableGenerationRuns = new PrismaTimetableGenerationRunRepository(p);

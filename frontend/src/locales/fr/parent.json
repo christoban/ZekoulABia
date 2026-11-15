@@ -76,6 +76,7 @@
     "offline": "",
     "downloadUnavailable": "Téléchargement PDF indisponible hors-ligne",
     "downloadError": "Erreur de téléchargement",
+    "downloadBlockedUnpaid": "Bulletin bloqué : veuillez régulariser les frais de scolarité impayés",
     "downloaded": "Bulletin téléchargé"
   },
   "attendance": {

@@ -26,6 +26,9 @@ export interface PendingAction {
     | 'EXAM_PUBLISH'
     | 'FEE_PAYMENT_CASH'
     | 'EXPENSE_CREATE'
+    | 'CARNET_ENTRY_CREATE'
+    | 'CARNET_ACK_READ'
+    | 'CARNET_CONFIRM_RESPONSE'
     // Transferts inter-écoles — actions SENSIBLES, JAMAIS en file hors-ligne
     // (Plan Transfert inter-écoles Phase 5 : refuse-strict, resynchronisation interdite).
     | 'STUDENT_TRANSFER_REQUEST'

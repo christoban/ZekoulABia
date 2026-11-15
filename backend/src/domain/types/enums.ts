@@ -50,6 +50,19 @@ export type AnonymatTeamMemberStatus =
 
 export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'ABSENT_JUSTIFIED';
 export type AttendancePeriod = 'MORNING' | 'AFTERNOON';
+export type JustificationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type LiaisonCategory =
+  | 'ABSENCE'
+  | 'BEHAVIOR'
+  | 'HOMEWORK'
+  | 'HEALTH'
+  | 'FEE_REMINDER'
+  | 'PAYMENT_RECEIPT'
+  | 'CONVOCATION'
+  | 'AUTHORIZATION'
+  | 'PARENT_NOTE'
+  | 'INFO';
+export type DiscountReasonType = 'SIBLING' | 'SCHOLARSHIP' | 'EXEMPTION' | 'DIRECTION_GESTURE' | 'OTHER';
 
 export type DisciplineType = 'WARNING_ORAL' | 'WARNING_WRITTEN' | 'TEMP_EXCLUSION' | 'COUNCIL_DECISION' | 'PERMANENT_EXCLUSION';
 export type PebsFiliere = 'FR_PEBS' | 'EN_PEBS';

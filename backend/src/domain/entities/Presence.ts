@@ -3,7 +3,7 @@
  * Enregistre la présence d'un élève à un cours ou une période.
  * Supporte le mode hors ligne avec marquage isOfflineSync.
  */
-import type { AttendanceStatus, AttendancePeriod } from '@domain/types/enums';
+import type { AttendanceStatus, AttendancePeriod, JustificationStatus } from '@domain/types/enums';
 
 export interface PresenceProps {
   id: string;
@@ -17,8 +17,21 @@ export interface PresenceProps {
   date: Date;
   status: AttendanceStatus;
   period: AttendancePeriod;
+  arrivedAt?: Date;
+  lateNote?: string;
+  justification?: string;
+  justificationStatus?: JustificationStatus;
+  justificationAttachmentUrl?: string;
+  submittedByParentId?: string;
+  justifiedById?: string;
+  justifiedAt?: Date;
+  previousStatus?: AttendanceStatus;
+  updatedById?: string;
+  updatedAt?: Date;
   isOfflineSync: boolean;
   syncedAt?: Date;
+  clientRecordedAt?: Date;
+  clockSkewSeconds?: number;
   createdAt: Date;
 }
 
@@ -33,7 +46,10 @@ export interface EnregistrerPresenceProps {
   academicPeriodId?: string;
   subjectId?: string;
   teacherId?: string;
+  arrivedAt?: Date;
+  lateNote?: string;
   isOfflineSync?: boolean;
+  clientRecordedAt?: Date;
 }
 
 export class Presence {
@@ -56,11 +72,24 @@ export class Presence {
       throw new Error('Impossible d\'enregistrer une présence pour une date future');
     }
 
+    const now = new Date();
+    const clockSkewSeconds = props.clientRecordedAt
+      ? Math.round((now.getTime() - props.clientRecordedAt.getTime()) / 1000)
+      : undefined;
+
+    // Si une heure d'arrivée est fournie sur un élève non absent, le statut canonique est PRESENT
+    const normalizedStatus: AttendanceStatus = props.arrivedAt && props.status === 'LATE'
+      ? 'PRESENT'
+      : props.status;
+
     return new Presence({
       ...props,
       id: crypto.randomUUID(),
+      status: normalizedStatus,
       isOfflineSync: props.isOfflineSync ?? false,
-      createdAt: new Date(),
+      syncedAt: props.isOfflineSync ? now : undefined,
+      clockSkewSeconds,
+      createdAt: now,
     });
   }
 
@@ -77,17 +106,21 @@ export class Presence {
   get date(): Date { return this.props.date; }
   get status(): AttendanceStatus { return this.props.status; }
   get period(): AttendancePeriod { return this.props.period; }
+  get teacherId(): string | undefined { return this.props.teacherId; }
   get subjectId(): string | undefined { return this.props.subjectId; }
+  get arrivedAt(): Date | undefined { return this.props.arrivedAt; }
+  get lateNote(): string | undefined { return this.props.lateNote; }
+  get clockSkewSeconds(): number | undefined { return this.props.clockSkewSeconds; }
   get isOfflineSync(): boolean { return this.props.isOfflineSync; }
 
   // --- Méthodes métier ---
 
   estPresent(): boolean { return this.props.status === 'PRESENT'; }
   estAbsent(): boolean { return this.props.status === 'ABSENT'; }
-  estEnRetard(): boolean { return this.props.status === 'LATE'; }
+  estEnRetard(): boolean { return this.props.status === 'LATE' || Boolean(this.props.arrivedAt); }
 
   estAbsenceOuRetard(): boolean {
-    return this.props.status === 'ABSENT' || this.props.status === 'LATE';
+    return this.props.status === 'ABSENT' || this.estEnRetard();
   }
 
   // Appelée lors de la synchronisation hors ligne réussie

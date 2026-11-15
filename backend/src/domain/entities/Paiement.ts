@@ -12,6 +12,10 @@ export interface PaiementProps {
   schoolId: string;
   invoiceId?: string;
   studentId: string;
+  academicYearId?: string;
+  installmentId?: string;
+  recordedById?: string;
+  paidById?: string;
   amount: number;
   currency: string;
   method: PaymentMethod;
@@ -20,11 +24,20 @@ export interface PaiementProps {
   cautionStatus?: CautionStatus;
   transactionId?: string;
   receiptUrl?: string;
+  receiptNumber?: string;
+  provisionalReceiptNumber?: string;
+  operatorFee?: number;
+  feeBearer?: string;
   paidAt?: Date;
   campayRef?: string;
   campayStatus?: string;
   operatorRef?: string;
   phoneNumber?: string;
+  cancellationReason?: string;
+  reversalOfPaymentId?: string;
+  isUnmatched?: boolean;
+  clientRecordedAt?: Date;
+  clockSkewSeconds?: number;
   refundTransactionId?: string;
   refundedAt?: Date;
   refundedById?: string;
@@ -35,10 +48,16 @@ export interface CreerPaiementProps {
   schoolId: string;
   invoiceId?: string;
   studentId: string;
+  academicYearId?: string;
+  installmentId?: string;
+  recordedById?: string;
+  paidById?: string;
   amount: number;
   currency?: string;
   method: PaymentMethod;
   feeType: FeeType;
+  operatorFee?: number;
+  feeBearer?: string;
   campayRef?: string;
   phoneNumber?: string;
 }
@@ -47,9 +66,14 @@ export interface CreerPaiementCashProps {
   schoolId: string;
   invoiceId: string;
   studentId: string;
+  academicYearId?: string;
+  installmentId?: string;
   amount: number;
   currency?: string;
   enregistreurId: string;
+  paidById?: string;
+  provisionalReceiptNumber?: string;
+  clientRecordedAt?: Date;
 }
 
 export class Paiement {
@@ -76,16 +100,26 @@ export class Paiement {
   static creerCash(props: CreerPaiementCashProps): Paiement {
     if (props.amount <= 0) throw new Error('Le montant du paiement doit être supérieur à 0');
     const now = new Date();
+    const clockSkewSeconds = props.clientRecordedAt
+      ? Math.round((now.getTime() - props.clientRecordedAt.getTime()) / 1000)
+      : undefined;
     return new Paiement({
       id: crypto.randomUUID(),
       schoolId: props.schoolId,
       invoiceId: props.invoiceId,
       studentId: props.studentId,
-      amount: props.amount,
+      academicYearId: props.academicYearId,
+      installmentId: props.installmentId,
+      recordedById: props.enregistreurId,
+      paidById: props.paidById,
+      amount: Math.round(props.amount),
       currency: props.currency ?? 'XAF',
       method: 'CASH',
       feeType: 'TUITION',
       status: 'SUCCESS',
+      provisionalReceiptNumber: props.provisionalReceiptNumber,
+      clientRecordedAt: props.clientRecordedAt,
+      clockSkewSeconds,
       paidAt: now,
       createdAt: now,
     });
@@ -96,12 +130,25 @@ export class Paiement {
   get schoolId(): string { return this.props.schoolId; }
   get invoiceId(): string | undefined { return this.props.invoiceId; }
   get studentId(): string { return this.props.studentId; }
+  get academicYearId(): string | undefined { return this.props.academicYearId; }
+  get installmentId(): string | undefined { return this.props.installmentId; }
+  get recordedById(): string | undefined { return this.props.recordedById; }
+  get paidById(): string | undefined { return this.props.paidById; }
   get amount(): number { return this.props.amount; }
   get phoneNumber(): string | undefined { return this.props.phoneNumber; }
+  get method(): PaymentMethod { return this.props.method; }
   get status(): PaymentStatus { return this.props.status; }
   get feeType(): FeeType { return this.props.feeType; }
   get campayRef(): string | undefined { return this.props.campayRef; }
   get cautionStatus(): CautionStatus | undefined { return this.props.cautionStatus; }
+  get receiptNumber(): string | undefined { return this.props.receiptNumber; }
+  get provisionalReceiptNumber(): string | undefined { return this.props.provisionalReceiptNumber; }
+  get operatorFee(): number | undefined { return this.props.operatorFee; }
+  get feeBearer(): string | undefined { return this.props.feeBearer; }
+  get cancellationReason(): string | undefined { return this.props.cancellationReason; }
+  get isUnmatched(): boolean | undefined { return this.props.isUnmatched; }
+  get clientRecordedAt(): Date | undefined { return this.props.clientRecordedAt; }
+  get clockSkewSeconds(): number | undefined { return this.props.clockSkewSeconds; }
   get paidAt(): Date | undefined { return this.props.paidAt; }
 
   // --- Méthodes métier ---
@@ -123,6 +170,10 @@ export class Paiement {
     this.props.campayStatus = 'SUCCESSFUL';
     this.props.operatorRef = operatorRef;
     this.props.paidAt = new Date();
+  }
+
+  assignReceiptNumber(receiptNumber: string): void {
+    this.props.receiptNumber = receiptNumber;
   }
 
   marquerEchoue(): void {

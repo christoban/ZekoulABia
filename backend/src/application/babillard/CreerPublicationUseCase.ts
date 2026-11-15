@@ -5,6 +5,8 @@
 import { Publication, type PublicationProps, type PublicationDureeVisibilite, type PublicationPriorite, type PublicationCategorie, type PublicationCorpsFormat, type PublicationType, type PieceJointe, type PublicationAudience } from '../../domain/entities/Publication';
 import type { PublicationRepository } from '../../domain/ports/repositories/PublicationRepository';
 import type { EventPublisher } from '../../domain/ports/services/EventPublisher';
+import type { NotificationService } from '../../domain/ports/services/NotificationService';
+import type { SmsNotificationPort } from '../../domain/ports/services/SmsNotificationPort';
 import { peutPublierBabillard, peutEpinglerBabillard } from '../../domain/rules/BabillardPermissionRules';
 import type { UtilisateurContexte } from '../../domain/rules/BabillardVisibilityRules';
 
@@ -27,7 +29,9 @@ export interface CreerPublicationCommande {
 export class CreerPublicationUseCase {
   constructor(
     private readonly repo: PublicationRepository,
-    private readonly eventPublisher?: EventPublisher
+    private readonly eventPublisher?: EventPublisher,
+    private readonly notificationService?: NotificationService,
+    private readonly smsNotification?: SmsNotificationPort,
   ) {}
 
   async execute(cmd: CreerPublicationCommande): Promise<Publication> {
@@ -138,7 +142,64 @@ export class CreerPublicationUseCase {
       });
     }
 
+    // Dispatch direct Push/In-App + SMS secours si publiée immédiatement
+    if (created.statut === 'PUBLIEE' && (this.notificationService || this.smsNotification)) {
+      this.notifierPublication(created).catch((err) => {
+        console.warn('[CreerPublicationUseCase] Erreur non bloquante notification publication:', err instanceof Error ? err.message : String(err));
+      });
+    }
+
     return created;
+  }
+
+  private async notifierPublication(publication: Publication): Promise<void> {
+    const details = await this.repo.listerDestinatairesLecture(publication);
+    const targets = details.nonVus.filter((d) => d.userId !== publication.auteurId);
+    if (targets.length === 0) return;
+
+    const isUrgent = publication.priorite === 'URGENTE';
+    const urgency = isUrgent ? 'URGENT' : publication.priorite === 'IMPORTANTE' ? 'HIGH' : 'NORMAL';
+    const extrait = publication.corps.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160);
+
+    if (this.notificationService) {
+      await Promise.allSettled(
+        targets
+          .filter((d) => d.accessMode !== 'NO_LOGIN')
+          .map((d) =>
+            this.notificationService!.envoyer({
+              schoolId: publication.tenantId,
+              userId: d.userId,
+              type: 'COMMUNICATION',
+              titre: publication.titre,
+              corps: extrait || publication.titre,
+              urgency,
+              metadata: {
+                publicationId: publication.id,
+                priorite: publication.priorite,
+                categorie: publication.categorie,
+              },
+            }),
+          ),
+      );
+    }
+
+    if (this.smsNotification?.notifyGenericAlertSms) {
+      const phones = Array.from(
+        new Set(
+          targets
+            .filter((d) => Boolean(d.phone) && (d.accessMode === 'SMS_ONLY' || isUrgent))
+            .map((d) => d.phone!)
+            .filter((p) => p.trim().length > 0),
+        ),
+      );
+      if (phones.length > 0) {
+        await this.smsNotification.notifyGenericAlertSms({
+          schoolId: publication.tenantId,
+          phones,
+          message: `[Babillard] ${publication.titre} — ${extrait}`.slice(0, 300),
+        });
+      }
+    }
   }
 
   private calculerExpiration(duree: PublicationDureeVisibilite, dateBase: Date): Date | null {

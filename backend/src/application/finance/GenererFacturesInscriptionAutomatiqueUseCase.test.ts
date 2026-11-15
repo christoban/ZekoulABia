@@ -30,6 +30,12 @@ describe('GenererFacturesInscriptionAutomatiqueUseCase', () => {
     },
     update: async () => {},
     delete: async () => {},
+    getInstallments: async () => [],
+    getDiscounts: async () => [],
+    configurerEcheancier: async (invoiceId) => ({ invoiceId, netAmount: 0, installments: [] }),
+    appliquerRemise: async () => { throw new Error('not implemented'); },
+    enregistrerPromessePaiement: async () => { throw new Error('not implemented'); },
+    calculerAvoirDisponible: async () => 0,
   };
 
   const mockPlanFraisRepo: PlanFraisRepository = {

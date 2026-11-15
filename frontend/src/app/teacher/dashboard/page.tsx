@@ -33,6 +33,7 @@ import EventCenterWidget from '@/features/communication/EventCenterWidget'
 import { useT } from '@/lib/i18n'
 import { useRouter } from 'next/navigation'
 import Babillard from '@/features/communication/Babillard'
+import CarnetLiaisonView from '@/features/carnet-liaison/CarnetLiaisonView'
 import Messagerie from '@/features/messagerie'
 import SectionOfflineStatus from '@/components/SectionOfflineStatus'
 import ModeTestBanner from '@/components/ModeTestBanner'
@@ -49,7 +50,7 @@ const TEACHER_SECTIONS: TeacherSection[] = [
   'dashboard', 'classes', 'attendance', 'grades', 'bulletins', 'timetable', 'sync',
   'pp-classe', 'pp-appreciations', 'ap-departement', 'cahier-de-texte', 'at-risk', 'mon-suivi',
   'correction-anonyme',
-  'mon-profil-rh', 'notifications', 'babillard', 'messagerie',
+  'mon-profil-rh', 'notifications', 'babillard', 'carnet-liaison', 'messagerie',
 ]
 const TEACHER_ASSISTANT_SUGGESTIONS = [
   'Donne 15 à Jean Dupont en maths pour la 4eA',
@@ -85,6 +86,7 @@ export default function TeacherDashboard() {
     'mon-profil-rh': tnav('sidebar.monProfilRH'),
     notifications: tnav('pageTitle.teacher_notifications'),
     babillard: tnav('sidebar.babillard'),
+    'carnet-liaison': tnav('sidebar.carnetLiaison'),
     messagerie: tnav('sidebar.messagerie'),
   }
   const [section, setSection] = useState<TeacherSection>('dashboard')
@@ -556,6 +558,11 @@ export default function TeacherDashboard() {
           {visitedSections.has('babillard') && (
             <div style={{ display: section === 'babillard' ? 'contents' : 'none' }}>
               <Babillard role={user?.role ?? 'TEACHER'} title={tnav('sidebar.babillard')} subtitle={tcommon('brand.roleTeacher')} currentUserId={user?.id} />
+            </div>
+          )}
+          {visitedSections.has('carnet-liaison') && (
+            <div style={{ display: section === 'carnet-liaison' ? 'contents' : 'none' }}>
+              <CarnetLiaisonView role="TEACHER" onToast={showToast} />
             </div>
           )}
           {visitedSections.has('messagerie') && (

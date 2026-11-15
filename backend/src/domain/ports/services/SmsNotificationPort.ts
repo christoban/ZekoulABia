@@ -91,4 +91,10 @@ export interface SmsNotificationPort {
     level?: string;
     examName?: string;
   }): Promise<void>;
+
+  notifyGenericAlertSms?(opts: {
+    schoolId: string;
+    phones: string[];
+    message: string;
+  }): Promise<void>;
 }

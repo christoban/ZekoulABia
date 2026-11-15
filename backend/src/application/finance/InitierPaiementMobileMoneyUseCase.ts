@@ -7,6 +7,7 @@ import { Paiement } from '@domain/entities/Paiement';
 import { ConflitVersionPaiementError } from '@domain/errors/ConflitVersionPaiementError';
 import type { FactureRepository } from '@domain/ports/repositories/FactureRepository';
 import type { PaiementRepository } from '@domain/ports/repositories/PaiementRepository';
+import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolConfigRepository';
 import type { PaiementService } from '@domain/ports/services/PaiementService';
 import type { PaymentMethod } from '@domain/types/enums';
 
@@ -14,9 +15,11 @@ export interface InitierPaiementCommande {
   schoolId: string;
   factureId: string;
   studentId: string;
+  paidById?: string;
   phoneNumber: string;
   method: PaymentMethod;
   amount?: number;
+  operatorFee?: number;
   /** V3.2 — version locale optionnelle (compat offline retro) */
   baseUpdatedAt?: Date | string | null;
   versionLocale?: Date | string | null;
@@ -34,6 +37,7 @@ export class InitierPaiementMobileMoneyUseCase {
     private readonly factureRepository: FactureRepository,
     private readonly paiementRepository: PaiementRepository,
     private readonly paiementService: PaiementService,
+    private readonly schoolConfigRepository?: SchoolConfigRepository,
   ) {}
 
   async execute(commande: InitierPaiementCommande): Promise<InitierPaiementResultat> {
@@ -96,14 +100,23 @@ export class InitierPaiementMobileMoneyUseCase {
       schoolId: commande.schoolId,
     });
 
+    const schoolConfig = this.schoolConfigRepository
+      ? await this.schoolConfigRepository.findBySchoolId(commande.schoolId)
+      : null;
+    const feeBearer = schoolConfig?.mobileMoneyFeeBearer ?? 'PARENT';
+
     // 4. Créer le paiement en PENDING
     const paiement = Paiement.create({
       schoolId: commande.schoolId,
       invoiceId: commande.factureId,
       studentId: commande.studentId,
+      academicYearId: facture.academicYearId,
+      paidById: commande.paidById,
       amount: montantAPayer,
       method: commande.method,
       feeType: 'TUITION',
+      operatorFee: commande.operatorFee ?? 0,
+      feeBearer,
       campayRef: resultatCampay.reference,
       phoneNumber: commande.phoneNumber,
     });

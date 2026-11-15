@@ -31,6 +31,8 @@ export function creerBabillardRoutes(controller: BabillardController): Router {
   router.post('/:id/epingler', requireAuth, controller.epingler);
   router.patch('/:id/epingler', requireAuth, controller.epingler);
   router.get('/:id/statistiques', requireAuth, controller.statistiques);
+  router.get('/:id/lectures-details', requireAuth, controller.lecturesDetails);
+  router.post('/:id/relancer', requireAuth, controller.relancerNonLus);
 
   // Pièces jointes
   router.post('/pieces-jointes', requireAuth, upload.single('file'), controller.uploadPieceJointe);

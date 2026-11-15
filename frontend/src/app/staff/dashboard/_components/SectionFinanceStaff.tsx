@@ -3,18 +3,20 @@ import { useState, useEffect, useCallback } from 'react'
 import type { SessionUser } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
-import { AlertTriangle, Loader2, Smartphone, Wallet, Pencil, Banknote } from 'lucide-react'
+import { AlertTriangle, Loader2, Smartphone, Wallet, Pencil, Banknote, Eye } from 'lucide-react'
 import SectionAPEEStaff from './SectionAPEEStaff'
 import SectionPlansStaff from './SectionPlansStaff'
 import { fmtCFA } from '@/components/finance/ModalOverlay'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
 import { getCachedData, putCachedData, getUserSession } from '@/lib/offline/db'
 import RecuProvisoireModal, { type RecuProvisoireData } from '@/components/finance/RecuProvisoireModal'
+import InvoiceDetailsModal from '@/features/finance/InvoiceDetailsModal'
+import FinanceCashOpsPanel from '@/features/finance/FinanceCashOpsPanel'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
   sessionUser?: SessionUser | null
-  initialTab?: 'invoices' | 'apee' | 'plans'
+  initialTab?: 'invoices' | 'apee' | 'plans' | 'closures'
 }
 
 interface Payment { id: string; amount: number; status: string; paidAt: string | null; method: string }
@@ -40,8 +42,9 @@ const EMPTY_DEP = { label: '', amount: '', category: '', date: '' }
 export default function SectionFinanceStaff({ onToast, sessionUser, initialTab = 'invoices' }: Props) {
   const t = useT('staff')
   const { addToQueue } = useSyncQueue()
-  const [tab, setTab]           = useState<'invoices' | 'apee' | 'plans'>(initialTab)
+  const [tab, setTab]           = useState<'invoices' | 'apee' | 'plans' | 'closures'>(initialTab)
   const [invoices, setInvoices] = useState<InvoiceItem[]>([])
+  const [detailsInvoice, setDetailsInvoice] = useState<{ id: string; studentName: string; feePlanName: string } | null>(null)
   const [pag, setPag]           = useState<Pagination>({ total: 0, page: 1, pages: 1 })
   const [loading, setLoading]   = useState(true)
   const [error, setError]       = useState<string | null>(null)
@@ -206,8 +209,13 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
     const idempotencyKey = crypto.randomUUID()
     const isCurrentlyOffline = !navigator.onLine
 
-    const buildRecuData = (isOffline: boolean, ref: string): RecuProvisoireData => ({
+    const provisionalRef = `PROV-${idempotencyKey.slice(0, 8).toUpperCase()}`
+    const clientRecordedAt = new Date().toISOString()
+
+    const buildRecuData = (isOffline: boolean, ref: string, paymentId?: string, showProv?: string): RecuProvisoireData => ({
       reference: ref,
+      provisionalReference: showProv,
+      paymentId,
       isOffline,
       date: new Date(),
       schoolName: schoolInfo?.name || 'Établissement Scolaire',
@@ -243,10 +251,16 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
           endpoint: '/api/v2/finance/payments/cash',
           method: 'POST',
           idempotencyKey,
-          payload: { factureId: inv.id, studentId: inv.student.id, montant },
+          payload: {
+            factureId: inv.id,
+            studentId: inv.student.id,
+            montant,
+            provisionalReceiptNumber: provisionalRef,
+            clientRecordedAt,
+          },
         })
         await applyOptimisticPayment()
-        setCurrentRecu(buildRecuData(true, `PROV-${idempotencyKey.slice(0, 8).toUpperCase()}`))
+        setCurrentRecu(buildRecuData(true, provisionalRef))
         onToast('Encaissement enregistré hors-ligne (reçu provisoire généré)', 'info')
       } catch (err) {
         onToast(err instanceof Error ? err.message : 'Erreur enregistrement hors-ligne', 'error')
@@ -264,13 +278,15 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
           factureId: inv.id,
           studentId: inv.student.id,
           montant,
+          provisionalReceiptNumber: provisionalRef,
+          clientRecordedAt,
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Erreur lors de l’encaissement')
       await applyOptimisticPayment()
-      const ref = data.data?.recuNumero || data.data?.paiementId || `REC-${idempotencyKey.slice(0, 8).toUpperCase()}`
-      setCurrentRecu(buildRecuData(false, ref))
+      const ref = data.data?.receiptNumber || data.data?.recuNumero || data.data?.paiementId || provisionalRef
+      setCurrentRecu(buildRecuData(false, ref, data.data?.paiementId, provisionalRef))
       onToast(t('finance.cashSuccess') || 'Paiement en espèces enregistré avec succès', 'success')
       fetchInvoices(page)
     } catch (err) {
@@ -281,10 +297,16 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
           endpoint: '/api/v2/finance/payments/cash',
           method: 'POST',
           idempotencyKey,
-          payload: { factureId: inv.id, studentId: inv.student.id, montant },
+          payload: {
+            factureId: inv.id,
+            studentId: inv.student.id,
+            montant,
+            provisionalReceiptNumber: provisionalRef,
+            clientRecordedAt,
+          },
         })
         await applyOptimisticPayment()
-        setCurrentRecu(buildRecuData(true, `PROV-${idempotencyKey.slice(0, 8).toUpperCase()}`))
+        setCurrentRecu(buildRecuData(true, provisionalRef))
         onToast('Connexion perdue : paiement conservé hors-ligne avec reçu provisoire', 'info')
       } catch {
         onToast(err instanceof Error ? err.message : 'Erreur', 'error')
@@ -359,10 +381,34 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
             {t('finance.tabAPEE') || 'Transparence APEE'}
           </button>
         )}
+
+        {hasMF && (
+          <button
+            style={{
+              ...btnSec,
+              background: tab === 'closures' ? 'var(--green-light)' : 'var(--surface)',
+              color: tab === 'closures' ? 'var(--green)' : 'var(--text2)',
+              borderColor: tab === 'closures' ? 'var(--green)' : 'var(--border2)',
+            }}
+            className="min-h-[38px] whitespace-nowrap px-3 py-2 text-xs font-bold"
+            onClick={() => setTab('closures')}
+          >
+            Clôture &amp; Rapprochement
+          </button>
+        )}
       </div>
 
-      {/* ── Onglet APEE ── */}
-      {tab === 'apee' ? (
+      {/* ── Onglet Clôture & Rapprochement (MANAGE_FINANCE) ── */}
+      {tab === 'closures' && hasMF ? (
+        <FinanceCashOpsPanel
+          canManage={hasMF}
+          invoices={invoices}
+          onReconciled={() => void fetchInvoices(page)}
+          onToast={onToast}
+        />
+
+      /* ── Onglet APEE ── */
+      ) : tab === 'apee' ? (
         <SectionAPEEStaff onToast={onToast} />
 
       /* ── Onglet Plans de frais (MANAGE_FINANCE) ── */
@@ -516,6 +562,20 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
                         </button>
                       </div>
                     )}
+                    <button
+                      type="button"
+                      style={{ ...btnSecSm, display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                      className="min-h-[34px] px-3 text-xs font-semibold"
+                      onClick={() =>
+                        setDetailsInvoice({
+                          id: inv.id,
+                          studentName: `${inv.student.lastName} ${inv.student.firstName}`,
+                          feePlanName: inv.feePlan?.name ?? 'Frais de scolarité',
+                        })
+                      }
+                    >
+                      <Eye size={12} /> Détails / Tranches / Reçus
+                    </button>
                   </div>
                 )
               })}
@@ -587,6 +647,19 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
                                 {sendingId === inv.id ? <Loader2 size={11} className="animate-spin" /> : 'SMS'}
                               </button>
                             )}
+                            <button
+                              type="button"
+                              style={{ ...btnSecSm, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                              onClick={() =>
+                                setDetailsInvoice({
+                                  id: inv.id,
+                                  studentName: `${inv.student.lastName} ${inv.student.firstName}`,
+                                  feePlanName: inv.feePlan?.name ?? 'Frais de scolarité',
+                                })
+                              }
+                            >
+                              <Eye size={11} /> Détails
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -668,6 +741,17 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
       ) : null}
 
       <RecuProvisoireModal data={currentRecu} onClose={() => setCurrentRecu(null)} />
+      {detailsInvoice && (
+        <InvoiceDetailsModal
+          invoiceId={detailsInvoice.id}
+          studentName={detailsInvoice.studentName}
+          feePlanName={detailsInvoice.feePlanName}
+          canManage={hasMF}
+          onClose={() => setDetailsInvoice(null)}
+          onUpdated={() => void fetchInvoices(page)}
+          onToast={onToast}
+        />
+      )}
     </div>
   )
 }

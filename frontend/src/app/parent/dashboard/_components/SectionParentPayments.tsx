@@ -29,6 +29,7 @@ import { useCachedFetch } from '@/hooks/useCachedFetch'
 import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 import { isExamClass, getExamLabel, isSchoolPrivate } from '@/lib/academicExamDetector'
+import ParentInvoiceExtensions from '@/features/finance/ParentInvoiceExtensions'
 
 interface Props {
   onToast: (msg: string, type?: Toast['type']) => void
@@ -52,6 +53,8 @@ interface Payment {
   feeType?: string
   cautionStatus?: string
   refundedAt?: string | null
+  receiptNumber?: string | null
+  provisionalReceiptNumber?: string | null
 }
 
 function getPaidAmount(payments: Payment[] = []): number {
@@ -68,6 +71,23 @@ interface Invoice {
   dueDate: string | null
   createdAt: string
   description: string | null
+  promisedPaymentDate?: string | null
+  promisedPaymentNote?: string | null
+  installments?: Array<{
+    id: string
+    trancheNumber: number
+    label: string
+    amount: number
+    paidAmount: number
+    dueDate: string
+    status: string
+  }>
+  discounts?: Array<{
+    id: string
+    reasonType: string
+    amount: number
+    justification: string
+  }>
   student: { id: string; firstName: string; lastName: string }
   feePlan: { id: string; name: string; feeType: string; amount: number } | null
   payments: Payment[]
@@ -859,6 +879,18 @@ export default function SectionParentPayments({ onToast, userId }: Props) {
                         </button>
                       </div>
                     )}
+
+                    <ParentInvoiceExtensions
+                      invoiceId={inv.id}
+                      invoiceStatus={inv.status}
+                      installments={inv.installments}
+                      discounts={inv.discounts}
+                      payments={inv.payments}
+                      promisedPaymentDate={inv.promisedPaymentDate}
+                      promisedPaymentNote={inv.promisedPaymentNote}
+                      onUpdated={() => reloadInvoices()}
+                      onToast={onToast}
+                    />
                   </div>
                 )
               })}
@@ -896,7 +928,18 @@ export default function SectionParentPayments({ onToast, userId }: Props) {
                           {inv.student.firstName} {inv.student.lastName}
                         </td>
                         <td style={{ ...tdSt, fontWeight: 600, color: 'var(--primary)' }}>
-                          {inv.feePlan?.name ?? inv.description ?? 'Frais scolaires'}
+                          <div>{inv.feePlan?.name ?? inv.description ?? 'Frais scolaires'}</div>
+                          <ParentInvoiceExtensions
+                            invoiceId={inv.id}
+                            invoiceStatus={inv.status}
+                            installments={inv.installments}
+                            discounts={inv.discounts}
+                            payments={inv.payments}
+                            promisedPaymentDate={inv.promisedPaymentDate}
+                            promisedPaymentNote={inv.promisedPaymentNote}
+                            onUpdated={() => reloadInvoices()}
+                            onToast={onToast}
+                          />
                         </td>
                         <td style={{ ...tdSt, fontWeight: 700 }}>{fmtCFA(inv.amount)}</td>
                         <td style={tdSt}>

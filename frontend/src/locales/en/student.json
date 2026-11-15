@@ -121,6 +121,7 @@
     "offline_label": "PDF unavailable offline",
     "toast_download_offline": "PDF download unavailable offline",
     "toast_download_error": "Download error",
+    "toast_blocked_unpaid": "Report card blocked: unpaid tuition fees",
     "toast_download_success": "Report card downloaded"
   },
   "health_tracking": {

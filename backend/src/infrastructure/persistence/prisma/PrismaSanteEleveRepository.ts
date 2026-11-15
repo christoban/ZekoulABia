@@ -60,7 +60,7 @@ export class PrismaSanteEleveRepository implements SanteEleveRepository {
       where: { studentId, schoolId, date: { gte: dateDebut } },
       select: { status: true },
     });
-    const joursPresent = presences.filter(p => p.status === 'PRESENT').length;
+    const joursPresent = presences.filter(p => p.status === 'PRESENT' || p.status === 'LATE').length;
     const joursTotaux = presences.length;
 
     // 3. Tendance (3 dernières périodes de l'année)

@@ -10,4 +10,8 @@ export interface SchoolConfigRepository {
 export interface SchoolConfigData {
   aiAlertsEnabled: boolean;
   subjectDropThreshold: number;
+  absenceAlertThreshold?: number;
+  bulletinBlockOnUnpaidFees?: boolean;
+  defaultInstallmentsCount?: number;
+  mobileMoneyFeeBearer?: string;
 }

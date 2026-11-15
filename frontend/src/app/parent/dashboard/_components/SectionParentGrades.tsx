@@ -206,6 +206,11 @@ export default function SectionParentGrades({ onToast, userId }: Props) {
     try {
       const res = await fetchApi(`/api/v2/report-cards/${id}/pdf`, { credentials: 'include' })
       if (!res.ok) {
+        const errBody = (await res.json().catch(() => null)) as { code?: string; message?: string } | null
+        if (res.status === 403 && errBody?.code === 'BULLETIN_BLOCKED_UNPAID_FEES') {
+          onToast(errBody.message || t('grades.downloadBlockedUnpaid'), 'error')
+          return
+        }
         onToast(t('grades.downloadError'), 'error')
         return
       }

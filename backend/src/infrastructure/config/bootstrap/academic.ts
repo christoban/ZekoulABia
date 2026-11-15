@@ -56,6 +56,8 @@ export function registerAcademicRoutes(app: Application, prismaParam: typeof pri
     new AIActionAuditAdapter(p),
     c.reportCard.verifierDisponibilite,
     c.reportCard.lister,
+    c.finance.factureRepository,
+    c.school.schoolConfigRepository,
   );
 
   const classCouncilController = new ClassCouncilController(

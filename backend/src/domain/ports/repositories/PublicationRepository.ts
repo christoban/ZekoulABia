@@ -18,6 +18,23 @@ export interface StatistiquesLecture {
   destinatairesEligiblesCount: number;
 }
 
+export interface DestinataireLectureItem {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  phone: string | null;
+  accessMode: string;
+  readAt: Date | null;
+}
+
+export interface LecturesDetailResult {
+  lecturesCount: number;
+  destinatairesEligiblesCount: number;
+  vus: DestinataireLectureItem[];
+  nonVus: DestinataireLectureItem[];
+}
+
 export interface PublicationRepository {
   creer(publication: Publication): Promise<Publication>;
   modifier(id: string, schoolId: string, data: Partial<PublicationProps>): Promise<Publication>;
@@ -34,6 +51,7 @@ export interface PublicationRepository {
   compterLectures(publicationId: string, schoolId: string): Promise<number>;
   compterDestinatairesEligibles(publication: Publication): Promise<number>;
   obtenirStatistiquesLecture(publication: Publication): Promise<StatistiquesLecture>;
+  listerDestinatairesLecture(publication: Publication): Promise<LecturesDetailResult>;
   enregistrerAudit(data: {
     schoolId: string;
     publicationId: string;
