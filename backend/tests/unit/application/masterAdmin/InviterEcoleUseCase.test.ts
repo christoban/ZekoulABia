@@ -4,6 +4,7 @@ import { InMemorySchoolRepository } from '../../../helpers/repositories/InMemory
 import { InMemoryInvitationRepository } from '../../../helpers/repositories/InMemoryInvitationRepository.ts';
 import { FakeEmailService } from '../../../helpers/services/FakeEmailService.ts';
 import type { EmailTemplatePort } from '@domain/ports/services/EmailTemplatePort';
+import type { OutboundMessagingPolicy } from '@domain/ports/services/OutboundMessagingPolicy';
 
 const stubEmailTemplate: EmailTemplatePort = {
   buildSchoolInviteTemplate: (payload) => ({
@@ -98,5 +99,38 @@ describe('InviterEcoleUseCase', () => {
     });
 
     expect(deuxieme.schoolId).toBe(premiere.schoolId);
+  });
+
+  it('devrait omettre activationUrl si envoi sortant actif (mode production réel)', async () => {
+    const politiqueActive: OutboundMessagingPolicy = {
+      estActive: async () => true,
+    };
+    const ucNormal = new InviterEcoleUseCase(schoolRepo, invitationRepo, emailService, stubEmailTemplate, politiqueActive);
+
+    const res = await ucNormal.execute({
+      email: 'directeur@lycee.cm',
+      schoolName: 'Lycée Test',
+      plan: 'DISCOVERY',
+      masterAdminId: 'master-1',
+    });
+
+    expect(res.activationUrl).toBeUndefined();
+  });
+
+  it('devrait inclure activationUrl si envoi sortant inactif (mode test)', async () => {
+    const politiqueModeTest: OutboundMessagingPolicy = {
+      estActive: async () => false,
+    };
+    const ucTest = new InviterEcoleUseCase(schoolRepo, invitationRepo, emailService, stubEmailTemplate, politiqueModeTest);
+
+    const res = await ucTest.execute({
+      email: 'directeur@lycee.cm',
+      schoolName: 'Lycée Test',
+      plan: 'DISCOVERY',
+      masterAdminId: 'master-1',
+    });
+
+    expect(res.activationUrl).toBeDefined();
+    expect(res.activationUrl).toContain('/onboarding/');
   });
 });

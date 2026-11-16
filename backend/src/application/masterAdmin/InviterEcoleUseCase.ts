@@ -12,6 +12,7 @@ import type { InvitationRepository, InvitationProps } from '@domain/ports/reposi
 import type { EmailService } from '@domain/ports/services/EmailService';
 import type { EmailTemplatePort } from '@domain/ports/services/EmailTemplatePort';
 import type { PlanType, SchoolSubsystem } from '@domain/types/enums';
+import type { OutboundMessagingPolicy } from '@domain/ports/services/OutboundMessagingPolicy';
 
 export interface InviterEcoleCommande {
   email: string;
@@ -28,7 +29,13 @@ export interface InviterEcoleResultat {
   token: string;
   expiresAt: Date;
   schoolId: string;
-  activationUrl: string;
+  /**
+   * Mode test (réglage plateforme outboundMessagingEnabled désactivé) : le lien
+   * d'activation est renvoyé directement dans la réponse pour permettre de finaliser
+   * l'onboarding sans boîte mail réelle.
+   * En production normale (envoi sortant actif) : undefined — l'invitation part uniquement par email.
+   */
+  activationUrl?: string;
 }
 
 export class InviterEcoleUseCase {
@@ -37,6 +44,7 @@ export class InviterEcoleUseCase {
     private readonly invitationRepository: InvitationRepository,
     private readonly emailService: EmailService,
     private readonly emailTemplate: EmailTemplatePort,
+    private readonly politiqueEnvoiSortant?: OutboundMessagingPolicy,
   ) {}
 
   async execute(commande: InviterEcoleCommande): Promise<InviterEcoleResultat> {
@@ -114,12 +122,16 @@ export class InviterEcoleUseCase {
       metadata: { schoolId, token: invitation.token },
     }).catch(err => console.error('[Email] Échec envoi invitation:', (err as Error)?.message));
 
+    const envoiSortantActif = this.politiqueEnvoiSortant
+      ? await this.politiqueEnvoiSortant.estActive({ recipientEmail: commande.email, schoolId })
+      : true;
+
     return {
       invitationId: invitation.id,
       token: invitation.token,
       expiresAt,
       schoolId,
-      activationUrl,
+      activationUrl: envoiSortantActif ? undefined : activationUrl,
     };
   }
 }

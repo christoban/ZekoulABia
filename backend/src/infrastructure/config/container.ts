@@ -925,7 +925,7 @@ export function creerContainer() {
 
   // 17. Use Cases — MasterAdmin
   const inviterEcoleUseCase = new InviterEcoleUseCase(
-    schoolRepository, invitationRepository, emailService, emailTemplateAdapter
+    schoolRepository, invitationRepository, emailService, emailTemplateAdapter, politiqueEnvoiSortantPlateforme
   );
   const suspendreEcoleUseCase = new SuspendreEcoleUseCase(schoolRepository, invitationRepository);
   const reactiverEcoleUseCase = new ReactiverEcoleUseCase(schoolRepository);

@@ -177,4 +177,3 @@ Dans `backend/src/infrastructure/assistant/catalog/`, **13 fichiers** exécutent
 | Lot | Horizon indicatif | Chantiers inclus | Critère de succès |
 |---|---|---|---|
 | **Lot 4 — Purge Hexagonale & Découpage > 500 l.** | 5 à 10 jours | 1. Migrer les **88 routes inline** et **146 requêtes Prisma** de `bootstrap/*.ts` vers Controllers + UseCases + Repositories<br>2. Extraire les **35 appels Prisma** de `MasterReferentielsController.ts` (et `NotificationController`, `TimetableController`, `GradeExcelController`) et durcir `architectureGuard.test.ts` contre `prisma.client`<br>3. Faire passer les **141 actions Copilot IA** par les UseCases applicatifs<br>4. Découper progressivement les **85 fichiers > 500 lignes** (en priorité `container.ts`, `onboarding/[token]/page.tsx`, `SectionUsers.tsx`, `SectionSubjects.tsx`, `SectionSettings.tsx`) | `architectureGuard.test.ts` étendu à toute la couche HTTP/Copilot, aucun fichier applicatif > 500 lignes |
-

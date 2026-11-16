@@ -576,10 +576,10 @@ function InviteForm({ selectedPlan, onPlanChange, loading, onCancel, onDone, onE
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ background: '#ecfdf5', border: '1px solid #10b981', borderRadius: 12, padding: 14 }}>
           <div style={{ fontSize: 13.5, fontWeight: 800, color: '#065f46', marginBottom: 4 }}>
-            Invitation créée pour {schoolName}
+            Mode test actif — Invitation créée pour {schoolName}
           </div>
           <div style={{ fontSize: 12, color: '#047857' }}>
-            Si l’adresse <strong>{email}</strong> est fictive (test), copiez directement le lien d’activation ci-dessous pour finaliser l’onboarding de l’école :
+            Aucun email réel n’a été envoyé. Copiez directement le lien d’activation ci-dessous pour finaliser l’onboarding de l’école :
           </div>
           <div style={{ marginTop: 10, padding: '8px 10px', background: '#fff', border: '1px solid #a7f3d0', borderRadius: 8, fontSize: 11.5, fontFamily: 'monospace', wordBreak: 'break-all', color: '#1a1209' }}>
             {activationUrl}
