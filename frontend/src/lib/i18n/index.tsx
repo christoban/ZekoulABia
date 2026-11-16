@@ -42,7 +42,7 @@ import enHrSelfService from '@/locales/en/hrSelfService.json'
 import enStudentTransfer from '@/locales/en/studentTransfer.json'
 
 export type Language = 'fr' | 'en'
-type Dictionary = Record<string, any>
+type Dictionary = Record<string, unknown>
 type Namespace =
   | 'common' | 'navigation' | 'admin' | 'master' | 'teacher' | 'staff'
   | 'parent' | 'student' | 'grades' | 'finance' | 'discipline' | 'errors'
@@ -105,6 +105,21 @@ function getStoredUserId(): string | null {
 function getBrowserLanguage(): Language {
   if (typeof navigator === 'undefined') return 'fr'
   return navigator.language?.startsWith('en') ? 'en' : 'fr'
+}
+
+export function getResolvedClientLanguage(): Language {
+  if (typeof window === 'undefined') return 'fr'
+  try {
+    const userId = getStoredUserId()
+    return resolveDashboardLanguage(
+      userId,
+      userId ? localStorage.getItem(getDashboardLanguageKey(userId)) : null,
+      localStorage.getItem(PUBLIC_LANGUAGE_KEY),
+      getBrowserLanguage(),
+    )
+  } catch {
+    return getBrowserLanguage()
+  }
 }
 
 // Résolution synchrone depuis les maps statiques (plus aucun import dynamique).

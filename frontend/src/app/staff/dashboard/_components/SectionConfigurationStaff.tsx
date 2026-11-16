@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Settings, UserPlus, School, Clock, Link2, Lock, Building2 } from 'lucide-react'
+import { Settings, UserPlus, School, Clock, Link2, Lock, Building2, type LucideIcon } from 'lucide-react'
 import type { StaffSection } from '../_types'
 import { useT } from '@/lib/i18n'
 
@@ -20,7 +20,7 @@ interface Props {
 
 type ConfigTab = 'import-eleves' | 'classes' | 'salles' | 'grille-horaire' | 'affectations' | 'cautions'
 
-const TAB_CONFIGS: { id: ConfigTab; labelKey: string; icon: any; perm: StaffSection }[] = [
+const TAB_CONFIGS: { id: ConfigTab; labelKey: string; icon: LucideIcon; perm: StaffSection }[] = [
   { id: 'import-eleves', labelKey: 'config.tabs.import', icon: UserPlus, perm: 'import-eleves' },
   { id: 'classes', labelKey: 'config.tabs.classes', icon: School, perm: 'classes' },
   { id: 'salles', labelKey: 'config.tabs.rooms', icon: Building2, perm: 'classes' },

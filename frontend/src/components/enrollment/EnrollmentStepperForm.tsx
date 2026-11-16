@@ -293,8 +293,8 @@ export default function EnrollmentStepperForm({ onSuccess, onCancel, initialData
       }
 
       setSuccessDossierId(onboardingId)
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors de l’enregistrement')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de l’enregistrement')
     } finally {
       setLoading(false)
     }

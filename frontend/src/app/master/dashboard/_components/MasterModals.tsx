@@ -222,8 +222,8 @@ export default function MasterModals({ open, schoolId, suspendTarget, deleteTarg
       onActionDone()
       onClose()
       resetAuth()
-    } catch (err: any) {
-      onToast(err.message || errMsg, 'error')
+    } catch (err: unknown) {
+      onToast(err instanceof Error ? err.message : errMsg, 'error')
     } finally {
       setLoading(false)
     }
@@ -447,8 +447,8 @@ export default function MasterModals({ open, schoolId, suspendTarget, deleteTarg
                         await initiatePasswordChange({ currentPassword: currentPwd, mfaCode: mfaCode || undefined })
                         onToast('Code de vérification envoyé par email.', 'info')
                         setPwdStep(2)
-                      } catch (err: any) {
-                        onToast(err.message || 'Erreur de vérification', 'error')
+                      } catch (err: unknown) {
+                        onToast(err instanceof Error ? err.message : 'Erreur de vérification', 'error')
                       } finally {
                         setPwdLoading(false)
                       }
@@ -495,8 +495,8 @@ export default function MasterModals({ open, schoolId, suspendTarget, deleteTarg
                         onToast('Mot de passe modifié avec succès.')
                         onClose()
                         resetPwdState()
-                      } catch (err: any) {
-                        onToast(err.message || 'Erreur lors du changement de mot de passe', 'error')
+                      } catch (err: unknown) {
+                        onToast(err instanceof Error ? err.message : 'Erreur lors du changement de mot de passe', 'error')
                       } finally {
                         setPwdLoading(false)
                       }
@@ -564,8 +564,8 @@ function InviteForm({ selectedPlan, onPlanChange, loading, onCancel, onDone, onE
       } else {
         onDone(`Invitation envoyée à ${email}`)
       }
-    } catch (err: any) {
-      onError(err.message || 'Erreur lors de l\'invitation')
+    } catch (err: unknown) {
+      onError(err instanceof Error ? err.message : 'Erreur lors de l\'invitation')
     } finally {
       setSubmitting(false)
     }

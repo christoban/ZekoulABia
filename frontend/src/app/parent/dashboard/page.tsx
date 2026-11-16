@@ -197,7 +197,9 @@ export default function ParentDashboard() {
         let sequences: { id: string; name: string }[] = []
         if (ayRes?.success && Array.isArray(ayRes.data)) {
           await putCachedData('parent:academic-years', ayRes.data)
-          const curYear = ayRes.data.find((y: any) => y.isCurrent) ?? ayRes.data[0]
+          type AyYear = { isCurrent?: boolean; periods?: Array<{ sequences?: Array<{ id: string; name: string }> }> }
+          const years = ayRes.data as AyYear[]
+          const curYear = years.find((y) => y.isCurrent) ?? years[0]
           if (curYear?.periods) {
             for (const p of curYear.periods) {
               for (const s of p.sequences ?? []) {
@@ -325,7 +327,7 @@ export default function ParentDashboard() {
               archives: babRes.counts.archives ?? 0,
             } : {
               all: babItems.length,
-              pinned: babItems.filter((p: any) => p.isPinned || p.pinned).length,
+              pinned: (babItems as Array<{ isPinned?: boolean; pinned?: boolean }>).filter((p) => p.isPinned || p.pinned).length,
               for_me: babItems.length,
               unread: 0,
               archives: 0,

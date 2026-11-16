@@ -8,6 +8,7 @@ import { useT } from '@/lib/i18n'
 import { fetchApi } from '@/lib/fetchApi'
 import { getCachedData, putCachedData } from '@/lib/offline/db'
 import DelegationSupervisionBanner from './DelegationSupervisionBanner'
+import { DEC_COLOR, type CouncilSession, type CouncilSessionDetail } from '@/features/council/councilShared'
 
 import type { AdminSection } from '../_types'
 
@@ -16,40 +17,7 @@ interface Props {
   onNav?: (section: AdminSection) => void
 }
 
-interface CouncilSession {
-  id: string
-  status: 'OPEN' | 'LOCKED'
-  createdAt: string
-  validatedAt: string | null
-  class: { id: string; name: string }
-  academicPeriod: { id: string; name: string }
-  _count: { decisions: number }
-  publishedCount?: number
-}
-
-interface Decision {
-  studentId: string
-  decision: string
-  observations: string | null
-  student: { id: string; firstName: string; lastName: string }
-  healthScore?: number
-  alertLevel?: 'critical' | 'warning' | null
-}
-
-interface SessionDetail {
-  id: string
-  status: string
-  class: { id: string; name: string }
-  academicPeriod: { id: string; name: string }
-  presidedBy: { id: string; firstName: string; lastName: string } | null
-  decisions: Decision[]
-}
-
-const DEC_COLOR: Record<string, { color: string; bg: string }> = {
-  PASS:         { color: 'var(--green)', bg: 'var(--green-light)' },
-  REPEAT:       { color: 'var(--red)', bg: 'var(--red-light)' },
-  DELIBERATION: { color: 'var(--amber)', bg: 'var(--amber-light)' },
-}
+type SessionDetail = CouncilSessionDetail
 
 export default function SectionAdminCouncil({ onToast, onNav }: Props) {
   const t = useT('grades')
@@ -86,7 +54,8 @@ export default function SectionAdminCouncil({ onToast, onNav }: Props) {
       setSessions(sessionList)
       await putCachedData(cacheKey, { sessions: sessionList }).catch(() => {})
     } catch (err: unknown) {
-      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || String((err as any)?.message || err).includes('fetch') || String((err as any)?.message || err).includes('Network')
+      const msg = err instanceof Error ? err.message : String(err)
+      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || msg.includes('fetch') || msg.includes('Network')
       if (isNet) {
         if (!cached?.data) setSessions([])
       } else if (!cached?.data) {
@@ -239,7 +208,7 @@ export default function SectionAdminCouncil({ onToast, onNav }: Props) {
             {filteredSessions.map(s => (
               <div key={s.id} onClick={() => openSession(s.id)}
                 className="rounded-[10px] md:rounded-[10px] p-[10px] md:px-[14px] md:py-[12px] shadow-[0_1px_2px_rgba(20,20,15,0.05),0_1px_6px_rgba(20,20,15,0.06)] md:shadow-none"
-                style={{ background: selected?.id === s.id ? 'var(--green-light)' : 'white', border: `1.5px solid ${selected?.id === s.id ? 'var(--green)' : 'var(--border)'}`, cursor: 'pointer', transition: 'all 0.15s' }}
+                style={{ background: selected?.id === s.id ? 'var(--green-light)' : 'var(--surface)', border: `1.5px solid ${selected?.id === s.id ? 'var(--green)' : 'var(--border)'}`, cursor: 'pointer', transition: 'all 0.15s' }}
                 onMouseEnter={e => { if (selected?.id !== s.id) Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--border2)', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }) }}
                 onMouseLeave={e => { if (selected?.id !== s.id) Object.assign((e.currentTarget as HTMLElement).style, { borderColor: 'var(--border)', boxShadow: 'none' }) }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>

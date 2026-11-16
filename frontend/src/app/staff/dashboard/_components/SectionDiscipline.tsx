@@ -5,6 +5,7 @@ import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
 import { AlertTriangle, CheckCircle2, Check, X, Loader2, Gavel, Download, WifiOff } from 'lucide-react'
+import { confirmAction } from '@/components/shell/ConfirmDialog'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
@@ -287,7 +288,7 @@ export default function SectionDiscipline({ onToast }: Props) {
   }
 
   const liftSanction = async (recordId: string, studentName: string) => {
-    if (!confirm(t('toasts.confirm_lift', { student: studentName }))) return
+    if (!(await confirmAction(t('toasts.confirm_lift', { student: studentName })))) return
 
     if (!isOnline) {
       await addToQueue({ type: 'DISCIPLINE_SANCTION_LIFT', endpoint: `/api/v2/discipline/${recordId}/lift`, method: 'PATCH', payload: {} })

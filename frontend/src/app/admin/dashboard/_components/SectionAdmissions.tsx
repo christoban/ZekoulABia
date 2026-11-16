@@ -22,7 +22,7 @@ interface OnboardingSettingsData {
   adminGereInscriptions: boolean
 }
 
-export default function SectionAdmissions({ schoolInfo }: { schoolInfo: any }) {
+export default function SectionAdmissions({ schoolInfo }: { schoolInfo?: { id?: string } | null }) {
   const t = useT('admin')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -82,8 +82,8 @@ export default function SectionAdmissions({ schoolInfo }: { schoolInfo: any }) {
       } else {
         showToast(data.message || t('settings.admissions.toast_error') || 'Erreur lors de la sauvegarde', 'err')
       }
-    } catch (err: any) {
-      showToast(err.message || t('settings.admissions.toast_error') || 'Erreur réseau', 'err')
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : (t('settings.admissions.toast_error') || 'Erreur réseau'), 'err')
     } finally {
       setSaving(false)
     }

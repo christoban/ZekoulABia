@@ -64,7 +64,7 @@ export default function SectionStudentTimetable({ onToast, user }: Props) {
           return json
         })
         .catch(async () => {
-          const cached = await getCachedData<any>(`student:timetables:${classId}`)
+          const cached = await getCachedData<unknown>(`student:timetables:${classId}`)
           return cached?.data ? { success: true, data: cached.data } : { success: false }
         }),
       fetchApi('/api/v2/timetable-grid-config', { credentials: 'include' })
@@ -76,7 +76,7 @@ export default function SectionStudentTimetable({ onToast, user }: Props) {
           return json
         })
         .catch(async () => {
-          const cached = await getCachedData<any>('student:timetable-grid-config')
+          const cached = await getCachedData<unknown>('student:timetable-grid-config')
           return cached?.data ? { success: true, data: cached.data } : { success: false }
         }),
     ])
@@ -110,8 +110,8 @@ export default function SectionStudentTimetable({ onToast, user }: Props) {
   useEffect(() => {
     if (error === 'OFFLINE_NO_CACHE' && !data && classId) {
       Promise.all([
-        getCachedData<any>(`student:timetables:${classId}`),
-        getCachedData<any>('student:timetable-grid-config'),
+        getCachedData<unknown>(`student:timetables:${classId}`),
+        getCachedData<unknown>('student:timetable-grid-config'),
       ]).then(([rawTt, rawGrid]) => {
         if (rawTt?.data) {
           const formatted = formatStudentTimetableData(

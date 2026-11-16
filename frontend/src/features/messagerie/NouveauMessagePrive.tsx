@@ -78,15 +78,23 @@ export default function NouveauMessagePrive({ onCreated, onCancel, conversations
 
     // Repli sur le cache local des utilisateurs
     try {
-      const cachedUsers = await getCachedData<any[]>('admin:users:ALL').catch(() => null)
+      interface CachedUserItem {
+        id: string
+        firstName?: string
+        lastName?: string
+        email?: string
+        role?: string
+        avatarUrl?: string | null
+      }
+      const cachedUsers = await getCachedData<CachedUserItem[]>('admin:users:ALL').catch(() => null)
       if (cachedUsers?.data && Array.isArray(cachedUsers.data)) {
         const lower = terme.toLowerCase()
         const filtres: ContactUser[] = cachedUsers.data
-          .filter((u: any) =>
+          .filter((u) =>
             `${u.firstName || ''} ${u.lastName || ''} ${u.email || ''}`.toLowerCase().includes(lower)
           )
           .slice(0, 20)
-          .map((u: any) => ({
+          .map((u) => ({
             id: u.id,
             firstName: u.firstName || '',
             lastName: u.lastName || '',

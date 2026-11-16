@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { X, Camera, RefreshCw, Upload, Check, AlertCircle, Video, VideoOff, Sparkles, User, RotateCcw } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
+import { confirmAction } from '@/components/shell/ConfirmDialog'
 
 interface Props {
   student: {
@@ -53,9 +54,10 @@ export default function StudentPhotoStudioModal({ student, onClose, onSuccess, o
         videoRef.current.play()
         setCameraActive(true)
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setCameraActive(false)
-      const msg = err.name === 'NotAllowedError'
+      const errName = err instanceof DOMException || err instanceof Error ? err.name : ''
+      const msg = errName === 'NotAllowedError'
         ? 'Accès à la caméra refusé. Activez la caméra dans les permissions de votre navigateur.'
         : 'Aucune caméra détectée ou accessible.'
       setCameraError(msg)
@@ -215,7 +217,7 @@ export default function StudentPhotoStudioModal({ student, onClose, onSuccess, o
 
   // Supprimer la photo officielle
   const handleRemovePhoto = async () => {
-    if (!confirm(`Supprimer la photo d'identité officielle de ${student.firstName} ${student.lastName} ?`)) return
+    if (!(await confirmAction(`Supprimer la photo d'identité officielle de ${student.firstName} ${student.lastName} ?`))) return
     setSaving(true)
     const studentTargetId = student.userId || student.id
 

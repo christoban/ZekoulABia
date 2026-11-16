@@ -18,7 +18,7 @@ interface VerifiedDocument {
     className?: string
     yearName?: string
     motif?: string
-    [key: string]: any
+    [key: string]: unknown
   }
 }
 

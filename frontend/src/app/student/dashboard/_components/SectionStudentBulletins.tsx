@@ -52,13 +52,14 @@ export default function SectionStudentBulletins({ onToast, user }: Props) {
     }
   }, [user])
 
+  type StudentBulletinRow = BulletinData & { generalAverage: number | null }
   const cacheKey = user ? `student:bulletins:${user.id}` : ''
-  const fetchFn = useCallback(async () => {
+  const fetchFn = useCallback(async (): Promise<StudentBulletinRow[]> => {
     const res = await fetchApi('/api/v2/report-cards/my', { credentials: 'include' }).then(r => r.json())
-    return (res.reportCards ?? []) as any[]
+    return (res.reportCards ?? []) as StudentBulletinRow[]
   }, [user])
 
-  const { data: bulletins, loading, error, fromCache, cachedAt, refetch } = useCachedFetch<any[]>(cacheKey, fetchFn)
+  const { data: bulletins, loading, error, fromCache, cachedAt, refetch } = useCachedFetch<StudentBulletinRow[]>(cacheKey, fetchFn)
 
   const downloadPdf = async (id: string, label: string) => {
     if (!isOnline) { onToast(t('bulletins.toast_download_offline'), 'warning'); return }
@@ -145,7 +146,7 @@ export default function SectionStudentBulletins({ onToast, user }: Props) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
         {list.map((b) => {
-          const [mBg, mC] = MENTION_COLOR(b.mention)
+          const [mBg, mC] = MENTION_COLOR(b.mention ?? null)
           const avg = b.generalAverage
           const rankDisplay = b.rank ? `${b.rank}e` : '—'
           const totalDisplay = b.totalStudents || '—'

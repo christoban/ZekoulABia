@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import { confirmAction } from '@/components/shell/ConfirmDialog'
 import {
   CalendarClock,
   Plus,
@@ -65,9 +66,9 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
   // Garde préventive : vérifie si une année scolaire courante est configurée
   const [hasCurrentYear, setHasCurrentYear] = useState<boolean>(true)
   useEffect(() => {
-    getCachedData<any[]>('admin:academic-years').then(c => {
+    getCachedData<Array<{ isCurrent?: boolean }>>('admin:academic-years').then(c => {
       if (c?.data && Array.isArray(c.data)) {
-        setHasCurrentYear(c.data.some((y: any) => y.isCurrent === true))
+        setHasCurrentYear(c.data.some((y) => y.isCurrent === true))
       }
     }).catch(() => {})
 
@@ -77,7 +78,7 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
       .then((r) => r.json())
       .then((d) => {
         if (d.success && Array.isArray(d.data)) {
-          setHasCurrentYear(d.data.some((y: any) => y.isCurrent === true))
+          setHasCurrentYear((d.data as Array<{ isCurrent?: boolean }>).some((y) => y.isCurrent === true))
           putCachedData('admin:academic-years', d.data).catch(() => {})
         }
       })
@@ -109,7 +110,8 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
       setEvents(eventList)
       await putCachedData(cacheKey, eventList).catch(() => {})
     } catch (err: unknown) {
-      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || String((err as any)?.message || err).includes('fetch') || String((err as any)?.message || err).includes('Network')
+      const msg = err instanceof Error ? err.message : String(err)
+      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || msg.includes('fetch') || msg.includes('Network')
       if (isNet) {
         if (!cached?.data) setEvents([])
       } else if (!cached?.data) {
@@ -165,7 +167,7 @@ export default function SectionAdminAcademicEvents({ onToast }: Props) {
   }
 
   const cloturer = async (id: string) => {
-    if (!window.confirm(t('academicEvents.confirmClose'))) return
+    if (!(await confirmAction({ message: t('academicEvents.confirmClose'), danger: true }))) return
     try {
       setClosingId(id)
       const res = await fetchApi(`/api/v2/academic-events/${id}/close`, {

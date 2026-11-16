@@ -207,7 +207,7 @@ function SecurityTab({ mfaEnabled, onChangePwd, onMfaChange }: {
       setQrDataUri(data.qrDataUri)
       setManualKey(data.manualKey)
       setFlow('enable-qr')
-    } catch (e: any) { setError(e.message) }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Erreur') }
     finally { setLoading(false) }
   }
 
@@ -219,7 +219,7 @@ function SecurityTab({ mfaEnabled, onChangePwd, onMfaChange }: {
       const data = await mfaEnable(totpCode.trim(), password.trim())
       setRecoveryCodes(data.recoveryCodes)
       setFlow('enable-codes')
-    } catch (e: any) { setError(e.message) }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Erreur') }
     finally { setLoading(false) }
   }
 
@@ -231,7 +231,7 @@ function SecurityTab({ mfaEnabled, onChangePwd, onMfaChange }: {
       await mfaDisable(disablePwd.trim(), disableMfa.trim())
       reset()
       onMfaChange()
-    } catch (e: any) { setError(e.message) }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Erreur') }
     finally { setLoading(false) }
   }
 
@@ -243,7 +243,7 @@ function SecurityTab({ mfaEnabled, onChangePwd, onMfaChange }: {
       const data = await mfaRegenCodes(disablePwd.trim(), disableMfa.trim())
       setRecoveryCodes(data.recoveryCodes)
       setFlow('regen-codes')
-    } catch (e: any) { setError(e.message) }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Erreur') }
     finally { setLoading(false) }
   }
 
@@ -527,8 +527,8 @@ function AccountMfaResetPanel() {
       await resetUserMfa(subdomain.trim().toLowerCase(), targetEmail.trim().toLowerCase(), password, totpCode)
       setDone(true)
       setPassword(''); setTotpCode('')
-    } catch (e: any) {
-      setError(e.message || 'Erreur lors de la réinitialisation')
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Erreur lors de la réinitialisation')
     } finally {
       setLoading(false)
     }

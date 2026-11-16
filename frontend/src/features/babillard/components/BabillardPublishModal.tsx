@@ -94,7 +94,7 @@ export default function BabillardPublishModal({
       .then((r) => r.json())
       .then((d) => {
         if (d.success && Array.isArray(d.data)) {
-          setAvailableClasses(d.data.map((c: any) => ({ id: c.id, name: c.name })));
+          setAvailableClasses((d.data as Array<{ id: string; name: string }>).map((c) => ({ id: c.id, name: c.name })));
         }
       })
       .catch(() => {});

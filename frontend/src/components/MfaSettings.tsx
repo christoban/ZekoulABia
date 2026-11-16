@@ -81,8 +81,8 @@ export default function MfaSettings() {
         setManualKey(data.data.manualKey)
         setStep('qr_confirm')
       }
-    } catch (e: any) {
-      setError(e.message || 'Erreur')
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Erreur')
     } finally {
       setLoading(false)
     }
@@ -101,8 +101,8 @@ export default function MfaSettings() {
       if (!data.success) throw new Error(data.message)
       setRecoveryCodes(data.data.recoveryCodes)
       setStep('show_codes')
-    } catch (e: any) {
-      setError(e.message || 'Erreur')
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Erreur')
     } finally {
       setLoading(false)
     }

@@ -1,6 +1,6 @@
 'use client'
 
-import { Users, TrendingUp, Wallet, CalendarX } from 'lucide-react'
+import { Users, TrendingUp, Wallet, CalendarX, type LucideIcon } from 'lucide-react'
 
 export type EcoleKpis = {
   schoolId: string
@@ -25,7 +25,7 @@ function formatXAF(n: number) {
   return new Intl.NumberFormat('fr-FR').format(Math.round(n)) + ' FCFA'
 }
 
-function KpiCard({ icon: Icon, label, value, color }: { icon: any; label: string; value: string; color: string }) {
+function KpiCard({ icon: Icon, label, value, color }: { icon: LucideIcon; label: string; value: string; color: string }) {
   return (
     <div style={{ background: 'white', borderRadius: 14, padding: '18px 20px', border: '1px solid #e5decf', display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 200 }}>
       <div style={{ width: 44, height: 44, borderRadius: 12, background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>

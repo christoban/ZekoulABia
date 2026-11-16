@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Building2, Edit2, Loader2, Plus, Search, Trash2 } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
+import { confirmAction } from '@/components/shell/ConfirmDialog'
 
 type RoomType = 'NORMAL' | 'LABORATORY' | 'WORKSHOP' | 'COMPUTER_LAB' | 'FIELD'
 type RoomStatus = 'ACTIVE' | 'MAINTENANCE' | 'INACTIVE'
@@ -150,7 +151,7 @@ export default function SectionRoomsStaff({ onToast }: Props) {
   }
 
   const handleDelete = async (room: Room) => {
-    if (!confirm(t('rooms.deleteConfirm', { name: room.name }))) return
+    if (!(await confirmAction(t('rooms.deleteConfirm', { name: room.name })))) return
     setDeletingId(room.id)
     try {
       const res = await fetchApi(`/api/v2/rooms/${encodeURIComponent(room.id)}`, {

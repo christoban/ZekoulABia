@@ -143,7 +143,8 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
         putCachedData(rcardsKey, cards).catch(() => {})
       }
     } catch (err: unknown) {
-      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || String((err as any)?.message || err).includes('fetch') || String((err as any)?.message || err).includes('Network')
+      const msg = err instanceof Error ? err.message : String(err)
+      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || msg.includes('fetch') || msg.includes('Network')
       if (!isNet && !cachedCheck?.data && !cachedRC?.data) {
         onToast('Erreur de chargement', 'error')
       }

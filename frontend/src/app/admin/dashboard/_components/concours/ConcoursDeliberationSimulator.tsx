@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Sliders, CheckCircle, AlertTriangle, Send, UserCheck, BarChart3 } from 'lucide-react';
 import { fetchApi } from '@/lib/fetchApi';
 import ConcoursSmsCampaignModal from './ConcoursSmsCampaignModal';
+import { confirmAction } from '@/components/shell/ConfirmDialog';
 
 interface SimulationOutcome {
   admisIds: string[];
@@ -118,7 +119,7 @@ export default function ConcoursDeliberationSimulator({
   };
 
   const handleFinalize = async () => {
-    if (!confirm('Générer automatiquement les dossiers d\'inscription (onboarding) pour tous les candidats admis ?')) {
+    if (!(await confirmAction('Générer automatiquement les dossiers d\'inscription (onboarding) pour tous les candidats admis ?'))) {
       return;
     }
     try {

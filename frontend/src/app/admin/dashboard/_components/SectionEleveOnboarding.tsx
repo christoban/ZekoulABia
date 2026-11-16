@@ -86,7 +86,8 @@ export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
         await putCachedData(cacheKey, data.data).catch(() => {})
       }
     } catch (err: unknown) {
-      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || String((err as any)?.message || err).includes('fetch') || String((err as any)?.message || err).includes('Network')
+      const msg = err instanceof Error ? err.message : String(err)
+      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || msg.includes('fetch') || msg.includes('Network')
       if (!isNet && !cached?.data) {
         onToast('Erreur lors du chargement des dossiers', 'error')
       }
@@ -503,7 +504,8 @@ export default function SectionEleveOnboarding({ onToast, onNav }: Props) {
                 const isSelected = selectedIds.includes(d.id)
                 const statutInfo = STATUT_STYLES[d.status] || { bg: 'var(--bg2)', color: 'var(--text)', label: d.status }
                 const sourceInfo = SOURCE_LABELS[d.sourceType] || { label: 'Hors concours', color: 'var(--blue)', bg: 'var(--blue-light)' }
-                const motifDerogation = (d.submittedData as any)?.motifDerogation || (d.submittedData as any)?.motifHorsConcours
+                const sub = d.submittedData as { motifDerogation?: string; motifHorsConcours?: string } | null | undefined
+                const motifDerogation = sub?.motifDerogation || sub?.motifHorsConcours
 
                 return (
                   <tr

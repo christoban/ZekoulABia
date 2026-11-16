@@ -119,8 +119,8 @@ export default function ClotureAnneeModal({ isOpen, onClose, onSuccess, onToast 
         if (isMounted && checkRes.ok) {
           setPreCloseCheck(checkData.data || { readyToClose: true, warnings: [], unclosedPeriods: 0, unvalidatedBulletins: 0 })
         }
-      } catch (err: any) {
-        if (isMounted) setError(err.message || 'Erreur d\'initialisation du diagnostic de clôture')
+      } catch (err: unknown) {
+        if (isMounted) setError(err instanceof Error ? err.message : 'Erreur d\'initialisation du diagnostic de clôture')
       } finally {
         if (isMounted) setLoading(false)
       }
@@ -172,8 +172,8 @@ export default function ClotureAnneeModal({ isOpen, onClose, onSuccess, onToast 
       }
 
       setStep('PROPOSE')
-    } catch (err: any) {
-      setError(err.message || "Erreur lors de la préparation de la structure N+1")
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erreur lors de la préparation de la structure N+1")
     } finally {
       setSubmitting(false)
     }
@@ -211,8 +211,8 @@ export default function ClotureAnneeModal({ isOpen, onClose, onSuccess, onToast 
       onToast?.(`Clôture de l'année ${currentYear.name} effectuée & Année ${candidateName} activée avec succès !`, 'success')
       onSuccess?.()
       onClose()
-    } catch (err: any) {
-      setError(err.message || "Erreur lors de l'application de la clôture N+1")
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erreur lors de l'application de la clôture N+1")
     } finally {
       setSubmitting(false)
     }

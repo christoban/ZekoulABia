@@ -37,7 +37,7 @@ export interface DrawerDossier {
   returnedComment?: string | null
   numeroInterne?: string | null
   createdStudentId?: string | null
-  submittedData?: Record<string, any> | null
+  submittedData?: Record<string, unknown> | null
 }
 
 interface Props {

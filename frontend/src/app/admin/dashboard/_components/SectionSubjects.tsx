@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { DndContext, DragOverlay, useDraggable, useDroppable, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { DndContext, DragOverlay, useDraggable, useDroppable, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { fetchApi } from '@/lib/fetchApi'
 import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
@@ -12,6 +12,7 @@ import {
 
 import DelegationSupervisionBanner from './DelegationSupervisionBanner'
 import type { AdminSection } from '../_types'
+import { confirmAction } from '@/components/shell/ConfirmDialog'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
@@ -126,9 +127,9 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
         setTeacherViewTeachers(cachedT.data)
         setTeacherViewLoading(false)
       } else {
-        const cachedAll = await getCachedData<any[]>('admin:users:ALL').catch(() => null)
+        const cachedAll = await getCachedData<Array<TeacherWithSubjects & { role?: string }>>('admin:users:ALL').catch(() => null)
         if (cachedAll?.data && Array.isArray(cachedAll.data)) {
-          const teachers = cachedAll.data.filter((u: any) => u.role === 'TEACHER')
+          const teachers = cachedAll.data.filter((u) => u.role === 'TEACHER')
           if (teachers.length > 0) {
             setTeacherViewTeachers(teachers)
             setTeacherViewLoading(false)
@@ -178,7 +179,8 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
       setSubjects(list)
       await putCachedData(cacheKey, list).catch(() => {})
     } catch (err: unknown) {
-      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || String((err as any)?.message || err).includes('fetch') || String((err as any)?.message || err).includes('Network')
+      const msg = err instanceof Error ? err.message : String(err)
+      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || msg.includes('fetch') || msg.includes('Network')
       if (isNet) {
         if (!cached?.data) setSubjects([])
       } else if (!cached?.data) {
@@ -235,7 +237,8 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
       }
       if (subjRes.ok && subjData.data) setSubjects(subjData.data)
     } catch (err: unknown) {
-      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || String((err as any)?.message || err).includes('fetch') || String((err as any)?.message || err).includes('Network')
+      const msg = err instanceof Error ? err.message : String(err)
+      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || msg.includes('fetch') || msg.includes('Network')
       if (isNet) {
         if (!cachedDept?.data) setDepartments([])
       } else if (!cachedDept?.data) {
@@ -249,14 +252,14 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
   // Charger les classes quand on bascule en vue par classe
   useEffect(() => {
     if (view !== 'par-classe' || classList.length > 0) return
-    getCachedData<any[]>('admin:classes').then(async c => {
+    getCachedData<ClassItem[]>('admin:classes').then(async c => {
       let list = c?.data
       if (!list || !Array.isArray(list) || list.length === 0) {
-        const fallback = await getCachedData<any[]>('staff:classes').catch(() => null)
+        const fallback = await getCachedData<ClassItem[]>('staff:classes').catch(() => null)
         list = fallback?.data
       }
       if (list && Array.isArray(list)) {
-        setClassList(list.map((cls: any) => ({ id: cls.id, name: cls.name, level: cls.level })))
+        setClassList(list.map((cls) => ({ id: cls.id, name: cls.name, level: cls.level })))
       }
     }).catch(() => {})
 
@@ -266,7 +269,7 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
       .then(r => r.json())
       .then(d => {
         if (d.success && Array.isArray(d.data)) {
-          const mapped = d.data.map((c: any) => ({ id: c.id, name: c.name, level: c.level }))
+          const mapped = (d.data as ClassItem[]).map((c) => ({ id: c.id, name: c.name, level: c.level }))
           setClassList(mapped)
           putCachedData('admin:classes', d.data).catch(() => {})
         }
@@ -301,7 +304,8 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
       setClassSubjects(subList)
       await putCachedData(classSubjKey, subList).catch(() => {})
     } catch (err: unknown) {
-      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || String((err as any)?.message || err).includes('fetch') || String((err as any)?.message || err).includes('Network')
+      const msg = err instanceof Error ? err.message : String(err)
+      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || msg.includes('fetch') || msg.includes('Network')
       if (isNet) {
         if (!cachedClassSubj?.data) setClassSubjects([])
       } else if (!cachedClassSubj?.data) {
@@ -360,7 +364,7 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
 
   // ── Supprimer une matière de la classe ────────────────────────────────────
   const handleDeleteSubject = async (subjectId: string, subjectName: string) => {
-    if (!window.confirm(t('subjects.class_view.delete_confirm').replace('{name}', subjectName))) return
+    if (!(await confirmAction(t('subjects.class_view.delete_confirm').replace('{name}', subjectName)))) return
     setDeletingSubjId(subjectId)
     try {
       const res = await fetchApi(`/api/v2/classes/${selectedClass}/subjects/${subjectId}`, {
@@ -459,7 +463,7 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
 
   // ── Supprimer ────────────────────────────────────────────────────────────
   const handleDelete = async (sub: SubjectItem) => {
-    if (!window.confirm(t('subjects.delete_confirm').replace('{name}', sub.name))) return
+    if (!(await confirmAction(t('subjects.delete_confirm').replace('{name}', sub.name)))) return
     setDeletingId(sub.id)
     setOpenDD(null)
     try {
@@ -604,7 +608,7 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
   }
 
   // ── Départements : Drag & Drop ──────────────────────────────────────────────
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     setActiveDragId(null)
     const { active, over } = event
     if (!over || active.id === over.id) return
@@ -675,7 +679,7 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
 
   // ── Départements : Supprimer ────────────────────────────────────────────────
   const handleDeleteDept = async (dept: { id: string; name: string }) => {
-    if (!window.confirm(t('subjects.departments.edit_modal.delete_confirm').replace('{name}', dept.name))) return
+    if (!(await confirmAction(t('subjects.departments.edit_modal.delete_confirm').replace('{name}', dept.name)))) return
     try {
       const res = await fetchApi(`/api/v2/departments/${dept.id}`, { method: 'DELETE', credentials: 'include' })
       const data = await res.json()
@@ -1345,7 +1349,7 @@ export default function SectionSubjects({ onToast, onNav }: Props) {
                               }}>
                                 {ts.subject?.name ?? ts.subjectId}
                                 <span onClick={async () => {
-                                  if (!window.confirm(t('subjects.teacher_view.remove_confirm').replace('{subject}', ts.subject?.name ?? ts.subjectId).replace('{teacher}', `${teacher.firstName} ${teacher.lastName}`))) return
+                                  if (!(await confirmAction(t('subjects.teacher_view.remove_confirm').replace('{subject}', ts.subject?.name ?? ts.subjectId).replace('{teacher}', `${teacher.firstName} ${teacher.lastName}`)))) return
                                   try {
                                     const res = await fetchApi(`/api/v2/subjects/teachers/${teacher.id}/assign`, {
                                       method: 'POST', credentials: 'include',

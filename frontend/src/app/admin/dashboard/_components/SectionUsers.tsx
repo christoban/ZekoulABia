@@ -12,6 +12,7 @@ import {
   Loader2, CheckCircle2, MoreHorizontal, MoreVertical, UserPlus, Camera, type LucideIcon,
 } from 'lucide-react'
 import StudentPhotoStudioModal from '@/app/staff/dashboard/_components/StudentPhotoStudioModal'
+import { confirmAction } from '@/components/shell/ConfirmDialog'
 
 import type { AdminSection } from '../_types'
 
@@ -66,6 +67,7 @@ interface UserItem {
   email: string | null
   role: string
   avatarUrl?: string | null
+  studentStatus?: string | null
   isActive: boolean
   lastLogin: string | null
   createdAt: string
@@ -968,7 +970,8 @@ export default function SectionUsers({ onToast, onNav }: Props) {
         await putCachedData('admin:users:role-counts', data.roleCounts)
       }
     } catch (err: unknown) {
-      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || String((err as any)?.message || err).includes('fetch') || String((err as any)?.message || err).includes('Network')
+      const errMsg = err instanceof Error ? err.message : String(err)
+      const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) || errMsg.includes('fetch') || errMsg.includes('Network')
       if (isNet) {
         if (!localList || localList.length === 0) setUsers([])
       } else if (!localList || localList.length === 0) {
@@ -995,7 +998,7 @@ export default function SectionUsers({ onToast, onNav }: Props) {
   // ── Générer un document scolaire ────────────────────────────────────────
   const openDocModal = (user: UserItem) => {
     setOpenDD(null)
-    setDocModal({ open: true, userId: user.id, userName: `${user.firstName} ${user.lastName}`, status: (user as any).studentStatus ?? 'ACTIVE', loading: false, error: '' })
+    setDocModal({ open: true, userId: user.id, userName: `${user.firstName} ${user.lastName}`, status: user.studentStatus ?? 'ACTIVE', loading: false, error: '' })
   }
 
   const generateDoc = async (type: 'certificat' | 'carte' | 'lettre-transfert') => {
@@ -1006,16 +1009,16 @@ export default function SectionUsers({ onToast, onNav }: Props) {
         : `/api/v2/students/${docModal.userId}/${type}`
       const res = await fetchApi(url, { credentials: 'include' })
       if (!res.ok) {
-        const d = await res.json().catch(() => ({}))
-        setDocModal(f => ({ ...f, loading: false, error: (d as any).message ?? t('users.doc_modal.toast_error') }))
+        const d = (await res.json().catch(() => ({}))) as { message?: string }
+        setDocModal(f => ({ ...f, loading: false, error: d.message ?? t('users.doc_modal.toast_error') }))
         return
       }
       const blob = await res.blob()
       const objUrl = URL.createObjectURL(blob)
       window.open(objUrl, '_blank')
       setDocModal(EMPTY_DOC_MODAL)
-    } catch (e: any) {
-      setDocModal(f => ({ ...f, loading: false, error: e.message ?? t('users.i18n_ext.toast.networkError') }))
+    } catch (e: unknown) {
+      setDocModal(f => ({ ...f, loading: false, error: e instanceof Error ? e.message : t('users.i18n_ext.toast.networkError') }))
     }
   }
 
@@ -1165,7 +1168,7 @@ export default function SectionUsers({ onToast, onNav }: Props) {
   }
 
   const handleDelete = async (userId: string) => {
-    if (!confirm(t('users.delete_confirm'))) return
+    if (!(await confirmAction(t('users.delete_confirm')))) return
     try {
       const res = await fetchApi(`/api/v2/users/${userId}`, { method: 'DELETE', credentials: 'include' })
       const data = await res.json()

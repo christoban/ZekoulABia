@@ -78,10 +78,11 @@ export function useSyncQueue() {
         }
         synced++
       } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err)
         const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) ||
-          String((err as any)?.message || err).includes('fetch') ||
-          String((err as any)?.message || err).includes('Network') ||
-          String((err as any)?.message || err).includes('Failed to fetch')
+          msg.includes('fetch') ||
+          msg.includes('Network') ||
+          msg.includes('Failed to fetch')
 
         if (isNet) {
           // Erreur réseau transitoire : on conserve l'action en PENDING pour la renvoyer dès reconnexion

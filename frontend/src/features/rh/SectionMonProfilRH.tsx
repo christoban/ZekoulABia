@@ -46,7 +46,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 export default function SectionMonProfilRH({ onToast }: Props) {
   const t = useT('hrSelfService')
   const [file, setFile] = useState<EmployeeFile | null>(null)
-  const [form, setForm] = useState<Record<string, any>>({})
+  const [form, setForm] = useState<Partial<EmployeeFile>>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)

@@ -1,16 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { KeyRound, MoreVertical, Bell, Menu, Sun, Moon, LogOut, Camera } from 'lucide-react'
 import { useT } from '@/lib/i18n'
-import { useTheme } from 'next-themes'
-import ThemeToggle from '@/components/ThemeToggle'
-import NotificationBell from '@/components/NotificationBell'
-import OfflineSyncButtonPopover from '@/components/OfflineSyncButtonPopover'
-import { useNotifications } from '@/hooks/NotificationContext'
-import CalendarTopbarButton from '@/components/CalendarTopbarButton'
-import LanguageSwitch from '@/components/LanguageSwitch'
-import ChangeAvatarModal from '@/components/ChangeAvatarModal'
+import { AppTopbar } from '@/components/shell/AppTopbar'
 import type { StaffSection, SessionUser } from '../_types'
 
 const SECTION_KEY: Record<string, string> = {
@@ -22,7 +13,7 @@ const SECTION_KEY: Record<string, string> = {
   'carnet-liaison': 'carnetLiaison',
   'mon-profil-rh': 'monProfilRh',
   'sync-offline': 'syncOffline',
-  'configuration': 'configuration',
+  configuration: 'configuration',
   'eleves-familles': 'elevesFamilles',
 }
 
@@ -47,274 +38,21 @@ export default function StaffTopbar({
 }: Props) {
   const tnav = useT('navigation')
   const tcommon = useT('common')
-
-  const { theme, setTheme, resolvedTheme } = useTheme()
-  const { recentNotifications, unreadCount, markAsRead, registerSeen } = useNotifications()
-
-  // Même pattern que AdminTopbar : panneau notif + kebab + profil sur mobile
-  const [notifOpen, setNotifOpen] = useState(false)
-  const [kebabOpen, setKebabOpen] = useState(false)
-  const [profileOpen, setProfileOpen] = useState(false)
-  const [avatarModalOpen, setAvatarModalOpen] = useState(false)
-  const [currentAvatar, setCurrentAvatar] = useState<string | null>(sessionUser?.avatarUrl || null)
-  const notifRef = useRef<HTMLDivElement>(null)
-  const kebabRef = useRef<HTMLDivElement>(null)
-  const profileRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (sessionUser?.avatarUrl !== undefined) {
-      setCurrentAvatar(sessionUser.avatarUrl)
-    }
-  }, [sessionUser?.avatarUrl])
-
-  useEffect(() => {
-    const handleUserUpdate = (e: Event) => {
-      const detail = (e as CustomEvent)?.detail
-      if (detail && 'avatarUrl' in detail) {
-        setCurrentAvatar(detail.avatarUrl)
-      }
-    }
-    window.addEventListener('zekoulabia:user-updated', handleUserUpdate)
-    return () => window.removeEventListener('zekoulabia:user-updated', handleUserUpdate)
-  }, [])
-
-  const toggleNotif = () => {
-    if (!notifOpen) registerSeen()
-    setNotifOpen(o => !o)
-    setKebabOpen(false)
-    setProfileOpen(false)
-  }
-
-  const toggleKebab = () => {
-    setKebabOpen(o => !o)
-    setNotifOpen(false)
-    setProfileOpen(false)
-  }
-
-  const toggleProfile = () => {
-    setProfileOpen(o => !o)
-    setNotifOpen(false)
-    setKebabOpen(false)
-  }
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false)
-      if (kebabRef.current && !kebabRef.current.contains(e.target as Node)) setKebabOpen(false)
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false)
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  // Initiales utilisateur pour l'avatar mobile (même logique qu'admin)
-  const userDisplayName = sessionUser?.nomComplet || sessionUser?.firstName || tcommon('user.fallbackName')
-  const userInitials = userDisplayName
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w: string) => w[0]?.toUpperCase())
-    .join('') || 'ST'
-
-  const isDark = resolvedTheme === 'dark'
-
   const title = tnav(`pageTitle.staff_${SECTION_KEY[section] ?? section}`)
 
   return (
-    <header
-      className="px-3 py-[8px] gap-1.5 md:gap-[10px] md:px-[20px] md:h-[48px] md:border-b-[1px] md:border-[var(--border)]"
-      style={{ background: 'var(--surface)', display: 'flex', alignItems: 'center', flexShrink: 0, position: 'relative', boxShadow: '0 1px 0 rgba(0,0,0,0.06)' }}
-    >
-      {/* Hamburger — sous md uniquement */}
-      {onMenuClick && (
-        <button
-          onClick={onMenuClick}
-          aria-label="Menu"
-          className="flex md:!hidden items-center justify-center shrink-0 w-10 h-10 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--bg2)] active:scale-90 transition-all cursor-pointer shadow-xs"
-        >
-          <Menu size={20} color="var(--text)" strokeWidth={2.2} />
-        </button>
-      )}
-
-      <div className="min-w-0 flex-1">
-        <div className="text-[16px] md:text-[18px] truncate" style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontWeight: 700, color: 'var(--text)' }}>
-          {title}
-        </div>
-      </div>
-
-      {periodLabel && (
-        <span
-          className="hidden md:inline"
-          style={{
-            background: 'var(--bg2)',
-            border: '1px solid var(--border)',
-            borderRadius: 12,
-            padding: '3px 9px',
-            fontSize: 11.5,
-            fontWeight: 700,
-            color: 'var(--text3)',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {periodLabel}
-        </span>
-      )}
-
-      {/* Bouton calendrier unifié (Mobile, Tablette, Desktop) */}
-      <div className="shrink-0">
-        <CalendarTopbarButton />
-      </div>
-
-      {/* Notifications — mobile : cercle 40px + pastille + panneau responsive */}
-      <div ref={notifRef} className="relative md:hidden flex-shrink-0">
-        <button onClick={toggleNotif} aria-label={tnav('topbar.notifications') ?? 'Notifications'}
-          style={{ width: 40, height: 40, borderRadius: 20, border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', cursor: 'pointer' }}>
-          <Bell size={21} color="var(--text)" strokeWidth={2} />
-          {unreadCount > 0 && (
-            <div style={{ position: 'absolute', top: 9, right: 9, width: 8, height: 8, borderRadius: '50%', background: 'var(--red)', border: '1.5px solid var(--surface)' }} />
-          )}
-        </button>
-        {notifOpen && (
-          <div className="fixed inset-x-3 top-[54px] max-w-[340px] ml-auto sm:absolute sm:inset-auto sm:top-12 sm:right-0 sm:w-[320px] max-h-[380px] overflow-y-auto bg-[var(--surface)] rounded-2xl shadow-2xl border border-[var(--border)] p-2.5 z-50 animate-fade-in font-nunito">
-            <div className="flex items-center justify-between px-2.5 py-2 border-b border-[var(--border)]">
-              <span className="text-[13.5px] font-bold text-[var(--text)]">{tnav('topbar.notifications') ?? 'Notifications'}</span>
-              {unreadCount > 0 && (
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-300">
-                  {unreadCount} {tnav('topbar.unread') ?? 'non lue(s)'}
-                </span>
-              )}
-            </div>
-            {recentNotifications.length === 0 ? (
-              <div className="py-7 text-center text-[var(--text3)] text-xs font-medium">{tnav('topbar.no_notifications') ?? 'Aucune notification'}</div>
-            ) : (
-              <div className="divide-y divide-[var(--border)]/40 my-1">
-                {[...recentNotifications].sort((a, b) => Number(a.isRead) - Number(b.isRead)).slice(0, 8).map(n => (
-                  <div key={n.id} onClick={() => !n.isRead && markAsRead(n.id)}
-                    className={`flex items-start gap-2.5 p-2.5 rounded-xl cursor-pointer transition-colors ${n.isRead ? 'hover:bg-[var(--bg2)]' : 'bg-blue-500/5 hover:bg-blue-500/15'}`}>
-                    <div className="mt-1 flex-shrink-0">
-                      {!n.isRead ? (
-                        <div className="w-2 h-2 rounded-full bg-[var(--green)]" />
-                      ) : (
-                        <div className="w-2 h-2 rounded-full bg-transparent" />
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[13px] font-bold text-[var(--text)] leading-snug">{n.title}</div>
-                      <div className="text-[12px] text-[var(--text2)] leading-relaxed mt-0.5 line-clamp-2">{n.body}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            {onNav && (
-              <button onClick={() => { setNotifOpen(false); onNav('notifications') }}
-                className="w-full mt-1.5 py-2 px-3 rounded-xl bg-[var(--bg2)] text-[var(--green)] hover:text-success text-xs font-bold border border-[var(--border)] cursor-pointer text-center transition-colors">
-                {tnav('topbar.view_all_notifications') ?? 'Voir toutes les notifications'}
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Kebab — mobile */}
-      <div ref={kebabRef} className="relative md:hidden flex-shrink-0">
-        <button onClick={toggleKebab} aria-label="Menu"
-          style={{ width: 40, height: 40, borderRadius: 20, border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-          <MoreVertical size={21} color="var(--text)" strokeWidth={2} />
-        </button>
-        {kebabOpen && (
-          <div style={{ position: 'absolute', top: 48, right: 0, width: 216, background: 'var(--surface)', borderRadius: 14, boxShadow: '0 8px 24px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.08)', padding: 8, zIndex: 20 }}>
-            <div style={{ padding: '4px 6px 8px' }}><LanguageSwitch compact style={{ width: '100%', justifyContent: 'center' }} /></div>
-            <div onClick={() => { setTheme(isDark ? 'light' : 'dark'); setKebabOpen(false) }}
-              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 10, cursor: 'pointer' }}>
-              {isDark ? <Sun size={18} color="var(--text)" strokeWidth={2} /> : <Moon size={18} color="var(--text)" strokeWidth={2} />}
-              <span style={{ fontSize: 14, color: 'var(--text)', fontWeight: 500 }}>{tcommon('theme.toggle') ?? 'Thème'}</span>
-            </div>
-            {onChangePassword && (
-              <div onClick={() => { onChangePassword(); setKebabOpen(false) }}
-                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 10, cursor: 'pointer' }}>
-                <KeyRound size={18} color="var(--text)" strokeWidth={2} />
-                <span style={{ fontSize: 14, color: 'var(--text)', fontWeight: 500 }}>{tcommon('auth.changePassword') ?? 'Changer mot de passe'}</span>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Actions secondaires desktop */}
-      <div className="hidden md:flex" style={{ alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
-        <OfflineSyncButtonPopover namespace="staff" />
-        <ThemeToggle />
-        <LanguageSwitch compact />
-        <NotificationBell onNav={onNav} />
-        {onChangePassword && (
-          <button onClick={onChangePassword} title={tcommon('auth.changePassword')}
-            style={{ width: 36, height: 36, borderRadius: 9, background: 'var(--bg2)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            <KeyRound size={16} color="var(--text2)" />
-          </button>
-        )}
-      </div>
-
-      {/* Profil utilisateur mobile — avatar circulaire identique à l'admin */}
-      {sessionUser && (
-        <div ref={profileRef} className="relative flex-shrink-0 md:hidden" style={{ marginLeft: 2 }}>
-          <button onClick={toggleProfile} aria-label={userDisplayName}
-            className="w-8 h-8 rounded-full border-0 bg-transparent flex items-center justify-center cursor-pointer p-0 overflow-hidden">
-            {currentAvatar ? (
-              <img src={currentAvatar} alt={userDisplayName} className="w-full h-full object-cover rounded-full" />
-            ) : (
-              <div
-                className="w-full h-full rounded-full flex items-center justify-center text-white text-xs font-bold"
-                style={{ background: 'linear-gradient(135deg,var(--primary),var(--blue,#2563eb))' }}
-              >
-                {userInitials}
-              </div>
-            )}
-          </button>
-          {profileOpen && (
-            <div style={{ position: 'absolute', top: 48, right: 0, width: 220, background: 'var(--surface)', borderRadius: 14, boxShadow: '0 8px 24px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.08)', padding: 8, zIndex: 20 }}>
-              <div style={{ padding: '8px 10px 10px', borderBottom: '1px solid var(--border)', marginBottom: 4 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{userDisplayName}</div>
-                <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{tcommon('user.roleLabel')}</div>
-              </div>
-              <div
-                onClick={() => {
-                  setProfileOpen(false)
-                  setAvatarModalOpen(true)
-                }}
-                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 10, cursor: 'pointer' }}
-              >
-                <Camera size={18} color="var(--primary)" strokeWidth={2} />
-                <span style={{ fontSize: 13.5, color: 'var(--text)', fontWeight: 600 }}>{tcommon('user.profilePhoto') || 'Photo de profil'}</span>
-              </div>
-              {onNav && (
-                <div onClick={() => { setProfileOpen(false); onNav('mon-profil-rh') }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 10, cursor: 'pointer' }}>
-                  <span style={{ fontSize: 14, color: 'var(--text)', fontWeight: 500 }}>{tnav('sidebar.monProfilRH') ?? 'Mon profil'}</span>
-                </div>
-              )}
-              {onLogout && (
-                <div onClick={() => { setProfileOpen(false); onLogout() }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 10, cursor: 'pointer' }}>
-                  <LogOut size={18} color="var(--red)" strokeWidth={2} />
-                  <span style={{ fontSize: 14, color: 'var(--red)', fontWeight: 600 }}>{tcommon('logout')}</span>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {avatarModalOpen && (
-        <ChangeAvatarModal
-          currentAvatarUrl={currentAvatar}
-          userName={userDisplayName}
-          onClose={() => setAvatarModalOpen(false)}
-          onSuccess={(url) => setCurrentAvatar(url)}
-          onToast={() => {}}
-        />
-      )}
-
-    </header>
+    <AppTopbar
+      title={title}
+      periodLabel={periodLabel}
+      onNavigate={onNav}
+      onChangePassword={onChangePassword}
+      onMenuClick={onMenuClick}
+      user={sessionUser}
+      fallbackInitials="ST"
+      roleLabel={tcommon('user.roleLabel')}
+      avatarGradient="linear-gradient(135deg,var(--primary),var(--blue,#2563eb))"
+      syncNamespace="staff"
+      onLogout={onLogout}
+    />
   )
 }

@@ -48,7 +48,7 @@ export interface TeacherAttendanceStatusData {
 }
 
 interface Props {
-  onPresenceConfirmed?: (attendance: any) => void
+  onPresenceConfirmed?: (attendance: TeacherAttendanceStatusData['attendance']) => void
   onToast: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void
   classId?: string
   subjectId?: string
@@ -90,7 +90,7 @@ export default function TeacherPresenceCheckIn({
           if (res.data.currentSlot?.roomId) {
             setSelectedRoomId(res.data.currentSlot.roomId)
           } else if (res.data.rooms?.length > 0) {
-            const firstQrRoom = res.data.rooms.find((r: any) => r.qrEnabled)
+            const firstQrRoom = (res.data.rooms as TeacherAttendanceStatusData['rooms']).find((r) => r.qrEnabled)
             if (firstQrRoom) setSelectedRoomId(firstQrRoom.id)
           }
         }
@@ -162,7 +162,7 @@ export default function TeacherPresenceCheckIn({
       const localAtt = {
         id: `offline-${Date.now()}`,
         statut: 'PRESENT' as const,
-        mode: mode as any,
+        mode: mode as TeacherAttendanceStatusData['recommendedMode'],
         date: new Date().toISOString().split('T')[0],
       }
       const updatedStatus: TeacherAttendanceStatusData = {
@@ -186,7 +186,7 @@ export default function TeacherPresenceCheckIn({
     }
 
     try {
-      let body: any = { mode }
+      const body: { mode: string; qrToken?: string; latitude?: number; longitude?: number } = { mode }
 
       if (mode === 'QR') {
         let tokenToSend = qrInput.trim()
@@ -240,8 +240,8 @@ export default function TeacherPresenceCheckIn({
       } else {
         onToast(res.message || 'Erreur lors du signalement de présence', 'error')
       }
-    } catch (err: any) {
-      onToast(err.message || 'Erreur de connexion lors du pointage', 'error')
+    } catch (err: unknown) {
+      onToast(err instanceof Error ? err.message : 'Erreur de connexion lors du pointage', 'error')
     } finally {
       setSubmitting(false)
     }

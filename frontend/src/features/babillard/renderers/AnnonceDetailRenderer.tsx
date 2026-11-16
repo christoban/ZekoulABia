@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import type { PublicationItem } from '../types';
 import { CATEGORIE_CONFIG, ROLE_LABELS_FR } from '../types';
+import { notifyToast } from '@/components/shell/AppToast';
+import { confirmAction } from '@/components/shell/ConfirmDialog';
 
 interface Props {
   publication: PublicationItem;
@@ -76,7 +78,7 @@ export default function AnnonceDetailRenderer({
     const url = `${window.location.origin}/babillard/${publication.id}`;
     if (navigator.clipboard) {
       await navigator.clipboard.writeText(url);
-      alert('Lien du communiqué copié dans le presse-papier !');
+      notifyToast('Lien du communiqué copié dans le presse-papier !', 'success');
     }
   };
 
@@ -206,8 +208,8 @@ export default function AnnonceDetailRenderer({
                   {onDelete && (
                     <button
                       type="button"
-                      onClick={() => {
-                        if (confirm(`Voulez-vous vraiment supprimer « ${publication.titre} » ?`)) {
+                      onClick={async () => {
+                        if (await confirmAction(`Voulez-vous vraiment supprimer « ${publication.titre} » ?`)) {
                           onDelete();
                         }
                       }}
@@ -309,8 +311,8 @@ export default function AnnonceDetailRenderer({
                   {onDelete && (
                     <button
                       type="button"
-                      onClick={() => {
-                        if (confirm(`Voulez-vous vraiment supprimer « ${publication.titre} » ?`)) {
+                      onClick={async () => {
+                        if (await confirmAction(`Voulez-vous vraiment supprimer « ${publication.titre} » ?`)) {
                           onDelete();
                         }
                       }}

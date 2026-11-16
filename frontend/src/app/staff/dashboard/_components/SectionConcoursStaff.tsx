@@ -28,39 +28,22 @@ import TabCandidats, { Candidate } from './concours/TabCandidats';
 import TabEmargement from './concours/TabEmargement';
 import TabResultatsStaff from './concours/TabResultatsStaff';
 import TabAdmisAFinaliser from './concours/TabAdmisAFinaliser';
+import {
+  getProchaineActionConcours,
+  type EntranceExamSession,
+  type EntranceExamSubject,
+  type EntranceExamRoom,
+  type EntranceExamStaffTab,
+} from '@/features/concours/entranceExamShared';
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
-interface Session {
-  id: string;
-  name: string;
-  status: string;
-  examDate: string;
-  admissionThreshold: number | null;
-  availableSeats: number | null;
-  registrationFee?: number | null;
-  seatReservationDays?: number | null;
-}
-
-interface Subject {
-  id: string;
-  name: string;
-  coefficient: number;
-  maxScore: number;
-  eliminatoryScore?: number | null;
-}
-
-interface Room {
-  id: string;
-  sessionId: string;
-  name: string;
-  capacity: number;
-  assignedCandidatesCount?: number;
-}
-
-type TabType = 'CANDIDATS' | 'SALLES' | 'EMARGEMENT' | 'NOTES' | 'RESULTATS' | 'CEP' | 'FINALISATION';
+type Session = EntranceExamSession;
+type Subject = EntranceExamSubject;
+type Room = EntranceExamRoom;
+type TabType = EntranceExamStaffTab;
 
 export default function SectionConcoursStaff({ onToast }: Props) {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -128,31 +111,7 @@ export default function SectionConcoursStaff({ onToast }: Props) {
   }, [selectedSessionId, loadSessionDetails]);
 
   const currentSession = sessions.find((s) => s.id === selectedSessionId) || null;
-
-  // Calcul de la prochaine action contextuelle
-  const getProchaineAction = (status: string): { text: string; tab?: TabType } => {
-    switch (status) {
-      case 'DRAFT':
-      case 'REGISTRATION_OPEN':
-        return { text: 'Inscrire les candidats et réceptionner les dossiers', tab: 'CANDIDATS' };
-      case 'SEATS_ASSIGNED':
-        return { text: 'Répartir les candidats dans les salles et imprimer les convocations', tab: 'SALLES' };
-      case 'IN_PROGRESS':
-        return { text: 'Procéder à l\'émargement des candidats présents', tab: 'EMARGEMENT' };
-      case 'GRADING':
-        return { text: 'Saisir les notes des épreuves écrites', tab: 'NOTES' };
-      case 'DELIBERATION':
-        return { text: 'Délibération en cours par la direction (simulation des seuils)' };
-      case 'PUBLISHED':
-        return { text: 'Saisir les résultats du CEP et finaliser les admissions confirmées', tab: 'CEP' };
-      case 'CLOSED':
-        return { text: 'Session clôturée' };
-      default:
-        return { text: 'Consulter les candidats et les résultats' };
-    }
-  };
-
-  const prochaineAction = currentSession ? getProchaineAction(currentSession.status) : null;
+  const prochaineAction = currentSession ? getProchaineActionConcours(currentSession.status) : null;
 
   if (loading) {
     return (

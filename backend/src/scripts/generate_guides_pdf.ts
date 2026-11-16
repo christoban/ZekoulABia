@@ -2,6 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import PDFDocument from 'pdfkit';
 
+type PdfDoc = InstanceType<typeof PDFDocument>;
+
 // Couleurs professionnelles
 const C_PRIMARY = '#B4532A'; // Terracotta ZekoulABia
 const C_DARK = '#2A1A15';
@@ -34,7 +36,7 @@ function createBasePdf(outputPath: string, title: string, subtitle: string) {
   return { doc, stream };
 }
 
-function addSectionTitle(doc: any, title: string, color = C_PRIMARY) {
+function addSectionTitle(doc: PdfDoc, title: string, color = C_PRIMARY) {
   if (doc.y > doc.page.height - 100) doc.addPage();
   doc.moveDown(0.6);
   doc.font('Helvetica-Bold').fontSize(14).fillColor(color).text(title);
@@ -42,20 +44,20 @@ function addSectionTitle(doc: any, title: string, color = C_PRIMARY) {
   doc.moveDown(0.4);
 }
 
-function addSubTitle(doc: any, title: string) {
+function addSubTitle(doc: PdfDoc, title: string) {
   if (doc.y > doc.page.height - 80) doc.addPage();
   doc.moveDown(0.4);
   doc.font('Helvetica-Bold').fontSize(11).fillColor(C_DARK).text(title);
   doc.moveDown(0.2);
 }
 
-function addParagraph(doc: any, text: string) {
+function addParagraph(doc: PdfDoc, text: string) {
   if (doc.y > doc.page.height - 60) doc.addPage();
   doc.font('Helvetica').fontSize(9.5).fillColor(C_DARK).text(text, { lineGap: 2 });
   doc.moveDown(0.3);
 }
 
-function addBullet(doc: any, title: string, desc: string) {
+function addBullet(doc: PdfDoc, title: string, desc: string) {
   if (doc.y > doc.page.height - 60) doc.addPage();
   doc.font('Helvetica-Bold').fontSize(9.5).fillColor(C_PRIMARY).text('• ', { continued: true });
   doc.font('Helvetica-Bold').fillColor(C_DARK).text(`${title} : `, { continued: true });
@@ -63,7 +65,7 @@ function addBullet(doc: any, title: string, desc: string) {
   doc.moveDown(0.2);
 }
 
-function addCodeBlock(doc: any, code: string, lang = 'SQL') {
+function addCodeBlock(doc: PdfDoc, code: string, lang = 'SQL') {
   const lines = code.trim().split('\n');
   const height = lines.length * 12 + 14;
   if (doc.y + height > doc.page.height - 40) doc.addPage();
@@ -83,7 +85,7 @@ function addCodeBlock(doc: any, code: string, lang = 'SQL') {
   doc.y = startY + height + 6;
 }
 
-function addTable(doc: any, headers: string[], rows: string[][], colWidths: number[]) {
+function addTable(doc: PdfDoc, headers: string[], rows: string[][], colWidths: number[]) {
   const rowHeight = 16;
   const totalHeight = (rows.length + 1) * rowHeight + 10;
   if (doc.y + totalHeight > doc.page.height - 50) doc.addPage();
@@ -122,7 +124,7 @@ function addTable(doc: any, headers: string[], rows: string[][], colWidths: numb
   doc.y = currentY + 6;
 }
 
-function finalizePdf(doc: any, stream: any): Promise<void> {
+function finalizePdf(doc: PdfDoc, stream: fs.WriteStream): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     stream.on('finish', resolve);
     stream.on('error', reject);

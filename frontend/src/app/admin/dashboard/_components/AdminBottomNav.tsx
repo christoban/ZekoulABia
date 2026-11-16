@@ -4,6 +4,7 @@ import React from 'react'
 import { LayoutDashboard, BookOpen, Wallet, Users, Menu } from 'lucide-react'
 import type { AdminSection } from '../_types'
 import { useT } from '@/lib/i18n'
+import { AppBottomNav } from '@/components/shell/AppBottomNav'
 
 interface Props {
   current: AdminSection
@@ -69,60 +70,20 @@ export default function AdminBottomNav({ current, onChange, onOpenMenu }: Props)
   const tnav = useT('navigation')
 
   return (
-    <nav
-      aria-label="Navigation mobile principale"
-      className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--border)] shadow-[0_-2px_10px_rgba(0,0,0,0.04)]"
-      style={{
-        background: 'var(--surface)',
-        paddingBottom: 'calc(6px + env(safe-area-inset-bottom, 0px))',
-        paddingTop: 6,
-      }}
-    >
-      <div className="flex items-center justify-around px-1 max-w-lg mx-auto">
-        {BOTTOM_NAV_ITEMS.map(item => {
-          const isActive = !item.isMenuTrigger && (item.targetSection === current || item.matchSections.includes(current))
-          const Icon = item.icon
-          const label = item.isMenuTrigger
-            ? (tnav(item.labelKey) || item.fallbackLabel)
-            : (t(item.labelKey) || item.fallbackLabel)
-
-          return (
-            <button
-              key={item.id}
-              onClick={() => {
-                if (item.isMenuTrigger) {
-                  onOpenMenu()
-                } else if (item.targetSection) {
-                  onChange(item.targetSection)
-                }
-              }}
-              className="flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-xl transition-colors border-none bg-transparent cursor-pointer min-w-[56px]"
-              style={{
-                WebkitTapHighlightColor: 'transparent',
-              }}
-            >
-              <div
-                className="w-11 h-6 rounded-full flex items-center justify-center transition-all duration-200"
-                style={{
-                  background: isActive ? 'var(--sidebar)' : 'transparent',
-                  color: isActive ? '#ffffff' : 'var(--text3)',
-                }}
-              >
-                <Icon size={16} strokeWidth={isActive ? 2.4 : 2} />
-              </div>
-              <span
-                className="text-[10.5px] tracking-tight truncate max-w-[64px]"
-                style={{
-                  fontWeight: isActive ? 800 : 500,
-                  color: isActive ? 'var(--text)' : 'var(--text3)',
-                }}
-              >
-                {label}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-    </nav>
+    <AppBottomNav
+      ariaLabel="Navigation mobile principale"
+      items={BOTTOM_NAV_ITEMS.map((item) => ({
+        id: item.id,
+        label: item.isMenuTrigger
+          ? (tnav(item.labelKey) || item.fallbackLabel)
+          : (t(item.labelKey) || item.fallbackLabel),
+        icon: item.icon,
+        isActive: !item.isMenuTrigger && (item.targetSection === current || item.matchSections.includes(current)),
+        onClick: () => {
+          if (item.isMenuTrigger) onOpenMenu()
+          else if (item.targetSection) onChange(item.targetSection)
+        },
+      }))}
+    />
   )
 }

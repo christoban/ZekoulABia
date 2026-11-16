@@ -142,17 +142,19 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
           if (d.success && Array.isArray(d.data)) {
             await putCachedData(assignCacheKey, d.data).catch(() => {})
             const myId = user?.id
-            const mine = (d.data ?? []).filter((a: any) => a.teacherId === myId)
+            interface AssignItem { teacherId?: string; subject: Subject }
+            const mine = ((d.data ?? []) as AssignItem[]).filter((a) => a.teacherId === myId)
             const dedup = new Map<string, Subject>()
             for (const a of mine) dedup.set(a.subject.id, a.subject)
             setSubjects([...dedup.values()])
           }
         }).catch(() => {})
     } else {
-      getCachedData<any[]>(assignCacheKey).then(cached => {
+      interface AssignItem { teacherId?: string; subject: Subject }
+      getCachedData<AssignItem[]>(assignCacheKey).then(cached => {
         if (cached?.data) {
           const myId = user?.id
-          const mine = cached.data.filter((a: any) => a.teacherId === myId)
+          const mine = cached.data.filter((a) => a.teacherId === myId)
           const dedup = new Map<string, Subject>()
           for (const a of mine) dedup.set(a.subject.id, a.subject)
           setSubjects([...dedup.values()])
@@ -192,7 +194,7 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
         })
         .catch(() => setHasProgramme(true))
     } else {
-      getCachedData<any>(progKey).then(cached => {
+      getCachedData<{ hasProgramme: boolean; chapitres?: Chapitre[] }>(progKey).then(cached => {
         if (cached?.data) {
           setHasProgramme(cached.data.hasProgramme)
           setChapitres(cached.data.chapitres ?? [])
@@ -617,7 +619,16 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {pendingEntries.map(entry => {
-                  const p = entry.payload as any
+                  const p = entry.payload as {
+                    _className?: string
+                    classId?: string
+                    _subjectName?: string
+                    subjectId?: string
+                    contenuRealise?: string
+                    contenuLibre?: string
+                    devoirsDonnes?: string
+                    date?: string
+                  }
                   const isFailed = entry.status === 'FAILED'
                   return (
                     <div key={entry.id} style={{

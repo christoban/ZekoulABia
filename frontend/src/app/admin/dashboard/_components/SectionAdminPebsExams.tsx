@@ -61,8 +61,9 @@ export default function SectionAdminPebsExams({ onToast }: Props) {
 
   useEffect(() => {
     fetchApi('/api/v2/academic-years', { credentials: 'include' }).then(r => r.json()).then(d => {
-      const list = d.data ?? []; setYears(list)
-      const cur = list.find((y: any) => y.isCurrent); if (cur) setFormYear(cur.id)
+      const list = (d.data ?? []) as { id: string; label: string; isCurrent: boolean }[]
+      setYears(list)
+      const cur = list.find((y) => y.isCurrent); if (cur) setFormYear(cur.id)
     }).catch(() => {})
     fetchApi('/api/v2/classes', { credentials: 'include' }).then(r => r.json()).then(d => setClasses(d.data ?? [])).catch(() => {})
   }, [])

@@ -36,9 +36,9 @@ export default function SectionSchoolPayments({ onToast }: Props) {
   useEffect(() => {
     fetchApi('/api/v2/academic-years', { credentials: 'include' })
       .then(r => r.json()).then(d => {
-        const list = d.data ?? []
+        const list = (d.data ?? []) as { id: string; label: string; isCurrent: boolean }[]
         setYears(list)
-        const cur = list.find((y: any) => y.isCurrent)
+        const cur = list.find((y) => y.isCurrent)
         if (cur) setAnneeScolaire(cur.label)
       }).catch(() => {})
   }, [])

@@ -50,7 +50,7 @@ const DEFAULT_SUGGESTIONS = [
 ]
 
 /** Omit qui se distribue sur chaque membre de l'union (sinon seules les clés communes survivent). */
-type DistributiveOmit<T, K extends keyof any> = T extends unknown ? Omit<T, K> : never
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never
 
 /** Notifie l'interface métier : navigation vers l'écran + rafraîchissement des données. */
 function notifyInterface(section?: string | null, entity?: string | null) {

@@ -844,7 +844,7 @@ export default function FilConversation({ conversationId, conversation, currentU
                         {isSelf && <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 400, marginLeft: 4 }}>(vous)</span>}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--text3)' }}>
-                        {roleLabel(member.role, (member as any).staffTitle)}
+                        {roleLabel(member.role, member.staffTitle)}
                       </div>
                     </div>
                     {/* Bouton DM — masqué pour STUDENT et pour soi-même */}

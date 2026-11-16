@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Bot, Check, FlaskConical, Play, RefreshCw, Sparkles, X } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
+import { confirmAction } from '@/components/shell/ConfirmDialog'
 
 interface Assignment {
   subjectId: string
@@ -312,7 +313,7 @@ export default function SectionTimetableStaffActions({
 
   const handleApply = async () => {
     if (!proposal || !proposalTimetableId || (proposal.seances.length === 0 && (proposal.seancesGroupes?.length ?? 0) === 0 && (proposal.tempsLibres?.length ?? 0) === 0)) return
-    if (!window.confirm(t('timetable.planning.applyConfirm'))) return
+    if (!(await confirmAction(t('timetable.planning.applyConfirm')))) return
     setBusy('apply')
     try {
       const res = await fetchApi(`/api/v2/timetables/${proposalTimetableId}/apply-schedule`, {
@@ -376,7 +377,7 @@ export default function SectionTimetableStaffActions({
 
   const handleAdjust = async () => {
     if (!timetable?.id || !adjustInstruction.trim()) return
-    if (!window.confirm(t('timetable.planning.adjustConfirm'))) return
+    if (!(await confirmAction(t('timetable.planning.adjustConfirm')))) return
     setBusy('adjust')
     setAdjustResult(null)
     try {
@@ -429,7 +430,7 @@ export default function SectionTimetableStaffActions({
       onToast(t('timetable.planning.groupTeacherMissing'), 'error')
       return
     }
-    if (!window.confirm(t('timetable.planning.groupConfirm'))) return
+    if (!(await confirmAction(t('timetable.planning.groupConfirm')))) return
     setBusy('group')
     try {
       const res = await fetchApi(`/api/v2/timetables/${timetable.id}/generate-group-sessions`, {

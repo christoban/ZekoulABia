@@ -346,8 +346,8 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
           : 'Communiqué retiré de la une.'
       );
       loadPublications();
-    } catch (err: any) {
-      showToast(err.message || 'Impossible de modifier l’épinglage', 'error');
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Impossible de modifier l’épinglage', 'error');
       // Revert
       setPublications((prev) =>
         prev.map((p) => (p.id === pub.id ? { ...p, isPinned: !newPinnedState, epinglee: !newPinnedState } : p))
@@ -370,8 +370,8 @@ export const BabillardBoard: React.FC<BabillardBoardProps> = ({
       showToast('Le communiqué a été supprimé.');
       setDeletingPublication(null);
       loadPublications();
-    } catch (err: any) {
-      showToast(err.message || 'Échec de la suppression', 'error');
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Échec de la suppression', 'error');
     } finally {
       setIsDeleting(false);
     }

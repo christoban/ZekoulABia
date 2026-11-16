@@ -257,7 +257,7 @@ export async function getPendingActions(): Promise<PendingAction[]> {
   return Promise.all(rows.map(async (r) => ({
     ...r,
     payload: await dechiffrer(r.payload),
-    conflictData: r.conflictData ? await dechiffrer(r.conflictData as any) : undefined,
+    conflictData: r.conflictData ? await dechiffrer(r.conflictData) : undefined,
   })))
 }
 
@@ -279,7 +279,7 @@ export async function updatePendingActionStatus(id: number, status: PendingActio
 /** Enregistre les données de conflit d'une action — chiffre conflictData comme payload. */
 export async function setConflictData(id: number, conflictData: unknown): Promise<void> {
   const chiffre = await chiffrer(conflictData)
-  await db.pendingActions.update(id, { conflictData: chiffre as any })
+  await db.pendingActions.update(id, { conflictData: chiffre as unknown as PendingAction['conflictData'] })
 }
 
 /** Écrit (ou met à jour) un message dans le fil local — affichage optimiste immédiat. */

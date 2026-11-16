@@ -44,7 +44,7 @@ export default function SectionParentLibrary({ userId }: Props) {
         const r = await fetchApi('/api/v2/parent/children', { credentials: 'include' })
         const d = await r.json()
         if (d.success && Array.isArray(d.data)) {
-          kids = d.data.map((c: any) => ({
+          kids = (d.data as Child[]).map((c) => ({
             studentId: c.studentId,
             prenom: c.prenom,
             nom: c.nom,
@@ -55,9 +55,9 @@ export default function SectionParentLibrary({ userId }: Props) {
       }
 
       if (kids.length === 0) {
-        const cached = await getCachedData<any[]>(`parent:children:${userId}`)
+        const cached = await getCachedData<Child[]>(`parent:children:${userId}`)
         if (cached?.data && Array.isArray(cached.data)) {
-          kids = cached.data.map((c: any) => ({
+          kids = cached.data.map((c) => ({
             studentId: c.studentId,
             prenom: c.prenom,
             nom: c.nom,

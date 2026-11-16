@@ -102,34 +102,42 @@ export default function SectionStudentDashboard({ onNav, onToast, user }: Props)
 
     let sequenceId = ''
     if (ayRes.success) {
-      const curYear = ayRes.data.find((y: any) => y.isCurrent)
+      type AyYear = {
+        isCurrent?: boolean
+        periods?: Array<{ isCurrent?: boolean; sequences?: Array<{ id: string; isCurrent?: boolean }> }>
+      }
+      const curYear = (ayRes.data as AyYear[]).find((y) => y.isCurrent)
       if (curYear) {
-        const curPeriod = curYear.periods?.find((p: any) => p.isCurrent)
+        const curPeriod = curYear.periods?.find((p) => p.isCurrent)
         if (curPeriod) {
-          const curSeq = curPeriod.sequences?.find((s: any) => s.isCurrent)
+          const curSeq = curPeriod.sequences?.find((s) => s.isCurrent)
           if (curSeq) sequenceId = curSeq.id
         }
       }
     }
 
     if (classId && userId) {
-      const promises: Promise<any>[] = [
-        fetchApi(`/api/v2/timetables?classId=${classId}`, { credentials: 'include' }).then(r => r.json()).catch(() => ({})),
-        fetchApi(`/api/v2/pedagogie/cahier-de-texte?classId=${classId}&limit=10`, { credentials: 'include' }).then(r => r.json()).catch(() => ({})),
-      ]
-
-      if (sequenceId) {
-        promises.push(
-          fetchApi(`/api/v2/grades/average/${userId}?classId=${classId}&sequenceId=${sequenceId}`, { credentials: 'include' }).then(r => r.json()).catch(() => ({})),
-          fetchApi(`/api/v2/grades?sequenceId=${sequenceId}`, { credentials: 'include' }).then(r => r.json()).catch(() => ({}))
-        )
+      interface StudentTtResponse {
+        success?: boolean
+        data?: Array<{ slots?: Array<{ dayOfWeek: number; startTime: string; endTime: string; groupId?: string | null; subject?: { name?: string | null } | null; teacher?: { firstName: string; lastName: string } | null; room?: string | null }> }>
       }
+      interface CahierResponse {
+        success?: boolean
+        data?: Array<{ id: string; devoirsDonnes?: string | null; dateDevoir?: string | null; matiere?: { name?: string | null } | null; subject?: { name?: string | null } | null }>
+      }
+      interface AvgResponse { average?: number; rank?: number; totalStudents?: number }
+      interface GradesListResponse { grades?: Array<{ subjectId: string }> }
 
-      const responses = await Promise.all(promises)
-      const ttRes = responses[0]
-      const cahierRes = responses[1]
-      const avgRes = sequenceId ? responses[2] : null
-      const gradesRes = sequenceId ? responses[3] : null
+      const ttPromise: Promise<StudentTtResponse> = fetchApi(`/api/v2/timetables?classId=${classId}`, { credentials: 'include' }).then(r => r.json()).catch(() => ({}))
+      const cahierPromise: Promise<CahierResponse> = fetchApi(`/api/v2/pedagogie/cahier-de-texte?classId=${classId}&limit=10`, { credentials: 'include' }).then(r => r.json()).catch(() => ({}))
+      const avgPromise: Promise<AvgResponse | null> = sequenceId
+        ? fetchApi(`/api/v2/grades/average/${userId}?classId=${classId}&sequenceId=${sequenceId}`, { credentials: 'include' }).then(r => r.json()).catch(() => ({}))
+        : Promise.resolve(null)
+      const gradesPromise: Promise<GradesListResponse | null> = sequenceId
+        ? fetchApi(`/api/v2/grades?sequenceId=${sequenceId}`, { credentials: 'include' }).then(r => r.json()).catch(() => ({}))
+        : Promise.resolve(null)
+
+      const [ttRes, cahierRes, avgRes, gradesRes] = await Promise.all([ttPromise, cahierPromise, avgPromise, gradesPromise])
 
       if (avgRes?.average !== undefined) result.avgGrade = avgRes.average
       if (avgRes?.rank !== undefined) result.rank = { pos: avgRes.rank, total: avgRes.totalStudents || 0 }
@@ -160,9 +168,9 @@ export default function SectionStudentDashboard({ onNav, onToast, user }: Props)
 
       if (cahierRes?.success && Array.isArray(cahierRes.data)) {
         result.upcomingHomework = cahierRes.data
-          .filter((entry: any) => Boolean(entry.devoirsDonnes))
+          .filter((entry): entry is NonNullable<CahierResponse['data']>[number] & { devoirsDonnes: string } => Boolean(entry.devoirsDonnes))
           .slice(0, 3)
-          .map((entry: any) => ({
+          .map((entry) => ({
             id: entry.id,
             subject: entry.matiere?.name || entry.subject?.name || 'Cours',
             task: entry.devoirsDonnes,
@@ -171,7 +179,7 @@ export default function SectionStudentDashboard({ onNav, onToast, user }: Props)
       }
 
       if (gradesRes?.grades) {
-        const uniqueSubjects = new Set(gradesRes.grades.map((g: any) => g.subjectId))
+        const uniqueSubjects = new Set(gradesRes.grades.map((g) => g.subjectId))
         result.subjectCount = uniqueSubjects.size
       }
     } else if (statsRes.stats?.avgGrade && statsRes.stats.avgGrade !== 'N/A') {

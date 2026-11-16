@@ -127,10 +127,13 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
   const [timelineLoading, setTimelineLoading] = useState(false)
 
   // ── Structure ────────────────────────────────────────────────────────────
-  const [structConfig, setStructConfig] = useState<{
-    niveaux1erCycle: string[]; classesParNiveau: Record<string, number>
-    niveauxPrimaire: string[]; classesParNiveauPrimaire: Record<string, number>
-  } | null>(null)
+  interface StructConfigShape {
+    niveaux1erCycle: string[]
+    classesParNiveau: Record<string, number>
+    niveauxPrimaire: string[]
+    classesParNiveauPrimaire: Record<string, number>
+  }
+  const [structConfig, setStructConfig] = useState<StructConfigShape | null>(null)
   const [structEdit, setStructEdit]   = useState<Record<string, number>>({})
   const [structSaving, setStructSaving] = useState(false)
   const [structResult, setStructResult] = useState<string[] | null>(null)
@@ -151,7 +154,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
 
   const isNetworkErr = (e: unknown) => {
     if (typeof navigator !== 'undefined' && !navigator.onLine) return true
-    const msg = String((e as any)?.message || e || '')
+    const msg = e instanceof Error ? e.message : String(e || '')
     return msg.includes('fetch') || msg.includes('Network') || msg.includes('Failed')
   }
 
@@ -159,7 +162,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
   useEffect(() => {
     if (activeTab !== 7 || structConfig !== null || !schoolInfo?.id) return
 
-    getCachedData<any>('admin:school:me').then(c => {
+    getCachedData<{ onboardingConfig?: StructConfigShape }>('admin:school:me').then(c => {
       const cfg = c?.data?.onboardingConfig
       if (cfg) {
         const parsed = {
@@ -222,7 +225,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
   useEffect(() => {
     if (activeTab !== 7 || logRetentionLoading || !schoolInfo?.id) return
 
-    getCachedData<any>('admin:school-settings').then(c => {
+    getCachedData<{ logRetentionDays?: number }>('admin:school-settings').then(c => {
       if (c?.data?.logRetentionDays != null) setLogRetentionDays(Number(c.data.logRetentionDays))
     }).catch(() => {})
 
@@ -421,7 +424,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
     if (!auditOpen || !schoolInfo?.id) return
 
     const cacheKey = `admin:audit-logs:${auditPage}:${auditAction}`
-    getCachedData<any>(cacheKey).then(c => {
+    getCachedData<{ logs?: AuditLog[]; total?: number; pages?: number }>(cacheKey).then(c => {
       if (c?.data) {
         setAuditLogs(c.data.logs || [])
         setAuditTotal(c.data.total || 0)
@@ -454,7 +457,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
   useEffect(() => {
     if (activeTab !== 3 || pedSettings) return
 
-    getCachedData<any>('admin:school-settings').then(c => {
+    getCachedData<NonNullable<typeof pedSettings>>('admin:school-settings').then(c => {
       if (c?.data) setPedSettings(c.data)
       else if (typeof navigator !== 'undefined' && !navigator.onLine) {
         setPedSettings({
@@ -498,7 +501,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
     if (activeTab !== 5) return
 
     const cacheKey = `admin:activities:${actPage}:${actSearch}`
-    getCachedData<any>(cacheKey).then(c => {
+    getCachedData<NonNullable<typeof actData>>(cacheKey).then(c => {
       if (c?.data) setActData(c.data)
     }).catch(() => {})
 
@@ -525,7 +528,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
     if (activeTab !== 5) return
 
     const cacheKey = `admin:ai-security-log:${aiAuditOutcome || 'ALL'}`
-    getCachedData<any>(cacheKey).then(c => {
+    getCachedData<NonNullable<typeof aiAuditData>>(cacheKey).then(c => {
       if (c?.data) setAiAuditData(c.data)
     }).catch(() => {})
 
@@ -551,7 +554,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
   useEffect(() => {
     if (activeTab !== 5) return
 
-    getCachedData<any[]>('admin:activities-timeline').then(c => {
+    getCachedData<NonNullable<typeof timelineData>>('admin:activities-timeline').then(c => {
       if (c?.data) setTimelineData(c.data)
     }).catch(() => {})
 
@@ -576,7 +579,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
     if (activeTab !== 6) return
 
     const cacheKey = `admin:email-logs:${emlPage}:${emlSearch}:${emlStatus}`
-    getCachedData<any>(cacheKey).then(c => {
+    getCachedData<NonNullable<typeof emlData>>(cacheKey).then(c => {
       if (c?.data) setEmlData(c.data)
     }).catch(() => {})
 
@@ -615,8 +618,8 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
         if (!data.success) throw new Error(data.message || t('common.error'))
         onLogoUpdate?.(logoBase64)
         onToast(t('settings.profile.toast_logo_updated'), 'success')
-      } catch (err: any) {
-        onToast(err.message || t('common.error'), 'error')
+      } catch (err: unknown) {
+        onToast(err instanceof Error ? err.message : t('common.error'), 'error')
         setLogoPreview(schoolInfo?.logoUrl ?? null)
       } finally { setLogoLoading(false) }
     }
@@ -639,8 +642,8 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
       if (!res.ok) throw new Error(data.message || t('common.error'))
       onToast(t('settings.profile.toast_updated'), 'success')
       setSubdomainAvail(null)
-    } catch (err: any) {
-      onToast(err.message || t('common.error'), 'error')
+    } catch (err: unknown) {
+      onToast(err instanceof Error ? err.message : t('common.error'), 'error')
     } finally { setSubdomainSaving(false) }
   }
 
@@ -659,9 +662,9 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Erreur')
       onToast(t('settings.notifications.toast_saved'), 'success')
-    } catch (err: any) {
+    } catch (err: unknown) {
       setNotifData(notifData)
-      onToast(err.message || 'Erreur', 'error')
+      onToast(err instanceof Error ? err.message : 'Erreur', 'error')
     } finally { setNotifSaving(null) }
   }
 
@@ -679,8 +682,8 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
       setSecSettings(data.data)
       setSecModal(false)
       onToast(t('settings.security.toast_updated'), 'success')
-    } catch (err: any) {
-      onToast(err.message || t('common.error'), 'error')
+    } catch (err: unknown) {
+      onToast(err instanceof Error ? err.message : t('common.error'), 'error')
     } finally { setSecSaving(false) }
   }
 
@@ -782,7 +785,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
                           const data = await res.json()
                           if (data.success) { setLogoPreview(null); onLogoUpdate?.(''); onToast(t('settings.profile.toast_deleted'), 'success') }
                           else throw new Error(data.message)
-                        } catch (err: any) { onToast(err.message || t('common.error'), 'error') }
+                        } catch (err: unknown) { onToast(err instanceof Error ? err.message : t('common.error'), 'error') }
                         finally { setLogoLoading(false) }
                       }}>
                       {t('settings.profile.btn_delete')}
@@ -832,7 +835,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
                   const data = await res.json()
                   if (!res.ok) throw new Error(data.message || t('common.error'))
                   onToast(t('settings.profile.toast_saved'), 'success')
-                } catch (err: any) { onToast(err.message || t('common.error'), 'error') }
+                } catch (err: unknown) { onToast(err instanceof Error ? err.message : t('common.error'), 'error') }
               }}>{t('settings.profile.btn_save')}</button>
             </div>
           </div>
@@ -1197,7 +1200,7 @@ export default function SectionSettings({ onToast, schoolInfo, onLogoUpdate }: P
                       const data = await res.json()
                       if (!res.ok) throw new Error(data.message || t('common.error'))
                       onToast(t('settings.pedagogy.toast_saved'), 'success')
-                    } catch (err: any) { onToast(err.message || t('common.error'), 'error') }
+                    } catch (err: unknown) { onToast(err instanceof Error ? err.message : t('common.error'), 'error') }
                     finally { setPedSaving(false) }
                   }}>
                   {pedSaving ? t('settings.pedagogy.saving') : t('settings.pedagogy.btn_save')}

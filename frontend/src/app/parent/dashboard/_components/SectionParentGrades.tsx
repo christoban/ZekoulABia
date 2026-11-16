@@ -120,9 +120,14 @@ export default function SectionParentGrades({ onToast, userId }: Props) {
   useEffect(() => {
     let mounted = true
 
-    const parseAcademicYears = (years: any[]) => {
+    interface AyYear {
+      isCurrent?: boolean
+      periods?: Array<{ sequences?: SequenceItem[] }>
+    }
+
+    const parseAcademicYears = (years: AyYear[]) => {
       if (!years?.length) return
-      const curYear = years.find((y: any) => y.isCurrent) ?? years[0]
+      const curYear = years.find((y) => y.isCurrent) ?? years[0]
       if (!curYear?.periods) return
 
       const allSeqs: SequenceItem[] = []
@@ -150,11 +155,11 @@ export default function SectionParentGrades({ onToast, userId }: Props) {
           parseAcademicYears(ayRes.data)
         })
         .catch(async () => {
-          const cached = await getCachedData<any[]>('parent:academic-years')
+          const cached = await getCachedData<AyYear[]>('parent:academic-years')
           if (mounted && cached?.data) parseAcademicYears(cached.data)
         })
     } else {
-      getCachedData<any[]>('parent:academic-years')
+      getCachedData<AyYear[]>('parent:academic-years')
         .then(cached => {
           if (mounted && cached?.data) parseAcademicYears(cached.data)
         })

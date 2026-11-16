@@ -10,6 +10,7 @@ import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { useCachedFetch } from '@/hooks/useCachedFetch'
 import { getCachedData, putCachedData } from '@/lib/offline/db'
+import { confirmAction } from '@/components/shell/ConfirmDialog'
 
 interface Props {
   user: UserInfo
@@ -192,7 +193,7 @@ export default function SectionDepartementAP({ user, departementId, departementN
           .then(d => { if (d.success && Array.isArray(d.data)) setClassesList(d.data) })
           .catch(() => {})
       } else {
-        getCachedData<any[]>('teacher:classes').then(cached => {
+        getCachedData<{ id: string; name: string }[]>('teacher:classes').then(cached => {
           if (cached?.data) setClassesList(cached.data)
         }).catch(() => {})
       }
@@ -244,7 +245,7 @@ export default function SectionDepartementAP({ user, departementId, departementN
   }
 
   const handleDeleteProgramme = async (id: string, titre: string) => {
-    if (!confirm(`Supprimer le programme « ${titre} » et tous ses chapitres ?`)) return
+    if (!(await confirmAction(`Supprimer le programme « ${titre} » et tous ses chapitres ?`))) return
     try {
       const res = await fetchApi(`/api/v2/pedagogie/programmes/${id}`, { method: 'DELETE', credentials: 'include' }).then(r => r.json())
       if (res.success) {
@@ -325,7 +326,7 @@ export default function SectionDepartementAP({ user, departementId, departementN
   }
 
   const handleDeleteChapitre = async (chapitreId: string, titre: string) => {
-    if (!confirm(`Supprimer le chapitre « ${titre} » ?`)) return
+    if (!(await confirmAction(`Supprimer le chapitre « ${titre} » ?`))) return
     try {
       const res = await fetchApi(`/api/v2/pedagogie/chapitres/${chapitreId}`, { method: 'DELETE', credentials: 'include' }).then(r => r.json())
       if (res.success) {

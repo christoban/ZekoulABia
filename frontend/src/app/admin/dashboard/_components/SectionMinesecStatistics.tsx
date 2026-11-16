@@ -5,6 +5,11 @@ import { useT } from '@/lib/i18n'
 
 interface Props { onToast: (msg: string, type?: 'success' | 'error' | 'info') => void }
 
+interface InfrastructuresDetailMap {
+  commodites?: Record<string, boolean | null>
+  [subsystem: string]: Record<string, Record<string, number | null | undefined> | undefined> | Record<string, boolean | null> | undefined
+}
+
 interface Supplement {
   hasTitreFoncier: boolean | null
   siteProvisoire: boolean | null
@@ -19,7 +24,7 @@ interface Supplement {
   ecolesPrimairesProximite: { moins1km?: number; entre1et3km?: number; entre4et5km?: number; plus5km?: number } | null
   posteComptable: string | null
   historiqueBip: { designation: string; anneeObtention: string }[] | null
-  infrastructuresDetail: Record<string, any> | null
+  infrastructuresDetail: InfrastructuresDetailMap | null
   effectifsTechniquesDetail: EstpEntry[] | null
   lastUpdatedAt: string | null
 }
@@ -80,7 +85,7 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
 
   const [supplement, setSupplement] = useState<Supplement | null>(null)
   const [meta, setMeta] = useState<Meta | null>(null)
-  const [form, setForm] = useState<Record<string, any>>({})
+  const [form, setForm] = useState<Partial<Supplement>>({})
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
 
@@ -134,9 +139,10 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
         if (metaData.data) putCachedData('admin:minesec:meta', metaData.data).catch(() => {})
       }
     } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
       const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) ||
-        String((err as any)?.message || err).includes('fetch') ||
-        String((err as any)?.message || err).includes('Network')
+        msg.includes('fetch') ||
+        msg.includes('Network')
       if (!isNet) {
         onToast(t('minesecStats.errorGeneric'), 'error')
       }
@@ -186,17 +192,20 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
   // ── Infrastructures ──
   const [expandedInfraRow, setExpandedInfraRow] = useState<string | null>(null)
   const setInfraValue = (subsystem: string, code: string, breakdownKey: string, value: number | null) => {
-    const detail = { ...(form.infrastructuresDetail ?? {}) }
-    const sub = { ...(detail[subsystem] ?? {}) }
+    const detail: InfrastructuresDetailMap = { ...(form.infrastructuresDetail ?? {}) }
+    const subMap = (detail[subsystem] as Record<string, Record<string, number | null | undefined> | undefined> | undefined) ?? {}
+    const sub = { ...subMap }
     sub[code] = { ...(sub[code] ?? {}), [breakdownKey]: value }
     detail[subsystem] = sub
     setForm((f) => ({ ...f, infrastructuresDetail: detail }))
   }
   const getInfraValue = (subsystem: string, code: string, breakdownKey: string): number | null => {
-    return form.infrastructuresDetail?.[subsystem]?.[code]?.[breakdownKey] ?? null
+    const subMap = form.infrastructuresDetail?.[subsystem] as Record<string, Record<string, number | null | undefined> | undefined> | undefined
+    return subMap?.[code]?.[breakdownKey] ?? null
   }
   const getInfraRowTotal = (subsystem: string, code: string): number => {
-    const row = form.infrastructuresDetail?.[subsystem]?.[code]
+    const subMap = form.infrastructuresDetail?.[subsystem] as Record<string, Record<string, number | null | undefined> | undefined> | undefined
+    const row = subMap?.[code]
     if (!row) return 0
     return ['definitifBon', 'definitifAcceptable', 'definitifMauvais', 'provisoireBon', 'provisoireAcceptable', 'provisoireMauvais']
       .reduce((sum, k) => sum + (Number(row[k]) || 0), 0)
@@ -360,7 +369,7 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
             {(form.historiqueBip ?? []).length === 0 && (
               <p style={{ fontSize: 12, color: 'var(--text3)' }}>{t('minesecStats.bipEmpty')}</p>
             )}
-            {(form.historiqueBip ?? []).map((bip: any, idx: number) => (
+            {(form.historiqueBip ?? []).map((bip, idx: number) => (
               <div key={idx} className="flex-wrap md:flex-nowrap" style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
                 <input className="flex-1 min-w-[140px]" style={inputStyle} placeholder={t('minesecStats.bipDesignation')} value={bip.designation} onChange={(e) => updateBip(idx, 'designation', e.target.value)} />
                 <input style={{ ...inputStyle, maxWidth: 110 }} placeholder={t('minesecStats.bipAnnee')} value={bip.anneeObtention} onChange={(e) => updateBip(idx, 'anneeObtention', e.target.value)} />

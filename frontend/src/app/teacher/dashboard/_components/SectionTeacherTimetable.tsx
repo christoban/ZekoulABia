@@ -61,11 +61,33 @@ const EMPTY_CATCHUP = {
   error: '',
 }
 
+interface TeacherTtSlot {
+  dayOfWeek: number
+  startTime: string
+  endTime?: string
+  room?: string | null
+  kind?: string
+  groupId?: string | null
+  subject?: { id?: string; name?: string | null } | null
+  teacher?: { id: string; firstName?: string; lastName?: string } | null
+}
+
+interface TeacherTtRow {
+  class?: { id: string; name?: string | null } | null
+  slots?: TeacherTtSlot[]
+}
+
+interface TeacherGridConfig {
+  squelette?: PeriodeGrille[]
+  config?: { joursActifs?: string[] }
+  squeletteParJour?: Record<string, PeriodeGrille[]>
+}
+
 export default function SectionTeacherTimetable({ onToast, user }: Props) {
   const t = useT('teacher')
   const tcommon = useT('common')
 
-  const [timetablesData, setTimetablesData] = useState<any[]>([])
+  const [timetablesData, setTimetablesData] = useState<TeacherTtRow[]>([])
   const [squelette, setSquelette] = useState<PeriodeGrille[]>(DEFAULT_SKELETON)
   const [joursActifs, setJoursActifs] = useState<string[]>(['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI'])
   const [squeletteParJour, setSqueletteParJour] = useState<Record<string, PeriodeGrille[]>>({})
@@ -93,8 +115,8 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
     if (!navigator.onLine) {
       try {
         const [cachedTt, cachedGrid] = await Promise.all([
-          getCachedData<any[]>(cacheKeyTt),
-          getCachedData<any>(cacheKeyGrid),
+          getCachedData<TeacherTtRow[]>(cacheKeyTt),
+          getCachedData<TeacherGridConfig>(cacheKeyGrid),
         ])
         if (cachedTt?.data) {
           setTimetablesData(cachedTt.data)
@@ -138,11 +160,11 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
       } else {
         throw new Error(t('timetable.error_loading'))
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Repli cache si erreur réseau
       try {
-        const cachedTt = await getCachedData<any[]>(cacheKeyTt)
-        const cachedGrid = await getCachedData<any>(cacheKeyGrid)
+        const cachedTt = await getCachedData<TeacherTtRow[]>(cacheKeyTt)
+        const cachedGrid = await getCachedData<TeacherGridConfig>(cacheKeyGrid)
         if (cachedTt?.data) {
           setTimetablesData(cachedTt.data)
           setFromCache(true)
@@ -156,7 +178,7 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
           return
         }
       } catch { /* ignore */ }
-      setError(err.message || t('timetable.error_network'))
+      setError(err instanceof Error ? err.message : t('timetable.error_network'))
     } finally {
       setLoading(false)
     }
@@ -169,8 +191,8 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
   // Nuance stricte demandée : Ne lister QUE les classes où cet enseignant donne AU MOINS UN cours
   const myClasses = useMemo(() => {
     const classesMap = new Map<string, string>()
-    timetablesData.forEach((tt: any) => {
-      const hasMyCourse = (tt.slots || []).some((s: any) => userId && s.teacher?.id === userId)
+    timetablesData.forEach((tt) => {
+      const hasMyCourse = (tt.slots || []).some((s) => userId && s.teacher?.id === userId)
       if (hasMyCourse && tt.class?.id) {
         classesMap.set(tt.class.id, tt.class.name || 'Classe')
       }
@@ -191,8 +213,8 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
 
     if (selectedView === 'MY_SCHEDULE') {
       // Vue personnelle : uniquement ses propres cours dans toutes ses classes
-      timetablesData.forEach((tt: any) => {
-        (tt.slots || []).forEach((s: any) => {
+      timetablesData.forEach((tt) => {
+        (tt.slots || []).forEach((s) => {
           if (!userId || s.teacher?.id !== userId) return
           const key = `${s.dayOfWeek}-${s.startTime}`
           const values = slotMap[key] ?? []
@@ -209,9 +231,9 @@ export default function SectionTeacherTimetable({ onToast, user }: Props) {
       })
     } else {
       // Vue de la classe sélectionnée : tous les cours de la classe, avec ses cours en surbrillance
-      const selectedTt = timetablesData.find((tt: any) => tt.class?.id === selectedView)
+      const selectedTt = timetablesData.find((tt) => tt.class?.id === selectedView)
       if (selectedTt) {
-        (selectedTt.slots || []).forEach((s: any) => {
+        (selectedTt.slots || []).forEach((s) => {
           const isMine = Boolean(userId && s.teacher?.id === userId)
           const key = `${s.dayOfWeek}-${s.startTime}`
           const values = slotMap[key] ?? []

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import { confirmAction } from '@/components/shell/ConfirmDialog'
 import {
   Calendar,
   GraduationCap,
@@ -150,7 +151,7 @@ export default function SectionReferentielsHub({ onToast }: Props) {
   }
 
   const handleDeleteBac = async (id: string) => {
-    if (!confirm('Supprimer cette entrée de référence BAC ?')) return
+    if (!(await confirmAction('Supprimer cette entrée de référence BAC ?'))) return
     try {
       await deleteBacCoefficient(id)
       setBacCoeffs(prev => prev.filter(c => c.id !== id))
@@ -162,7 +163,7 @@ export default function SectionReferentielsHub({ onToast }: Props) {
   }
 
   const handleDeleteTemplateSubject = async (id: string) => {
-    if (!confirm('Supprimer cette matière de référence ?')) return
+    if (!(await confirmAction('Supprimer cette matière de référence ?'))) return
     try {
       await deleteTemplateSubject(id, filterSubsystem)
       setTemplateSubjects(prev => prev.filter(s => s.id !== id))
@@ -174,7 +175,7 @@ export default function SectionReferentielsHub({ onToast }: Props) {
   }
 
   const handleDeleteProgression = async (id: string) => {
-    if (!confirm('Supprimer ce programme officiel ?')) return
+    if (!(await confirmAction('Supprimer ce programme officiel ?'))) return
     try {
       await deleteOfficialProgression(id)
       setProgressions(prev => prev.filter(p => p.id !== id))

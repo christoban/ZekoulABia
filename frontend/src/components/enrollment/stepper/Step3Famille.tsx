@@ -143,7 +143,7 @@ export default function Step3Famille({ form, onChange, errors }: Props) {
               </label>
               <select
                 value={resp.lien}
-                onChange={(e) => updateResponsable(index, { lien: e.target.value as any })}
+                onChange={(e) => updateResponsable(index, { lien: e.target.value as ParentResponsable['lien'] })}
                 style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, background: 'var(--surface)' }}
               >
                 <option value="PERE">Père</option>

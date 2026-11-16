@@ -93,12 +93,14 @@ export default function SectionAnonymatStaff({ onToast }: Props) {
       fetchApi('/api/v2/subjects', { credentials: 'include' }).then(r => r.json()),
       fetchApi('/api/v2/academic-years', { credentials: 'include' }).then(r => r.json()),
     ]).then(([cls, sub, ay]) => {
-      if (cls.data) setClasses(cls.data.map((c: any) => ({ id: c.id, name: c.name })))
-      if (sub.data) setSubjects(sub.data.map((s: any) => ({ id: s.id, name: s.name })))
+      type IdName = { id: string; name: string }
+      type AyYear = { name: string; periods?: Array<{ name: string; sequences?: IdName[] }> }
+      if (cls.data) setClasses((cls.data as IdName[]).map((c) => ({ id: c.id, name: c.name })))
+      if (sub.data) setSubjects((sub.data as IdName[]).map((s) => ({ id: s.id, name: s.name })))
       if (ay.data) {
-        const seqs = (ay.data ?? []).flatMap((year: any) =>
-          (year.periods ?? []).flatMap((p: any) =>
-            (p.sequences ?? []).map((s: any) => ({
+        const seqs = ((ay.data ?? []) as AyYear[]).flatMap((year) =>
+          (year.periods ?? []).flatMap((p) =>
+            (p.sequences ?? []).map((s) => ({
               id: s.id,
               label: `${year.name} · ${p.name} · ${s.name}`,
             })),
@@ -114,7 +116,11 @@ export default function SectionAnonymatStaff({ onToast }: Props) {
     if (selected?.anonymatStatus === 'ANONYMISATION_TERMINEE' && selected.correctionMode === 'CROSSED' && teachers.length === 0) {
       fetchApi('/api/v2/users?role=TEACHER', { credentials: 'include' })
         .then(r => r.json())
-        .then(d => { if (d.success) setTeachers(d.data.map((u: any) => ({ id: u.id, name: `${u.firstName} ${u.lastName}` }))) })
+        .then(d => {
+          if (d.success) {
+            setTeachers((d.data as Array<{ id: string; firstName: string; lastName: string }>).map((u) => ({ id: u.id, name: `${u.firstName} ${u.lastName}` })))
+          }
+        })
         .catch(() => {})
     }
   }, [selected?.anonymatStatus, selected?.correctionMode])

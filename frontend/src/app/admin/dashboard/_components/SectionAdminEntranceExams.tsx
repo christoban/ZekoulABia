@@ -8,33 +8,19 @@ import ConcoursRoomsManager from './concours/ConcoursRoomsManager';
 import ConcoursGradesSheet from './concours/ConcoursGradesSheet';
 import ConcoursDeliberationSimulator from './concours/ConcoursDeliberationSimulator';
 import ConcoursCepBatchModal from './concours/ConcoursCepBatchModal';
+import type {
+  EntranceExamSession,
+  EntranceExamSubject,
+  EntranceExamRoom,
+  EntranceExamSummary,
+} from '@/features/concours/entranceExamShared';
 
 interface Props { onToast: (msg: string, type?: 'success' | 'error' | 'info') => void }
 
-interface Session {
-  id: string; name: string; status: string; examDate: string;
-  admissionThreshold: number | null; availableSeats: number | null;
-}
-
-interface Subject {
-  id: string; name: string; coefficient: number; maxScore: number; eliminatoryScore?: number | null;
-}
-
-interface Room {
-  id: string; sessionId: string; name: string; capacity: number; assignedCandidatesCount?: number;
-}
-
-interface Candidate {
-  id: string; candidateNumber?: string | null; firstName: string; lastName: string; examScore: number | null;
-  totalAverage?: number | null; rank?: number | null; roomName?: string | null; deskNumber?: number | null;
-  admissionStatus: string; cepResult: string | null; cepResultDate: string | null;
-  studentProfileId: string | null; grades?: { subjectId: string; score: number | null; isAbsent: boolean }[];
-}
-
-interface Summary {
-  session: Session; total: number; pending: number; admisProvisoire: number;
-  confirms: number; annules: number; cepPending: number; candidates: Candidate[];
-}
+type Session = EntranceExamSession;
+type Subject = EntranceExamSubject;
+type Room = EntranceExamRoom;
+type Summary = EntranceExamSummary;
 
 const btnPri = { padding: '8px 18px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' as const };
 const btnSec = { padding: '8px 18px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 14, cursor: 'pointer' as const };

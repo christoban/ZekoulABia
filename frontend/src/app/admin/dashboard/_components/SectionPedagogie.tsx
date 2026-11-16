@@ -6,6 +6,7 @@ import { useT } from '@/lib/i18n'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
 import { Circle, TrendingUp, BookOpen, CheckCircle2, Inbox, Check, WifiOff } from 'lucide-react'
 import DelegationSupervisionBanner from './DelegationSupervisionBanner'
+import { confirmAction } from '@/components/shell/ConfirmDialog'
 
 import type { AdminSection } from '../_types'
 
@@ -182,7 +183,7 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
   }
 
   const handleDeleteProgramme = async (id: string) => {
-    if (!confirm('Supprimer ce programme et tous ses chapitres ?')) return
+    if (!(await confirmAction('Supprimer ce programme et tous ses chapitres ?'))) return
     const r = await fetchApi(`/api/v2/pedagogie/programmes/${id}`, { method: 'DELETE', credentials: 'include' })
     const d = await r.json()
     if (d.success) { onToast('Programme supprimé', 'success'); loadProgrammes() }

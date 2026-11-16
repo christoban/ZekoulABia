@@ -201,7 +201,7 @@ export default function StudentDashboard() {
           excused: statsRes.stats.excused || 0, attendanceRate: statsRes.stats.attendanceRate || '0%',
         } : null
         const weeks: Record<string, { week: string; present: number; absent: number; late: number; excused: number }> = {}
-        ;(recordsRes.records || []).forEach((r: any) => {
+        ;((recordsRes.records || []) as Array<{ date: string; status: string }>).forEach((r) => {
           const d = new Date(r.date), sw = new Date(d)
           sw.setDate(d.getDate() - d.getDay() + 1)
           const k = sw.toISOString().slice(0, 10)
@@ -221,7 +221,9 @@ export default function StudentDashboard() {
           await putCachedData('student:academic-years', ayRes.data)
 
           // Extraire toutes les séquences de l'année courante
-          const curYear = ayRes.data.find((y: any) => y.isCurrent) ?? ayRes.data[0]
+          type AyYear = { isCurrent?: boolean; periods?: Array<{ sequences?: Array<{ id?: string }> }> }
+          const years = ayRes.data as AyYear[]
+          const curYear = years.find((y) => y.isCurrent) ?? years[0]
           const seqIds: string[] = []
           for (const period of (curYear?.periods ?? [])) {
             for (const s of (period.sequences ?? [])) {
@@ -358,7 +360,7 @@ export default function StudentDashboard() {
             archives: babRes.counts.archives ?? 0,
           } : {
             all: babItems.length,
-            pinned: babItems.filter((p: any) => p.isPinned || p.pinned).length,
+            pinned: (babItems as Array<{ isPinned?: boolean; pinned?: boolean }>).filter((p) => p.isPinned || p.pinned).length,
             for_me: babItems.length,
             unread: 0,
             archives: 0,

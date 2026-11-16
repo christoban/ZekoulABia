@@ -7,31 +7,21 @@ import { useT } from '@/lib/i18n'
 import { groupTimetableSlotsForDisplay, normalizeTimetableCellSlots, timetableCellKey } from '@/lib/timetableSlotGrouping'
 import { X, AlertTriangle, CalendarDays, Calendar, Bot } from 'lucide-react'
 import DelegationSupervisionBanner from './DelegationSupervisionBanner'
+import { confirmAction } from '@/components/shell/ConfirmDialog'
+import {
+  DAY_MAP,
+  subjectColor,
+  type TimetableClassItem as ClassItem,
+  type TimetableSlot,
+  type TimetableData as Timetable,
+  type PeriodeGrille,
+} from '@/features/timetable/timetableShared'
 
 import type { AdminSection } from '../_types'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
   onNav?: (section: AdminSection) => void
-}
-
-interface ClassItem { id: string; name: string }
-interface TimetableSlot {
-  id: string; dayOfWeek: number; startTime: string; endTime: string
-  room: string | null; kind: string
-  subject: { id: string; name: string } | null
-  teacher: { id: string; firstName: string; lastName: string } | null
-  isLV2Slot?: boolean
-  groupId?: string | null
-}
-interface Timetable {
-  id: string; classId: string; status: string; generatedByAI: boolean
-  class: { id: string; name: string }
-  slots: TimetableSlot[]
-}
-interface PeriodeGrille {
-  ordre: number; debut: string; fin: string
-  type: 'COURS' | 'PETITE_PAUSE' | 'GRANDE_PAUSE'; duree: number
 }
 interface GenResult {
   classId: string; className: string; timetableId: string; slotsCreated: number; isNew: boolean
@@ -45,24 +35,6 @@ interface GenResults {
   skipped: { classId: string; className: string; reason: string }[]
   unplaced: UnplacedItem[]
   stats: { classesTraitees: number; classesIgnorees: number; slotsTotal: number; coursNonPlaces: number }
-}
-
-const DAY_MAP: Record<string, number> = {
-  LUNDI: 0, MARDI: 1, MERCREDI: 2, JEUDI: 3, VENDREDI: 4, SAMEDI: 5,
-}
-
-const SUBJECT_PALETTES = [
-  { bg: 'rgba(5,150,105,0.10)', border: 'var(--green)', text: 'var(--green2)' },
-  { bg: 'rgba(37,99,235,0.09)', border: 'var(--blue)', text: 'var(--blue)' },
-  { bg: 'rgba(217,119,6,0.09)', border: 'var(--amber)', text: 'var(--amber)' },
-  { bg: 'rgba(139,92,246,0.09)', border: 'var(--purple)', text: 'var(--purple)' },
-  { bg: 'rgba(236,72,153,0.09)', border: 'var(--red)', text: 'var(--red)' },
-  { bg: 'rgba(142,42,58,0.09)', border: 'var(--primary)', text: 'var(--primary)' },
-]
-function subjectColor(id: string) {
-  let hash = 0
-  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) & 0xffffffff
-  return SUBJECT_PALETTES[Math.abs(hash) % SUBJECT_PALETTES.length]
 }
 
 const freeSlotStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, width: '100%', minHeight: '60px', boxSizing: 'border-box' }
@@ -221,7 +193,7 @@ export default function SectionTimetable({ onToast, onNav }: Props) {
   }
 
   const handleReopen = async () => {
-    if (!timetable || !window.confirm(t('timetable.reopenConfirm'))) return
+    if (!timetable || !(await confirmAction(t('timetable.reopenConfirm')))) return
     setReopening(true)
     try {
       const res = await fetchApi(`/api/v2/timetables/${timetable.id}/reopen`, {

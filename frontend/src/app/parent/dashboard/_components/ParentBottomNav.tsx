@@ -5,6 +5,7 @@ import { LayoutDashboard, Users, FileText, Banknote, Menu, Calendar } from 'luci
 import type { ParentSection } from '../_types'
 import { useT } from '@/lib/i18n'
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount'
+import { AppBottomNav } from '@/components/shell/AppBottomNav'
 
 interface Props {
   current: ParentSection
@@ -71,57 +72,23 @@ export default function ParentBottomNav({ current, onChange, onOpenMenu }: Props
   ]
 
   return (
-    <nav
-      aria-label="Navigation mobile parent"
-      className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--border)] shadow-[0_-2px_10px_rgba(0,0,0,0.05)] backdrop-blur-md"
-      style={{
-        background: 'var(--surface)',
-        paddingBottom: 'calc(6px + env(safe-area-inset-bottom, 0px))',
-        paddingTop: 6,
-      }}
-    >
-      <div className="flex items-center justify-around px-1 max-w-lg mx-auto">
-        {items.map(item => {
-          const isActive = !item.isMenuTrigger && (item.targetSection === current || item.matchSections.includes(current))
-          const Icon = item.icon
-          const rawLabel = t(item.labelKey)
-          const label = (rawLabel && rawLabel !== item.labelKey) ? rawLabel : item.fallbackLabel
-
-          return (
-            <button
-              key={item.id}
-              onClick={() => {
-                if (item.isMenuTrigger) {
-                  onOpenMenu()
-                } else if (item.targetSection) {
-                  onChange(item.targetSection)
-                }
-              }}
-              className="flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-colors border-none bg-transparent cursor-pointer min-w-[54px] relative"
-              style={{ WebkitTapHighlightColor: 'transparent' }}
-            >
-              <div
-                className="w-11 h-6 rounded-full flex items-center justify-center transition-all duration-200 relative"
-                style={{
-                  background: isActive ? 'var(--sidebar)' : 'transparent',
-                  color: isActive ? '#ffffff' : 'var(--text3)',
-                }}
-              >
-                <Icon size={16} strokeWidth={isActive ? 2.4 : 2} />
-              </div>
-              <span
-                className="text-[10px] tracking-tight truncate max-w-[62px]"
-                style={{
-                  fontWeight: isActive ? 800 : 500,
-                  color: isActive ? 'var(--text)' : 'var(--text3)',
-                }}
-              >
-                {label}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-    </nav>
+    <AppBottomNav
+      ariaLabel="Navigation mobile parent"
+      items={items.map((item) => {
+        const rawLabel = t(item.labelKey)
+        const label = rawLabel && rawLabel !== item.labelKey ? rawLabel : item.fallbackLabel
+        return {
+          id: item.id,
+          label,
+          icon: item.icon,
+          badge: item.badge,
+          isActive: !item.isMenuTrigger && (item.targetSection === current || item.matchSections.includes(current)),
+          onClick: () => {
+            if (item.isMenuTrigger) onOpenMenu()
+            else if (item.targetSection) onChange(item.targetSection)
+          },
+        }
+      })}
+    />
   )
 }

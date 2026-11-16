@@ -60,8 +60,8 @@ export default function SectionCorbeille({ onToast }: Props) {
       if (!res.ok || !d.success) throw new Error(d.message || t('corbeille.erreur_restauration'))
       onToast(t('corbeille.restaure').replace('{nom}', el.nom), 'success')
       refetch()
-    } catch (e: any) {
-      onToast(e.message || t('corbeille.erreur_restauration'), 'error')
+    } catch (e: unknown) {
+      onToast(e instanceof Error ? e.message : t('corbeille.erreur_restauration'), 'error')
     } finally {
       setRestaurationEnCours(null)
     }

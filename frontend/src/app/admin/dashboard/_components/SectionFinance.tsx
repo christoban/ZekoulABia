@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { notifyToast } from '@/components/shell/AppToast'
 import { fetchApi } from '@/lib/fetchApi'
 import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
@@ -11,51 +12,16 @@ import { fmtCFA } from '@/components/finance/ModalOverlay'
 import type { AdminSection } from '../_types'
 import InvoiceDetailsModal from '@/features/finance/InvoiceDetailsModal'
 import FinanceCashOpsPanel from '@/features/finance/FinanceCashOpsPanel'
+import {
+  INVOICE_STATUS_STYLES,
+  type FinanceFeePlan as FeePlan,
+  type FinanceInvoiceItem as InvoiceItem,
+  type FinancePagination as Pagination,
+} from '@/features/finance/financeShared'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
   onNav?: (section: AdminSection) => void
-}
-
-interface FeePlan {
-  id: string
-  name: string
-  amount: number
-  currency: string
-  feeType: string
-  level: string | null
-  description: string | null
-  isRefundable: boolean
-  dueDate: string | null
-  createdAt: string
-  status?: string
-}
-
-interface Payment {
-  id: string
-  amount: number
-  status: string
-  paidAt: string | null
-  method: string
-}
-
-interface InvoiceItem {
-  id: string
-  amount: number
-  currency: string
-  status: string
-  dueDate: string | null
-  createdAt: string
-  description: string | null
-  student: { id: string; firstName: string; lastName: string }
-  feePlan: { id: string; name: string; feeType: string } | null
-  payments: Payment[]
-}
-
-interface Pagination {
-  total: number
-  page: number
-  pages: number
 }
 
 export default function SectionFinance({ onToast, onNav }: Props) {
@@ -73,14 +39,15 @@ export default function SectionFinance({ onToast, onNav }: Props) {
   const t = useT('finance')
 
   const getInvStatus = (status: string) => {
-    const styles: Record<string, { bg: string; color: string; label: string }> = {
-      PENDING: { bg: 'var(--amber-light)', color: 'var(--amber)', label: t('invoice_status.PENDING') },
-      PAID: { bg: 'var(--green-light)', color: 'var(--green)', label: t('invoice_status.PAID') },
-      OVERDUE: { bg: 'var(--red-light)', color: 'var(--red)', label: t('invoice_status.OVERDUE') },
-      CANCELLED: { bg: 'var(--bg2)', color: 'var(--text2)', label: t('invoice_status.CANCELLED') },
-      PARTIAL: { bg: 'var(--blue-light)', color: 'var(--blue)', label: t('invoice_status.PARTIAL') },
+    const base = INVOICE_STATUS_STYLES[status] ?? { bg: 'var(--bg2)', color: 'var(--text2)' }
+    const labelMap: Record<string, string> = {
+      PENDING: t('invoice_status.PENDING'),
+      PAID: t('invoice_status.PAID'),
+      OVERDUE: t('invoice_status.OVERDUE'),
+      CANCELLED: t('invoice_status.CANCELLED'),
+      PARTIAL: t('invoice_status.PARTIAL'),
     }
-    return styles[status] ?? { bg: 'var(--bg2)', color: 'var(--text2)', label: status }
+    return { ...base, label: labelMap[status] ?? status }
   }
 
   const FEE_TYPE_LABEL: Record<string, string> = {
@@ -178,13 +145,13 @@ export default function SectionFinance({ onToast, onNav }: Props) {
         ? `Plan « ${planName} » validé et publié avec succès ! ${count} facture(s) générée(s) pour les élèves.`
         : `Plan « ${planName} » validé et publié avec succès !`
       if (onToast) onToast(msg, 'success')
-      else alert(msg)
+      else notifyToast(msg, 'success')
       fetchPlans()
       window.dispatchEvent(new Event('zekoulabia:data-changed'))
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : t('errors.generic_error')
       if (onToast) onToast(errMsg, 'error')
-      else alert(errMsg)
+      else notifyToast(errMsg, 'error')
     } finally {
       setValidatingPlanId(null)
     }

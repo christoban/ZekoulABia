@@ -314,7 +314,7 @@ export default function SectionOrientation({ onToast }: Props) {
     fetchApi('/api/v2/academic-years', { credentials: 'include' })
       .then(r => r.json())
       .then(d => {
-        const list: AcademicYear[] = (d.data || []).map((y: any) => ({ id: y.id, label: y.label || y.name || y.id }))
+        const list: AcademicYear[] = ((d.data || []) as Array<{ id: string; label?: string; name?: string }>).map((y) => ({ id: y.id, label: y.label || y.name || y.id }))
         setYears(list)
         if (list.length > 0) setSelectedYear(list[0].id)
       })

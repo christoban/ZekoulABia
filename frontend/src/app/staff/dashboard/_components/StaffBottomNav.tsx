@@ -13,6 +13,7 @@ import {
 import type { StaffSection } from '../_types'
 import { useT } from '@/lib/i18n'
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount'
+import { AppBottomNav } from '@/components/shell/AppBottomNav'
 
 interface Props {
   current: StaffSection
@@ -133,65 +134,19 @@ export default function StaffBottomNav({ current, onChange, allowedSections, onO
   const finalItems = items.slice(0, 5)
 
   return (
-    <nav
-      aria-label="Navigation mobile principale staff"
-      className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--border)] shadow-[0_-2px_10px_rgba(0,0,0,0.05)] backdrop-blur-md"
-      style={{
-        background: 'var(--surface)',
-        paddingBottom: 'calc(6px + env(safe-area-inset-bottom, 0px))',
-        paddingTop: 6,
-      }}
-    >
-      <div className="flex items-center justify-around px-1 max-w-lg mx-auto">
-        {finalItems.map(item => {
-          const isActive = !item.isMenuTrigger && (item.targetSection === current || item.matchSections.includes(current))
-          const Icon = item.icon
-          const label = tnav(item.labelKey) || item.fallbackLabel
-
-          return (
-            <button
-              key={item.id}
-              onClick={() => {
-                if (item.isMenuTrigger) {
-                  onOpenMenu()
-                } else if (item.targetSection) {
-                  onChange(item.targetSection)
-                }
-              }}
-              className="flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-colors border-none bg-transparent cursor-pointer min-w-[54px] relative"
-              style={{
-                WebkitTapHighlightColor: 'transparent',
-              }}
-            >
-              <div
-                className="w-11 h-6 rounded-full flex items-center justify-center transition-all duration-200 relative"
-                style={{
-                  background: isActive ? 'var(--sidebar)' : 'transparent',
-                  color: isActive ? '#ffffff' : 'var(--text3)',
-                }}
-              >
-                <Icon size={16} strokeWidth={isActive ? 2.4 : 2} />
-                {item.badge !== undefined && item.badge > 0 && (
-                  <span
-                    className="absolute -top-1 -right-1 min-w-[15px] h-[15px] rounded-full flex items-center justify-center text-[9px] font-black px-1 text-white bg-red-500 shadow-sm"
-                  >
-                    {item.badge > 99 ? '99+' : item.badge}
-                  </span>
-                )}
-              </div>
-              <span
-                className="text-[10px] tracking-tight truncate max-w-[62px]"
-                style={{
-                  fontWeight: isActive ? 800 : 500,
-                  color: isActive ? 'var(--text)' : 'var(--text3)',
-                }}
-              >
-                {label}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-    </nav>
+    <AppBottomNav
+      ariaLabel="Navigation mobile principale staff"
+      items={finalItems.map((item) => ({
+        id: item.id,
+        label: tnav(item.labelKey) || item.fallbackLabel,
+        icon: item.icon,
+        badge: item.badge,
+        isActive: !item.isMenuTrigger && (item.targetSection === current || item.matchSections.includes(current)),
+        onClick: () => {
+          if (item.isMenuTrigger) onOpenMenu()
+          else if (item.targetSection) onChange(item.targetSection)
+        },
+      }))}
+    />
   )
 }

@@ -51,8 +51,15 @@ export default function Step1Eleve({
           { credentials: 'include' },
         )
         const data = await res.json()
-        const users = Array.isArray(data.data) ? data.data : (Array.isArray(data.users) ? data.users : [])
-        const match = users.map((u: any) => ({
+        interface StudentCandidateRow {
+          id: string
+          lastName?: string
+          firstName?: string
+          nomProvisoire?: string
+          dateNaissance?: string
+        }
+        const users: StudentCandidateRow[] = Array.isArray(data.data) ? data.data : (Array.isArray(data.users) ? data.users : [])
+        const match = users.map((u) => ({
           id: u.id,
           nomComplet: `${u.lastName || ''} ${u.firstName || ''}`.trim() || u.nomProvisoire || 'Élève',
           dateNaissance: u.dateNaissance,
@@ -352,7 +359,7 @@ export default function Step1Eleve({
           </label>
           <select
             value={form.sousSysteme}
-            onChange={(e) => onChange({ sousSysteme: e.target.value as any })}
+            onChange={(e) => onChange({ sousSysteme: e.target.value as StepperFormState['sousSysteme'] })}
             style={{
               width: '100%',
               padding: '8px 12px',

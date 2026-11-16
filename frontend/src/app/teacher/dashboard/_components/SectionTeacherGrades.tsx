@@ -13,19 +13,48 @@ interface Props {
   user?: UserInfo | null
 }
 
+interface TeacherClassOption { id: string; name: string }
+interface TeacherSubjectOption { id: string; name: string }
+interface TeacherSequenceOption {
+  id: string
+  name: string
+  periodName?: string
+  academicYearId?: string
+  [key: string]: unknown
+}
+interface TeacherStudentRef {
+  id?: string
+  firstName: string
+  lastName: string
+  className?: string
+}
+interface TeacherGradeRow {
+  id?: string
+  studentId: string
+  student?: TeacherStudentRef | null
+  sequenceScore?: number | null
+  sequenceAverage?: number | null
+  observation?: string | null
+  validationStatus?: string
+  classId?: string
+  subjectId?: string
+  sequenceId?: string
+  rejectionReason?: string | null
+}
+
 export default function SectionTeacherGrades({ onToast, user }: Props) {
   const t = useT('teacher')
   const tcommon = useT('common')
-  const [classes, setClasses] = useState<any[]>([])
-  const [subjects, setSubjects] = useState<any[]>([])
-  const [sequences, setSequences] = useState<any[]>([])
+  const [classes, setClasses] = useState<TeacherClassOption[]>([])
+  const [subjects, setSubjects] = useState<TeacherSubjectOption[]>([])
+  const [sequences, setSequences] = useState<TeacherSequenceOption[]>([])
   const [selectedClass, setSelectedClass] = useState('')
   const [selectedSubject, setSelectedSubject] = useState('')
   const [selectedSequence, setSelectedSequence] = useState('')
-  const [grades, setGrades] = useState<any[]>([])
+  const [grades, setGrades] = useState<TeacherGradeRow[]>([])
   const [notes, setNotes] = useState<Record<string, number>>({})
   const [observations, setObservations] = useState<Record<string, string>>({})
-  const [rejectedGrades, setRejectedGrades] = useState<any[]>([])
+  const [rejectedGrades, setRejectedGrades] = useState<TeacherGradeRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [rosterLabel, setRosterLabel] = useState<string | null>(null)
@@ -54,9 +83,12 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
           await putCachedData('teacher:subjects', subRes.data)
         }
         if (ayRes.success) {
-          const seqs = ayRes.data.flatMap((ay: any) =>
-            ay.periods?.flatMap((p: any) =>
-              p.sequences?.map((s: any) => ({ ...s, periodName: p.name, academicYearId: ay.id })) || []
+          interface AySeqRaw { id: string; name: string; [key: string]: unknown }
+          interface AyPeriodRaw { name: string; sequences?: AySeqRaw[] }
+          interface AyYearRaw { id: string; periods?: AyPeriodRaw[] }
+          const seqs: TeacherSequenceOption[] = (ayRes.data as AyYearRaw[]).flatMap((ay) =>
+            ay.periods?.flatMap((p) =>
+              p.sequences?.map((s) => ({ ...s, periodName: p.name, academicYearId: ay.id })) || []
             ) || []
           )
           setSequences(seqs)
@@ -66,9 +98,9 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
       }).catch(() => {}).finally(() => setLoading(false))
     } else {
       Promise.all([
-        getCachedData<any[]>('teacher:classes'),
-        getCachedData<any[]>('teacher:subjects'),
-        getCachedData<any[]>('teacher:sequences'),
+        getCachedData<TeacherClassOption[]>('teacher:classes'),
+        getCachedData<TeacherSubjectOption[]>('teacher:subjects'),
+        getCachedData<TeacherSequenceOption[]>('teacher:sequences'),
       ]).then(([clsCache, subCache, seqCache]) => {
         if (clsCache) setClasses(clsCache.data)
         if (subCache) setSubjects(subCache.data)
@@ -104,7 +136,7 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
     const draftKey = `draft:grades:${selectedClass}:${selectedSubject}:${selectedSequence}`
     try {
       if (!isOnline) {
-        const cached = await getCachedData<any[]>(`teacher:grades:${selectedClass}:${selectedSubject}:${selectedSequence}`)
+        const cached = await getCachedData<TeacherGradeRow[]>(`teacher:grades:${selectedClass}:${selectedSubject}:${selectedSequence}`)
         const draft = await getCachedData<{ notes: Record<string, number>; observations: Record<string, string> }>(draftKey)
         if (cached) {
           setGrades(cached.data)
@@ -114,7 +146,7 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
           } else {
             const n: Record<string, number> = {}
             const o: Record<string, string> = {}
-            ;(cached.data as any[]).forEach((g: any) => {
+            cached.data.forEach((g) => {
               n[g.studentId] = g.sequenceScore ?? 0
               o[g.studentId] = g.observation || ''
             })
@@ -133,7 +165,8 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
       try {
         const classStudentsRes = await fetchApi(`/api/v2/classes/${selectedClass}/students`, { credentials: 'include' }).then(r => r.json())
         if (classStudentsRes.success && Array.isArray(classStudentsRes.data) && classStudentsRes.data.length > 0) {
-          allClassStudents = classStudentsRes.data.map((s: any) => ({
+          interface RawClassStudent { id: string; firstName?: string | null; lastName?: string | null }
+          allClassStudents = (classStudentsRes.data as RawClassStudent[]).map((s) => ({
             id: s.id,
             firstName: s.firstName || '',
             lastName: s.lastName || '',
@@ -146,7 +179,8 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
         try {
           const usersRes = await fetchApi(`/api/v2/users?role=STUDENT&classId=${selectedClass}&limit=100`, { credentials: 'include' }).then(r => r.json())
           if (usersRes.success && Array.isArray(usersRes.data) && usersRes.data.length > 0) {
-            allClassStudents = usersRes.data.map((u: any) => ({
+            interface RawUserStudent { id: string; firstName?: string | null; lastName?: string | null }
+            allClassStudents = (usersRes.data as RawUserStudent[]).map((u) => ({
               id: u.id,
               firstName: u.firstName || '',
               lastName: u.lastName || '',
@@ -159,13 +193,13 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
       // 2. Récupération des notes existantes pour cette séquence
       const url = `/api/v2/grades?classId=${selectedClass}&subjectId=${selectedSubject}&sequenceId=${selectedSequence}`
       const res = await fetchApi(url, { credentials: 'include' }).then(r => r.json()).catch(() => ({ grades: [] }))
-      const gradesByStudentId = new Map<string, any>()
+      const gradesByStudentId = new Map<string, TeacherGradeRow>()
       if (Array.isArray(res.grades)) {
-        res.grades.forEach((g: any) => gradesByStudentId.set(g.studentId, g))
+        (res.grades as TeacherGradeRow[]).forEach((g) => gradesByStudentId.set(g.studentId, g))
       }
 
       // 3. Fusion : chaque élève de la classe apparaît, avec sa note existante ou vide
-      let baseRows: any[] = allClassStudents.map(s => {
+      let baseRows: TeacherGradeRow[] = allClassStudents.map(s => {
         const existing = gradesByStudentId.get(s.id)
         if (existing) return existing
         return {
@@ -194,7 +228,7 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
       } else {
         const n: Record<string, number> = {}
         const o: Record<string, string> = {}
-        baseRows.forEach((r: any) => {
+        baseRows.forEach((r) => {
           n[r.studentId] = r.sequenceScore ?? r.sequenceAverage ?? 0
           o[r.studentId] = r.observation || ''
         })
@@ -207,15 +241,17 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
         try {
           const roster = await fetchApi(`/api/v2/teacher/roster?classId=${selectedClass}&subjectId=${selectedSubject}`, { credentials: 'include' }).then(r => r.json())
           if (roster?.success && roster.data.filtered) {
-            const byId = new Map(baseRows.map((g: any) => [g.studentId, g]))
-            baseRows = roster.data.students.map((s: any) => {
+            interface RosterStudent { id: string; firstName: string; lastName: string; className?: string }
+            const byId = new Map(baseRows.map((g) => [g.studentId, g]))
+            const rosterStudents = roster.data.students as RosterStudent[]
+            baseRows = rosterStudents.map((s) => {
               const existing = byId.get(s.id)
               const student = existing?.student ?? { id: s.id, firstName: s.firstName, lastName: s.lastName }
               return { ...(existing ?? { studentId: s.id }), student: { ...student, className: s.className } }
             })
             setRosterLabel(roster.data.label)
             // Restreindre la saisie aux seuls élèves du roster (évite d'enregistrer une note à un non-électeur)
-            const allowed = new Set<string>(roster.data.students.map((s: any) => s.id))
+            const allowed = new Set<string>(rosterStudents.map((s) => s.id))
             setNotes(prev => Object.fromEntries(Object.entries(prev).filter(([id]) => allowed.has(id))))
             setObservations(prev => Object.fromEntries(Object.entries(prev).filter(([id]) => allowed.has(id))))
           }
@@ -224,8 +260,8 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
 
       setGrades(baseRows)
       await putCachedData(`teacher:grades:${selectedClass}:${selectedSubject}:${selectedSequence}`, baseRows)
-    } catch (err: any) {
-      setError(err.message || t('grades_section.toast_error'))
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t('grades_section.toast_error'))
     } finally {
       setLoading(false)
     }
@@ -267,8 +303,8 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
       } else {
         onToast(res.message || t('grades_section.toast_error'), 'error')
       }
-    } catch (err: any) {
-      onToast(err.message, 'error')
+    } catch (err: unknown) {
+      onToast(err instanceof Error ? err.message : t('grades_section.toast_error'), 'error')
     } finally {
       setSaving(false)
     }
@@ -367,16 +403,16 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
       } else {
         onToast(res.message || t('grades_section.toast_import_error'), 'error')
       }
-    } catch (err: any) {
-      onToast(err.message, 'error')
+    } catch (err: unknown) {
+      onToast(err instanceof Error ? err.message : t('grades_section.toast_import_error'), 'error')
     } finally {
       setImporting(false)
     }
   }
 
-  const validatedCount = grades.filter((g: any) => g.validationStatus === 'VALIDATED' || g.validationStatus === 'LOCKED').length
-  const draftCount = grades.filter((g: any) => g.validationStatus === 'DRAFT' || !g.validationStatus).length
-  const rejectedCount = grades.filter((g: any) => g.validationStatus === 'REJECTED').length
+  const validatedCount = grades.filter((g) => g.validationStatus === 'VALIDATED' || g.validationStatus === 'LOCKED').length
+  const draftCount = grades.filter((g) => g.validationStatus === 'DRAFT' || !g.validationStatus).length
+  const rejectedCount = grades.filter((g) => g.validationStatus === 'REJECTED').length
   const modifiableCount = draftCount + rejectedCount
 
   if (loading && !grades.length) {
@@ -447,7 +483,7 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
       {grades.length > 0 && (
         <div style={{ background: 'var(--bg2)', borderRadius: 10, padding: '10px 14px', marginBottom: 10 }}>
           <div className="flex flex-col sm:flex-row sm:justify-between text-xs font-bold text-[var(--text2)] gap-1 mb-1.5">
-            <span>{classes.find((c: any) => c.id === selectedClass)?.name || ''} — {subjects.find((s: any) => s.id === selectedSubject)?.name || ''}</span>
+            <span>{classes.find((c) => c.id === selectedClass)?.name || ''} — {subjects.find((s) => s.id === selectedSubject)?.name || ''}</span>
             <span style={{ color: 'var(--green)' }}>{t('grades_section.progress_text').replace('{validated}', String(validatedCount)).replace('{total}', String(grades.length)).replace('{pct}', String(grades.length ? Math.round(validatedCount / grades.length * 100) : 0))}</span>
           </div>
           <div style={{ height: 6, background: 'var(--border2)', borderRadius: 6, overflow: 'hidden' }}>
@@ -468,7 +504,7 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
               onChange={e => setSelectedClass(e.target.value)}
             >
               <option value="">{t('grades_section.filter_class')}</option>
-              {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
 
             <select
@@ -478,7 +514,7 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
               onChange={e => setSelectedSubject(e.target.value)}
             >
               <option value="">{t('grades_section.filter_subject')}</option>
-              {subjects.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
 
             <select
@@ -488,7 +524,7 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
               onChange={e => setSelectedSequence(e.target.value)}
             >
               <option value="">{t('grades_section.filter_sequence')}</option>
-              {sequences.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              {sequences.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
 
             <button
@@ -583,8 +619,8 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
           <>
             {/* ── VUE MOBILE: Cartes de saisie des notes tactiles ── */}
             <div className="md:hidden divide-y divide-[var(--border)]">
-              {grades.map((g: any, i: number) => {
-                const sid = g.studentId || g.student?.id
+              {grades.map((g, i: number) => {
+                const sid = g.studentId || g.student?.id || ''
                 const name = g.student ? `${g.student.firstName} ${g.student.lastName}` : t('grades_section.unknown_student')
                 const status = g.validationStatus || 'DRAFT'
                 const sColors: Record<string, { bg: string; color: string }> = {
@@ -679,8 +715,8 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
                   ))}</tr>
                 </thead>
                 <tbody>
-                  {grades.map((g: any, i: number) => {
-                    const sid = g.studentId || g.student?.id
+                  {grades.map((g, i: number) => {
+                    const sid = g.studentId || g.student?.id || ''
                     const name = g.student ? `${g.student.firstName} ${g.student.lastName}` : t('grades_section.unknown_student')
                     const status = g.validationStatus || 'DRAFT'
                     const sColors: Record<string, { bg: string; color: string }> = {
@@ -738,7 +774,7 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
             {/* Actions de sauvegarde & soumission */}
             <div className="p-3 sm:p-3.5 border-t border-[var(--border)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <span className="text-xs text-[var(--text3)] font-semibold">
-                {t('grades_section.summary_draft').replace('{count}', String(draftCount))}{rejectedCount > 0 ? ` · ${t('grades_section.summary_rejected').replace('{count}', String(rejectedCount))}` : ''} · {t('grades_section.summary_submitted').replace('{count}', String(grades.filter((g: any) => g.validationStatus === 'SUBMITTED').length))}
+                {t('grades_section.summary_draft').replace('{count}', String(draftCount))}{rejectedCount > 0 ? ` · ${t('grades_section.summary_rejected').replace('{count}', String(rejectedCount))}` : ''} · {t('grades_section.summary_submitted').replace('{count}', String(grades.filter((g) => g.validationStatus === 'SUBMITTED').length))}
               </span>
               <div className="flex gap-2 w-full sm:w-auto">
                 {modifiableCount > 0 ? (
@@ -783,7 +819,7 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
           </div>
           {/* Vue mobile: Cartes notes rejetées */}
           <div className="md:hidden divide-y divide-[rgba(220,38,38,0.15)]">
-            {rejectedGrades.map((g: any) => (
+            {rejectedGrades.map((g) => (
               <div key={g.id} className="p-3.5 space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -815,7 +851,7 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
               <thead><tr>{[t('grades_section.rejected_table_student'), t('grades_section.rejected_table_grade'), t('grades_section.rejected_table_reason'), t('grades_section.rejected_table_actions')].map(h => <th key={h} style={thSt}>{h}</th>)}</tr></thead>
               <tbody>
-                {rejectedGrades.map((g: any) => (
+                {rejectedGrades.map((g) => (
                   <tr key={g.id}>
                     <td style={{ ...tdSt, fontWeight: 700, color: 'var(--text)' }}>{g.student?.firstName} {g.student?.lastName}</td>
                     <td style={{ ...tdSt, fontWeight: 800, color: 'var(--red)' }}>{g.sequenceScore ?? '?'}/20</td>

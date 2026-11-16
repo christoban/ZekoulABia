@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { AlertTriangle, Lock, Loader2 } from 'lucide-react'
+import { confirmAction } from '@/components/shell/ConfirmDialog'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
@@ -87,7 +88,7 @@ export default function SectionCautions({ onToast }: Props) {
       onToast(t('cautions.noEligiblePayment'), 'error')
       return
     }
-    if (!confirm(t('cautions.refundConfirm', { firstName: caution.student.firstName, lastName: caution.student.lastName, amount: fmtCFA(caution.amount) }))) return
+    if (!(await confirmAction(t('cautions.refundConfirm', { firstName: caution.student.firstName, lastName: caution.student.lastName, amount: fmtCFA(caution.amount) })))) return
     setActionId(caution.id)
     try {
       const res = await fetchApi(`/api/v2/finance/payments/caution/${cautionPayment.id}/rembourser`, {
@@ -107,7 +108,7 @@ export default function SectionCautions({ onToast }: Props) {
   }
 
   const handleRetention = async (caution: CautionInvoice) => {
-    if (!confirm(t('cautions.retainConfirm', { firstName: caution.student.firstName, lastName: caution.student.lastName }))) return
+    if (!(await confirmAction(t('cautions.retainConfirm', { firstName: caution.student.firstName, lastName: caution.student.lastName })))) return
     const cautionPayment = findEligiblePayment(caution)
     if (!cautionPayment || !isCautionHeld(caution)) {
       onToast(t('cautions.noPaymentFound'), 'error')

@@ -38,11 +38,12 @@ export default function Step2Scolarite({
       try {
         const res = await fetchApi('/api/v2/classes')
         const data = await res.json()
-        const classes = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : [])
+        interface ClassLevelRow { level?: string | null; name?: string }
+        const classes: ClassLevelRow[] = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : [])
         const levels = Array.from(
           new Set(
             classes
-              .map((c: any) => c.level || c.name?.split(' ')[0])
+              .map((c) => c.level || c.name?.split(' ')[0])
               .filter(Boolean),
           ),
         ) as string[]

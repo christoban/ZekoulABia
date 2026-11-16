@@ -72,8 +72,8 @@ export default function SectionGroupTransfers({ schools }: { schools: EcoleMembr
       setMessage({ text: 'Demande de transfert créée — en attente de validation par l\'école cible.', type: 'success' })
       setSelected(null); setRecherche(''); setResultats([])
       loadDemandes()
-    } catch (err: any) {
-      setMessage({ text: err.message, type: 'error' })
+    } catch (err: unknown) {
+      setMessage({ text: err instanceof Error ? err.message : 'Erreur', type: 'error' })
     } finally {
       setSubmitting(false)
     }

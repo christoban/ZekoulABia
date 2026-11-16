@@ -188,9 +188,10 @@ export default function SectionRH({ onToast }: { onToast: OnToast }) {
       putCachedData(cacheKey, list).catch(() => {})
       if (!selectedEmployeeId && list.length > 0) setSelectedEmployeeId(list[0].id)
     } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error)
       const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) ||
-        String((error as any)?.message || error).includes('fetch') ||
-        String((error as any)?.message || error).includes('Network')
+        errMsg.includes('fetch') ||
+        errMsg.includes('Network')
       if (!isNet && !cached?.data) {
         onToast(error instanceof Error ? error.message : t('rh.toast.errLoadStaff'), 'error')
       }
@@ -224,9 +225,10 @@ export default function SectionRH({ onToast }: { onToast: OnToast }) {
       setDocEmployeeId(employeeId)
       if (d.data) putCachedData(cacheKey, d.data).catch(() => {})
     } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error)
       const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) ||
-        String((error as any)?.message || error).includes('fetch') ||
-        String((error as any)?.message || error).includes('Network')
+        errMsg.includes('fetch') ||
+        errMsg.includes('Network')
       if (!isNet && !cached?.data) {
         onToast(error instanceof Error ? error.message : t('rh.toast.errLoadFile'), 'error')
       }
@@ -257,9 +259,10 @@ export default function SectionRH({ onToast }: { onToast: OnToast }) {
       setLeaveRequests(list)
       putCachedData(cacheKey, list).catch(() => {})
     } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error)
       const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) ||
-        String((error as any)?.message || error).includes('fetch') ||
-        String((error as any)?.message || error).includes('Network')
+        errMsg.includes('fetch') ||
+        errMsg.includes('Network')
       if (!isNet && !cached?.data) {
         onToast(error instanceof Error ? error.message : t('rh.toast.errLeaves'), 'error')
       }

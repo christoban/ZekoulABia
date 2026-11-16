@@ -199,7 +199,7 @@ export default function Step4AccesNumerique({ form, onChange }: Props) {
                 <label style={{ display: 'block', fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>Compte élève</label>
                 <select
                   value={form.compteEleveType}
-                  onChange={(e) => onChange({ compteEleveType: e.target.value as any })}
+                  onChange={(e) => onChange({ compteEleveType: e.target.value as StepperFormState['compteEleveType'] })}
                   style={{ width: '100%', padding: 6, borderRadius: 6, border: '1px solid var(--border)', fontSize: 12 }}
                 >
                   <option value="AUCUN">Aucun compte</option>
@@ -212,7 +212,7 @@ export default function Step4AccesNumerique({ form, onChange }: Props) {
                 <label style={{ display: 'block', fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>Canal de notification</label>
                 <select
                   value={form.canalNotification}
-                  onChange={(e) => onChange({ canalNotification: e.target.value as any })}
+                  onChange={(e) => onChange({ canalNotification: e.target.value as StepperFormState['canalNotification'] })}
                   style={{ width: '100%', padding: 6, borderRadius: 6, border: '1px solid var(--border)', fontSize: 12 }}
                 >
                   <option value="APPLI_PARENT">Application Parent</option>

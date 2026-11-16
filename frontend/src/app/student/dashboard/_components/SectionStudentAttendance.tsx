@@ -53,7 +53,7 @@ export default function SectionStudentAttendance({ onToast, user }: Props) {
     let weekly: WeeklyStat[] = []
     if (recordsRes.records?.length) {
       const weeks: Record<string, WeeklyStat> = {}
-      recordsRes.records.forEach((r: any) => {
+      ;(recordsRes.records as Array<{ date: string; status: string }>).forEach((r) => {
         const d = new Date(r.date)
         const startOfWeek = new Date(d)
         startOfWeek.setDate(d.getDate() - d.getDay() + 1)

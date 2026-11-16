@@ -447,8 +447,8 @@ export default function LoginPage() {
       } else {
         completeLogin(data.data)
       }
-    } catch (err: any) {
-      setOtpAlert(err.message)
+    } catch (err: unknown) {
+      setOtpAlert(err instanceof Error ? err.message : 'Erreur')
     } finally {
       setOtpLoading(false)
     }
@@ -469,8 +469,8 @@ export default function LoginPage() {
       if (data.emailMasked) setEmailMasked(data.emailMasked)
       startOtpTimer()
       setTimeout(() => otpRefs.current[0]?.focus(), 50)
-    } catch (err: any) {
-      setOtpAlert(err.message)
+    } catch (err: unknown) {
+      setOtpAlert(err instanceof Error ? err.message : 'Erreur')
     }
   }
 
@@ -585,8 +585,8 @@ export default function LoginPage() {
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
       completeLogin(data.data)
-    } catch (err: any) {
-      setTotpAlert(err.message)
+    } catch (err: unknown) {
+      setTotpAlert(err instanceof Error ? err.message : 'Erreur')
     } finally {
       setTotpLoading(false)
     }
@@ -604,8 +604,8 @@ export default function LoginPage() {
       if (!data.success) throw new Error(data.message)
       setQrDataUri(data.data.qrDataUri)
       setManualKey(data.data.manualKey)
-    } catch (err: any) {
-      setSetupAlert(err.message)
+    } catch (err: unknown) {
+      setSetupAlert(err instanceof Error ? err.message : 'Erreur')
     }
   }
 
@@ -624,8 +624,8 @@ export default function LoginPage() {
       if (!data.success) throw new Error(data.message)
       setRecoveryCodes(data.data.recoveryCodes)
       setPendingLoginData(data.data)
-    } catch (err: any) {
-      setSetupAlert(err.message)
+    } catch (err: unknown) {
+      setSetupAlert(err instanceof Error ? err.message : 'Erreur')
     } finally {
       setSetupLoading(false)
     }

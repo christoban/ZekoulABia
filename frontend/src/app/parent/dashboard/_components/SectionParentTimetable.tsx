@@ -64,7 +64,13 @@ function CacheBadge({ cachedAt, label }: { cachedAt: number | null; label: strin
   )
 }
 
-function buildSlots(data: any[], groupIds: string[], unassignedLabel: string): Record<string, CellSlots> {
+interface GridConfigShape {
+  squelette?: PeriodeGrille[]
+  config?: { joursActifs?: string[] }
+  squeletteParJour?: Record<string, PeriodeGrille[]>
+}
+
+function buildSlots(data: Array<{ slots?: RawSlot[] }>, groupIds: string[], unassignedLabel: string): Record<string, CellSlots> {
   const slotMap: Record<string, CellSlots> = {}
   const colors = ['var(--green)', 'var(--blue)', 'var(--purple)', 'var(--amber)', 'var(--primary)', 'var(--red)', 'var(--orange)']
   let colorIdx = 0
@@ -115,7 +121,7 @@ export default function SectionParentTimetable({ onToast, userId }: Props) {
   const cacheKey = userId ? `parent:timetable:v2:${userId}` : ''
   const fetchFn = useCallback(async (): Promise<TimetableData> => {
     let children: ChildWithStats[] = []
-    let gridData: any = null
+    let gridData: GridConfigShape | null = null
 
     try {
       const [childrenRes, gridRes] = await Promise.all([
@@ -146,8 +152,8 @@ export default function SectionParentTimetable({ onToast, userId }: Props) {
     }
 
     if (!gridData) {
-      const cachedGrid = await getCachedData<any>('parent:timetable-grid-config')
-      gridData = cachedGrid?.data
+      const cachedGrid = await getCachedData<GridConfigShape>('parent:timetable-grid-config')
+      gridData = cachedGrid?.data ?? null
     }
 
     let squelette: PeriodeGrille[] = DEFAULT_SKELETON
@@ -181,7 +187,7 @@ export default function SectionParentTimetable({ onToast, userId }: Props) {
           throw new Error('API timetables failed')
         }
       } catch {
-        const cachedTT = await getCachedData<any>(`parent:timetables:class:${child.classeId}`)
+        const cachedTT = await getCachedData<Array<{ slots?: RawSlot[] }>>(`parent:timetables:class:${child.classeId}`)
         slotsByChild[child.studentId] = cachedTT?.data ? buildSlots(cachedTT.data, child.groupIds ?? [], t('timetable.notAssignedToGroup')) : {}
       }
     }))
@@ -198,8 +204,8 @@ export default function SectionParentTimetable({ onToast, userId }: Props) {
         const kids = cachedKids?.data || []
         if (kids.length === 0) return
 
-        const cachedGrid = await getCachedData<any>('parent:timetable-grid-config')
-        const gridData = cachedGrid?.data
+        const cachedGrid = await getCachedData<GridConfigShape>('parent:timetable-grid-config')
+        const gridData = cachedGrid?.data ?? null
 
         let squelette: PeriodeGrille[] = DEFAULT_SKELETON
         let joursActifs: string[] = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI']
@@ -217,7 +223,7 @@ export default function SectionParentTimetable({ onToast, userId }: Props) {
         for (const c of kids) {
           classNames[c.studentId] = c.classeNom || ''
           if (c.classeId) {
-            const cachedTT = await getCachedData<any>(`parent:timetables:class:${c.classeId}`)
+            const cachedTT = await getCachedData<Array<{ slots?: RawSlot[] }>>(`parent:timetables:class:${c.classeId}`)
             slotsByChild[c.studentId] = cachedTT?.data ? buildSlots(cachedTT.data, c.groupIds ?? [], t('timetable.notAssignedToGroup')) : {}
           } else {
             slotsByChild[c.studentId] = {}

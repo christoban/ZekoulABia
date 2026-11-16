@@ -13,11 +13,11 @@ Le socle métier de ZekoulABia est riche et mature sur de nombreux moteurs, mais
 | Axe d'analyse | Constat chiffré | Criticité |
 |---|---|---|
 | **Fonctionnalités Backend non branchées** | **~80+ endpoints backend** (sur **632** analysés) sans aucun appelant frontend ; **2 UseCases orphelins**, **1 UseCase non exposé** en HTTP ; modules complets sans UI | **Élevée (P1/P2)** |
-| **Doublons de code & Fichiers redondants** | **8 paires** de sections Admin vs Staff dupliquées (~**10 000 lignes**), **23 composants Shell UI** dupliqués sur 6 portails | **Élevée (P1)** |
+| **Doublons identifiés côté Backend** | Routes de chat IA redondantes (`POST /api/v2/ai/chat`, `POST /api/v2/assistant/chat`) face à `POST /api/v2/assistant/execute` | **Moyenne (P2)** |
 | **Contournements Architecture Hexagonale** | **88 routes inline** et **146 requêtes Prisma directes** dans `bootstrap/*.ts`, **42+ accès Prisma directs** dans 4 Controllers, **141 `ctx.prisma.*`** dans l'assistant IA | **Élevée (P1)** |
-| **Plafond de taille (`> 500` lignes — §4.1)** | **90 fichiers hors plafond** (**23 Backend** dont 4 > 1 000 l., **67 Frontend** dont 13 > 1 000 l. et un fichier à 2 730 l.) | **Moyenne / Élevée** |
-| **Dette de typage `any` (§4.12)** | **294 `any`** sur **78 fichiers Frontend** (aucun guard automatisé côté Frontend), **8 `any`** dans `generate_guides_pdf.ts`, **3 `// hex-allow-any`** Backend | **Élevée** |
-| **UX & Finition Production** | **48 `confirm()` / `alert()` natifs** et fragilité d'isolation sur certains tests d'intégration | **Moyenne / Élevée** |
+| **Plafond de taille (`> 500` lignes — §4.1)** | **85 fichiers hors plafond** (**23 Backend** dont 4 > 1 000 l., **62 Frontend** dont 12 > 1 000 l. et un fichier à 2 729 l.) | **Moyenne / Élevée** |
+| **Dette de typage `any` (§4.12)** | **3 `// hex-allow-any`** Backend dans `catalogShared.ts` (Frontend et `generate_guides_pdf.ts` purgés, `architectureGuard` actif) | **Faible (P3)** |
+| **Dettes de tests (intégration)** | Fragilité d'isolation (`mock.module`) sur certains tests d'intégration backend (`CODE_REVIEW_NOTES.md`) | **Moyenne** |
 
 ---
 
@@ -59,34 +59,7 @@ Sur **632 endpoints HTTP backend** et **366 UseCases** analysés, **~90+ endpoin
 
 ## Partie 2 — Code Doublé & Fichiers Redondants à Unifier (DRY)
 
-### 2.1 8 paires de sections Admin vs Staff dupliquées (~10 000 lignes cumulées)
-
-Contrairement aux modules récents bien centralisés dans `frontend/src/features/` (`babillard`, `messagerie`, `carnet-liaison`, `discipline`, `orientation`, `pointage`), **8 domaines entiers** sont dupliqués entre `admin/dashboard/_components/` et `staff/dashboard/_components/` :
-
-| Domaine | Version Admin | Version Staff | Total lignes | Risque constaté |
-|---|---|---|---|---|
-| **Classes** | `SectionClasses.tsx` (1 494 l.) | `SectionClassesStaff.tsx` (527 l.) | 2 021 l. | Divergence de comportement et d'UI |
-| **Emploi du temps** | `SectionTimetable.tsx` (565 l.) | `SectionTimetableStaff.tsx` (1 038 l.) | 1 603 l. | Évolutions appliquées sur un seul portail |
-| **Finance / Scolarité** | `SectionFinance.tsx` (863 l.) | `SectionFinanceStaff.tsx` (769 l.) | 1 632 l. | A provoqué l'incident 404 `/remind-sms` (corrigé en Lot 1) ; risque persistant sur toute évolution |
-| **Conseils de classe** | `SectionAdminCouncil.tsx` (402 l.) | `SectionCouncil.tsx` (519 l.) | 921 l. | Double maintenance des calculs/statuts |
-| **Affectations** | `admin/_components/SectionAffectations.tsx` (385 l.) | `staff/_components/SectionAffectations.tsx` (560 l.) | 945 l. | Double logique de grille d'affectation |
-| **Grille horaire** | `admin/_components/SectionGrilleHoraire.tsx` (348 l.) | `staff/_components/SectionGrilleHoraire.tsx` (376 l.) | 724 l. | Quasi copier-coller ligne pour ligne |
-| **Assiduité / Appel** | `SectionAdminAttendance.tsx` (339 l.) | `SectionAttendanceStaff.tsx` (359 l.) | 698 l. | Double logique de filtrage/export |
-| **Concours d'entrée** | `SectionAdminEntranceExams.tsx` (417 l.) | `SectionConcoursStaff.tsx` (516 l.) | 933 l. | Double interface d'admission |
-
-- **Recommandation** : Migrer ces 8 domaines vers `frontend/src/features/<domaine>/` avec un composant unique paramétré par permissions (`canEdit`, `canValidate`, `role`), sur le modèle déjà appliqué pour `babillard` et `carnet-liaison`.
-
-### 2.2 23 composants de coque (Shell UI) dupliqués sur les 6 portails
-
-Chaque portail (`admin`, `staff`, `teacher`, `parent`, `student`, `master`) réimplémente sa propre coque UI au lieu de consommer un shell partagé :
-
-- **6 composants `*Toast.tsx`** (`AdminToast.tsx` 37 l., `StaffToast.tsx` 59 l., `TeacherToast.tsx` 37 l., `ParentToast.tsx` 37 l., `StudentToast.tsx` 37 l., `MasterToast.tsx` 45 l.) — 5 d'entre eux sont quasi identiques caractère pour caractère.
-- **6 composants `*BottomNav.tsx`** (`AdminBottomNav.tsx` 129 l., `StaffBottomNav.tsx` 198 l., `TeacherBottomNav.tsx` 134 l., `ParentBottomNav.tsx` 128 l., `StudentBottomNav.tsx` 133 l., `MasterBottomNav.tsx` 121 l. — **843 lignes cumulées**).
-- **6 composants `*Topbar.tsx`** (`AdminTopbar.tsx` 280 l., `StaffTopbar.tsx` 321 l., `TeacherTopbar.tsx` 267 l., `ParentTopbar.tsx` 265 l., `StudentTopbar.tsx` 280 l., `MasterTopbar.tsx` 707 l. — **2 120 lignes cumulées**).
-- **5 composants `*Sidebar.tsx`** (`AdminSidebar.tsx` 504 l., `StaffSidebar.tsx` 468 l., `TeacherSidebar.tsx` 341 l., `ParentSidebar.tsx` 271 l., `StudentSidebar.tsx` 280 l. — **1 864 lignes cumulées**).
-- **Recommandation** : Créer dans `frontend/src/components/shell/` un jeu unique `<DashboardShell />`, `<AppTopbar />`, `<AppSidebar />`, `<AppBottomNav />` et `<AppToast />` alimenté par une configuration déclarative par rôle (éliminant ~4 000 lignes redondantes et garantissant l'uniformité responsive/dark mode/accessibilité).
-
-### 2.3 Doublons identifiés côté Backend
+### 2.1 Doublons identifiés côté Backend
 1. **Routes de chat IA redondantes** : `POST /api/v2/ai/chat` (`ai.routes.ts:14`) et `POST /api/v2/assistant/chat` (`bootstrap/core.ts:266`) coexistent avec `POST /api/v2/assistant/execute`.
 
 ---
@@ -130,9 +103,9 @@ Dans `backend/src/infrastructure/assistant/catalog/`, **13 fichiers** exécutent
 
 ---
 
-## Partie 4 — Plafond de taille de fichiers (`AGENTS.md §4.1`) : 90 fichiers hors plafond
+## Partie 4 — Plafond de taille de fichiers (`AGENTS.md §4.1`) : 85 fichiers hors plafond
 
-`AGENTS.md §4.1` fixe une cible confortable à **150–250 lignes**, un signal d'alerte à **300–400 lignes** et un **plafond dur à 500 lignes (split obligatoire)**. **90 fichiers** du projet dépassent ce plafond dur.
+`AGENTS.md §4.1` fixe une cible confortable à **150–250 lignes**, un signal d'alerte à **300–400 lignes** et un **plafond dur à 500 lignes (split obligatoire)**. **85 fichiers** du projet dépassent ce plafond dur.
 
 ### 4.1 Les 23 fichiers Backend > 500 lignes
 
@@ -162,27 +135,26 @@ Dans `backend/src/infrastructure/assistant/catalog/`, **13 fichiers** exécutent
 | 22 | `backend/src/infrastructure/config/bootstrap/modules.ts` | 521 | Extraire les 15 routes inline vers un `ModuleController` dédié |
 | 23 | `backend/src/infrastructure/services/import/importRowValidator.ts` | 504 | Séparer les validateurs par type d'import (élèves, staff, notes) |
 
-### 4.2 Top des 67 fichiers Frontend > 500 lignes
+### 4.2 Top des 62 fichiers Frontend > 500 lignes
 
-**67 fichiers Frontend** dépassent 500 lignes, dont **13 dépassent 1 000 lignes** :
+**62 fichiers Frontend** dépassent 500 lignes, dont **12 dépassent 1 000 lignes** :
 
 | Rang | Fichier Frontend | Lignes | Problème structurel |
 |---|---|---:|---|
-| 1 | `frontend/src/app/onboarding/[token]/page.tsx` | 2 730 | Monolithe multi-étapes dans une seule page route |
-| 2 | `frontend/src/app/admin/dashboard/_components/SectionUsers.tsx` | 1 915 | Création, édition, import, rôles et filtres dans un seul composant |
-| 3 | `frontend/src/app/admin/dashboard/_components/SectionSubjects.tsx` | 1 870 | Catalogue, coefficients, groupes et modales confondus |
-| 4 | `frontend/src/app/admin/dashboard/_components/SectionOrientation.tsx` | 1 741 | Plusieurs sous-vues/modales dans le même fichier |
-| 5 | `frontend/src/app/admin/dashboard/_components/SectionSettings.tsx` | 1 696 | Paramètres généraux, sécurité, templates et MFA mélangés |
-| 6 | `frontend/src/app/admin/dashboard/_components/SectionClasses.tsx` | 1 494 | De plus dupliqué avec `SectionClassesStaff.tsx` (527 l.) |
-| 7 | `frontend/src/app/login/page.tsx` | 1 393 | Multi-flows login, MFA, récupération mot de passe, redirections |
-| 8 | `frontend/src/app/parent/dashboard/_components/SectionParentPayments.tsx` | 1 338 | Échéancier, reçus, mobile money et historique dans un composant |
-| 9 | `frontend/src/app/onboarding/_components/ConversationalOnboarding.tsx` | 1 280 | Étapes conversationnelles et état formulaire non découpés |
+| 1 | `frontend/src/app/onboarding/[token]/page.tsx` | 2 729 | Monolithe multi-étapes dans une seule page route |
+| 2 | `frontend/src/app/admin/dashboard/_components/SectionUsers.tsx` | 1 917 | Création, édition, import, rôles et filtres dans un seul composant |
+| 3 | `frontend/src/app/admin/dashboard/_components/SectionSubjects.tsx` | 1 873 | Catalogue, coefficients, groupes et modales confondus |
+| 4 | `frontend/src/app/staff/dashboard/_components/SectionOrientation.tsx` | 1 740 | Plusieurs sous-vues/modales dans le même fichier |
+| 5 | `frontend/src/app/admin/dashboard/_components/SectionSettings.tsx` | 1 698 | Paramètres généraux, sécurité, templates et MFA mélangés |
+| 6 | `frontend/src/app/admin/dashboard/_components/SectionClasses.tsx` | 1 459 | Nombreuses modales de gestion classes / sous-groupes / options dans un seul composant |
+| 7 | `frontend/src/app/login/page.tsx` | 1 392 | Multi-flows login, MFA, récupération mot de passe, redirections |
+| 8 | `frontend/src/app/parent/dashboard/_components/SectionParentPayments.tsx` | 1 337 | Échéancier, reçus, mobile money et historique dans un composant |
+| 9 | `frontend/src/app/admin/configuration/ConversationalOnboarding.tsx` | 1 279 | Étapes conversationnelles et état formulaire non découpés |
 | 10 | `frontend/src/app/master/dashboard/_components/SectionReferentielsHub.tsx` | 1 169 | Plusieurs référentiels nationaux dans un seul onglet |
-| 11 | `frontend/src/components/landing/LandingPage.tsx` | 1 155 | Toutes les sections marketing/tarifs/FAQ dans un seul fichier |
-| 12 | `frontend/src/app/admin/dashboard/_components/SectionLogs.tsx` | 1 047 | Tableau, filtres avancés, export et tiroir de détail |
-| 13 | `frontend/src/app/staff/dashboard/_components/SectionTimetableStaff.tsx` | 1 038 | Également dupliqué avec `SectionTimetable.tsx` (565 l.) |
+| 11 | `frontend/src/components/LandingPage.tsx` | 1 154 | Toutes les sections marketing/tarifs/FAQ dans un seul fichier |
+| 12 | `frontend/src/app/master/dashboard/_components/SectionLogs.tsx` | 1 046 | Tableau, filtres avancés, export et tiroir de détail |
 
-*(54 autres fichiers Frontend compris entre 501 et 998 lignes — ex. `SectionTeam.tsx` 998 l., `FilConversation.tsx` 973 l., `SectionFinance.tsx` 863 l., `SectionFinanceStaff.tsx` 769 l., `MasterTopbar.tsx` 707 l., `AdminSidebar.tsx` 504 l. — nécessitent également une extraction en sous-composants/hooks).*
+*(50 autres fichiers Frontend compris entre 501 et 999 lignes — ex. `SectionTimetableStaff.tsx` 999 l., `SectionTeam.tsx` 997 l., `FilConversation.tsx` 972 l., `SectionFinance.tsx` 829 l., `SectionFinanceStaff.tsx` 816 l., `MasterTopbar.tsx` 706 l. — nécessitent également une extraction en sous-composants/hooks).*
 
 ---
 
@@ -190,37 +162,12 @@ Dans `backend/src/infrastructure/assistant/catalog/`, **13 fichiers** exécutent
 
 ### 5.1 Backend
 - `backend/src/infrastructure/assistant/catalog/catalogShared.ts` : **3 occurrences** tolérées via `// hex-allow-any` (L23-24, L29). À remplacer à terme par des types génériques/structurels (`unknown` avec narrowing ou schémas Zod).
-- `backend/src/scripts/generate_guides_pdf.ts` : **8 occurrences de `any`** non couvertes par le guard principal. À typer proprement.
-
-### 5.2 Frontend : 294 occurrences de `any` réparties sur 78 fichiers
-Aucun garde-fou automatisé équivalent à `backend/tests/unit/architectureGuard.test.ts` n'existe dans `frontend/`, ce qui a laissé la dette s'accumuler :
-
-| Fichier Frontend (`frontend/src/...`) | Occurrences `any` |
-|---|---:|
-| `app/teacher/dashboard/_components/SectionTeacherGrades.tsx` | **39** |
-| `app/admin/dashboard/_components/SectionSettings.tsx` | **16** |
-| `app/admin/dashboard/_components/SectionSubjects.tsx` | **13** |
-| `app/teacher/dashboard/_components/SectionTeacherTimetable.tsx` | **12** |
-| `app/student/dashboard/_components/SectionStudentGrades.tsx` | **9** |
-| `app/master/login/page.tsx` | **7** |
-| `app/student/dashboard/_components/SectionStudentDashboard.tsx` | **7** |
-| `app/teacher/dashboard/_components/SectionTeacherClasses.tsx` | **7** |
-| `app/teacher/dashboard/page.tsx` | **7** |
-| *69 autres fichiers Frontend* | **177** |
-| **Total Frontend** | **294** |
-
-- **Recommandation** : Ajouter un test bloquant `frontend/src/__tests__/architectureGuard.test.ts` interdisant l'introduction de nouveaux `any` (en partant d'un plafond dégressif ou après purge des 78 fichiers).
 
 ---
 
-## Partie 6 — Expérience Utilisateur (UX), Sécurité & Finition Production
+## Partie 6 — Qualité des Tests d'Intégration
 
-### 6.1 48 appels natifs `window.confirm()` / `confirm()` / `alert()` côté Frontend
-Des composants clés utilisent encore les boîtes de dialogue natives du navigateur (notamment `alert(msg)` dans `SectionFinance.tsx:181,187`, et `confirm(...)` dans `SectionSubjects.tsx`, `SectionAffectations.tsx`, `SectionReferentielsHub.tsx`, `SectionUsers.tsx`, `SectionAcademicYear.tsx`, `MasterTopbar.tsx`, etc.).
-- **Impact** : Bloquent le thread JS, impossibles à styler (cassent l'identité visuelle, le mode sombre et les traductions i18n des boutons « OK/Annuler »), et dégradent l'expérience sur mobile Android / PWA.
-- **Action** : Introduire un composant `<ConfirmDialog />` partagé (et utiliser le `<AppToast />` unifié à la place de `alert()`).
-
-### 6.2 Dettes de tests relevées dans `CODE_REVIEW_NOTES.md`
+### 6.1 Dettes de tests relevées dans `CODE_REVIEW_NOTES.md`
 - **Tests d'intégration fragiles** (`backend/tests/integration/studentRisk.routes.test.ts`, `communicationsBroadcast.integration.test.ts:39`) : utilisation de `mock.module(...)` global sous Bun, susceptible de polluer les fichiers de test exécutés dans le même processus.
 
 ---
@@ -229,6 +176,5 @@ Des composants clés utilisent encore les boîtes de dialogue natives du navigat
 
 | Lot | Horizon indicatif | Chantiers inclus | Critère de succès |
 |---|---|---|---|
-| **Lot 3 — Unification Frontend & Finition UX** | 5 à 8 jours | 1. Factoriser les **23 composants Shell** (`Toast`, `Topbar`, `Sidebar`, `BottomNav`) dans `frontend/src/components/shell/`<br>2. Fusionner les **8 paires Admin/Staff** dans `frontend/src/features/`<br>3. Remplacer les **48 `confirm()`/`alert()`** par `<ConfirmDialog />` + `<AppToast />`<br>4. Éliminer les **294 `any` frontend** + instaurer un `architectureGuard.test.ts` côté frontend | Zéro `any` frontend, zéro `alert()`/`confirm()` natif, -50 % de code dupliqué UI |
-| **Lot 4 — Purge Hexagonale & Découpage > 500 l.** | 5 à 10 jours | 1. Migrer les **88 routes inline** et **146 requêtes Prisma** de `bootstrap/*.ts` vers Controllers + UseCases + Repositories<br>2. Extraire les **35 appels Prisma** de `MasterReferentielsController.ts` (et `NotificationController`, `TimetableController`, `GradeExcelController`) et durcir `architectureGuard.test.ts` contre `prisma.client`<br>3. Faire passer les **141 actions Copilot IA** par les UseCases applicatifs<br>4. Découper progressivement les **90 fichiers > 500 lignes** (en priorité `container.ts`, `onboarding/[token]/page.tsx`, `SectionUsers.tsx`, `SectionSubjects.tsx`, `SectionSettings.tsx`) | `architectureGuard.test.ts` étendu à toute la couche HTTP/Copilot, aucun fichier applicatif > 500 lignes |
+| **Lot 4 — Purge Hexagonale & Découpage > 500 l.** | 5 à 10 jours | 1. Migrer les **88 routes inline** et **146 requêtes Prisma** de `bootstrap/*.ts` vers Controllers + UseCases + Repositories<br>2. Extraire les **35 appels Prisma** de `MasterReferentielsController.ts` (et `NotificationController`, `TimetableController`, `GradeExcelController`) et durcir `architectureGuard.test.ts` contre `prisma.client`<br>3. Faire passer les **141 actions Copilot IA** par les UseCases applicatifs<br>4. Découper progressivement les **85 fichiers > 500 lignes** (en priorité `container.ts`, `onboarding/[token]/page.tsx`, `SectionUsers.tsx`, `SectionSubjects.tsx`, `SectionSettings.tsx`) | `architectureGuard.test.ts` étendu à toute la couche HTTP/Copilot, aucun fichier applicatif > 500 lignes |
 

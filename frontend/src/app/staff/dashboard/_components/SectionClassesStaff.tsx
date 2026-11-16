@@ -4,28 +4,11 @@ import { useEffect, useState } from 'react'
 import { Plus, School, Edit2, Users, Search, Loader2 } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { getCachedData, putCachedData } from '@/lib/offline/db'
-
-type ClassItem = {
-  id: string
-  name: string
-  level?: string
-  filiere?: string
-  serie?: string
-  capacity?: number
-  roomAssignment?: { roomName?: string }
-  mainTeacher?: { nomComplet?: string; firstName?: string; lastName?: string }
-  _count?: { students?: number; enrollments?: number }
-}
+import type { StaffClassItem as ClassItem, AcademicYearItem } from '@/features/classes/classesShared'
+import ClassStaffProposeModal from '@/features/classes/ClassStaffProposeModal'
 
 type Props = {
   onToast: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void
-}
-
-type AcademicYearItem = {
-  id: string
-  name: string
-  isCurrent?: boolean
-  status?: string
 }
 
 export default function SectionClassesStaff({ onToast }: Props) {
@@ -135,8 +118,8 @@ export default function SectionClassesStaff({ onToast }: Props) {
       setFormLevel('')
       setFormCapacity('40')
       loadClassesAndYears()
-    } catch (err: any) {
-      onToast(err.message || 'Erreur lors de la création de la classe', 'error')
+    } catch (err: unknown) {
+      onToast(err instanceof Error ? err.message : 'Erreur lors de la création de la classe', 'error')
     } finally {
       setSaving(false)
     }
@@ -162,8 +145,8 @@ export default function SectionClassesStaff({ onToast }: Props) {
 
       onToast('Structure N+1 proposée avec succès (classes DRAFT créées)', 'success')
       setProposeOpen(false)
-    } catch (err: any) {
-      onToast(err.message || 'Erreur lors de la proposition de la structure', 'error')
+    } catch (err: unknown) {
+      onToast(err instanceof Error ? err.message : 'Erreur lors de la proposition de la structure', 'error')
     } finally {
       setProposing(false)
     }
@@ -400,127 +383,17 @@ export default function SectionClassesStaff({ onToast }: Props) {
       )}
 
       {/* Modal Proposer Structure N+1 */}
-      {proposeOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 12, padding: 24, width: 420, maxWidth: '90%' }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px 0', color: 'var(--text)' }}>Proposer la structure d'année N+1</h2>
-            <p style={{ fontSize: 12, color: 'var(--text2)', margin: '0 0 16px 0' }}>
-              Duplique les classes actives de l'année actuelle vers l'année cible sous forme de classes DRAFT. La validation finale relève du Proviseur (ADMIN).
-            </p>
-
-            <form onSubmit={handlePropose} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text2)', marginBottom: 4 }}>
-                  Année Actuelle (Source) *
-                </label>
-                {academicYears.length > 0 ? (
-                  <select
-                    value={anneeActuelleId}
-                    onChange={e => setAnneeActuelleId(e.target.value)}
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '8px 10px',
-                      borderRadius: 6,
-                      background: 'var(--bg2)',
-                      border: '1px solid var(--border2)',
-                      color: 'var(--text)',
-                      fontSize: 12,
-                    }}
-                  >
-                    <option value="">-- Sélectionner l'année source --</option>
-                    {academicYears.map(y => (
-                      <option key={y.id} value={y.id}>
-                        {y.name} {y.isCurrent ? '(Actuelle)' : ''}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    value={anneeActuelleId}
-                    onChange={e => setAnneeActuelleId(e.target.value)}
-                    placeholder="ID de l'année actuelle"
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '8px 10px',
-                      borderRadius: 6,
-                      background: 'var(--bg2)',
-                      border: '1px solid var(--border2)',
-                      color: 'var(--text)',
-                      fontSize: 12,
-                    }}
-                  />
-                )}
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text2)', marginBottom: 4 }}>
-                  Année Cible N+1 *
-                </label>
-                {academicYears.length > 0 ? (
-                  <select
-                    value={anneeSuivanteId}
-                    onChange={e => setAnneeSuivanteId(e.target.value)}
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '8px 10px',
-                      borderRadius: 6,
-                      background: 'var(--bg2)',
-                      border: '1px solid var(--border2)',
-                      color: 'var(--text)',
-                      fontSize: 12,
-                    }}
-                  >
-                    <option value="">-- Sélectionner l'année cible N+1 --</option>
-                    {academicYears.map(y => (
-                      <option key={y.id} value={y.id}>
-                        {y.name} {y.isCurrent ? '(Actuelle)' : ''}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    value={anneeSuivanteId}
-                    onChange={e => setAnneeSuivanteId(e.target.value)}
-                    placeholder="ID de l'année suivante N+1"
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '8px 10px',
-                      borderRadius: 6,
-                      background: 'var(--bg2)',
-                      border: '1px solid var(--border2)',
-                      color: 'var(--text)',
-                      fontSize: 12,
-                    }}
-                  />
-                )}
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
-                <button
-                  type="button"
-                  onClick={() => setProposeOpen(false)}
-                  style={{ padding: '6px 12px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text)', fontSize: 12, cursor: 'pointer' }}
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  disabled={proposing}
-                  style={{ padding: '6px 14px', borderRadius: 6, background: 'var(--amber)', border: 'none', color: '#000', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}
-                >
-                  {proposing ? 'Envoi...' : 'Proposer la structure'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <ClassStaffProposeModal
+        isOpen={proposeOpen}
+        academicYears={academicYears}
+        anneeActuelleId={anneeActuelleId}
+        anneeSuivanteId={anneeSuivanteId}
+        proposing={proposing}
+        onChangeActuelle={setAnneeActuelleId}
+        onChangeSuivante={setAnneeSuivanteId}
+        onClose={() => setProposeOpen(false)}
+        onSubmit={handlePropose}
+      />
     </div>
   )
 }

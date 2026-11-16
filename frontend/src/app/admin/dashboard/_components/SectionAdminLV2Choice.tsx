@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Globe } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
+import { confirmAction } from '@/components/shell/ConfirmDialog'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
@@ -145,7 +146,7 @@ export default function SectionAdminLV2Choice({ onToast }: Props) {
   }
 
   const handleApply = async (windowId: string) => {
-    if (!confirm(t('lv2_choice.confirm_apply'))) return
+    if (!(await confirmAction(t('lv2_choice.confirm_apply')))) return
     try {
       const res = await fetchApi(`/api/v2/lv2-choice-windows/${windowId}/apply`, {
         method: 'POST',

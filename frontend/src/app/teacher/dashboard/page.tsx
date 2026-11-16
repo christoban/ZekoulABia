@@ -254,16 +254,22 @@ export default function TeacherDashboard() {
         }
 
         // Périodes et séquences
-        let seqs: any[] = []
+        interface AySeqItem { id: string; name: string; isCurrent?: boolean; [key: string]: unknown }
+        interface AyPeriodItem { id: string; name: string; sequences?: AySeqItem[] }
+        interface AyYearItem { id: string; isCurrent?: boolean; periods?: AyPeriodItem[] }
+        interface CachedSeqItem extends AySeqItem { periodName: string; academicYearId: string }
+
+        let seqs: CachedSeqItem[] = []
         if (ayRes?.success && Array.isArray(ayRes.data)) {
-          seqs = ayRes.data.flatMap((ay: any) =>
-            ay.periods?.flatMap((p: any) =>
-              p.sequences?.map((s: any) => ({ ...s, periodName: p.name, academicYearId: ay.id })) || []
+          const ayYears = ayRes.data as AyYearItem[]
+          seqs = ayYears.flatMap((ay) =>
+            ay.periods?.flatMap((p) =>
+              p.sequences?.map((s) => ({ ...s, periodName: p.name, academicYearId: ay.id })) || []
             ) || []
           )
           await putCachedData('teacher:sequences', seqs)
 
-          const currentYear = ayRes.data.find((y: any) => y.isCurrent) ?? ayRes.data[0]
+          const currentYear = ayYears.find((y) => y.isCurrent) ?? ayYears[0]
           if (currentYear?.periods?.length) {
             await putCachedData('teacher:academic-periods', currentYear.periods)
           }
@@ -278,7 +284,16 @@ export default function TeacherDashboard() {
           // Élèves de la classe (utilisé par SectionTeacherAttendance et SectionProfesseurPrincipal)
           const studRes = await fetchApi(`/api/v2/classes/${cls.id}/students`, { credentials: 'include' }).then(r => r.json()).catch(() => null)
           if (studRes?.success && Array.isArray(studRes.data)) {
-            const mappedStudents = studRes.data.map((s: any) => ({
+            interface RawClassStudent {
+              id: string
+              firstName?: string
+              lastName?: string
+              matricule?: string
+              rang?: number
+              moyenne?: number
+              tauxPresence?: number
+            }
+            const mappedStudents = (studRes.data as RawClassStudent[]).map((s) => ({
               id: s.id,
               name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || 'Élève inconnu',
               firstName: s.firstName,
@@ -331,7 +346,15 @@ export default function TeacherDashboard() {
           for (const per of currentPeriods) {
             const rcRes = await fetchApi(`/api/v2/report-cards?classId=${ppCls.id}&periodId=${per.id}&limit=100`, { credentials: 'include' }).then(r => r.json()).catch(() => null)
             if (rcRes?.reportCards) {
-              const cards = rcRes.reportCards.map((rc: any) => ({
+              interface RawPpReportCard {
+                id: string
+                studentId: string
+                student?: { firstName?: string | null; lastName?: string | null } | null
+                generalAverage?: number | null
+                classMasterComment?: string | null
+                status?: string | null
+              }
+              const cards = (rcRes.reportCards as RawPpReportCard[]).map((rc) => ({
                 id: rc.id,
                 studentId: rc.studentId,
                 studentName: rc.student ? `${rc.student.lastName ?? ''} ${rc.student.firstName ?? ''}`.trim() : rc.studentId,

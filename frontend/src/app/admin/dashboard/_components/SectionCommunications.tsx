@@ -4,6 +4,7 @@ import { Smartphone, Mail, PenLine, ClipboardList, Eye, Upload, AlertTriangle, P
 import type { LucideIcon } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
+import { confirmAction } from '@/components/shell/ConfirmDialog'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
@@ -159,7 +160,7 @@ export default function SectionCommunications({ onToast }: Props) {
     const target = buildTarget()
     if (!message.trim())                                     { onToast(t('communications.message_empty'), 'error'); return }
     if (!role && !classId && !level && !paymentStatus)       { onToast(t('communications.select_filter'), 'error'); return }
-    if (!window.confirm(t('communications.confirm_send').replace('{channel}', channel).replace('{count}', String(preview?.total ?? '?')))) return
+    if (!(await confirmAction(t('communications.confirm_send').replace('{channel}', channel).replace('{count}', String(preview?.total ?? '?'))))) return
 
     setSending(true)
     try {

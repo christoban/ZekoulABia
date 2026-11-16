@@ -1,19 +1,18 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import {
-  LogOut, LayoutDashboard, Users, School, BookOpen, ClipboardCheck, FileText,
+  LayoutDashboard, Users, School, BookOpen, ClipboardCheck, FileText,
   ScrollText, Calendar, GraduationCap, NotebookPen, Briefcase, CalendarDays,
   Smartphone, IdCard, Wallet, Banknote, ClipboardEdit, UserPlus, BarChart3, ClipboardList,
-  Globe, Languages, Bot, Megaphone, Settings, CalendarClock, X, ArrowRightLeft, Trash2,
-  MessageCircle, ListChecks, ChevronDown, ChevronRight, Camera,
+  Globe, Languages, Bot, Megaphone, Settings, CalendarClock, ArrowRightLeft, Trash2,
+  MessageCircle, ListChecks, ChevronDown, ChevronRight,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useT } from '@/lib/i18n'
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount'
 import { useUnreadBabillardCount } from '@/hooks/useUnreadBabillardCount'
-import ChangeAvatarModal from '@/components/ChangeAvatarModal'
+import { AppSidebarDrawer } from '@/components/shell/AppSidebarDrawer'
 import type { AdminSection } from '../_types'
 
 interface NavItem {
@@ -99,31 +98,8 @@ export default function AdminSidebar({
   const tcommon = useT('common')
   const messagesNonLus = useUnreadMessagesCount()
   const babillardNonLus = useUnreadBabillardCount()
-  const displayName = schoolName || tcommon('brand.fallbackSchool')
-  const initials = displayName.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('')
-
   const userDisplayName = sessionUser?.nomComplet ?? sessionUser?.firstName ?? tcommon('user.fallbackName')
   const userInitials = userDisplayName.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0, 2)
-
-  const [currentAvatar, setCurrentAvatar] = useState<string | null>(sessionUser?.avatarUrl ?? null)
-  const [avatarModalOpen, setAvatarModalOpen] = useState(false)
-
-  useEffect(() => {
-    if (sessionUser?.avatarUrl !== undefined) {
-      setCurrentAvatar(sessionUser.avatarUrl)
-    }
-  }, [sessionUser?.avatarUrl])
-
-  useEffect(() => {
-    const handleUserUpdated = (e: Event) => {
-      const customEvent = e as CustomEvent
-      if (customEvent.detail?.avatarUrl !== undefined) {
-        setCurrentAvatar(customEvent.detail.avatarUrl)
-      }
-    }
-    window.addEventListener('zekoulabia:user-updated', handleUserUpdated)
-    return () => window.removeEventListener('zekoulabia:user-updated', handleUserUpdated)
-  }, [])
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(DEFAULT_OPEN_GROUPS)
 
@@ -220,50 +196,22 @@ export default function AdminSidebar({
 
   const isConfigActive = ['settings', 'matricules', 'corbeille'].includes(current)
 
-  const sidebarBody = (
-    <>
-      {/* Bande déco */}
-      <div className="absolute top-0 left-0 right-0 h-[5px] z-10"
-        style={{ background: 'repeating-linear-gradient(90deg,var(--amber) 0,var(--amber) 13px,var(--green) 13px,var(--green) 25px,var(--red) 25px,var(--red) 37px,#60a5fa 37px,#60a5fa 49px)' }}
-      />
-
-      {/* Brand */}
-      <div className="flex items-center gap-2.5 border-b border-white/[0.07]" style={{ padding: '12px 12px', flexShrink: 0 }}>
-        <div className="w-7.5 h-7.5 rounded-[8px] flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: "linear-gradient(135deg,var(--amber),var(--accent))" }}><img src="/logo.svg" alt="ZekoulABia" style={{ width: "70%", height: "70%", objectFit: "contain" }} /></div>
-        <div className="flex-1 min-w-0">
-          <div className="font-spectral text-[16px] font-bold text-white leading-tight truncate">ZekoulABia</div>
-          <div className="text-[11px] text-white/35 font-semibold truncate">{tcommon('brand.roleAdmin')}</div>
-        </div>
-        {onMobileClose && (
-          <button
-            type="button"
-            onClick={onMobileClose}
-            className="md:hidden ml-auto p-1 text-white/60 hover:text-white rounded-lg hover:bg-white/10 active:scale-90 transition-all flex items-center justify-center"
-            aria-label="Fermer le menu"
-          >
-            <X size={18} />
-          </button>
-        )}
-      </div>
-
-      <div className="flex flex-col gap-2 md:px-2 md:gap-2" style={{ flex: 1, minHeight: 0 }}>
-        {/* École pill */}
-        <div className="mx-2 my-1 bg-white/[0.06] border border-white/10 rounded-[8px] p-2.5" style={{ flexShrink: 0 }}>
-          <div className="flex items-center gap-2.5">
-            {logoUrl
-              ? <img src={logoUrl} alt={displayName} className="w-6.5 h-6.5 rounded-[6px] flex-shrink-0" style={{ objectFit: 'cover' }} />
-              : <div className="w-6.5 h-6.5 rounded-[6px] bg-gradient-to-br from-[var(--primary)] to-[var(--blue)] flex items-center justify-center text-[11px] font-black text-white flex-shrink-0">{initials}</div>
-            }
-            <div className="min-w-0">
-              <div className="text-[12.5px] font-bold text-white truncate">{displayName}</div>
-              <div className="text-[10.5px] text-white/35">{tcommon('brand.roleAdmin')}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Nav — wrapper relatif pour le fondu de défilement */}
-        <div className="relative" style={{ minHeight: 0, flex: 1 }}>
-          <nav className="overflow-y-auto px-2 pt-0 pb-3 h-full" style={{ minHeight: 0 }}>
+  return (
+    <AppSidebarDrawer
+      roleBrandLabel={tcommon('brand.roleAdmin')}
+      schoolName={schoolName}
+      schoolLogoUrl={logoUrl}
+      userDisplayName={userDisplayName}
+      userInitials={userInitials}
+      userSubtitle={tcommon('user.roleLabel')}
+      userAvatarUrl={sessionUser?.avatarUrl}
+      userAvatarGradient="from-[var(--amber)] to-[var(--red)]"
+      onLogout={onLogout}
+      mobileOpen={mobileOpen}
+      onMobileClose={onMobileClose}
+      showScrollFade
+    >
+      <nav className="overflow-y-auto px-2 pt-0 pb-3 h-full" style={{ minHeight: 0 }}>
             {/* Dashboard principal */}
             <button onClick={() => handleChange('dashboard')}
               className={cn(
@@ -423,83 +371,7 @@ export default function AdminSidebar({
                 </div>
               )}
             </div>
-          </nav>
-          <div className="md:hidden" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 16, background: 'linear-gradient(0deg,var(--sidebar),transparent)', pointerEvents: 'none' }} />
-        </div>
-      </div>
-
-      {/* User */}
-      <div className="hidden md:block border-t border-white/[0.07]" style={{ padding: '9px 12px', flexShrink: 0 }}>
-        <div className="flex items-center gap-2.5 rounded-[8px] hover:bg-white/[0.06] transition-colors" style={{ padding: '6px 8px' }}>
-          <button
-            type="button"
-            onClick={() => setAvatarModalOpen(true)}
-            title="Modifier ma photo de profil"
-            className="relative group w-8 h-8 rounded-full overflow-hidden border border-white/20 flex-shrink-0 cursor-pointer p-0 bg-transparent flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-400"
-          >
-            {currentAvatar ? (
-              <img
-                src={currentAvatar}
-                alt={userDisplayName}
-                className="w-full h-full object-cover rounded-full"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-[var(--amber)] to-[var(--red)] flex items-center justify-center text-white font-black text-[11px]">
-                {userInitials}
-              </div>
-            )}
-            <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-full">
-              <Camera size={13} className="text-white" />
-            </div>
-          </button>
-          <div className="min-w-0 flex-1">
-            <div className="text-[12px] font-bold text-white truncate">{userDisplayName}</div>
-            <div className="text-[10px] text-white/35">{tcommon('user.roleLabel')}</div>
-          </div>
-          {onLogout && (
-            <button onClick={onLogout} title={tcommon('user.logoutTitle')}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', flexShrink: 0, padding: 3, borderRadius: 4 }}
-              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'rgba(239,68,68,0.8)'}
-              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(239,68,68,0.3)'}>
-              <LogOut size={14} />
-            </button>
-          )}
-        </div>
-      </div>
-    </>
-  )
-
-  return (
-    <>
-      {/* Desktop — sidebar statique, fait partie du flux flex normal */}
-      <aside className="hidden md:flex w-[250px] min-w-[250px] flex-shrink-0 relative" style={{ background: 'var(--sidebar)', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-        {sidebarBody}
-      </aside>
-
-      {/* Mobile — tiroir en overlay, glisse depuis la gauche (comme Gmail), ouvert/fermé depuis page.tsx */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true">
-            <motion.div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onMobileClose}
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }} />
-            <motion.aside className="absolute left-0 top-0 h-full w-[85vw] max-w-[250px] flex flex-col relative" style={{ background: 'var(--sidebar)', overflow: 'hidden' }}
-              initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ duration: 0.26, ease: [0.4, 0, 0.2, 1] }}>
-              {sidebarBody}
-            </motion.aside>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Modal Changement Photo de Profil */}
-      {avatarModalOpen && (
-        <ChangeAvatarModal
-          currentAvatarUrl={currentAvatar}
-          userName={userDisplayName}
-          onClose={() => setAvatarModalOpen(false)}
-          onSuccess={(url) => setCurrentAvatar(url)}
-          onToast={() => { }}
-        />
-      )}
-    </>
+      </nav>
+    </AppSidebarDrawer>
   )
 }

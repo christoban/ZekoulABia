@@ -4,6 +4,7 @@ import { fetchApi } from '@/lib/fetchApi'
 import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 import { AlertTriangle, Calendar, Star, ChevronRight, Loader2, Pencil, FolderOpen, X, Lock, Save, Check } from 'lucide-react'
+import { confirmAction } from '@/components/shell/ConfirmDialog'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
@@ -143,7 +144,7 @@ export default function SectionAcademicYear({ onToast }: Props) {
   }
 
   const handleClose = async (yearId: string) => {
-    if (!confirm(t('academic_year.toast.confirmClose'))) return
+    if (!(await confirmAction({ message: t('academic_year.toast.confirmClose'), danger: true }))) return
     setClosingId(yearId)
     try {
       const checkRes = await fetchApi(`/api/v2/academic-years/${yearId}/pre-close-check`, { method: 'POST', credentials: 'include' })

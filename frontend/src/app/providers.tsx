@@ -3,6 +3,8 @@
 import { useEffect } from 'react'
 import { ThemeProvider } from 'next-themes'
 import { purgeExpiredCache } from '@/lib/offline/db'
+import { ConfirmDialogHost } from '@/components/shell/ConfirmDialog'
+import { GlobalToastHost } from '@/components/shell/AppToast'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -13,6 +15,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
       {children}
+      <GlobalToastHost />
+      <ConfirmDialogHost />
     </ThemeProvider>
   )
 }

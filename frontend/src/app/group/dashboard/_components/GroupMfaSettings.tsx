@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { ShieldCheck, ShieldOff, KeyRound, RefreshCw, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { confirmAction } from '@/components/shell/ConfirmDialog'
 
 const API_BASE = ''
 
@@ -82,7 +83,7 @@ export default function GroupMfaSettings() {
   }
 
   const handleRegenCodes = async () => {
-    if (!confirm('Régénérer de nouveaux codes de secours invalidera les anciens. Continuer ?')) return
+    if (!(await confirmAction('Régénérer de nouveaux codes de secours invalidera les anciens. Continuer ?'))) return
     setBusy(true)
     setError(null)
     setInfo(null)
@@ -103,7 +104,7 @@ export default function GroupMfaSettings() {
   }
 
   const handleDisable = async () => {
-    if (!confirm('Voulez-vous vraiment désactiver la double authentification sur ce compte ?')) return
+    if (!(await confirmAction('Voulez-vous vraiment désactiver la double authentification sur ce compte ?'))) return
     setBusy(true)
     setError(null)
     setInfo(null)

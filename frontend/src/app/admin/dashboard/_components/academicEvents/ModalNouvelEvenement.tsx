@@ -120,7 +120,7 @@ export default function ModalNouvelEvenement({
       .then((d) => {
         if (d.success && Array.isArray(d.data)) {
           setClasses(d.data)
-          const distinctLevels = Array.from(new Set(d.data.map((c: any) => c.level).filter(Boolean))) as string[]
+          const distinctLevels = Array.from(new Set((d.data as Array<{ level?: string | null }>).map((c) => c.level).filter(Boolean))) as string[]
           setNiveaux(distinctLevels)
         }
       })
@@ -228,7 +228,7 @@ export default function ModalNouvelEvenement({
 
     setSubmitting(true)
     try {
-      const payload: Record<string, any> = {
+      const payload: Record<string, unknown> = {
         type,
         category,
         title,
@@ -396,7 +396,7 @@ export default function ModalNouvelEvenement({
                 </label>
                 <select
                   value={category}
-                  onChange={(e) => setCategory(e.target.value as any)}
+                  onChange={(e) => setCategory(e.target.value as 'FIXED_DATE' | 'MANUAL_TRIGGER' | 'SLIDING_WINDOW')}
                   className="w-full px-3 py-2 rounded-lg border border-[var(--border2)] bg-[var(--bg2)] text-xs text-[var(--text)] outline-none"
                 >
                   <option value="FIXED_DATE">{t('academicEvents.category.FIXED_DATE')}</option>

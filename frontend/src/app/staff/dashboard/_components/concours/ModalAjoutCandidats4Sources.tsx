@@ -222,7 +222,23 @@ export default function ModalAjoutCandidats4Sources({
 
         const data = await res.json();
         if (data.success && Array.isArray(data.data?.candidats)) {
-          const scanned: CandidatAEnregistrer[] = data.data.candidats.map((c: any, i: number) => ({
+          interface ScannedCandidateRaw {
+            nom?: string
+            lastName?: string
+            prenom?: string
+            firstName?: string
+            dateNaissance?: string
+            dateOfBirth?: string
+            telephone?: string
+            phone?: string
+            email?: string
+            gender?: string
+            ecoleOrigine?: string
+            originSchool?: string
+            telephoneParent?: string
+            parentPhone?: string
+          }
+          const scanned: CandidatAEnregistrer[] = (data.data.candidats as ScannedCandidateRaw[]).map((c, i: number) => ({
             tempId: `scan_${Date.now()}_${i}`,
             lastName: String(c.nom || c.lastName || '').toUpperCase(),
             firstName: String(c.prenom || c.firstName || ''),
@@ -290,7 +306,7 @@ export default function ModalAjoutCandidats4Sources({
     }
   };
 
-  const modifierLigne = (tempId: string, champ: keyof CandidatAEnregistrer, val: any) => {
+  const modifierLigne = <K extends keyof CandidatAEnregistrer>(tempId: string, champ: K, val: CandidatAEnregistrer[K]) => {
     const updated = candidatesList.map((c) => (c.tempId === tempId ? { ...c, [champ]: val } : c));
     setCandidatesList(verifierDoublons(updated));
   };

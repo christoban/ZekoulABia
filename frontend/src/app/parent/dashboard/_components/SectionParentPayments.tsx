@@ -192,7 +192,7 @@ export default function SectionParentPayments({ onToast, userId }: Props) {
     const res = await fetchApi('/api/v2/parent/children', { credentials: 'include' })
     const d = await res.json()
     if (!d.success) return []
-    return (d.data || []).map((c: any) => ({
+    return ((d.data || []) as Array<Partial<Child> & { studentId: string; prenom: string; nom: string }>).map((c) => ({
       studentId: c.studentId,
       prenom: c.prenom,
       nom: c.nom,

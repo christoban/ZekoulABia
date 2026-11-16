@@ -74,8 +74,8 @@ export default function SectionOrgPedagogyHub({ onNav, onToast }: Props) {
 
         if (resYears.status === 'fulfilled' && resYears.value.ok) {
           const yearsData = await resYears.value.json()
-          const years = yearsData.data || []
-          const current = years.find((y: any) => y.isCurrent)
+          const years = (yearsData.data || []) as Array<{ isCurrent?: boolean; endDate?: string | null }>
+          const current = years.find((y) => y.isCurrent)
           if (current) {
             // Seuil de proximité : uniquement dans la fenêtre de 6 semaines (42 jours) avant la clôture officielle
             const now = new Date()

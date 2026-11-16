@@ -5,6 +5,18 @@ import { fetchApi } from '@/lib/fetchApi'
 import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 import DelegationSupervisionBanner from './DelegationSupervisionBanner'
+import {
+  extractAssignedTeachers,
+  ALEVEL_MIN,
+  ALEVEL_MAX,
+  isSixthForm,
+  isLV2Level,
+  serieToFiliere,
+  isCollegLevel,
+  inferFromName,
+  type Teacher,
+} from '@/features/classes/classesShared'
+export { extractAssignedTeachers }
 
 import type { AdminSection } from '../_types'
 
@@ -16,6 +28,7 @@ interface Props {
 interface ClassItem {
   id: string; name: string; level: string | null; filiere: string | null; serie: string | null
   capacity: number
+  pebsBadge?: string | null
   professorPrincipal: { id: string; firstName: string; lastName: string } | null
   _count: { students: number }
 }
@@ -26,19 +39,6 @@ interface SchoolInfo {
   hasPEBSFrancophone: boolean
   hasPEBSAnglophone: boolean
 }
-
-interface Teacher { id: string; name: string }
-interface TeachingAssignmentRow { currentTeacherId?: string | null; currentTeacherName?: string | null }
-
-export function extractAssignedTeachers(rows: TeachingAssignmentRow[]): Teacher[] {
-  const teachers = new Map<string, Teacher>()
-  for (const row of rows) {
-    if (row.currentTeacherId && row.currentTeacherName) {
-      teachers.set(row.currentTeacherId, { id: row.currentTeacherId, name: row.currentTeacherName })
-    }
-  }
-  return [...teachers.values()]
-}
 interface SubGroup { id: string; name: string }
 interface StudentItem { id: string; firstName: string; lastName: string; studentProfile?: { id: string } | null }
 interface SubjectItem { id: string; name: string }
@@ -48,42 +48,6 @@ interface PEBSStudentRow { id: string; firstName: string; lastName: string; pebs
 interface PEBSOverview { className: string; pebsCount: number; nonPEBSCount: number; total: number; eleves: { id: string; firstName: string; lastName: string; pebsFiliere: string | null }[] }
 interface ALevelStudentRow { id: string; firstName: string; lastName: string; subjects: SubjectItem[]; count: number; saving: boolean }
 interface ALevelCombo { code: string; type: string; label: string; subjects: string[] }
-const ALEVEL_MIN = 3
-const ALEVEL_MAX = 5
-function isSixthForm(cls: { level: string | null; name: string }): boolean {
-  const src = `${cls.level ?? ''} ${cls.name}`.toLowerCase()
-  return /sixth|lower\s*6|upper\s*6/.test(src)
-}
-function isLV2Level(cls: { level: string | null }): boolean {
-  if (!cls.level) return false
-  return ['4e', '3e', '2nde', '1ère', 'Tle'].includes(cls.level)
-}
-
-function serieToFiliere(serie: string): string {
-  if (/^A4/.test(serie)) return 'Littéraire'
-  if (serie === 'A') return 'Littéraire'
-  if (serie === 'C' || serie === 'D') return 'Scientifique'
-  if (serie === 'TI') return 'Technique'
-  return ''
-}
-
-function isCollegLevel(level: string, name: string): boolean {
-  const src = (level || name).trim()
-  return /^[3456](e|ème|e\s|$)/i.test(src)
-}
-
-function inferFromName(name: string): { filiere: string; serie: string } {
-  const n = name.trim()
-  const a4Match = n.match(/A4[-\s](\w+)/i)
-  if (a4Match) return { filiere: 'Littéraire', serie: `A4-${a4Match[1]}` }
-  if (/\bA4\b/i.test(n)) return { filiere: 'Littéraire', serie: 'A4' }
-  if (/\bTI\b/.test(n)) return { filiere: 'Technique', serie: 'TI' }
-  if (/^(Tle|Terminale|1[eèê]re?|Première)\s/i.test(n)) {
-    if (/\bC$/i.test(n)) return { filiere: 'Scientifique', serie: 'C' }
-    if (/\bD$/i.test(n)) return { filiere: 'Scientifique', serie: 'D' }
-  }
-  return { filiere: '', serie: '' }
-}
 
 
 
@@ -530,7 +494,8 @@ export default function SectionClasses({ onToast, onNav }: Props) {
       const combos: ALevelCombo[] = comboData?.success
         ? [...(comboData.data.arts ?? []), ...(comboData.data.science ?? [])]
         : []
-      const rows: ALevelStudentRow[] = (ov.data.students ?? []).map((s: any) => ({
+      interface RawALevelStudent { id: string; firstName: string; lastName: string; subjects?: SubjectItem[]; count?: number }
+      const rows: ALevelStudentRow[] = ((ov.data.students ?? []) as RawALevelStudent[]).map((s) => ({
         id: s.id, firstName: s.firstName, lastName: s.lastName, subjects: s.subjects ?? [], count: s.count ?? 0, saving: false,
       }))
       setALevelForm(f => ({ ...f, rows, available: ov.data.availableSubjects ?? [], combos, loading: false }))
@@ -575,7 +540,7 @@ export default function SectionClasses({ onToast, onNav }: Props) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || t('classes.error.load'))
-      const applied: SubjectItem[] = (data.data?.applied ?? []).map((a: any) => ({ id: a.id, name: a.name }))
+      const applied: SubjectItem[] = ((data.data?.applied ?? []) as Array<{ id: string; name: string }>).map((a) => ({ id: a.id, name: a.name }))
       setALevelForm(f => ({ ...f, rows: f.rows.map(r => r.id === studentId ? { ...r, subjects: applied, count: applied.length, saving: false } : r) }))
     } catch (err) {
       setALevelForm(f => ({ ...f, rows: f.rows.map(r => r.id === studentId ? { ...r, saving: false } : r) }))
@@ -599,7 +564,8 @@ export default function SectionClasses({ onToast, onNav }: Props) {
       // Recharger la vue d'ensemble
       const ov = await (await fetchApi(`/api/v2/classes/${alevelForm.classId}/alevel-overview`, { credentials: 'include' })).json()
       if (ov?.success) {
-        setALevelForm(f => ({ ...f, rows: (ov.data.students ?? []).map((s: any) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, subjects: s.subjects ?? [], count: s.count ?? 0, saving: false })) }))
+        interface RawALevelStudent { id: string; firstName: string; lastName: string; subjects?: SubjectItem[]; count?: number }
+        setALevelForm(f => ({ ...f, rows: ((ov.data.students ?? []) as RawALevelStudent[]).map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, subjects: s.subjects ?? [], count: s.count ?? 0, saving: false })) }))
       }
     } catch (err) {
       setALevelForm(f => ({ ...f, bulkApplying: false }))
@@ -690,7 +656,7 @@ export default function SectionClasses({ onToast, onNav }: Props) {
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
                   {(() => {
-                    const pebsBadge = (cls as any).pebsBadge as string | null
+                    const pebsBadge = cls.pebsBadge ?? null
                     const isPEBSFiliere = cls.filiere === 'FR_PEBS' || cls.filiere === 'EN_PEBS'
                     if (pebsBadge === 'PEBS' || isPEBSFiliere) {
                       const label = cls.filiere === 'EN_PEBS' ? 'PEBS EN' : 'PEBS FR'
@@ -754,7 +720,7 @@ export default function SectionClasses({ onToast, onNav }: Props) {
                 </div>
                 <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                   {(() => {
-                    const badge = (cls as any).pebsBadge as string | null;
+                    const badge = cls.pebsBadge ?? null;
                     const isPEBSFiliere = cls.filiere === 'FR_PEBS' || cls.filiere === 'EN_PEBS';
                     if (badge === 'PEBS' || isPEBSFiliere) {
                       const label = cls.filiere === 'EN_PEBS' ? 'PEBS EN' : 'PEBS FR';

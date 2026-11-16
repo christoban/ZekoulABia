@@ -186,8 +186,8 @@ export default function SuperAdminLogin() {
       startTimer()
       setStep(2)
       setTimeout(() => otpRefs.current[0]?.focus(), 100)
-    } catch (err: any) {
-      setAlert1({ msg: err.message, type: 'error' })
+    } catch (err: unknown) {
+      setAlert1({ msg: err instanceof Error ? err.message : 'Erreur', type: 'error' })
     } finally {
       setLoading1(false)
     }
@@ -226,8 +226,8 @@ export default function SuperAdminLogin() {
         setAlert2({ msg: 'Authentification réussie — Redirection...', type: 'success' })
         setTimeout(() => router.push('/master/dashboard'), 1500)
       }
-    } catch (err: any) {
-      setAlert2({ msg: err.message, type: 'error' })
+    } catch (err: unknown) {
+      setAlert2({ msg: err instanceof Error ? err.message : 'Erreur', type: 'error' })
     } finally {
       setLoading2(false)
     }
@@ -254,8 +254,8 @@ export default function SuperAdminLogin() {
         setAlert2({ msg: 'Authentification réussie — Redirection...', type: 'success' })
         setTimeout(() => router.push('/master/dashboard'), 1500)
       }
-    } catch (err: any) {
-      setAlert2({ msg: err.message, type: 'error' })
+    } catch (err: unknown) {
+      setAlert2({ msg: err instanceof Error ? err.message : 'Erreur', type: 'error' })
     } finally {
       setLoading2(false)
     }
@@ -274,8 +274,8 @@ export default function SuperAdminLogin() {
       if (!data.success) throw new Error(data.message)
       startTimer()
       setTimeout(() => otpRefs.current[0]?.focus(), 50)
-    } catch (err: any) {
-      setAlert2({ msg: err.message, type: 'error' })
+    } catch (err: unknown) {
+      setAlert2({ msg: err instanceof Error ? err.message : 'Erreur', type: 'error' })
     }
   }
 
@@ -297,8 +297,8 @@ export default function SuperAdminLogin() {
       if (totpRef.current) clearInterval(totpRef.current)
       setAlert3({ msg: 'Authentification réussie — Redirection vers le dashboard...', type: 'success' })
       setTimeout(() => router.push('/master/dashboard'), 1500)
-    } catch (err: any) {
-      setAlert3({ msg: err.message, type: 'error' })
+    } catch (err: unknown) {
+      setAlert3({ msg: err instanceof Error ? err.message : 'Erreur', type: 'error' })
     } finally {
       setLoading3(false)
     }
@@ -316,7 +316,7 @@ export default function SuperAdminLogin() {
       if (!data.success) throw new Error(data.message || 'Erreur')
       setForgotStep(2)
       setForgotAlert({ msg: 'Code envoyé à ' + maskEmail(forgotEmail), type: 'success' })
-    } catch (err: any) { setForgotAlert({ msg: err.message, type: 'error' }) }
+    } catch (err: unknown) { setForgotAlert({ msg: err instanceof Error ? err.message : 'Erreur', type: 'error' }) }
     finally { setForgotLoading(false) }
   }
 
@@ -336,7 +336,7 @@ export default function SuperAdminLogin() {
       setForgotDone(true)
       setForgotAlert({ msg: 'Mot de passe réinitialisé — vous pouvez vous connecter', type: 'success' })
       setTimeout(() => { setForgotOpen(false); setEmail(forgotEmail.trim().toLowerCase()); setPassword('') }, 1800)
-    } catch (err: any) { setForgotAlert({ msg: err.message, type: 'error' }) }
+    } catch (err: unknown) { setForgotAlert({ msg: err instanceof Error ? err.message : 'Erreur', type: 'error' }) }
     finally { setForgotLoading(false) }
   }
 

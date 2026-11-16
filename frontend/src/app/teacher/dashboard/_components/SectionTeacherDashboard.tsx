@@ -12,13 +12,35 @@ interface Props {
   user?: UserInfo | null
 }
 
+interface TodaySlotItem {
+  time: string
+  classe: string
+  classId: string
+  subject: string
+  subjectId: string
+  salle: string
+  eleves: number
+}
+
 interface TeacherDashData {
   classCount: number | null
   studentCount: number | null
   pendingGrades: number | null
   attendanceRate: string | null
-  todaySlots: any[]
+  todaySlots: TodaySlotItem[]
   rejectedGrades: number
+}
+
+interface TimetableRaw {
+  class?: { id?: string; name?: string | null } | null
+  slots?: Array<{
+    dayOfWeek: number
+    startTime: string
+    endTime: string
+    room?: string | null
+    teacher?: { id?: string } | null
+    subject?: { id?: string; name?: string | null } | null
+  }>
 }
 
 export default function SectionTeacherDashboard({ onNav, onToast, user }: Props) {
@@ -40,7 +62,7 @@ export default function SectionTeacherDashboard({ onNav, onToast, user }: Props)
 
     if (classesRes.success) {
       result.classCount = classesRes.data.length
-      result.studentCount = classesRes.data.reduce((sum: number, c: any) => sum + (c._count?.students || 0), 0)
+      result.studentCount = (classesRes.data as Array<{ _count?: { students?: number } }>).reduce((sum: number, c) => sum + (c._count?.students || 0), 0)
     }
     if (gradesPendingRes.grades) {
       result.pendingGrades = gradesPendingRes.pagination?.total || gradesPendingRes.grades.length
@@ -54,10 +76,10 @@ export default function SectionTeacherDashboard({ onNav, onToast, user }: Props)
       // aucun créneau, ce qui est le comportement voulu.
       const todayIdx = (new Date().getDay() + 6) % 7
       const teacherId = user?.id
-      result.todaySlots = timetableRes.data.flatMap((tt: any) =>
+      result.todaySlots = (timetableRes.data as TimetableRaw[]).flatMap((tt) =>
         (tt.slots || [])
-          .filter((s: any) => s.dayOfWeek === todayIdx && teacherId && s.teacher?.id === teacherId)
-          .map((s: any) => ({
+          .filter((s) => s.dayOfWeek === todayIdx && Boolean(teacherId) && s.teacher?.id === teacherId)
+          .map((s) => ({
             time: `${s.startTime}–${s.endTime}`,
             classe: tt.class?.name || '',
             classId: tt.class?.id || '',
@@ -85,7 +107,17 @@ export default function SectionTeacherDashboard({ onNav, onToast, user }: Props)
   const now = new Date()
   const dateStr = now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
-  const KPI_ITEMS = [
+  const KPI_ITEMS: Array<{
+    Icon: typeof School
+    bg: string
+    val: string
+    label: string
+    trend: string
+    tBg: string
+    tC: string
+    nav?: string
+    urgent?: boolean
+  }> = [
     { Icon: School, bg: 'var(--green-light)', val: classCount !== null ? String(classCount) : '...', label: t('dashboard.kpi_assigned_classes'), trend: t('dashboard.trend_2025_2026'), tBg: 'var(--green-light)', tC: 'var(--green)' },
     { Icon: GraduationCap, bg: 'var(--blue-light)', val: studentCount !== null ? String(studentCount) : '...', label: t('dashboard.kpi_total_students'), trend: t('dashboard.trend_year'), tBg: 'var(--green-light)', tC: 'var(--green)' },
     { Icon: FileText, bg: 'var(--amber-light)', val: pendingGrades !== null ? String(pendingGrades) : '...', label: t('dashboard.kpi_pending_grades'), trend: t('dashboard.trend_urgent'), tBg: 'var(--amber-light)', tC: 'var(--amber)', nav: 'grades', urgent: true },
@@ -147,7 +179,7 @@ export default function SectionTeacherDashboard({ onNav, onToast, user }: Props)
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
               <div style={{ width: 34, height: 34, borderRadius: 8, background: k.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><k.Icon size={17} strokeWidth={2} /></div>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10.5, fontWeight: 800, padding: '2px 7px', borderRadius: 20, background: k.tBg, color: k.tC }}>
-                {(k as any).urgent && <AlertTriangle size={11} strokeWidth={2} />}{k.trend}
+                {k.urgent && <AlertTriangle size={11} strokeWidth={2} />}{k.trend}
               </span>
             </div>
             <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)', lineHeight: 1.1 }}>{k.val}</div>

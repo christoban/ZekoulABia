@@ -73,8 +73,8 @@ export default function SectionStatistics({ onToast }: Props) {
       getCachedData<SubjectItem[]>('admin:subjects').then(s => s?.data ?? []).catch(() => []),
       getCachedData<TeacherItem[]>('admin:users:TEACHER').then(async t => {
         if (t?.data && Array.isArray(t.data) && t.data.length > 0) return t.data
-        const fallback = await getCachedData<any[]>('admin:users:ALL').catch(() => null)
-        return (fallback?.data ?? []).filter((u: any) => u.role === 'TEACHER')
+        const fallback = await getCachedData<Array<TeacherItem & { role?: string }>>('admin:users:ALL').catch(() => null)
+        return (fallback?.data ?? []).filter((u) => u.role === 'TEACHER')
       }).catch(() => []),
     ]).then(([cList, sList, tList]) => {
       if (cList.length > 0) setClasses(cList)

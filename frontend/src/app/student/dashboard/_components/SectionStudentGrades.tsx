@@ -12,8 +12,16 @@ interface Props {
   user?: UserInfo | null
 }
 
+interface StudentGradeItem {
+  subjectId: string
+  subject?: { name?: string | null; coefficient?: number | null } | null
+  coefficient?: number | null
+  sequenceScore?: number | null
+  sequenceAverage?: number | null
+}
+
 interface GradesData {
-  grades: any[]
+  grades: StudentGradeItem[]
   avg: number | null
   rank: { pos: number; total: number } | null
 }
@@ -67,9 +75,14 @@ export default function SectionStudentGrades({ onToast, user }: Props) {
   useEffect(() => {
     let mounted = true
 
-    const parseAcademicYears = (years: any[]) => {
+    interface AyYear {
+      isCurrent?: boolean
+      periods?: Array<{ sequences?: Array<{ id: string; name: string; isCurrent?: boolean }> }>
+    }
+
+    const parseAcademicYears = (years: AyYear[]) => {
       if (!years?.length) return
-      const curYear = years.find((y: any) => y.isCurrent) ?? years[0]
+      const curYear = years.find((y) => y.isCurrent) ?? years[0]
       if (!curYear?.periods) return
 
       const allSeqs: SequenceItem[] = []
@@ -98,11 +111,11 @@ export default function SectionStudentGrades({ onToast, user }: Props) {
           parseAcademicYears(ayRes.data)
         })
         .catch(async () => {
-          const cached = await getCachedData<any[]>('student:academic-years')
+          const cached = await getCachedData<AyYear[]>('student:academic-years')
           if (mounted && cached?.data) parseAcademicYears(cached.data)
         })
     } else {
-      getCachedData<any[]>('student:academic-years')
+      getCachedData<AyYear[]>('student:academic-years')
         .then(cached => {
           if (mounted && cached?.data) parseAcademicYears(cached.data)
         })
@@ -170,9 +183,16 @@ export default function SectionStudentGrades({ onToast, user }: Props) {
   const [mBg, mC] = MENTION_COLOR(mention)
   const subjectsAbove10 = grades.filter(g => (g.sequenceScore ?? g.sequenceAverage ?? 0) >= 10).length
 
+  interface SubjectRowSummary {
+    subjectId: string
+    name: string
+    coeff: number
+    note: number
+  }
+
   const subjectRows = grades
     .filter(g => g.subject)
-    .reduce((acc: any[], g: any) => {
+    .reduce<SubjectRowSummary[]>((acc, g) => {
       if (acc.find(a => a.subjectId === g.subjectId)) return acc
       acc.push({
         subjectId: g.subjectId,
@@ -182,7 +202,7 @@ export default function SectionStudentGrades({ onToast, user }: Props) {
       })
       return acc
     }, [])
-    .sort((a: any, b: any) => a.name.localeCompare(b.name))
+    .sort((a, b) => a.name.localeCompare(b.name))
 
   void mBg; void mC
 

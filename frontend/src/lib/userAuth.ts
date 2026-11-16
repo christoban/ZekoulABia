@@ -1,5 +1,6 @@
 import { db } from '@/lib/offline/db'
 import { purgerCle } from '@/lib/offline/crypto'
+import { confirmAction } from '@/components/shell/ConfirmDialog'
 
 /**
  * Met à jour le timestamp de dernière activité de l'utilisateur dans localStorage.
@@ -31,9 +32,10 @@ export async function logoutUser(): Promise<void> {
   // mais découle directement de son esprit ("ne jamais perdre de données").
   const pendingCount = await db.pendingActions.where('status').anyOf(['PENDING', 'FAILED', 'CONFLICT']).count()
   if (pendingCount > 0) {
-    const confirme = window.confirm(
-      `${pendingCount} action(s) non synchronisée(s) seront perdues si vous vous déconnectez maintenant. Continuer quand même ?`
-    )
+    const confirme = await confirmAction({
+      message: `${pendingCount} action(s) non synchronisée(s) seront perdues si vous vous déconnectez maintenant. Continuer quand même ?`,
+      danger: true,
+    })
     if (!confirme) return
   }
 
@@ -42,18 +44,20 @@ export async function logoutUser(): Promise<void> {
   // Le supprimer silencieusement = perte de données pour l'utilisateur.
   const unsentMessages = await db.messages.where('status').equals('PENDING').count()
   if (unsentMessages > 0) {
-    const confirme = window.confirm(
-      `${unsentMessages} message(s) non envoyé(s) seront perdus si vous vous déconnectez. Continuer quand même ?`
-    )
+    const confirme = await confirmAction({
+      message: `${unsentMessages} message(s) non envoyé(s) seront perdus si vous vous déconnectez. Continuer quand même ?`,
+      danger: true,
+    })
     if (!confirme) return
   }
 
   // Vérifier les fichiers et pièces jointes non envoyés avant de purger
   const unsentUploads = await db.pendingUploads.count()
   if (unsentUploads > 0) {
-    const confirme = window.confirm(
-      `${unsentUploads} document(s)/fichier(s) en attente d'envoi seront perdus si vous vous déconnectez. Continuer quand même ?`
-    )
+    const confirme = await confirmAction({
+      message: `${unsentUploads} document(s)/fichier(s) en attente d'envoi seront perdus si vous vous déconnectez. Continuer quand même ?`,
+      danger: true,
+    })
     if (!confirme) return
   }
 

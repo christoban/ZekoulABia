@@ -63,7 +63,12 @@ export default function SectionTasks({ onToast }: Props) {
   useEffect(() => {
     fetchApi('/api/v2/users', { credentials: 'include' })
       .then(r => r.json())
-      .then(d => { if (d.success) setUsers((d.data || []).filter((u: any) => u.role === 'STAFF' || u.role === 'ADMIN')) })
+      .then(d => {
+        if (d.success) {
+          type StaffUserOption = { id: string; firstName: string; lastName: string; role: string }
+          setUsers(((d.data || []) as StaffUserOption[]).filter((u) => u.role === 'STAFF' || u.role === 'ADMIN'))
+        }
+      })
       .catch(() => {})
   }, [])
 

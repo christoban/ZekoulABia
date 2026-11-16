@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
+import { confirmAction } from '@/components/shell/ConfirmDialog'
 import { BookOpen, CheckCircle2, AlertTriangle, Search, Loader2, Trash2, Check, X, Pencil, RefreshCw, WifiOff } from 'lucide-react'
 
 interface Props {
@@ -262,7 +263,7 @@ export default function SectionLibrary({ onToast }: Props) {
   }
 
   const deleteBook = async (bookId: string, bookTitle: string) => {
-    if (!confirm(t('library.deleteConfirm', { title: bookTitle }))) return
+    if (!(await confirmAction(t('library.deleteConfirm', { title: bookTitle })))) return
     setDeletingId(bookId)
     try {
       const res = await fetchApi(`/api/v2/library/books/${bookId}`, { method: 'DELETE', credentials: 'include' })
@@ -276,7 +277,7 @@ export default function SectionLibrary({ onToast }: Props) {
   }
 
   const returnLoan = async (loanId: string, bookTitle: string) => {
-    if (!confirm(t('library.returnConfirm', { title: bookTitle }))) return
+    if (!(await confirmAction(t('library.returnConfirm', { title: bookTitle })))) return
     setReturningId(loanId)
     try {
       const res = await fetchApi(`/api/v2/library/loans/${loanId}/return`, { method: 'PATCH', credentials: 'include' })

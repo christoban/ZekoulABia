@@ -12,32 +12,20 @@ import { getCachedData, putCachedData, getUserSession } from '@/lib/offline/db'
 import RecuProvisoireModal, { type RecuProvisoireData } from '@/components/finance/RecuProvisoireModal'
 import InvoiceDetailsModal from '@/features/finance/InvoiceDetailsModal'
 import FinanceCashOpsPanel from '@/features/finance/FinanceCashOpsPanel'
+import {
+  INVOICE_STATUS_STYLES as INV_STATUS,
+  DEPENSE_CATEGORIES,
+  EMPTY_DEPENSE as EMPTY_DEP,
+  type FinanceInvoiceItem as InvoiceItem,
+  type FinancePagination as Pagination,
+  type FinancePayment as Payment,
+} from '@/features/finance/financeShared'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
   sessionUser?: SessionUser | null
   initialTab?: 'invoices' | 'apee' | 'plans' | 'closures'
 }
-
-interface Payment { id: string; amount: number; status: string; paidAt: string | null; method: string }
-interface InvoiceItem {
-  id: string; amount: number; currency: string; status: string; dueDate: string | null; createdAt: string
-  student: { id: string; firstName: string; lastName: string }
-  feePlan: { id: string; name: string; feeType: string; amount: number } | null
-  payments: Payment[]
-}
-interface Pagination { total: number; page: number; pages: number }
-
-const INV_STATUS: Record<string, { bg: string; color: string }> = {
-  PENDING:    { bg: 'var(--red-light)', color: 'var(--red)' },
-  PARTIAL:    { bg: 'var(--amber-light)', color: 'var(--amber)' },
-  PAID:       { bg: 'var(--green-light)', color: 'var(--green)' },
-  OVERDUE:    { bg: 'var(--red-light)', color: 'var(--red)' },
-  CANCELLED:  { bg: 'var(--bg2)', color: 'var(--text2)' },
-}
-
-const DEPENSE_CATEGORIES = ['catSupplies', 'catMaintenance', 'catUtilities', 'catFuel', 'catCommunication', 'catBankFees', 'catSalaries', 'catEvents', 'catOther']
-const EMPTY_DEP = { label: '', amount: '', category: '', date: '' }
 
 export default function SectionFinanceStaff({ onToast, sessionUser, initialTab = 'invoices' }: Props) {
   const t = useT('staff')

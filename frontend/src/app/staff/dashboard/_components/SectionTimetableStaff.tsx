@@ -6,7 +6,17 @@ import { groupTimetableSlotsForDisplay, timetableCellKey } from '@/lib/timetable
 import { AlertTriangle, Calendar, CalendarDays, Coffee, Eye, Loader2, Trash2, UtensilsCrossed, Package, WifiOff } from 'lucide-react'
 import { putCachedData, getCachedData } from '@/lib/offline/db'
 import SectionTimetableStaffActions from './SectionTimetableStaffActions'
+import { confirmAction } from '@/components/shell/ConfirmDialog'
 import TimetableProposalPreview, { type ProposalPreviewGroupSession, type ProposalPreviewMissingHours, type ProposalPreviewSession } from './TimetableProposalPreview'
+import {
+  DAY_NAME,
+  DAY_MAP,
+  subjectColor,
+  type TimetableClassItem as ClassItem,
+  type TimetableSlot,
+  type TimetableData as Timetable,
+  type PeriodeGrille,
+} from '@/features/timetable/timetableShared'
 
 const FREE_VALUE = '__FREE__'
 
@@ -24,29 +34,7 @@ interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
 }
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface ClassItem { id: string; name: string; academicYearId?: string }
-
-interface TimetableSlot {
-  id: string; dayOfWeek: number; startTime: string; endTime: string
-  room: string | null; kind: string
-  subject: { id: string; name: string } | null
-  teacher: { id: string; firstName: string; lastName: string } | null
-  isLV2Slot?: boolean
-  groupId?: string | null
-}
-
-interface Timetable {
-  id: string; classId: string; status: string
-  class: { id: string; name: string }
-  slots: TimetableSlot[]
-}
-
-interface PeriodeGrille {
-  ordre: number; debut: string; fin: string
-  type: 'COURS' | 'PETITE_PAUSE' | 'GRANDE_PAUSE'; duree: number
-}
-
+// ─── Types locaux ─────────────────────────────────────────────────────────────
 interface GridConfig {
   heureDebut: string; dureePeriode: number
   periodesAvantP1: number; dureePetitePause: number
@@ -88,32 +76,6 @@ interface GenerationRunData {
 }
 
 const GLOBAL_RUN_STORAGE_KEY = 'zekoulabia_timetable_global_run'
-
-// ─── Constantes ───────────────────────────────────────────────────────────────
-const DAY_NAME: Record<string, string> = {
-  LUNDI: 'Lundi', MARDI: 'Mardi', MERCREDI: 'Mercredi',
-  JEUDI: 'Jeudi', VENDREDI: 'Vendredi', SAMEDI: 'Samedi',
-}
-const DAY_MAP: Record<string, number> = {
-  LUNDI: 0, MARDI: 1, MERCREDI: 2, JEUDI: 3, VENDREDI: 4, SAMEDI: 5,
-}
-
-// Palette de couleurs par matière (hash stable)
-const SUBJECT_PALETTES = [
-  { bg: 'rgba(5,150,105,0.10)', border: 'var(--green)', text: 'var(--green2)' },
-  { bg: 'rgba(37,99,235,0.09)', border: 'var(--blue)', text: 'var(--blue)' },
-  { bg: 'rgba(217,119,6,0.09)', border: 'var(--amber)', text: 'var(--amber)' },
-  { bg: 'rgba(139,92,246,0.09)', border: 'var(--purple)', text: 'var(--purple)' },
-  { bg: 'rgba(236,72,153,0.09)', border: 'var(--red)', text: 'var(--red)' },
-  { bg: 'rgba(142,42,58,0.09)', border: 'var(--primary)', text: 'var(--primary)' },
-  { bg: 'rgba(239,68,68,0.09)', border: 'var(--red)', text: 'var(--red)' },
-  { bg: 'rgba(251,146,60,0.09)', border: 'var(--orange)', text: 'var(--orange)' },
-]
-function subjectColor(id: string) {
-  let hash = 0
-  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) & 0xffffffff
-  return SUBJECT_PALETTES[Math.abs(hash) % SUBJECT_PALETTES.length]
-}
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 export default function SectionTimetable({ onToast }: Props) {
@@ -349,7 +311,7 @@ export default function SectionTimetable({ onToast }: Props) {
   }, [classes[0]?.academicYearId, loadingClasses, pollGlobalRun])
 
   const handleProposeAll = async () => {
-    if (classes.length === 0 || !window.confirm(t('timetable.bulkProposeConfirm'))) return
+    if (classes.length === 0 || !(await confirmAction(t('timetable.bulkProposeConfirm')))) return
      setBulkResults([])
      setSelectedPartialIds(new Set())
      setBulkPropose({ current: 0, total: classes.length, className: '', errors: [], warnings: [] })
@@ -394,7 +356,7 @@ export default function SectionTimetable({ onToast }: Props) {
       onToast(t('timetable.bulkNoApplicable'), 'error')
       return
     }
-    if (!window.confirm(t('timetable.bulkApplyConfirm', { count: applicable.length }))) return
+    if (!(await confirmAction(t('timetable.bulkApplyConfirm', { count: applicable.length })))) return
     setApplyingAll(true)
     try {
       const response = await fetchApi('/api/v2/timetables/apply-all', {
@@ -420,7 +382,7 @@ export default function SectionTimetable({ onToast }: Props) {
       onToast(t('timetable.bulkPartialSelectionRequired'), 'error')
       return
     }
-    if (!window.confirm(t('timetable.bulkApplyPartialConfirm', { count: selected.length }))) return
+    if (!(await confirmAction(t('timetable.bulkApplyPartialConfirm', { count: selected.length })))) return
     setApplyingAll(true)
     try {
       const response = await fetchApi('/api/v2/timetables/apply-all', {
@@ -470,7 +432,7 @@ export default function SectionTimetable({ onToast }: Props) {
 
   const handleClearAll = async () => {
     if (!timetable || timetable.status !== 'DRAFT') return
-    if (!window.confirm(t('timetable.clearAllConfirm', { className: timetable.class.name }))) return
+    if (!(await confirmAction(t('timetable.clearAllConfirm', { className: timetable.class.name })))) return
     setClearingAll(true)
     try {
       const res = await fetchApi(`/api/v2/timetables/${timetable.id}/slots`, {

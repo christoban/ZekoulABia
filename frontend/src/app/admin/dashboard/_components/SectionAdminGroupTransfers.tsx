@@ -40,8 +40,8 @@ export default function SectionAdminGroupTransfers({ onToast }: Props) {
       if (!data.success) throw new Error(data.message)
       onToast('Transfert accepté.', 'success')
       load()
-    } catch (err: any) {
-      onToast(err.message || 'Erreur', 'error')
+    } catch (err: unknown) {
+      onToast(err instanceof Error ? err.message : 'Erreur', 'error')
     } finally {
       setProcessingId(null)
     }
@@ -55,8 +55,8 @@ export default function SectionAdminGroupTransfers({ onToast }: Props) {
       if (!data.success) throw new Error(data.message)
       onToast('Demande de transfert rejetée.', 'info')
       load()
-    } catch (err: any) {
-      onToast(err.message || 'Erreur', 'error')
+    } catch (err: unknown) {
+      onToast(err instanceof Error ? err.message : 'Erreur', 'error')
     } finally {
       setProcessingId(null)
     }

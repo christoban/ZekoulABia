@@ -21,24 +21,34 @@ interface ClassStats {
   attendanceRate: string | null
 }
 
+interface TeacherClassRow {
+  id: string
+  name: string
+  professorPrincipalId?: string | null
+  level?: string | null
+  _count?: { enrollments?: number; students?: number }
+}
+
+type GradeStatEntry = { total: number; submitted: number; draft: number }
+
 export default function SectionTeacherClasses({ onNav, onToast, user }: Props) {
   const t = useT('teacher')
   const tcommon = useT('common')
   const [stats, setStats]     = useState<Record<string, ClassStats>>({})
-  const [gradeStats, setGradeStats] = useState<Record<string, { total: number; submitted: number; draft: number }>>({})
+  const [gradeStats, setGradeStats] = useState<Record<string, GradeStatEntry>>({})
 
-  const fetchClassesFn = useCallback(async (): Promise<any[]> => {
+  const fetchClassesFn = useCallback(async (): Promise<TeacherClassRow[]> => {
     const res = await fetchApi('/api/v2/classes', { credentials: 'include' }).then(r => r.json())
     if (!res.success) throw new Error(t('classes.load_error'))
     return res.data
   }, [t])
 
-  const { data: classesData, loading, error, fromCache, cachedAt, refetch: fetchData } = useCachedFetch<any[]>('teacher:classes', fetchClassesFn)
+  const { data: classesData, loading, error, fromCache, cachedAt, refetch: fetchData } = useCachedFetch<TeacherClassRow[]>('teacher:classes', fetchClassesFn)
   const classes = classesData ?? []
 
-  const fetchStats = async (classList: any[]) => {
+  const fetchStats = async (classList: TeacherClassRow[]) => {
     const statsMap: Record<string, ClassStats> = {}
-    const gradeMap: Record<string, { total: number; submitted: number; draft: number }> = {}
+    const gradeMap: Record<string, GradeStatEntry> = {}
     await Promise.all(classList.map(async (cls) => {
       let attendanceRate: string | null = null
       let average: number | null = null
@@ -54,9 +64,9 @@ export default function SectionTeacherClasses({ onNav, onToast, user }: Props) {
         }
 
         if (resStudents?.success && Array.isArray(resStudents.data)) {
-          const validMoys = resStudents.data
-            .map((s: any) => s.moyenne)
-            .filter((m: any) => typeof m === 'number' && !isNaN(m))
+          const validMoys = (resStudents.data as Array<{ moyenne?: number | null }>)
+            .map((s) => s.moyenne)
+            .filter((m): m is number => typeof m === 'number' && !isNaN(m))
           if (validMoys.length > 0) {
             average = Math.round((validMoys.reduce((acc: number, v: number) => acc + v, 0) / validMoys.length) * 10) / 10
           }
@@ -87,7 +97,7 @@ export default function SectionTeacherClasses({ onNav, onToast, user }: Props) {
       if (!fromCache) {
         fetchStats(classes)
       } else {
-        getCachedData<{ stats: Record<string, ClassStats>; gradeStats: Record<string, any> }>('teacher:classes-detail-stats')
+        getCachedData<{ stats: Record<string, ClassStats>; gradeStats: Record<string, GradeStatEntry> }>('teacher:classes-detail-stats')
           .then(cached => {
             if (cached?.data) {
               setStats(cached.data.stats || {})
@@ -99,7 +109,7 @@ export default function SectionTeacherClasses({ onNav, onToast, user }: Props) {
     }
   }, [classes, fromCache]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const totalStudents = classes.reduce((sum: number, c: any) => sum + (c._count?.enrollments ?? c._count?.students ?? 0), 0)
+  const totalStudents = classes.reduce((sum: number, c) => sum + (c._count?.enrollments ?? c._count?.students ?? 0), 0)
 
   if (loading) {
     return (

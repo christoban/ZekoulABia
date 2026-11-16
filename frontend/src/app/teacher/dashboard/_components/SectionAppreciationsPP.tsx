@@ -6,6 +6,7 @@ import { fetchApi } from '@/lib/fetchApi'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
 import { useT } from '@/lib/i18n'
 import { getCachedData, putCachedData } from '@/lib/offline/db'
+import { confirmAction } from '@/components/shell/ConfirmDialog'
 
 interface Props {
   user: UserInfo
@@ -132,7 +133,15 @@ export default function SectionAppreciationsPP({ user: _user, classeId, classeNo
       fetchApi(`/api/v2/report-cards?classId=${classeId}&periodId=${selectedPeriodId}&limit=100`, { credentials: 'include' })
         .then(r => r.json())
         .then(async d => {
-          const cards: ReportCard[] = (d.reportCards ?? []).map((rc: any) => ({
+          interface RawReportCardItem {
+            id: string
+            studentId: string
+            student?: { firstName?: string | null; lastName?: string | null } | null
+            generalAverage?: number | null
+            classMasterComment?: string | null
+            status?: string | null
+          }
+          const cards: ReportCard[] = ((d.reportCards ?? []) as RawReportCardItem[]).map((rc) => ({
             id: rc.id,
             studentId: rc.studentId,
             studentName: rc.student ? `${rc.student.lastName ?? ''} ${rc.student.firstName ?? ''}`.trim() : rc.studentId,
@@ -229,7 +238,7 @@ export default function SectionAppreciationsPP({ user: _user, classeId, classeNo
   }, [comments])
 
   const handleGenerateAI = useCallback(async (rcId: string) => {
-    if ((comments[rcId] ?? '').trim() && !confirm(t('pp.ai_confirm_overwrite'))) return
+    if ((comments[rcId] ?? '').trim() && !(await confirmAction(t('pp.ai_confirm_overwrite')))) return
 
     setAiError(e => { const n = { ...e }; delete n[rcId]; return n })
     setGeneratingAI(g => ({ ...g, [rcId]: true }))

@@ -42,8 +42,8 @@ export default function CalendarProgressModal({ isOpen, onClose }: Props) {
 
         if (resYears.status === 'fulfilled' && resYears.value.ok) {
           const data = await resYears.value.json()
-          const years = data.data || []
-          const current = years.find((y: any) => y.isCurrent) || years[0]
+          const years = (data.data || []) as Array<{ isCurrent?: boolean; name: string; startDate?: string; endDate?: string }>
+          const current = years.find((y) => y.isCurrent) || years[0]
           if (current) {
             setActiveYearName(current.name)
             if (current.startDate && current.endDate) {

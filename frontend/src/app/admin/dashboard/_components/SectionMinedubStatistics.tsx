@@ -24,9 +24,9 @@ const INFRA_SUB_KEYS = [
 interface Supplement {
   zoneImplantation: string | null
   ordreEnseignement: string | null
-  elevesVulnerablesDetail: Record<string, any> | null
-  infrastructuresDetail: Record<string, any> | null
-  commoditesDetail: Record<string, any> | null
+  elevesVulnerablesDetail: Record<string, Record<string, number | null> | undefined> | null
+  infrastructuresDetail: Record<string, Record<string, number | null> | undefined> | null
+  commoditesDetail: Record<string, string | undefined> | null
   lastUpdatedAt: string | null
 }
 interface ChampNonResolu { section: string; champ: string; raison: string }
@@ -50,7 +50,7 @@ export default function SectionMinedubStatistics({ onToast }: Props) {
   const [tab, setTab] = useState<'supplement' | 'generer'>('supplement')
 
   const [supplement, setSupplement] = useState<Supplement | null>(null)
-  const [form, setForm] = useState<Record<string, any>>({})
+  const [form, setForm] = useState<Partial<Supplement>>({})
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [expandedInfraRow, setExpandedInfraRow] = useState<string | null>(null)
@@ -92,9 +92,10 @@ export default function SectionMinedubStatistics({ onToast }: Props) {
         if (repData.data) putCachedData('admin:minedub:reports', repData.data).catch(() => {})
       }
     } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
       const isNet = (typeof navigator !== 'undefined' && !navigator.onLine) ||
-        String((err as any)?.message || err).includes('fetch') ||
-        String((err as any)?.message || err).includes('Network')
+        msg.includes('fetch') ||
+        msg.includes('Network')
       if (!isNet) {
         onToast(t('minedubStats.errorGeneric'), 'error')
       }

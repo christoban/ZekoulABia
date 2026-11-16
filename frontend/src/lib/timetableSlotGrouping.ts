@@ -77,8 +77,12 @@ export function groupTimetableSlotsForStudent<T extends TimetableGroupSlot>(
     // Vérifie si la matière du slot correspond au choix LV2/filière de l'élève
     const isSlotMatchingStudentLv2 = (slot: T) => {
       if (!studentLv2SubjectId && !studentLv2SubjectName) return false
-      const sub = (slot as any).subject
-      const subId = (slot as any).subjectId || (typeof sub === 'object' ? sub?.id : undefined)
+      const typedSlot = slot as T & {
+        subjectId?: string
+        subject?: string | { id?: string; name?: string | null } | null
+      }
+      const sub = typedSlot.subject
+      const subId = typedSlot.subjectId || (typeof sub === 'object' && sub !== null ? sub.id : undefined)
       if (studentLv2SubjectId && subId && subId === studentLv2SubjectId) return true
       const subName = (typeof sub === 'string' ? sub : sub?.name)?.trim().toLowerCase()
       if (studentLv2SubjectName && subName && subName === studentLv2SubjectName.trim().toLowerCase()) return true
@@ -150,9 +154,20 @@ export const DEFAULT_TIMETABLE_SKELETON: PeriodeGrille[] = [
   { ordre: 7, debut: '13:45', fin: '14:40', type: 'COURS', duree: 55 },
 ]
 
+interface GridConfigShape {
+  squelette?: PeriodeGrille[]
+  config?: { joursActifs?: string[] }
+  squeletteParJour?: Record<string, PeriodeGrille[]>
+  data?: GridConfigShape
+}
+
+interface TimetableShape {
+  slots?: RawSlot[]
+}
+
 export function formatStudentTimetableData(
-  timetablesRaw: any,
-  gridConfigRaw: any,
+  timetablesRaw: unknown,
+  gridConfigRaw: unknown,
   groupIds: readonly string[] = [],
   className: string = '',
   unassignedLabel = 'Non assigné au groupe',
@@ -162,7 +177,8 @@ export function formatStudentTimetableData(
   let joursActifs: string[] = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI']
   let squeletteParJour: Record<string, PeriodeGrille[]> = {}
 
-  const gridData = gridConfigRaw?.data ?? gridConfigRaw
+  const gridWrapper = gridConfigRaw && typeof gridConfigRaw === 'object' ? (gridConfigRaw as GridConfigShape) : null
+  const gridData = gridWrapper?.data ?? gridWrapper
   if (gridData) {
     if (Array.isArray(gridData.squelette) && gridData.squelette.length > 0) {
       squelette = gridData.squelette
@@ -180,13 +196,14 @@ export function formatStudentTimetableData(
   let colorIdx = 0
   const subjectColors: Record<string, string> = {}
 
-  const ttList: any[] = Array.isArray(timetablesRaw)
-    ? timetablesRaw
-    : Array.isArray(timetablesRaw?.data)
-    ? timetablesRaw.data
+  const ttWrapper = timetablesRaw && typeof timetablesRaw === 'object' ? (timetablesRaw as { data?: TimetableShape[] }) : null
+  const ttList: TimetableShape[] = Array.isArray(timetablesRaw)
+    ? (timetablesRaw as TimetableShape[])
+    : Array.isArray(ttWrapper?.data)
+    ? ttWrapper.data
     : []
 
-  const rawSlots: RawSlot[] = ttList.flatMap((tt: { slots?: RawSlot[] }) => tt?.slots ?? [])
+  const rawSlots: RawSlot[] = ttList.flatMap((tt) => tt?.slots ?? [])
 
   const groupingOptions: StudentGroupingOptions = {
     studentGroupIds: groupIds,
