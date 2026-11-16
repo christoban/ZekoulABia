@@ -94,11 +94,17 @@ frontend/src/
 │   ├── login/ · reset-password/ · invite/            pages publiques
 │   ├── onboarding/[token]/                            Phase 1 : questionnaire d'inscription (wizard)
 │   ├── admin/configuration/                           Phase 2 : onboarding conversationnel + activation
-│   ├── admin/ teacher/ staff/ parent/ student/ master/  dashboards par rôle (voir MODULE_INDEX)
+│   ├── admin/ teacher/ staff/ parent/ student/ master/ group/  dashboards par rôle (`_components/` si local)
 │   └── api/                                           routes Next (le cas échéant)
-├── components/     partagés : AnimatedBackground, ThemeToggle, LanguageSwitch, LandingPage, ui/ (shadcn)
-└── lib/            fetchApi, i18n/, offline/ (Dexie/PWA), userAuth, colors, utils
+├── features/<domaine>/                                socles partagés entre ≥ 2 portails (16 domaines : affectations, attendance, babillard, carnet-liaison, classes, concours, council, finance, messagerie, rh, studentTransfer, timetable…)
+├── components/
+│   ├── shell/                                         coque UI unifiée (`AppTopbar`, `AppSidebarDrawer`, `AppBottomNav`, `AppToast`, `ConfirmDialog`)
+│   ├── ui/                                            primitives génériques shadcn/@base-ui
+│   └── ...                                            composants transverses génériques (`AnimatedBackground`, `ThemeToggle`, `LanguageSwitch`, `LandingPage`)
+└── lib/                                               fetchApi, i18n/, offline/ (Dexie/PWA), userAuth, colors, utils
 ```
+
+- **Matrice de placement & isolation** (voir [frontend/AGENTS.md](frontend/AGENTS.md)) : `components/shell/` et `components/ui/` ne dépendent jamais de `app/` ni de `features/`. Toute logique multi-portails vit dans `features/<domaine>/`, consommée par des wrappers ou sections de `app/<role>/dashboard/_components/`. Ces règles + zéro `any` + zéro `alert()`/`confirm()` + cliquet 500 lignes sont vérifiés automatiquement par `frontend/src/tests/architectureGuard.test.ts`.
 
 - **Dashboards** : chaque rôle a un `dashboard/page.tsx` + `_components/Section*.tsx` (admin 32, teacher 12, staff 16, parent 8, student 7) + une sidebar + topbar + toasts. S'y ajoutent les espaces **master** (plateforme) et **group** (propriétaire d'un groupe d'écoles : `frontend/src/app/group/`), ainsi que l'onboarding élève dédié (`frontend/src/app/eleve-onboarding/`).
 - **Styles** : **inline styles** majoritaires + tokens CSS (`var(--bg)`, `var(--text)`…) définis dans `globals.css`, plus quelques utilitaires Tailwind. Thème clair/sombre via **next-themes** + `@custom-variant dark` (Tailwind v4).

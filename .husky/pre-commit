@@ -15,40 +15,60 @@
 # largement utilisé dans le code (JSON Prisma, enums) pour typer précisément une valeur sans
 # `any` — seul `as any` lui-même (et @ts-ignore/@ts-expect-error) est un vrai garde-fou.
 
+REPO_ROOT=$(pwd)
+
 STAGED_BACKEND_TS=$(git diff --cached --name-only --diff-filter=ACMDR | grep -E '^backend/.*\.tsx?$' || true)
+STAGED_FRONTEND_TS=$(git diff --cached --name-only --diff-filter=ACMDR | grep -E '^frontend/.*\.tsx?$' || true)
 
-if [ -z "$STAGED_BACKEND_TS" ]; then
-  exit 0
+if [ -n "$STAGED_BACKEND_TS" ]; then
+  echo "🔍 Pré-commit backend : tsc --noEmit + architectureGuard + détection as any/@ts-ignore réintroduits..."
+
+  cd "$REPO_ROOT/backend" || exit 1
+
+  echo "  → tsc --noEmit (projet complet)"
+  ./node_modules/.bin/tsc --noEmit || {
+    echo "❌ tsc backend a échoué. Corrigez les erreurs de type avant de committer."
+    exit 1
+  }
+
+  echo "  → architectureGuard.test.ts (règles hexagonales & zéro any)"
+  bun test tests/unit/architectureGuard.test.ts || {
+    echo "❌ architectureGuard backend a échoué. Corrigez les violations avant de committer."
+    exit 1
+  }
+
+  echo "  → recherche de as any / @ts-ignore / @ts-expect-error sur les lignes ajoutées"
+  CULPRITS=$(git -C "$REPO_ROOT" diff --cached --no-ext-diff -M | awk '
+    /^diff --git/ { inBackend = ($0 ~ / b\/backend\//) }
+    inBackend && /^\+[^+]/ && !/^\+\s*(\*|\/\/)/ && ($0 ~ /\bas any\b/ || $0 ~ /@ts-ignore/ || $0 ~ /@ts-expect-error/) { print }
+  ')
+
+  if [ -n "$CULPRITS" ]; then
+    echo "❌ Nouveau \`as any\` (ou @ts-ignore/@ts-expect-error) détecté dans les lignes ajoutées :"
+    echo "$CULPRITS"
+    echo "   Utilisez un type précis (voir CONVENTIONS.md) — \`as unknown as TypePrécis\` reste autorisé."
+    exit 1
+  fi
+
+  echo "✅ Pré-commit backend OK"
 fi
 
-echo "🔍 Pré-commit backend : tsc --noEmit + détection as any/@ts-ignore réintroduits..."
+if [ -n "$STAGED_FRONTEND_TS" ]; then
+  echo "🔍 Pré-commit frontend : tsc --noEmit + architectureGuard.test.ts..."
 
-cd backend || exit 1
+  cd "$REPO_ROOT/frontend" || exit 1
 
-echo "  → tsc --noEmit (projet complet — la résolution de types ne se limite pas aux fichiers stagés)"
-bunx tsc --noEmit -p . || {
-  echo "❌ tsc a échoué. Corrigez les erreurs de type avant de committer."
-  exit 1
-}
+  echo "  → tsc --noEmit (projet complet)"
+  ./node_modules/.bin/tsc --noEmit || {
+    echo "❌ tsc frontend a échoué. Corrigez les erreurs de type avant de committer."
+    exit 1
+  }
 
-echo "  → recherche de as any / @ts-ignore / @ts-expect-error sur les lignes ajoutées"
-# Diff COMPLET (pas de pathspec) : un pathspec désactive la détection de renames, or pour un
-# `git mv` + réécriture, git afficherait alors le fichier comme entièrement nouveau — et tous
-# les `as any` préexistants (déjà dans HEAD) apparaîtraient comme "ajoutés". Avec le diff
-# complet + -M, les renames sont détectés : seules les lignes réellement ajoutées ressortent.
-# On filtre ensuite par awk sur les fichiers backend/ pour ne garder que le périmètre du hook.
-# Exclut les lignes de commentaire (JSDoc ` * ...` et `// ...`) : elles ne peuvent pas
-# réintroduire un vrai cast, seulement en parler en prose (ex. documenter un bug corrigé).
-CULPRITS=$(git diff --cached --no-ext-diff -M | awk '
-  /^diff --git/ { inBackend = ($0 ~ / b\/backend\//) }
-  inBackend && /^\+[^+]/ && !/^\+\s*(\*|\/\/)/ && ($0 ~ /\bas any\b/ || $0 ~ /@ts-ignore/ || $0 ~ /@ts-expect-error/) { print }
-')
+  echo "  → architectureGuard.test.ts (zéro any, zéro alert/confirm, isolation shell/ui, cliquet 500 l.)"
+  bun test src/tests/architectureGuard.test.ts || {
+    echo "❌ architectureGuard frontend a échoué. Corrigez les violations avant de committer."
+    exit 1
+  }
 
-if [ -n "$CULPRITS" ]; then
-  echo "❌ Nouveau \`as any\` (ou @ts-ignore/@ts-expect-error) détecté dans les lignes ajoutées :"
-  echo "$CULPRITS"
-  echo "   Utilisez un type précis (voir CONVENTIONS.md) — \`as unknown as TypePrécis\` reste autorisé."
-  exit 1
+  echo "✅ Pré-commit frontend OK"
 fi
-
-echo "✅ Pré-commit backend OK"

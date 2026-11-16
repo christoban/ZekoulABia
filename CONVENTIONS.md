@@ -27,8 +27,10 @@
 | Controller | `PascalCase` + `Controller.ts` | `ReportCardController.ts` |
 | Route Express | `<domaine>.routes.ts`, export `creer<Domaine>Routes(...)` | `grade.routes.ts` |
 | Service (adapter) | `PascalCase` + `Service.ts` | `CampayPaiementService.ts` |
-| Section frontend | `Section<Nom>.tsx` dans `_components/` | `SectionBulletins.tsx` |
-| Composant partagé | `PascalCase.tsx` | `AnimatedBackground.tsx` |
+| Section frontend | `Section<Nom>.tsx` dans `_components/` (wrapper vers `features/` si multi-portail) | `SectionBulletins.tsx`, `SectionGrilleHoraire.tsx` |
+| Feature partagée | `features/<domaine>/<Nom>.tsx` ou `*Shared.ts` | `features/timetable/GrilleHoraireView.tsx` |
+| Composant Shell UI | `components/shell/App*.tsx` / `ConfirmDialog.tsx` | `AppTopbar.tsx`, `ConfirmDialog.tsx` |
+| Composant partagé | `PascalCase.tsx` dans `components/` | `AnimatedBackground.tsx` |
 | Hook | `useXxx` | `useT`, `useLanguage` |
 | Test | `<Nom>.test.ts` dans `tests/unit|integration/...` | `tests/unit/application/grade/SaisirNoteUseCase.test.ts` |
 | i18n | `locales/{fr,en}/<namespace>.json` | `locales/fr/admin.json` |
@@ -38,7 +40,7 @@
 ## 3. Structure des dossiers (rappel — détail dans ARCHITECTURE/MODULE_INDEX)
 
 - **Backend** = hexagonal : `domain/` (entities, ports, rules, types, value-objects, errors) → `application/<module>/` (use cases) → `infrastructure/` (http, persistence, services, config). Transverses : `services/`, `utils/`, `middleware/`, `inngest/`, `socket/`, `scripts/`. Tests centralisés dans `tests/` (`unit/` et `integration/`).
-- **Frontend** = App Router : `app/<role>/dashboard/_components/Section*.tsx`, `components/`, `lib/`, `locales/`.
+- **Frontend** = App Router + couches DRY : `components/shell/` (coque UI unifiée), `features/<domaine>/` (logique/vues partagées entre ≥ 2 portails), `app/<role>/dashboard/_components/Section*.tsx` (sections locales ou wrappers), `components/` + `components/ui/` (générique pur), `lib/`, `locales/`. Détail dans [frontend/AGENTS.md](frontend/AGENTS.md).
 - **Un use case par fichier** ; regroupés par domaine ; `index.ts` de barrel par module.
 
 ---
@@ -73,6 +75,7 @@
 5. **Next.js** : cette version diffère des habitudes (`frontend/AGENTS.md`). Lire la doc locale (`node_modules/next/dist/docs/`) avant d'utiliser une API Next. `'use client'` en tête des composants interactifs.
 6. **Formulaires** : `react-hook-form` + `zod` quand la complexité le justifie ; sinon `useState` local (cohérent avec l'existant).
 7. **Pas d'`import()` dynamique de JSON** pour l'i18n (fragile ici) — imports statiques.
+8. **Dialogues, Toasts & Guards bloquants** : interdiction d'appeler `alert()`/`window.alert()`/`confirm()`/`window.confirm()` (utiliser `AppToast` et `confirmAction()` de `@/components/shell/ConfirmDialog`). Toute violation de typage `any`, dialogue natif, isolation `shell/`/`ui/`, factorisation des 8 paires ou dépassement du cliquet 500 lignes bloque `frontend/src/tests/architectureGuard.test.ts`.
 
 ---
 

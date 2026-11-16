@@ -92,7 +92,9 @@ Chemins raccourcis : `app/` = `backend/src/application`, `infra/` = `backend/src
 | **Socle i18n** | Traduction FR/EN ; dashboard personnel par utilisateur ; contenus générés par école/section | `fe/lib/i18n/`, `fe/locales/{fr,en}/*.json` (13 namespaces) | `useT`, `LanguageProvider`, `resolveDashboardLanguage`, `README.md` |
 | **Thème** | Clair/sombre | `fe/app/providers.tsx` (next-themes), `fe/app/globals.css` (`.dark`), `components/ThemeToggle` | |
 | **Offline / PWA** | File d'attente hors-ligne | `fe/lib/offline/` (Dexie), `components/OfflineIndicator/EmptyState` | |
-| **Composants partagés** | UI transverse | `fe/components/` + `fe/components/ui/` (shadcn) | `AnimatedBackground`, `LanguageSwitch`, `PasswordStrengthBar` |
+| **Shell UI unifié** | Topbar, SidebarDrawer, BottomNav, AppToast, ConfirmDialog | `fe/components/shell/` | `AppTopbar.tsx`, `AppSidebarDrawer.tsx`, `AppBottomNav.tsx`, `AppToast.tsx`, `ConfirmDialog.tsx` |
+| **Features partagées** | Modules métier mutualisés entre ≥ 2 portails (16 domaines dont les 8 paires Admin/Staff) | `fe/features/*` | `affectations/`, `attendance/`, `babillard/`, `carnet-liaison/`, `classes/`, `concours/`, `council/`, `finance/`, `messagerie/`, `rh/`, `studentTransfer/`, `timetable/` |
+| **Composants partagés** | UI transverse générique & primitives | `fe/components/` + `fe/components/ui/` (shadcn) | `AnimatedBackground`, `LanguageSwitch`, `PasswordStrengthBar` |
 | **Accès réseau** | Wrapper API + auth session | `fe/lib/fetchApi.ts`, `fe/lib/userAuth.ts` | cookies, `/api/v2/*` |
 
 ---
@@ -105,3 +107,6 @@ Chemins raccourcis : `app/` = `backend/src/application`, `infra/` = `backend/src
 - **Nouvelle langue/texte UI** → `fe/locales/{fr,en}/<namespace>.json` (parité obligatoire) + `useT`.
 - **Nouvelle route API** → controller + `routes/*.routes.ts` + montage dans `hexagonal.bootstrap.ts` (via `container`).
 - **Logique de langue** → toujours `resolveLanguage` (jamais recréer).
+- **Nouvelle fonctionnalité UI partagée (≥ 2 portails)** → `fe/features/<domaine>/` + wrapper fin dans `app/<role>/dashboard/_components/` (voir [frontend/AGENTS.md](frontend/AGENTS.md)).
+- **Coque UI, Toast ou Confirmation** → `fe/components/shell/` (`AppTopbar`, `AppSidebarDrawer`, `AppBottomNav`, `AppToast`, `ConfirmDialog`).
+- **Validation structurelle & qualité** → `cd backend && bun test tests/unit/architectureGuard.test.ts` et `cd frontend && bun test src/tests/architectureGuard.test.ts`.

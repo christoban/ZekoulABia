@@ -83,6 +83,14 @@ Si en lisant ou modifiant du code tu repères une violation d'une règle de la �
 - Toute intégration externe nouvelle passe par un port domaine/application, un adapter infrastructure et le wiring du container. Aucun raccourci direct depuis un use case.
 - Le test `backend/tests/unit/architectureGuard.test.ts` est bloquant : s'il échoue, la tâche n'est pas terminée et le guard ne doit pas être affaibli pour faire passer le code.
 
+### 4.3.2 Règles bloquantes d'architecture Frontend & Matrice de placement (« Où mettre mon code ? »)
+Tout code ajouté ou modifié dans `frontend/src/` doit suivre cette matrice stricte de placement (voir détail dans [frontend/AGENTS.md](frontend/AGENTS.md)) :
+- **Coque UI, navigation, toasts et confirmations** → exclusivement dans `frontend/src/components/shell/` (`AppTopbar`, `AppSidebarDrawer`, `AppBottomNav`, `AppToast`, `ConfirmDialog`). Interdiction absolue de dupliquer une variante par rôle sans délégation au shell partagé, et interdiction d'appeler `window.alert`, `alert`, `window.confirm` ou `confirm` natifs.
+- **Fonctionnalité partagée par >= 2 portails (ex. Admin + Staff, Teacher + Staff…)** → logique, types, modales et vues dans `frontend/src/features/<domaine>/`. Les fichiers `app/<role>/dashboard/_components/Section*.tsx` doivent rester de simples wrappers (`<= 40` lignes lorsque toute la vue est factorisée) ou déléguer au module partagé.
+- **Écran propre à 1 seul portail** → colocalisé dans `frontend/src/app/<role>/dashboard/_components/Section*.tsx` (`<= 500` lignes ; découper en sous-composants dès 300–400 lignes).
+- **Primitive UI générique sans logique métier** → `frontend/src/components/ui/` ou `frontend/src/components/` (`components/shell/` et `components/ui/` ne doivent jamais importer depuis `app/` ou `features/`).
+- Le test `frontend/src/tests/architectureGuard.test.ts` est bloquant : s'il échoue, la tâche n'est pas terminée et le guard ne doit pas être affaibli (y compris l'effet cliquet des 500 lignes).
+
 ### 4.4 DRY (Don't Repeat Yourself)
 - Une seule source de vérité par calcul/règle métier
 - Avant d'écrire une nouvelle implémentation d'une logique existante, chercher si elle existe déjà (le bug de coefficient de notation venait de 8 implémentations dupliquées du même calcul)
@@ -200,7 +208,9 @@ Format recommandé dans le plan :
 ## 8. Vérification avant de terminer
 
 - **`tsc` clean** (backend et/ou frontend selon la tâche) — montre la sortie.
-- **Architecture guard** : depuis `backend/`, `bun test tests/unit/architectureGuard.test.ts` doit être vert à 100 %.
+- **Architecture guards** :
+  - depuis `backend/`, `bun test tests/unit/architectureGuard.test.ts` doit être vert à 100 % ;
+  - depuis `frontend/`, `./node_modules/.bin/tsc --noEmit && bun test src/tests/architectureGuard.test.ts` doit être vert à 100 %.
 - **Contrôle lexical `any`** : vérifier également `grep -rn '\bany\b' backend/src --include='*.ts'` et justifier chaque résultat autorisé ; le guard reste la preuve automatisée de référence.
 - **Smoke test** du chemin le plus risqué — montre la sortie. (Bulletins PDF : patcher `PDFDocument.prototype.text` pour capturer les libellés dessinés.)
 - **i18n** : si texte UI ajouté → parité fr/en vérifiée (mêmes clés).
