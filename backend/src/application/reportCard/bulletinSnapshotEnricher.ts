@@ -32,13 +32,14 @@ import {
   buildSubjectInputsWithCurriculum,
   calculerMentionBulletin,
   canonicalHashSnapshot,
+  formatAbsenceHoursDisplay,
   genererVerifyToken,
   mapNotesToSnapshotInputs,
   resoudreVerifyBaseUrl,
   snapshotToLignesMatiere,
 } from './bulletinEnrichmentHelpers';
 
-export { calculerMentionBulletin, resoudreVerifyBaseUrl, snapshotToLignesMatiere };
+export { calculerMentionBulletin, formatAbsenceHoursDisplay, resoudreVerifyBaseUrl, snapshotToLignesMatiere };
 
 export interface LoadedClassPeriodContext {
   periodIds: string[];

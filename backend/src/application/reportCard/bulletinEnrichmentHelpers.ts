@@ -85,27 +85,20 @@ export function snapshotToLignesMatiere(snapshot: StudentBulletinSnapshot): Lign
   }));
 }
 
+export function formatAbsenceHoursDisplay(hours: number | null | undefined): string {
+  if (hours === null || hours === undefined || Number.isNaN(hours)) return '—';
+  return `${hours} h`;
+}
+
 export function buildConductForStudent(
   presences: Presence[],
   sanctions: DisciplineRecordData[],
   fallbackAbsenceDays: number,
 ): BulletinConductSnapshot {
-  let justifiedAbsenceHours = 0;
-  let unjustifiedAbsenceHours = 0;
   let lateCount = 0;
 
   for (const p of presences) {
-    const obj = p.toObject();
-    const hours = obj.subjectId ? 1 : 4;
-    if (obj.status === 'ABSENT_JUSTIFIED') {
-      justifiedAbsenceHours += hours;
-    } else if (obj.status === 'ABSENT') {
-      const hasApprovedJustif =
-        obj.justificationStatus === 'APPROVED' ||
-        (Boolean(obj.justification && obj.justification.trim().length > 0) && obj.justificationStatus !== 'REJECTED');
-      if (hasApprovedJustif) justifiedAbsenceHours += hours;
-      else unjustifiedAbsenceHours += hours;
-    } else if (obj.status === 'LATE') {
+    if (p.toObject().status === 'LATE') {
       lateCount++;
     }
   }
@@ -116,10 +109,12 @@ export function buildConductForStudent(
     (s) => s.type === 'TEMP_EXCLUSION' || s.type === 'PERMANENT_EXCLUSION',
   ).length;
 
+  // Attendance ne porte ni horaire ni lien fiable vers TimetableSlot :
+  // ne jamais inventer de durée estimée (1h/4h) sur un document officiel.
   return {
-    justifiedAbsenceHours,
-    unjustifiedAbsenceHours,
-    totalAbsenceHours: justifiedAbsenceHours + unjustifiedAbsenceHours,
+    justifiedAbsenceHours: null,
+    unjustifiedAbsenceHours: null,
+    totalAbsenceHours: null,
     totalAbsenceDays: fallbackAbsenceDays,
     lateCount,
     warningsCount,
@@ -230,3 +225,4 @@ export function mapNotesToSnapshotInputs(notesDeClasse: Note[]): SnapshotNoteInp
     };
   });
 }
+

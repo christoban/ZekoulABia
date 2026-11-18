@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'bun:test';
 import PDFDocument from 'pdfkit';
 import { GenererBulletinUseCase } from '@application/reportCard/GenererBulletinUseCase';
 import { GenererBulletinsInngestUseCase } from '@application/reportCard/GenererBulletinsInngestUseCase';
+import { formatAbsenceHoursDisplay } from '@application/reportCard/bulletinSnapshotEnricher';
 import { Classe } from '@domain/entities/Classe';
 import { School } from '@domain/entities/School';
 import { User } from '@domain/entities/User';
@@ -313,8 +314,10 @@ describe('Étape 2 — Parité Sync/Inngest, Snapshot v2, Régénération, ANNUA
     expect(snapIng.mainTeacherName).toBe('Ahmadou Bello');
     expect(snapSync.studentIdentity?.matricule).toBe('GAR-26-001');
     expect(snapIng.studentIdentity?.matricule).toBe('GAR-26-001');
-    expect(snapSync.conduct?.justifiedAbsenceHours).toBe(4);
-    expect(snapSync.conduct?.unjustifiedAbsenceHours).toBe(1);
+    expect(snapSync.conduct?.justifiedAbsenceHours).toBeNull();
+    expect(snapSync.conduct?.unjustifiedAbsenceHours).toBeNull();
+    expect(snapSync.conduct?.totalAbsenceHours).toBeNull();
+    expect(snapSync.conduct?.totalAbsenceDays).toBe(2);
     expect(snapSync.conduct?.lateCount).toBe(1);
     expect(snapSync.conduct?.warningsCount).toBe(1);
     expect(snapIng.conduct).toEqual(snapSync.conduct);
@@ -457,6 +460,48 @@ describe('Étape 2 — Parité Sync/Inngest, Snapshot v2, Régénération, ANNUA
         drawHeader(doc2, { name: 'Lycée de Garoua', motto }, 'CERTIFICAT');
       }
       expect(capturedTexts.some((t) => t.trim() === '' || t.trim() === '""')).toBe(false);
+    } finally {
+      PDFDocument.prototype.text = origText;
+    }
+  });
+
+  it('ne fabrique aucune heure d’absence estimée (stocke null et affiche « — »)', async () => {
+    setupTrimesterNotes('per-t1');
+    const bulletinRepo = new InMemoryBulletinRepository();
+    const useCase = new GenererBulletinUseCase(
+      noteRepo, bulletinRepo, classeRepo, userRepo, matiereRepo, anneeRepo,
+      presenceRepo, new InMemoryPdfService(), councilRepo, schoolRepo, sectionRepo, studentProfileRepo,
+      classeCoeffRepo, teachingRepo, disciplineRepo,
+    );
+
+    await useCase.execute({
+      schoolId: SCHOOL_ID, classId: CLASS_ID, academicPeriodId: 'per-t1', academicYearId: YEAR_ID,
+      template: 'FR_SECONDARY', nomEtablissement: 'Lycée de Garoua', demandeurId: 'admin-1', demandeurRole: 'ADMIN',
+    });
+
+    const bulletin = (await bulletinRepo.findByEleveEtPeriode('eleve-1', 'per-t1'))!.toObject();
+    const snap = bulletin.snapshotData as StudentBulletinSnapshot;
+    expect(snap.conduct?.justifiedAbsenceHours).toBeNull();
+    expect(snap.conduct?.unjustifiedAbsenceHours).toBeNull();
+    expect(snap.conduct?.totalAbsenceHours).toBeNull();
+    expect(snap.conduct?.totalAbsenceDays).toBe(2);
+    expect(formatAbsenceHoursDisplay(snap.conduct?.justifiedAbsenceHours)).toBe('—');
+    expect(formatAbsenceHoursDisplay(snap.conduct?.unjustifiedAbsenceHours)).toBe('—');
+    expect(formatAbsenceHoursDisplay(6)).toBe('6 h');
+
+    const drawnTexts: string[] = [];
+    const origText = PDFDocument.prototype.text;
+    PDFDocument.prototype.text = function patched(this: PDFKit.PDFDocument, text?: string, ...rest: unknown[]) {
+      if (typeof text === 'string') drawnTexts.push(text);
+      return (origText as (...args: unknown[]) => PDFKit.PDFDocument).call(this, text, ...rest);
+    } as typeof PDFDocument.prototype.text;
+    try {
+      const doc = new PDFDocument({ size: 'A4', margin: 36 });
+      drawBulletinHeader(doc, {
+        schoolName: 'Lycée de Garoua', studentName: 'Amina Oumarou', className: '2nde C',
+        periodName: 'Trimestre 1', yearName: '2025-2026', absenceCount: 2, snapshot: snap, template: 'FR_SECONDARY',
+      });
+      expect(drawnTexts.some((t) => t.includes('Heures : —'))).toBe(true);
     } finally {
       PDFDocument.prototype.text = origText;
     }

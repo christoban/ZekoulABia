@@ -1,4 +1,5 @@
 import type PDFDocument from "pdfkit";
+import type { StudentBulletinSnapshot } from "@domain/types/bulletinSnapshot";
 
 // ─── MENTIONS MINESEC FR ────────────────────────────────────────
 export const getMentionFr = (average: number): string => {
@@ -238,13 +239,14 @@ export const drawBulletinHeader = (
     rank?: number | null;
     totalStudents?: number | null;
     absenceCount?: number;
+    snapshot?: StudentBulletinSnapshot;
     template: string;
     language?: "fr" | "en";
   },
 ) => {
   const {
     schoolName, schoolMotto, logoUrl, studentName, className,
-    periodName, yearName, rank, totalStudents, absenceCount, template,
+    periodName, yearName, rank, totalStudents, absenceCount, snapshot, template,
     language = "fr",
   } = options;
   const isEn = language === "en";
@@ -298,7 +300,10 @@ export const drawBulletinHeader = (
     doc.text(isEn ? `Class : ${className}` : `Classe : ${className}`);
   }
   if (absenceCount !== undefined) {
-    doc.text(`Absences : ${absenceCount}`);
+    const hJust = snapshot?.conduct?.justifiedAbsenceHours;
+    const hUnjust = snapshot?.conduct?.unjustifiedAbsenceHours;
+    const hoursLabel = hJust == null || hUnjust == null ? "—" : `J : ${hJust} h / NJ : ${hUnjust} h`;
+    doc.text(isEn ? `Absences : ${absenceCount} | Hours : ${hoursLabel}` : `Absences : ${absenceCount} | Heures : ${hoursLabel}`);
   }
   doc.moveDown(0.5);
   doc.moveTo(b.left, doc.y).lineTo(b.right, doc.y).strokeColor("#334155").lineWidth(0.5).stroke();

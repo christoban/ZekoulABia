@@ -95,9 +95,10 @@ export interface BulletinConductSanctionItem {
 }
 
 export interface BulletinConductSnapshot {
-  justifiedAbsenceHours: number;
-  unjustifiedAbsenceHours: number;
-  totalAbsenceHours: number;
+  /** Heures d'absence réelles si une durée fiable est disponible ; null sinon (affiché « — » sur le bulletin). */
+  justifiedAbsenceHours: number | null;
+  unjustifiedAbsenceHours: number | null;
+  totalAbsenceHours: number | null;
   totalAbsenceDays: number;
   lateCount: number;
   warningsCount: number;
