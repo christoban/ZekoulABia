@@ -18,7 +18,7 @@ export class RelanceOnboardingUseCase {
     let reminded = 0;
     let escalated = 0;
     let expired = 0;
-    const frontendUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
+    const frontendUrl = (process.env.FRONTEND_URL || process.env.CLIENT_URL || process.env.APP_URL || 'http://localhost:3000').trim().replace(/\/+$/, '');
 
     for (const dossier of dossiers) {
       const settings = await this.repository.trouverSettings(dossier.schoolId);

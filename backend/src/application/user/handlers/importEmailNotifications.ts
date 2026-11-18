@@ -10,7 +10,7 @@ export async function envoyerEmailLienInvitation(
   schoolName: string,
 ): Promise<void> {
   try {
-    const frontendUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
+    const frontendUrl = (process.env.FRONTEND_URL || process.env.CLIENT_URL || process.env.APP_URL || 'http://localhost:3000').trim().replace(/\/+$/, '');
     const jwt = await import('jsonwebtoken');
     const inviteToken = jwt.default.sign(
       { sub: userId, email, schoolId, type: 'user_invite' },

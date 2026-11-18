@@ -9,6 +9,7 @@ import type {
   ResultatPaiement,
   DonneeWebhook,
 } from '@domain/ports/services/PaiementService';
+import { resolveFrontendUrl } from '../../config/EnvAppConfig.ts';
 
 const BASE_URL = process.env.CAMPAY_BASE_URL ?? 'https://demo.campay.net/api';
 
@@ -86,7 +87,7 @@ export class CampayPaiementService implements PaiementService {
         from: telephone,
         description: `[${operateur}] ${options.description}`,
         external_reference: options.referenceInterne,
-        redirect_url: `${process.env.CLIENT_URL}/parent/payments`,
+        redirect_url: `${resolveFrontendUrl()}/parent/payments`,
       }),
     });
 

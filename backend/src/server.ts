@@ -86,12 +86,15 @@ if (process.env.STAGE === "development") {
 // cross-origin resource sharing (CORS) middleware
 
 // CORS: allow the configured client origin plus common local dev hosts
-const rawClientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+const configuredOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.CLIENT_URL,
+  process.env.APP_URL,
+].filter((u): u is string => Boolean(u && u.trim())).map(u => u.trim().replace(/\/+$/, ''));
+
 const allowedOrigins = Array.from(new Set([
-  rawClientUrl,
-  // also allow 127.0.0.1 variant used by some dev setups / Playwright
-  rawClientUrl.replace("localhost", "127.0.0.1"),
-  // ensure localhost is present
+  ...configuredOrigins,
+  ...configuredOrigins.map((u) => u.replace("localhost", "127.0.0.1")),
   "http://localhost:5173",
   "http://127.0.0.1:5173",
   // Next.js dev server (proxy forwarding keeps Origin: localhost:3000)

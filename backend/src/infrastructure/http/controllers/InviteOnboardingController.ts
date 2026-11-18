@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import { sendTransactionalEmail } from '../../services/email/EmailService.ts';
+import { resolveMasterDashboardUrl } from '../../config/EnvAppConfig.ts';
 import { passwordError } from '../../../domain/security/PasswordPolicy';
 import type { InvitationRepository } from '../../../domain/ports/repositories/InvitationRepository';
 import type { SchoolRepository } from '../../../domain/ports/repositories/SchoolRepository';
@@ -238,7 +239,7 @@ export class InviteOnboardingController {
 
       // Notification au Super Admin — envoyée via Resend (destinataire = SUPER_ADMIN_EMAIL)
       const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'zekoulabia.noreply@gmail.com';
-      const masterDashboardUrl = `${process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000'}/master/dashboard`;
+      const masterDashboardUrl = resolveMasterDashboardUrl();
       const planLabels: Record<string, string> = { DISCOVERY: 'Découverte (gratuit)', STANDARD: 'Standard', PREMIUM: 'Premium' };
 
       sendTransactionalEmail({

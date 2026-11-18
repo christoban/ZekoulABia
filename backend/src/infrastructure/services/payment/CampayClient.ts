@@ -1,4 +1,5 @@
 import axios from "axios";
+import { resolveFrontendUrl } from '../../config/EnvAppConfig.ts';
 
 const CAMPAY_BASE_URL = process.env.CAMPAY_BASE_URL || "https://demo.campay.net/api";
 const CAMPAY_USERNAME = process.env.CAMPAY_USERNAME || "";
@@ -31,7 +32,7 @@ export const initiatePayment = async (params: {
       from: params.from,
       description: params.description,
       external_reference: params.externalReference,
-      redirect_url: params.redirectUrl || `${process.env.CLIENT_URL}/parent/payments`,
+      redirect_url: params.redirectUrl || `${resolveFrontendUrl()}/parent/payments`,
     },
     {
       headers: {

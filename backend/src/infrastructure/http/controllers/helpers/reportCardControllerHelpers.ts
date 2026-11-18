@@ -6,8 +6,9 @@ import { resolveLanguage } from '@domain/policies/LanguagePolicy';
 import { generateBulletinPdf } from '@infrastructure/pdf/report-card/index';
 import { getMention } from '@infrastructure/pdf/report-card/BulletinPdfHelpers';
 import { getEffectiveSchoolSettings } from '@infrastructure/services/school-settings/SchoolSettingsService';
+import { resolveFrontendUrl } from '@infrastructure/config/EnvAppConfig';
 
-const VERIFY_BASE = process.env.CLIENT_URL || 'http://localhost:3000';
+const VERIFY_BASE = resolveFrontendUrl();
 
 export async function isBulletinBlockedByUnpaidFees(params: {
   schoolConfigRepository?: SchoolConfigRepository;

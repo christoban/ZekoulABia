@@ -8,6 +8,7 @@ import { notifierUtilisateurPushAvecResultat } from '../notification/PushNotific
 import { SocketNotificationService } from '../notification/SocketNotificationService.ts';
 import { estEnvoiSortantActif } from '../outbound/OutboundMessagingPolicy.ts';
 import { enregistrerMessageSupprime } from '../outbound/SuppressedOutboundMessageRecorder.ts';
+import { resolveMasterLoginUrl } from '../../config/EnvAppConfig';
 import type { NotificationType as DomainNotificationType } from "@domain/types/enums";
 
 const notificationService = new SocketNotificationService();
@@ -340,7 +341,7 @@ export const sendContactRequestEmail = async ({
         <p style="margin-top: 24px; color: #64748b; font-size: 14px;">
           Connectez-vous au hub de contrôle pour traiter cette demande.
         </p>
-        <a href="https://zekoulabia.cm/master/login" style="display: inline-block; background: #3b82f6; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+        <a href="${resolveMasterLoginUrl()}" style="display: inline-block; background: #3b82f6; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
           Accéder au hub
         </a>
       </div>

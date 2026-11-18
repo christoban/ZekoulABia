@@ -1,6 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 import type { TransferConsentNotificationPort } from '@domain/ports/services/TransferConsentNotificationPort';
 import { sendSms } from './SmsService';
+import { resolveFrontendUrl } from '../../config/EnvAppConfig';
 
 export class TransferConsentNotificationAdapter implements TransferConsentNotificationPort {
   constructor(private readonly prisma: PrismaClient) {}
@@ -20,8 +21,8 @@ export class TransferConsentNotificationAdapter implements TransferConsentNotifi
     });
     if (existing?.smsSentAt && !input.force) return { providerMessageId: existing.smsProviderMessageId ?? undefined };
 
-    const baseUrl = process.env.TRANSFER_CONSENT_BASE_URL;
-    if (!baseUrl) throw new Error('TRANSFER_CONSENT_BASE_URL non configurée.');
+    const baseUrl = process.env.TRANSFER_CONSENT_BASE_URL || resolveFrontendUrl();
+    if (!baseUrl) throw new Error('Base URL non configurée.');
     const link = `${baseUrl.replace(/\/$/, '')}/student-transfers/consent/${encodeURIComponent(input.requestId)}?token=${encodeURIComponent(input.rawToken)}`;
     const result = await sendSms({
       to: input.phone,

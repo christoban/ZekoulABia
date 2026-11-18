@@ -103,7 +103,7 @@ export class InviterEcoleUseCase {
     await this.invitationRepository.save(invitation);
 
     // 4. Envoyer l'email d'invitation (fire-and-forget — ne bloque pas la réponse HTTP)
-    const frontendUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
+    const frontendUrl = (process.env.FRONTEND_URL || process.env.CLIENT_URL || process.env.APP_URL || 'http://localhost:3000').trim().replace(/\/+$/, '');
     const activationUrl = `${frontendUrl}/onboarding/${invitation.token}`;
     const inviteTemplate = this.emailTemplate.buildSchoolInviteTemplate({
       schoolName: commande.schoolName,

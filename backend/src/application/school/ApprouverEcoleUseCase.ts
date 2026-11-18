@@ -38,7 +38,7 @@ export class ApprouverEcoleUseCase {
     await this.schoolRepository.update(school);
 
     // 3. Notifier l'Admin — invitation à finaliser la configuration
-    const frontendUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
+    const frontendUrl = (process.env.FRONTEND_URL || process.env.CLIENT_URL || process.env.APP_URL || 'http://localhost:3000').trim().replace(/\/+$/, '');
     const configUrl = `${frontendUrl}/admin/configuration?subdomain=${encodeURIComponent(school.subdomain)}`;
 
     // Langue déjà connue (sous-système fixé sur l'école) → resolveLanguage.

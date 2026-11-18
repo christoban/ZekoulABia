@@ -9,7 +9,7 @@ export class RelanceProfilRHUseCase {
   constructor(private readonly repository: HrJobsRepository, private readonly emailService: EmailService) {}
 
   async execute(step: StepRunner): Promise<{ reminded: number; escalated: number; processedAt: string }> {
-    const FRONTEND_URL = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
+    const FRONTEND_URL = (process.env.FRONTEND_URL || process.env.CLIENT_URL || process.env.APP_URL || 'http://localhost:3000').trim().replace(/\/+$/, '');
     const employes = await this.repository.listerEmployesActifs();
 
     let reminded = 0;

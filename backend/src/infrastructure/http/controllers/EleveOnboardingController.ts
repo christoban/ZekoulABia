@@ -12,6 +12,7 @@ import { ValiderOnboardingUseCase } from '@application/eleveOnboarding/ValiderOn
 import { RejeterOnboardingUseCase } from '@application/eleveOnboarding/RejeterOnboardingUseCase';
 import { notifierOnboardingLienCreeAvecEcole, notifierOnboardingValidationAvecEcole } from '@infrastructure/services/notification/OnboardingNotificationService';
 import { generateOnboardingFormPdf } from '../../pdf/onboarding/OnboardingFormPdfRenderer';
+import { resolveFrontendUrl } from '../../config/EnvAppConfig.ts';
 import { canManageEnrollment } from '@domain/rules/EnrollmentRules';
 
 import { InscrireEleveUseCase } from '@application/eleveOnboarding/InscrireEleveUseCase';
@@ -440,7 +441,7 @@ export class EleveOnboardingController {
         return;
       }
 
-      const formUrl = `${process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000'}/eleve-onboarding/${onboarding.token}`;
+      const formUrl = `${resolveFrontendUrl()}/eleve-onboarding/${onboarding.token}`;
       const pdf = await generateOnboardingFormPdf({
         schoolName: onboarding.school?.name ?? 'Établissement',
         nomProvisoire: onboarding.nomProvisoire,

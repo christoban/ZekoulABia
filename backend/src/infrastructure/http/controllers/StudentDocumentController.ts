@@ -11,8 +11,9 @@ import {
   generateLettreTransfertPdf,
 } from '../../pdf/school-documents/SchoolDocumentPdfRenderer';
 import { resolveLanguage } from '../../../domain/policies/LanguagePolicy';
+import { resolveFrontendUrl } from '../../config/EnvAppConfig.ts';
 
-const VERIFY_BASE = process.env.CLIENT_URL || 'http://localhost:3000';
+const VERIFY_BASE = resolveFrontendUrl();
 
 function classeActuelle(student: { enrollmentsYearScoped: { class: { name: string; section: { code: string } | null } | null }[] | undefined }) {
   return student?.enrollmentsYearScoped?.[0]?.class ?? null;

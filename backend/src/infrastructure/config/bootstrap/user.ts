@@ -57,6 +57,7 @@ import { LoginEmailOtpUseCase } from '@application/user/LoginEmailOtpUseCase';
 import { VerifierMfaConnexionUseCase } from '@application/user/VerifierMfaConnexionUseCase';
 import { MfaUseCase } from '@application/user/MfaUseCase';
 import { sendTransactionalEmail } from '../../services/email/EmailService';
+import { resolveMasterLoginUrl } from '../EnvAppConfig';
 import { PlatformSettingsController } from '@infrastructure/http/controllers/PlatformSettingsController';
 import { creerPlatformSettingsRoutes, creerPublicPlatformSettingsRoutes } from '@infrastructure/http/routes/platformSettings.routes';
 import { GetPlatformSettingsUseCase } from '@application/masterAdmin/GetPlatformSettingsUseCase';
@@ -197,8 +198,7 @@ export function registerUserRoutes(app: Application, prismaParam: typeof prisma 
     temporaryPassword: string;
     isReset?: boolean;
   }) => {
-    const frontendBase = (process.env.FRONTEND_URL ?? 'http://localhost:3000').replace(/\/$/, '');
-    const loginUrl = `${frontendBase}/master/login`;
+    const loginUrl = resolveMasterLoginUrl();
     const subject = isReset
       ? 'ZekoulABia Master — Réinitialisation de votre mot de passe temporaire'
       : 'ZekoulABia Master — Invitation à rejoindre le Hub de Contrôle';

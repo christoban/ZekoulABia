@@ -14,6 +14,7 @@ import type { MasterAdminQueryRepository } from '@domain/ports/repositories/Mast
 import type { PlanType, SchoolSubsystem } from '@domain/types/enums';
 import { sendTransactionalEmail } from '../../../services/email/EmailService.ts';
 import { logMasterAction } from '../../../services/audit/MasterAuthAuditService';
+import { resolveFrontendUrl } from '../../../config/EnvAppConfig.ts';
 
 export interface MasterAdminSchoolDeps {
   inviter: InviterEcoleUseCase;
@@ -216,7 +217,7 @@ export async function renvoyerInvitationAction(
     if (!(await verifierAccesGestion(deps.queryRepo, req, res, id))) return;
     const { email, schoolName, newToken } = await deps.renvoyerInvitationUC.execute(id);
 
-    const frontendUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
+    const frontendUrl = resolveFrontendUrl();
     const activationUrl = `${frontendUrl}/onboarding/${newToken}`;
 
     const master = req.masterUser;

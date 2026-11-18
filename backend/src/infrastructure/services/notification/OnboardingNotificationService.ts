@@ -12,9 +12,10 @@ import {
 import {
   buildOnboardingLinkTemplate,
 } from '../email/templates/emailTemplates';
+import { resolveFrontendUrl } from '../../config/EnvAppConfig.ts';
 
 function frontendUrl(): string {
-  return process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
+  return resolveFrontendUrl();
 }
 
 /**

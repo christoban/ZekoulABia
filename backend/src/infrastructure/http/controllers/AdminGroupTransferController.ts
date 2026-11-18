@@ -8,6 +8,7 @@ import { AccepterTransfertEnseignantUseCase } from '../../../application/schoolG
 import { RejeterTransfertGroupeUseCase } from '../../../application/schoolGroup/RejeterTransfertGroupeUseCase';
 import { notifierOnboardingLienCreeAvecEcole } from '@infrastructure/services/notification/OnboardingNotificationService';
 import { sendTransactionalEmail } from '../../services/email/EmailService.ts';
+import { resolveFrontendUrl } from '../../config/EnvAppConfig.ts';
 
 export class AdminGroupTransferController {
   constructor(
@@ -53,7 +54,7 @@ export class AdminGroupTransferController {
 
         const school = await this.groupeScolaireQueryRepository.trouverEcoleDetail(schoolId);
         const schoolName = school?.name ?? 'votre nouvel établissement';
-        const frontendUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
+        const frontendUrl = resolveFrontendUrl();
         const jwt = await import('jsonwebtoken');
         const inviteToken = jwt.default.sign(
           { sub: resultat.userId, email: resultat.email, schoolId, type: 'user_invite' },

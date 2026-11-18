@@ -334,7 +334,7 @@ export class GenererBulletinUseCase {
         ? await this.userRepository.findById(classe.professorPrincipalId)
         : null;
 
-      const verifyBase = process.env.CLIENT_URL || 'http://localhost:3000';
+      const verifyBase = (process.env.FRONTEND_URL || process.env.CLIENT_URL || process.env.APP_URL || 'http://localhost:3000').trim().replace(/\/+$/, '');
       const verifyUrl = `${verifyBase}/verify/${bulletin.id}`;
 
       await this.pdfService.genererBulletin({

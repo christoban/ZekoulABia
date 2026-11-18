@@ -6,6 +6,7 @@ import type { SchoolRepository } from '@domain/ports/repositories/SchoolReposito
 import type { OutboundMessagingPolicy } from '@domain/ports/services/OutboundMessagingPolicy';
 import { passwordError } from '../../../../domain/security/PasswordPolicy';
 import { sendTransactionalEmail } from '../../../services/email/EmailService.ts';
+import { resolveFrontendUrl } from '../../../config/EnvAppConfig.ts';
 import { messageErreur } from '@application/shared/messageErreur';
 
 export class UserMfaPasswordController {
@@ -81,7 +82,7 @@ export class UserMfaPasswordController {
       }
 
       const normalizedEmail = email.toLowerCase().trim();
-      const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+      const clientUrl = resolveFrontendUrl();
 
       // Mode test (réglage global plateforme désactivé) : aucun jeton
       // créé, aucun email déclenché — réponse identique au cas nominal (anti-énumération).
