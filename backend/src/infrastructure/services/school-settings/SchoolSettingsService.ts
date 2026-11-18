@@ -2,7 +2,7 @@ import { prisma } from "../../../config/prisma.ts";
 
 export const DEFAULT_SCHOOL_SETTINGS = {
   schoolName: "ZEKOULABIA Education",
-  schoolMotto: "Excellence in Education & Innovation",
+  schoolMotto: "",
   schoolLogoUrl: "",
   academicCalendarType: "trimester" as "trimester" | "semester",
   preferredLanguage: "fr" as "fr" | "en",

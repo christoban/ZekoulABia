@@ -18,7 +18,8 @@ import type { SchoolRepository } from '@domain/ports/repositories/SchoolReposito
 import type { SectionRepository } from '@domain/ports/repositories/SectionRepository';
 import type { StudentProfileRepository } from '@domain/ports/repositories/StudentProfileRepository';
 import type { BulletinTemplate } from '@domain/types/enums';
-import { calculateAverageScoreOn20 } from '@domain/rules/GradingEngine';
+import { BulletinSnapshotBuilder } from '@domain/services/bulletin/BulletinSnapshotBuilder';
+import type { SnapshotNoteInput, SnapshotSubjectInput } from '@domain/types/bulletinSnapshot';
 import { resolveHasCoefficientForClass } from '@domain/subsystems/SubsystemDefaults';
 import { resolveLanguage } from '../../domain/policies/LanguagePolicy';
 
@@ -106,61 +107,14 @@ export class GenererBulletinUseCase {
       return { bulletinsGeneres: 0, bulletinsIgnores: 0, message: 'Aucun élève avec des notes validées dans cette classe' };
     }
 
-    // 3. Récupérer les matières (période/année déjà résolues plus haut)
-    const matieres = await this.matiereRepository.findBySchool(commande.schoolId);
-
-    // Lookup rapide matière par subjectId
-    const matiereParId = new Map(matieres.map(m => [m.id, m]));
-
-    // 4. Calculer les moyennes générales de tous les élèves (pour les rangs)
-    const schoolForCoeff = await this.schoolRepository.findById(commande.schoolId);
-    const classeForCoeff = await this.classeRepository.findById(commande.classId);
-    const hasCoefficientBySubject = schoolForCoeff && classeForCoeff
-      ? resolveHasCoefficientForClass(schoolForCoeff, classeForCoeff.level ?? null)
-      : true;
-    // On utilise notesDeClasse (déjà chargé par findByClasse — classId garanti correct)
-    const moyennesEleves: { studentId: string; moyenne: number }[] = [];
-
-    for (const eleve of elevesClasse) {
-      const notesEleve = notesDeClasse.filter((n) =>
-        n.studentId === eleve.id &&
-        n.validationStatus === 'LOCKED'
-      );
-
-      const moyenneBrute = calculateAverageScoreOn20(
-        notesEleve
-          .filter((n) => n.sequenceAverage !== undefined)
-          .map((n) => ({
-            scoreOn20: n.sequenceAverage!,
-            percentage: n.sequenceAverage! * 5,
-            coefficient: n.coefficient,
-            isAbsentGrade: n.isAbsentGrade,
-          })),
-        hasCoefficientBySubject,
-        true,
-      );
-      const moyenne = Number.isNaN(moyenneBrute) ? 0 : moyenneBrute === 0 ? 0 : moyenneBrute;
-
-      moyennesEleves.push({ studentId: eleve.id, moyenne });
-    }
-
-    // 5. Calculer les rangs (tri décroissant)
-    const classeesParMoyenne = [...moyennesEleves].sort((a, b) => b.moyenne - a.moyenne);
-    const rangs = new Map<string, number>();
-    classeesParMoyenne.forEach((item, index) => {
-      rangs.set(item.studentId, index + 1);
-    });
-
-    // 6. Résoudre la langue de rendu (sous-système + section pour le bilingue).
-    //    Templates PARTAGÉS (PRIMARY/ANNUAL) : la langue vient d'ici. Les autres
-    //    templates encodent déjà leur langue via commande.template.
+    // 3. Récupérer l'école, la section et les matières
     const school = await this.schoolRepository.findById(commande.schoolId);
     if (!school) {
       throw new Error(`Établissement ${commande.schoolId} introuvable`);
     }
 
     let sectionCode: string | null = null;
-    if (classe?.sectionId) {
+    if (classe.sectionId) {
       const section = await this.sectionRepository.findById(classe.sectionId);
       if (section) {
         sectionCode = section.code;
@@ -168,8 +122,86 @@ export class GenererBulletinUseCase {
     }
 
     const langue = resolveLanguage(school.subsystem, sectionCode);
+    const hasCoefficientBySubject = resolveHasCoefficientForClass(school, classe.level ?? null, sectionCode);
+    const matieres = await this.matiereRepository.findBySchool(commande.schoolId);
+    const matiereParId = new Map(matieres.map((m) => [m.id, m]));
 
-    // 6bis. Calculer la mention selon le template et la langue
+    // 4. Charger LV2 + A-Level pour filtrage strict en amont de tout calcul
+    const lv2Map = new Map<string, string | null>();
+    const lv2SubjectIds = new Set<string>(await this.matiereRepository.findIdsLV2BySchool(commande.schoolId));
+    const alevelMap = new Map<string, string[]>();
+
+    const profiles = await this.studentProfileRepository.findBulletinOptionsByStudentIds(
+      elevesClasse.map((eleve) => eleve.id),
+    );
+    for (const profile of profiles) {
+      lv2Map.set(profile.studentId, profile.lv2SubjectId);
+      if (profile.alevelSubjectIds.length > 0) {
+        alevelMap.set(profile.studentId, profile.alevelSubjectIds);
+      }
+    }
+
+    // 5. Construire les snapshots de toute la classe via l'unique moteur mathématique du domaine
+    const subjectsInput: SnapshotSubjectInput[] = matieres.map((m) => ({
+      id: m.id,
+      name: m.name,
+      coefficient: m.coefficient,
+      isLV2: lv2SubjectIds.has(m.id),
+      subjectType: m.subjectType,
+    }));
+    const knownSubjectIds = new Set(subjectsInput.map((s) => s.id));
+    for (const n of notesDeClasse) {
+      if (!knownSubjectIds.has(n.subjectId)) {
+        knownSubjectIds.add(n.subjectId);
+        subjectsInput.push({
+          id: n.subjectId,
+          name: matiereParId.get(n.subjectId)?.name ?? `Matière (${n.subjectId.slice(0, 6)})`,
+          coefficient: n.coefficient,
+          isLV2: lv2SubjectIds.has(n.subjectId),
+        });
+      }
+    }
+
+    const notesInput: SnapshotNoteInput[] = notesDeClasse.map((n) => {
+      const obj = n.toObject();
+      return {
+        id: obj.id,
+        studentId: obj.studentId,
+        subjectId: obj.subjectId,
+        sequenceId: obj.sequenceId,
+        coefficient: obj.coefficient,
+        maxValue: obj.maxValue,
+        sequenceScore: obj.sequenceScore,
+        classTestScore: obj.classTestScore,
+        terminalExamScore: obj.terminalExamScore,
+        theoreticalScore: obj.theoreticalScore,
+        practicalScore: obj.practicalScore,
+        professionalAttitude: obj.professionalAttitude,
+        oralScore: obj.oralScore,
+        selfDevelopmentScore: obj.selfDevelopmentScore,
+        sequenceAverage: obj.sequenceAverage,
+        validationStatus: obj.validationStatus,
+        isAbsentGrade: obj.isAbsentGrade,
+        observation: obj.observation,
+      };
+    });
+
+    const orderedSeqs = [...sequences].sort((a, b) => a.orderIndex - b.orderIndex);
+    const { snapshotsByStudentId, classProfile } = BulletinSnapshotBuilder.buildClassSnapshots({
+      students: elevesClasse.map((e) => ({
+        id: e.id,
+        lv2SubjectId: lv2Map.get(e.id) ?? null,
+        alevelSubjectIds: alevelMap.get(e.id) ?? null,
+      })),
+      subjects: subjectsInput,
+      sequences: orderedSeqs.map((s) => ({ id: s.id, name: s.name, orderIndex: s.orderIndex })),
+      notes: notesInput,
+      hasCoefficientBySubject,
+      excludeAbsentGrades: true,
+      isAnnual: commande.template === 'ANNUAL',
+    });
+
+    // 6. Calculer la mention selon le template et la langue
     const mentionEn = (m: number): string =>
       m >= 18 ? 'Excellent' : m >= 16 ? 'Very Good' : m >= 14 ? 'Good' : m >= 12 ? 'Fair' : m >= 10 ? 'Pass' : 'Poor';
     const mentionApc = (m: number): string =>
@@ -181,62 +213,44 @@ export class GenererBulletinUseCase {
     const calculerMention = (moyenne: number): string => {
       if (commande.template === 'EN_SECONDARY') return mentionEn(moyenne);
       if (commande.template === 'MONTHLY') return mentionApc(moyenne);
-      // Partagés entre sous-systèmes : la langue décide.
       if (commande.template === 'PRIMARY') return langue === 'en' ? mentionEn(moyenne) : mentionApc(moyenne);
       if (commande.template === 'ANNUAL') return langue === 'en' ? mentionEn(moyenne) : mentionFr(moyenne);
-      // FR_SECONDARY, TECHNICAL_FR
       return mentionFr(moyenne);
     };
 
-    // 7. Charger les lv2SubjectId de tous les élèves + l'ensemble des matières isLV2 (label "(LV2)")
-    //    + la sélection A-Level de chaque élève (pour ne montrer que ses matières choisies).
-    const lv2Map = new Map<string, string | null>(); // userId → lv2SubjectId
-    const lv2SubjectIds = new Set<string>();          // subjectId des matières taggées isLV2
-    const alevelMap = new Map<string, Set<string>>(); // userId → set des subjectId A-Level choisis
-
-    const profiles =
-      await this.studentProfileRepository.findBulletinOptionsByStudentIds(
-        elevesClasse.map(eleve => eleve.id),
-      );
-
-    for (const profile of profiles) {
-      lv2Map.set(profile.studentId, profile.lv2SubjectId);
-
-      if (profile.alevelSubjectIds.length > 0) {
-        alevelMap.set(profile.studentId, new Set(profile.alevelSubjectIds));
-      }
-    }
-
-    for (const subjectId of await this.matiereRepository.findIdsLV2BySchool(commande.schoolId)) {
-      lv2SubjectIds.add(subjectId);
-    }
-
-    const [seqA, seqB] = sequences;
+    const [seqA, seqB] = orderedSeqs;
     const seq1Label = seqA?.name || 'SÉQ 1';
     const seq2Label = seqB?.name || 'SÉQ 2';
 
-    // 7b. Générer le bulletin pour chaque élève
+    const professorPrincipal = classe.professorPrincipalId
+      ? await this.userRepository.findById(classe.professorPrincipalId)
+      : null;
+    const verifyBase = (process.env.FRONTEND_URL || process.env.CLIENT_URL || process.env.APP_URL || 'http://localhost:3000').trim().replace(/\/+$/, '');
+
+    // 7. Générer et persister le bulletin pour chaque élève (un bulletin déjà GENERATED est immuable)
     let generes = 0;
     let ignores = 0;
 
     for (const eleve of elevesClasse) {
-      // Vérifier si bulletin déjà généré
       const bulletinExistant = await this.bulletinRepository.findByEleveEtPeriode(
         eleve.id,
-        commande.academicPeriodId
+        commande.academicPeriodId,
       );
+      if (bulletinExistant?.estGenere()) {
+        ignores++;
+        continue;
+      }
 
-      const moyenneEleve = moyennesEleves.find((m) => m.studentId === eleve.id)?.moyenne ?? 0;
-      const rang = rangs.get(eleve.id) ?? elevesClasse.length;
-      const mention = calculerMention(moyenneEleve);
+      const snapshot = snapshotsByStudentId.get(eleve.id);
+      if (!snapshot || snapshot.subjectLines.length === 0) {
+        continue;
+      }
 
-      // Statistiques présences
       const statsPresence = await this.presenceRepository.getStatistiquesEleve(
         eleve.id,
-        commande.academicPeriodId
+        commande.academicPeriodId,
       );
 
-      // Créer une nouvelle instance de bulletin
       const bulletin = Bulletin.create({
         schoolId: commande.schoolId,
         studentId: eleve.id,
@@ -245,96 +259,44 @@ export class GenererBulletinUseCase {
         template: commande.template,
       });
 
-      // Construire les lignes matière depuis notesDeClasse (classId garanti correct)
-      const notesEleve = notesDeClasse.filter((n) =>
-        n.studentId === eleve.id &&
-        n.validationStatus === 'LOCKED' &&
-        n.sequenceAverage !== undefined
+      bulletin.definirLignesMatiere(
+        snapshot.subjectLines.map((l) => ({
+          id: crypto.randomUUID(),
+          subjectId: l.subjectId,
+          subjectName: l.subjectName,
+          coefficient: l.coefficient,
+          seq1Score: l.seq1Score,
+          seq2Score: l.seq2Score,
+          seq3Score: l.seq3Score,
+          seq4Score: l.seq4Score,
+          seq5Score: l.seq5Score,
+          seq6Score: l.seq6Score,
+          classTestScore: l.classTestScore,
+          terminalExamScore: l.terminalExamScore,
+          theoreticalScore: l.theoreticalScore,
+          practicalScore: l.practicalScore,
+          professionalAttitude: l.professionalAttitude,
+          oralScore: l.oralScore,
+          selfDevelopmentScore: l.selfDevelopmentScore,
+          subjectAverage: l.subjectAverage,
+          weightedScore: l.weightedScore,
+          subjectRank: l.subjectRank,
+          teacherComment: l.teacherComment,
+          competenceLabel: l.competenceLabel,
+        })),
       );
 
-      // Grouper par subjectId — collecter toutes les notes de l'élève pour la période
-      const notesParSubject = new Map<string, typeof notesEleve>();
-      for (const n of notesEleve) {
-        const list = notesParSubject.get(n.subjectId) ?? [];
-        list.push(n);
-        notesParSubject.set(n.subjectId, list);
-      }
-
-      const eleveClv2 = lv2Map.get(eleve.id) ?? null;
-      const alevelSelection = alevelMap.get(eleve.id) ?? null; // non-null ⇒ élève A-Level
-
-      const lignes = Array.from(notesParSubject.entries()).flatMap(([subjectId, notesList]) => {
-        const matiere = matiereParId.get(subjectId);
-        const coeff = matiere?.coefficient ?? notesList[0]?.coefficient ?? 1;
-        const baseName = matiere?.name ?? `Matière (${subjectId.slice(0, 6)})`;
-        const subjectEstLV2 = lv2SubjectIds.has(subjectId);
-
-        // Élève A-Level : n'afficher que les matières réellement choisies (coeff A-Level officiel via matiere).
-        if (alevelSelection && !alevelSelection.has(subjectId)) {
-          return [];
-        }
-
-        // Anomalie : note dans une matière LV2 qui n'est pas la LV2 de l'élève → exclure + warning.
-        if (subjectEstLV2 && eleveClv2 !== subjectId) {
-          console.warn(
-            `[Bulletin] Élève ${eleve.id} possède une note dans la LV2 "${baseName}" (${subjectId}) ` +
-            `qui n'est pas sa LV2 affectée (${eleveClv2 ?? 'aucune'}) — ligne exclue du bulletin.`,
-          );
-          return [];
-        }
-
-        const isLignLV2 = subjectEstLV2 && eleveClv2 === subjectId;
-
-        // Associer les notes de chaque séquence de la période
-        const nSeq1 = seqA ? notesList.find((n) => n.sequenceId === seqA.id) : undefined;
-        const nSeq2 = seqB ? notesList.find((n) => n.sequenceId === seqB.id) : undefined;
-
-        const s1 = nSeq1 ? (nSeq1.toObject().sequenceScore ?? nSeq1.sequenceAverage ?? null) : null;
-        const s2 = nSeq2 ? (nSeq2.toObject().sequenceScore ?? nSeq2.sequenceAverage ?? null) : null;
-
-        // Calcul de la moyenne de la matière pour la période
-        let subjAvg = 0;
-        if (s1 !== null && s2 !== null) {
-          subjAvg = Math.round(((s1 + s2) / 2) * 100) / 100;
-        } else if (s1 !== null) {
-          subjAvg = s1;
-        } else if (s2 !== null) {
-          subjAvg = s2;
-        } else if (notesList[0]?.sequenceAverage !== undefined) {
-          subjAvg = notesList[0].sequenceAverage;
-        }
-
-        const wScore = Math.round(subjAvg * coeff * 100) / 100;
-        const teacherComment = nSeq2?.toObject().observation || nSeq1?.toObject().observation || null;
-
-        return [{
-          id: crypto.randomUUID(),
-          subjectId,
-          subjectName: isLignLV2 ? `${baseName} (LV2)` : baseName,
-          coefficient: coeff,
-          seq1Score: s1 ?? undefined,
-          seq2Score: s2 ?? undefined,
-          subjectAverage: subjAvg,
-          weightedScore: wScore,
-          teacherComment: teacherComment ?? undefined,
-        }];
-      });
-
-      bulletin.definirLignesMatiere(lignes);
       bulletin.definirResultats({
-        generalAverage: moyenneEleve,
-        rank: rang,
-        totalStudents: elevesClasse.length,
-        mention,
+        generalAverage: snapshot.generalAverage,
+        rank: snapshot.rank,
+        totalStudents: snapshot.totalStudents,
+        mention: calculerMention(snapshot.generalAverage),
         absenceCount: statsPresence.joursAbsent,
+        rankTrimestre1: snapshot.rankTrimestre1,
+        rankTrimestre2: snapshot.rankTrimestre2,
+        rankTrimestre3: snapshot.rankTrimestre3,
       });
 
-      // Générer le PDF
-      const professorPrincipal = classe.professorPrincipalId
-        ? await this.userRepository.findById(classe.professorPrincipalId)
-        : null;
-
-      const verifyBase = (process.env.FRONTEND_URL || process.env.CLIENT_URL || process.env.APP_URL || 'http://localhost:3000').trim().replace(/\/+$/, '');
       const verifyUrl = `${verifyBase}/verify/${bulletin.id}`;
 
       await this.pdfService.genererBulletin({
@@ -346,7 +308,11 @@ export class GenererBulletinUseCase {
         anneeAcademique: annee.name,
         nomPeriode: periode.name,
         nomProfesseurPrincipal: professorPrincipal?.nomComplet,
-        moyenneClasse: moyennesEleves.reduce((s, m) => s + m.moyenne, 0) / elevesClasse.length,
+        moyenneClasse: classProfile.classAverage,
+        moyennePremier: classProfile.topAverage,
+        moyenneDernier: classProfile.lowAverage,
+        nbAdmis: classProfile.passCount,
+        tauxReussite: classProfile.passRate,
         langue,
         verifyUrl,
         seq1Label,
@@ -356,7 +322,6 @@ export class GenererBulletinUseCase {
       const pdfUrl = `bulletins/${commande.schoolId}/${bulletin.id}.pdf`;
       bulletin.marquerGenere(pdfUrl);
 
-      // Sauvegarder (si un ancien bulletin existait, le remplacer proprement)
       if (bulletinExistant) {
         await this.bulletinRepository.delete(bulletinExistant.toObject().id);
       }
@@ -375,7 +340,7 @@ export class GenererBulletinUseCase {
     return {
       bulletinsGeneres: generes,
       bulletinsIgnores: ignores,
-      message: `${generes} bulletin(s) généré(s) avec succès`,
+      message: `${generes} bulletin(s) généré(s) avec succès${ignores > 0 ? ` (${ignores} déjà généré(s) ignoré(s))` : ''}`,
     };
   }
 }

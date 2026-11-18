@@ -1,0 +1,265 @@
+/**
+ * DOMAIN LAYER — Fonctions pures de calcul pour BulletinSnapshotBuilder
+ * Rangs, filtrage LV2/A-Level, calculs de séquences/trimestres/groupes via GradingEngine.
+ */
+import type {
+  AnnualAveragePolicyMode,
+  BulletinGroupSummary,
+  BulletinSubjectSnapshotLine,
+  SnapshotNoteInput,
+  SnapshotSequenceInput,
+  SnapshotStudentInput,
+  SnapshotSubjectInput,
+} from '@domain/types/bulletinSnapshot';
+import {
+  calculateAverageScoreOn20,
+  calculerMoyenneSequence,
+  normalizeScoreOn20,
+} from '@domain/rules/GradingEngine';
+
+export const round2 = (n: number): number => Math.round((n + Number.EPSILON) * 100) / 100;
+
+export function assignCompetitionRanks(items: Array<{ id: string; value: number }>): Map<string, number> {
+  const sorted = [...items].sort((a, b) => b.value - a.value);
+  const ranks = new Map<string, number>();
+  let currentRank = 1;
+  for (let i = 0; i < sorted.length; i++) {
+    if (i > 0 && sorted[i]!.value < sorted[i - 1]!.value) {
+      currentRank = i + 1;
+    }
+    ranks.set(sorted[i]!.id, currentRank);
+  }
+  return ranks;
+}
+
+export function resolveNoteScoreOn20(
+  note: SnapshotNoteInput,
+  mode: 'single' | 'triple' | 'weighted',
+): number {
+  const maxVal = note.maxValue ?? 20;
+  const raw =
+    note.sequenceAverage != null
+      ? Number(note.sequenceAverage)
+      : calculerMoyenneSequence(
+          {
+            sequenceScore: note.sequenceScore,
+            classTestScore: note.classTestScore,
+            terminalExamScore: note.terminalExamScore,
+            theoreticalScore: note.theoreticalScore,
+            practicalScore: note.practicalScore,
+            seq1Score: note.sequenceScore,
+            maxValue: maxVal,
+          },
+          mode,
+        );
+  return maxVal === 20 ? round2(raw) : normalizeScoreOn20({ rawScore: raw, maxScore: maxVal });
+}
+
+export function isSubjectAllowedForStudent(
+  student: SnapshotStudentInput,
+  subject: SnapshotSubjectInput,
+): boolean {
+  if (student.alevelSubjectIds && student.alevelSubjectIds.length > 0) {
+    if (!student.alevelSubjectIds.includes(subject.id)) return false;
+  }
+  if (subject.isLV2 && student.lv2SubjectId !== subject.id) {
+    return false;
+  }
+  return true;
+}
+
+function resolveTermIndex(seq: SnapshotSequenceInput, sortedIndex: number): 1 | 2 | 3 {
+  if (seq.termIndex === 1 || seq.termIndex === 2 || seq.termIndex === 3) return seq.termIndex;
+  if (sortedIndex < 2) return 1;
+  if (sortedIndex < 4) return 2;
+  return 3;
+}
+
+export function buildStudentSubjectLines(params: {
+  student: SnapshotStudentInput;
+  studentNotes: SnapshotNoteInput[];
+  subjectById: Map<string, SnapshotSubjectInput>;
+  subjectOrderById: Map<string, number>;
+  seqSlotById: Map<string, number>;
+  hasCoefficientBySubject: boolean;
+  excludeAbsent: boolean;
+  seqMode: 'single' | 'triple' | 'weighted';
+}): BulletinSubjectSnapshotLine[] {
+  const notesBySubject = new Map<string, SnapshotNoteInput[]>();
+  for (const n of params.studentNotes) {
+    const arr = notesBySubject.get(n.subjectId) ?? [];
+    arr.push(n);
+    notesBySubject.set(n.subjectId, arr);
+  }
+
+  const lines: BulletinSubjectSnapshotLine[] = [];
+  for (const [subjectId, subNotes] of notesBySubject.entries()) {
+    const subject = params.subjectById.get(subjectId)!;
+    const scoredEntries = subNotes
+      .filter((n) => !(params.excludeAbsent && n.isAbsentGrade))
+      .map((n) => ({
+        note: n,
+        slot: params.seqSlotById.get(n.sequenceId)!,
+        score: resolveNoteScoreOn20(n, params.seqMode),
+      }))
+      .sort((a, b) => a.slot - b.slot);
+
+    if (scoredEntries.length === 0) continue;
+
+    const seqScores: Array<number | undefined> = [undefined, undefined, undefined, undefined, undefined, undefined];
+    for (const entry of scoredEntries) {
+      if (entry.slot >= 0 && entry.slot < 6) seqScores[entry.slot] = entry.score;
+    }
+
+    const subjectAvg = round2(scoredEntries.reduce((sum, e) => sum + e.score, 0) / scoredEntries.length);
+    const effCoeff = params.hasCoefficientBySubject ? (subject.coefficient ?? 1) : 1;
+    const weightedScore = round2(subjectAvg * effCoeff);
+    const lastNote = scoredEntries[scoredEntries.length - 1]!.note;
+    const observation =
+      [...scoredEntries].reverse().find((e) => e.note.observation && e.note.observation.trim().length > 0)?.note.observation ?? undefined;
+    const isLv2Display = subject.isLV2 && params.student.lv2SubjectId === subject.id && !subject.name.includes('(LV2)');
+
+    lines.push({
+      subjectId,
+      subjectName: isLv2Display ? `${subject.name} (LV2)` : subject.name,
+      coefficient: subject.coefficient ?? 1,
+      groupKey: subject.groupKey ?? 'DEFAULT',
+      groupLabel: subject.groupLabel ?? 'Matières',
+      groupOrder: subject.groupOrder ?? 99,
+      seq1Score: seqScores[0],
+      seq2Score: seqScores[1],
+      seq3Score: seqScores[2],
+      seq4Score: seqScores[3],
+      seq5Score: seqScores[4],
+      seq6Score: seqScores[5],
+      classTestScore: lastNote.classTestScore ?? undefined,
+      terminalExamScore: lastNote.terminalExamScore ?? undefined,
+      theoreticalScore: lastNote.theoreticalScore ?? undefined,
+      practicalScore: lastNote.practicalScore ?? undefined,
+      professionalAttitude: lastNote.professionalAttitude ?? undefined,
+      oralScore: lastNote.oralScore ?? undefined,
+      selfDevelopmentScore: lastNote.selfDevelopmentScore ?? undefined,
+      subjectAverage: subjectAvg,
+      weightedScore,
+      subjectRank: 1,
+      subjectTotalStudents: 1,
+      classSubjectAverage: subjectAvg,
+      minSubjectAverage: subjectAvg,
+      maxSubjectAverage: subjectAvg,
+      teacherComment: observation,
+      teacherName: subject.teacherName,
+      competenceLabel: subject.competenceLabel,
+    });
+  }
+
+  return lines.sort((a, b) => {
+    if (a.groupOrder !== b.groupOrder) return a.groupOrder - b.groupOrder;
+    return (params.subjectOrderById.get(a.subjectId) ?? 0) - (params.subjectOrderById.get(b.subjectId) ?? 0);
+  });
+}
+
+export function computeStudentSequenceAndTermAverages(params: {
+  studentNotes: SnapshotNoteInput[];
+  orderedSequences: SnapshotSequenceInput[];
+  subjectById: Map<string, SnapshotSubjectInput>;
+  hasCoefficientBySubject: boolean;
+  excludeAbsent: boolean;
+  seqMode: 'single' | 'triple' | 'weighted';
+}): {
+  sequenceAverages: Array<{ sequenceId: string; name: string; orderIndex: number; average: number | null }>;
+  termAverages: { trim1?: number; trim2?: number; trim3?: number };
+} {
+  const sequenceAverages = params.orderedSequences.map((seq) => {
+    const seqNotes = params.studentNotes.filter((n) => n.sequenceId === seq.id && !(params.excludeAbsent && n.isAbsentGrade));
+    if (seqNotes.length === 0) {
+      return { sequenceId: seq.id, name: seq.name, orderIndex: seq.orderIndex, average: null };
+    }
+    const avg = calculateAverageScoreOn20(
+      seqNotes.map((n) => {
+        const sub = params.subjectById.get(n.subjectId)!;
+        const s = resolveNoteScoreOn20(n, params.seqMode);
+        return { scoreOn20: s, percentage: s * 5, coefficient: sub.coefficient, isAbsentGrade: false };
+      }),
+      params.hasCoefficientBySubject,
+      false,
+    );
+    return { sequenceId: seq.id, name: seq.name, orderIndex: seq.orderIndex, average: avg };
+  });
+
+  const termAverages: { trim1?: number; trim2?: number; trim3?: number } = {};
+  for (const termIdx of [1, 2, 3] as const) {
+    const termSeqIds = new Set(
+      params.orderedSequences.filter((s, idx) => resolveTermIndex(s, idx) === termIdx).map((s) => s.id),
+    );
+    if (termSeqIds.size === 0) continue;
+    const termNotesBySub = new Map<string, number[]>();
+    for (const n of params.studentNotes) {
+      if (!termSeqIds.has(n.sequenceId) || (params.excludeAbsent && n.isAbsentGrade)) continue;
+      const arr = termNotesBySub.get(n.subjectId) ?? [];
+      arr.push(resolveNoteScoreOn20(n, params.seqMode));
+      termNotesBySub.set(n.subjectId, arr);
+    }
+    if (termNotesBySub.size === 0) continue;
+    const termSubAvgs = Array.from(termNotesBySub.entries()).map(([subId, scores]) => {
+      const avg = round2(scores.reduce((a, b) => a + b, 0) / scores.length);
+      const sub = params.subjectById.get(subId)!;
+      return { scoreOn20: avg, percentage: avg * 5, coefficient: sub.coefficient, isAbsentGrade: false };
+    });
+    const termAvg = calculateAverageScoreOn20(termSubAvgs, params.hasCoefficientBySubject, false);
+    if (termIdx === 1) termAverages.trim1 = termAvg;
+    else if (termIdx === 2) termAverages.trim2 = termAvg;
+    else termAverages.trim3 = termAvg;
+  }
+
+  return { sequenceAverages, termAverages };
+}
+
+export function buildGroupSummariesForStudent(
+  lines: BulletinSubjectSnapshotLine[],
+  hasCoefficientBySubject: boolean,
+): BulletinGroupSummary[] {
+  const linesByGroup = new Map<string, BulletinSubjectSnapshotLine[]>();
+  for (const line of lines) {
+    const list = linesByGroup.get(line.groupKey) ?? [];
+    list.push(line);
+    linesByGroup.set(line.groupKey, list);
+  }
+  const groups: BulletinGroupSummary[] = [];
+  for (const [groupKey, groupLines] of linesByGroup.entries()) {
+    const first = groupLines[0]!;
+    groups.push({
+      groupKey,
+      groupLabel: first.groupLabel,
+      groupOrder: first.groupOrder,
+      totalCoefficient: round2(groupLines.reduce((s, l) => s + (hasCoefficientBySubject ? l.coefficient : 1), 0)),
+      totalWeightedScore: round2(groupLines.reduce((s, l) => s + l.weightedScore, 0)),
+      groupAverage: calculateAverageScoreOn20(
+        groupLines.map((l) => ({ scoreOn20: l.subjectAverage, percentage: l.subjectAverage * 5, coefficient: l.coefficient })),
+        hasCoefficientBySubject,
+        false,
+      ),
+      groupRank: 1,
+      groupTotalStudents: 1,
+    });
+  }
+  return groups.sort((a, b) => a.groupOrder - b.groupOrder);
+}
+
+export function resolveAnnualGeneralAverage(params: {
+  annualPolicy: AnnualAveragePolicyMode;
+  weightedSubjectAvg: number;
+  sequenceAverages: Array<{ average: number | null }>;
+  termAverages: { trim1?: number; trim2?: number; trim3?: number };
+}): number {
+  if (params.annualPolicy === 'SIX_SEQUENCES_ARITHMETIC') {
+    const valid = params.sequenceAverages.map((s) => s.average).filter((a): a is number => a !== null);
+    return valid.length > 0 ? round2(valid.reduce((a, b) => a + b, 0) / valid.length) : 0;
+  }
+  if (params.annualPolicy === 'THREE_TERMS_ARITHMETIC') {
+    const vals = [params.termAverages.trim1, params.termAverages.trim2, params.termAverages.trim3].filter(
+      (v): v is number => v !== undefined,
+    );
+    return vals.length > 0 ? round2(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+  }
+  return params.weightedSubjectAvg;
+}
