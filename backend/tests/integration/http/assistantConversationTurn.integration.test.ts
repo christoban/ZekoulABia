@@ -16,6 +16,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'bun:test';
 import { randomUUID } from 'crypto';
 import { AssistantController } from '../../../src/infrastructure/http/controllers/AssistantController.ts';
 import { PrismaAssistantContextQueryRepository } from '@infrastructure/persistence/prisma/PrismaAssistantContextQueryRepository';
+import { PrismaCopilotDataGateway } from '@infrastructure/persistence/prisma/copilot/PrismaCopilotDataGateway';
 import { AIActionAuditAdapter } from '@infrastructure/services/ai/AIActionAuditAdapter';
 import { prismaTest } from '../../helpers/prismaTestClient.ts';
 import { creerEcoleTest, creerUtilisateurTest, nettoyerEcole } from '../../helpers/dbFixtures.ts';
@@ -57,7 +58,7 @@ describe('AssistantController.saveTurn — écriture JSON toolCalls sans cast', 
       new PrismaAssistantContextQueryRepository(prismaTest),
       [],
       new AIActionAuditAdapter(prismaTest),
-      prismaTest,
+      new PrismaCopilotDataGateway(prismaTest),
     ) as unknown as AssistantControllerTestAccess;
     const conversationId = randomUUID();
     const toolCalls = [{ name: 'creer_classe', input: { name: '6ème A', capacity: 45 } }];

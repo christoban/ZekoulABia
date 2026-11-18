@@ -1,5 +1,4 @@
 import { messageErreur } from '@application/shared/messageErreur';
-import type { PrismaClient } from '@prisma/client';
 import type { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { generateText, tool, APICallError } from 'ai';
@@ -11,13 +10,16 @@ import {
   type ActionContext,
   type ActionDefinition,
 } from '@infrastructure/assistant/catalog/catalogShared';
+import type { CopilotDataGateway } from '@domain/ports/repositories/CopilotDataGateway';
 import type { AssistantContextQueryRepository } from '@domain/ports/repositories/AssistantContextQueryRepository';
 import type { AIActionAuditPort } from '@domain/ports/services/AIActionAuditPort';
 import { resolveLanguage } from '../../../domain/policies/LanguagePolicy';
 import { instructionLangue } from '../../services/ai/prompts/LanguagePrompt';
-
-/** Fenêtre pendant laquelle une action non-destructive reste annulable (5 minutes). */
-const UNDO_WINDOW_MS = 5 * 60 * 1000;
+import {
+  detecterParametreHallucine,
+  executerAnnulationAction,
+  executerConfirmationAction,
+} from './assistant/assistantExecutionHelper';
 
 /** Contact support affiché lors d'une escalade — placeholder configurable, jamais en dur. */
 const SUPPORT_CONTACT = process.env.ASSISTANT_SUPPORT_CONTACT || 'le support ZekoulABia (contact à configurer)';
@@ -36,39 +38,7 @@ type ActionEnAttente = { pendingActionId: string; actionType: string; summary: s
 const ESCALATE_TOOL_NAME = 'escalate_to_support';
 
 /**
- * Détecte quand le modèle a recopié (intégralement OU partiellement, paraphrasé) la description
- * Zod d'un champ comme s'il s'agissait de sa valeur réelle — ex. `teacherName: "Nom de
- * l'enseignant à nommer professeur principal"`, ou une version raccourcie comme "Nom de
- * l'enseignant", au lieu du vrai nom, quand l'utilisateur n'a jamais précisé quel enseignant.
- * Comportement réellement observé chez Groq/Llama malgré l'instruction système explicite de ne
- * jamais deviner — et observé sous DEUX formes différentes (copie complète, puis copie tronquée)
- * lors des mêmes tests, d'où une correspondance par sous-chaîne plutôt qu'exacte : le modèle ne
- * recopie pas toujours la description à l'identique. `min(1)` sur un champ string laisse passer
- * cette hallucination sans jamais la détecter (n'importe quelle chaîne non vide est valide).
- * Le seuil de 8 caractères évite de bloquer à tort une valeur légitime courte qui partagerait
- * par coïncidence un petit fragment avec la description.
- * Retourne la description du premier champ concerné (à réutiliser comme question de
- * clarification), ou `null` si l'appel est légitime.
- */
-function detecterParametreHallucine(action: ActionDefinition, input: Record<string, unknown>): string | null {
-  const schema = action.inputSchema;
-  if (!(schema instanceof z.ZodObject)) return null;
-  const shape = schema.shape as Record<string, z.ZodTypeAny>;
-  for (const [key, value] of Object.entries(input)) {
-    if (typeof value !== 'string') continue;
-    const description = shape[key]?.description;
-    if (!description) continue;
-    const v = value.trim().toLowerCase();
-    const d = description.trim().toLowerCase();
-    if (v.length >= 8 && d.includes(v)) {
-      return description;
-    }
-  }
-  return null;
-}
-
-/**
- * INFRASTRUCTURE — Assistant IA exécutant (copilot) pour le rôle ADMIN.
+ * INFRASTRUCTURE — Assistant IA exécutant (copilot) pour les rôles autorisés.
  *
  * POST /api/v2/assistant/execute        → comprend la demande, exécute (non-destructif)
  *                                          ou renvoie une demande de confirmation (destructif)
@@ -80,7 +50,7 @@ function detecterParametreHallucine(action: ActionDefinition, input: Record<stri
  * toute exécution — on ne fait jamais confiance au prompt.
  */
 export class AssistantController {
-  /** Construit le contexte d'action du catalogue (école + rôle + client Prisma vivant). */
+  /** Construit le contexte d'action du catalogue (école + rôle + passerelle de données). */
   private readonly ctx: (req: Request) => ActionContext;
 
   constructor(
@@ -88,12 +58,10 @@ export class AssistantController {
     private readonly catalog: ActionDefinition[],
     private readonly audit: AIActionAuditPort,
     /**
-     * Client Prisma requis UNIQUEMENT pour bâtir l'`ActionContext` du catalogue : les
-     * `execute()/undo()` des actions appelées ici font leurs requêtes métier via
-     * `ctx.prisma` (voir catalogShared). Hors d'ici, le contrôleur n'utilise plus jamais ce
-     * client directement — toutes ses lectures/écritures passent par `contextRepo`/`audit`.
+     * Passerelle de données requise UNIQUEMENT pour bâtir l'`ActionContext` du catalogue :
+     * le contrôleur lui-même ne fait aucune requête directe et passe par `contextRepo`/`audit`.
      */
-    prismaClient: PrismaClient,
+    copilotData: CopilotDataGateway,
     /**
      * Génération de texte, injectable — production : `generateText` du SDK `ai` (défaut).
      *
@@ -111,7 +79,7 @@ export class AssistantController {
   ) {
     this.ctx = (req: Request): ActionContext => {
       const user = req.user!;
-      return { schoolId: user.schoolId, userId: user.userId, role: user.role, prisma: prismaClient };
+      return { schoolId: user.schoolId, userId: user.userId, role: user.role, data: copilotData };
     };
   }
 
@@ -468,61 +436,12 @@ export class AssistantController {
   // ── POST /api/v2/assistant/confirm-action ───────────────────────────────────
   confirmAction = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const user = req.user!;
-      const { pendingActionId, confirmed } = req.body as { pendingActionId?: string; confirmed?: boolean };
-      if (!pendingActionId) {
-        res.status(400).json({ success: false, message: 'pendingActionId requis' });
-        return;
-      }
-
-      const log = await this.contextRepo.findActionLogById(pendingActionId);
-      if (!log || log.schoolId !== user.schoolId) {
-        res.status(404).json({ success: false, message: 'Action introuvable' });
-        return;
-      }
-      if (log.status !== 'PENDING_CONFIRMATION') {
-        res.status(409).json({ success: false, message: 'Cette action n\'est plus en attente de confirmation.' });
-        return;
-      }
-
-      if (!confirmed) {
-        await this.contextRepo.updateActionLog(log.id, { status: 'CANCELLED' });
-        res.json({ success: true, cancelled: true });
-        return;
-      }
-
-      // Re-vérification RBAC au moment de la confirmation (on ne fait jamais confiance à l'appel client).
-      const allowed = filterCatalogForUser(this.catalog, user);
-      const action = allowed.find((a) => a.name === log.actionType);
-      if (!action || !action.destructive) {
-        this.audit.journaliser({
-          actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
-          actionName: log.actionType, origin: 'AI_ASSISTANT', outcome: 'REFUSE',
-          refusalReason: 'action_hors_catalogue_autorise', parametersSummary: log.parameters,
-        });
-        res.status(403).json({ success: false, message: 'Action non autorisée.' });
-        return;
-      }
-
-      try {
-        const r = await action.execute(log.parameters, this.ctx(req));
-        await this.contextRepo.updateActionLog(log.id, { status: 'EXECUTED', resultLabel: r.resultLabel, executedAt: new Date() });
-        this.audit.journaliser({
-          actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
-          actionName: action.name, origin: 'AI_ASSISTANT', outcome: 'SUCCES', parametersSummary: log.parameters,
-        });
-        res.json({
-          success: true,
-          executed: { actionLogId: log.id, label: r.resultLabel, section: r.section ?? null, entity: r.entity ?? null },
-        });
-      } catch (e) {
-        this.audit.journaliser({
-          actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
-          actionName: action.name, origin: 'AI_ASSISTANT', outcome: 'ERREUR',
-          refusalReason: messageErreur(e), parametersSummary: log.parameters,
-        });
-        res.status(400).json({ success: false, message: messageErreur(e) ?? 'Échec de la suppression.' });
-      }
+      await executerConfirmationAction(req, res, {
+        contextRepo: this.contextRepo,
+        catalog: this.catalog,
+        audit: this.audit,
+        buildContext: this.ctx,
+      });
     } catch (error) {
       next(error);
     }
@@ -531,42 +450,12 @@ export class AssistantController {
   // ── POST /api/v2/assistant/undo-action ──────────────────────────────────────
   undoAction = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const user = req.user!;
-      const { actionLogId } = req.body as { actionLogId?: string };
-      if (!actionLogId) {
-        res.status(400).json({ success: false, message: 'actionLogId requis' });
-        return;
-      }
-
-      const log = await this.contextRepo.findActionLogById(actionLogId);
-      if (!log || log.schoolId !== user.schoolId) {
-        res.status(404).json({ success: false, message: 'Action introuvable' });
-        return;
-      }
-      if (log.status !== 'EXECUTED' || !log.undoable || log.destructive) {
-        res.status(409).json({ success: false, message: 'Cette action ne peut pas être annulée.' });
-        return;
-      }
-      if (Date.now() - new Date(log.executedAt).getTime() > UNDO_WINDOW_MS) {
-        res.status(409).json({ success: false, message: 'La fenêtre d\'annulation (5 minutes) est dépassée.' });
-        return;
-      }
-
-      const allowed = filterCatalogForUser(this.catalog, user);
-      const action = allowed.find((a) => a.name === log.actionType);
-      if (!action) {
-        res.status(403).json({ success: false, message: 'Action non autorisée.' });
-        return;
-      }
-
-      const undoData = (log.undoData ?? {}) as Record<string, unknown>;
-      try {
-        await action.undo(log.parameters, undoData, this.ctx(req));
-        await this.contextRepo.updateActionLog(log.id, { status: 'UNDONE', undoneAt: new Date() });
-        res.json({ success: true, undone: true, section: undoData.__section ?? null, entity: undoData.__entity ?? null });
-      } catch (e) {
-        res.status(400).json({ success: false, message: messageErreur(e) ?? 'Échec de l\'annulation.' });
-      }
+      await executerAnnulationAction(req, res, {
+        contextRepo: this.contextRepo,
+        catalog: this.catalog,
+        audit: this.audit,
+        buildContext: this.ctx,
+      });
     } catch (error) {
       next(error);
     }

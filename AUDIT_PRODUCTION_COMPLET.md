@@ -14,10 +14,10 @@ Le socle métier de ZekoulABia est riche et mature sur de nombreux moteurs, mais
 |---|---|---|
 | **Fonctionnalités Backend non branchées** | **~80+ endpoints backend** (sur **632** analysés) sans aucun appelant frontend ; **2 UseCases orphelins**, **1 UseCase non exposé** en HTTP ; modules complets sans UI | **Élevée (P1/P2)** |
 | **Doublons identifiés côté Backend** | Routes de chat IA redondantes (`POST /api/v2/ai/chat`, `POST /api/v2/assistant/chat`) face à `POST /api/v2/assistant/execute` | **Moyenne (P2)** |
-| **Contournements Architecture Hexagonale** | **88 routes inline** et **146 requêtes Prisma directes** dans `bootstrap/*.ts`, **42+ accès Prisma directs** dans 4 Controllers, **141 `ctx.prisma.*`** dans l'assistant IA | **Élevée (P1)** |
-| **Plafond de taille (`> 500` lignes — §4.1)** | **85 fichiers hors plafond** (**23 Backend** dont 4 > 1 000 l., **62 Frontend** dont 12 > 1 000 l. et un fichier à 2 729 l.) | **Moyenne / Élevée** |
-| **Dette de typage `any` (§4.12)** | **3 `// hex-allow-any`** Backend dans `catalogShared.ts` (Frontend et `generate_guides_pdf.ts` purgés, `architectureGuard` actif) | **Faible (P3)** |
-| **Dettes de tests (intégration)** | Fragilité d'isolation (`mock.module`) sur certains tests d'intégration backend (`CODE_REVIEW_NOTES.md`) | **Moyenne** |
+| **Contournements Architecture Hexagonale** | **Purge Lot 4 terminée** : 0 route inline ni appel `p.*` dans `bootstrap/*.ts` ; 0 accès Prisma direct dans les Controllers HTTP ; 141 accès `ctx.prisma.*` du catalogue Copilot encapsulés derrière `CopilotDataGateway` (`PrismaCopilotDataGateway`) ; `architectureGuard.test.ts` durci sans exception | **Résolu (Lot 4)** |
+| **Plafond de taille (`> 500` lignes — §4.1)** | **Purge Lot 4 terminée** : **0 fichier `> 500` lignes** sur `backend/src/` et `frontend/src/` (`LEGACY_OVERSIZED_MAX_LINES = {}` et garde-fou backend `<= 500` lignes actifs) | **Résolu (Lot 4)** |
+| **Dette de typage `any` (§4.12)** | **0 occurrence** de `// hex-allow-any` et **0 `any`** applicatif dans `backend/src/` (hors déclarations ambiantes `src/types/*.d.ts`) et `frontend/src/` | **Résolu (Lot 4)** |
+| **Dettes de tests (intégration)** | **0 appel `mock.module`** subsistant dans `backend/tests/` (`SmsService` migré vers lecture dynamique d'environnement) | **Résolu (Lot 4)** |
 
 ---
 
@@ -64,116 +64,40 @@ Sur **632 endpoints HTTP backend** et **366 UseCases** analysés, **~90+ endpoin
 
 ---
 
-## Partie 3 — Violations de l'Architecture Hexagonale (`AGENTS.md §4.3.1`)
+## Partie 3 — Architecture Hexagonale (`AGENTS.md §4.3.1`) — Résolu en Lot 4
 
-Bien que le domaine (`domain/`) et l'application (`application/`) soient protégés par `backend/tests/unit/architectureGuard.test.ts`, plusieurs contournements majeurs persistent dans la couche `infrastructure/`.
+Toutes les violations identifiées lors de l'audit dans `infrastructure/` ont été corrigées et verrouillées par `backend/tests/unit/architectureGuard.test.ts` :
 
-### 3.1 88 routes Express inline & 146 appels Prisma directs dans `backend/src/infrastructure/config/bootstrap/*.ts`
-
-Les fichiers de câblage HTTP du dossier `bootstrap/` contiennent directement des handlers Express complets (`app.get/post/put/patch/delete`) et de la logique métier/Prisma (`p.<model>.*`), court-circuitant la séparation **Route → Controller → UseCase → Port → Repository**.
-
-| Fichier (`backend/src/infrastructure/config/bootstrap/`) | Taille | Routes HTTP inline | Appels Prisma directs (`p.*`) | Exemples de routes concernées |
-|---|---|---|---|---|
-| `lists.ts` | 1 112 l. | **18** | **42** | `/api/v2/students`, `/api/v2/teachers`, `/api/v2/staff`, `/api/v2/classes`, `/api/v2/subjects`, `/api/v2/rooms`, etc. |
-| `school.ts` | 669 l. | **18** | **37** | Paramétrage établissement et structures scolaires |
-| `modules.ts` | 521 l. | **15** | **32** | Gestion des modules activés et droits |
-| `electifs.ts` | 500 l. | **14** | **17** | Créneaux électifs, A-Level et élèves par créneau |
-| `grade.ts` | 241 l. | **4** | **14** | Routes transverses de notation |
-| `academic.ts` | 340 l. | **9** | — | Routes académiques |
-| `authOnboarding.ts` | 321 l. | **5** | **2** | Endpoints d'auth et onboarding |
-| `core.ts` | 297 l. | **5** | **2** | Health/assistant/core endpoints |
-| **Total** | **4 001 l.** | **88 routes** | **146 requêtes** | — |
-
-### 3.2 Accès Prisma directs dans 4 Controllers HTTP (angle mort du guard)
-
-Règle `AGENTS.md §4.3.1` : *« Un controller HTTP ne contient pas de logique métier, de requête Prisma ou d'appel SDK »*. Or 4 controllers contournent actuellement cette règle en important le singleton `{ prisma }` depuis `prisma.client` (ce que `architectureGuard.test.ts` ne bloque pas encore) :
-
-1. **`MasterReferentielsController.ts`** (735 lignes) : **35 appels `prisma.*` directs** via `import { prisma } from '../../database/prisma.client'`.
-2. **`NotificationController.ts`** : **5 appels `prisma.notification.*` directs**.
-3. **`TimetableController.ts:528`** : appel direct à `prisma.school.findUnique`.
-4. **`grade/GradeExcelController.ts:37-38`** : import dynamique `await import('../../../database/prisma.client')` + `prisma.studentProfile.findMany` directement dans le controller.
-
-- **Action** : Extraire ces requêtes vers des Ports/Repositories et des UseCases dédiés, puis renforcer `backend/tests/unit/architectureGuard.test.ts` pour interdire tout import statique ou dynamique de `prisma.client` et `@prisma/client` dans `infrastructure/http/controllers/`.
-
-### 3.3 141 appels `ctx.prisma.*` directs dans le catalogue Copilot IA
-
-Dans `backend/src/infrastructure/assistant/catalog/`, **13 fichiers** exécutent au total **141 requêtes `ctx.prisma.*` directes** (dont `adminAcademicGradeActions.ts` : **33**, `staffActionCatalog.ts` : **18**, `teacherActionCatalog.ts` : **15**, `adminClassSubjectActions.ts` : **12**).
-- **Risque** : Duplication des règles métier, risque d'écart sur l'isolation multi-tenant, l'audit trail ou le RBAC par rapport aux UseCases applicatifs.
-- **Recommandation** : Faire déléguer les actions Copilot IA vers les UseCases existants du `container` plutôt que de réécrire des requêtes Prisma brutes.
+- **3.1 `bootstrap/*.ts`** : routes inline et requêtes Prisma directes (`p.<model>`, `p.$transaction`) extraites vers des contrôleurs, routeurs `routes/*.routes.ts`, adaptateurs et repositories (`academic.ts`, `authOnboarding.ts`, `core.ts`, `electifs.ts`, `grade.ts`, `lists.ts`, `modules.ts`, `registrations.ts`, `school.ts`). Le garde-fou interdit désormais toute route inline `app.(get|post|put|patch|delete)` et tout appel `p.*` dans `bootstrap/`.
+- **3.2 Controllers HTTP** : `MasterReferentielsController.ts`, `NotificationController.ts`, `TimetableController.ts`, `AcademicYearController.ts`, `ParentController.ts`, `SubjectController.ts`, `GradeExcelController.ts` et `AssistantController.ts` sont exempts de `prisma.client` / `@prisma/client` (exception `AssistantController` supprimée dans `architectureGuard.test.ts`).
+- **3.3 Catalogue Copilot IA** : les 141 accès `ctx.prisma.*` répartis sur 13 fichiers passent désormais par `ActionContext.data` (`CopilotDataGateway` / `PrismaCopilotDataGateway` segmenté en `shared`, `adminAcademic`, `adminOps` et `portal`), sans `@prisma/client` ni dans `domain/` ni dans `infrastructure/assistant/catalog/`.
 
 ---
 
-## Partie 4 — Plafond de taille de fichiers (`AGENTS.md §4.1`) : 85 fichiers hors plafond
+## Partie 4 — Plafond de taille de fichiers (`AGENTS.md §4.1`) — Résolu en Lot 4
 
-`AGENTS.md §4.1` fixe une cible confortable à **150–250 lignes**, un signal d'alerte à **300–400 lignes** et un **plafond dur à 500 lignes (split obligatoire)**. **85 fichiers** du projet dépassent ce plafond dur.
-
-### 4.1 Les 23 fichiers Backend > 500 lignes
-
-| # | Fichier Backend | Lignes | Axe de découpage recommandé |
-|---|---|---:|---|
-| 1 | `backend/src/infrastructure/services/statisticalCampaign/minesecEsgFieldMap.ts` | 1 630 | Scinder les tables de mapping par section/tableau officiel |
-| 2 | `backend/src/infrastructure/config/container.ts` | 1 452 | Modulariser le wiring DI par bounded context (`containers/*.ts`) |
-| 3 | `backend/src/infrastructure/database/PrismaMessagerieRepository.ts` | 1 118 | Séparer conversations, messages, pièces jointes et notifications |
-| 4 | `backend/src/infrastructure/config/bootstrap/lists.ts` | 1 112 | Extraire les 18 routes inline en Controllers + UseCases par entité |
-| 5 | `backend/src/infrastructure/assistant/catalog/adminAcademicGradeActions.ts` | 797 | Scinder par sous-domaine (notes, évaluations, bulletins, années) |
-| 6 | `backend/src/infrastructure/http/controllers/MasterReferentielsController.ts` | 735 | Déplacer les 35 requêtes Prisma vers UseCases/Repo + splitter |
-| 7 | `backend/src/infrastructure/services/notifications/SmsNotificationService.ts` | 723 | Séparer formatage/templates SMS, quotas et adaptateurs fournisseurs |
-| 8 | `backend/src/infrastructure/config/bootstrap/school.ts` | 669 | Extraire les 18 routes inline vers `SchoolSettingsController` / UseCases |
-| 9 | `backend/src/infrastructure/http/controllers/TimetableController.ts` | 616 | Scinder génération, édition manuelle et consultation/export |
-| 10 | `backend/src/infrastructure/database/PrismaEleveOnboardingRepository.ts` | 608 | Séparer requêtes dossiers, validations et liens d'accès |
-| 11 | `backend/src/infrastructure/http/controllers/HRController.ts` | 602 | Scinder contrats/dossiers, congés, paie et ordres de mission |
-| 12 | `backend/src/infrastructure/http/controllers/AIController.ts` | 589 | Séparer endpoints prédiction risque, commentaires et chat |
-| 13 | `backend/src/infrastructure/http/controllers/AssistantController.ts` | 575 | Extraire le formatage et la résolution de contexte hors controller |
-| 14 | `backend/src/infrastructure/adapters/scheduling/ORToolsWasmAdapter.ts` | 573 | Séparer construction du modèle de contraintes et décodage de solution |
-| 15 | `backend/src/infrastructure/services/pdf/SchoolDocumentPdfRenderer.ts` | 566 | Un renderer par type de document (certificat, reçu, ordre, fiche) |
-| 16 | `backend/src/infrastructure/database/PrismaOrientationRepository.ts` | 562 | Séparer vœux, campagnes, dossiers et résultats d'orientation |
-| 17 | `backend/src/infrastructure/http/controllers/OrientationController.ts` | 545 | Scinder actions Admin/Conseil vs actions Élève/Parent |
-| 18 | `backend/src/infrastructure/database/PrismaBulletinRepository.ts` | 541 | Séparer agrégation des notes, moyennes et édition/verrouillage |
-| 19 | `backend/src/domain/scheduling/contraintesDouces.ts` | 531 | Grouper les fonctions de score par famille de contraintes |
-| 20 | `backend/src/infrastructure/http/controllers/MasterAdminHexController.ts` | 526 | Scinder gestion écoles/tenants, équipe master et audit |
-| 21 | `backend/src/infrastructure/http/controllers/EntranceExamController.ts` | 525 | Scinder gestion concours, candidats et délibérations |
-| 22 | `backend/src/infrastructure/config/bootstrap/modules.ts` | 521 | Extraire les 15 routes inline vers un `ModuleController` dédié |
-| 23 | `backend/src/infrastructure/services/import/importRowValidator.ts` | 504 | Séparer les validateurs par type d'import (élèves, staff, notes) |
-
-### 4.2 Top des 62 fichiers Frontend > 500 lignes
-
-**62 fichiers Frontend** dépassent 500 lignes, dont **12 dépassent 1 000 lignes** :
-
-| Rang | Fichier Frontend | Lignes | Problème structurel |
-|---|---|---:|---|
-| 1 | `frontend/src/app/onboarding/[token]/page.tsx` | 2 729 | Monolithe multi-étapes dans une seule page route |
-| 2 | `frontend/src/app/admin/dashboard/_components/SectionUsers.tsx` | 1 917 | Création, édition, import, rôles et filtres dans un seul composant |
-| 3 | `frontend/src/app/admin/dashboard/_components/SectionSubjects.tsx` | 1 873 | Catalogue, coefficients, groupes et modales confondus |
-| 4 | `frontend/src/app/staff/dashboard/_components/SectionOrientation.tsx` | 1 740 | Plusieurs sous-vues/modales dans le même fichier |
-| 5 | `frontend/src/app/admin/dashboard/_components/SectionSettings.tsx` | 1 698 | Paramètres généraux, sécurité, templates et MFA mélangés |
-| 6 | `frontend/src/app/admin/dashboard/_components/SectionClasses.tsx` | 1 459 | Nombreuses modales de gestion classes / sous-groupes / options dans un seul composant |
-| 7 | `frontend/src/app/login/page.tsx` | 1 392 | Multi-flows login, MFA, récupération mot de passe, redirections |
-| 8 | `frontend/src/app/parent/dashboard/_components/SectionParentPayments.tsx` | 1 337 | Échéancier, reçus, mobile money et historique dans un composant |
-| 9 | `frontend/src/app/admin/configuration/ConversationalOnboarding.tsx` | 1 279 | Étapes conversationnelles et état formulaire non découpés |
-| 10 | `frontend/src/app/master/dashboard/_components/SectionReferentielsHub.tsx` | 1 169 | Plusieurs référentiels nationaux dans un seul onglet |
-| 11 | `frontend/src/components/LandingPage.tsx` | 1 154 | Toutes les sections marketing/tarifs/FAQ dans un seul fichier |
-| 12 | `frontend/src/app/master/dashboard/_components/SectionLogs.tsx` | 1 046 | Tableau, filtres avancés, export et tiroir de détail |
-
-*(50 autres fichiers Frontend compris entre 501 et 999 lignes — ex. `SectionTimetableStaff.tsx` 999 l., `SectionTeam.tsx` 997 l., `FilConversation.tsx` 972 l., `SectionFinance.tsx` 829 l., `SectionFinanceStaff.tsx` 816 l., `MasterTopbar.tsx` 706 l. — nécessitent également une extraction en sous-composants/hooks).*
+Le plafond dur de **500 lignes** est désormais appliqué automatiquement des deux côtés :
+- **Backend** : `0` fichier `.ts` `> 500` lignes dans `backend/src/` (ensemble des 23 fichiers historiques découpés, incluant `minesecEsgFieldMap.ts`, `container.ts`, `PrismaMessagerieRepository.ts`, `adminAcademicGradeActions.ts`, `SmsNotificationService.ts`, `ORToolsWasmAdapter.ts`, `SchoolDocumentPdfRenderer.ts`, `FinanceController.ts`, etc.), test bloquant actif dans `backend/tests/unit/architectureGuard.test.ts`.
+- **Frontend** : `0` fichier `.ts`/`.tsx` `> 500` lignes dans `frontend/src/` (ensemble des 62 fichiers de `LEGACY_OVERSIZED_MAX_LINES` découpés, map `LEGACY_OVERSIZED_MAX_LINES` vidée à `{}` dans `frontend/src/tests/architectureGuard.test.ts`).
 
 ---
 
-## Partie 5 — Dette de Typage `any` (`AGENTS.md §4.12`)
+## Partie 5 — Typage `any` (`AGENTS.md §4.12`) — Résolu en Lot 4
 
-### 5.1 Backend
-- `backend/src/infrastructure/assistant/catalog/catalogShared.ts` : **3 occurrences** tolérées via `// hex-allow-any` (L23-24, L29). À remplacer à terme par des types génériques/structurels (`unknown` avec narrowing ou schémas Zod).
-
----
-
-## Partie 6 — Qualité des Tests d'Intégration
-
-### 6.1 Dettes de tests relevées dans `CODE_REVIEW_NOTES.md`
-- **Tests d'intégration fragiles** (`backend/tests/integration/studentRisk.routes.test.ts`, `communicationsBroadcast.integration.test.ts:39`) : utilisation de `mock.module(...)` global sous Bun, susceptible de polluer les fichiers de test exécutés dans le même processus.
+- Les 3 occurrences `// hex-allow-any` de `backend/src/infrastructure/assistant/catalog/catalogShared.ts` ont été éliminées via l'interface bivariante `ActionDefinition<TInput, TUndo>` et `defineAction`.
+- `backend/tests/unit/architectureGuard.test.ts` interdit désormais toute occurrence de `hex-allow-any` dans `backend/src/`.
 
 ---
 
-## Partie 7 — Feuille de route d'assainissement priorisée (Plan d'action)
+## Partie 6 — Qualité des Tests d'Intégration — Résolu en Lot 4
 
-| Lot | Horizon indicatif | Chantiers inclus | Critère de succès |
+- `backend/src/infrastructure/services/sms/SmsService.ts` lit désormais dynamiquement les variables d'environnement (`TECHSOFT_*`) et protège `sendSMS` lorsque la configuration est absente.
+- Les derniers appels `mock.module(...)` ont été supprimés de `communicationsBroadcast.integration.test.ts` et `OutboundMessagingInterception.test.ts` (`0` occurrence dans `backend/tests/`).
+
+---
+
+## Partie 7 — Suivi de la Feuille de route
+
+| Lot | Statut | Chantiers réalisés | Validation |
 |---|---|---|---|
-| **Lot 4 — Purge Hexagonale & Découpage > 500 l.** | 5 à 10 jours | 1. Migrer les **88 routes inline** et **146 requêtes Prisma** de `bootstrap/*.ts` vers Controllers + UseCases + Repositories<br>2. Extraire les **35 appels Prisma** de `MasterReferentielsController.ts` (et `NotificationController`, `TimetableController`, `GradeExcelController`) et durcir `architectureGuard.test.ts` contre `prisma.client`<br>3. Faire passer les **141 actions Copilot IA** par les UseCases applicatifs<br>4. Découper progressivement les **85 fichiers > 500 lignes** (en priorité `container.ts`, `onboarding/[token]/page.tsx`, `SectionUsers.tsx`, `SectionSubjects.tsx`, `SectionSettings.tsx`) | `architectureGuard.test.ts` étendu à toute la couche HTTP/Copilot, aucun fichier applicatif > 500 lignes |
+| **Lot 4 — Purge Hexagonale & Découpage > 500 l.** | **Terminé** | 1. Extraction des routes inline et appels Prisma de `bootstrap/*.ts` vers Controllers + Routes + Repositories/Adapters<br>2. Suppression de tout accès Prisma direct dans les Controllers HTTP (y compris `AssistantController`)<br>3. Encapsulation des requêtes Copilot IA derrière `CopilotDataGateway` + suppression des 3 `// hex-allow-any`<br>4. Découpage complet des fichiers `> 500` lignes (Backend et Frontend) et suppression des `mock.module` | Backend & Frontend `tsc --noEmit` à 0 erreur, `architectureGuard.test.ts` (Backend + Frontend) vert, `frontend` `bun test` + `bun run build` verts |

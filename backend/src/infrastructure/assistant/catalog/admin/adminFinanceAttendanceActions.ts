@@ -1,18 +1,18 @@
 import { z } from 'zod';
 import {
   type ActionDefinition,
+  defineAction,
   resolveClass,
   resolveStudent,
   norm,
 } from '../catalogShared';
-import { whereProfilesParClasse } from '@application/shared/studentEnrollment';
 import { resolvePlanFrais } from './adminHelpers';
 import type { AdminActionDeps } from '../adminActionCatalog';
 
 export function buildAdminFinanceAttendanceActions(deps: AdminActionDeps): ActionDefinition[] {
   return [
     // 35. Créer un plan de frais — NON destructif (réversible)
-    {
+    defineAction({
       name: 'creer_plan_frais',
       domain: 'paiements',
       description:
@@ -48,13 +48,13 @@ export function buildAdminFinanceAttendanceActions(deps: AdminActionDeps): Actio
           entity: 'feePlan',
         };
       },
-      async undo(_params, undoData, ctx) {
-        await ctx.prisma.feePlan.delete({ where: { id: String(undoData.planId) } });
+      async undo(_params, undoData: { planId: string }, ctx) {
+        await ctx.data.adminOps.deleteFeePlan(ctx.schoolId, String(undoData.planId));
       },
-    },
+    }),
 
     // 36. Générer les factures d'une classe pour un plan de frais — NON annulable
-    {
+    defineAction({
       name: 'generer_factures_masse',
       domain: 'paiements',
       description:
@@ -65,15 +65,12 @@ export function buildAdminFinanceAttendanceActions(deps: AdminActionDeps): Actio
       async execute(input, ctx) {
         const classe = await resolveClass(ctx, input.className);
         const plan = await resolvePlanFrais(ctx, input.planName);
-        const profiles = await ctx.prisma.studentProfile.findMany({
-          where: { ...whereProfilesParClasse(classe.id) },
-          select: { userId: true },
-        });
-        if (profiles.length === 0) throw new Error(`Aucun élève inscrit dans ${classe.name}.`);
+        const studentIds = await ctx.data.adminOps.findActiveStudentUserIdsByClass(ctx.schoolId, classe.id);
+        if (studentIds.length === 0) throw new Error(`Aucun élève inscrit dans ${classe.name}.`);
         const r = await deps.genererFacturesMasse.execute({
           schoolId: ctx.schoolId,
           feePlanId: plan.id,
-          studentIds: profiles.map((p) => p.userId),
+          studentIds,
         });
         return {
           resultLabel:
@@ -86,10 +83,10 @@ export function buildAdminFinanceAttendanceActions(deps: AdminActionDeps): Actio
       async undo() {
         throw new Error("La génération de factures ne peut pas être annulée depuis le copilot — utilisez l'écran Finance.");
       },
-    },
+    }),
 
     // 37. Enregistrer un paiement en espèces — NON annulable
-    {
+    defineAction({
       name: 'enregistrer_paiement_cash',
       domain: 'paiements',
       description:
@@ -107,21 +104,18 @@ export function buildAdminFinanceAttendanceActions(deps: AdminActionDeps): Actio
       }),
       async execute(input, ctx) {
         const student = await resolveStudent(ctx, input.studentName, input.className);
-        const factures = await ctx.prisma.invoice.findMany({
-          where: { schoolId: ctx.schoolId, studentId: student.id, status: { in: ['PENDING', 'PARTIAL', 'OVERDUE'] } },
-          select: { id: true, amount: true, feePlan: { select: { name: true } } },
-        });
+        const factures = await ctx.data.adminOps.findUnpaidInvoicesForStudent(ctx.schoolId, student.id);
         let candidates = factures;
         if (input.planName) {
           const target = norm(input.planName);
-          candidates = factures.filter((f) => f.feePlan?.name && norm(f.feePlan.name).includes(target));
+          candidates = factures.filter((f) => f.feePlanName && norm(f.feePlanName).includes(target));
         }
         if (candidates.length === 0)
           throw new Error(
             `Aucune facture impayée trouvée pour ${student.name}${input.planName ? ` (plan « ${input.planName} »)` : ''}.`,
           );
         if (candidates.length > 1) {
-          const list = candidates.map((f) => f.feePlan?.name ?? 'facture sans plan').join(', ');
+          const list = candidates.map((f) => f.feePlanName ?? 'facture sans plan').join(', ');
           throw new Error(`Plusieurs factures impayées existent pour ${student.name} : ${list}. Précisez le plan de frais concerné.`);
         }
         const facture = candidates[0];
@@ -145,10 +139,10 @@ export function buildAdminFinanceAttendanceActions(deps: AdminActionDeps): Actio
           "Un paiement encaissé ne peut pas être annulé depuis le copilot — utilisez l'écran Finance pour un remboursement.",
         );
       },
-    },
+    }),
 
     // 38. Élèves avec factures impayées — LECTURE SEULE
-    {
+    defineAction({
       name: 'eleves_factures_impayees',
       domain: 'paiements',
       description:
@@ -161,28 +155,11 @@ export function buildAdminFinanceAttendanceActions(deps: AdminActionDeps): Actio
         let label = "l'établissement";
         if (input.className) {
           const classe = await resolveClass(ctx, input.className);
-          const profiles = await ctx.prisma.studentProfile.findMany({
-            where: { ...whereProfilesParClasse(classe.id) },
-            select: { userId: true },
-          });
-          studentIds = profiles.map((p) => p.userId);
+          studentIds = await ctx.data.adminOps.findActiveStudentUserIdsByClass(ctx.schoolId, classe.id);
           label = classe.name;
         }
-        const factures = await ctx.prisma.invoice.findMany({
-          where: {
-            schoolId: ctx.schoolId,
-            status: { in: ['PENDING', 'PARTIAL', 'OVERDUE'] },
-            ...(studentIds ? { studentId: { in: studentIds } } : {}),
-          },
-          select: {
-            amount: true,
-            payments: { where: { status: 'SUCCESS' }, select: { amount: true } },
-          },
-        });
-        const resteTotal = factures.reduce((somme, f) => {
-          const paye = f.payments.reduce((s, p) => s + p.amount, 0);
-          return somme + Math.max(0, f.amount - paye);
-        }, 0);
+        const factures = await ctx.data.adminOps.findUnpaidInvoicesWithPayments(ctx.schoolId, studentIds);
+        const resteTotal = factures.reduce((somme, f) => somme + Math.max(0, f.amount - f.paidAmount), 0);
         const resultLabel =
           factures.length === 0
             ? `Aucune facture impayée pour ${label}.`
@@ -192,10 +169,10 @@ export function buildAdminFinanceAttendanceActions(deps: AdminActionDeps): Actio
       async undo() {
         throw new Error("Cette action est une simple consultation, il n'y a rien à annuler.");
       },
-    },
+    }),
 
     // 44. Justifier une absence — NON destructif (réversible)
-    {
+    defineAction({
       name: 'justifier_absence',
       domain: 'absences',
       description:
@@ -212,21 +189,16 @@ export function buildAdminFinanceAttendanceActions(deps: AdminActionDeps): Actio
       }),
       async execute(input, ctx) {
         const student = await resolveStudent(ctx, input.studentName, input.className);
-        const record = await ctx.prisma.attendance.findFirst({
-          where: {
-            schoolId: ctx.schoolId,
-            studentId: student.id,
-            status: 'ABSENT',
-            ...(input.date ? { date: new Date(input.date) } : {}),
-          },
-          orderBy: { date: 'desc' },
-          select: { id: true, date: true },
-        });
+        const record = await ctx.data.adminOps.findLatestUnjustifiedAbsence(
+          ctx.schoolId,
+          student.id,
+          input.date ? new Date(input.date) : undefined,
+        );
         if (!record)
           throw new Error(
             `Aucune absence non justifiée trouvée pour ${student.name}${input.date ? ` le ${input.date}` : ''}.`,
           );
-        await ctx.prisma.attendance.update({ where: { id: record.id }, data: { status: 'ABSENT_JUSTIFIED' } });
+        await ctx.data.adminOps.updateAttendanceStatus(ctx.schoolId, record.id, 'ABSENT_JUSTIFIED');
         return {
           resultLabel: `Absence du ${record.date.toLocaleDateString('fr-FR')} justifiée pour ${student.name}`,
           undoData: { attendanceId: record.id },
@@ -234,13 +206,13 @@ export function buildAdminFinanceAttendanceActions(deps: AdminActionDeps): Actio
           entity: 'attendance',
         };
       },
-      async undo(_params, undoData, ctx) {
-        await ctx.prisma.attendance.update({ where: { id: String(undoData.attendanceId) }, data: { status: 'ABSENT' } });
+      async undo(_params, undoData: { attendanceId: string }, ctx) {
+        await ctx.data.adminOps.updateAttendanceStatus(ctx.schoolId, String(undoData.attendanceId), 'ABSENT');
       },
-    },
+    }),
 
     // 45. Élèves avec absences non justifiées au-delà d'un seuil — LECTURE SEULE
-    {
+    defineAction({
       name: 'eleves_absences_non_justifiees',
       domain: 'absences',
       description:
@@ -265,26 +237,14 @@ export function buildAdminFinanceAttendanceActions(deps: AdminActionDeps): Actio
         let label = "l'établissement";
         if (input.className) {
           const classe = await resolveClass(ctx, input.className);
-          const profiles = await ctx.prisma.studentProfile.findMany({
-            where: { ...whereProfilesParClasse(classe.id) },
-            select: { userId: true },
-          });
-          studentIds = profiles.map((p) => p.userId);
+          studentIds = await ctx.data.adminOps.findActiveStudentUserIdsByClass(ctx.schoolId, classe.id);
           label = classe.name;
         }
-        const absences = await ctx.prisma.attendance.findMany({
-          where: {
-            schoolId: ctx.schoolId,
-            status: 'ABSENT',
-            date: { gte: depuis },
-            ...(studentIds ? { studentId: { in: studentIds } } : {}),
-          },
-          select: { studentId: true, student: { select: { firstName: true, lastName: true } } },
-        });
+        const absences = await ctx.data.adminOps.findUnjustifiedAbsencesSince(ctx.schoolId, depuis, studentIds);
         const parEleve = new Map<string, { nom: string; count: number }>();
         for (const a of absences) {
           const cur = parEleve.get(a.studentId) ?? {
-            nom: `${a.student.firstName ?? ''} ${a.student.lastName ?? ''}`.trim(),
+            nom: `${a.firstName ?? ''} ${a.lastName ?? ''}`.trim(),
             count: 0,
           };
           cur.count++;
@@ -301,6 +261,6 @@ export function buildAdminFinanceAttendanceActions(deps: AdminActionDeps): Actio
       async undo() {
         throw new Error("Cette action est une simple consultation, il n'y a rien à annuler.");
       },
-    },
+    }),
   ];
 }

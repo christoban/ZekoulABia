@@ -21,6 +21,7 @@ import type { DemanderRattrapageUseCase } from '@application/timetable/DemanderR
 import {
   type ActionContext,
   type ActionDefinition,
+  defineAction,
   resolveClass,
   resolveSubject,
   resolveStudent,
@@ -28,7 +29,6 @@ import {
   resolveCurrentPeriod,
   resolveCurrentSequence,
 } from '@infrastructure/assistant/catalog/catalogShared';
-import { whereProfilesParClasse } from '@application/shared/studentEnrollment';
 
 import type { GetMetricUseCase } from '@application/reporting/GetMetricUseCase';
 
@@ -41,10 +41,13 @@ export interface TeacherActionDeps {
 }
 
 async function verifierAssignation(ctx: ActionContext, classId: string, subjectId: string, classeName: string, subjectName: string): Promise<void> {
-  const assignation = await ctx.prisma.teachingAssignment.findFirst({
-    where: { teacherId: ctx.userId, classId, subjectId },
+  const assigned = await ctx.data.portal.hasTeacherAssignment({
+    schoolId: ctx.schoolId,
+    teacherId: ctx.userId,
+    classId,
+    subjectId,
   });
-  if (!assignation) throw new Error(`Vous n'êtes pas assigné à l'enseignement de ${subjectName} pour ${classeName}.`);
+  if (!assigned) throw new Error(`Vous n'êtes pas assigné à l'enseignement de ${subjectName} pour ${classeName}.`);
 }
 
 export function buildTeacherActionCatalog(deps: TeacherActionDeps): ActionDefinition[] {
@@ -52,7 +55,7 @@ export function buildTeacherActionCatalog(deps: TeacherActionDeps): ActionDefini
     // ═══ Notes ═══
 
     // 1. Saisir la note d'un élève — NON destructif (réversible tant que la note reste en brouillon)
-    {
+    defineAction({
       name: 'saisir_note',
       description: "Saisit la note d'un élève dans une matière que vous enseignez, pour la séquence courante. La note est enregistrée en brouillon — elle doit ensuite être soumise pour validation.",
       destructive: false,
@@ -92,12 +95,12 @@ export function buildTeacherActionCatalog(deps: TeacherActionDeps): ActionDefini
         };
       },
       async undo(_params, undoData, ctx) {
-        await ctx.prisma.grade.delete({ where: { id: String(undoData.noteId) } });
+        await ctx.data.portal.deleteGradeById(ctx.schoolId, String(undoData.noteId));
       },
-    },
+    }),
 
     // 2. Verrouiller mes notes d'une classe/matière — NON annulable
-    {
+    defineAction({
       name: 'verrouiller_mes_notes_classe',
       description: "Verrouille toutes vos notes en brouillon d'une classe et d'une matière que vous enseignez, pour la séquence courante. Cette action est irréversible.",
       destructive: true,
@@ -123,10 +126,10 @@ export function buildTeacherActionCatalog(deps: TeacherActionDeps): ActionDefini
       async undo() {
         throw new Error('Le verrouillage de notes ne peut pas être annulé depuis le copilot — utilisez l\'écran Notes.');
       },
-    },
+    }),
 
     // 3. Mes notes en attente — LECTURE SEULE
-    {
+    defineAction({
       name: 'mes_notes_en_attente',
       description: "Indique où vous en êtes dans la saisie des notes d'une classe et d'une matière que vous enseignez, pour la séquence courante (combien saisies, combien encore en brouillon).",
       destructive: false,
@@ -137,23 +140,25 @@ export function buildTeacherActionCatalog(deps: TeacherActionDeps): ActionDefini
         const classe = await resolveClass(ctx, input.className);
         const subject = await resolveSubject(ctx, input.subjectName);
         const sequence = await resolveCurrentSequence(ctx);
-        const [total, draft, saisies] = await Promise.all([
-          ctx.prisma.enrollment.count({ where: { classId: classe.id, status: 'ACTIVE', academicYear: { isCurrent: true } } }),
-          ctx.prisma.grade.count({ where: { schoolId: ctx.schoolId, classId: classe.id, subjectId: subject.id, sequenceId: sequence.id, recordedById: ctx.userId, validationStatus: 'DRAFT' } }),
-          ctx.prisma.grade.count({ where: { schoolId: ctx.schoolId, classId: classe.id, subjectId: subject.id, sequenceId: sequence.id, recordedById: ctx.userId } }),
-        ]);
+        const { totalStudents, draftCount, recordedCount } = await ctx.data.portal.getTeacherGradeEntryProgress({
+          schoolId: ctx.schoolId,
+          teacherId: ctx.userId,
+          classId: classe.id,
+          subjectId: subject.id,
+          sequenceId: sequence.id,
+        });
         return {
-          resultLabel: `${classe.name}, ${subject.name} (${sequence.name}) : ${saisies}/${total} élève(s) noté(s), dont ${draft} en brouillon (non soumis).`,
+          resultLabel: `${classe.name}, ${subject.name} (${sequence.name}) : ${recordedCount}/${totalStudents} élève(s) noté(s), dont ${draftCount} en brouillon (non soumis).`,
           section: 'grades',
         };
       },
       async undo() {
         throw new Error('Cette action est une simple consultation, il n\'y a rien à annuler.');
       },
-    },
+    }),
 
     // 4. Moyenne de ma classe dans ma matière — LECTURE SEULE
-    {
+    defineAction({
       name: 'moyenne_ma_classe_matiere',
       description: "Donne la moyenne de classe dans une matière que vous enseignez, pour la séquence courante.",
       destructive: false,
@@ -165,9 +170,11 @@ export function buildTeacherActionCatalog(deps: TeacherActionDeps): ActionDefini
         const subject = await resolveSubject(ctx, input.subjectName);
         await verifierAssignation(ctx, classe.id, subject.id, classe.name, subject.name);
         const sequence = await resolveCurrentSequence(ctx);
-        const grades = await ctx.prisma.grade.findMany({
-          where: { schoolId: ctx.schoolId, classId: classe.id, subjectId: subject.id, sequenceId: sequence.id, sequenceAverage: { not: null } },
-          select: { sequenceAverage: true, isAbsentGrade: true },
+        const grades = await ctx.data.portal.findClassSubjectSequenceGrades({
+          schoolId: ctx.schoolId,
+          classId: classe.id,
+          subjectId: subject.id,
+          sequenceId: sequence.id,
         });
         if (grades.length === 0) {
           return { resultLabel: `Aucune note calculée pour ${subject.name} en ${classe.name} (séquence ${sequence.name}).`, section: 'grades' };
@@ -185,12 +192,12 @@ export function buildTeacherActionCatalog(deps: TeacherActionDeps): ActionDefini
       async undo() {
         throw new Error('Cette action est une simple consultation, il n\'y a rien à annuler.');
       },
-    },
+    }),
 
     // ═══ Présences ═══
 
     // 5. Marquer la présence d'un élève — NON destructif (réversible)
-    {
+    defineAction({
       name: 'marquer_absence_eleve',
       description: "Enregistre le statut de présence (présent, absent, ou en retard) d'UN élève pour votre cours, à la date du jour ou une date précisée.",
       destructive: false,
@@ -223,27 +230,29 @@ export function buildTeacherActionCatalog(deps: TeacherActionDeps): ActionDefini
           period: attendancePeriod,
           presences: [{ studentId: student.id, statut: input.statut }],
         });
-        const record = await ctx.prisma.attendance.findFirst({
-          where: { schoolId: ctx.schoolId, studentId: student.id, classId: classe.id, date, period: attendancePeriod },
-          orderBy: { createdAt: 'desc' },
-          select: { id: true },
+        const attendanceId = await ctx.data.portal.findLatestAttendanceId({
+          schoolId: ctx.schoolId,
+          studentId: student.id,
+          classId: classe.id,
+          date,
+          period: attendancePeriod,
         });
         const labelStatut = input.statut === 'PRESENT' ? 'présent' : input.statut === 'ABSENT' ? 'absent' : 'en retard';
         return {
           resultLabel: `${student.name} marqué ${labelStatut} le ${date.toLocaleDateString('fr-FR')} (${classe.name}).`,
-          undoData: record ? { attendanceId: record.id } : undefined,
+          undoData: attendanceId ? { attendanceId } : undefined,
           section: 'attendance',
           entity: 'attendance',
         };
       },
       async undo(_params, undoData, ctx) {
         if (!undoData.attendanceId) throw new Error('Annulation impossible — enregistrement introuvable.');
-        await ctx.prisma.attendance.delete({ where: { id: String(undoData.attendanceId) } });
+        await ctx.data.portal.deleteAttendanceById(ctx.schoolId, String(undoData.attendanceId));
       },
-    },
+    }),
 
     // 6. Taux de présence d'une classe — LECTURE SEULE
-    {
+    defineAction({
       name: 'mes_stats_presence_classe',
       description: "Donne le taux de présence d'une classe que vous encadrez, depuis une date donnée (ce mois-ci par défaut).",
       destructive: false,
@@ -258,8 +267,11 @@ export function buildTeacherActionCatalog(deps: TeacherActionDeps): ActionDefini
         const now = new Date();
         const depuis = input.depuis ? new Date(input.depuis) : new Date(now.getFullYear(), now.getMonth(), 1);
         if (deps.getMetric) {
-          const count = await ctx.prisma.attendance.count({
-            where: { schoolId: ctx.schoolId, classId: classe.id, teacherId: ctx.userId, date: { gte: depuis } },
+          const count = await ctx.data.portal.countAttendancesSince({
+            schoolId: ctx.schoolId,
+            classId: classe.id,
+            teacherId: ctx.userId,
+            since: depuis,
           });
           if (count === 0) {
             return { resultLabel: `Aucun enregistrement de présence pour ${classe.name} depuis le ${depuis.toLocaleDateString('fr-FR')}.`, section: 'attendance' };
@@ -273,9 +285,11 @@ export function buildTeacherActionCatalog(deps: TeacherActionDeps): ActionDefini
             section: 'attendance',
           };
         }
-        const records = await ctx.prisma.attendance.findMany({
-          where: { schoolId: ctx.schoolId, classId: classe.id, teacherId: ctx.userId, date: { gte: depuis } },
-          select: { status: true },
+        const records = await ctx.data.portal.findAttendanceStatusesSince({
+          schoolId: ctx.schoolId,
+          classId: classe.id,
+          teacherId: ctx.userId,
+          since: depuis,
         });
         if (records.length === 0) {
           return { resultLabel: `Aucun enregistrement de présence pour ${classe.name} depuis le ${depuis.toLocaleDateString('fr-FR')}.`, section: 'attendance' };
@@ -290,12 +304,12 @@ export function buildTeacherActionCatalog(deps: TeacherActionDeps): ActionDefini
       async undo() {
         throw new Error('Cette action est une simple consultation, il n\'y a rien à annuler.');
       },
-    },
+    }),
 
     // ═══ Cahier de texte ═══
 
     // 7. Ajouter une entrée au cahier de texte — NON destructif (réversible)
-    {
+    defineAction({
       name: 'ajouter_cahier_texte',
       description: "Ajoute une entrée au cahier de texte pour une classe et une matière que vous enseignez : ce qui a été fait en cours, et les devoirs donnés le cas échéant.",
       destructive: false,
@@ -313,18 +327,15 @@ export function buildTeacherActionCatalog(deps: TeacherActionDeps): ActionDefini
         const subject = await resolveSubject(ctx, input.subjectName);
         await verifierAssignation(ctx, classe.id, subject.id, classe.name, subject.name);
         const year = await resolveCurrentAcademicYear(ctx);
-        const entry = await ctx.prisma.cahierDeTexte.create({
-          data: {
-            schoolId: ctx.schoolId,
-            teacherId: ctx.userId,
-            classId: classe.id,
-            subjectId: subject.id,
-            academicYearId: year.id,
-            date: input.date ? new Date(input.date) : new Date(),
-            contenuLibre: input.contenu,
-            devoirsDonnes: input.devoirs,
-          },
-          select: { id: true },
+        const entry = await ctx.data.portal.createCahierDeTexteEntry({
+          schoolId: ctx.schoolId,
+          teacherId: ctx.userId,
+          classId: classe.id,
+          subjectId: subject.id,
+          academicYearId: year.id,
+          date: input.date ? new Date(input.date) : new Date(),
+          contenuLibre: input.contenu,
+          devoirsDonnes: input.devoirs,
         });
         return {
           resultLabel: `Entrée ajoutée au cahier de texte — ${classe.name}, ${subject.name}`,
@@ -334,14 +345,14 @@ export function buildTeacherActionCatalog(deps: TeacherActionDeps): ActionDefini
         };
       },
       async undo(_params, undoData, ctx) {
-        await ctx.prisma.cahierDeTexte.delete({ where: { id: String(undoData.entryId) } });
+        await ctx.data.portal.deleteCahierDeTexteEntry(ctx.schoolId, String(undoData.entryId));
       },
-    },
+    }),
 
     // ═══ Emploi du temps ═══
 
     // 8. Demander un rattrapage — NON annulable (notification déjà envoyée aux censeurs)
-    {
+    defineAction({
       name: 'demander_rattrapage',
       description: "Demande une session de rattrapage pour un cours manqué, envoyée pour validation aux censeurs/surveillants généraux de l'établissement.",
       destructive: false,
@@ -377,12 +388,12 @@ export function buildTeacherActionCatalog(deps: TeacherActionDeps): ActionDefini
       async undo() {
         throw new Error('Une demande de rattrapage déjà envoyée ne peut pas être annulée depuis le copilot.');
       },
-    },
+    }),
 
     // ═══ Mes classes ═══
 
     // 9. Mes classes et matières — LECTURE SEULE
-    {
+    defineAction({
       name: 'mes_classes',
       description: "Liste les classes et matières que vous enseignez.",
       destructive: false,
@@ -390,22 +401,19 @@ export function buildTeacherActionCatalog(deps: TeacherActionDeps): ActionDefini
       allowedRoles: ['TEACHER'],
       inputSchema: z.object({}),
       async execute(_input, ctx) {
-        const assignments = await ctx.prisma.teachingAssignment.findMany({
-          where: { teacherId: ctx.userId, schoolId: ctx.schoolId },
-          select: { class: { select: { name: true } }, subject: { select: { name: true } } },
-        });
+        const assignments = await ctx.data.portal.findTeacherAssignments(ctx.schoolId, ctx.userId);
         const resultLabel = assignments.length === 0
           ? "Vous n'avez aucune classe assignée actuellement."
-          : `Vos classes : ${assignments.map((a) => `${a.subject.name} en ${a.class.name}`).join(', ')}.`;
+          : `Vos classes : ${assignments.map((a) => `${a.subjectName} en ${a.className}`).join(', ')}.`;
         return { resultLabel, section: 'classes' };
       },
       async undo() {
         throw new Error('Cette action est une simple consultation, il n\'y a rien à annuler.');
       },
-    },
+    }),
 
     // 10. Élèves d'une de mes classes — LECTURE SEULE
-    {
+    defineAction({
       name: 'mes_eleves_classe',
       description: "Liste les élèves d'une classe que vous enseignez.",
       destructive: false,
@@ -414,13 +422,13 @@ export function buildTeacherActionCatalog(deps: TeacherActionDeps): ActionDefini
       inputSchema: z.object({ className: z.string().min(1) }),
       async execute(input, ctx) {
         const classe = await resolveClass(ctx, input.className);
-        const assignation = await ctx.prisma.teachingAssignment.findFirst({ where: { teacherId: ctx.userId, classId: classe.id } });
-        if (!assignation) throw new Error(`Vous n'enseignez pas dans ${classe.name}.`);
-        const eleves = await ctx.prisma.user.findMany({
-          where: { schoolId: ctx.schoolId, role: 'STUDENT', studentProfile: { ...whereProfilesParClasse(classe.id) } },
-          select: { firstName: true, lastName: true },
-          orderBy: { lastName: 'asc' },
+        const assigned = await ctx.data.portal.hasTeacherAssignment({
+          schoolId: ctx.schoolId,
+          teacherId: ctx.userId,
+          classId: classe.id,
         });
+        if (!assigned) throw new Error(`Vous n'enseignez pas dans ${classe.name}.`);
+        const eleves = await ctx.data.portal.findStudentsInClass(ctx.schoolId, classe.id);
         const resultLabel = eleves.length === 0
           ? `Aucun élève inscrit dans ${classe.name}.`
           : `${classe.name} (${eleves.length} élève(s)) : ${eleves.map((e) => `${e.firstName ?? ''} ${e.lastName ?? ''}`.trim()).join(', ')}`;
@@ -429,6 +437,6 @@ export function buildTeacherActionCatalog(deps: TeacherActionDeps): ActionDefini
       async undo() {
         throw new Error('Cette action est une simple consultation, il n\'y a rien à annuler.');
       },
-    },
+    }),
   ];
 }

@@ -25,32 +25,20 @@ export class GradeExcelController {
         return;
       }
 
-      const [classe, matiere, sequence] = await Promise.all([
+      const [classe, matiere, sequence, students] = await Promise.all([
         this.classeRepository.findById(classId),
         this.matiereRepository.findById(subjectId),
         this.anneeRepository.findSequenceById(sequenceId, user.schoolId),
+        this.classeRepository.findElevesActifsPourTemplate(user.schoolId, classId),
       ]);
-
-      // ponytail: la query studentProfile reste en Prisma — aucun repository ne couvre
-      // les profils élèves par classe avec matricule + nom. À extraire si un Use Case
-      // template ou un StudentProfileRepository.findByClasse est ajouté.
-      const { prisma } = await import('@infrastructure/persistence/prisma/prisma.client');
-      const students = await prisma.studentProfile.findMany({
-        where: {
-          user: { schoolId: user.schoolId },
-          enrollmentsYearScoped: { some: { classId, status: 'ACTIVE', academicYear: { isCurrent: true } } },
-        },
-        include: { user: { select: { firstName: true, lastName: true } } },
-        orderBy: { user: { lastName: 'asc' } },
-      });
 
       const wb = XLSX.utils.book_new();
 
       const headers = ['matricule', 'nom', 'prenom', 'note (/20)', 'observation'];
       const dataRows = students.map((s) => [
         s.matricule ?? '',
-        s.user.lastName,
-        s.user.firstName,
+        s.lastName,
+        s.firstName,
         '',
         '',
       ]);

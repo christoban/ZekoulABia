@@ -1,12 +1,14 @@
 'use client'
-import { useState, useRef, useEffect } from 'react'
-import {
-  X, EyeOff, Eye, Shield, AlertTriangle, CheckCircle2, XCircle, Ban, Siren,
-  Trash2, Mail, ArrowLeft,
-} from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { AlertTriangle, CheckCircle2, XCircle, Ban, Siren, Trash2 } from 'lucide-react'
 import type { ModalId, ConfirmActionTarget } from '../_types'
-import { inviteSchool, suspendSchool, rejectSchool, deleteSchool, changeSchoolPlan, approveSchool, fetchMasterMfaStatus, initiatePasswordChange, changePassword } from '../_api'
+import { suspendSchool, rejectSchool, deleteSchool, approveSchool } from '../_api'
+import {
+  Overlay, ModalWrap, ModalHeader, ModalFooter, Field,
+  BtnPrimary, BtnSecondary, SchoolSummary, WarningBox, SensitiveAuthFields,
+} from './modals/MasterModalPrimitives'
+import InviteSchoolModal from './modals/InviteSchoolModal'
+import ChangePasswordModal from './modals/ChangePasswordModal'
 
 interface Props {
   open: ModalId
@@ -18,155 +20,6 @@ interface Props {
   onClose: () => void
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
   onActionDone: () => void
-}
-
-function Overlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
-  return (
-    <div onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
-      style={{
-        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-        background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)',
-        zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center'
-      }}>
-      {children}
-    </div>
-  )
-}
-
-function ModalWrap({ children, size = 'md' }: { children: React.ReactNode; size?: 'sm' | 'md' | 'lg' }) {
-  const maxW = size === 'sm' ? 440 : size === 'lg' ? 660 : 480
-  return (
-    <div style={{
-      background: 'var(--surface)', borderRadius: 16, padding: '24px 28px',
-      maxWidth: maxW, width: '92%', maxHeight: '85vh', overflowY: 'auto',
-      position: 'relative', animation: 'popIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both',
-      border: '1px solid var(--border)'
-    }}>
-      {children}
-    </div>
-  )
-}
-
-function ModalHeader({ title, sub, onClose, danger, icon: Icon }: { title: string; sub?: string; onClose: () => void; danger?: boolean; icon?: LucideIcon }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 }}>
-      <div>
-        <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 18, fontWeight: 700, color: danger ? '#dc2626' : 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          {Icon && <Icon size={18} />}{title}
-        </div>
-        {sub && <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 3 }}>{sub}</div>}
-      </div>
-      <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border2)', background: 'none', cursor: 'pointer', color: 'var(--text3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><X size={16} /></button>
-    </div>
-  )
-}
-
-function ModalFooter({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18, paddingTop: 14, borderTop: '1px solid var(--border)' }}>
-      {children}
-    </div>
-  )
-}
-
-function Field({ label, hint, children }: { label: string; hint?: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <div style={{ marginBottom: 16 }}>
-      <label style={{ fontSize: 11, fontWeight: 800, color: 'var(--text2)', marginBottom: 6, display: 'block', letterSpacing: '0.4px', textTransform: 'uppercase' }}>{label}</label>
-      {children}
-      {hint && <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>{hint}</div>}
-    </div>
-  )
-}
-
-function FieldInput({ placeholder, type = 'text', value, onChange, style, autoComplete = 'off', showToggle }: { placeholder?: string; type?: string; value?: string; onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void; style?: React.CSSProperties; autoComplete?: string; showToggle?: boolean }) {
-  const [show, setShow] = useState(false)
-  const base: React.CSSProperties = { width: '100%', padding: '10px 14px', background: 'var(--bg2)', border: '1px solid var(--border2)', borderRadius: 8, color: 'var(--text)', fontSize: 13, fontFamily: 'inherit', fontWeight: 600, outline: 'none', ...style }
-  if (showToggle && type === 'password') {
-    return (
-      <div style={{ position: 'relative' }}>
-        <input type={show ? 'text' : 'password'} placeholder={placeholder} value={value} onChange={onChange} autoComplete={autoComplete}
-          style={{ ...base, paddingRight: 40 }} />
-        <button type="button" onClick={() => setShow(s => !s)}
-          style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#a89478', cursor: 'pointer', padding: 4, lineHeight: 1, display: 'flex', alignItems: 'center' }}>
-          {show ? <EyeOff size={16} /> : <Eye size={16} />}
-        </button>
-      </div>
-    )
-  }
-  return (
-    <input type={type} placeholder={placeholder} value={value} onChange={onChange} autoComplete={autoComplete}
-      style={base} />
-  )
-}
-
-function BtnPrimary({ onClick, children, disabled, type = 'button' }: { onClick?: () => void; children: React.ReactNode; disabled?: boolean; type?: 'button' | 'submit' }) {
-  return (
-    <button type={type} onClick={onClick} disabled={disabled} style={{ padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 800, background: disabled ? '#6b7280' : 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: disabled ? 'none' : '0 2px 8px rgba(142,42,58,0.18)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-      {children}
-    </button>
-  )
-}
-
-function BtnSecondary({ onClick, children }: { onClick?: () => void; children: React.ReactNode }) {
-  return (
-    <button type="button" onClick={onClick} style={{ padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-      {children}
-    </button>
-  )
-}
-
-function SchoolSummary({ initials: init, name, meta, danger }: { initials: string; name: string; meta: string; danger?: boolean }) {
-  return (
-    <div style={{ background: 'var(--bg2)', borderRadius: 10, padding: '14px 16px', marginBottom: 18, display: 'flex', gap: 12, alignItems: 'center' }}>
-      <div style={{ width: 36, height: 36, borderRadius: 8, background: danger ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : 'linear-gradient(135deg,var(--primary),var(--blue))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
-        {init}
-      </div>
-      <div>
-        <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>{name}</div>
-        <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{meta}</div>
-      </div>
-    </div>
-  )
-}
-
-function WarningBox({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ background: '#fef3c7', border: '1px solid rgba(217,119,6,0.2)', borderRadius: 10, padding: '12px 14px', fontSize: 12, color: '#92400e', fontWeight: 600, lineHeight: 1.6, marginBottom: 18, display: 'flex', gap: 8 }}>
-      {children}
-    </div>
-  )
-}
-
-const PLAN_MAP: Record<string, string> = { deco: 'DISCOVERY', std: 'STANDARD', prem: 'PREMIUM' }
-
-// ── Champs d'authentification sensible réutilisables ─────────────────────────
-function SensitiveAuthFields({ mfaEnabled, password, onPassword, mfaCode, onMfaCode }: {
-  mfaEnabled: boolean
-  password: string
-  onPassword: (v: string) => void
-  mfaCode: string
-  onMfaCode: (v: string) => void
-}) {
-  return (
-    <div style={{ background: '#fef3c7', border: '1px solid rgba(217,119,6,0.25)', borderRadius: 10, padding: '12px 14px', marginTop: 14 }}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: '#92400e', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-        <Shield size={13} /> Vérification d&apos;identité requise
-      </div>
-      {/* Honeypot — absorbe l'autofill Chrome/Firefox avant les vrais champs */}
-      <input type="text" autoComplete="username" aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} />
-      <input type="password" autoComplete="new-password" aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} />
-      <Field label="Votre mot de passe master *">
-        <FieldInput type="password" placeholder="••••••••••••" value={password} onChange={e => onPassword(e.target.value)} autoComplete="new-password" showToggle />
-      </Field>
-      {mfaEnabled && (
-        <Field label="Code TOTP ou code de récupération *" hint="Requis car le MFA est actif">
-          <FieldInput type="text" placeholder="123456" value={mfaCode} onChange={e => onMfaCode(e.target.value)}
-            style={{ textAlign: 'center', fontSize: 12, fontWeight: 900, letterSpacing: 3 }} />
-        </Field>
-      )}
-    </div>
-  )
 }
 
 export default function MasterModals({ open, schoolId, suspendTarget, deleteTarget, confirmActionTarget, mfaEnabled, onClose, onToast, onActionDone }: Props) {
@@ -189,25 +42,6 @@ export default function MasterModals({ open, schoolId, suspendTarget, deleteTarg
     if (!authPwd.trim()) return 'Le mot de passe master est requis.'
     if (mfaEnabled && !authMfa.trim()) return 'Le code MFA est requis.'
     return null
-  }
-
-  // changePwd state — 2 étapes : vérification identité → OTP email → nouveau mdp
-  const [pwdStep, setPwdStep] = useState<1 | 2>(1)
-  const [currentPwd, setCurrentPwd] = useState('')
-  const [mfaCode, setMfaCode] = useState('')
-  const [emailOtp, setEmailOtp] = useState('')
-  const [newPwd, setNewPwd] = useState('')
-  const [confirmPwd, setConfirmPwd] = useState('')
-  const [pwdLoading, setPwdLoading] = useState(false)
-
-  const resetPwdState = () => {
-    setPwdStep(1)
-    setCurrentPwd('')
-    setMfaCode('')
-    setEmailOtp('')
-    setNewPwd('')
-    setConfirmPwd('')
-    setPwdLoading(false)
   }
 
   const doAction = async (action: () => Promise<void>, successMsg: string, errMsg: string, skipAuthCheck = false) => {
@@ -234,19 +68,14 @@ export default function MasterModals({ open, schoolId, suspendTarget, deleteTarg
   return (
     <>
       {open === 'invite' && (
-        <Overlay onClose={onClose}>
-          <ModalWrap>
-            <ModalHeader title="Inviter un nouvel établissement" sub="Un lien d'activation valable 72h sera envoyé à l'administrateur" onClose={onClose} />
-            <InviteForm
-              selectedPlan={selectedPlan}
-              onPlanChange={setSelectedPlan}
-              loading={loading}
-              onCancel={onClose}
-              onDone={(msg) => { onToast(msg); onActionDone(); onClose() }}
-              onError={(msg) => onToast(msg, 'error')}
-            />
-          </ModalWrap>
-        </Overlay>
+        <InviteSchoolModal
+          selectedPlan={selectedPlan}
+          onPlanChange={setSelectedPlan}
+          loading={loading}
+          onClose={onClose}
+          onToast={onToast}
+          onActionDone={onActionDone}
+        />
       )}
 
       {open === 'approve' && (
@@ -407,282 +236,8 @@ export default function MasterModals({ open, schoolId, suspendTarget, deleteTarg
       )}
 
       {open === 'changePwd' && (
-        <Overlay onClose={() => { onClose(); resetPwdState() }}>
-          <ModalWrap size="sm">
-            <ModalHeader
-              title="Changer le mot de passe"
-              sub={pwdStep === 1 ? 'Étape 1 / 2 — Vérification d\'identité' : 'Étape 2 / 2 — Code email + nouveau mot de passe'}
-              onClose={() => { onClose(); resetPwdState() }}
-            />
-
-            {/* ── Étape 1 : mot de passe actuel + MFA → déclenche l'envoi d'un OTP par email ── */}
-            {pwdStep === 1 && (
-              <>
-                {/* Honeypot */}
-                <input type="text" autoComplete="username" aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} />
-                <input type="password" autoComplete="new-password" aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} />
-                <Field label="Mot de passe actuel *">
-                  <FieldInput type="password" placeholder="••••••••••••" value={currentPwd} onChange={e => setCurrentPwd(e.target.value)} autoComplete="new-password" showToggle />
-                </Field>
-                {mfaEnabled && (
-                  <Field label="Code TOTP ou code de récupération *" hint="Requis car le MFA est actif sur ce compte">
-                    <FieldInput
-                      type="text"
-                      placeholder="123456  ou  ABCD-1234-EFGH-5678"
-                      value={mfaCode}
-                      onChange={e => setMfaCode(e.target.value)}
-                      style={{ textAlign: 'center', fontSize: 12, letterSpacing: 2 }}
-                    />
-                  </Field>
-                )}
-                <ModalFooter>
-                  <BtnSecondary onClick={() => { onClose(); resetPwdState() }}>Annuler</BtnSecondary>
-                  <BtnPrimary
-                    disabled={pwdLoading}
-                    onClick={async () => {
-                      if (!currentPwd.trim()) { onToast('Le mot de passe actuel est requis.', 'error'); return }
-                      if (mfaEnabled && !mfaCode.trim()) { onToast('Le code MFA est requis.', 'error'); return }
-                      setPwdLoading(true)
-                      try {
-                        await initiatePasswordChange({ currentPassword: currentPwd, mfaCode: mfaCode || undefined })
-                        onToast('Code de vérification envoyé par email.', 'info')
-                        setPwdStep(2)
-                      } catch (err: unknown) {
-                        onToast(err instanceof Error ? err.message : 'Erreur de vérification', 'error')
-                      } finally {
-                        setPwdLoading(false)
-                      }
-                    }}
-                  >
-                    {pwdLoading ? '...' : 'Continuer →'}
-                  </BtnPrimary>
-                </ModalFooter>
-              </>
-            )}
-
-            {/* ── Étape 2 : code OTP reçu par email + nouveau mot de passe ── */}
-            {pwdStep === 2 && (
-              <>
-                <div style={{ padding: '8px 10px', background: '#eff6ff', border: '1px solid rgba(37,99,235,0.2)', borderRadius: 8, marginBottom: 12, fontSize: 11, color: '#1e40af', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Mail size={16} style={{ flexShrink: 0 }} /> Un code de vérification a été envoyé à votre adresse email. Saisissez-le ci-dessous.
-                </div>
-                <Field label="Code de vérification email *" hint="Valable 15 minutes — vérifiez vos spams">
-                  <FieldInput
-                    type="text"
-                    placeholder="123456"
-                    value={emailOtp}
-                    onChange={e => setEmailOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    style={{ textAlign: 'center', fontSize: 15, fontWeight: 900, letterSpacing: 4 }}
-                  />
-                </Field>
-                <Field label="Nouveau mot de passe *" hint="Minimum 12 caractères">
-                  <FieldInput type="password" placeholder="Minimum 12 caractères" value={newPwd} onChange={e => setNewPwd(e.target.value)} autoComplete="new-password" showToggle />
-                </Field>
-                <Field label="Confirmer le mot de passe *">
-                  <FieldInput type="password" placeholder="Répétez le nouveau mot de passe" value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)} autoComplete="new-password" showToggle />
-                </Field>
-                <ModalFooter>
-                  <BtnSecondary onClick={() => { setPwdStep(1); setEmailOtp('') }}><ArrowLeft size={15} /> Retour</BtnSecondary>
-                  <BtnPrimary
-                    disabled={pwdLoading}
-                    onClick={async () => {
-                      if (!emailOtp.trim() || emailOtp.length !== 6) { onToast('Code de vérification à 6 chiffres requis.', 'error'); return }
-                      if (newPwd.length < 12) { onToast('Minimum 12 caractères requis.', 'error'); return }
-                      if (newPwd !== confirmPwd) { onToast('Les mots de passe ne correspondent pas.', 'error'); return }
-                      setPwdLoading(true)
-                      try {
-                        await changePassword({ otp: emailOtp.trim(), newPassword: newPwd })
-                        onToast('Mot de passe modifié avec succès.')
-                        onClose()
-                        resetPwdState()
-                      } catch (err: unknown) {
-                        onToast(err instanceof Error ? err.message : 'Erreur lors du changement de mot de passe', 'error')
-                      } finally {
-                        setPwdLoading(false)
-                      }
-                    }}
-                  >
-                    {pwdLoading ? '...' : <><CheckCircle2 size={17} /> Confirmer le changement</>}
-                  </BtnPrimary>
-                </ModalFooter>
-              </>
-            )}
-          </ModalWrap>
-        </Overlay>
+        <ChangePasswordModal mfaEnabled={mfaEnabled} onClose={onClose} onToast={onToast} />
       )}
     </>
-  )
-}
-
-function InviteForm({ selectedPlan, onPlanChange, loading, onCancel, onDone, onError }: {
-  selectedPlan: 'deco' | 'std' | 'prem'
-  onPlanChange: (p: 'deco' | 'std' | 'prem') => void
-  loading: boolean
-  onCancel: () => void
-  onDone: (msg: string) => void
-  onError: (msg: string) => void
-}) {
-  const [step, setStep] = useState<'details' | 'confirm' | 'done'>('details')
-  const [email, setEmail] = useState('')
-  const [schoolName, setSchoolName] = useState('')
-  const [password, setPassword] = useState('')
-  const [mfaCode, setMfaCode] = useState('')
-  const [mfaEnabled, setMfaEnabled] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-  const [activationUrl, setActivationUrl] = useState<string | null>(null)
-  const [copiedUrl, setCopiedUrl] = useState(false)
-
-  useEffect(() => {
-    fetchMasterMfaStatus()
-      .then(d => setMfaEnabled(d.mfaEnabled))
-      .catch(() => setMfaEnabled(false))
-  }, [])
-
-  const handleDetailsSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!email || !schoolName) { onError('Email et nom de l\'école requis'); return }
-    if (!email.includes('@')) { onError('Format email invalide'); return }
-    setStep('confirm')
-  }
-
-  const handleConfirmSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!password.trim()) { onError('Le mot de passe master est requis.'); return }
-    if (mfaEnabled && !mfaCode.trim()) { onError('Le code MFA est requis.'); return }
-
-    setSubmitting(true)
-    try {
-      const res = await inviteSchool({
-        email,
-        schoolName,
-        plan: PLAN_MAP[selectedPlan],
-        sensitiveAuth: { password: password.trim(), ...(mfaEnabled && { code: mfaCode.trim() }) },
-      })
-      if (res?.activationUrl) {
-        setActivationUrl(res.activationUrl)
-        setStep('done')
-      } else {
-        onDone(`Invitation envoyée à ${email}`)
-      }
-    } catch (err: unknown) {
-      onError(err instanceof Error ? err.message : 'Erreur lors de l\'invitation')
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  if (step === 'done' && activationUrl) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ background: '#ecfdf5', border: '1px solid #10b981', borderRadius: 12, padding: 14 }}>
-          <div style={{ fontSize: 13.5, fontWeight: 800, color: '#065f46', marginBottom: 4 }}>
-            Mode test actif — Invitation créée pour {schoolName}
-          </div>
-          <div style={{ fontSize: 12, color: '#047857' }}>
-            Aucun email réel n’a été envoyé. Copiez directement le lien d’activation ci-dessous pour finaliser l’onboarding de l’école :
-          </div>
-          <div style={{ marginTop: 10, padding: '8px 10px', background: '#fff', border: '1px solid #a7f3d0', borderRadius: 8, fontSize: 11.5, fontFamily: 'monospace', wordBreak: 'break-all', color: '#1a1209' }}>
-            {activationUrl}
-          </div>
-          <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(activationUrl)
-                  setCopiedUrl(true)
-                } catch { /* ignore */ }
-              }}
-              style={{
-                padding: '7px 12px',
-                borderRadius: 8,
-                border: 'none',
-                background: '#059669',
-                color: '#fff',
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              {copiedUrl ? 'Lien copié !' : 'Copier le lien d’activation'}
-            </button>
-          </div>
-        </div>
-        <ModalFooter>
-          <BtnPrimary onClick={() => onDone(`Invitation créée pour ${schoolName}`)}>
-            Terminer
-          </BtnPrimary>
-        </ModalFooter>
-      </div>
-    )
-  }
-
-  if (step === 'details') {
-    return (
-      <form onSubmit={handleDetailsSubmit}>
-        <Field label="Email de l'administrateur *" hint="L'administrateur recevra le lien d'invitation">
-          <FieldInput type="email" placeholder="directeur@lyceedebafia.cm" value={email} onChange={e => setEmail(e.target.value)} />
-        </Field>
-        <Field label="Nom de l'établissement *">
-          <FieldInput placeholder="Lycée de Bafia" value={schoolName} onChange={e => setSchoolName(e.target.value)} />
-        </Field>
-        <Field label="Plan tarifaire">
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {[
-              { id: 'deco' as const, name: 'Découverte', desc: 'Gratuit · 50 élèves max' },
-              { id: 'std' as const, name: 'Standard', desc: '300 élèves · Toutes fonctions' },
-              { id: 'prem' as const, name: 'Premium', desc: 'Illimité · IA + Mobile Money' },
-            ].map(plan => (
-              <div key={plan.id} onClick={() => onPlanChange(plan.id)} style={{
-                flex: '1 1 120px', padding: 10, border: `1.5px solid ${selectedPlan === plan.id ? 'var(--primary)' : 'var(--border2)'}`,
-                borderRadius: 10, textAlign: 'center', cursor: 'pointer',
-                background: selectedPlan === plan.id ? 'var(--green-light)' : 'var(--surface)',
-                transition: 'all 0.15s'
-              }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>{plan.name}</div>
-                <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>{plan.desc}</div>
-              </div>
-            ))}
-          </div>
-        </Field>
-        <ModalFooter>
-          <button type="button" onClick={onCancel} style={{ padding: '9px 14px', borderRadius: 10, fontSize: 11, fontWeight: 800, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>Annuler</button>
-          <button type="submit" disabled={loading} style={{ padding: '9px 14px', borderRadius: 10, fontSize: 11, fontWeight: 800, background: loading ? '#6b7280' : 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: loading ? 'none' : '0 2px 8px rgba(142,42,58,0.18)' }}>
-            Continuer →
-          </button>
-        </ModalFooter>
-      </form>
-    )
-  }
-
-  return (
-    <form onSubmit={handleConfirmSubmit} autoComplete="off">
-      {/* Honeypot */}
-      <input type="text" autoComplete="username" aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} />
-      <input type="password" autoComplete="new-password" aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} />
-      <div style={{ background: 'var(--bg2)', borderRadius: 14, padding: 16, marginBottom: 16 }}>
-        <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 4 }}>Établissement</div>
-        <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>{schoolName}</div>
-        <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 10, marginBottom: 4 }}>Email</div>
-        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)' }}>{email}</div>
-      </div>
-
-      <Field label="Mot de passe master *" hint="Confirmez votre identité pour envoyer l'invitation">
-        <FieldInput type="password" placeholder="••••••••••••" value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" showToggle />
-      </Field>
-
-      {mfaEnabled && (
-        <Field label="Code MFA *">
-          <FieldInput type="tel" placeholder="123456" value={mfaCode} onChange={e => setMfaCode(e.target.value)} style={{ textAlign: 'center', fontSize: 14, fontWeight: 900, letterSpacing: 3 }} />
-        </Field>
-      )}
-
-      <ModalFooter>
-        <button type="button" onClick={() => setStep('details')} style={{ padding: '9px 14px', borderRadius: 10, fontSize: 11, fontWeight: 800, background: 'white', color: '#6b5c45', border: '1px solid #d4c8b8', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}><ArrowLeft size={13} /> Retour</button>
-        <button type="submit" disabled={submitting || loading} style={{ padding: '9px 14px', borderRadius: 10, fontSize: 11, fontWeight: 800, background: submitting || loading ? '#6b7280' : 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: submitting || loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: submitting || loading ? 'none' : '0 2px 8px rgba(142,42,58,0.18)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          {submitting ? '...' : <><Mail size={16} /> Envoyer l'invitation</>}
-        </button>
-      </ModalFooter>
-    </form>
   )
 }

@@ -7,7 +7,6 @@ import type { MettreAJourCalendrierUseCase } from '@application/academicYear/Met
 import type { ProposerStructureAnneeSuivanteUseCase } from '@application/academicYear/ProposerStructureAnneeSuivanteUseCase';
 import type { ValiderStructureAnneeSuivanteUseCase } from '@application/academicYear/ValiderStructureAnneeSuivanteUseCase';
 import type { AnnulerStructureProposeeUseCase } from '@application/academicYear/AnnulerStructureProposeeUseCase';
-import { prisma } from '@infrastructure/persistence/prisma/prisma.client';
 import { journaliserActionIA } from '@infrastructure/services/ai/AIActionAuditLogger';
 import type { ActivityLogPort } from '@domain/ports/services/ActivityLogPort';
 
@@ -52,7 +51,7 @@ export class AcademicYearController {
     try {
       const user = req.user;
       await this.definirPeriode.definirPeriode(req.params['id'] as string, req.user!.schoolId);
-      journaliserActionIA(prisma, {
+      journaliserActionIA({
         actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
         actionName: 'definir_periode_courante', targetType: 'AcademicPeriod', targetId: req.params['id'] as string,
         origin: 'UI_DIRECT', outcome: 'SUCCES', parametersSummary: { academicPeriodId: req.params['id'] },
@@ -60,7 +59,7 @@ export class AcademicYearController {
       res.json({ success: true, message: 'Période courante définie' });
     } catch (error) {
       const user = req.user;
-      journaliserActionIA(prisma, {
+      journaliserActionIA({
         actorUserId: user?.userId, actorRole: user?.role, schoolId: user?.schoolId,
         actionName: 'definir_periode_courante', targetType: 'AcademicPeriod', targetId: req.params['id'] as string,
         origin: 'UI_DIRECT', outcome: 'ERREUR',
@@ -83,7 +82,7 @@ export class AcademicYearController {
     try {
       const user = req.user;
       const resultat = await this.verifierPrerequis.execute(req.params['id'] as string);
-      journaliserActionIA(prisma, {
+      journaliserActionIA({
         actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
         actionName: 'verifier_cloture_annee', targetType: 'AcademicYear', targetId: req.params['id'] as string,
         origin: 'UI_DIRECT', outcome: 'SUCCES', parametersSummary: { academicYearId: req.params['id'] },
@@ -91,7 +90,7 @@ export class AcademicYearController {
       res.json({ success: true, data: resultat });
     } catch (error) {
       const user = req.user;
-      journaliserActionIA(prisma, {
+      journaliserActionIA({
         actorUserId: user?.userId, actorRole: user?.role, schoolId: user?.schoolId,
         actionName: 'verifier_cloture_annee', targetType: 'AcademicYear', targetId: req.params['id'] as string,
         origin: 'UI_DIRECT', outcome: 'ERREUR',
@@ -140,7 +139,7 @@ export class AcademicYearController {
         anneeActuelleId: req.params['id'] as string,
         anneeSuivanteId,
       });
-      journaliserActionIA(prisma, {
+      journaliserActionIA({
         actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
         actionName: 'proposer_structure_annee_suivante', targetType: 'AcademicYear', targetId: anneeSuivanteId,
         origin: 'UI_DIRECT', outcome: 'SUCCES',
@@ -155,7 +154,7 @@ export class AcademicYearController {
       res.status(201).json({ success: true, data: resultat });
     } catch (error) {
       const user = req.user;
-      journaliserActionIA(prisma, {
+      journaliserActionIA({
         actorUserId: user?.userId, actorRole: user?.role, schoolId: user?.schoolId,
         actionName: 'proposer_structure_annee_suivante', targetType: 'AcademicYear', targetId: req.params['id'] as string,
         origin: 'UI_DIRECT', outcome: 'ERREUR',
@@ -173,7 +172,7 @@ export class AcademicYearController {
         schoolId: user.schoolId,
         anneeSuivanteId: req.params['id'] as string,
       });
-      journaliserActionIA(prisma, {
+      journaliserActionIA({
         actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
         actionName: 'valider_structure_annee_suivante', targetType: 'AcademicYear', targetId: req.params['id'] as string,
         origin: 'UI_DIRECT', outcome: 'SUCCES', parametersSummary: { classesActivees: resultat.classesActivees },
@@ -187,7 +186,7 @@ export class AcademicYearController {
       res.json({ success: true, data: resultat });
     } catch (error) {
       const user = req.user;
-      journaliserActionIA(prisma, {
+      journaliserActionIA({
         actorUserId: user?.userId, actorRole: user?.role, schoolId: user?.schoolId,
         actionName: 'valider_structure_annee_suivante', targetType: 'AcademicYear', targetId: req.params['id'] as string,
         origin: 'UI_DIRECT', outcome: 'ERREUR',
@@ -205,7 +204,7 @@ export class AcademicYearController {
         schoolId: user.schoolId,
         anneeSuivanteId: req.params['id'] as string,
       });
-      journaliserActionIA(prisma, {
+      journaliserActionIA({
         actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
         actionName: 'annuler_structure_annee_suivante', targetType: 'AcademicYear', targetId: req.params['id'] as string,
         origin: 'UI_DIRECT', outcome: 'SUCCES', parametersSummary: { classesSupprimees: resultat.classesSupprimees },
@@ -219,7 +218,7 @@ export class AcademicYearController {
       res.json({ success: true, data: resultat });
     } catch (error) {
       const user = req.user;
-      journaliserActionIA(prisma, {
+      journaliserActionIA({
         actorUserId: user?.userId, actorRole: user?.role, schoolId: user?.schoolId,
         actionName: 'annuler_structure_annee_suivante', targetType: 'AcademicYear', targetId: req.params['id'] as string,
         origin: 'UI_DIRECT', outcome: 'ERREUR',

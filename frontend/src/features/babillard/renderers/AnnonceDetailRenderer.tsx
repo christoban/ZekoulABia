@@ -1,27 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  Download,
-  Printer,
-  Share2,
-  Paperclip,
-  Eye,
-  FileText,
-  AlertTriangle,
-  Pin,
-  ExternalLink,
-  ChevronLeft,
-  ChevronRight,
-  MoreVertical,
-  Edit2,
-  Trash2,
-  X,
-} from 'lucide-react';
 import type { PublicationItem } from '../types';
 import { CATEGORIE_CONFIG, ROLE_LABELS_FR } from '../types';
 import { notifyToast } from '@/components/shell/AppToast';
-import { confirmAction } from '@/components/shell/ConfirmDialog';
+import { AnnonceDetailToolbar } from './AnnonceDetailToolbar';
+import { AnnonceSheetHeader } from './AnnonceSheetHeader';
+import { AnnonceAttachmentsList } from './AnnonceAttachmentsList';
 
 interface Props {
   publication: PublicationItem;
@@ -53,7 +38,6 @@ export default function AnnonceDetailRenderer({
   onPinToggle,
 }: Props) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const catCfg = CATEGORIE_CONFIG[publication.categorie] ?? CATEGORIE_CONFIG.COMMUNIQUE;
 
@@ -109,370 +93,49 @@ export default function AnnonceDetailRenderer({
 
   return (
     <div className="babillard-detail-root flex flex-col w-full max-w-[840px] mx-auto select-text">
-      {/* ========================================================
-          A3: BARRE D'OUTILS UNIQUE
-          - Sur mobile : collante en haut, flèche retour, titre tronqué, bouton menu "⋯"
-          - Sur desktop : alignée à droite de la feuille au-dessus
-         ======================================================== */}
-      {/* Mobile Sticky Bar (sm:hidden) */}
-      <div className="sm:hidden print:hidden sticky top-0 z-30 flex items-center justify-between gap-2 px-3 py-2.5 bg-[var(--surface)]/95 text-[var(--text)] backdrop-blur-md rounded-t-xl border-b border-[var(--border)] mb-2 shadow-lg">
-        <div className="flex items-center gap-2 min-w-0">
-          {onClose && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1.5 -ml-1 text-[var(--text)] hover:bg-[var(--bg2)] rounded-full transition-colors"
-              aria-label="Fermer"
-            >
-              <ChevronLeft size={20} />
-            </button>
-          )}
-          <span className="text-xs font-semibold truncate text-[var(--text)]">
-            {publication.titre}
-          </span>
-        </div>
+      {/* A3: BARRE D'OUTILS UNIQUE (Mobile sticky + Desktop) */}
+      <AnnonceDetailToolbar
+        publicationTitle={publication.titre}
+        isPinned={Boolean(publication.isPinned || publication.epinglee)}
+        onClose={onClose}
+        onPrev={onPrev}
+        onNext={onNext}
+        hasPrev={hasPrev}
+        hasNext={hasNext}
+        canManage={canManage}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onPinToggle={onPinToggle}
+        onShare={handleShare}
+        onPrint={handlePrint}
+      />
 
-        <div className="flex items-center gap-1 shrink-0 relative">
-          {onPrev && (
-            <button
-              type="button"
-              onClick={onPrev}
-              disabled={!hasPrev}
-              className="p-1.5 rounded text-[var(--text2)] hover:text-[var(--text)] disabled:opacity-20 transition-colors"
-              aria-label="Précédent"
-            >
-              <ChevronLeft size={18} />
-            </button>
-          )}
-          {onNext && (
-            <button
-              type="button"
-              onClick={onNext}
-              disabled={!hasNext}
-              className="p-1.5 rounded text-[var(--text2)] hover:text-[var(--text)] disabled:opacity-20 transition-colors"
-              aria-label="Suivant"
-            >
-              <ChevronRight size={18} />
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="p-1.5 rounded-full hover:bg-[var(--bg2)] text-[var(--text)] transition-colors"
-            aria-label="Menu d'actions"
-          >
-            <MoreVertical size={18} />
-          </button>
-
-          {/* Mobile dropdown menu */}
-          {isMenuOpen && (
-            <div
-              className="absolute right-0 top-full mt-2 w-48 bg-[var(--surface)] rounded-xl shadow-2xl border border-[var(--border)] py-1.5 z-50 text-[var(--text)] text-xs"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <button
-                type="button"
-                onClick={handleShare}
-                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[var(--bg2)] text-left"
-              >
-                <Share2 size={14} /> Partager le lien
-              </button>
-              <button
-                type="button"
-                onClick={handlePrint}
-                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[var(--bg2)] text-left"
-              >
-                <Printer size={14} /> Imprimer
-              </button>
-              {canManage && (
-                <>
-                  <div className="my-1 border-t border-[var(--border)]" />
-                  {onEdit && (
-                    <button
-                      type="button"
-                      onClick={onEdit}
-                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[var(--bg2)] text-left font-medium"
-                    >
-                      <Edit2 size={14} /> Modifier
-                    </button>
-                  )}
-                  {onPinToggle && (
-                    <button
-                      type="button"
-                      onClick={onPinToggle}
-                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[var(--bg2)] text-left font-medium"
-                    >
-                      <Pin size={14} /> {publication.isPinned || publication.epinglee ? 'Désépingler' : 'Épingler'}
-                    </button>
-                  )}
-                  {onDelete && (
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (await confirmAction(`Voulez-vous vraiment supprimer « ${publication.titre} » ?`)) {
-                          onDelete();
-                        }
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-red-500/10 text-red-500 text-left font-semibold"
-                    >
-                      <Trash2 size={14} /> Supprimer
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Desktop Toolbar (hidden on mobile, print:hidden) */}
-      <div className="hidden sm:flex print:hidden items-center justify-between gap-2 pb-3 mb-2 border-b border-[var(--border)]">
-        <div className="flex items-center gap-1">
-          {onPrev && (
-            <button
-              type="button"
-              onClick={onPrev}
-              disabled={!hasPrev}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--bg2)] disabled:opacity-30 border border-[var(--border)] shadow-xs text-xs font-medium transition-colors"
-              title="Précédent (Flèche gauche)"
-            >
-              <ChevronLeft size={14} />
-              <span>Précédent</span>
-            </button>
-          )}
-          {onNext && (
-            <button
-              type="button"
-              onClick={onNext}
-              disabled={!hasNext}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--bg2)] disabled:opacity-30 border border-[var(--border)] shadow-xs text-xs font-medium transition-colors"
-              title="Suivant (Flèche droite)"
-            >
-              <span>Suivant</span>
-              <ChevronRight size={14} />
-            </button>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleShare}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--bg2)] border border-[var(--border)] text-xs font-medium shadow-xs transition-colors"
-            title="Copier le lien direct"
-          >
-            <Share2 size={13} />
-            <span>Partager</span>
-          </button>
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--bg2)] border border-[var(--border)] text-xs font-medium shadow-xs transition-colors"
-            title="Imprimer ce document officiel"
-          >
-            <Printer size={13} />
-            <span>Imprimer</span>
-          </button>
-
-          {canManage && (
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-1.5 rounded-lg bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--bg2)] border border-[var(--border)] shadow-xs"
-                title="Actions de gestion"
-              >
-                <MoreVertical size={14} />
-              </button>
-
-              {isMenuOpen && (
-                <div
-                  className="absolute right-0 top-full mt-1.5 w-44 bg-[var(--surface)] rounded-xl shadow-xl border border-[var(--border)] py-1 z-50 text-xs text-[var(--text)]"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {onEdit && (
-                    <button
-                      type="button"
-                      onClick={onEdit}
-                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[var(--bg2)] text-left font-medium"
-                    >
-                      <Edit2 size={13} /> Modifier
-                    </button>
-                  )}
-                  {onPinToggle && (
-                    <button
-                      type="button"
-                      onClick={onPinToggle}
-                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[var(--bg2)] text-left font-medium"
-                    >
-                      <Pin size={13} /> {publication.isPinned || publication.epinglee ? 'Désépingler' : 'Épingler'}
-                    </button>
-                  )}
-                  {onDelete && (
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (await confirmAction(`Voulez-vous vraiment supprimer « ${publication.titre} » ?`)) {
-                          onDelete();
-                        }
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-red-500/10 text-red-500 text-left font-semibold"
-                    >
-                      <Trash2 size={13} /> Supprimer
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {onClose && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-white text-xs font-semibold shadow-xs transition-colors"
-            >
-              <X size={13} />
-              <span>Fermer (Échap)</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* ========================================================
-          FEUILLE OFFICIELLE
-         ======================================================== */}
+      {/* FEUILLE OFFICIELLE */}
       <div
         className="babillard-sheet-paper relative bg-[var(--paper)] text-[var(--paper-text)] rounded-lg border border-[var(--paper-edge)] shadow-2xl p-6 sm:p-10 transition-all print:p-0 print:border-none print:shadow-none"
         style={{
           boxShadow: '0 12px 36px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08)',
         }}
       >
-        {/* A2 & B8: En-tête officiel de l'établissement */}
-        <div className="text-center pb-5 mb-6 border-b border-[var(--paper-edge)]">
-          {showDevises && (
-            <div className="mb-2">
-              {/* Desktop : une ligne */}
-              <div className="hidden sm:block text-[11px] font-bold uppercase tracking-widest text-[var(--paper-text-sub)]">
-                {isAnglophone
-                  ? 'REPUBLIC OF CAMEROON — PEACE · WORK · FATHERLAND'
-                  : 'RÉPUBLIQUE DU CAMEROUN — PAIX · TRAVAIL · PATRIE'}
-              </div>
-              {/* Mobile (B8) : deux lignes nettes pour éviter que « · PATRIE » soit orphelin */}
-              <div className="sm:hidden text-[10.5px] font-bold uppercase tracking-wider text-[var(--paper-text-sub)] leading-tight">
-                <div>{isAnglophone ? 'REPUBLIC OF CAMEROON' : 'RÉPUBLIQUE DU CAMEROUN'}</div>
-                <div className="text-[10px] text-[var(--paper-text-sub)] mt-0.5 opacity-80">
-                  {isAnglophone ? 'Peace · Work · Fatherland' : 'Paix · Travail · Patrie'}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {showMinistere && (
-            <div className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--paper-text-sub)] mb-2 opacity-90">
-              {isAnglophone
-                ? 'MINISTRY OF SECONDARY EDUCATION'
-                : 'MINISTÈRE DES ENSEIGNEMENTS SECONDAIRES'}
-            </div>
-          )}
-
-          {/* Logo et Nom de l'établissement */}
-          <div className="flex items-center justify-center gap-3">
-            {etablissement?.logoUrl && (
-              <img
-                src={etablissement.logoUrl}
-                alt={nomEtablissement}
-                className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
-              />
-            )}
-            <div>
-              <h1 className="font-spectral font-extrabold text-[20px] sm:text-[24px] text-[var(--paper-text)] tracking-tight leading-tight">
-                {nomEtablissement}
-              </h1>
-              <div className="text-xs text-[var(--paper-text-muted)] italic mt-0.5">
-                Babillard Officiel & Publications Institutionnelles
-              </div>
-            </div>
-          </div>
-
-          {/* C: Numéro de référence */}
-          <div className="mt-2 text-[11px] font-mono text-[var(--paper-text-sub)]">
-            {refNum}
-          </div>
-        </div>
-
-        {/* Ligne des badges (Catégorie, Priorité, Épinglage) & Ligne méta auteur */}
-        <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span
-              className="inline-flex items-center px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider"
-              style={{ background: catCfg.badgeBg, color: catCfg.badgeColor }}
-            >
-              {catCfg.label}
-            </span>
-
-            {publication.priorite === 'URGENTE' && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider text-white bg-red-600">
-                <AlertTriangle size={12} />
-                Urgent
-              </span>
-            )}
-
-            {(publication.isPinned || publication.epinglee) && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold text-orange-800 dark:text-orange-300 bg-orange-100 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-800/40">
-                <Pin size={12} />
-                À la une
-              </span>
-            )}
-          </div>
-
-          {/* A2: Ligne méta complète avec Auteur et Date */}
-          <div className="text-xs text-[var(--paper-text-sub)]">
-            Publié le <span className="font-semibold text-[var(--paper-text)]">{dateFormatee}</span>
-            {auteurNomComplet ? (
-              <span> · <strong className="text-[var(--paper-text)]">{auteurNomComplet}</strong>, {auteurTitre}</span>
-            ) : (
-              <span> · {auteurTitre}</span>
-            )}
-            {publication.modifieLe && (
-              <span className="italic ml-2 text-[var(--paper-text-sub)] opacity-75">
-                (Modifié le {new Date(publication.modifieLe).toLocaleDateString('fr-FR')})
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Grand Titre en Spectral */}
-        <h2 className="font-spectral font-bold text-[24px] sm:text-[30px] text-[var(--paper-text)] leading-tight mb-4">
-          {publication.titre}
-        </h2>
-
-        {/* Publics destinataires */}
-        <div className="bg-[var(--paper-footer-bg)] rounded-md p-3 mb-6 border border-[var(--paper-footer-border)] flex items-center justify-between gap-3 flex-wrap text-xs">
-          <div>
-            <span className="font-bold text-[var(--paper-text-muted)] mr-1.5">Destinataires :</span>
-            <span className="text-[var(--paper-text)] font-medium">
-              {rolesLabels.length >= 5 ? 'Tous les usagers' : rolesLabels.join(', ')}
-            </span>
-            {classesLabels.length > 0 && (
-              <span className="ml-2 font-semibold text-primary">
-                · {classesLabels.length} classe{classesLabels.length > 1 ? 's' : ''} concernée{classesLabels.length > 1 ? 's' : ''}
-              </span>
-            )}
-          </div>
-
-          {stats && (
-            <div
-              className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-[var(--surface)] border border-[var(--paper-edge)] font-medium text-xs text-[var(--paper-text-muted)]"
-              title="Statistiques de consultation"
-            >
-              <Eye size={13} />
-              <span>
-                Lu par <strong className="text-[var(--paper-text)]">{stats.lecturesCount}</strong> sur <strong className="text-[var(--paper-text)]">{stats.destinatairesEligiblesCount}</strong> destinataires
-              </span>
-            </div>
-          )}
-        </div>
+        <AnnonceSheetHeader
+          nomEtablissement={nomEtablissement}
+          logoUrl={etablissement?.logoUrl}
+          isAnglophone={isAnglophone}
+          showDevises={showDevises}
+          showMinistere={showMinistere}
+          refNum={refNum}
+          catCfg={catCfg}
+          priorite={publication.priorite}
+          isPinned={Boolean(publication.isPinned || publication.epinglee)}
+          dateFormatee={dateFormatee}
+          auteurNomComplet={auteurNomComplet}
+          auteurTitre={auteurTitre}
+          modifieLe={publication.modifieLe}
+          titre={publication.titre}
+          rolesLabels={rolesLabels}
+          classesLabels={classesLabels}
+          stats={stats}
+        />
 
         {/* Corps du message formaté (HTML sanitizé) */}
         <div
@@ -481,80 +144,11 @@ export default function AnnonceDetailRenderer({
         />
 
         {/* Pièces jointes intégrées (Documents & Images) */}
-        {publication.piecesJointes && publication.piecesJointes.length > 0 && (
-          <div className="border-t border-[var(--paper-edge)] pt-6 mb-8">
-            <h3 className="text-sm font-bold text-[var(--paper-text-muted)] uppercase tracking-wider mb-4 flex items-center gap-2">
-              <Paperclip size={15} />
-              Documents joints ({publication.piecesJointes.length})
-            </h3>
-
-            {/* Galerie d'images en grand format */}
-            <div className="space-y-4 mb-4">
-              {publication.piecesJointes
-                .filter((p) => p.mime.startsWith('image/'))
-                .map((pj) => {
-                  const imgUrl = pj.previewUrl || `/api/v2/babillard/${publication.id}/pieces-jointes/${pj.id}`;
-                  return (
-                    <div key={pj.id} className="relative rounded overflow-hidden border border-[var(--paper-edge)] group">
-                      <img
-                        src={imgUrl}
-                        alt={pj.texteAlternatif ?? pj.nomOriginal}
-                        className="w-full max-h-[550px] object-contain bg-[var(--paper-footer-bg)] cursor-zoom-in"
-                        onClick={() => setSelectedImage(imgUrl)}
-                      />
-                      <div className="p-2.5 bg-[var(--paper-footer-bg)] border-t border-[var(--paper-edge)] flex items-center justify-between text-xs text-[var(--paper-text-muted)]">
-                        <span className="font-semibold truncate text-[var(--paper-text)]">{pj.nomOriginal}</span>
-                        <a
-                          href={imgUrl}
-                          download={pj.nomOriginal}
-                          className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
-                        >
-                          <Download size={12} /> Télécharger
-                        </a>
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-
-            {/* Fichiers PDF et documents */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {publication.piecesJointes
-                .filter((p) => !p.mime.startsWith('image/'))
-                .map((pj) => (
-                  <div
-                    key={pj.id}
-                    className="p-3.5 rounded-lg border border-[var(--paper-edge)] bg-[var(--paper-footer-bg)] flex items-center justify-between gap-3 hover:bg-[var(--bg2)] transition-colors"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-9 h-9 rounded bg-red-500/10 text-red-500 flex items-center justify-center shrink-0">
-                        <FileText size={18} />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-xs font-bold text-[var(--paper-text)] truncate" title={pj.nomOriginal}>
-                          {pj.nomOriginal}
-                        </div>
-                        <div className="text-[11px] text-[var(--paper-text-sub)]">
-                          {pj.nbPages ? `${pj.nbPages} page${pj.nbPages > 1 ? 's' : ''} · ` : ''}
-                          {(pj.taille / 1024).toFixed(0)} Ko
-                        </div>
-                      </div>
-                    </div>
-
-                    <a
-                      href={`/api/v2/babillard/${publication.id}/pieces-jointes/${pj.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 rounded bg-[var(--surface)] text-[var(--paper-text)] hover:bg-[var(--bg2)] shadow-xs border border-[var(--paper-edge)] transition-colors shrink-0"
-                      title="Ouvrir le document"
-                    >
-                      <ExternalLink size={14} />
-                    </a>
-                  </div>
-                ))}
-            </div>
-          </div>
-        )}
+        <AnnonceAttachmentsList
+          publicationId={publication.id}
+          piecesJointes={publication.piecesJointes}
+          onSelectImage={setSelectedImage}
+        />
 
         {/* A2 & C: Bloc Signature officielle dynamique */}
         <div className="pt-6 border-t border-[var(--paper-edge)] flex flex-col sm:flex-row items-end sm:items-center justify-between gap-4 text-xs text-[var(--paper-text-muted)]">

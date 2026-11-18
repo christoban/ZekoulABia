@@ -1,31 +1,16 @@
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react'
-import {
-  X,
-  Search,
-  CheckCircle2,
-  XCircle,
-  AlertOctagon,
-  CloudOff,
-  RefreshCw,
-  Users,
-  Loader2,
-} from 'lucide-react'
+import { X, Search, Users, Loader2 } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
 import { putCachedData, getCachedData } from '@/lib/offline/db'
+import { EmargementStatusBar } from './emargement/EmargementStatusBar'
+import { EmargementCandidateRow } from './emargement/EmargementCandidateRow'
+import type { CandidateItem, PresenceStatus } from './emargement/types'
 
-export interface CandidateItem {
-  id: string
-  candidateNumber?: string | null
-  firstName: string
-  lastName: string
-  deskNumber?: number | null
-  presenceStatus?: 'PRESENT' | 'ABSENT' | 'ABANDON'
-  originSchool?: string | null
-}
+export type { CandidateItem }
 
 interface Props {
   sessionId: string
@@ -53,7 +38,6 @@ export default function ConcoursEmargementModal({
 
   const cacheKey = `concours_emargement_${sessionId}_${room.id}`
 
-  // Charger les candidats de la salle (réseau ou cache Dexie)
   useEffect(() => {
     if (!isOpen) return
 
@@ -61,7 +45,6 @@ export default function ConcoursEmargementModal({
       setLoading(true)
       setError(null)
 
-      // 1. Lire le cache Dexie en premier pour affichage immédiat
       try {
         const cached = await getCachedData<CandidateItem[]>(cacheKey)
         if (cached?.data && Array.isArray(cached.data)) {
@@ -71,7 +54,6 @@ export default function ConcoursEmargementModal({
         // silencieux
       }
 
-      // 2. Si connecté, actualiser depuis le serveur
       if (isOnline) {
         try {
           const res = await fetchApi(`/api/v2/entrance-exams/${sessionId}/candidates?roomId=${room.id}`)
@@ -92,7 +74,6 @@ export default function ConcoursEmargementModal({
     loadCandidates()
   }, [isOpen, sessionId, room.id, isOnline])
 
-  // Filtrage recherche
   const candidatsFiltres = useMemo(() => {
     const q = search.trim().toLowerCase()
     if (!q) return candidates
@@ -104,7 +85,6 @@ export default function ConcoursEmargementModal({
     })
   }, [candidates, search])
 
-  // Statistiques d'émargement
   const stats = useMemo(() => {
     let presents = 0
     let absents = 0
@@ -117,15 +97,10 @@ export default function ConcoursEmargementModal({
     return { presents, absents, abandons, total: candidates.length }
   }, [candidates])
 
-  // Changement de statut (Online direct ou Offline via file Dexie)
-  const handleSetPresence = async (
-    candidateId: string,
-    nextStatus: 'PRESENT' | 'ABSENT' | 'ABANDON'
-  ) => {
+  const handleSetPresence = async (candidateId: string, nextStatus: PresenceStatus) => {
     setUpdatingId(candidateId)
     setError(null)
 
-    // Mise à jour optimiste immédiate dans l'UI et le cache local
     const updatedList = candidates.map((c) =>
       c.id === candidateId ? { ...c, presenceStatus: nextStatus } : c
     )
@@ -145,7 +120,7 @@ export default function ConcoursEmargementModal({
         })
         onToast?.('Émargement enregistré localement (hors ligne)', 'info')
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'Erreur d\'enregistrement local')
+        setError(err instanceof Error ? err.message : "Erreur d'enregistrement local")
       } finally {
         setUpdatingId(null)
       }
@@ -160,10 +135,9 @@ export default function ConcoursEmargementModal({
       })
       const data = await res.json()
       if (!data.success) {
-        throw new Error(data.message || 'Erreur lors de l\'émargement')
+        throw new Error(data.message || "Erreur lors de l'émargement")
       }
     } catch {
-      // Fallback hors-ligne en cas de micro-coupure réseau
       try {
         await addToQueue({
           type: 'EXAM_ATTENDANCE',
@@ -173,7 +147,7 @@ export default function ConcoursEmargementModal({
         })
         onToast?.('Réseau interrompu : action mise en file hors ligne', 'info')
       } catch {
-        setError('Impossible d\'enregistrer l\'émargement')
+        setError("Impossible d'enregistrer l'émargement")
       }
     } finally {
       setUpdatingId(null)
@@ -209,7 +183,6 @@ export default function ConcoursEmargementModal({
           border: '1px solid var(--border, #e5e7eb)',
         }}
       >
-        {/* Header */}
         <div
           style={{
             padding: '16px 20px',
@@ -256,103 +229,14 @@ export default function ConcoursEmargementModal({
           </button>
         </div>
 
-        {/* Barre de statut & KPIs d'émargement */}
-        <div
-          style={{
-            padding: '12px 20px',
-            borderBottom: '1px solid var(--border, #e5e7eb)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 10,
-          }}
-        >
-          {/* Badge réseau */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {!isOnline ? (
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: '#c2410c',
-                  background: 'rgba(234,88,12,0.12)',
-                  padding: '3px 8px',
-                  borderRadius: 6,
-                }}
-              >
-                <CloudOff size={13} /> Hors-ligne (local Dexie)
-              </span>
-            ) : pendingCount > 0 ? (
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: '#1d4ed8',
-                  background: 'rgba(37,99,235,0.1)',
-                  padding: '3px 8px',
-                  borderRadius: 6,
-                }}
-              >
-                <RefreshCw size={13} className={syncing ? 'animate-spin' : ''} />
-                {pendingCount} en attente de synchro
-              </span>
-            ) : (
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: '#16a34a',
-                  background: 'rgba(22,163,74,0.1)',
-                  padding: '3px 8px',
-                  borderRadius: 6,
-                }}
-              >
-                Connecté (temps réel)
-              </span>
-            )}
-            {isOnline && pendingCount > 0 && (
-              <button
-                type="button"
-                onClick={() => syncQueue().then((n) => onToast?.(`${n} émargement(s) synchronisé(s)`, 'success'))}
-                disabled={syncing}
-                style={{
-                  fontSize: 11,
-                  padding: '2px 8px',
-                  borderRadius: 4,
-                  background: '#2563eb',
-                  color: '#fff',
-                  border: 'none',
-                  cursor: syncing ? 'not-allowed' : 'pointer',
-                  fontWeight: 600,
-                }}
-              >
-                Synchro
-              </button>
-            )}
-          </div>
+        <EmargementStatusBar
+          isOnline={isOnline}
+          pendingCount={pendingCount}
+          syncing={syncing}
+          onSync={() => syncQueue().then((n) => onToast?.(`${n} émargement(s) synchronisé(s)`, 'success'))}
+          stats={stats}
+        />
 
-          {/* Badges compteurs */}
-          <div style={{ display: 'flex', gap: 8 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#16a34a', background: 'rgba(22,163,74,0.1)', padding: '2px 8px', borderRadius: 6 }}>
-              Présents : {stats.presents}
-            </span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#ef4444', background: 'rgba(239,68,68,0.1)', padding: '2px 8px', borderRadius: 6 }}>
-              Absents : {stats.absents}
-            </span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#d97706', background: 'rgba(217,119,6,0.1)', padding: '2px 8px', borderRadius: 6 }}>
-              Abandons : {stats.abandons}
-            </span>
-          </div>
-        </div>
-
-        {/* Barre de recherche */}
         <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border, #e5e7eb)' }}>
           <div style={{ position: 'relative' }}>
             <Search
@@ -384,7 +268,6 @@ export default function ConcoursEmargementModal({
           </div>
         </div>
 
-        {/* Liste des candidats */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 20px' }}>
           {error && (
             <div
@@ -412,121 +295,14 @@ export default function ConcoursEmargementModal({
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {candidatsFiltres.map((c) => {
-                const isCurrentUpdating = updatingId === c.id
-                return (
-                  <div
-                    key={c.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '10px 14px',
-                      borderRadius: 8,
-                      border: '1px solid var(--border, #e5e7eb)',
-                      background: 'var(--surface, #fff)',
-                      flexWrap: 'wrap',
-                      gap: 10,
-                    }}
-                  >
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        {c.deskNumber && (
-                          <span
-                            style={{
-                              fontSize: 11,
-                              fontWeight: 800,
-                              color: 'var(--blue, #2563eb)',
-                              background: 'rgba(37,99,235,0.1)',
-                              padding: '1px 6px',
-                              borderRadius: 4,
-                            }}
-                          >
-                            Table #{c.deskNumber}
-                          </span>
-                        )}
-                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text, #111827)' }}>
-                          {c.firstName} {c.lastName}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: 11, color: 'var(--text3, #9ca3af)', marginTop: 2 }}>
-                        {c.candidateNumber || 'Sans matricule'} {c.originSchool ? `— ${c.originSchool}` : ''}
-                      </div>
-                    </div>
-
-                    {/* Boutons Présence */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      {isCurrentUpdating && <Loader2 size={14} className="animate-spin" />}
-
-                      <button
-                        type="button"
-                        onClick={() => handleSetPresence(c.id, 'PRESENT')}
-                        style={{
-                          padding: '5px 10px',
-                          borderRadius: 6,
-                          border: 'none',
-                          background: c.presenceStatus === 'PRESENT' ? 'var(--green, #16a34a)' : 'rgba(22,163,74,0.1)',
-                          color: c.presenceStatus === 'PRESENT' ? '#fff' : 'var(--green, #16a34a)',
-                          fontSize: 11,
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 4,
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        <CheckCircle2 size={13} />
-                        Présent
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleSetPresence(c.id, 'ABSENT')}
-                        style={{
-                          padding: '5px 10px',
-                          borderRadius: 6,
-                          border: 'none',
-                          background: c.presenceStatus === 'ABSENT' ? 'var(--red, #ef4444)' : 'rgba(239,68,68,0.1)',
-                          color: c.presenceStatus === 'ABSENT' ? '#fff' : 'var(--red, #ef4444)',
-                          fontSize: 11,
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 4,
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        <XCircle size={13} />
-                        Absent
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleSetPresence(c.id, 'ABANDON')}
-                        style={{
-                          padding: '5px 10px',
-                          borderRadius: 6,
-                          border: 'none',
-                          background: c.presenceStatus === 'ABANDON' ? 'var(--amber, #d97706)' : 'rgba(217,119,6,0.1)',
-                          color: c.presenceStatus === 'ABANDON' ? '#fff' : 'var(--amber, #d97706)',
-                          fontSize: 11,
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 4,
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        <AlertOctagon size={13} />
-                        Abandon
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
+              {candidatsFiltres.map((c) => (
+                <EmargementCandidateRow
+                  key={c.id}
+                  candidate={c}
+                  isUpdating={updatingId === c.id}
+                  onSetPresence={handleSetPresence}
+                />
+              ))}
             </div>
           )}
         </div>

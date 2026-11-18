@@ -7,7 +7,8 @@
  * - admin/adminClassSubjectActions.ts   — classes, matières, professeur principal
  * - admin/adminStudentUserActions.ts    — élèves, inscriptions, transferts, matricules, candidats CEP
  * - admin/adminLv2PebsExamActions.ts    — LV2, PEBS, fenêtres choix, concours, sélections PEBS
- * - admin/adminAcademicGradeActions.ts  — notes, bulletins, conseils, EDT, périodes, statistiques
+ * - admin/adminAcademicActions.ts       — EDT, affectations enseignants, périodes, année scolaire
+ * - admin/adminGradeExamActions.ts      — notes, bulletins, conseils de classe, statistiques
  * - admin/adminFinanceAttendanceActions.ts — finance (frais/factures/paiements), absences
  * - admin/adminHrCommRiskActions.ts     — RH (congés, diplômes), pédagogie, communications, risques élèves
  * - admin/adminHelpers.ts               — helpers de résolution internes (employee, plan frais, sessions)
@@ -139,7 +140,8 @@ import { buildAdminClassSubjectActions } from './admin/adminClassSubjectActions'
 import { buildAdminRoomAssignmentActions } from './admin/adminRoomAssignmentActions';
 import { buildAdminStudentUserActions } from './admin/adminStudentUserActions';
 import { buildAdminLv2PebsExamActions } from './admin/adminLv2PebsExamActions';
-import { buildAdminAcademicGradeActions } from './admin/adminAcademicGradeActions';
+import { buildAdminAcademicActions } from './admin/adminAcademicActions';
+import { buildAdminGradeExamActions } from './admin/adminGradeExamActions';
 import { buildAdminFinanceAttendanceActions } from './admin/adminFinanceAttendanceActions';
 import { buildAdminHrCommRiskActions } from './admin/adminHrCommRiskActions';
 
@@ -150,7 +152,8 @@ export function buildAdminActionCatalog(deps: AdminActionDeps): ActionDefinition
     ...buildAdminRoomAssignmentActions(deps),
     ...buildAdminStudentUserActions(deps),
     ...buildAdminLv2PebsExamActions(deps),
-    ...buildAdminAcademicGradeActions(deps),
+    ...buildAdminAcademicActions(deps),
+    ...buildAdminGradeExamActions(deps),
     ...buildAdminFinanceAttendanceActions(deps),
     ...buildAdminHrCommRiskActions(deps),
   ];

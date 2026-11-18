@@ -1,61 +1,30 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { logoutUser } from '@/lib/userAuth'
 import TeacherSidebar from './_components/TeacherSidebar'
 import TeacherTopbar from './_components/TeacherTopbar'
 import TeacherBottomNav from './_components/TeacherBottomNav'
 import TeacherToast from './_components/TeacherToast'
-import SectionTeacherDashboard from './_components/SectionTeacherDashboard'
-import SectionTeacherClasses from './_components/SectionTeacherClasses'
-import SectionTeacherAttendance from './_components/SectionTeacherAttendance'
-import SectionTeacherGrades from './_components/SectionTeacherGrades'
-import SectionTeacherBulletins from './_components/SectionTeacherBulletins'
-import SectionTeacherTimetable from './_components/SectionTeacherTimetable'
-import SectionProfesseurPrincipal from './_components/SectionProfesseurPrincipal'
-import SectionAppreciationsPP from './_components/SectionAppreciationsPP'
-import SectionDepartementAP from './_components/SectionDepartementAP'
-import SectionCahierDeTexte from './_components/SectionCahierDeTexte'
-import SectionTeacherAtRisk from './_components/SectionTeacherAtRisk'
-import SectionMesActionsSuivi from './_components/SectionMesActionsSuivi'
-import SectionTeacherCorrectionAnonyme from './_components/SectionTeacherCorrectionAnonyme'
 import type { TeacherSection, Toast, UserInfo } from './_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
-import { getUserSession, putUserSession, putCachedData } from '@/lib/offline/db'
+import { getUserSession, putUserSession } from '@/lib/offline/db'
 import { OfflineIndicator } from '@/components/OfflineIndicator'
 import ChangePasswordModal from '@/components/ChangePasswordModal'
-import SectionMonProfilRH from '@/features/rh/SectionMonProfilRH'
-import NotificationCenter from '@/components/NotificationCenter'
 import AssistantWidget from '../../admin/dashboard/_components/AssistantWidget'
 import EventCenterWidget from '@/features/communication/EventCenterWidget'
 import { useT } from '@/lib/i18n'
-import { useRouter } from 'next/navigation'
-import Babillard from '@/features/communication/Babillard'
-import CarnetLiaisonView from '@/features/carnet-liaison/CarnetLiaisonView'
-import Messagerie from '@/features/messagerie'
-import SectionOfflineStatus from '@/components/SectionOfflineStatus'
 import ModeTestBanner from '@/components/ModeTestBanner'
-
-interface SessionUser {
-  userId: string
-  role: string
-  nomComplet?: string
-  firstName?: string
-  permissions?: string[]
-}
-
-const TEACHER_SECTIONS: TeacherSection[] = [
-  'dashboard', 'classes', 'attendance', 'grades', 'bulletins', 'timetable', 'sync',
-  'pp-classe', 'pp-appreciations', 'ap-departement', 'cahier-de-texte', 'at-risk', 'mon-suivi',
-  'correction-anonyme',
-  'mon-profil-rh', 'notifications', 'babillard', 'carnet-liaison', 'messagerie',
-]
-const TEACHER_ASSISTANT_SUGGESTIONS = [
-  'Donne 15 à Jean Dupont en maths pour la 4eA',
-  'Marque Awa absente aujourd’hui en 3eB',
-  'Quelle est la moyenne de ma 4eA en maths ?',
-]
+import TeacherMainContent from './_pageParts/TeacherMainContent'
+import { prefetchTeacherOfflineData } from './_pageParts/prefetchTeacherOfflineData'
+import {
+  getTeacherTitles,
+  TEACHER_ASSISTANT_SUGGESTIONS,
+  TEACHER_SECTIONS,
+  type SessionUser,
+} from './_pageParts/constants'
 
 let toastId = 0
 
@@ -63,27 +32,8 @@ export default function TeacherDashboard() {
   const tnav = useT('navigation')
   const tcommon = useT('common')
   const router = useRouter()
-  const TITLES: Record<TeacherSection, string> = {
-    dashboard: tnav('pageTitle.teacher_dashboard'),
-    classes: tnav('pageTitle.teacher_classes'),
-    attendance: tnav('pageTitle.teacher_attendance'),
-    grades: tnav('pageTitle.teacher_grades'),
-    bulletins: tnav('pageTitle.teacher_bulletins'),
-    timetable: tnav('pageTitle.teacher_timetable'),
-    sync: tnav('pageTitle.teacher_sync'),
-    'pp-classe': tnav('pageTitle.teacher_ppClasse'),
-    'pp-appreciations': tnav('pageTitle.teacher_ppAppreciations'),
-    'ap-departement': tnav('pageTitle.teacher_apDepartement'),
-    'cahier-de-texte': tnav('pageTitle.teacher_cahierDeTexte'),
-    'at-risk': tnav('pageTitle.teacher_atRisk'),
-    'mon-suivi': tnav('pageTitle.teacher_monSuivi'),
-    'correction-anonyme': tnav('pageTitle.teacher_correctionAnonyme'),
-    'mon-profil-rh': tnav('sidebar.monProfilRH'),
-    notifications: tnav('pageTitle.teacher_notifications'),
-    babillard: tnav('sidebar.babillard'),
-    'carnet-liaison': tnav('sidebar.carnetLiaison'),
-    messagerie: tnav('sidebar.messagerie'),
-  }
+  const TITLES = getTeacherTitles(tnav)
+
   const [section, setSection] = useState<TeacherSection>('dashboard')
   const [visitedSections, setVisitedSections] = useState<Set<TeacherSection>>(() => new Set(['dashboard']))
 
@@ -138,7 +88,6 @@ export default function TeacherDashboard() {
       }
     } catch { /* silencieux — données absentes ou corrompues */ }
 
-    // Restauration immédiate du profil complet (PP, AP, schoolInfo) depuis Dexie userSession
     if (currentUserId) {
       getUserSession(currentUserId).then(saved => {
         if (saved?.fullProfile) {
@@ -187,7 +136,7 @@ export default function TeacherDashboard() {
             }).catch(() => {})
           }
         }
-      }).catch(() => { })
+      }).catch(() => {})
 
     fetchApi('/api/v2/users/me', { credentials: 'include' })
       .then(r => {
@@ -201,7 +150,6 @@ export default function TeacherDashboard() {
       .then(d => {
         if (d.success && d.data) {
           setUser(d.data)
-          // Persistance du profil complet (avec classesProfessorPrincipal et headedDepartments) dans Dexie
           const fullUser = d.data as UserInfo
           getUserSession(fullUser.id).then(existing => {
             putUserSession({
@@ -221,205 +169,13 @@ export default function TeacherDashboard() {
       .catch(err => { if (err !== 'auth') console.warn('[teacher-dashboard] Erreur réseau:', err) })
 
     fetchApi('/api/v2/grades?validationStatus=SUBMITTED&limit=1', { credentials: 'include' })
-      .then(r => r.json()).then(d => { if (d.pagination) setPendingGrades(d.pagination.total ?? 0) }).catch(() => { })
+      .then(r => r.json()).then(d => { if (d.pagination) setPendingGrades(d.pagination.total ?? 0) }).catch(() => {})
   }, [router])
 
-  // Préchargement exhaustif en tâche de fond pour l'autonomie hors-ligne complète (enseignant simple, PP et AP)
+  // Préchargement exhaustif en tâche de fond pour l'autonomie hors-ligne complète
   useEffect(() => {
     if (!user || !navigator.onLine) return
-    const uid = user.id
-    ;(async () => {
-      try {
-        // 1. Classes, matières, grille horaire, emplois du temps et années académiques
-        const [clsRes, subRes, ayRes, gridRes, ttRes] = await Promise.all([
-          fetchApi('/api/v2/classes', { credentials: 'include' }).then(r => r.json()).catch(() => null),
-          fetchApi('/api/v2/subjects', { credentials: 'include' }).then(r => r.json()).catch(() => null),
-          fetchApi('/api/v2/academic-years', { credentials: 'include' }).then(r => r.json()).catch(() => null),
-          fetchApi('/api/v2/timetable-grid-config', { credentials: 'include' }).then(r => r.json()).catch(() => null),
-          fetchApi('/api/v2/timetables', { credentials: 'include' }).then(r => r.json()).catch(() => null),
-        ])
-
-        if (clsRes?.success && Array.isArray(clsRes.data)) {
-          await putCachedData('teacher:classes', clsRes.data)
-        }
-        if (subRes?.success && Array.isArray(subRes.data)) {
-          await putCachedData('teacher:subjects', subRes.data)
-        }
-        if (gridRes?.success && gridRes.data) {
-          await putCachedData('teacher:timetable-grid-config', gridRes.data)
-        }
-        if (ttRes?.success && Array.isArray(ttRes.data)) {
-          await putCachedData(`teacher:timetables:${uid}`, ttRes.data)
-          await putCachedData('teacher:timetables:all', ttRes.data)
-        }
-
-        // Périodes et séquences
-        interface AySeqItem { id: string; name: string; isCurrent?: boolean; [key: string]: unknown }
-        interface AyPeriodItem { id: string; name: string; sequences?: AySeqItem[] }
-        interface AyYearItem { id: string; isCurrent?: boolean; periods?: AyPeriodItem[] }
-        interface CachedSeqItem extends AySeqItem { periodName: string; academicYearId: string }
-
-        let seqs: CachedSeqItem[] = []
-        if (ayRes?.success && Array.isArray(ayRes.data)) {
-          const ayYears = ayRes.data as AyYearItem[]
-          seqs = ayYears.flatMap((ay) =>
-            ay.periods?.flatMap((p) =>
-              p.sequences?.map((s) => ({ ...s, periodName: p.name, academicYearId: ay.id })) || []
-            ) || []
-          )
-          await putCachedData('teacher:sequences', seqs)
-
-          const currentYear = ayYears.find((y) => y.isCurrent) ?? ayYears[0]
-          if (currentYear?.periods?.length) {
-            await putCachedData('teacher:academic-periods', currentYear.periods)
-          }
-        }
-
-        const classes = clsRes?.success && Array.isArray(clsRes.data) ? clsRes.data : []
-
-        // 2. Pour chaque classe : élèves, assignations, cahier de texte
-        for (const cls of classes) {
-          if (!cls.id) continue
-
-          // Élèves de la classe (utilisé par SectionTeacherAttendance et SectionProfesseurPrincipal)
-          const studRes = await fetchApi(`/api/v2/classes/${cls.id}/students`, { credentials: 'include' }).then(r => r.json()).catch(() => null)
-          if (studRes?.success && Array.isArray(studRes.data)) {
-            interface RawClassStudent {
-              id: string
-              firstName?: string
-              lastName?: string
-              matricule?: string
-              rang?: number
-              moyenne?: number
-              tauxPresence?: number
-            }
-            const mappedStudents = (studRes.data as RawClassStudent[]).map((s) => ({
-              id: s.id,
-              name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || 'Élève inconnu',
-              firstName: s.firstName,
-              lastName: s.lastName,
-              matricule: s.matricule,
-              rang: s.rang,
-              moyenne: s.moyenne,
-              tauxPresence: s.tauxPresence,
-            }))
-            await putCachedData(`teacher:students:${cls.id}`, mappedStudents)
-            await putCachedData(`teacher:pp-students:${cls.id}`, studRes.data)
-          }
-
-          // Affectations d'enseignement
-          const assignRes = await fetchApi(`/api/v2/teaching-assignments?classId=${cls.id}`, { credentials: 'include' }).then(r => r.json()).catch(() => null)
-          if (assignRes?.success && Array.isArray(assignRes.data)) {
-            await putCachedData(`teacher:teaching-assignments:${cls.id}`, assignRes.data)
-          }
-
-          // Cahier de texte de la classe
-          const cahierRes = await fetchApi(`/api/v2/pedagogie/cahier-de-texte?classId=${cls.id}&limit=50`, { credentials: 'include' }).then(r => r.json()).catch(() => null)
-          if (cahierRes?.success && Array.isArray(cahierRes.data)) {
-            await putCachedData(`teacher:cahierDeTexte:${cls.id}`, cahierRes.data)
-          }
-        }
-
-        // Cahier de texte global
-        const cahierAll = await fetchApi('/api/v2/pedagogie/cahier-de-texte?limit=50', { credentials: 'include' }).then(r => r.json()).catch(() => null)
-        if (cahierAll?.success && Array.isArray(cahierAll.data)) {
-          await putCachedData('teacher:cahierDeTexte:all', cahierAll.data)
-        }
-
-        // Élèves à risque
-        const atRiskRes = await fetchApi('/api/v2/ai/at-risk-students', { credentials: 'include' }).then(r => r.json()).catch(() => null)
-        if (atRiskRes) {
-          await putCachedData('teacher:at-risk-students', atRiskRes)
-        }
-
-        // Actions de suivi
-        const followUpRes = await fetchApi('/api/v2/student-follow-up/mine', { credentials: 'include' }).then(r => r.json()).catch(() => null)
-        if (followUpRes?.success && Array.isArray(followUpRes.data)) {
-          await putCachedData('teacher:mes-actions-suivi', followUpRes.data)
-        }
-
-        // 3. Spécifique Professeur Principal (PP)
-        const ppClasses = user.classesProfessorPrincipal ?? []
-        for (const ppCls of ppClasses) {
-          if (!ppCls.id) continue
-          const currentPeriods = ayRes?.data?.[0]?.periods ?? []
-          for (const per of currentPeriods) {
-            const rcRes = await fetchApi(`/api/v2/report-cards?classId=${ppCls.id}&periodId=${per.id}&limit=100`, { credentials: 'include' }).then(r => r.json()).catch(() => null)
-            if (rcRes?.reportCards) {
-              interface RawPpReportCard {
-                id: string
-                studentId: string
-                student?: { firstName?: string | null; lastName?: string | null } | null
-                generalAverage?: number | null
-                classMasterComment?: string | null
-                status?: string | null
-              }
-              const cards = (rcRes.reportCards as RawPpReportCard[]).map((rc) => ({
-                id: rc.id,
-                studentId: rc.studentId,
-                studentName: rc.student ? `${rc.student.lastName ?? ''} ${rc.student.firstName ?? ''}`.trim() : rc.studentId,
-                generalAverage: rc.generalAverage ?? null,
-                classMasterComment: rc.classMasterComment ?? null,
-                status: rc.status ?? '',
-              }))
-              await putCachedData(`teacher:pp-report-cards:${ppCls.id}:${per.id}`, cards)
-            }
-          }
-        }
-
-        // 4. Spécifique Animateur Pédagogique (AP)
-        const apDepts = user.headedDepartments ?? []
-        for (const dept of apDepts) {
-          if (!dept.id) continue
-          const [perfRes, progAlertRes] = await Promise.all([
-            fetchApi(`/api/v2/departments/${dept.id}/performance`, { credentials: 'include' }).then(r => r.json()).catch(() => null),
-            fetchApi('/api/v2/pedagogie/alertes-retard', { credentials: 'include' }).then(r => r.json()).catch(() => null),
-          ])
-          if (perfRes?.data) {
-            await putCachedData(`teacher:dept-perf:${dept.id}`, perfRes.data)
-          }
-          if (progAlertRes?.data) {
-            await putCachedData(`teacher:dept-progression:${dept.id}`, progAlertRes.data)
-          }
-        }
-
-        // Messagerie : conversations et messages récents de l'enseignant
-        try {
-          const convRes = await fetchApi('/api/v2/messagerie/conversations', { credentials: 'include' }).then(r => r.json()).catch(() => null)
-          if (convRes?.success && Array.isArray(convRes.data)) {
-            await putCachedData(`messagerie:conversations:${uid}`, convRes.data).catch(() => {})
-            await putCachedData('messagerie:conversations', convRes.data).catch(() => {})
-            for (const c of convRes.data.slice(0, 5)) {
-              if (c?.id) {
-                const msgRes = await fetchApi(`/api/v2/messagerie/conversations/${c.id}/messages`, { credentials: 'include' }).then(r => r.json()).catch(() => null)
-                if (msgRes?.success && Array.isArray(msgRes.data)) {
-                  await putCachedData(`messagerie:messages:${c.id}`, msgRes.data).catch(() => {})
-                }
-              }
-            }
-          }
-        } catch { /* ignore */ }
-
-        // Babillard officiel & compteurs
-        try {
-          const babRes = await fetchApi('/api/v2/babillard?tab=tous', { credentials: 'include' }).then(r => r.json()).catch(() => null)
-          const babItems = babRes?.data || babRes?.publications || []
-          if (Array.isArray(babItems)) {
-            await putCachedData('babillard:publications:all', babItems).catch(() => {})
-            if (babRes?.counts) {
-              const countsObj = {
-                all: babRes.counts.tous ?? 0,
-                pinned: babRes.counts.une ?? 0,
-                for_me: babRes.counts.pourMoi ?? 0,
-                unread: babRes.counts.nonLus ?? 0,
-                archives: babRes.counts.archives ?? 0,
-              }
-              await putCachedData('babillard:counts', countsObj).catch(() => {})
-            }
-          }
-        } catch { /* ignore */ }
-      } catch { /* silencieux */ }
-    })()
+    void prefetchTeacherOfflineData(user)
   }, [user])
 
   const showToast = useCallback((msg: string, type: Toast['type'] = 'success') => {
@@ -431,10 +187,7 @@ export default function TeacherDashboard() {
     setToasts(prev => prev.filter(t => t.id !== id))
   }, [])
 
-  const sProps = { onToast: showToast, user }
-
-  // Navigation temps réel déclenchée par l'assistant IA (copilot) : quand il exécute
-  // une action, on bascule vers l'écran concerné pour que le changement soit visible.
+  // Navigation temps réel déclenchée par l'assistant IA (copilot)
   useEffect(() => {
     const onNavigate = (e: Event) => {
       const navSection = (e as CustomEvent<{ section?: string }>).detail?.section
@@ -449,7 +202,6 @@ export default function TeacherDashboard() {
       <TeacherSidebar current={section} onChange={setSection} schoolName={schoolInfo?.name} logoUrl={schoolInfo?.logoUrl} onLogout={logoutUser} user={user} pendingGrades={pendingGrades} pendingCount={pendingCount} mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
-        {/* Topbar — pattern Admin (identique admin/staff) */}
         <TeacherTopbar
           title={TITLES[section]}
           onMenuClick={() => setMobileNavOpen(true)}
@@ -461,139 +213,19 @@ export default function TeacherDashboard() {
         <ModeTestBanner />
         <EventCenterWidget />
 
-        {/* Contenu */}
-        <main className="pb-[calc(60px+env(safe-area-inset-bottom,0px))] md:pb-0" style={{ flex: 1, overflow: 'hidden', background: 'var(--bg)' }}>
-          <div style={{ display: section === 'dashboard' ? 'contents' : 'none' }}>
-            <SectionTeacherDashboard onNav={s => setSection(s as TeacherSection)} {...sProps} />
-          </div>
-          {visitedSections.has('classes') && (
-            <div style={{ display: section === 'classes' ? 'contents' : 'none' }}>
-              <SectionTeacherClasses onNav={s => setSection(s as TeacherSection)} {...sProps} />
-            </div>
-          )}
-          {visitedSections.has('attendance') && (
-            <div style={{ display: section === 'attendance' ? 'contents' : 'none' }}>
-              <SectionTeacherAttendance {...sProps} />
-            </div>
-          )}
-          {visitedSections.has('grades') && (
-            <div style={{ display: section === 'grades' ? 'contents' : 'none' }}>
-              <SectionTeacherGrades {...sProps} />
-            </div>
-          )}
-          {visitedSections.has('bulletins') && (
-            <div style={{ display: section === 'bulletins' ? 'contents' : 'none' }}>
-              <SectionTeacherBulletins onNav={s => setSection(s as TeacherSection)} onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('timetable') && (
-            <div style={{ display: section === 'timetable' ? 'contents' : 'none' }}>
-              <SectionTeacherTimetable {...sProps} />
-            </div>
-          )}
-          {visitedSections.has('sync') && (
-            <div style={{ display: section === 'sync' ? 'contents' : 'none' }}>
-              <SectionOfflineStatus onToast={showToast} namespace="teacher" />
-            </div>
-          )}
-          {visitedSections.has('pp-classe') && (
-            <div style={{ display: section === 'pp-classe' ? 'contents' : 'none' }}>
-              {(() => {
-                const ppList = user?.classesProfessorPrincipal ?? []
-                const activeCls = ppList.find(c => c.id === selectedPPClassId) || ppList[0]
-                return activeCls ? (
-                  <SectionProfesseurPrincipal
-                    user={user!}
-                    classeId={activeCls.id}
-                    classeNom={activeCls.name}
-                    classesList={ppList}
-                    onSelectClasse={setSelectedPPClassId}
-                  />
-                ) : null
-              })()}
-            </div>
-          )}
-          {visitedSections.has('pp-appreciations') && (
-            <div style={{ display: section === 'pp-appreciations' ? 'contents' : 'none' }}>
-              {(() => {
-                const ppList = user?.classesProfessorPrincipal ?? []
-                const activeCls = ppList.find(c => c.id === selectedPPClassId) || ppList[0]
-                return activeCls ? (
-                  <SectionAppreciationsPP
-                    user={user!}
-                    classeId={activeCls.id}
-                    classeNom={activeCls.name}
-                    classesList={ppList}
-                    onSelectClasse={setSelectedPPClassId}
-                  />
-                ) : null
-              })()}
-            </div>
-          )}
-          {visitedSections.has('ap-departement') && (
-            <div style={{ display: section === 'ap-departement' ? 'contents' : 'none' }}>
-              {(() => {
-                const deptList = user?.headedDepartments ?? []
-                const activeDept = deptList.find(d => d.id === selectedAPDeptId) || deptList[0]
-                return activeDept ? (
-                  <SectionDepartementAP
-                    user={user!}
-                    departementId={activeDept.id}
-                    departementNom={activeDept.name}
-                    departmentsList={deptList}
-                    onSelectDept={setSelectedAPDeptId}
-                    onToast={showToast}
-                  />
-                ) : null
-              })()}
-            </div>
-          )}
-          {visitedSections.has('cahier-de-texte') && (
-            <div style={{ display: section === 'cahier-de-texte' ? 'contents' : 'none' }}>
-              <SectionCahierDeTexte user={user} onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('at-risk') && user && (
-            <div style={{ display: section === 'at-risk' ? 'contents' : 'none' }}>
-              <SectionTeacherAtRisk currentUserId={user.id} onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('mon-suivi') && (
-            <div style={{ display: section === 'mon-suivi' ? 'contents' : 'none' }}>
-              <SectionMesActionsSuivi onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('correction-anonyme') && (
-            <div style={{ display: section === 'correction-anonyme' ? 'contents' : 'none' }}>
-              <SectionTeacherCorrectionAnonyme onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('mon-profil-rh') && (
-            <div style={{ display: section === 'mon-profil-rh' ? 'contents' : 'none' }}>
-              <SectionMonProfilRH onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('notifications') && (
-            <div style={{ display: section === 'notifications' ? 'contents' : 'none' }}>
-              <NotificationCenter onNav={s => setSection(s as TeacherSection)} />
-            </div>
-          )}
-          {visitedSections.has('babillard') && (
-            <div style={{ display: section === 'babillard' ? 'contents' : 'none' }}>
-              <Babillard role={user?.role ?? 'TEACHER'} title={tnav('sidebar.babillard')} subtitle={tcommon('brand.roleTeacher')} currentUserId={user?.id} />
-            </div>
-          )}
-          {visitedSections.has('carnet-liaison') && (
-            <div style={{ display: section === 'carnet-liaison' ? 'contents' : 'none' }}>
-              <CarnetLiaisonView role="TEACHER" onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('messagerie') && (
-            <div style={{ display: section === 'messagerie' ? 'contents' : 'none' }}>
-              <Messagerie />
-            </div>
-          )}
-        </main>
+        <TeacherMainContent
+          section={section}
+          visitedSections={visitedSections}
+          user={user}
+          selectedPPClassId={selectedPPClassId}
+          selectedAPDeptId={selectedAPDeptId}
+          onSelectSection={setSection}
+          onSelectPPClass={setSelectedPPClassId}
+          onSelectAPDept={setSelectedAPDeptId}
+          showToast={showToast}
+          tnav={tnav}
+          tcommon={tcommon}
+        />
       </div>
 
       <TeacherToast toasts={toasts} onRemove={removeToast} />

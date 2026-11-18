@@ -1,340 +1,17 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
-import { Loader2, RefreshCw, Plus, Key, Users, Edit, CheckCircle, AlertCircle, UserPlus } from 'lucide-react'
-import { fetchApi } from '@/lib/fetchApi'
+
+import { RefreshCw } from 'lucide-react'
+import { useAnonymatData } from './anonymat/useAnonymatData'
+import AnonymatCreateForm from './anonymat/AnonymatCreateForm'
+import AnonymatSessionsTable from './anonymat/AnonymatSessionsTable'
+import AnonymatDetailPanel from './anonymat/AnonymatDetailPanel'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void
 }
 
-type SessionRow = {
-  id: string
-  classId: string
-  className?: string
-  subjectId: string
-  subjectName?: string
-  scheduledDate: string
-  status: string
-  isAnonymized: boolean
-  anonymatStatus: string
-  correctionMode: 'OWN_CLASS' | 'CROSSED' | null
-  academicSequenceId: string | null
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  NONE: 'Non démarré',
-  CODES_GENERES: 'Codes générés',
-  EQUIPE_DESIGNEE: 'Équipe désignée',
-  ANONYMISATION_EN_COURS: 'Anonymisation en cours',
-  ANONYMISATION_TERMINEE: 'Anonymisation terminée',
-  EN_CORRECTION: 'En correction',
-  CORRECTION_TERMINEE: 'Correction terminée',
-  RECONCILIE: 'Réconcilié',
-}
-
-const STATUS_COLORS: Record<string, string> = {
-  NONE: 'bg-gray-500/20 text-gray-600 dark:text-gray-300',
-  CODES_GENERES: 'bg-blue-500/20 text-blue-600 dark:text-blue-300',
-  EQUIPE_DESIGNEE: 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-300',
-  ANONYMISATION_EN_COURS: 'bg-amber-500/20 text-amber-700 dark:text-amber-300',
-  ANONYMISATION_TERMINEE: 'bg-success/20 text-success',
-  EN_CORRECTION: 'bg-purple-500/20 text-purple-600 dark:text-purple-300',
-  CORRECTION_TERMINEE: 'bg-primary/20 text-primary',
-  RECONCILIE: 'bg-success/20 text-success',
-}
-
-type RefItem = { id: string; name: string }
-type SequenceItem = { id: string; label: string }
-
 export default function SectionAnonymatStaff({ onToast }: Props) {
-  const [sessions, setSessions] = useState<SessionRow[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selected, setSelected] = useState<SessionRow | null>(null)
-  const [classId, setClassId] = useState('')
-  const [subjectId, setSubjectId] = useState('')
-  const [scopeId, setScopeId] = useState('')
-  const [academicSequenceId, setAcademicSequenceId] = useState('')
-  const [scheduledDate, setScheduledDate] = useState('')
-  const [isAnonymized, setIsAnonymized] = useState(true)
-  const [correctionMode, setCorrectionMode] = useState<'OWN_CLASS' | 'CROSSED'>('OWN_CLASS')
-  const [teamEmails, setTeamEmails] = useState('')
-  const [crossAssignments, setCrossAssignments] = useState<{ classId: string; correcteurUserId: string }[]>([])
-  const [teachers, setTeachers] = useState<{ id: string; name: string }[]>([])
-  const [classes, setClasses] = useState<RefItem[]>([])
-  const [subjects, setSubjects] = useState<RefItem[]>([])
-  const [sequences, setSequences] = useState<SequenceItem[]>([])
-  const [creating, setCreating] = useState(false)
-  const [generating, setGenerating] = useState<string | null>(null)
-  const [designating, setDesignating] = useState(false)
-  const [assigning, setAssigning] = useState(false)
-  const [reconciling, setReconciling] = useState(false)
-  const [teamProgress, setTeamProgress] = useState<{ total: number; done: number } | null>(null)
-
-  const loadSessions = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await fetchApi('/api/v2/assessments/sessions', { credentials: 'include' })
-      const data = await res.json()
-      if (data.success) setSessions(data.data ?? [])
-      else onToast(data.message || 'Erreur chargement sessions', 'error')
-    } catch (e: unknown) {
-      onToast(e instanceof Error ? e.message : 'Erreur réseau', 'error')
-    } finally {
-      setLoading(false)
-    }
-  }, [onToast])
-
-  useEffect(() => { loadSessions() }, [loadSessions])
-
-  // Load reference data on mount
-  useEffect(() => {
-    Promise.all([
-      fetchApi('/api/v2/classes', { credentials: 'include' }).then(r => r.json()),
-      fetchApi('/api/v2/subjects', { credentials: 'include' }).then(r => r.json()),
-      fetchApi('/api/v2/academic-years', { credentials: 'include' }).then(r => r.json()),
-    ]).then(([cls, sub, ay]) => {
-      type IdName = { id: string; name: string }
-      type AyYear = { name: string; periods?: Array<{ name: string; sequences?: IdName[] }> }
-      if (cls.data) setClasses((cls.data as IdName[]).map((c) => ({ id: c.id, name: c.name })))
-      if (sub.data) setSubjects((sub.data as IdName[]).map((s) => ({ id: s.id, name: s.name })))
-      if (ay.data) {
-        const seqs = ((ay.data ?? []) as AyYear[]).flatMap((year) =>
-          (year.periods ?? []).flatMap((p) =>
-            (p.sequences ?? []).map((s) => ({
-              id: s.id,
-              label: `${year.name} · ${p.name} · ${s.name}`,
-            })),
-          ),
-        )
-        setSequences(seqs)
-      }
-    }).catch(() => {})
-  }, [])
-
-  // Fetch teachers for CROSSED mode when panel opens
-  useEffect(() => {
-    if (selected?.anonymatStatus === 'ANONYMISATION_TERMINEE' && selected.correctionMode === 'CROSSED' && teachers.length === 0) {
-      fetchApi('/api/v2/users?role=TEACHER', { credentials: 'include' })
-        .then(r => r.json())
-        .then(d => {
-          if (d.success) {
-            setTeachers((d.data as Array<{ id: string; firstName: string; lastName: string }>).map((u) => ({ id: u.id, name: `${u.firstName} ${u.lastName}` })))
-          }
-        })
-        .catch(() => {})
-    }
-  }, [selected?.anonymatStatus, selected?.correctionMode])
-
-  // Fetch team progress when selected session is in team phase
-  useEffect(() => {
-    if (!selected || !['CODES_GENERES', 'EQUIPE_DESIGNEE', 'ANONYMISATION_EN_COURS', 'ANONYMISATION_TERMINEE'].includes(selected.anonymatStatus)) {
-      setTeamProgress(null)
-      return
-    }
-    fetchApi(`/api/v2/assessments/sessions/${selected.id}/anonymat/team-progress`, { credentials: 'include' })
-      .then(r => r.json())
-      .then(d => { if (d.success) setTeamProgress(d.data) })
-      .catch(() => {})
-  }, [selected?.id, selected?.anonymatStatus])
-
-  const createSession = async () => {
-    if (!scopeId || !subjectId || !classId || !scheduledDate || !academicSequenceId) {
-      onToast('Tous les champs sont requis (incl. séquence académique)', 'error')
-      return
-    }
-    setCreating(true)
-    try {
-      const res = await fetchApi('/api/v2/assessments/sessions', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          assessmentScopeId: scopeId,
-          subjectId,
-          classId,
-          academicSequenceId,
-          scheduledDate,
-          isAnonymized,
-          correctionMode: isAnonymized ? correctionMode : undefined,
-        }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        onToast('Session créée', 'success')
-        loadSessions()
-        setScopeId('')
-        setSubjectId('')
-        setClassId('')
-        setAcademicSequenceId('')
-        setScheduledDate('')
-      } else onToast(data.message || data.error || 'Échec', 'error')
-    } catch (e: unknown) {
-      onToast(e instanceof Error ? e.message : 'Erreur réseau', 'error')
-    } finally {
-      setCreating(false)
-    }
-  }
-
-  const generateCodes = async (sessionId: string, classIds: string[]) => {
-    setGenerating(sessionId)
-    try {
-      const res = await fetchApi(`/api/v2/assessments/sessions/${sessionId}/anonymat/codes`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ classIds }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        onToast(`${data.data.codesCount} codes générés`, 'success')
-        loadSessions()
-      } else onToast(data.message || data.error || 'Échec codes', 'error')
-    } catch (e: unknown) {
-      onToast(e instanceof Error ? e.message : 'Erreur réseau', 'error')
-    } finally {
-      setGenerating(null)
-    }
-  }
-
-  const designateTeam = async (session: SessionRow) => {
-    const emails = teamEmails.split(/[\n,;]+/).map(e => e.trim()).filter(Boolean)
-    if (emails.length === 0) {
-      onToast('Au moins un email requis', 'error')
-      return
-    }
-    setDesignating(true)
-    try {
-      const members = emails.map(email => ({ type: 'EMAIL' as const, email }))
-      const schoolRes = await fetchApi('/api/v2/school/me', { credentials: 'include' })
-      const school = await schoolRes.json()
-      const res = await fetchApi(`/api/v2/assessments/sessions/${session.id}/anonymat/team`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          members,
-          classIds: [session.classId],
-          schoolName: school?.data?.name ?? 'Établissement',
-        }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        onToast(`${data.data.membersCreated} membre(s) notifié(s)`, 'success')
-        setTeamEmails('')
-        loadSessions()
-      } else onToast(data.message || data.error || 'Échec équipe', 'error')
-    } catch (e: unknown) {
-      onToast(e instanceof Error ? e.message : 'Erreur réseau', 'error')
-    } finally {
-      setDesignating(false)
-    }
-  }
-
-  const assignCorrection = async (session: SessionRow) => {
-    if (session.correctionMode === 'CROSSED' && crossAssignments.length === 0) {
-      onToast('Ajoutez au moins un correcteur (mode croisé)', 'warning')
-      return
-    }
-    if (session.correctionMode === 'CROSSED' && crossAssignments.some(a => !a.correcteurUserId)) {
-      onToast('Tous les correcteurs doivent être sélectionnés', 'warning')
-      return
-    }
-    setAssigning(true)
-    try {
-      const body =
-        session.correctionMode === 'CROSSED'
-          ? { classIds: [session.classId], assignments: crossAssignments }
-          : { classIds: [session.classId] }
-      const res = await fetchApi(
-        `/api/v2/assessments/sessions/${session.id}/anonymat/correction-assignments`,
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        },
-      )
-      const data = await res.json()
-      if (data.success) {
-        onToast('Correcteurs assignés', 'success')
-        loadSessions()
-      } else onToast(data.message || data.error || 'Échec assignation', 'error')
-    } catch (e: unknown) {
-      onToast(e instanceof Error ? e.message : 'Erreur réseau', 'error')
-    } finally {
-      setAssigning(false)
-    }
-  }
-
-  const reconcile = async (sessionId: string) => {
-    setReconciling(true)
-    try {
-      const res = await fetchApi(`/api/v2/assessments/sessions/${sessionId}/anonymat/reconcile`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      })
-      const data = await res.json()
-      if (data.success) {
-        onToast(
-          `Réconciliation : ${data.data.reconciled} note(s)` +
-            (data.data.locked ? ' (verrouillées)' : ' (brouillon)'),
-          'success',
-        )
-        loadSessions()
-      } else onToast(data.message || data.error || 'Échec réconciliation', 'error')
-    } catch (e: unknown) {
-      onToast(e instanceof Error ? e.message : 'Erreur réseau', 'error')
-    } finally {
-      setReconciling(false)
-    }
-  }
-
-  const getActions = (session: SessionRow) => {
-    const actions: Array<{ label: string; onClick: () => void; icon: React.ReactNode; variant?: 'primary' | 'secondary' | 'danger' }> = []
-    if (session.anonymatStatus === 'NONE' && session.isAnonymized) {
-      actions.push({
-        label: 'Générer les codes',
-        icon: <Key size={16} />,
-        onClick: () => generateCodes(session.id, [session.classId]),
-        variant: 'primary',
-      })
-    }
-    if (['CODES_GENERES', 'EQUIPE_DESIGNEE'].includes(session.anonymatStatus)) {
-      actions.push({
-        label: 'Désigner l\'équipe',
-        icon: <Users size={16} />,
-        onClick: () => { setSelected(session); setTeamEmails('') },
-        variant: 'secondary',
-      })
-    }
-    if (session.anonymatStatus === 'ANONYMISATION_TERMINEE') {
-      actions.push({
-        label: 'Assigner correction',
-        icon: <Edit size={16} />,
-        onClick: () => { setSelected(session); setCrossAssignments([]) },
-        variant: 'primary',
-      })
-    }
-    if (session.anonymatStatus === 'CORRECTION_TERMINEE') {
-      actions.push({
-        label: 'Réconcilier',
-        icon: <CheckCircle size={16} />,
-        onClick: () => reconcile(session.id),
-        variant: 'primary',
-      })
-    }
-    if (session.anonymatStatus === 'RECONCILIE') {
-      actions.push({
-        label: 'Terminé',
-        icon: <CheckCircle size={16} />,
-        onClick: () => {},
-        variant: 'secondary',
-      })
-    }
-    return actions
-  }
+  const state = useAnonymatData(onToast)
 
   return (
     <div className="px-4 py-4 md:px-7 md:py-6" style={{ height: '100%', overflowY: 'auto' }}>
@@ -343,298 +20,70 @@ export default function SectionAnonymatStaff({ onToast }: Props) {
           <h1 className="text-lg md:text-xl font-bold text-[var(--text)]" style={{ fontFamily: 'var(--font-spectral),Spectral,serif' }}>
             Anonymat / Compositions
           </h1>
-          <p className="text-[var(--text3)] text-xs md:text-[12.5px] mt-0.5">Gestion des sessions d'évaluation anonymisées</p>
+          <p className="text-[var(--text3)] text-xs md:text-[12.5px] mt-0.5">Gestion des sessions d&apos;évaluation anonymisées</p>
         </div>
         <button
-          onClick={loadSessions}
-          disabled={loading}
+          onClick={state.loadSessions}
+          disabled={state.loading}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] text-xs font-semibold hover:bg-[var(--bg2)] transition-colors"
         >
-          <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+          <RefreshCw size={13} className={state.loading ? 'animate-spin' : ''} />
           Rafraîchir
         </button>
       </div>
 
-      {/* Création de session */}
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
-        <h2 className="text-sm md:text-base font-semibold text-[var(--text)] mb-3">Créer une session</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, alignItems: 'end' }}>
-          <div>
-            <label className="block text-xs font-medium text-[var(--text2)] mb-1">Scope d'évaluation</label>
-            <input
-              type="text"
-              value={scopeId}
-              onChange={(e) => setScopeId(e.target.value)}
-              placeholder="ID du scope"
-              className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-xs md:text-[12.5px] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[var(--text2)] mb-1">Matière</label>
-            <select
-              value={subjectId}
-              onChange={(e) => setSubjectId(e.target.value)}
-              className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-xs md:text-[12.5px] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
-            >
-              <option value="">— Matière —</option>
-              {subjects.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[var(--text2)] mb-1">Classe</label>
-            <select
-              value={classId}
-              onChange={(e) => setClassId(e.target.value)}
-              className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-xs md:text-[12.5px] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
-            >
-              <option value="">— Classe —</option>
-              {classes.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[var(--text2)] mb-1">Date prévue</label>
-            <input
-              type="datetime-local"
-              value={scheduledDate}
-              onChange={(e) => setScheduledDate(e.target.value)}
-              className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-xs md:text-[12.5px] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[var(--text2)] mb-1">Séquence académique</label>
-            <select
-              value={academicSequenceId}
-              onChange={(e) => setAcademicSequenceId(e.target.value)}
-              className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-xs md:text-[12.5px] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
-            >
-              <option value="">— Séquence —</option>
-              {sequences.map(s => (
-                <option key={s.id} value={s.id}>{s.label}</option>
-              ))}
-            </select>
-          </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'end' }}>
-            <label className="flex items-center gap-1.5 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={isAnonymized}
-                onChange={(e) => setIsAnonymized(e.target.checked)}
-                className="w-3.5 h-3.5 rounded border-[var(--border)] bg-[var(--bg)] text-[var(--primary)] focus:ring-[var(--primary)]"
-              />
-              <span className="text-xs text-[var(--text)]">Session anonymisée</span>
-            </label>
-            {isAnonymized && (
-              <div style={{ flex: 1 }}>
-                <label className="block text-xs font-medium text-[var(--text2)] mb-1">Mode correction</label>
-                <select
-                  value={correctionMode}
-                  onChange={(e) => setCorrectionMode(e.target.value as 'OWN_CLASS' | 'CROSSED')}
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-xs md:text-[12.5px] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
-                >
-                  <option value="OWN_CLASS">Propre classe</option>
-                  <option value="CROSSED">Croisé</option>
-                </select>
-              </div>
-            )}
-          </div>
-          <div>
-            <button
-              onClick={createSession}
-              disabled={creating}
-              className="w-full px-3 py-1.5 rounded-lg bg-[var(--primary)] text-white text-xs md:text-[12.5px] font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center justify-center gap-1.5"
-            >
-              <Plus size={14} />
-              {creating ? 'Création...' : 'Créer la session'}
-            </button>
-          </div>
-        </div>
-      </div>
+      <AnonymatCreateForm
+        scopeId={state.scopeId}
+        setScopeId={state.setScopeId}
+        subjectId={state.subjectId}
+        setSubjectId={state.setSubjectId}
+        classId={state.classId}
+        setClassId={state.setClassId}
+        scheduledDate={state.scheduledDate}
+        setScheduledDate={state.setScheduledDate}
+        academicSequenceId={state.academicSequenceId}
+        setAcademicSequenceId={state.setAcademicSequenceId}
+        isAnonymized={state.isAnonymized}
+        setIsAnonymized={state.setIsAnonymized}
+        correctionMode={state.correctionMode}
+        setCorrectionMode={state.setCorrectionMode}
+        subjects={state.subjects}
+        classes={state.classes}
+        sequences={state.sequences}
+        creating={state.creating}
+        onCreate={state.createSession}
+      />
 
-      {/* Liste des sessions */}
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
-        {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 size={20} className="text-[var(--primary)] animate-spin" />
-          </div>
-        ) : sessions.length === 0 ? (
-          <div className="text-center py-8 text-[var(--text3)] text-xs">
-            Aucune session trouvée. Créez votre première session ci-dessus.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg2)' }}>
-                  <th className="text-left px-2.5 py-2 text-[11px] font-bold text-[var(--text3)] uppercase tracking-wider">Session</th>
-                  <th className="text-left px-2.5 py-2 text-[11px] font-bold text-[var(--text3)] uppercase tracking-wider">Classe</th>
-                  <th className="text-left px-2.5 py-2 text-[11px] font-bold text-[var(--text3)] uppercase tracking-wider">Matière</th>
-                  <th className="text-left px-2.5 py-2 text-[11px] font-bold text-[var(--text3)] uppercase tracking-wider">Date</th>
-                  <th className="text-left px-2.5 py-2 text-[11px] font-bold text-[var(--text3)] uppercase tracking-wider">Statut</th>
-                  <th className="text-left px-2.5 py-2 text-[11px] font-bold text-[var(--text3)] uppercase tracking-wider">Anonymat</th>
-                  <th className="text-left px-2.5 py-2 text-[11px] font-bold text-[var(--text3)] uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sessions.map((session) => (
-                  <tr key={session.id} style={{ borderBottom: '1px solid var(--border)', background: selected?.id === session.id ? 'var(--bg2)' : 'transparent' }} onClick={() => setSelected(selected?.id === session.id ? null : session)}>
-                    <td className="px-2.5 py-2 text-xs font-mono text-[var(--text)]">{session.id.slice(0, 8)}…</td>
-                    <td className="px-2.5 py-2 text-xs font-medium text-[var(--text)]">{session.className || session.classId}</td>
-                    <td className="px-2.5 py-2 text-xs text-[var(--text)]">{session.subjectName || session.subjectId}</td>
-                    <td className="px-2.5 py-2 text-xs text-[var(--text3)]">{new Date(session.scheduledDate).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
-                    <td className="px-2.5 py-2 text-xs">
-                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${session.status === 'PLANNED' ? 'bg-blue-500/20 text-blue-600 dark:text-blue-300' : session.status === 'IN_PROGRESS' ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300' : 'bg-success/20 text-success'}`}>
-                        {session.status}
-                      </span>
-                    </td>
-                    <td className="px-2.5 py-2 text-xs">
-                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_COLORS[session.anonymatStatus] || STATUS_COLORS.NONE}`}>
-                        {STATUS_LABELS[session.anonymatStatus] || session.anonymatStatus}
-                      </span>
-                    </td>
-                    <td className="px-2.5 py-2 text-xs">
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        {getActions(session).map((action, idx) => (
-                          <button
-                            key={idx}
-                            onClick={(e) => { e.stopPropagation(); action.onClick() }}
-                            disabled={generating === session.id || designating || assigning || reconciling}
-                            className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
-                              action.variant === 'primary'
-                                ? 'bg-[var(--primary)] text-white hover:opacity-90'
-                                : action.variant === 'danger'
-                                 ? 'bg-red-500/20 text-red-600 dark:text-red-300 hover:bg-red-500/30'
+      <AnonymatSessionsTable
+        sessions={state.sessions}
+        loading={state.loading}
+        selected={state.selected}
+        busyAction={state.designating || state.assigning || state.reconciling}
+        generatingId={state.generating}
+        onSelect={state.setSelected}
+        onGenerateCodes={state.generateCodes}
+        onOpenTeam={(session) => { state.setSelected(session); state.setTeamEmails('') }}
+        onOpenCorrection={(session) => { state.setSelected(session); state.setCrossAssignments([]) }}
+        onReconcile={state.reconcile}
+      />
 
-                                : 'bg-[var(--bg2)] text-[var(--text)] hover:bg-[var(--border)]'
-                            }`}
-                          >
-                            {action.icon}
-                            {action.label}
-                          </button>
-                        ))}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Panneau de détail / actions */}
-      {selected && (
-        <div style={{ marginTop: 16, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h2 className="text-sm md:text-base font-semibold text-[var(--text)]">Session {selected.id.slice(0, 8)}…</h2>
-            <button onClick={() => setSelected(null)} className="text-[var(--text3)] hover:text-[var(--text)] text-sm">×</button>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, marginBottom: 12 }}>
-            <div><span className="text-[var(--text3)] text-xs">Classe</span><br /><span className="font-semibold text-xs text-[var(--text)]">{selected.className || selected.classId}</span></div>
-            <div><span className="text-[var(--text3)] text-xs">Matière</span><br /><span className="font-semibold text-xs text-[var(--text)]">{selected.subjectName || selected.subjectId}</span></div>
-            <div><span className="text-[var(--text3)] text-xs">Statut anonymat</span><br /><span className={`font-semibold px-2 py-0.5 rounded-full text-[11px] ${STATUS_COLORS[selected.anonymatStatus] || STATUS_COLORS.NONE}`}>{STATUS_LABELS[selected.anonymatStatus] || selected.anonymatStatus}</span></div>
-            <div><span className="text-[var(--text3)] text-xs">Mode correction</span><br /><span className="font-semibold text-xs text-[var(--text)]">{selected.correctionMode || '—'}</span></div>
-          </div>
-
-          {['CODES_GENERES', 'EQUIPE_DESIGNEE'].includes(selected.anonymatStatus) && (
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
-              <h3 className="font-medium text-xs md:text-sm text-[var(--text)] mb-2">Désigner l'équipe d'anonymisation</h3>
-              {teamProgress && (
-                <p className="text-xs text-[var(--text3)] mb-2">
-                  Équipe : {teamProgress.done}/{teamProgress.total} lot(s) terminé(s)
-                </p>
-              )}
-              <textarea
-                value={teamEmails}
-                onChange={(e) => setTeamEmails(e.target.value)}
-                placeholder="Emails des membres (un par ligne ou séparés par des virgules)"
-                rows={2}
-                className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
-              />
-              <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-                <button
-                  onClick={() => designateTeam(selected)}
-                  disabled={designating}
-                  className="px-3 py-1.5 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5"
-                >
-                  <Users size={14} />
-                  {designating ? 'Envoi…' : 'Notifier l\'équipe'}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {selected.anonymatStatus === 'ANONYMISATION_TERMINEE' && (
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
-              <h3 className="font-medium text-xs md:text-sm text-[var(--text)] mb-2">Assigner les correcteurs</h3>
-              {selected.correctionMode === 'CROSSED' ? (
-                <div>
-                  <p className="text-xs text-[var(--text3)] mb-2">Mode croisé : associez chaque classe à un correcteur</p>
-                  <button
-                    onClick={() => setCrossAssignments([...crossAssignments, { classId: selected.classId, correcteurUserId: '' }])}
-                    className="text-xs text-[var(--primary)] hover:underline mb-2 flex items-center gap-1"
-                  >
-                    <UserPlus size={13} />
-                    + Ajouter une assignation
-                  </button>
-                  {crossAssignments.map((a, idx) => (
-                    <div key={idx} style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
-                      <select
-                        value={a.correcteurUserId}
-                        onChange={(e) => setCrossAssignments(crossAssignments.map((x, i) => i === idx ? { ...x, correcteurUserId: e.target.value } : x))}
-                        className="flex-1 px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-xs"
-                      >
-                        <option value="">— Sélectionner un correcteur —</option>
-                        {teachers.map(t => (
-                          <option key={t.id} value={t.id}>{t.name}</option>
-                        ))}
-                      </select>
-                      <button onClick={() => setCrossAssignments(crossAssignments.filter((_, i) => i !== idx))} className="text-red-600 hover:text-red-300 dark:text-red-300 dark:hover:text-red-200 text-sm">×</button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-[var(--text3)] mb-2">Mode propre classe : les correcteurs sont les enseignants de la classe.</p>
-              )}
-              <button
-                onClick={() => assignCorrection(selected)}
-                disabled={assigning}
-                className="px-3 py-1.5 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold hover:opacity-90 disabled:opacity-50 mt-1 flex items-center gap-1.5"
-              >
-                <Edit size={14} />
-                {assigning ? 'Assignation…' : 'Assigner la correction'}
-              </button>
-            </div>
-          )}
-
-          {selected.anonymatStatus === 'CORRECTION_TERMINEE' && (
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
-              <h3 className="font-medium text-xs md:text-sm text-[var(--text)] mb-2">Réconcilier les notes</h3>
-              <p className="text-xs text-[var(--text3)] mb-2">Appliquer les notes anonymes aux bulletins des élèves.</p>
-              <button
-                onClick={() => reconcile(selected.id)}
-                disabled={reconciling}
-                className="px-3 py-1.5 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5"
-              >
-                <CheckCircle size={14} />
-                {reconciling ? 'Réconciliation…' : 'Réconcilier maintenant'}
-              </button>
-            </div>
-          )}
-
-          {selected.anonymatStatus === 'RECONCILIE' && (
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
-              <div className="flex items-center gap-2 text-success text-xs md:text-sm">
-                <CheckCircle size={18} />
-                <span className="font-medium">Session réconciliée — toutes les notes sont intégrées aux bulletins.</span>
-              </div>
-            </div>
-          )}
-        </div>
+      {state.selected && (
+        <AnonymatDetailPanel
+          selected={state.selected}
+          teamProgress={state.teamProgress}
+          teamEmails={state.teamEmails}
+          setTeamEmails={state.setTeamEmails}
+          designating={state.designating}
+          onDesignateTeam={state.designateTeam}
+          crossAssignments={state.crossAssignments}
+          setCrossAssignments={state.setCrossAssignments}
+          teachers={state.teachers}
+          assigning={state.assigning}
+          onAssignCorrection={state.assignCorrection}
+          reconciling={state.reconciling}
+          onReconcile={state.reconcile}
+          onClose={() => state.setSelected(null)}
+        />
       )}
     </div>
   )

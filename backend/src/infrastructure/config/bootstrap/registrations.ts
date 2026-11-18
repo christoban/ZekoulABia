@@ -1,6 +1,7 @@
 import type { Application } from 'express';
 import { prisma } from '@infrastructure/persistence/prisma/prisma.client';
 import { AIActionAuditAdapter } from '@infrastructure/services/ai/AIActionAuditAdapter';
+import { creerMessagerieClassLister } from '@infrastructure/services/messagerie/MessagerieClassListerAdapter';
 import { PrismaDisciplineRepository } from '@infrastructure/persistence/prisma/PrismaDisciplineRepository';
 import { creerContainer } from '@infrastructure/config/container';
 import { ClasseController } from '@infrastructure/http/controllers/ClasseController';
@@ -300,7 +301,7 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
   const changerParametresCanalUseCase = new ChangerParametresCanalUseCase(messagerieRepository, realtimeSocketAdapter);
   const initialiserCanauxUseCase = new InitialiserCanauxManquantsUseCase(
     messagerieRepository,
-    async (schoolId: string) => p.class.findMany({ where: { schoolId }, select: { id: true, name: true, schoolId: true } }),
+    creerMessagerieClassLister(p),
   );
   const messagerieController = new MessagerieController(
     envoyerMessageUseCase,

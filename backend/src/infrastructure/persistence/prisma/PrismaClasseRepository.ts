@@ -167,6 +167,25 @@ export class PrismaClasseRepository implements ClasseRepository {
     return this.prisma.class.findFirst({ where: { id, schoolId, deletedAt: { not: null } }, select: { id: true } });
   }
 
+  async findElevesActifsPourTemplate(
+    schoolId: string,
+    classId: string,
+  ): Promise<Array<{ matricule: string | null; firstName: string; lastName: string }>> {
+    const rows = await this.prisma.studentProfile.findMany({
+      where: {
+        user: { schoolId },
+        enrollmentsYearScoped: { some: { classId, status: 'ACTIVE', academicYear: { isCurrent: true } } },
+      },
+      include: { user: { select: { firstName: true, lastName: true } } },
+      orderBy: { user: { lastName: 'asc' } },
+    });
+    return rows.map((s) => ({
+      matricule: s.matricule ?? null,
+      firstName: s.user.firstName,
+      lastName: s.user.lastName,
+    }));
+  }
+
   private toDomain(data: Class): Classe {
     return Classe.reconstituer({
       id: data.id,

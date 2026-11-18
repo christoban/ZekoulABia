@@ -1,43 +1,27 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { motion } from 'framer-motion'
 import { fetchApi } from '@/lib/fetchApi'
 import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
-import { groupTimetableSlotsForDisplay, normalizeTimetableCellSlots, timetableCellKey } from '@/lib/timetableSlotGrouping'
-import { X, AlertTriangle, CalendarDays, Calendar, Bot } from 'lucide-react'
+import { groupTimetableSlotsForDisplay } from '@/lib/timetableSlotGrouping'
+import { AlertTriangle, CalendarDays, Calendar, Bot } from 'lucide-react'
 import DelegationSupervisionBanner from './DelegationSupervisionBanner'
 import { confirmAction } from '@/components/shell/ConfirmDialog'
 import {
   DAY_MAP,
-  subjectColor,
   type TimetableClassItem as ClassItem,
-  type TimetableSlot,
   type TimetableData as Timetable,
   type PeriodeGrille,
 } from '@/features/timetable/timetableShared'
-
+import TimetableMobileView from './timetable/TimetableMobileView'
+import TimetableDesktopGrid from './timetable/TimetableDesktopGrid'
+import { btnPrim, btnSec, spinInline } from './timetable/timetableStyles'
 import type { AdminSection } from '../_types'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
   onNav?: (section: AdminSection) => void
 }
-interface GenResult {
-  classId: string; className: string; timetableId: string; slotsCreated: number; isNew: boolean
-}
-interface UnplacedItem {
-  classId: string; className: string; subjectId: string; subjectName: string
-  teacherName: string; explication: string
-}
-interface GenResults {
-  results: GenResult[]
-  skipped: { classId: string; className: string; reason: string }[]
-  unplaced: UnplacedItem[]
-  stats: { classesTraitees: number; classesIgnorees: number; slotsTotal: number; coursNonPlaces: number }
-}
-
-const freeSlotStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, width: '100%', minHeight: '60px', boxSizing: 'border-box' }
 
 export default function SectionTimetable({ onToast, onNav }: Props) {
   const t = useT('admin')
@@ -253,7 +237,7 @@ export default function SectionTimetable({ onToast, onNav }: Props) {
           </select>
 
           <div className="flex flex-wrap gap-2.5 md:items-center">
-             <button className="text-xs md:text-sm font-bold rounded-lg px-3.5 py-2"
+            <button className="text-xs md:text-sm font-bold rounded-lg px-3.5 py-2"
               style={btnSec}
               onClick={handlePublishAll}
               disabled={publishingAll || publishing || reopening}>
@@ -288,8 +272,6 @@ export default function SectionTimetable({ onToast, onNav }: Props) {
           </div>
         </div>
       </div>
-
-      {/* Panel résultats génération */}
 
       {/* Chargement */}
       {loading && (
@@ -336,9 +318,9 @@ export default function SectionTimetable({ onToast, onNav }: Props) {
             </div>
             <span className="text-xs md:text-sm font-extrabold" style={{ color: pct === 100 ? 'var(--green)' : 'var(--amber)' }}>{pct}%</span>
             {timetable.generatedByAI && <span className="text-xs bg-[var(--purple-light)] color-[var(--purple)] font-bold rounded-full px-3 py-0.5 inline-flex items-center gap-1"><Bot size={12} strokeWidth={2} /> IA</span>}
-             {timetable.status === 'PUBLISHED' && <span className="text-xs bg-[var(--green-light)] color-[var(--green)] font-bold rounded-full px-3 py-0.5">{t('timetable.statusPublished')}</span>}
-             {timetable.status === 'SUBMITTED' && <span className="text-xs bg-[var(--blue-light)] color-[var(--blue)] font-bold rounded-full px-3 py-0.5">{t('timetable.statusSubmitted')}</span>}
-             {timetable.status === 'DRAFT' && <span className="text-xs bg-[var(--amber-light)] color-[var(--amber)] font-bold rounded-full px-3 py-0.5">{t('timetable.statusDraft')}</span>}
+            {timetable.status === 'PUBLISHED' && <span className="text-xs bg-[var(--green-light)] color-[var(--green)] font-bold rounded-full px-3 py-0.5">{t('timetable.statusPublished')}</span>}
+            {timetable.status === 'SUBMITTED' && <span className="text-xs bg-[var(--blue-light)] color-[var(--blue)] font-bold rounded-full px-3 py-0.5">{t('timetable.statusSubmitted')}</span>}
+            {timetable.status === 'DRAFT' && <span className="text-xs bg-[var(--amber-light)] color-[var(--amber)] font-bold rounded-full px-3 py-0.5">{t('timetable.statusDraft')}</span>}
           </div>
 
           {slots.length === 0 ? (
@@ -347,190 +329,30 @@ export default function SectionTimetable({ onToast, onNav }: Props) {
             </div>
           ) : (
             <>
-            {/* ── Vue jour-par-jour — mobile ── */}
-            <div className="md:hidden">
-              <div className="relative -mr-4 border-b border-[var(--border)]">
-                <div className="flex gap-1.5 overflow-x-auto p-2 scrollbar-none">
-                  {displayDays.map(j => {
-                    const active = effectiveMobileDay === j
-                    return (
-                      <button key={j} onClick={() => setMobileDay(j)}
-                        className="relative flex-shrink-0 rounded-full px-3.5 py-1.5 whitespace-nowrap border-0 cursor-pointer font-inherit">
-                        {active && (
-                          <motion.div layoutId="timetable-day-pill" className="absolute inset-0 rounded-full"
-                            style={{ background: 'var(--sidebar)' }}
-                            transition={{ type: 'spring', stiffness: 380, damping: 30 }} />
-                        )}
-                        <span className="relative z-10 text-xs font-bold" style={{ color: active ? '#fff' : 'var(--text3)' }}>
-                          {t(`timetable.days.${j}`)}
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-              <div className="p-3 flex flex-col gap-2.5">
-                {hasGridConfig ? squelette.map((periode, idx) => {
-                  if (periode.type !== 'COURS') {
-                    const isPetite = periode.type === 'PETITE_PAUSE'
-                    return (
-                      <div key={`m-pause-${idx}`} className="rounded-lg shadow-xs flex items-stretch overflow-hidden">
-                        <div className="w-14 flex-shrink-0 p-2.5 bg-[var(--bg2)] text-[10.5px] font-bold text-[var(--text3)] text-center">
-                          {periode.debut}<br /><span className="text-[9.5px]">{periode.fin}</span>
-                        </div>
-                        <div className="flex-1 p-2.5 bg-[var(--amber-light)] border-l-2 border-[var(--amber)] flex items-center">
-                          <span className="text-xs font-bold text-[var(--amber)]">{isPetite ? t('timetable.smallBreak') : t('timetable.bigBreak')}</span>
-                        </div>
-                      </div>
-                    )
-                  }
-                   const cellSlots = slotMap.get(timetableCellKey({ dayOfWeek: DAY_MAP[effectiveMobileDay]!, startTime: periode.debut, endTime: periode.fin })) ?? []
-                   const courseActive = (squeletteParJour[effectiveMobileDay] ?? squelette).some(periodeJour => periodeJour.type === 'COURS' && periodeJour.debut === periode.debut && periodeJour.fin === periode.fin)
-
-                  return (
-                     <div key={`m-cours-${periode.debut}`} className="rounded-lg shadow-xs flex items-stretch overflow-hidden">
-                       <div className="w-14 flex-shrink-0 p-2.5 bg-[var(--bg2)] text-[10.5px] font-bold text-[var(--text3)] text-center">
-                         {periode.debut}<br /><span className="text-[9.5px]">{periode.fin}</span>
-                       </div>
-                       <div className="flex-1 p-2.5" style={{ background: 'var(--surface)', opacity: courseActive ? 1 : 0.4 }}>
-                         {!courseActive ? <div className="text-xs text-[var(--text3)]">—</div> : <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>{cellSlots.map(slot => {
-                           const col = slot.subject ? subjectColor(slot.subject.id) : null
-                           return <div key={slot.id} style={{ padding: '5px 6px', background: slot.kind === 'FREE' ? 'var(--blue-light)' : col?.bg, borderLeft: `3px solid ${slot.kind === 'FREE' ? 'var(--blue)' : col?.border}`, ...(slot.kind === 'FREE' ? freeSlotStyle : {}) }}>
-                             <div className="text-xs font-bold" style={{ color: slot.kind === 'FREE' ? 'var(--blue)' : col?.text }}>{slot.kind === 'FREE' ? t('timetable.freeTime') : slot.subject?.name}</div>
-                             {slot.subject && <div className="text-[11px] text-[var(--text3)] mt-0.5">{slot.teacher ? `${slot.teacher.firstName} ${slot.teacher.lastName}` : '—'}</div>}
-                             {slot.room && <div className="text-[10.5px] text-[var(--text3)] mt-0.5">{t('timetable.roomLabel')} {slot.room}</div>}
-                           </div>
-                         })}</div>}
-                       </div>
-                     </div>
-                   )
-                 }) : fallbackTimes.map(time => {
-                   const d = DAY_MAP[effectiveMobileDay]
-                   const cellSlots = normalizeTimetableCellSlots(slots.filter(slot => slot.dayOfWeek === d && slot.startTime === time))
-                   return (
-                     <div key={`m-${time}`} className="rounded-lg shadow-xs flex items-stretch overflow-hidden">
-                       <div className="w-14 flex-shrink-0 p-2.5 bg-[var(--bg2)] text-[10.5px] font-bold text-[var(--text3)] text-center">{time}</div>
-                       <div className="flex-1 p-2.5" style={{ background: 'var(--surface)' }}>
-                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>{cellSlots.map(slot => {
-                           const col = slot.subject ? subjectColor(slot.subject.id) : null
-                           return <div key={slot.id} style={{ padding: '5px 6px', background: slot.kind === 'FREE' ? 'var(--blue-light)' : col?.bg, borderLeft: `3px solid ${slot.kind === 'FREE' ? 'var(--blue)' : col?.border}`, ...(slot.kind === 'FREE' ? freeSlotStyle : {}) }}>
-                             <div className="text-xs font-bold" style={{ color: slot.kind === 'FREE' ? 'var(--blue)' : col?.text }}>{slot.kind === 'FREE' ? t('timetable.freeTime') : slot.subject?.name}</div>
-                             {slot.subject && <div className="text-[11px] text-[var(--text3)] mt-0.5">{slot.teacher ? `${slot.teacher.firstName} ${slot.teacher.lastName}` : '—'}</div>}
-                             {slot.room && <div className="text-[10.5px] text-[var(--text3)] mt-0.5">{t('timetable.roomLabel')} {slot.room}</div>}
-                           </div>
-                         })}</div>
-                       </div>
-                     </div>
-                   )
-                 })}
-              </div>
-            </div>
-
-            {/* ── Grille complete — desktop ── */}
-            <div className="hidden md:block overflow-x-auto">
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
-                <thead>
-                  <tr>
-                    <th style={{ ...thSt, width: 95 }}>{t('timetable.schedule')}</th>
-                    {(hasGridConfig ? joursActifs : ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI']).map(j => (
-                      <th key={j} style={thSt}>{t(`timetable.days.${j}`)}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {hasGridConfig ? (
-                    squelette.map((periode, idx) => {
-                      if (periode.type !== 'COURS') {
-                        const isPetite = periode.type === 'PETITE_PAUSE'
-                        return (
-                          <tr key={`pause-${idx}`}>
-                            <td colSpan={joursActifs.length + 1}
-                              style={{ textAlign: 'center', padding: '5px 12px', background: 'var(--amber-light)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', fontSize: 11.5, fontWeight: 700, color: 'var(--amber)' }}>
-                              {isPetite ? t('timetable.smallBreak') : t('timetable.bigBreak')} — {periode.debut} {t('timetable.to')} {periode.fin}
-                            </td>
-                          </tr>
-                        )
-                      }
-                      return (
-                        <tr key={`cours-${periode.debut}`}>
-                          <td style={{ padding: '7px 9px', background: 'var(--bg)', fontSize: 12, fontWeight: 800, color: 'var(--text3)', textAlign: 'center', border: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
-                            {periode.debut}<br /><span style={{ fontSize: 10.5 }}>{periode.fin}</span>
-                          </td>
-                          {joursActifs.map(jour => {
-                             const dayNum = DAY_MAP[jour]
-                             const cellSlots = slotMap.get(timetableCellKey({ dayOfWeek: dayNum, startTime: periode.debut, endTime: periode.fin })) ?? []
-                             const courseActive = (squeletteParJour[jour] ?? squelette).some(periodeJour => periodeJour.type === 'COURS' && periodeJour.debut === periode.debut && periodeJour.fin === periode.fin)
-
-                             return (
-                               <td key={jour} style={{ padding: 0, border: '1px solid var(--border)', verticalAlign: 'top', minWidth: 105, minHeight: 60, opacity: courseActive ? 1 : 0.4 }}>
-                                 {!courseActive ? (
-                                   <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)' }}>—</div>
-                                 ) : cellSlots.length === 0 ? (
-                                   <div style={{ height: '100%', background: 'var(--bg)' }} />
-                                 ) : (
-                                   <div style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: 3, minHeight: 60, boxSizing: 'border-box' }}>
-                                     {cellSlots.map(slot => {
-                                       const col = slot.subject ? subjectColor(slot.subject.id) : null
-                                       return (
-                                          <div key={slot.id} style={{ padding: '5px 7px', background: slot.kind === 'FREE' ? 'var(--blue-light)' : col?.bg, borderLeft: `3px solid ${slot.kind === 'FREE' ? 'var(--blue)' : col?.border}`, boxSizing: 'border-box', ...(slot.kind === 'FREE' ? freeSlotStyle : {}) }}>
-                                           {slot.kind === 'FREE' ? <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--blue)' }}>{t('timetable.freeTime')}</div> : <>
-                                             <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}><span style={{ fontSize: 11.5, fontWeight: 800, color: col?.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{slot.subject?.name}</span>{slot.isLV2Slot && <span style={{ fontSize: 8.5, fontWeight: 900, color: 'var(--blue)', background: 'rgba(3,105,161,0.14)', padding: '1px 3px', borderRadius: 4, whiteSpace: 'nowrap' }}>LV2 · {slot.subject?.name}</span>}</div>
-                                             <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{slot.teacher ? `${slot.teacher.firstName} ${slot.teacher.lastName}` : <span style={{ color: 'var(--amber)' }}>{t('timetable.noTeacher')}</span>}</div>
-                                             {slot.room && <div style={{ fontSize: 9, color: 'var(--text3)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('timetable.roomLabel')} {slot.room}</div>}
-                                           </>}
-                                         </div>
-                                       )
-                                     })}
-                                   </div>
-                                 )}
-                              </td>
-                             )
-                           })}
-                        </tr>
-                      )
-                    })
-                  ) : (
-                    fallbackTimes.map(time => (
-                      <tr key={time}>
-                        <td style={{ padding: '7px 9px', background: 'var(--bg)', fontSize: 12, fontWeight: 800, color: 'var(--text3)', textAlign: 'center', border: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
-                          {time}
-                        </td>
-                         {[1,2,3,4,5].map(d => {
-                           const cellSlots = normalizeTimetableCellSlots(slots.filter(slot => slot.dayOfWeek === d && slot.startTime === time))
-                           return (
-                             <td key={d} style={{ padding: 0, border: '1px solid var(--border)', verticalAlign: 'top', minWidth: 105, minHeight: 60 }}>
-                               <div style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: 3, boxSizing: 'border-box' }}>
-                                 {cellSlots.map(slot => {
-                                   const col = slot.subject ? subjectColor(slot.subject.id) : null
-                                    return <div key={slot.id} style={{ padding: '5px 7px', background: slot.kind === 'FREE' ? 'var(--bg2)' : col?.bg, borderLeft: `3px solid ${slot.kind === 'FREE' ? 'var(--border)' : col?.border}`, boxSizing: 'border-box', ...(slot.kind === 'FREE' ? freeSlotStyle : {}) }}>
-                                     <div style={{ fontSize: 11.5, fontWeight: 800, color: col?.text }}>{slot.kind === 'FREE' ? t('timetable.freeTime') : slot.subject?.name}</div>
-                                     {slot.subject && <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>{slot.teacher ? `${slot.teacher.firstName} ${slot.teacher.lastName}` : '—'}</div>}
-                                     {slot.room && <div style={{ fontSize: 9, color: 'var(--text3)', marginTop: 2 }}>{t('timetable.roomLabel')} {slot.room}</div>}
-                                   </div>
-                                 })}
-                               </div>
-                             </td>
-                           )
-                         })}
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+              <TimetableMobileView
+                displayDays={displayDays}
+                effectiveMobileDay={effectiveMobileDay}
+                onSelectMobileDay={setMobileDay}
+                hasGridConfig={hasGridConfig}
+                squelette={squelette}
+                squeletteParJour={squeletteParJour}
+                fallbackTimes={fallbackTimes}
+                slots={slots}
+                slotMap={slotMap}
+              />
+              <TimetableDesktopGrid
+                hasGridConfig={hasGridConfig}
+                joursActifs={joursActifs}
+                squelette={squelette}
+                squeletteParJour={squeletteParJour}
+                fallbackTimes={fallbackTimes}
+                slots={slots}
+                slotMap={slotMap}
+              />
             </>
           )}
         </div>
       )}
-
     </div>
   )
 }
-
-const sTitle:    React.CSSProperties = { fontFamily: 'var(--font-spectral,Spectral,serif)', fontWeight: 700, color: 'var(--text)' }
-const sSub:      React.CSSProperties = { color: 'var(--text3)', marginTop: 3 }
-const btnPrim:   React.CSSProperties = { padding: '9px 17px', borderRadius: 9, fontSize: 14, fontWeight: 800, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }
-const btnSec:    React.CSSProperties = { padding: '9px 15px', borderRadius: 9, fontSize: 14, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
-const selectSt:  React.CSSProperties = { background: 'var(--surface)', border: '1.5px solid var(--border2)', borderRadius: 9, padding: '8.5px 13px', fontSize: 14, fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }
-const thSt:      React.CSSProperties = { padding: '9px 8px', textAlign: 'center', fontSize: 12, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', border: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.4px' }
-const spinInline: React.CSSProperties = { display: 'inline-block', width: 13, height: 13, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: 'white', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite', verticalAlign: 'middle' }

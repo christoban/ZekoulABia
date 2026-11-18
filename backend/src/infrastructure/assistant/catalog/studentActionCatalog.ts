@@ -10,13 +10,17 @@
  */
 import { z } from 'zod';
 import { calculateAverageScoreOn20 } from '@domain/rules/GradingEngine';
-import { type ActionDefinition, resolveCurrentSequence } from '@infrastructure/assistant/catalog/catalogShared';
+import {
+  type ActionDefinition,
+  defineAction,
+  resolveCurrentSequence,
+} from '@infrastructure/assistant/catalog/catalogShared';
 import type { GetMetricUseCase } from '@application/reporting/GetMetricUseCase';
 
 export function buildStudentActionCatalog(getMetric?: GetMetricUseCase): ActionDefinition[] {
   return [
     // 1. Mes notes récentes — LECTURE SEULE
-    {
+    defineAction({
       name: 'mes_notes',
       description: 'Donne vos notes les plus récentes, toutes matières confondues.',
       destructive: false,
@@ -24,29 +28,24 @@ export function buildStudentActionCatalog(getMetric?: GetMetricUseCase): ActionD
       allowedRoles: ['STUDENT'],
       inputSchema: z.object({ subjectName: z.string().optional().describe('Limiter à une matière précise') }),
       async execute(input, ctx) {
-        const grades = await ctx.prisma.grade.findMany({
-          where: {
-            schoolId: ctx.schoolId,
-            studentId: ctx.userId,
-            sequenceAverage: { not: null },
-            ...(input.subjectName ? { subject: { name: { contains: input.subjectName, mode: 'insensitive' } } } : {}),
-          },
-          orderBy: { id: 'desc' },
+        const grades = await ctx.data.portal.findRecentStudentGrades({
+          schoolId: ctx.schoolId,
+          studentId: ctx.userId,
+          subjectNameContains: input.subjectName ?? undefined,
           take: 10,
-          select: { sequenceAverage: true, subject: { select: { name: true } }, sequence: { select: { name: true } } },
         });
         const resultLabel = grades.length === 0
           ? "Aucune note disponible pour le moment."
-          : `Vos notes récentes : ` + grades.map((g) => `${g.subject.name} (${g.sequence.name}) : ${g.sequenceAverage}/20`).join(', ');
+          : `Vos notes récentes : ` + grades.map((g) => `${g.subjectName} (${g.sequenceName}) : ${g.sequenceAverage}/20`).join(', ');
         return { resultLabel, section: 'grades' };
       },
       async undo() {
         throw new Error('Cette action est une simple consultation, il n\'y a rien à annuler.');
       },
-    },
+    }),
 
     // 2. Ma moyenne de la séquence courante — LECTURE SEULE
-    {
+    defineAction({
       name: 'ma_moyenne_sequence',
       description: 'Donne votre moyenne générale pour la séquence courante.',
       destructive: false,
@@ -55,10 +54,7 @@ export function buildStudentActionCatalog(getMetric?: GetMetricUseCase): ActionD
       inputSchema: z.object({}),
       async execute(_input, ctx) {
         const sequence = await resolveCurrentSequence(ctx);
-        const grades = await ctx.prisma.grade.findMany({
-          where: { schoolId: ctx.schoolId, studentId: ctx.userId, sequenceId: sequence.id, sequenceAverage: { not: null } },
-          select: { sequenceAverage: true, coefficient: true, isAbsentGrade: true },
-        });
+        const grades = await ctx.data.portal.findStudentSequenceGrades(ctx.schoolId, ctx.userId, sequence.id);
         if (grades.length === 0) {
           return { resultLabel: `Aucune note calculée pour la séquence ${sequence.name} pour le moment.`, section: 'grades' };
         }
@@ -66,8 +62,8 @@ export function buildStudentActionCatalog(getMetric?: GetMetricUseCase): ActionD
           grades.length > 0
             ? calculateAverageScoreOn20(
                 grades.map((g) => ({
-                  scoreOn20: g.sequenceAverage as number,
-                  percentage: (g.sequenceAverage as number) * 5,
+                  scoreOn20: g.sequenceAverage,
+                  percentage: g.sequenceAverage * 5,
                   coefficient: g.coefficient,
                   isAbsentGrade: g.isAbsentGrade,
                 })),
@@ -85,10 +81,10 @@ export function buildStudentActionCatalog(getMetric?: GetMetricUseCase): ActionD
       async undo() {
         throw new Error('Cette action est une simple consultation, il n\'y a rien à annuler.');
       },
-    },
+    }),
 
     // 3. Ma présence — LECTURE SEULE
-    {
+    defineAction({
       name: 'ma_presence',
       description: 'Donne votre taux de présence depuis une date donnée (ce mois-ci par défaut).',
       destructive: false,
@@ -100,8 +96,10 @@ export function buildStudentActionCatalog(getMetric?: GetMetricUseCase): ActionD
         const depuis = input.depuis ? new Date(input.depuis) : new Date(now.getFullYear(), now.getMonth(), 1);
         // Si getMetric disponible (moteur v1), l'utiliser ; sinon fallback direct
         if (getMetric) {
-          const count = await ctx.prisma.attendance.count({
-            where: { schoolId: ctx.schoolId, studentId: ctx.userId, date: { gte: depuis } },
+          const count = await ctx.data.portal.countAttendancesSince({
+            schoolId: ctx.schoolId,
+            studentId: ctx.userId,
+            since: depuis,
           });
           if (count === 0) {
             return { resultLabel: `Aucun enregistrement de présence depuis le ${depuis.toLocaleDateString('fr-FR')}.`, section: 'attendance' };
@@ -110,17 +108,21 @@ export function buildStudentActionCatalog(getMetric?: GetMetricUseCase): ActionD
             key: 'taux_presence',
             dimensions: { schoolId: ctx.schoolId, studentId: ctx.userId, dateRange: { from: depuis.toISOString(), to: now.toISOString() } },
           });
-          const absences = await ctx.prisma.attendance.count({
-            where: { schoolId: ctx.schoolId, studentId: ctx.userId, date: { gte: depuis }, status: { in: ['ABSENT', 'ABSENT_JUSTIFIED'] } },
+          const absences = await ctx.data.portal.countAttendancesSince({
+            schoolId: ctx.schoolId,
+            studentId: ctx.userId,
+            since: depuis,
+            statuses: ['ABSENT', 'ABSENT_JUSTIFIED'],
           });
           return {
             resultLabel: `Votre taux de présence depuis le ${depuis.toLocaleDateString('fr-FR')} : ${res.value}% (${absences} absence(s) sur ${count} enregistrement(s)).`,
             section: 'attendance',
           };
         }
-        const records = await ctx.prisma.attendance.findMany({
-          where: { schoolId: ctx.schoolId, studentId: ctx.userId, date: { gte: depuis } },
-          select: { status: true },
+        const records = await ctx.data.portal.findAttendanceStatusesSince({
+          schoolId: ctx.schoolId,
+          studentId: ctx.userId,
+          since: depuis,
         });
         if (records.length === 0) {
           return { resultLabel: `Aucun enregistrement de présence depuis le ${depuis.toLocaleDateString('fr-FR')}.`, section: 'attendance' };
@@ -136,10 +138,10 @@ export function buildStudentActionCatalog(getMetric?: GetMetricUseCase): ActionD
       async undo() {
         throw new Error('Cette action est une simple consultation, il n\'y a rien à annuler.');
       },
-    },
+    }),
 
     // 4. Mes livres empruntés — LECTURE SEULE
-    {
+    defineAction({
       name: 'mes_livres_empruntes',
       description: 'Liste les livres que vous avez actuellement empruntés à la bibliothèque, avec leur date de retour.',
       destructive: false,
@@ -147,18 +149,18 @@ export function buildStudentActionCatalog(getMetric?: GetMetricUseCase): ActionD
       allowedRoles: ['STUDENT'],
       inputSchema: z.object({}),
       async execute(_input, ctx) {
-        const emprunts = await ctx.prisma.bookLoan.findMany({
-          where: { schoolId: ctx.schoolId, studentId: ctx.userId, status: { in: ['ACTIVE', 'OVERDUE'] } },
-          select: { dueDate: true, status: true, book: { select: { title: true } } },
+        const emprunts = await ctx.data.portal.findActiveStudentBookLoans({
+          schoolId: ctx.schoolId,
+          studentId: ctx.userId,
         });
         const resultLabel = emprunts.length === 0
           ? "Vous n'avez aucun livre emprunté actuellement."
-          : `Vos emprunts : ` + emprunts.map((e) => `« ${e.book.title} »${e.dueDate ? ` (retour prévu le ${e.dueDate.toLocaleDateString('fr-FR')})` : ''}${e.status === 'OVERDUE' ? ' — EN RETARD' : ''}`).join(', ');
+          : `Vos emprunts : ` + emprunts.map((e) => `« ${e.bookTitle} »${e.dueDate ? ` (retour prévu le ${e.dueDate.toLocaleDateString('fr-FR')})` : ''}${e.status === 'OVERDUE' ? ' — EN RETARD' : ''}`).join(', ');
         return { resultLabel, section: 'library' };
       },
       async undo() {
         throw new Error('Cette action est une simple consultation, il n\'y a rien à annuler.');
       },
-    },
+    }),
   ];
 }

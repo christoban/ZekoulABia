@@ -15,6 +15,7 @@ import type { ReceiptPdfRendererPort } from '@domain/ports/services/ReceiptPdfRe
 import type { AuthPayload } from '../../middlewares/auth';
 import type { VerifierStatutPaiementUseCase } from '@application/finance/VerifierStatutPaiementUseCase';
 import type { AIActionAuditPort } from '@domain/ports/services/AIActionAuditPort';
+import type { EnregistrerPaiementCashUseCase } from '@application/finance/EnregistrerPaiementCashUseCase';
 import { sendTransactionalEmail } from '@infrastructure/services/email/EmailService';
 
 export function verifyCampayWebhookSignature(req: Request): boolean {
@@ -318,6 +319,63 @@ export async function handleVerifyMobilePaymentHelper(params: {
     });
     res.json({ success: true, data: resultat });
   } catch (error) {
+    handleFinanceControllerError(error, res, next);
+  }
+}
+
+export async function handleCashPaymentHelper(params: {
+  req: Request;
+  res: Response;
+  next: NextFunction;
+  user: AuthPayload;
+  audit: AIActionAuditPort;
+  enregistrerPaiementCash: EnregistrerPaiementCashUseCase;
+  paiementRepository: PaiementRepository;
+  receiptRenderer: ReceiptPdfRendererPort;
+  carnetRepository?: CarnetLiaisonRepository;
+  creerEntreeCarnet?: CreerEntreeCarnetUseCase;
+}): Promise<void> {
+  const { req, res, next, user, audit, enregistrerPaiementCash, paiementRepository, receiptRenderer, carnetRepository, creerEntreeCarnet } = params;
+  const {
+    factureId, studentId, montant, paidById, installmentId, provisionalReceiptNumber,
+    clientRecordedAt, allowOverpayment, baseUpdatedAt, versionLocale, versionClient,
+  } = req.body as {
+    factureId?: string; studentId?: string; montant?: number; paidById?: string; installmentId?: string;
+    provisionalReceiptNumber?: string; clientRecordedAt?: string; allowOverpayment?: boolean;
+    baseUpdatedAt?: string | Date | null; versionLocale?: string | Date | null; versionClient?: string | Date | null;
+  };
+  if (!factureId || !studentId || montant == null) {
+    res.status(400).json({ success: false, message: 'factureId, studentId et montant requis' });
+    return;
+  }
+  const versionRaw = versionLocale ?? baseUpdatedAt ?? versionClient ?? null;
+  const versionDate = versionRaw ? new Date(versionRaw as string) : undefined;
+  const versionOption = versionDate && !Number.isNaN(versionDate.getTime()) ? versionDate : undefined;
+
+  try {
+    const resultat = await enregistrerPaiementCash.execute({
+      schoolId: user.schoolId, factureId, studentId, montant: Number(montant),
+      enregistreurId: user.userId, paidById, installmentId, provisionalReceiptNumber,
+      clientRecordedAt, allowOverpayment: allowOverpayment === true,
+      ...(versionOption ? { versionLocale: versionOption, baseUpdatedAt: versionOption } : {}),
+    });
+    audit.journaliser({
+      actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
+      actionName: 'enregistrer_paiement_cash', targetType: 'Payment', targetId: resultat.paiementId,
+      origin: 'UI_DIRECT', outcome: 'SUCCES', parametersSummary: { factureId, studentId, montant, receiptNumber: resultat.receiptNumber },
+    });
+    res.status(201).json({ success: true, data: resultat });
+    dispatchCashSuccessHooks({
+      schoolId: user.schoolId, studentId, actorId: user.userId, actorRole: user.role,
+      paymentId: resultat.paiementId, amount: Number(montant), receiptNumber: resultat.receiptNumber,
+      paiementRepository, receiptRenderer, carnetRepository, creerEntreeCarnet,
+    });
+  } catch (error) {
+    audit.journaliser({
+      actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
+      actionName: 'enregistrer_paiement_cash', origin: 'UI_DIRECT', outcome: 'ERREUR',
+      refusalReason: error instanceof Error ? error.message : undefined, parametersSummary: req.body,
+    });
     handleFinanceControllerError(error, res, next);
   }
 }

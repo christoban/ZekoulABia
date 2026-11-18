@@ -2,10 +2,7 @@ import { type ActionContext, norm } from '../catalogShared';
 
 /** Résolution nom → employé (enseignant OU staff), pour le domaine RH. */
 export async function resolveEmployee(ctx: ActionContext, name: string): Promise<{ id: string; name: string }> {
-  const employees = await ctx.prisma.user.findMany({
-    where: { schoolId: ctx.schoolId, role: { in: ['TEACHER', 'STAFF'] } },
-    select: { id: true, firstName: true, lastName: true },
-  });
+  const employees = await ctx.data.shared.findEmployeesBySchool(ctx.schoolId);
   const full = (e: { firstName: string | null; lastName: string | null }) =>
     `${e.firstName ?? ''} ${e.lastName ?? ''}`.trim();
   const target = norm(name);
@@ -22,10 +19,7 @@ export async function resolvePlanFrais(
   ctx: ActionContext,
   name: string,
 ): Promise<{ id: string; name: string; amount: number }> {
-  const plans = await ctx.prisma.feePlan.findMany({
-    where: { schoolId: ctx.schoolId },
-    select: { id: true, name: true, amount: true },
-  });
+  const plans = await ctx.data.shared.findFeePlansBySchool(ctx.schoolId);
   const target = norm(name);
   let matches = plans.filter((p) => norm(p.name) === target);
   if (matches.length === 0) matches = plans.filter((p) => norm(p.name).includes(target));
@@ -40,10 +34,7 @@ export async function resolveEntranceExamSession(
   ctx: ActionContext,
   name: string,
 ): Promise<{ id: string; name: string }> {
-  const sessions = await ctx.prisma.entranceExamSession.findMany({
-    where: { schoolId: ctx.schoolId },
-    select: { id: true, name: true },
-  });
+  const sessions = await ctx.data.shared.findEntranceExamSessionsBySchool(ctx.schoolId);
   const target = norm(name);
   let matches = sessions.filter((s) => norm(s.name) === target);
   if (matches.length === 0) matches = sessions.filter((s) => norm(s.name).includes(target));
@@ -55,10 +46,7 @@ export async function resolveEntranceExamSession(
 }
 
 export async function resolvePebsSession(ctx: ActionContext, name: string): Promise<{ id: string; name: string }> {
-  const sessions = await ctx.prisma.pebsExamSession.findMany({
-    where: { schoolId: ctx.schoolId },
-    select: { id: true, name: true },
-  });
+  const sessions = await ctx.data.shared.findPebsExamSessionsBySchool(ctx.schoolId);
   const target = norm(name);
   let matches = sessions.filter((s) => norm(s.name) === target);
   if (matches.length === 0) matches = sessions.filter((s) => norm(s.name).includes(target));

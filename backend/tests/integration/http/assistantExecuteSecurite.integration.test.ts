@@ -23,9 +23,9 @@ import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
 import type { Server } from 'http';
 import type { AddressInfo } from 'net';
-import type { PrismaClient } from '@prisma/client';
 import { AssistantController } from '../../../src/infrastructure/http/controllers/AssistantController.ts';
 import { PrismaAssistantContextQueryRepository } from '@infrastructure/persistence/prisma/PrismaAssistantContextQueryRepository';
+import { PrismaCopilotDataGateway } from '@infrastructure/persistence/prisma/copilot/PrismaCopilotDataGateway';
 import { AIActionAuditAdapter } from '@infrastructure/services/ai/AIActionAuditAdapter';
 import { buildAdminActionCatalog } from '@infrastructure/assistant/catalog/adminActionCatalog';
 import { requireAuth } from '../../../src/infrastructure/http/middlewares/auth.ts';
@@ -131,7 +131,7 @@ beforeAll(async () => {
     new PrismaAssistantContextQueryRepository(prismaTest),
     catalog,
     new AIActionAuditAdapter(prismaTest),
-    prismaTest as unknown as PrismaClient,
+    new PrismaCopilotDataGateway(prismaTest),
     modeleSimule,
   );
 

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, mock } from 'bun:test';
+import { afterEach, describe, expect, it } from 'bun:test';
 import { sendTransactionalEmail } from '../../../../../src/infrastructure/services/email/EmailService.ts';
 import {
   definirOutboundMessagingPolicy,
@@ -6,19 +6,9 @@ import {
 } from '../../../../../src/infrastructure/services/outbound/OutboundMessagingPolicy.ts';
 import { masquerDestinataire } from '../../../../../src/infrastructure/services/outbound/SuppressedOutboundMessageRecorder.ts';
 import { authorizeMaster } from '../../../../../src/infrastructure/http/middlewares/authMultiTenant.ts';
+import { sendBulkSMS, sendSMS, sendSms } from '../../../../../src/infrastructure/services/sms/SmsService.ts';
 import type { OutboundMessagingPolicy } from '@domain/ports/services/OutboundMessagingPolicy';
 import type { Request, Response } from 'express';
-
-// Restaure le module réel : le test broadcast (tests/integration/http/communicationsBroadcast)
-// mocke sendSMS via mock.module, ce qui fuit sur tout le process bun test. Le suffixe ?reel
-// contourne le registre de modules (déjà mocké) pour évaluer une copie fraîche et réelle,
-// puis réinstalle les implémentations réelles sur le spécificateur canonique — quel que soit
-// l'ordre d'exécution des fichiers.
-// @ts-expect-error — suffixe ?reel volontairement absent des déclarations : il sert à contourner le registre de modules bun.
-const smsServiceReel = await import('../../../../../src/infrastructure/services/sms/SmsService.ts?reel');
-mock.module('../../../../../src/infrastructure/services/sms/SmsService.ts', () => ({ ...smsServiceReel }));
-
-const { sendBulkSMS, sendSMS, sendSms } = await import('../../../../../src/infrastructure/services/sms/SmsService.ts');
 
 class PolitiqueDesactivee implements OutboundMessagingPolicy {
   async estActive(): Promise<boolean> {

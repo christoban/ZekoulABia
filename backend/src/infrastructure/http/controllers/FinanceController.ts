@@ -27,7 +27,7 @@ import { ReceiptPdfRenderer } from '@infrastructure/pdf/finance/ReceiptPdfRender
 import {
   canReadStudentFinanceRecord,
   dispatchCampaySuccessNotifications,
-  dispatchCashSuccessHooks,
+  handleCashPaymentHelper,
   handleFinanceControllerError,
   handleVerifyMobilePaymentHelper,
   notifierCreationPlanFraisHelper,
@@ -439,62 +439,13 @@ export class FinanceController {
 
   // POST /api/v2/finance/payments/cash
   creerPaiementCash = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const user = req.user;
-      if (!(await this.checkFinancePermission(user, res, true))) return;
-      const {
-        factureId, studentId, montant, paidById, installmentId, provisionalReceiptNumber,
-        clientRecordedAt, allowOverpayment, baseUpdatedAt, versionLocale, versionClient,
-      } = req.body as {
-        factureId?: string; studentId?: string; montant?: number; paidById?: string; installmentId?: string;
-        provisionalReceiptNumber?: string; clientRecordedAt?: string; allowOverpayment?: boolean;
-        baseUpdatedAt?: string | Date | null; versionLocale?: string | Date | null; versionClient?: string | Date | null;
-      };
-
-      if (!factureId || !studentId || montant == null) {
-        res.status(400).json({ success: false, message: 'factureId, studentId et montant requis' });
-        return;
-      }
-
-      const versionRaw = versionLocale ?? baseUpdatedAt ?? versionClient ?? null;
-      const versionDate = versionRaw ? new Date(versionRaw as string) : undefined;
-      const versionOption = versionDate && !Number.isNaN(versionDate.getTime()) ? versionDate : undefined;
-
-      const resultat = await this.enregistrerPaiementCash.execute({
-        schoolId: user.schoolId,
-        factureId,
-        studentId,
-        montant: Number(montant),
-        enregistreurId: user.userId,
-        paidById,
-        installmentId,
-        provisionalReceiptNumber,
-        clientRecordedAt,
-        allowOverpayment: allowOverpayment === true,
-        ...(versionOption ? { versionLocale: versionOption, baseUpdatedAt: versionOption } : {}),
-      });
-
-      this.audit.journaliser({
-        actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
-        actionName: 'enregistrer_paiement_cash', targetType: 'Payment', targetId: resultat.paiementId,
-        origin: 'UI_DIRECT', outcome: 'SUCCES', parametersSummary: { factureId, studentId, montant, receiptNumber: resultat.receiptNumber },
-      });
-      res.status(201).json({ success: true, data: resultat });
-
-      dispatchCashSuccessHooks({
-        schoolId: user.schoolId, studentId, actorId: user.userId, actorRole: user.role,
-        paymentId: resultat.paiementId, amount: Number(montant), receiptNumber: resultat.receiptNumber,
-        paiementRepository: this.paiementRepository, receiptRenderer: this.receiptRenderer,
-        carnetRepository: this.extras.carnetRepository, creerEntreeCarnet: this.extras.creerEntreeCarnet,
-      });
-    } catch (error) {
-      const user = req.user;
-      this.audit.journaliser({
-        actorUserId: user?.userId, actorRole: user?.role, schoolId: user?.schoolId,
-        actionName: 'enregistrer_paiement_cash', origin: 'UI_DIRECT', outcome: 'ERREUR',
-        refusalReason: error instanceof Error ? error.message : undefined, parametersSummary: req.body,
-      });
-      handleFinanceControllerError(error, res, next);
-    }
+    const user = req.user;
+    if (!(await this.checkFinancePermission(user, res, true))) return;
+    await handleCashPaymentHelper({
+      req, res, next, user: user!, audit: this.audit,
+      enregistrerPaiementCash: this.enregistrerPaiementCash,
+      paiementRepository: this.paiementRepository, receiptRenderer: this.receiptRenderer,
+      carnetRepository: this.extras.carnetRepository, creerEntreeCarnet: this.extras.creerEntreeCarnet,
+    });
   };
 }

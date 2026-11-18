@@ -85,23 +85,23 @@ import { TransferConsentNotificationAdapter } from '@infrastructure/services/sms
 import { EmettreConsentementTransfertUseCase } from '@application/studentTransfer/EmettreConsentementTransfertUseCase';
 import { executerBroadcast } from '@infrastructure/services/communication/BroadcastService';
 import { calculerAlertesRetardProgramme } from '@infrastructure/services/pedagogie/AlerteRetardProgrammeService';
-import { notifyDisciplineSms, DISCIPLINE_TYPE_LABELS } from '../../services/sms/SmsNotificationService';
-import { notifierParentsPushDabord } from '../../services/notification/PushFirstNotifier';
-import { sendTransactionalEmail } from '../../services/email/EmailService';
+import { creerDisciplineSanctionNotifier } from '../../services/notification/DisciplineSanctionNotificationAdapter';
+import { PrismaCopilotDataGateway } from '@infrastructure/persistence/prisma/copilot/PrismaCopilotDataGateway';
 import { creerOrientationRoutes } from '@infrastructure/http/routes/orientation.routes';
 import { creerMatriculeRoutes } from '@infrastructure/http/routes/matricule.routes';
+import { creerMatriculeStudentRoutes } from '@infrastructure/http/routes/matriculeStudent.routes';
 import { creerEleveOnboardingRoutes } from '@infrastructure/http/routes/eleveOnboarding.routes';
 import { creerActivitiesRoutes } from '@infrastructure/http/routes/activities.routes';
 import { creerDashboardRoutes } from '@infrastructure/http/routes/dashboard.routes';
 import { creerEmailLogRoutes } from '@infrastructure/http/routes/emailLog.routes';
 import { creerSearchRoutes } from '@infrastructure/http/routes/search.routes';
 import { creerAIRoutes } from '@infrastructure/http/routes/ai.routes';
+import { creerAssistantRoutes } from '@infrastructure/http/routes/assistant.routes';
 import { creerStudentFollowUpRoutes } from '@infrastructure/http/routes/studentFollowUp.routes';
 import { creerAcademicEventRoutes } from '@infrastructure/http/routes/academicEvent.routes';
 import { creerCoreDomainRoutes } from '@infrastructure/http/routes/coreDomain.routes';
 import { creerPublicRoutes } from '@infrastructure/http/routes/public.routes';
 import { creerSMSRoutes } from '@infrastructure/http/routes/sms.routes';
-import { requireAuth, requireRole } from '../../http/middlewares/auth';
 import { registerSchoolRoutes } from './school';
 
 type Container = ReturnType<typeof creerContainer>;
@@ -188,8 +188,7 @@ export function registerCoreRoutes(app: Application, prismaParam: typeof prisma 
     new AIActionAuditAdapter(p),
   );
   app.use('/api/v2/matricules', creerMatriculeRoutes(matriculeController));
-  // Route orpheline retrouvée : la méthode existait sur le controller mais n'était montée nulle part.
-  app.patch('/api/v2/students/:id/matricule', requireAuth, requireRole('ADMIN', 'STAFF'), matriculeController.updateMatricule);
+  app.use('/api/v2/students',   creerMatriculeStudentRoutes(matriculeController));
 
   // ── Transfert inter-écoles ──────────────────────────────────────────────
   const transferRequestRepository = new PrismaTransferRequestRepository(p);
@@ -263,7 +262,6 @@ export function registerCoreRoutes(app: Application, prismaParam: typeof prisma 
   app.use('/api/v2/ai',            creerAIRoutes(aiController));
   app.use('/api/v2/student-follow-up', creerStudentFollowUpRoutes(studentFollowUpController));
   app.use('/api/v2/academic-events', creerAcademicEventRoutes(academicEventController));
-  app.post('/api/v2/assistant/chat', requireAuth, aiController.assistantChat);
 
   // ── Assistant IA EXÉCUTANT (copilot) — rôle ADMIN uniquement ────────────────
   // Catalogue d'actions mappé sur les use cases existants ; RBAC filtré + revérifié serveur.
@@ -337,31 +335,7 @@ export function registerCoreRoutes(app: Application, prismaParam: typeof prisma 
     creerTransactionAPEE: new CreerTransactionAPEEUseCase(new PrismaApeeRepository(p)),
     validerDepenseAPEE: new ValiderDepenseAPEEUseCase(new PrismaApeeRepository(p)),
     ajouterSuiviOrientation: c.orientation.ajouterSuivi,
-    notifierSanctionDisciplinaire: async (schoolId, studentId, studentName, type, reason) => {
-      const { phonesSansPush } = await notifierParentsPushDabord({
-        schoolId, studentId, type: 'DISCIPLINE_SANCTION',
-        titre: 'Sanction disciplinaire',
-        corps: `${studentName} a fait l'objet d'une sanction disciplinaire. Motif : ${reason}.`,
-      });
-      await notifyDisciplineSms({ schoolId, studentId, studentName, type, reason, phones: phonesSansPush });
-      const parentLinks = await p.parentStudent.findMany({
-        where: { studentProfile: { userId: studentId } },
-        include: { parentProfile: { include: { user: { select: { email: true } } } } },
-      });
-      const parentEmails = [...new Set(parentLinks.map((l) => l.parentProfile?.user?.email).filter((e): e is string => Boolean(e)))];
-      const typeLabel = DISCIPLINE_TYPE_LABELS[type]?.fr ?? type;
-      for (const email of parentEmails) {
-        await sendTransactionalEmail({
-          recipientEmail: email,
-          subject: `Notification disciplinaire — ${studentName}`,
-          html: `<p>Bonjour,</p><p><b>${studentName}</b> a fait l'objet d'une sanction disciplinaire.</p><p><b>Type :</b> ${typeLabel}</p><p><b>Motif :</b> ${reason}</p><p>Merci de contacter l'établissement pour plus d'informations.</p>`,
-          text: `Sanction disciplinaire pour ${studentName} : ${typeLabel} — ${reason}`,
-          template: 'discipline_notification',
-          eventType: 'discipline_notification',
-          metadata: { schoolId },
-        });
-      }
-    },
+    notifierSanctionDisciplinaire: creerDisciplineSanctionNotifier(p),
   });
 
   // ── Assistant IA EXÉCUTANT (copilot) — rôle PARENT (Section 6.2 du chantier) ──
@@ -379,11 +353,9 @@ export function registerCoreRoutes(app: Application, prismaParam: typeof prisma 
     new PrismaAssistantContextQueryRepository(p),
     [...adminActionCatalog, ...teacherActionCatalog, ...staffActionCatalog, ...parentActionCatalog, ...studentActionCatalog],
     new AIActionAuditAdapter(p),
-    p,
+    new PrismaCopilotDataGateway(p),
   );
-  app.post('/api/v2/assistant/execute', requireAuth, requireRole('ADMIN', 'TEACHER', 'STAFF', 'PARENT', 'STUDENT'), assistantController.execute);
-  app.post('/api/v2/assistant/confirm-action', requireAuth, requireRole('ADMIN', 'TEACHER', 'STAFF', 'PARENT', 'STUDENT'), assistantController.confirmAction);
-  app.post('/api/v2/assistant/undo-action', requireAuth, requireRole('ADMIN', 'TEACHER', 'STAFF', 'PARENT', 'STUDENT'), assistantController.undoAction);
+  app.use('/api/v2/assistant', creerAssistantRoutes(assistantController, aiController));
   app.use('/api/v2/core-domain',   creerCoreDomainRoutes(coreDomainController));
   app.use('/api/v2/public',        creerPublicRoutes(publicController));
   app.use('/api/v2/sms',           creerSMSRoutes(smsController));

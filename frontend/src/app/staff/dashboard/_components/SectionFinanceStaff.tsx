@@ -3,23 +3,21 @@ import { useState, useEffect, useCallback } from 'react'
 import type { SessionUser } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
-import { AlertTriangle, Loader2, Smartphone, Wallet, Pencil, Banknote, Eye, RefreshCw } from 'lucide-react'
 import SectionAPEEStaff from './SectionAPEEStaff'
 import SectionPlansStaff from './SectionPlansStaff'
 import { fmtCFA } from '@/components/finance/ModalOverlay'
-import { useSyncQueue } from '@/hooks/useSyncQueue'
 import { getCachedData, putCachedData, getUserSession } from '@/lib/offline/db'
-import RecuProvisoireModal, { type RecuProvisoireData } from '@/components/finance/RecuProvisoireModal'
+import RecuProvisoireModal from '@/components/finance/RecuProvisoireModal'
 import InvoiceDetailsModal from '@/features/finance/InvoiceDetailsModal'
 import FinanceCashOpsPanel from '@/features/finance/FinanceCashOpsPanel'
 import {
-  INVOICE_STATUS_STYLES as INV_STATUS,
-  DEPENSE_CATEGORIES,
-  EMPTY_DEPENSE as EMPTY_DEP,
   type FinanceInvoiceItem as InvoiceItem,
   type FinancePagination as Pagination,
-  type FinancePayment as Payment,
 } from '@/features/finance/financeShared'
+import FinanceStaffDepenseModal from './finance/FinanceStaffDepenseModal'
+import FinanceInvoicesTable from './finance/FinanceInvoicesTable'
+import { useFinanceStaffPayments } from './finance/useFinanceStaffPayments'
+import { btnPrim, btnSec, sSub, sTitle } from './finance/financeStaffStyles'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
@@ -29,425 +27,150 @@ interface Props {
 
 export default function SectionFinanceStaff({ onToast, sessionUser, initialTab = 'invoices' }: Props) {
   const t = useT('staff')
-  const { addToQueue } = useSyncQueue()
-  const [tab, setTab]           = useState<'invoices' | 'apee' | 'plans' | 'closures'>(initialTab)
+  const [tab, setTab] = useState<'invoices' | 'apee' | 'plans' | 'closures'>(initialTab)
   const [invoices, setInvoices] = useState<InvoiceItem[]>([])
   const [detailsInvoice, setDetailsInvoice] = useState<{ id: string; studentName: string; feePlanName: string } | null>(null)
-  const [pag, setPag]           = useState<Pagination>({ total: 0, page: 1, pages: 1 })
-  const [loading, setLoading]   = useState(true)
-  const [error, setError]       = useState<string | null>(null)
+  const [pag, setPag] = useState<Pagination>({ total: 0, page: 1, pages: 1 })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState('PENDING')
-  const [page, setPage]         = useState(1)
-  const [sendingId, setSendingId] = useState<string | null>(null)
-  const [payingId, setPayingId]   = useState<string | null>(null)
-  const [verifyingId, setVerifyingId] = useState<string | null>(null)
-  const [pendingCampayRefs, setPendingCampayRefs] = useState<Record<string, string>>({})
-
+  const [page, setPage] = useState(1)
   const [schoolInfo, setSchoolInfo] = useState<{ name: string; logoUrl: string | null } | null>(null)
-  const [currentRecu, setCurrentRecu] = useState<RecuProvisoireData | null>(null)
-
-  const [depenseOpen, setDepenseOpen]       = useState(false)
-  const [depenseForm, setDepenseForm]       = useState(EMPTY_DEP)
-  const [depenseSending, setDepenseSending] = useState(false)
-  const [depenseError, setDepenseError]     = useState<string | null>(null)
+  const [depenseOpen, setDepenseOpen] = useState(false)
 
   const hasMF = sessionUser?.permissions?.includes('MANAGE_FINANCE') ?? false
 
   useEffect(() => {
     if (sessionUser?.userId) {
-      getUserSession(sessionUser.userId).then(s => {
-        if (s?.schoolInfo) setSchoolInfo(s.schoolInfo)
-      }).catch(() => {})
+      getUserSession(sessionUser.userId)
+        .then(s => {
+          if (s?.schoolInfo) setSchoolInfo(s.schoolInfo)
+        })
+        .catch(() => {})
     }
   }, [sessionUser])
 
-  const submitDepense = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!depenseForm.label.trim()) { setDepenseError(t('finance.depenseLabelRequired')); return }
-    const amt = parseFloat(depenseForm.amount)
-    if (!depenseForm.amount || isNaN(amt) || amt <= 0) { setDepenseError(t('finance.depenseAmountInvalid')); return }
-    setDepenseSending(true); setDepenseError(null)
-
-    const body: Record<string, unknown> = { label: depenseForm.label.trim(), amount: amt }
-    if (depenseForm.category.trim()) body.category = depenseForm.category.trim()
-    if (depenseForm.date) body.date = depenseForm.date
-
-    if (!navigator.onLine) {
+  const fetchInvoices = useCallback(
+    async (pg = 1) => {
+      setError(null)
+      const cacheKey = `staff:finance:invoices:${statusFilter}:${pg}`
       try {
-        const idempotencyKey = crypto.randomUUID()
-        await addToQueue({
-          type: 'EXPENSE_CREATE',
-          endpoint: '/api/v2/finance/expenses',
-          method: 'POST',
-          idempotencyKey,
-          payload: body,
-        })
-        onToast('Dépense enregistrée hors-ligne (en attente de synchronisation)', 'info')
-        setDepenseOpen(false)
-        setDepenseForm(EMPTY_DEP)
-      } catch (err) {
-        setDepenseError(err instanceof Error ? err.message : 'Erreur enregistrement hors-ligne')
-      } finally {
-        setDepenseSending(false)
-      }
-      return
-    }
-
-    try {
-      const res = await fetchApi('/api/v2/finance/expenses', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Erreur serveur')
-      onToast(t('finance.depenseSuccess'), 'success')
-      setDepenseOpen(false)
-      setDepenseForm(EMPTY_DEP)
-    } catch (err) {
-      setDepenseError(err instanceof Error ? err.message : 'Erreur serveur')
-    } finally {
-      setDepenseSending(false)
-    }
-  }
-
-  const fetchInvoices = useCallback(async (pg = 1) => {
-    setError(null)
-    const cacheKey = `staff:finance:invoices:${statusFilter}:${pg}`
-    try {
-      const cached = await getCachedData<{ invoices: InvoiceItem[]; pagination: Pagination }>(cacheKey)
-      if (cached?.data?.invoices) {
-        setInvoices(cached.data.invoices)
-        setPag(cached.data.pagination)
-        setLoading(false)
-      }
-    } catch { /* ignore */ }
-
-    if (navigator.onLine) {
-      try {
-        const params = new URLSearchParams({ limit: '20', page: String(pg) })
-        if (statusFilter) params.set('status', statusFilter)
-        const res = await fetchApi(`/api/v2/finance/invoices?${params}`, { credentials: 'include' })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.message || 'Erreur serveur')
-        const items = data.data || []
-        const pagination = data.pagination ?? { total: 0, page: pg, pages: 1 }
-        setInvoices(items)
-        setPag(pagination)
-        await putCachedData(cacheKey, { invoices: items, pagination })
-      } catch (err) {
-        if (!invoices.length) {
-          setError(err instanceof Error ? err.message : 'Erreur de chargement')
+        const cached = await getCachedData<{ invoices: InvoiceItem[]; pagination: Pagination }>(cacheKey)
+        if (cached?.data?.invoices) {
+          setInvoices(cached.data.invoices)
+          setPag(cached.data.pagination)
+          setLoading(false)
         }
-      } finally {
+      } catch {
+        /* ignore */
+      }
+
+      if (navigator.onLine) {
+        try {
+          const params = new URLSearchParams({ limit: '20', page: String(pg) })
+          if (statusFilter) params.set('status', statusFilter)
+          const res = await fetchApi(`/api/v2/finance/invoices?${params}`, { credentials: 'include' })
+          const data = await res.json()
+          if (!res.ok) throw new Error(data.message || 'Erreur serveur')
+          const items = data.data || []
+          const pagination = data.pagination ?? { total: 0, page: pg, pages: 1 }
+          setInvoices(items)
+          setPag(pagination)
+          await putCachedData(cacheKey, { invoices: items, pagination })
+        } catch (err) {
+          if (!invoices.length) {
+            setError(err instanceof Error ? err.message : 'Erreur de chargement')
+          }
+        } finally {
+          setLoading(false)
+        }
+      } else {
         setLoading(false)
       }
-    } else {
-      setLoading(false)
-    }
-  }, [statusFilter, invoices.length])
+    },
+    [statusFilter, invoices.length]
+  )
 
   useEffect(() => {
-    if (tab === 'invoices') { setPage(1); fetchInvoices(1) }
+    if (tab === 'invoices') {
+      setPage(1)
+      void fetchInvoices(1)
+    }
   }, [tab, fetchInvoices])
 
-  useEffect(() => { setPage(1); fetchInvoices(1) }, [statusFilter, fetchInvoices])
+  useEffect(() => {
+    setPage(1)
+    void fetchInvoices(1)
+  }, [statusFilter, fetchInvoices])
 
-  const verifyMobileMoney = async (invoiceId: string, campayRef?: string) => {
-    setVerifyingId(invoiceId)
-    try {
-      const res = await fetchApi('/api/v2/finance/payments/mobile/verify', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invoiceId, campayRef: campayRef || pendingCampayRefs[invoiceId] || undefined }),
-      })
-      const d = await res.json() as { success?: boolean; data?: { statut?: string; message?: string }; message?: string }
-      if (!res.ok) throw new Error(d.message || 'Erreur vérification Campay')
-      const statut = d.data?.statut
-      onToast(
-        d.data?.message || (statut === 'SUCCESS' ? 'Paiement Mobile Money confirmé !' : 'Toujours en attente sur le téléphone'),
-        statut === 'SUCCESS' ? 'success' : statut === 'FAILED' ? 'error' : 'info'
-      )
-      if (statut === 'SUCCESS' || statut === 'FAILED') {
-        setPendingCampayRefs(prev => { const next = { ...prev }; delete next[invoiceId]; return next })
-        void fetchInvoices(page)
-      }
-    } catch (err) {
-      onToast(err instanceof Error ? err.message : 'Erreur vérification Mobile Money', 'error')
-    } finally {
-      setVerifyingId(null)
-    }
-  }
-
-  const initiateMobileMoney = async (invoice: InvoiceItem) => {
-    const phone = prompt(t('finance.mobileMoneyPrompt', { firstName: invoice.student.firstName, lastName: invoice.student.lastName }))
-    if (!phone?.trim()) return
-    const normalized = phone.trim().replace(/\s+/g, '')
-    const alreadyPaid = invoice.payments
-      .filter(p => p.status === 'COMPLETED' || p.status === 'SUCCESS' || p.status === 'PAID')
-      .reduce((s, p) => s + p.amount, 0)
-    const remaining = Math.max(1, invoice.amount - alreadyPaid)
-    const isMtn = normalized.startsWith('67') || normalized.startsWith('650') || normalized.startsWith('651') || normalized.startsWith('652') || normalized.startsWith('653') || normalized.startsWith('654') || normalized.startsWith('68')
-    setPayingId(invoice.id)
-    try {
-      const res = await fetchApi('/api/v2/finance/payments/mobile', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          factureId: invoice.id,
-          studentId: invoice.student.id,
-          phoneNumber: normalized,
-          amount: remaining,
-          method: isMtn ? 'MTN_MOMO' : 'ORANGE_MONEY',
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Erreur serveur')
-      if (data.data?.campayRef) {
-        setPendingCampayRefs(prev => ({ ...prev, [invoice.id]: String(data.data.campayRef) }))
-      }
-      onToast(t('finance.paymentInitiated'), 'info')
-      fetchInvoices(page)
-    } catch (err) {
-      onToast(err instanceof Error ? err.message : 'Erreur Mobile Money', 'error')
-    } finally {
-      setPayingId(null)
-    }
-  }
-
-  const recordCashPayment = async (inv: InvoiceItem) => {
-    const alreadyPaid = inv.payments
-      .filter(p => p.status === 'COMPLETED' || p.status === 'SUCCESS' || p.status === 'PAID')
-      .reduce((s, p) => s + p.amount, 0)
-    const remaining = Math.max(0, inv.amount - alreadyPaid)
-    const defaultAmount = remaining > 0 ? remaining : inv.amount
-    const promptMsg = t('finance.cashPrompt', { firstName: inv.student.firstName, lastName: inv.student.lastName }) ||
-      `Encaisser en espèces pour ${inv.student.firstName} ${inv.student.lastName} (FCFA) :`
-    const amountStr = prompt(promptMsg, String(defaultAmount))
-    if (!amountStr?.trim()) return
-    const montant = parseFloat(amountStr.trim())
-    if (isNaN(montant) || montant <= 0) {
-      onToast('Montant invalide', 'error')
-      return
-    }
-
-    setPayingId(inv.id)
-    const idempotencyKey = crypto.randomUUID()
-    const isCurrentlyOffline = !navigator.onLine
-
-    const provisionalRef = `PROV-${idempotencyKey.slice(0, 8).toUpperCase()}`
-    const clientRecordedAt = new Date().toISOString()
-
-    const buildRecuData = (isOffline: boolean, ref: string, paymentId?: string, showProv?: string): RecuProvisoireData => ({
-      reference: ref,
-      provisionalReference: showProv,
-      paymentId,
-      isOffline,
-      date: new Date(),
-      schoolName: schoolInfo?.name || 'Établissement Scolaire',
-      schoolLogoUrl: schoolInfo?.logoUrl,
-      studentName: `${inv.student.firstName} ${inv.student.lastName}`,
-      studentId: inv.student.id,
-      feePlanName: inv.feePlan?.name || 'Frais de scolarité',
-      amountPaid: montant,
-      totalAmount: inv.amount,
-      remainingAmount: Math.max(0, inv.amount - (alreadyPaid + montant)),
-      receivedBy: sessionUser?.nomComplet || sessionUser?.firstName || 'Intendant',
-    })
-
-    const applyOptimisticPayment = async () => {
-      const newPaid = alreadyPaid + montant
-      const newStatus = newPaid >= inv.amount ? 'PAID' : 'PARTIAL'
-      const updatedPayments: Payment[] = [
-        ...inv.payments,
-        { id: idempotencyKey, amount: montant, status: 'PAID', paidAt: new Date().toISOString(), method: 'CASH' },
-      ]
-      const updatedInvoices = invoices.map(item =>
-        item.id === inv.id ? { ...item, payments: updatedPayments, status: newStatus } : item
-      )
-      setInvoices(updatedInvoices)
-      const cacheKey = `staff:finance:invoices:${statusFilter}:${page}`
-      await putCachedData(cacheKey, { invoices: updatedInvoices, pagination: pag }).catch(() => {})
-    }
-
-    if (isCurrentlyOffline) {
-      try {
-        await addToQueue({
-          type: 'FEE_PAYMENT_CASH',
-          endpoint: '/api/v2/finance/payments/cash',
-          method: 'POST',
-          idempotencyKey,
-          payload: {
-            factureId: inv.id,
-            studentId: inv.student.id,
-            montant,
-            provisionalReceiptNumber: provisionalRef,
-            clientRecordedAt,
-          },
-        })
-        await applyOptimisticPayment()
-        setCurrentRecu(buildRecuData(true, provisionalRef))
-        onToast('Encaissement enregistré hors-ligne (reçu provisoire généré)', 'info')
-      } catch (err) {
-        onToast(err instanceof Error ? err.message : 'Erreur enregistrement hors-ligne', 'error')
-      } finally {
-        setPayingId(null)
-      }
-      return
-    }
-
-    try {
-      const res = await fetchApi('/api/v2/finance/payments/cash', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
-        body: JSON.stringify({
-          factureId: inv.id,
-          studentId: inv.student.id,
-          montant,
-          provisionalReceiptNumber: provisionalRef,
-          clientRecordedAt,
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Erreur lors de l’encaissement')
-      await applyOptimisticPayment()
-      const ref = data.data?.receiptNumber || data.data?.recuNumero || data.data?.paiementId || provisionalRef
-      setCurrentRecu(buildRecuData(false, ref, data.data?.paiementId, provisionalRef))
-      onToast(t('finance.cashSuccess') || 'Paiement en espèces enregistré avec succès', 'success')
-      fetchInvoices(page)
-    } catch (err) {
-      // Repli hors-ligne automatique si la requête réseau a échoué
-      try {
-        await addToQueue({
-          type: 'FEE_PAYMENT_CASH',
-          endpoint: '/api/v2/finance/payments/cash',
-          method: 'POST',
-          idempotencyKey,
-          payload: {
-            factureId: inv.id,
-            studentId: inv.student.id,
-            montant,
-            provisionalReceiptNumber: provisionalRef,
-            clientRecordedAt,
-          },
-        })
-        await applyOptimisticPayment()
-        setCurrentRecu(buildRecuData(true, provisionalRef))
-        onToast('Connexion perdue : paiement conservé hors-ligne avec reçu provisoire', 'info')
-      } catch {
-        onToast(err instanceof Error ? err.message : 'Erreur', 'error')
-      }
-    } finally {
-      setPayingId(null)
-    }
-  }
-
-  const sendSmsReminder = async (invoice: InvoiceItem) => {
-    setSendingId(invoice.id)
-    try {
-      const res = await fetchApi(`/api/v2/finance/invoices/${invoice.id}/remind`, {
-        method: 'POST', credentials: 'include',
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Erreur serveur')
-      onToast(t('finance.smsSent', { firstName: invoice.student.firstName, lastName: invoice.student.lastName }), 'success')
-    } catch (err) {
-      onToast(err instanceof Error ? err.message : 'Erreur envoi SMS', 'error')
-    } finally {
-      setSendingId(null)
-    }
-  }
+  const {
+    sendingId,
+    payingId,
+    verifyingId,
+    pendingCampayRefs,
+    currentRecu,
+    setCurrentRecu,
+    verifyMobileMoney,
+    initiateMobileMoney,
+    recordCashPayment,
+    sendSmsReminder,
+  } = useFinanceStaffPayments({
+    invoices,
+    setInvoices,
+    pag,
+    page,
+    statusFilter,
+    fetchInvoices,
+    schoolInfo,
+    sessionUser,
+    onToast,
+  })
 
   const totalPending = invoices.filter(i => i.status === 'PENDING' || i.status === 'OVERDUE').reduce((s, i) => s + i.amount, 0)
   const totalPartial = invoices.filter(i => i.status === 'PARTIAL').reduce((s, i) => s + i.amount, 0)
 
+  const tabButtonStyle = (active: boolean): React.CSSProperties => ({
+    ...btnSec,
+    background: active ? 'var(--green-light)' : 'var(--surface)',
+    color: active ? 'var(--green)' : 'var(--text2)',
+    borderColor: active ? 'var(--green)' : 'var(--border2)',
+  })
+
   return (
     <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4" style={{ overflowY: 'auto', height: '100%' }}>
-      {/* ── Onglets ── */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-[var(--border)]" style={{ scrollbarWidth: 'none' }}>
-        <button
-          style={{
-            ...btnSec,
-            background: tab === 'invoices' ? 'var(--green-light)' : 'var(--surface)',
-            color: tab === 'invoices' ? 'var(--green)' : 'var(--text2)',
-            borderColor: tab === 'invoices' ? 'var(--green)' : 'var(--border2)',
-          }}
-          className="min-h-[38px] whitespace-nowrap px-3 py-2 text-xs font-bold"
-          onClick={() => setTab('invoices')}
-        >
+        <button style={tabButtonStyle(tab === 'invoices')} className="min-h-[38px] whitespace-nowrap px-3 py-2 text-xs font-bold" onClick={() => setTab('invoices')}>
           {t('finance.tabInvoices') || 'Factures & Paiements'}
         </button>
-
         {hasMF && (
-          <button
-            style={{
-              ...btnSec,
-              background: tab === 'plans' ? 'var(--green-light)' : 'var(--surface)',
-              color: tab === 'plans' ? 'var(--green)' : 'var(--text2)',
-              borderColor: tab === 'plans' ? 'var(--green)' : 'var(--border2)',
-            }}
-            className="min-h-[38px] whitespace-nowrap px-3 py-2 text-xs font-bold"
-            onClick={() => setTab('plans')}
-          >
+          <button style={tabButtonStyle(tab === 'plans')} className="min-h-[38px] whitespace-nowrap px-3 py-2 text-xs font-bold" onClick={() => setTab('plans')}>
             {t('finance.tabPlans') || 'Plans de frais'}
           </button>
         )}
-
         {hasMF && (
-          <button
-            style={{
-              ...btnSec,
-              background: tab === 'apee' ? 'var(--green-light)' : 'var(--surface)',
-              color: tab === 'apee' ? 'var(--green)' : 'var(--text2)',
-              borderColor: tab === 'apee' ? 'var(--green)' : 'var(--border2)',
-            }}
-            className="min-h-[38px] whitespace-nowrap px-3 py-2 text-xs font-bold"
-            onClick={() => setTab('apee')}
-          >
+          <button style={tabButtonStyle(tab === 'apee')} className="min-h-[38px] whitespace-nowrap px-3 py-2 text-xs font-bold" onClick={() => setTab('apee')}>
             {t('finance.tabAPEE') || 'Transparence APEE'}
           </button>
         )}
-
         {hasMF && (
-          <button
-            style={{
-              ...btnSec,
-              background: tab === 'closures' ? 'var(--green-light)' : 'var(--surface)',
-              color: tab === 'closures' ? 'var(--green)' : 'var(--text2)',
-              borderColor: tab === 'closures' ? 'var(--green)' : 'var(--border2)',
-            }}
-            className="min-h-[38px] whitespace-nowrap px-3 py-2 text-xs font-bold"
-            onClick={() => setTab('closures')}
-          >
+          <button style={tabButtonStyle(tab === 'closures')} className="min-h-[38px] whitespace-nowrap px-3 py-2 text-xs font-bold" onClick={() => setTab('closures')}>
             Clôture &amp; Rapprochement
           </button>
         )}
       </div>
 
-      {/* ── Onglet Clôture & Rapprochement (MANAGE_FINANCE) ── */}
       {tab === 'closures' && hasMF ? (
-        <FinanceCashOpsPanel
-          canManage={hasMF}
-          invoices={invoices}
-          onReconciled={() => void fetchInvoices(page)}
-          onToast={onToast}
-        />
-
-      /* ── Onglet APEE ── */
+        <FinanceCashOpsPanel canManage={hasMF} invoices={invoices} onReconciled={() => void fetchInvoices(page)} onToast={onToast} />
       ) : tab === 'apee' ? (
         <SectionAPEEStaff onToast={onToast} />
-
-      /* ── Onglet Plans de frais (MANAGE_FINANCE) ── */
       ) : tab === 'plans' && hasMF ? (
         <SectionPlansStaff
           onToast={onToast}
           onInvoiceCreated={() => {
             setTab('invoices')
-            fetchInvoices(1)
+            void fetchInvoices(1)
           }}
         />
-
-      /* ── Onglet Factures & Paiements ── */
       ) : tab === 'invoices' ? (
         <>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
@@ -457,334 +180,59 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
             </div>
             <div className="flex items-center gap-2">
               {hasMF && (
-                <button
-                  style={btnPrim}
-                  className="min-h-[38px] flex-1 sm:flex-initial"
-                  onClick={() => { setDepenseOpen(true); setDepenseError(null); setDepenseForm(EMPTY_DEP) }}
-                >
+                <button style={btnPrim} className="min-h-[38px] flex-1 sm:flex-initial" onClick={() => setDepenseOpen(true)}>
                   {t('finance.recordExpense')}
                 </button>
               )}
-              <button
-                style={btnSec}
-                className="min-h-[38px] flex-1 sm:flex-initial"
-                onClick={() => fetchInvoices(page)}
-              >
+              <button style={btnSec} className="min-h-[38px] flex-1 sm:flex-initial" onClick={() => void fetchInvoices(page)}>
                 {t('finance.refresh')}
               </button>
             </div>
           </div>
 
-      {/* KPIs */}
-      {!loading && !error && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 mb-3.5">
-          {[
-            { label: t('finance.kpiTotalUnpaid'),  val: fmtCFA(totalPending), bg: 'var(--red-light)', color: 'var(--red)' },
-            { label: t('finance.kpiPartialPayments'),   val: fmtCFA(totalPartial), bg: 'var(--amber-light)', color: 'var(--amber)' },
-            { label: '', val: t('finance.kpiResults', { count: pag.total }), bg: 'var(--bg2)', color: 'var(--text2)' },
-          ].map((k, i) => (
-            <div key={i} style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: '10px 14px' }}>
-              <div style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>{k.label}</div>
-              <div style={{ fontSize: 15, fontWeight: 900, color: k.color || 'var(--text)' }}>{k.val}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Filtres */}
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={filterSt} className="min-h-[38px] text-xs">
-          <option value="">{t('finance.filterAllStatuses')}</option>
-          <option value="PENDING">{t('finance.filterUnpaid')}</option>
-          <option value="PARTIAL">{t('finance.filterPartial')}</option>
-          <option value="PAID">{t('finance.filterPaid')}</option>
-          <option value="OVERDUE">{t('finance.filterOverdue')}</option>
-        </select>
-        <span style={{ fontSize: 12, color: 'var(--text3)' }}>
-          {t('finance.pageInfo', { page: pag.page, pages: pag.pages, total: pag.total })}
-        </span>
-      </div>
-
-      {/* Liste des factures (Mobile Cards + Desktop Table) */}
-      <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
-        {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: 50 }}>
-            <div style={{ width: 32, height: 32, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'edu-spin 0.7s linear infinite' }} />
-          </div>
-        ) : error ? (
-          <div style={{ background: 'var(--red-light)', borderRadius: 10, padding: '12px 16px', margin: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <AlertTriangle size={15} strokeWidth={2} />
-            <span style={{ fontWeight: 700, color: 'var(--red)', flex: 1, fontSize: 13 }}>{error}</span>
-            <button onClick={() => fetchInvoices(page)} style={{ padding: '5px 12px', borderRadius: 8, background: 'var(--surface)', color: 'var(--red)', border: '1.5px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 12 }}>
-              {t('finance.refresh')}
-            </button>
-          </div>
-        ) : invoices.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--text3)', fontSize: 13 }}>
-            {t('finance.noInvoices')}
-          </div>
-        ) : (
-          <>
-            {/* Vue Mobile : Cartes factures */}
-            <div className="md:hidden divide-y divide-[var(--border)]">
-              {invoices.map(inv => {
-                const totalPaid = inv.payments.filter(p => p.status === 'COMPLETED' || p.status === 'SUCCESS' || p.status === 'PAID').reduce((s, p) => s + p.amount, 0)
-                const stCfg = INV_STATUS[inv.status] || { bg: 'var(--bg2)', color: 'var(--text2)' }
-                return (
-                  <div key={inv.id} className="p-3.5 space-y-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="font-bold text-sm text-[var(--text)]">
-                        {inv.student.lastName} {inv.student.firstName}
-                      </div>
-                      <span style={{ background: stCfg.bg, color: stCfg.color, padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 700 }}>
-                        {t(`finance.status${inv.status === 'PENDING' ? 'Unpaid' : inv.status === 'PARTIAL' ? 'Partial' : inv.status === 'PAID' ? 'Paid' : inv.status === 'OVERDUE' ? 'Overdue' : 'Cancelled'}`)}
-                      </span>
-                    </div>
-
-                    <div className="text-xs text-[var(--text2)]">
-                      {inv.feePlan?.name ?? '—'}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-[var(--bg)] text-xs">
-                      <div>
-                        <span className="text-[10px] text-[var(--text3)] uppercase font-bold block">{t('finance.tableHeaderAmount')}</span>
-                        <span className="font-bold text-[var(--text)]">{fmtCFA(inv.amount)}</span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-[var(--text3)] uppercase font-bold block">{t('finance.tableHeaderPaid')}</span>
-                        <span className="font-bold text-[var(--green)]">{fmtCFA(totalPaid)}</span>
-                      </div>
-                    </div>
-
-                    {inv.status !== 'PAID' && (
-                      <div className="flex items-center gap-2 pt-1 flex-wrap">
-                        {hasMF && (
-                          <button
-                            style={{ ...btnSecSm, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, background: 'var(--green-light)', color: 'var(--green)', borderColor: 'var(--green)' }}
-                            className="min-h-[38px] px-3 text-xs font-semibold"
-                            disabled={payingId === inv.id}
-                            onClick={() => recordCashPayment(inv)}
-                          >
-                            {payingId === inv.id ? <Loader2 size={13} className="animate-spin" /> : <Banknote size={13} />}
-                            {t('finance.cashBtn') || 'Espèces'}
-                          </button>
-                        )}
-                        <button
-                          style={{ ...btnSecSm, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
-                          className="flex-1 min-h-[38px] text-xs font-semibold"
-                          disabled={payingId === inv.id}
-                          onClick={() => initiateMobileMoney(inv)}
-                        >
-                          {payingId === inv.id ? <Loader2 size={13} className="animate-spin" /> : <Smartphone size={13} />}
-                          Mobile Money
-                        </button>
-                        {(Boolean(pendingCampayRefs[inv.id]) || inv.payments.some(p => p.status === 'PENDING')) && (
-                          <button
-                            style={{ ...btnSecSm, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, background: 'var(--amber-light)', color: 'var(--amber)', borderColor: 'var(--amber)' }}
-                            className="min-h-[38px] px-3 text-xs font-semibold"
-                            disabled={verifyingId === inv.id}
-                            onClick={() => verifyMobileMoney(inv.id)}
-                          >
-                            {verifyingId === inv.id ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
-                            Vérifier Campay
-                          </button>
-                        )}
-                        <button
-                          style={btnSecSm}
-                          className="min-h-[38px] px-3 text-xs font-semibold"
-                          disabled={sendingId === inv.id}
-                          onClick={() => sendSmsReminder(inv)}
-                        >
-                          {sendingId === inv.id ? <Loader2 size={13} className="animate-spin" /> : 'SMS'}
-                        </button>
-                      </div>
-                    )}
-                    <button
-                      type="button"
-                      style={{ ...btnSecSm, display: 'inline-flex', alignItems: 'center', gap: 5 }}
-                      className="min-h-[34px] px-3 text-xs font-semibold"
-                      onClick={() =>
-                        setDetailsInvoice({
-                          id: inv.id,
-                          studentName: `${inv.student.lastName} ${inv.student.firstName}`,
-                          feePlanName: inv.feePlan?.name ?? 'Frais de scolarité',
-                        })
-                      }
-                    >
-                      <Eye size={12} /> Détails / Tranches / Reçus
-                    </button>
+          {!loading && !error && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 mb-3.5">
+              {[
+                { label: t('finance.kpiTotalUnpaid'), val: fmtCFA(totalPending), color: 'var(--red)' },
+                { label: t('finance.kpiPartialPayments'), val: fmtCFA(totalPartial), color: 'var(--amber)' },
+                { label: '', val: t('finance.kpiResults', { count: pag.total }), color: 'var(--text2)' },
+              ].map((k, i) => (
+                <div key={i} style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: '10px 14px' }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>
+                    {k.label}
                   </div>
-                )
-              })}
-            </div>
-
-            {/* Vue Desktop : Tableau classique */}
-            <div className="hidden md:block overflow-x-auto">
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    <th style={thSt}>{t('finance.tableHeaderStudent')}</th>
-                    <th style={thSt}>{t('finance.tableHeaderPlan')}</th>
-                    <th style={thSt}>{t('finance.tableHeaderAmount')}</th>
-                    <th style={thSt}>{t('finance.tableHeaderPaid')}</th>
-                    <th style={thSt}>{t('finance.tableHeaderStatus')}</th>
-                    <th style={thSt}>{t('finance.tableHeaderActions')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoices.map(inv => {
-                    const totalPaid = inv.payments.filter(p => p.status === 'COMPLETED' || p.status === 'SUCCESS' || p.status === 'PAID').reduce((s, p) => s + p.amount, 0)
-                    const stCfg = INV_STATUS[inv.status] || { bg: 'var(--bg2)', color: 'var(--text2)' }
-                    return (
-                      <tr key={inv.id}>
-                        <td style={tdSt}>
-                          <span style={{ fontWeight: 700, color: 'var(--text)' }}>
-                            {inv.student.lastName} {inv.student.firstName}
-                          </span>
-                        </td>
-                        <td style={tdSt}>
-                          <span style={{ color: 'var(--text2)', fontSize: 12 }}>{inv.feePlan?.name ?? '—'}</span>
-                        </td>
-                        <td style={{ ...tdSt, fontWeight: 700 }}>{fmtCFA(inv.amount)}</td>
-                        <td style={{ ...tdSt, color: 'var(--green)', fontWeight: 600 }}>{fmtCFA(totalPaid)}</td>
-                        <td style={tdSt}>
-                          <span style={{ background: stCfg.bg, color: stCfg.color, padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 700 }}>
-                            {t(`finance.status${inv.status === 'PENDING' ? 'Unpaid' : inv.status === 'PARTIAL' ? 'Partial' : inv.status === 'PAID' ? 'Paid' : inv.status === 'OVERDUE' ? 'Overdue' : 'Cancelled'}`)}
-                          </span>
-                        </td>
-                        <td style={tdSt}>
-                          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                            {inv.status !== 'PAID' && hasMF && (
-                              <button
-                                style={{ ...btnSecSm, display: 'flex', alignItems: 'center', gap: 4, background: 'var(--green-light)', color: 'var(--green)', borderColor: 'var(--green)' }}
-                                disabled={payingId === inv.id}
-                                onClick={() => recordCashPayment(inv)}
-                                title={t('finance.cashBtn') || 'Encaisser en espèces'}
-                              >
-                                {payingId === inv.id ? <Loader2 size={11} className="animate-spin" /> : <Banknote size={11} />}
-                                {t('finance.cashBtn') || 'Espèces'}
-                              </button>
-                            )}
-                            {inv.status !== 'PAID' && (
-                              <button
-                                style={{ ...btnSecSm, display: 'flex', alignItems: 'center', gap: 4 }}
-                                disabled={payingId === inv.id}
-                                onClick={() => initiateMobileMoney(inv)}
-                              >
-                                {payingId === inv.id ? <Loader2 size={11} className="animate-spin" /> : <Smartphone size={11} />}
-                                Mobile Money
-                              </button>
-                            )}
-                            {inv.status !== 'PAID' && (Boolean(pendingCampayRefs[inv.id]) || inv.payments.some(p => p.status === 'PENDING')) && (
-                              <button
-                                style={{ ...btnSecSm, display: 'flex', alignItems: 'center', gap: 4, background: 'var(--amber-light)', color: 'var(--amber)', borderColor: 'var(--amber)' }}
-                                disabled={verifyingId === inv.id}
-                                onClick={() => verifyMobileMoney(inv.id)}
-                                title="Vérifier le statut du paiement Campay"
-                              >
-                                {verifyingId === inv.id ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />}
-                                Vérifier Campay
-                              </button>
-                            )}
-                            {inv.status !== 'PAID' && (
-                              <button
-                                style={btnSecSm}
-                                disabled={sendingId === inv.id}
-                                onClick={() => sendSmsReminder(inv)}
-                              >
-                                {sendingId === inv.id ? <Loader2 size={11} className="animate-spin" /> : 'SMS'}
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              style={{ ...btnSecSm, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                              onClick={() =>
-                                setDetailsInvoice({
-                                  id: inv.id,
-                                  studentName: `${inv.student.lastName} ${inv.student.firstName}`,
-                                  feePlanName: inv.feePlan?.name ?? 'Frais de scolarité',
-                                })
-                              }
-                            >
-                              <Eye size={11} /> Détails
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {pag.pages > 1 && (
-              <div style={{ padding: '8px 14px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'center', gap: 6 }}>
-                <button style={btnSec} disabled={page <= 1}
-                  onClick={() => { const p = page - 1; setPage(p); fetchInvoices(p) }}>{t('finance.previous')}</button>
-                <span style={{ padding: '4px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text2)' }}>{page}/{pag.pages}</span>
-                <button style={btnSec} disabled={page >= pag.pages}
-                  onClick={() => { const p = page + 1; setPage(p); fetchInvoices(p) }}>{t('finance.next')}</button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* ── Modale : Enregistrer une dépense ── */}
-      {depenseOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
-          onClick={e => { if (e.target === e.currentTarget && !depenseSending) { setDepenseOpen(false) } }}>
-          <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', width: '100%', maxWidth: 440, boxShadow: '0 20px 60px rgba(0,0,0,0.18)', overflow: 'hidden' }}>
-            <div className="px-4 py-3 md:px-5 md:py-3.5" style={{ borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>{t('finance.depenseModalTitle')}</div>
-              <button onClick={() => !depenseSending && setDepenseOpen(false)}
-                style={{ background: 'none', border: 'none', fontSize: 18, color: 'var(--text3)', cursor: 'pointer', lineHeight: 1, padding: 2 }}>×</button>
-            </div>
-
-            <form onSubmit={submitDepense} className="px-4 py-3 md:px-5 md:py-4" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div>
-                <label style={fLb}>{t('finance.depenseLabelLabel')} <span style={{ color: 'var(--red)' }}>*</span></label>
-                <input type="text" value={depenseForm.label} onChange={e => setDepenseForm(f => ({ ...f, label: e.target.value }))} placeholder={t('finance.depenseLabelPlaceholder')} style={fIn}
-                  onFocus={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--primary)'; (e.currentTarget as HTMLElement).style.background = 'var(--surface)' }}
-                  onBlur={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border2)'; (e.currentTarget as HTMLElement).style.background = 'var(--bg2)' }} />
-              </div>
-              <div>
-                <label style={fLb}>{t('finance.depenseAmountLabel')} <span style={{ color: 'var(--red)' }}>*</span></label>
-                <input type="number" min="1" value={depenseForm.amount} onChange={e => setDepenseForm(f => ({ ...f, amount: e.target.value }))} placeholder={t('finance.depenseAmountPlaceholder')} style={fIn}
-                  onFocus={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--primary)'; (e.currentTarget as HTMLElement).style.background = 'var(--surface)' }}
-                  onBlur={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border2)'; (e.currentTarget as HTMLElement).style.background = 'var(--bg2)' }} />
-              </div>
-              <div>
-                <label style={fLb}>{t('finance.depenseCategoryLabel')} <span style={{ color: 'var(--text3)', fontWeight: 600, fontSize: 11 }}>({t('finance.depenseCategoryOptional')})</span></label>
-                <select value={depenseForm.category} onChange={e => setDepenseForm(f => ({ ...f, category: e.target.value }))} style={{ ...fIn, cursor: 'pointer' }}>
-                  <option value="">{t('finance.depenseCategoryPlaceholder')}</option>
-                  {DEPENSE_CATEGORIES.map(c => <option key={c} value={c}>{t(`finance.${c}`)}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={fLb}>{t('finance.depenseDateLabel')} <span style={{ color: 'var(--text3)', fontWeight: 600, fontSize: 11 }}>({t('finance.depenseDateOptional')})</span></label>
-                <input type="date" value={depenseForm.date} onChange={e => setDepenseForm(f => ({ ...f, date: e.target.value }))} style={fIn}
-                  onFocus={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--primary)'; (e.currentTarget as HTMLElement).style.background = 'var(--surface)' }}
-                  onBlur={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border2)'; (e.currentTarget as HTMLElement).style.background = 'var(--bg2)' }} />
-              </div>
-              {depenseError && (
-                <div style={{ background: 'var(--red-light)', border: '1px solid rgba(220,38,38,0.3)', borderRadius: 8, padding: '8px 12px', color: 'var(--red)', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <AlertTriangle size={13} strokeWidth={2} /> {depenseError}
+                  <div style={{ fontSize: 15, fontWeight: 900, color: k.color || 'var(--text)' }}>{k.val}</div>
                 </div>
-              )}
-              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', paddingTop: 4 }}>
-                <button type="button" onClick={() => setDepenseOpen(false)} disabled={depenseSending} style={btnSec}>
-                  {t('finance.cancel')}
-                </button>
-                <button type="submit" disabled={depenseSending}
-                  style={{ ...btnPrim, opacity: depenseSending ? 0.7 : 1, cursor: depenseSending ? 'wait' : 'pointer' }}>
-                  {depenseSending ? t('finance.saving') : t('finance.save')}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+              ))}
+            </div>
+          )}
+
+          <FinanceInvoicesTable
+            invoices={invoices}
+            pag={pag}
+            page={page}
+            loading={loading}
+            error={error}
+            statusFilter={statusFilter}
+            hasMF={hasMF}
+            payingId={payingId}
+            verifyingId={verifyingId}
+            sendingId={sendingId}
+            pendingCampayRefs={pendingCampayRefs}
+            onStatusFilterChange={setStatusFilter}
+            onPageChange={nextPage => {
+              setPage(nextPage)
+              void fetchInvoices(nextPage)
+            }}
+            onRefresh={pg => void fetchInvoices(pg)}
+            onRecordCash={recordCashPayment}
+            onInitiateMobileMoney={initiateMobileMoney}
+            onVerifyMobileMoney={verifyMobileMoney}
+            onSendSmsReminder={sendSmsReminder}
+            onOpenDetails={setDetailsInvoice}
+          />
+
+          {depenseOpen && <FinanceStaffDepenseModal onClose={() => setDepenseOpen(false)} onToast={onToast} />}
         </>
       ) : null}
 
@@ -803,14 +251,3 @@ export default function SectionFinanceStaff({ onToast, sessionUser, initialTab =
     </div>
   )
 }
-
-const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)' }
-const sSub: React.CSSProperties = { fontSize: 12, color: 'var(--text3)', marginTop: 2 }
-const btnPrim: React.CSSProperties = { padding: '6px 13px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
-const btnSec: React.CSSProperties = { padding: '5px 11px', borderRadius: 8, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
-const btnSecSm: React.CSSProperties = { padding: '4px 9px', borderRadius: 7, fontSize: 11.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
-const filterSt: React.CSSProperties = { background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 8, padding: '5px 9px', fontSize: 12, fontWeight: 600, color: 'var(--text2)', outline: 'none', fontFamily: 'inherit' }
-const thSt: React.CSSProperties = { padding: '7px 11px', textAlign: 'left', fontSize: 10.5, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }
-const tdSt: React.CSSProperties = { padding: '8px 11px', fontSize: 12.5, color: 'var(--text2)', borderBottom: '1px solid var(--bg)', verticalAlign: 'middle' }
-const fLb: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: 'var(--text2)', marginBottom: 3, display: 'block', letterSpacing: '0.4px', textTransform: 'uppercase' }
-const fIn: React.CSSProperties = { width: '100%', padding: '7px 10px', background: 'var(--bg2)', border: '1.5px solid var(--border2)', borderRadius: 8, color: 'var(--text)', fontSize: 12.5, fontFamily: 'inherit', fontWeight: 600, outline: 'none', transition: 'all 0.15s', boxSizing: 'border-box' }

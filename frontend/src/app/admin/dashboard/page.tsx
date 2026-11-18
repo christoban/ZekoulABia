@@ -4,71 +4,26 @@ import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { logoutUser } from '@/lib/userAuth'
 import { fetchApi } from '@/lib/fetchApi'
+import { getUserSession, putUserSession } from '@/lib/offline/db'
+import { useT } from '@/lib/i18n'
+import EventCenterWidget from '@/features/communication/EventCenterWidget'
+import { OfflineIndicator } from '@/components/OfflineIndicator'
+import ChangePasswordModal from '@/components/ChangePasswordModal'
+import ModeTestBanner from '@/components/ModeTestBanner'
 import AdminSidebar from './_components/AdminSidebar'
 import AdminTopbar from './_components/AdminTopbar'
-import SectionDashboard from './_components/SectionDashboard'
-import SectionUsers from './_components/SectionUsers'
-import SectionClasses from './_components/SectionClasses'
-import SectionSubjects from './_components/SectionSubjects'
-import SectionGrades from './_components/SectionGrades'
-import SectionBulletins from './_components/SectionBulletins'
-import SectionTimetable from './_components/SectionTimetable'
-import SectionSettings from './_components/SectionSettings'
-import SectionCorbeille from './_components/SectionCorbeille'
-import NotificationCenter from '@/components/NotificationCenter'
-import SectionFinance from './_components/SectionFinance'
 import AdminBottomNav from './_components/AdminBottomNav'
-import SectionAdminAttendance from './_components/SectionAdminAttendance'
-import SectionAdminCouncil from './_components/SectionAdminCouncil'
-import SectionBulletinValidation from '../../staff/dashboard/_components/SectionBulletinValidation'
-import SectionAdminAI from './_components/SectionAdminAI'
-import SectionStatistics from './_components/SectionStatistics'
-import SectionPedagogie from './_components/SectionPedagogie'
-import AnomaliesAlertBanner from './_components/AnomaliesAlertBanner'
-import SectionRH from './_components/SectionRH'
-import SectionMatricules from './_components/SectionMatricules'
-import SectionSchoolPayments from './_components/SectionSchoolPayments'
-import SectionAdminLV2Choice from './_components/SectionAdminLV2Choice'
-import SectionAdminEntranceExams from './_components/SectionAdminEntranceExams'
-import SectionAdminAcademicEvents from './_components/SectionAdminAcademicEvents'
-import SectionAdminGroupTransfers from './_components/SectionAdminGroupTransfers'
-import SectionAdminStudentTransfers from './_components/SectionAdminStudentTransfers'
-import SectionEleveOnboarding from './_components/SectionEleveOnboarding'
-import SectionMinesecStatistics from './_components/SectionMinesecStatistics'
-import SectionMinedubStatistics from './_components/SectionMinedubStatistics'
-import SectionAdminPebsExams from './_components/SectionAdminPebsExams'
-import EventCenterWidget from '@/features/communication/EventCenterWidget'
-import { getUserSession, putUserSession, putCachedData } from '@/lib/offline/db'
 import AdminToast from './_components/AdminToast'
 import AssistantWidget from './_components/AssistantWidget'
 import HighlightController from './_components/HighlightController'
-import SectionOrgPedagogyHub from './_components/SectionOrgPedagogyHub'
+import AnomaliesAlertBanner from './_components/AnomaliesAlertBanner'
 import ClotureAnneeModal from './_components/ClotureAnneeModal'
 import type { AdminSection, Toast } from './_types'
-import { OfflineIndicator } from '@/components/OfflineIndicator'
-import ChangePasswordModal from '@/components/ChangePasswordModal'
-import { useT } from '@/lib/i18n'
-import Babillard from '@/features/communication/Babillard'
-import CarnetLiaisonView from '@/features/carnet-liaison/CarnetLiaisonView'
-import Messagerie from '@/features/messagerie'
-import SectionOfflineStatus from '@/components/SectionOfflineStatus'
-import ModeTestBanner from '@/components/ModeTestBanner'
+import { ADMIN_SECTIONS, type AdminBadges, type SchoolInfo, type SessionUser } from './pageParts/types'
+import { useAdminOfflinePreload } from './pageParts/useAdminOfflinePreload'
+import AdminMainSections from './pageParts/AdminMainSections'
 
 let toastId = 0
-
-const ADMIN_SECTIONS: AdminSection[] = [
-  'dashboard', 'users', 'classes', 'subjects',
-  'attendance', 'grades', 'bulletins', 'timetable',
-  'council', 'academic-events', 'finance', 'ai', 'statistics', 'communications', 'babillard', 'carnet-liaison', 'messagerie', 'settings', 'corbeille', 'sync-offline',
-  'bulletin-validation',
-  'pedagogie', 'rh', 'lv2-choice', 'entrance-exams', 'pebs-exams', 'matricules', 'school-payments', 'eleve-onboarding', 'minesec-stats', 'minedub-stats', 'ministerial-stats', 'group-transfers',
-  'org-pedagogy',
-]
-
-
-interface SchoolInfo { id?: string; name: string; logoUrl: string | null; subdomain?: string; city?: string; phone?: string; email?: string; isPrimaire?: boolean | null }
-interface AdminBadges { users?: string; classes?: string; grades?: string; finance?: string; 'eleve-onboarding'?: string }
-interface SessionUser { id?: string; userId?: string; nomComplet?: string; firstName?: string; role?: string; avatarUrl?: string | null }
 
 export default function AdminDashboard() {
   const t = useT('admin')
@@ -80,12 +35,7 @@ export default function AdminDashboard() {
   const [changePwdOpen, setChangePwdOpen] = useState(false)
   const [badges, setBadges] = useState<AdminBadges>({})
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null)
-  // Types d'événements académiques actuellement actifs — gate l'affichage des menus de
-  // fonctionnalités événementielles (ex. 'lv2-choice') dans la sidebar : jamais visibles pour
-  // rien toute l'année, seulement quand la fonctionnalité réelle qu'ils représentent est ouverte.
   const [activeEventTypes, setActiveEventTypes] = useState<string[]>([])
-  // Concours 6e / PEBS : pas de AcademicEvent dédié — le statut réel de la session (déjà sa
-  // propre machine à états) pilote directement la visibilité, sans dupliquer l'information.
   const [hasActiveEntranceExam, setHasActiveEntranceExam] = useState(false)
   const [hasActivePebs, setHasActivePebs] = useState(false)
   const [hasPendingGroupTransfers, setHasPendingGroupTransfers] = useState(false)
@@ -107,7 +57,7 @@ export default function AdminDashboard() {
   }, [])
 
   const removeToast = useCallback((id: number) => {
-    setToasts(prev => prev.filter(t => t.id !== id))
+    setToasts(prev => prev.filter(item => item.id !== id))
   }, [])
 
   useEffect(() => {
@@ -121,7 +71,6 @@ export default function AdminDashboard() {
       }
     } catch { /* ignore */ }
 
-    // Restauration immédiate du schoolInfo depuis le cache local Dexie userSession
     if (currentUserId) {
       getUserSession(currentUserId).then(saved => {
         if (saved?.schoolInfo) {
@@ -148,21 +97,16 @@ export default function AdminDashboard() {
         return r.json()
       })
       .then(d => {
-        if (!d || !d.success || !d.data) {
-          // Erreur réseau ou serveur indisponible : ne pas purger la session locale !
-          return
-        }
+        if (!d || !d.success || !d.data) return
         const { status } = d.data as { status: string }
         if (status === 'APPROVED') { router.replace('/admin/configuration'); return }
         if (status !== 'ACTIVE') {
-          // Établissement explicitement suspendu/inactif côté serveur
           try { localStorage.removeItem('zekoulabia_user') } catch { /* ignore */ }
           router.replace('/login')
           return
         }
         setSchoolInfo(d.data)
 
-        // Persistance du schoolInfo dans le store Dexie userSession pour les prochains démarrages offline
         if (currentUserId) {
           putUserSession({
             userId: currentUserId,
@@ -197,21 +141,21 @@ export default function AdminDashboard() {
       .then(r => r.json())
       .then(d => {
         if (!d.success) return
-        const { users, classes, pendingGrades, pendingInvoices, pendingOnboardings } = d.data as { users: number; classes: number; pendingGrades: number; pendingInvoices: number; pendingOnboardings?: number }
+        const { users, classes, pendingInvoices, pendingOnboardings } = d.data as { users: number; classes: number; pendingGrades: number; pendingInvoices: number; pendingOnboardings?: number }
         setBadges({
-          users:   users > 0         ? String(users)         : undefined,
-          classes: classes > 0       ? String(classes)       : undefined,
-          grades:  undefined,
+          users: users > 0 ? String(users) : undefined,
+          classes: classes > 0 ? String(classes) : undefined,
+          grades: undefined,
           finance: pendingInvoices > 0 ? String(pendingInvoices) : undefined,
           'eleve-onboarding': (pendingOnboardings && pendingOnboardings > 0) ? String(pendingOnboardings) : undefined,
         })
       })
-      .catch(() => { /* badges not critical */ })
+      .catch(() => {})
 
     fetchApi('/api/v2/academic-events/active')
       .then(r => r.json())
       .then(d => { if (d.success) setActiveEventTypes((d.data || []).map((e: { type: string }) => e.type)) })
-      .catch(() => { /* gating non critique — le menu reste masqué par défaut si l'appel échoue */ })
+      .catch(() => {})
 
     fetchApi('/api/v2/entrance-exams')
       .then(r => r.json())
@@ -229,343 +173,9 @@ export default function AdminDashboard() {
       .catch(() => {})
 
     return () => window.removeEventListener('zekoulabia:user-updated', handleUserUpdated)
-  }, [router, showToast])
+  }, [router, showToast, t])
 
-  // Préchargement offline-first silencieux en tâche de fond pour l'ensemble du dashboard Admin
-  useEffect(() => {
-    if (!sessionUser || typeof navigator === 'undefined' || !navigator.onLine) return
-
-    let cancelled = false
-
-    const preloadAdminData = async () => {
-      try {
-        // 1. Statistiques du dashboard de pilotage
-        fetchApi('/api/v2/dashboard/stats', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (d?.stats) putCachedData('admin:dashboard-stats', d.stats).catch(() => {})
-          })
-          .catch(() => {})
-
-        // 2. Classes & Années académiques
-        const [clsRes, yearsRes, gridRes, titlesRes] = await Promise.allSettled([
-          fetchApi('/api/v2/classes', { credentials: 'include' }).then(r => r.json()),
-          fetchApi('/api/v2/academic-years', { credentials: 'include' }).then(r => r.json()),
-          fetchApi('/api/v2/timetable-grid-config', { credentials: 'include' }).then(r => r.json()),
-          fetchApi('/api/v2/school/staff-titles').then(r => r.json()),
-        ])
-
-        if (cancelled) return
-
-        let classesList: Array<{ id: string; name: string }> = []
-        if (clsRes.status === 'fulfilled') {
-          const raw = clsRes.value
-          const list = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : []
-          if (list.length > 0) {
-            classesList = list
-            await putCachedData('admin:classes', list).catch(() => {})
-            await putCachedData('staff:classes', list).catch(() => {})
-          }
-        }
-
-        if (yearsRes.status === 'fulfilled') {
-          const raw = yearsRes.value
-          const list = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : []
-          if (list.length > 0) {
-            await putCachedData('admin:academic-years', list).catch(() => {})
-            await putCachedData('staff:academic-years', list).catch(() => {})
-          }
-        }
-
-        if (gridRes.status === 'fulfilled' && gridRes.value?.data) {
-          await putCachedData('admin:timetable-grid-config', gridRes.value.data).catch(() => {})
-          await putCachedData('staff:timetable-grid-config', gridRes.value.data).catch(() => {})
-        }
-
-        if (titlesRes.status === 'fulfilled' && titlesRes.value?.data) {
-          await putCachedData('admin:staff-titles', titlesRes.value.data).catch(() => {})
-        }
-
-        // 3. Utilisateurs & effectifs par rôle
-        fetchApi('/api/v2/users?limit=100', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (d?.data && Array.isArray(d.data)) {
-              putCachedData('admin:users:ALL', d.data).catch(() => {})
-              if (d.roleCounts) {
-                putCachedData('admin:users:role-counts', d.roleCounts).catch(() => {})
-              }
-            }
-          })
-          .catch(() => {})
-
-        // 4. Finances : plans tarifaires et factures en attente
-        fetchApi('/api/v2/finance/fee-plans', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (d?.data && Array.isArray(d.data)) {
-              putCachedData('admin:finance:fee-plans', d.data).catch(() => {})
-            }
-          })
-          .catch(() => {})
-
-        fetchApi('/api/v2/finance/invoices?status=PENDING&page=1&limit=20', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (d?.data && Array.isArray(d.data)) {
-              putCachedData('admin:finance:invoices:PENDING:1', {
-                invoices: d.data,
-                pagination: d.pagination ?? { total: d.data.length, page: 1, pages: 1 }
-              }).catch(() => {})
-            }
-          })
-          .catch(() => {})
-
-        // 5. Emplois du temps et Matières des classes
-        if (classesList.length > 0) {
-          const targetClasses = classesList.slice(0, 25)
-          for (const c of targetClasses) {
-            if (cancelled) return
-            fetchApi(`/api/v2/timetables?classId=${c.id}`, { credentials: 'include' })
-              .then(r => r.json())
-              .then(d => {
-                const list = d?.data || []
-                if (list[0]) {
-                  putCachedData(`admin:timetables:${c.id}`, list[0]).catch(() => {})
-                  putCachedData(`staff:timetables:${c.id}`, list[0]).catch(() => {})
-                }
-              })
-              .catch(() => {})
-
-            fetchApi(`/api/v2/subjects?classId=${c.id}`, { credentials: 'include' })
-              .then(r => r.json())
-              .then(d => {
-                if (d?.data) putCachedData(`admin:subjects:class:${c.id}`, d.data).catch(() => {})
-              })
-              .catch(() => {})
-
-            // Préchargement des bulletins et du statut de génération de la classe
-            fetchApi(`/api/v2/report-cards?classId=${c.id}&limit=100`, { credentials: 'include' })
-              .then(r => r.json())
-              .then(rd => {
-                const cards = rd?.reportCards ?? rd?.data ?? []
-                if (Array.isArray(cards) && cards.length > 0) {
-                  putCachedData(`admin:report-cards:${c.id}`, cards).catch(() => {})
-                }
-              })
-              .catch(() => {})
-
-            fetchApi(`/api/v2/report-cards/check/${c.id}`, { credentials: 'include' })
-              .then(r => r.json())
-              .then(cd => {
-                if (cd) putCachedData(`admin:report-cards:check:${c.id}`, cd).catch(() => {})
-              })
-              .catch(() => {})
-          }
-        }
-
-        // 6. Événements académiques
-        fetchApi('/api/v2/academic-events', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (d?.data) putCachedData('admin:academic-events', d.data).catch(() => {})
-          })
-          .catch(() => {})
-
-        // 7. Matières, Départements & Enseignants
-        fetchApi('/api/v2/subjects', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (d?.data) putCachedData('admin:subjects', d.data).catch(() => {})
-          })
-          .catch(() => {})
-
-        fetchApi('/api/v2/departments', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (d?.data) putCachedData('admin:departments', d.data).catch(() => {})
-          })
-          .catch(() => {})
-
-        fetchApi('/api/v2/users?role=TEACHER&limit=200', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (d?.data && Array.isArray(d.data)) putCachedData('admin:users:TEACHER', d.data).catch(() => {})
-          })
-          .catch(() => {})
-
-        // 7b. Statistiques globales
-        fetchApi('/api/v2/statistics/classes-comparison', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => { if (d?.data) putCachedData('admin:stats-comparison:', d.data).catch(() => {}) })
-          .catch(() => {})
-
-        fetchApi('/api/v2/statistics/students-distribution?criteria=gender', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => { if (d?.data) putCachedData('admin:stats-distribution:gender', d.data).catch(() => {}) })
-          .catch(() => {})
-
-        fetchApi('/api/v2/statistics/grades-evolution', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => { if (d?.data) putCachedData('admin:stats-evolution::', d.data).catch(() => {}) })
-          .catch(() => {})
-
-        // 7c. Ressources Humaines (RH)
-        fetchApi('/api/v2/hr/employees', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (d?.data && Array.isArray(d.data)) {
-              putCachedData('admin:hr:employees', d.data).catch(() => {})
-              if (d.data[0]?.id) {
-                fetchApi(`/api/v2/hr/employees/${d.data[0].id}`, { credentials: 'include' })
-                  .then(dr => dr.json())
-                  .then(dd => { if (dd?.data) putCachedData(`admin:hr:employee:${d.data[0].id}`, dd.data).catch(() => {}) })
-                  .catch(() => {})
-              }
-            }
-          })
-          .catch(() => {})
-
-        fetchApi('/api/v2/hr/leave-requests', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => { if (d?.data) putCachedData('admin:hr:leave-requests', d.data).catch(() => {}) })
-          .catch(() => {})
-
-        // 7d. Campagnes statistiques ministérielles
-        fetchApi('/api/v2/statistical-campaign/supplement', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => { if (d?.data) putCachedData('admin:minesec:supplement', d.data).catch(() => {}) })
-          .catch(() => {})
-
-        fetchApi('/api/v2/statistical-campaign/submissions', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => { if (d?.data) putCachedData('admin:minesec:submissions', d.data).catch(() => {}) })
-          .catch(() => {})
-
-        fetchApi('/api/v2/statistical-campaign/meta', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => { if (d?.data) putCachedData('admin:minesec:meta', d.data).catch(() => {}) })
-          .catch(() => {})
-
-        // 8. Conseils de classe & Onboarding
-        fetchApi('/api/v2/class-councils', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (d?.sessions) putCachedData('admin:class-councils', { sessions: d.sessions }).catch(() => {})
-          })
-          .catch(() => {})
-
-        fetchApi('/api/v2/eleve-onboarding', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (d?.data) putCachedData('admin:eleve-onboarding', d.data).catch(() => {})
-          })
-          .catch(() => {})
-
-        // 9. IA Santé scolaire
-        fetchApi('/api/v2/ai/students-health', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (d?.students) {
-              putCachedData('admin:ai-health:', { students: d.students, summary: d.summary ?? null }).catch(() => {})
-            }
-          })
-          .catch(() => {})
-
-        // 10. Pédagogie (programmes et alertes retard)
-        fetchApi('/api/v2/pedagogie/programmes', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (d?.data) putCachedData('admin:pedagogie:programmes', d.data).catch(() => {})
-          })
-          .catch(() => {})
-
-        fetchApi('/api/v2/pedagogie/alertes-retard', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (d?.data) putCachedData('admin:pedagogie:alertes', d.data).catch(() => {})
-          })
-          .catch(() => {})
-
-        // 11. Configuration établissement, Paramètres & Sauvegardes
-        fetchApi('/api/v2/school/me', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (d?.data) {
-              putCachedData('admin:school:me', d.data).catch(() => {})
-              const sid = d.data.id
-              if (sid) {
-                fetchApi(`/api/v2/schools/${sid}/notification-settings`, { credentials: 'include' })
-                  .then(nr => nr.json())
-                  .then(nd => { if (nd?.data) putCachedData('admin:notification-settings', nd.data).catch(() => {}) })
-                  .catch(() => {})
-
-                fetchApi(`/api/v2/schools/${sid}/security-settings`, { credentials: 'include' })
-                  .then(sr => sr.json())
-                  .then(sd => { if (sd?.data) putCachedData('admin:security-settings', sd.data).catch(() => {}) })
-                  .catch(() => {})
-              }
-            }
-          })
-          .catch(() => {})
-
-        fetchApi('/api/v2/school/last-backup', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (d?.data) putCachedData('admin:school:last-backup', d.data).catch(() => {})
-          })
-          .catch(() => {})
-
-        fetchApi('/api/v2/school-settings', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (d?.data) putCachedData('admin:school-settings', d.data).catch(() => {})
-          })
-          .catch(() => {})
-
-        fetchApi('/api/v2/corbeille', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (d?.data) putCachedData('admin:corbeille', d.data).catch(() => {})
-          })
-          .catch(() => {})
-
-        // 12. Messagerie conversations & messages de l'utilisateur courant
-        try {
-          const rawU = typeof window !== 'undefined' ? localStorage.getItem('zekoulabia_user') : null
-          const parsed = rawU ? JSON.parse(rawU) : null
-          const uid = parsed?.userId || parsed?.id || ''
-          fetchApi('/api/v2/messagerie/conversations')
-            .then(r => r.json())
-            .then(d => {
-              if (d?.data && Array.isArray(d.data)) {
-                if (uid) putCachedData(`messagerie:conversations:${uid}`, d.data).catch(() => {})
-                putCachedData('messagerie:conversations', d.data).catch(() => {})
-
-                // Précharger les messages des premières conversations pour lecture immédiate hors-ligne
-                for (const conv of d.data.slice(0, 5)) {
-                  fetchApi(`/api/v2/messagerie/conversations/${conv.id}/messages`)
-                    .then(mr => mr.json())
-                    .then(md => {
-                      if (md?.data && Array.isArray(md.data)) {
-                        putCachedData(`messagerie:messages:${conv.id}`, md.data).catch(() => {})
-                      }
-                    })
-                    .catch(() => {})
-                }
-              }
-            })
-            .catch(() => {})
-        } catch { /* ignorer */ }
-      } catch { /* ignorer */ }
-    }
-
-    preloadAdminData()
-
-    return () => {
-      cancelled = true
-    }
-  }, [sessionUser])
+  useAdminOfflinePreload(sessionUser)
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -575,18 +185,15 @@ export default function AdminDashboard() {
     return () => window.removeEventListener('keydown', handler)
   }, [router])
 
-  // Navigation temps réel déclenchée par l'assistant IA (copilot) : quand il exécute
-  // une action, on bascule vers l'écran concerné pour que le changement soit visible.
   useEffect(() => {
     const onNavigate = (e: Event) => {
-      const section = (e as CustomEvent<{ section?: string }>).detail?.section
-      if (section && ADMIN_SECTIONS.includes(section as AdminSection)) setSection(section as AdminSection)
+      const target = (e as CustomEvent<{ section?: string }>).detail?.section
+      if (target && ADMIN_SECTIONS.includes(target as AdminSection)) setSection(target as AdminSection)
     }
     window.addEventListener('zekoulabia:navigate', onNavigate)
     return () => window.removeEventListener('zekoulabia:navigate', onNavigate)
   }, [])
 
-  // Déclenchement automatique de la modal de clôture depuis la cloche de notification
   useEffect(() => {
     const onOpenCloture = () => setClotureModalOpen(true)
     window.addEventListener('zekoulabia:open-cloture-modal', onOpenCloture)
@@ -595,193 +202,45 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: 'var(--font-nunito),Nunito,sans-serif', background: 'var(--bg)' }}>
-      <AdminSidebar current={section} onChange={setSection} schoolName={schoolInfo?.name} logoUrl={schoolInfo?.logoUrl} onLogout={logoutUser} badges={badges} sessionUser={sessionUser} activeEventTypes={activeEventTypes} hasActiveEntranceExam={hasActiveEntranceExam} hasActivePebs={hasActivePebs} hasPendingGroupTransfers={hasPendingGroupTransfers} isPrimaire={schoolInfo?.isPrimaire} mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
+      <AdminSidebar
+        current={section}
+        onChange={setSection}
+        schoolName={schoolInfo?.name}
+        logoUrl={schoolInfo?.logoUrl}
+        onLogout={logoutUser}
+        badges={badges}
+        sessionUser={sessionUser}
+        activeEventTypes={activeEventTypes}
+        hasActiveEntranceExam={hasActiveEntranceExam}
+        hasActivePebs={hasActivePebs}
+        hasPendingGroupTransfers={hasPendingGroupTransfers}
+        isPrimaire={schoolInfo?.isPrimaire}
+        mobileOpen={mobileNavOpen}
+        onMobileClose={() => setMobileNavOpen(false)}
+      />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
-        <AdminTopbar title={t(`page.section_titles.${section}`)} onNavigate={s => setSection(s as AdminSection)} onChangePassword={() => setChangePwdOpen(true)} onMenuClick={() => setMobileNavOpen(true)} sessionUser={sessionUser} onLogout={logoutUser} />
+        <AdminTopbar
+          title={t(`page.section_titles.${section}`)}
+          onNavigate={s => setSection(s as AdminSection)}
+          onChangePassword={() => setChangePwdOpen(true)}
+          onMenuClick={() => setMobileNavOpen(true)}
+          sessionUser={sessionUser}
+          onLogout={logoutUser}
+        />
         <ModeTestBanner />
         <EventCenterWidget onNav={s => setSection(s as AdminSection)} />
         <AnomaliesAlertBanner onNav={s => setSection(s as AdminSection)} />
 
-        <main className="flex-1 overflow-hidden pb-[60px] md:pb-0">
-          <div style={{ display: section === 'dashboard' ? 'contents' : 'none' }}>
-            <SectionDashboard
-              onNav={s => setSection(s as AdminSection)}
-              onInvite={() => showToast(t('page.toast.feature_coming'), 'info')}
-              onToast={showToast}
-            />
-          </div>
-          {visitedSections.has('org-pedagogy') && (
-            <div style={{ display: section === 'org-pedagogy' ? 'contents' : 'none' }}>
-              <SectionOrgPedagogyHub onNav={s => setSection(s as AdminSection)} onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('users') && (
-            <div style={{ display: section === 'users' ? 'contents' : 'none' }}>
-              <SectionUsers onNav={s => setSection(s as AdminSection)} onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('classes') && (
-            <div style={{ display: section === 'classes' ? 'contents' : 'none' }}>
-              <SectionClasses onNav={s => setSection(s as AdminSection)} onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('subjects') && (
-            <div style={{ display: section === 'subjects' ? 'contents' : 'none' }}>
-              <SectionSubjects onNav={s => setSection(s as AdminSection)} onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('grades') && (
-            <div style={{ display: section === 'grades' ? 'contents' : 'none' }}>
-              <SectionGrades onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('bulletins') && (
-            <div style={{ display: section === 'bulletins' ? 'contents' : 'none' }}>
-              <SectionBulletins onNav={s => setSection(s as AdminSection)} onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('timetable') && (
-            <div style={{ display: section === 'timetable' ? 'contents' : 'none' }}>
-              <SectionTimetable onNav={s => setSection(s as AdminSection)} onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('academic-events') && (
-            <div style={{ display: section === 'academic-events' ? 'contents' : 'none' }}>
-              <SectionAdminAcademicEvents onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('finance') && (
-            <div style={{ display: section === 'finance' ? 'contents' : 'none' }}>
-              <SectionFinance onNav={s => setSection(s as AdminSection)} onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('attendance') && (
-            <div style={{ display: section === 'attendance' ? 'contents' : 'none' }}>
-              <SectionAdminAttendance onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('council') && (
-            <div style={{ display: section === 'council' ? 'contents' : 'none' }}>
-              <SectionAdminCouncil onNav={s => setSection(s as AdminSection)} onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('bulletin-validation') && (
-            <div style={{ display: section === 'bulletin-validation' ? 'contents' : 'none' }}>
-              <SectionBulletinValidation onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('ai') && (
-            <div style={{ display: section === 'ai' ? 'contents' : 'none' }}>
-              <SectionAdminAI onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('statistics') && (
-            <div style={{ display: section === 'statistics' ? 'contents' : 'none' }}>
-              <SectionStatistics onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('babillard') && (
-            <div style={{ display: section === 'babillard' ? 'contents' : 'none' }}>
-              <Babillard role={sessionUser?.role ?? 'ADMIN'} title={t('page.section_titles.babillard')} subtitle={t('page.section_titles.babillard_subtitle')} currentUserId={sessionUser?.userId ?? sessionUser?.id} />
-            </div>
-          )}
-          {visitedSections.has('carnet-liaison') && (
-            <div style={{ display: section === 'carnet-liaison' ? 'contents' : 'none' }}>
-              <CarnetLiaisonView role="ADMIN" onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('messagerie') && (
-            <div style={{ display: section === 'messagerie' ? 'contents' : 'none' }}>
-              <Messagerie />
-            </div>
-          )}
-          {visitedSections.has('pedagogie') && (
-            <div style={{ display: section === 'pedagogie' ? 'contents' : 'none' }}>
-              <SectionPedagogie onNav={s => setSection(s as AdminSection)} onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('rh') && (
-            <div style={{ display: section === 'rh' ? 'contents' : 'none' }}>
-              <SectionRH onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('matricules') && (
-            <div style={{ display: section === 'matricules' ? 'contents' : 'none' }}>
-              <SectionMatricules onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('school-payments') && (
-            <div style={{ display: section === 'school-payments' ? 'contents' : 'none' }}>
-              <SectionSchoolPayments onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('entrance-exams') && (
-            <div style={{ display: section === 'entrance-exams' ? 'contents' : 'none' }}>
-              <SectionAdminEntranceExams onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('eleve-onboarding') && (
-            <div style={{ display: section === 'eleve-onboarding' ? 'contents' : 'none' }}>
-              <SectionEleveOnboarding onNav={s => setSection(s as AdminSection)} onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('minesec-stats') && (
-            <div style={{ display: section === 'minesec-stats' ? 'contents' : 'none' }}>
-              <SectionMinesecStatistics onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('minedub-stats') && (
-            <div style={{ display: section === 'minedub-stats' ? 'contents' : 'none' }}>
-              <SectionMinedubStatistics onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('ministerial-stats') && (
-            <div style={{ display: section === 'ministerial-stats' ? 'contents' : 'none' }}>
-              {schoolInfo?.isPrimaire === true ? <SectionMinedubStatistics onToast={showToast} /> : <SectionMinesecStatistics onToast={showToast} />}
-            </div>
-          )}
-          {visitedSections.has('pebs-exams') && (
-            <div style={{ display: section === 'pebs-exams' ? 'contents' : 'none' }}>
-              <SectionAdminPebsExams onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('lv2-choice') && (
-            <div style={{ display: section === 'lv2-choice' ? 'contents' : 'none' }}>
-              <SectionAdminLV2Choice onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('group-transfers') && (
-            <div style={{ display: section === 'group-transfers' ? 'contents' : 'none' }}>
-              <SectionAdminGroupTransfers onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('student-transfers') && (
-            <div style={{ display: section === 'student-transfers' ? 'contents' : 'none' }}>
-              <SectionAdminStudentTransfers onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('notifications') && (
-            <div style={{ display: section === 'notifications' ? 'contents' : 'none' }}>
-              <NotificationCenter onNav={s => setSection(s as AdminSection)} />
-            </div>
-          )}
-          {visitedSections.has('settings') && (
-            <div style={{ display: section === 'settings' ? 'contents' : 'none' }}>
-              <SectionSettings onToast={showToast} schoolInfo={schoolInfo} onLogoUpdate={url => setSchoolInfo(s => s ? { ...s, logoUrl: url } : null)} />
-            </div>
-          )}
-          {visitedSections.has('corbeille') && (
-            <div style={{ display: section === 'corbeille' ? 'contents' : 'none' }}>
-              <SectionCorbeille onToast={showToast} />
-            </div>
-          )}
-          {visitedSections.has('sync-offline') && (
-            <div style={{ display: section === 'sync-offline' ? 'contents' : 'none' }}>
-              <SectionOfflineStatus onToast={showToast} namespace="admin" />
-            </div>
-          )}
-        </main>
+        <AdminMainSections
+          section={section}
+          visitedSections={visitedSections}
+          setSection={setSection}
+          showToast={showToast}
+          schoolInfo={schoolInfo}
+          onLogoUpdate={url => setSchoolInfo(s => (s ? { ...s, logoUrl: url } : null))}
+          sessionUser={sessionUser}
+        />
       </div>
 
       <AdminToast toasts={toasts} onRemove={removeToast} />
@@ -794,7 +253,7 @@ export default function AdminDashboard() {
         onClose={() => setClotureModalOpen(false)}
         onToast={showToast}
         onSuccess={() => {
-          showToast("Transition d'année effectuée avec succès", "success")
+          showToast("Transition d'année effectuée avec succès", 'success')
           window.location.reload()
         }}
       />

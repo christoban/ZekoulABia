@@ -1,5 +1,4 @@
 import type { Request, Response, NextFunction } from 'express';
-import { prisma } from '@infrastructure/persistence/prisma/prisma.client';
 import type { SocketNotificationService } from '@infrastructure/services/notification/SocketNotificationService';
 
 /**
@@ -10,9 +9,6 @@ export class NotificationController {
   constructor(private readonly notificationService: SocketNotificationService) {}
 
   // GET /api/v2/notifications?limit=30&page=1&type=ACADEMIC&readAt=true
-  // Sans page/type/readAt : comportement identique à avant (30 dernières, tous types) — la
-  // cloche (NotificationBell.tsx) continue de fonctionner sans changement. page/type/readAt
-  // sont utilisés par le centre de notifications complet (NotificationCenter.tsx).
   list = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.userId;
@@ -22,30 +18,16 @@ export class NotificationController {
       const type = req.query['type'] as string | undefined;
       const readAtParam = req.query['readAt'] as string | undefined;
 
-      const where: Record<string, unknown> = { userId, schoolId };
-      if (type) where.type = type;
-      if (readAtParam === 'true') where.readAt = { not: null };
-      else if (readAtParam === 'false') where.readAt = null;
-
-      const [notifications, total, unreadCount] = await Promise.all([
-        prisma.notification.findMany({
-          where,
-          orderBy: { createdAt: 'desc' },
-          skip: (page - 1) * limit,
-          take: limit,
-        }),
-        prisma.notification.count({ where }),
-        prisma.notification.count({ where: { userId, schoolId, readAt: null } }),
-      ]);
-
-      res.json({
-        success: true,
-        data: {
-          notifications,
-          unreadCount,
-          pagination: { page, limit, total, pages: Math.max(1, Math.ceil(total / limit)) },
-        },
+      const data = await this.notificationService.listerNotifications({
+        userId,
+        schoolId,
+        limit,
+        page,
+        type,
+        readAtParam,
       });
+
+      res.json({ success: true, data });
     } catch (err) { next(err); }
   };
 
@@ -55,14 +37,12 @@ export class NotificationController {
       const userId = req.user!.userId;
       const id = String(req.params['id']);
 
-      // Vérifie l'appartenance avant mutation (défense multi-tenant, voir CONVENTIONS.md §4.4)
-      const notif = await prisma.notification.findUnique({ where: { id } });
-      if (!notif || notif.userId !== userId) {
+      const ok = await this.notificationService.marquerLueSiProprietaire(id, userId);
+      if (!ok) {
         res.status(404).json({ success: false, message: 'Notification introuvable' });
         return;
       }
 
-      await this.notificationService.marquerLue(id);
       res.json({ success: true });
     } catch (err) { next(err); }
   };
@@ -72,10 +52,7 @@ export class NotificationController {
     try {
       const userId = req.user!.userId;
       const schoolId = req.user!.schoolId;
-      await prisma.notification.updateMany({
-        where: { userId, schoolId, readAt: null },
-        data: { readAt: new Date() },
-      });
+      await this.notificationService.marquerToutesLues(userId, schoolId);
       res.json({ success: true });
     } catch (err) { next(err); }
   };

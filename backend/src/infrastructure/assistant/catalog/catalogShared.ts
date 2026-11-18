@@ -14,7 +14,7 @@
  */
 import { z } from 'zod';
 import { tool, type Tool } from 'ai';
-import type { PrismaClient } from '@prisma/client';
+import type { CopilotDataGateway } from '@domain/ports/repositories/CopilotDataGateway';
 import type { StaffPermissionType } from '@domain/types/enums';
 
 // ─── Contexte & contrats ─────────────────────────────────────────────────────
@@ -23,7 +23,7 @@ export interface ActionContext {
   schoolId: string;
   userId: string;
   role: string;
-  prisma: PrismaClient;
+  data: CopilotDataGateway;
 }
 
 export interface ActionExecuteResult {
@@ -37,7 +37,7 @@ export interface ActionExecuteResult {
   entity?: string;
 }
 
-export interface ActionDefinition {
+export interface ActionDefinition<TInput = unknown, TUndo = Record<string, unknown>> {
   name: string;
   description: string;
   destructive: boolean;
@@ -66,10 +66,28 @@ export interface ActionDefinition {
   domain?: string;
   inputSchema: z.ZodTypeAny;
   /** Résumé de ce qui sera perdu — obligatoire pour toute action destructive. */
-  summarizeDestructive?: (input: any, ctx: ActionContext) => Promise<string>; // hex-allow-any: entrée validée par le Zod schema de l'action
-  execute: (input: any, ctx: ActionContext) => Promise<ActionExecuteResult>; // hex-allow-any: entrée validée par le Zod schema de l'action
+  summarizeDestructive?(input: TInput, ctx: ActionContext): Promise<string>;
+  execute(input: TInput, ctx: ActionContext): Promise<ActionExecuteResult>;
   /** Annulation d'une action non-destructive. Lève une erreur si non annulable. */
-  undo: (params: any, undoData: any, ctx: ActionContext) => Promise<void>; // hex-allow-any: paramètres validés par le Zod schema de l'action
+  undo(params: TInput, undoData: TUndo, ctx: ActionContext): Promise<void>;
+}
+
+export function defineAction<
+  TSchema extends z.ZodTypeAny,
+  TUndo extends Record<string, unknown> = Record<string, unknown>,
+>(def: {
+  name: string;
+  description: string;
+  destructive: boolean;
+  requiredPermission: StaffPermissionType | null;
+  allowedRoles?: string[];
+  domain?: string;
+  inputSchema: TSchema;
+  summarizeDestructive?(input: NoInfer<z.infer<TSchema>>, ctx: ActionContext): Promise<string>;
+  execute(input: NoInfer<z.infer<TSchema>>, ctx: ActionContext): Promise<ActionExecuteResult>;
+  undo(params: NoInfer<z.infer<TSchema>>, undoData: TUndo, ctx: ActionContext): Promise<void>;
+}): ActionDefinition {
+  return def;
 }
 
 // ─── Helpers de résolution nom → entité, partagés entre catalogues de rôles ──
@@ -77,10 +95,7 @@ export interface ActionDefinition {
 export const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
 
 export async function resolveClass(ctx: ActionContext, name: string): Promise<{ id: string; name: string }> {
-  const classes = await ctx.prisma.class.findMany({
-    where: { schoolId: ctx.schoolId },
-    select: { id: true, name: true },
-  });
+  const classes = await ctx.data.shared.findClassesBySchool(ctx.schoolId);
   const target = norm(name);
   let matches = classes.filter((c) => norm(c.name) === target);
   if (matches.length === 0) {
@@ -94,10 +109,7 @@ export async function resolveClass(ctx: ActionContext, name: string): Promise<{ 
 }
 
 export async function resolveTeacher(ctx: ActionContext, name: string): Promise<{ id: string; name: string }> {
-  const teachers = await ctx.prisma.user.findMany({
-    where: { schoolId: ctx.schoolId, role: 'TEACHER' },
-    select: { id: true, firstName: true, lastName: true },
-  });
+  const teachers = await ctx.data.shared.findTeachersBySchool(ctx.schoolId);
   const full = (t: { firstName: string | null; lastName: string | null }) =>
     `${t.firstName ?? ''} ${t.lastName ?? ''}`.trim();
   const target = norm(name);
@@ -115,10 +127,7 @@ export async function resolveTeacher(ctx: ActionContext, name: string): Promise<
 }
 
 export async function resolveSubject(ctx: ActionContext, name: string): Promise<{ id: string; name: string }> {
-  const subjects = await ctx.prisma.subject.findMany({
-    where: { schoolId: ctx.schoolId },
-    select: { id: true, name: true },
-  });
+  const subjects = await ctx.data.shared.findSubjectsBySchool(ctx.schoolId);
   const target = norm(name);
   let matches = subjects.filter((s) => norm(s.name) === target);
   if (matches.length === 0) matches = subjects.filter((s) => norm(s.name).includes(target));
@@ -138,34 +147,16 @@ export async function resolveStudent(
   name: string,
   className?: string,
 ): Promise<{ id: string; name: string; className: string | null }> {
-  const students = await ctx.prisma.user.findMany({
-    where: { schoolId: ctx.schoolId, role: 'STUDENT' },
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      studentProfile: {
-        select: {
-          enrollmentsYearScoped: {
-            where: { status: 'ACTIVE', academicYear: { isCurrent: true } },
-            select: { class: { select: { name: true } } },
-            take: 1,
-          },
-        },
-      },
-    },
-  });
+  const students = await ctx.data.shared.findStudentsBySchool(ctx.schoolId);
   const full = (s: { firstName: string | null; lastName: string | null }) =>
     `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim();
-  const classNameOf = (s: (typeof students)[number]): string | null =>
-    s.studentProfile?.enrollmentsYearScoped?.[0]?.class?.name ?? null;
   const target = norm(name);
   let matches = students.filter((s) => norm(full(s)) === target);
   if (matches.length === 0) matches = students.filter((s) => norm(full(s)).includes(target));
 
   if (matches.length > 1 && className) {
     const classTarget = norm(className);
-    const narrowed = matches.filter((s) => classNameOf(s) && norm(classNameOf(s)!) === classTarget);
+    const narrowed = matches.filter((s) => s.className && norm(s.className) === classTarget);
     if (narrowed.length > 0) matches = narrowed;
   }
 
@@ -173,37 +164,28 @@ export async function resolveStudent(
   if (matches.length > 1) {
     const list = matches
       .slice(0, 6)
-      .map((s) => `${full(s)} (${classNameOf(s) ?? 'sans classe'})`)
+      .map((s) => `${full(s)} (${s.className ?? 'sans classe'})`)
       .join(', ');
     throw new Error(`Plusieurs élèves nommés « ${name} » existent : ${list}. Précisez la classe.`);
   }
   const m = matches[0];
-  return { id: m.id, name: full(m), className: classNameOf(m) };
+  return { id: m.id, name: full(m), className: m.className };
 }
 
 export async function resolveCurrentAcademicYear(ctx: ActionContext): Promise<{ id: string; name: string }> {
-  const year = await ctx.prisma.academicYear.findFirst({
-    where: { schoolId: ctx.schoolId, isCurrent: true },
-    select: { id: true, name: true },
-  });
+  const year = await ctx.data.shared.findCurrentAcademicYear(ctx.schoolId);
   if (!year) throw new Error("Aucune année scolaire courante n'est configurée pour cet établissement.");
   return year;
 }
 
 export async function resolveCurrentPeriod(ctx: ActionContext): Promise<{ id: string; name: string }> {
-  const period = await ctx.prisma.academicPeriod.findFirst({
-    where: { academicYear: { schoolId: ctx.schoolId, isCurrent: true }, isCurrent: true },
-    select: { id: true, name: true },
-  });
+  const period = await ctx.data.shared.findCurrentAcademicPeriod(ctx.schoolId);
   if (!period) throw new Error("Aucune période courante n'est configurée pour cet établissement.");
   return period;
 }
 
 export async function resolveCurrentSequence(ctx: ActionContext): Promise<{ id: string; name: string }> {
-  const sequence = await ctx.prisma.academicSequence.findFirst({
-    where: { schoolId: ctx.schoolId, isCurrent: true },
-    select: { id: true, name: true },
-  });
+  const sequence = await ctx.data.shared.findCurrentAcademicSequence(ctx.schoolId);
   if (!sequence) throw new Error("Aucune séquence courante n'est configurée pour cet établissement.");
   return sequence;
 }
@@ -218,8 +200,8 @@ export async function calculerMoyennesClasseSequence(
   let hasCoefficientBySubject = true;
   try {
     const [school, classe] = await Promise.all([
-      ctx.prisma.school.findUnique({ where: { id: ctx.schoolId }, select: { subsystem: true } }),
-      ctx.prisma.class.findUnique({ where: { id: classId }, select: { level: true } }),
+      ctx.data.shared.findSchoolSubsystem(ctx.schoolId),
+      ctx.data.shared.findClassLevel(ctx.schoolId, classId),
     ]);
     if (school && classe) {
       const { resolveHasCoefficientForClass } = await import('@domain/subsystems/SubsystemDefaults');
@@ -229,10 +211,7 @@ export async function calculerMoyennesClasseSequence(
     // best-effort fallback
   }
 
-  const grades = await ctx.prisma.grade.findMany({
-    where: { classId, sequenceId, schoolId: ctx.schoolId, sequenceAverage: { not: null } },
-    select: { studentId: true, sequenceAverage: true, coefficient: true, isAbsentGrade: true },
-  });
+  const grades = await ctx.data.shared.findClassSequenceGrades(ctx.schoolId, classId, sequenceId);
   const parStudent = new Map<string, { somme: number; poids: number }>();
   for (const g of grades) {
     if (g.isAbsentGrade) continue;

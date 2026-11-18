@@ -1,12 +1,15 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { PenLine, Save, Loader2, Lock, ScrollText, Sparkles, Send, CheckCircle2, Clock, AlertTriangle } from 'lucide-react'
+import { PenLine, Save, Loader2, ScrollText } from 'lucide-react'
 import type { UserInfo } from '../_types'
 import { fetchApi } from '@/lib/fetchApi'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
 import { useT } from '@/lib/i18n'
 import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { confirmAction } from '@/components/shell/ConfirmDialog'
+import AppreciationSubmissionBanner from './appreciations/AppreciationSubmissionBanner'
+import AppreciationStudentCard from './appreciations/AppreciationStudentCard'
+import type { Period, ReportCard } from './appreciations/types'
 
 interface Props {
   user: UserInfo
@@ -15,29 +18,6 @@ interface Props {
   classesList?: { id: string; name: string }[]
   onSelectClasse?: (id: string) => void
 }
-
-interface Period {
-  id: string
-  name: string
-  isCurrent?: boolean
-}
-
-interface ReportCard {
-  id: string
-  studentId: string
-  studentName: string
-  generalAverage: number | null
-  classMasterComment: string | null
-  status: string
-}
-
-const QUICK_CHIPS_KEYS = [
-  'chip_satisfactory',
-  'chip_can_improve',
-  'chip_progressing',
-  'chip_encouraging',
-  'chip_effort_needed',
-]
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value)
@@ -64,14 +44,12 @@ export default function SectionAppreciationsPP({ user: _user, classeId, classeNo
   const [aiError, setAiError] = useState<Record<string, boolean>>({})
   const { isOnline, addToQueue } = useSyncQueue()
 
-  // État soumission bulletin
   const [myClassId, setMyClassId] = useState<string | null>(null)
   const [currentPeriodId, setCurrentPeriodId] = useState<string | null>(null)
   const [submissionStatus, setSubmissionStatus] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
-  // Load periods from current academic year
   useEffect(() => {
     if (navigator.onLine) {
       fetchApi('/api/v2/academic-years?isCurrent=true', { credentials: 'include' })
@@ -100,7 +78,6 @@ export default function SectionAppreciationsPP({ user: _user, classeId, classeNo
     }
   }, [])
 
-  // Load PP's class
   useEffect(() => {
     fetchApi('/api/v2/users/my-class', { credentials: 'include' })
       .then(r => r.json())
@@ -110,7 +87,6 @@ export default function SectionAppreciationsPP({ user: _user, classeId, classeNo
       .catch(() => {})
   }, [])
 
-  // Load submission status for current period
   useEffect(() => {
     if (!currentPeriodId || !classeId) return
     fetchApi(`/api/v2/bulletin-validations?classId=${classeId}&academicPeriodId=${currentPeriodId}`, { credentials: 'include' })
@@ -122,12 +98,18 @@ export default function SectionAppreciationsPP({ user: _user, classeId, classeNo
       .catch(() => {})
   }, [currentPeriodId, classeId])
 
-  // Load report cards when period changes
   useEffect(() => {
     if (!selectedPeriodId) return
     setLoadingCards(true)
     setError(null)
     const rcCacheKey = `teacher:pp-report-cards:${classeId}:${selectedPeriodId}`
+
+    const applyCachedCards = (cards: ReportCard[]) => {
+      setReportCards(cards)
+      const init: Record<string, string> = {}
+      for (const rc of cards) init[rc.id] = rc.classMasterComment ?? ''
+      setComments(init)
+    }
 
     if (navigator.onLine) {
       fetchApi(`/api/v2/report-cards?classId=${classeId}&periodId=${selectedPeriodId}&limit=100`, { credentials: 'include' })
@@ -149,41 +131,25 @@ export default function SectionAppreciationsPP({ user: _user, classeId, classeNo
             classMasterComment: rc.classMasterComment ?? null,
             status: rc.status ?? '',
           }))
-          setReportCards(cards)
-          const init: Record<string, string> = {}
-          for (const rc of cards) init[rc.id] = rc.classMasterComment ?? ''
-          setComments(init)
+          applyCachedCards(cards)
           setSaved({})
           await putCachedData(rcCacheKey, cards).catch(() => {})
         })
         .catch(async () => {
           const cached = await getCachedData<ReportCard[]>(rcCacheKey)
-          if (cached?.data?.length) {
-            setReportCards(cached.data)
-            const init: Record<string, string> = {}
-            for (const rc of cached.data) init[rc.id] = rc.classMasterComment ?? ''
-            setComments(init)
-          } else {
-            setError(t('pp.toast_error'))
-          }
+          if (cached?.data?.length) applyCachedCards(cached.data)
+          else setError(t('pp.toast_error'))
         })
         .finally(() => setLoadingCards(false))
     } else {
       getCachedData<ReportCard[]>(rcCacheKey).then(cached => {
-        if (cached?.data?.length) {
-          setReportCards(cached.data)
-          const init: Record<string, string> = {}
-          for (const rc of cached.data) init[rc.id] = rc.classMasterComment ?? ''
-          setComments(init)
-        } else {
-          setError(t('pp.toast_error'))
-        }
+        if (cached?.data?.length) applyCachedCards(cached.data)
+        else setError(t('pp.toast_error'))
       }).catch(() => setError(t('pp.toast_error')))
         .finally(() => setLoadingCards(false))
     }
   }, [selectedPeriodId, classeId, t])
 
-  // Debounced auto-save per report card
   const debouncedComments = useDebounce(comments, 1500)
   const prevSavedRef = useRef<Record<string, string>>({})
 
@@ -196,7 +162,6 @@ export default function SectionAppreciationsPP({ user: _user, classeId, classeNo
       const payload = { classMasterComment: text }
 
       if (!isOnline) {
-        // Hors ligne : mise en file, rejouée automatiquement au retour du réseau (useSyncQueue)
         addToQueue({ type: 'APPRECIATION_PP', endpoint, method: 'PATCH', payload })
         setSaved(s => ({ ...s, [rcId]: true }))
         setTimeout(() => setSaved(s => { const n = { ...s }; delete n[rcId]; return n }), 3000)
@@ -286,7 +251,6 @@ export default function SectionAppreciationsPP({ user: _user, classeId, classeNo
       })
       const data = await res.json()
       if (!res.ok) {
-        // Le backend renvoie le détail des élèves manquants dans data.message
         setSubmitError(data.message || 'Erreur lors de la soumission')
         return
       }
@@ -300,7 +264,6 @@ export default function SectionAppreciationsPP({ user: _user, classeId, classeNo
 
   return (
     <div className="px-3.5 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4" style={{ height: '100%', overflowY: 'auto' }}>
-      {/* Sélecteur multi-classes PP si concerné */}
       {classesList && classesList.length > 1 && (
         <div className="flex items-center gap-2 p-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] overflow-x-auto">
           <span className="text-xs font-bold text-[var(--text3)] px-2 whitespace-nowrap">Mes classes PP :</span>
@@ -340,14 +303,12 @@ export default function SectionAppreciationsPP({ user: _user, classeId, classeNo
         </button>
       </div>
 
-      {/* Barre progression bulk */}
       {bulkSaving && (
         <div style={{ background: 'var(--border)', borderRadius: 4, height: 4, overflow: 'hidden' }}>
           <div style={{ height: '100%', background: 'var(--sidebar)', width: `${bulkProgress}%`, transition: 'width 0.3s' }} />
         </div>
       )}
 
-      {/* Sélecteur période */}
       {periods.length > 0 && (
         <div className="flex gap-1.5 overflow-x-auto pb-1">
           {periods.map(p => (
@@ -361,62 +322,14 @@ export default function SectionAppreciationsPP({ user: _user, classeId, classeNo
         </div>
       )}
 
-      {/* Zone de soumission bulletin */}
-      {currentPeriodId && (
-        <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', padding: '10px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 200 }}>
-            {submissionStatus === null ? (
-              <>
-                <Send size={15} strokeWidth={2} style={{ color: 'var(--amber)' }} />
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Prêt pour soumission</div>
-                  <div style={{ fontSize: 11.5, color: 'var(--text3)' }}>Les bulletins de la classe peuvent être soumis au censeur.</div>
-                </div>
-              </>
-            ) : submissionStatus === 'SUBMITTED' ? (
-              <>
-                <Clock size={15} strokeWidth={2} style={{ color: 'var(--amber)' }} />
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--amber)' }}>En attente de validation</div>
-                  <div style={{ fontSize: 11.5, color: 'var(--text3)' }}>Le censeur doit valider avant publication.</div>
-                </div>
-              </>
-            ) : submissionStatus === 'VALIDATED' ? (
-              <>
-                <CheckCircle2 size={15} strokeWidth={2} style={{ color: 'var(--green)' }} />
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--green)' }}>Validé, en attente de publication</div>
-                  <div style={{ fontSize: 11.5, color: 'var(--text3)' }}>L'administrateur doit publier les bulletins.</div>
-                </div>
-              </>
-            ) : (
-              <>
-                <CheckCircle2 size={15} strokeWidth={2} style={{ color: 'var(--blue)' }} />
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--blue)' }}>Bulletins publiés</div>
-                  <div style={{ fontSize: 11.5, color: 'var(--text3)' }}>Les parents ont été notifiés.</div>
-                </div>
-              </>
-            )}
-          </div>
-          {submissionStatus === null && (
-            <button
-              onClick={handleSubmit}
-              disabled={submitting || !isOnline}
-              style={{ padding: '6px 14px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, cursor: submitting || !isOnline ? 'not-allowed' : 'pointer', border: 'none', fontFamily: 'inherit',
-                background: submitting ? 'var(--border)' : 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', display: 'inline-flex', alignItems: 'center', gap: 6, opacity: !isOnline ? 0.5 : 1 }}>
-              {submitting ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : <Send size={13} strokeWidth={2} />}
-              {submitting ? 'Envoi…' : 'Soumettre au censeur'}
-            </button>
-          )}
-        </div>
-      )}
-      {submitError && (
-        <div style={{ padding: '10px 14px', background: 'var(--red-light)', borderRadius: 8, color: 'var(--red)', fontSize: 12, fontWeight: 600, marginBottom: 12, whiteSpace: 'pre-line' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><AlertTriangle size={13} strokeWidth={2} /> </span>
-          {submitError}
-        </div>
-      )}
+      <AppreciationSubmissionBanner
+        currentPeriodId={currentPeriodId}
+        submissionStatus={submissionStatus}
+        submitting={submitting}
+        submitError={submitError}
+        isOnline={isOnline}
+        onSubmit={handleSubmit}
+      />
 
       {!isOnline && (
         <div style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 8, padding: '8px 12px', marginBottom: 14, fontSize: 12, fontWeight: 700, color: 'var(--amber)' }}>
@@ -436,93 +349,22 @@ export default function SectionAppreciationsPP({ user: _user, classeId, classeNo
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {reportCards.map(rc => {
-            const locked = isLocked(rc)
-            const text = comments[rc.id] ?? ''
-            const charCount = text.length
-            return (
-              <div key={rc.id} style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', padding: '12px 14px' }}>
-                {/* Élève info */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 7, background: 'var(--sidebar)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 12, flexShrink: 0 }}>
-                      {rc.studentName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>{rc.studentName}</div>
-                      {rc.generalAverage !== null && (
-                        <div style={{ fontSize: 11.5, color: 'var(--text2)', fontWeight: 600 }}>{t('pp.average_label').replace('{average}', rc.generalAverage.toFixed(2))}</div>
-                      )}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    {saving[rc.id] && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: 'var(--text3)', fontWeight: 600 }}><Loader2 size={11} strokeWidth={2} className="animate-spin" />{t('pp.saving')}</span>}
-                    {saved[rc.id] && !saving[rc.id] && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: 'var(--green)', fontWeight: 700 }}><Save size={11} strokeWidth={2} />{t('pp.saved')}</span>}
-                    {locked && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: 'var(--text2)', fontWeight: 700, background: 'var(--bg2)', padding: '2px 8px', borderRadius: 12 }}>
-                        <Lock size={11} strokeWidth={2} />{t('pp.locked')}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {locked ? (
-                  <div style={{ padding: '8px 12px', background: 'var(--bg)', borderRadius: 7, border: '1px solid var(--border)', color: 'var(--text3)', fontSize: 12, fontWeight: 600 }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Lock size={12} strokeWidth={2} />{t('pp.council_locked')}</span>
-                    {text && <div style={{ marginTop: 4, color: 'var(--text2)', fontStyle: 'italic' }}>&ldquo;{text}&rdquo;</div>}
-                  </div>
-                ) : (
-                  <>
-                    {/* Génération IA & Chips */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
-                      <button
-                        onClick={() => handleGenerateAI(rc.id)}
-                        disabled={!isOnline || !!generatingAI[rc.id]}
-                        title={!isOnline ? t('pp.ai_offline_disabled') : undefined}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 9px', borderRadius: 12, fontSize: 11.5, fontWeight: 700,
-                          cursor: !isOnline || generatingAI[rc.id] ? 'not-allowed' : 'pointer', border: '1px solid var(--purple)',
-                          background: 'var(--purple-light)', color: 'var(--purple)', fontFamily: 'inherit',
-                          opacity: !isOnline ? 0.5 : 1 }}>
-                        {generatingAI[rc.id] ? <Loader2 size={11} strokeWidth={2} className="animate-spin" /> : <Sparkles size={11} strokeWidth={2} />}
-                        {generatingAI[rc.id] ? t('pp.generating_ai') : t('pp.generate_ai')}
-                      </button>
-                      {aiError[rc.id] && <span style={{ fontSize: 11, color: 'var(--red)', fontWeight: 600 }}>{t('pp.ai_error')}</span>}
-
-                      {QUICK_CHIPS_KEYS.map(key => {
-                        const chip = t(`pp.${key}`)
-                        return (
-                          <button key={key} onClick={() => setComments(c => ({ ...c, [rc.id]: chip }))}
-                            style={{ padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: '1px solid var(--border2)', background: 'var(--surface)', color: 'var(--text2)', fontFamily: 'inherit', transition: 'all 0.12s' }}
-                            onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { background: 'var(--sidebar)', color: 'white', borderColor: 'var(--sidebar)' })}
-                            onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { background: 'var(--surface)', color: 'var(--text2)', borderColor: 'var(--border2)' })}>
-                            {chip}
-                          </button>
-                        )
-                      })}
-                    </div>
-
-                    {/* Textarea */}
-                    <div style={{ position: 'relative' }}>
-                      <textarea
-                        value={text}
-                        onChange={e => setComments(c => ({ ...c, [rc.id]: e.target.value }))}
-                        maxLength={300}
-                        placeholder={t('pp.write_placeholder')}
-                        rows={2}
-                         style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid var(--border2)', background: 'var(--surface)', fontSize: 12.5, fontFamily: 'inherit', fontWeight: 500, color: 'var(--text)', resize: 'vertical', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' }}
-
-                        onFocus={e => (e.currentTarget.style.borderColor = 'var(--sidebar)')}
-                        onBlur={e => (e.currentTarget.style.borderColor = 'var(--border2)')}
-                      />
-                      <div style={{ position: 'absolute', bottom: 6, right: 10, fontSize: 10, color: charCount > 270 ? 'var(--red)' : 'var(--text3)', fontWeight: 600 }}>
-                        {charCount}/300
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            )
-          })}
+          {reportCards.map(rc => (
+            <AppreciationStudentCard
+              key={rc.id}
+              rc={rc}
+              text={comments[rc.id] ?? ''}
+              locked={isLocked(rc)}
+              isSaving={Boolean(saving[rc.id])}
+              isSaved={Boolean(saved[rc.id])}
+              isGeneratingAI={Boolean(generatingAI[rc.id])}
+              hasAiError={Boolean(aiError[rc.id])}
+              isOnline={isOnline}
+              onChangeText={(val) => setComments(c => ({ ...c, [rc.id]: val }))}
+              onGenerateAI={() => handleGenerateAI(rc.id)}
+              t={t}
+            />
+          ))}
         </div>
       )}
     </div>

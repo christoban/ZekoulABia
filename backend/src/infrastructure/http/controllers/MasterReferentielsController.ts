@@ -1,48 +1,27 @@
 import type { Request, Response, NextFunction } from 'express';
-import { prisma } from '@infrastructure/persistence/prisma/prisma.client';
-import { logMasterAction } from '../../services/audit/MasterAuthAuditService.ts';
+import type { MasterReferentielsRepository } from '@domain/ports/repositories/MasterReferentielsRepository';
 import type { TypeFraisMinesec } from '@domain/types/enums';
+import { logMasterAction } from '../../services/audit/MasterAuthAuditService.ts';
 
 export class MasterReferentielsController {
+  constructor(private readonly repo: MasterReferentielsRepository) {}
+
   // ─── 1. Synthèse globale & Alerte Proactive ─────────────────────────────
-  getSummary = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  getSummary = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const now = new Date();
       const currentYearNum = now.getFullYear();
-      const currentMonth = now.getMonth() + 1; // 1-12
+      const currentMonth = now.getMonth() + 1;
 
-      // Année scolaire courante estimée (ex: sept 2026 -> 2026-2027)
       const currentAcademicYear = currentMonth >= 8
         ? `${currentYearNum}-${currentYearNum + 1}`
         : `${currentYearNum - 1}-${currentYearNum}`;
-
-      // Année scolaire approchante (ex: à partir de juillet 2027, on attend 2027-2028)
       const nextAcademicYear = currentMonth >= 7
         ? `${currentYearNum + 1}-${currentYearNum + 2}`
         : `${currentYearNum}-${currentYearNum + 1}`;
 
-      const [
-        calendarCount,
-        calendars,
-        bacCoefficientsCount,
-        cycleCoefficientsCount,
-        anglophoneLoadsCount,
-        progressionsCount,
-        tarifsCount,
-        templatesCount,
-      ] = await Promise.all([
-        prisma.officialAcademicCalendar.count(),
-        prisma.officialAcademicCalendar.findMany({ select: { academicYear: true, active: true } }),
-        prisma.bacCoefficient.count(),
-        prisma.cycleCoefficient.count(),
-        prisma.anglophoneSubjectLoad.count(),
-        prisma.officialProgrammeProgression.count(),
-        prisma.tarifMinesecReference.count(),
-        prisma.schoolTemplate.count(),
-      ]);
-
-      // Alerte proactive : si on est en juillet ou après, et qu'aucune ligne n'existe pour la rentrée suivante
-      const hasNextYearCalendar = calendars.some(c => c.academicYear === nextAcademicYear);
+      const counts = await this.repo.getSummaryCounts();
+      const hasNextYearCalendar = counts.calendars.some(c => c.academicYear === nextAcademicYear);
       const isApproachingBackToSchool = currentMonth >= 7 && currentMonth <= 9;
       const upcomingYearAlert = isApproachingBackToSchool && !hasNextYearCalendar;
 
@@ -56,30 +35,24 @@ export class MasterReferentielsController {
             ? `Arrêté conjoint attendu : Aucune date officielle n'a été saisie pour l'année scolaire ${nextAcademicYear}. Pensez à enregistrer le calendrier officiel dès publication de l'arrêté.`
             : null,
           counts: {
-            calendars: calendarCount,
-            bacCoefficients: bacCoefficientsCount,
-            cycleSubjects: cycleCoefficientsCount + anglophoneLoadsCount,
-            progressions: progressionsCount,
-            tarifs: tarifsCount,
-            templates: templatesCount,
+            calendars: counts.calendarCount,
+            bacCoefficients: counts.bacCoefficientsCount,
+            cycleSubjects: counts.cycleCoefficientsCount + counts.anglophoneLoadsCount,
+            progressions: counts.progressionsCount,
+            tarifs: counts.tarifsCount,
+            templates: counts.templatesCount,
           },
         },
       });
-    } catch (error) {
-      next(error);
-    }
+    } catch (error) { next(error); }
   };
 
   // ─── 2. Calendrier Scolaire Officiel ────────────────────────────────────
-  getCalendars = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  getCalendars = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const calendars = await prisma.officialAcademicCalendar.findMany({
-        orderBy: [{ academicYear: 'desc' }, { establishmentType: 'asc' }],
-      });
+      const calendars = await this.repo.listCalendars();
       res.json({ success: true, data: calendars });
-    } catch (error) {
-      next(error);
-    }
+    } catch (error) { next(error); }
   };
 
   saveCalendar = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -102,49 +75,17 @@ export class MasterReferentielsController {
         return;
       }
 
-      const rentree = new Date(dateRentreeOfficielle);
-      const cloture = new Date(dateClotureOfficielle);
-
-      let result;
-      if (id) {
-        result = await prisma.officialAcademicCalendar.update({
-          where: { id },
-          data: {
-            academicYear,
-            establishmentType,
-            arreteReference,
-            dateRentreeOfficielle: rentree,
-            dateClotureOfficielle: cloture,
-            trimestres,
-            periodesVacances,
-            active,
-          },
-        });
-      } else {
-        result = await prisma.officialAcademicCalendar.upsert({
-          where: {
-            academicYear_establishmentType: { academicYear, establishmentType },
-          },
-          update: {
-            arreteReference,
-            dateRentreeOfficielle: rentree,
-            dateClotureOfficielle: cloture,
-            trimestres,
-            periodesVacances,
-            active,
-          },
-          create: {
-            academicYear,
-            establishmentType,
-            arreteReference,
-            dateRentreeOfficielle: rentree,
-            dateClotureOfficielle: cloture,
-            trimestres,
-            periodesVacances,
-            active,
-          },
-        });
-      }
+      const result = await this.repo.saveCalendar({
+        id,
+        academicYear,
+        establishmentType,
+        arreteReference,
+        dateRentreeOfficielle: new Date(dateRentreeOfficielle),
+        dateClotureOfficielle: new Date(dateClotureOfficielle),
+        trimestres,
+        periodesVacances,
+        active,
+      });
 
       void logMasterAction({
         req,
@@ -153,26 +94,20 @@ export class MasterReferentielsController {
         targetId: result.id,
         description: `Calendrier ${result.academicYear} (${result.establishmentType}) mis à jour`,
       });
-
       res.status(200).json({ success: true, data: result });
-    } catch (error) {
-      next(error);
-    }
+    } catch (error) { next(error); }
   };
 
   toggleCalendarActive = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const master = req.masterUser;
       const id = String(req.params.id);
-      const existing = await prisma.officialAcademicCalendar.findUnique({ where: { id } });
+      const existing = await this.repo.findCalendarById(id);
       if (!existing) {
         res.status(404).json({ success: false, message: 'Calendrier introuvable.' });
         return;
       }
-      const updated = await prisma.officialAcademicCalendar.update({
-        where: { id },
-        data: { active: !existing.active },
-      });
+      const updated = await this.repo.updateCalendarActive(id, !existing.active);
       void logMasterAction({
         req,
         masterUserId: master.id,
@@ -181,34 +116,21 @@ export class MasterReferentielsController {
         description: `Calendrier ${existing.academicYear} ${updated.active ? 'activé' : 'désactivé'}`,
       });
       res.json({ success: true, data: updated });
-    } catch (error) {
-      next(error);
-    }
+    } catch (error) { next(error); }
   };
 
   // ─── 3. Coefficients Bac (Arrêté N°92/22) ───────────────────────────────
   getBacCoefficients = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { serie, niveau, templateCode, search } = req.query;
-      const where: { [key: string]: unknown } = {};
-
-      if (serie && typeof serie === 'string') where.serie = serie;
-      if (niveau && typeof niveau === 'string') where.niveau = niveau;
-      if (templateCode && typeof templateCode === 'string') where.templateCode = templateCode;
-      if (search && typeof search === 'string') {
-        where.subjectName = { contains: search, mode: 'insensitive' };
-      }
-
-      const coeffs = await prisma.bacCoefficient.findMany({
-        where,
-        orderBy: [{ serie: 'asc' }, { niveau: 'asc' }, { groupe: 'asc' }, { subjectName: 'asc' }],
-        take: 300,
+      const coeffs = await this.repo.listBacCoefficients({
+        serie: typeof serie === 'string' ? serie : undefined,
+        niveau: typeof niveau === 'string' ? niveau : undefined,
+        templateCode: typeof templateCode === 'string' ? templateCode : undefined,
+        search: typeof search === 'string' ? search : undefined,
       });
-
       res.json({ success: true, data: coeffs });
-    } catch (error) {
-      next(error);
-    }
+    } catch (error) { next(error); }
   };
 
   saveBacCoefficient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -231,49 +153,17 @@ export class MasterReferentielsController {
         return;
       }
 
-      let result;
-      if (id) {
-        result = await prisma.bacCoefficient.update({
-          where: { id },
-          data: {
-            subjectName: subjectName.trim(),
-            serie: serie.trim(),
-            niveau,
-            coefficient: Number(coefficient),
-            groupe: Number(groupe),
-            templateCode,
-            source,
-            isOfficialMinesec,
-          },
-        });
-      } else {
-        result = await prisma.bacCoefficient.upsert({
-          where: {
-            subjectName_serie_niveau_templateCode: {
-              subjectName: subjectName.trim(),
-              serie: serie.trim(),
-              niveau,
-              templateCode,
-            },
-          },
-          update: {
-            coefficient: Number(coefficient),
-            groupe: Number(groupe),
-            source,
-            isOfficialMinesec,
-          },
-          create: {
-            subjectName: subjectName.trim(),
-            serie: serie.trim(),
-            niveau,
-            coefficient: Number(coefficient),
-            groupe: Number(groupe),
-            templateCode,
-            source,
-            isOfficialMinesec,
-          },
-        });
-      }
+      const result = await this.repo.saveBacCoefficient({
+        id,
+        subjectName: String(subjectName).trim(),
+        serie: String(serie).trim(),
+        niveau,
+        coefficient: Number(coefficient),
+        groupe: Number(groupe),
+        templateCode,
+        source,
+        isOfficialMinesec,
+      });
 
       void logMasterAction({
         req,
@@ -282,23 +172,20 @@ export class MasterReferentielsController {
         targetId: result.id,
         description: `Coefficient Bac ${result.subjectName} (${result.serie} - ${result.niveau}) fixé à ${result.coefficient}`,
       });
-
       res.json({ success: true, data: result });
-    } catch (error) {
-      next(error);
-    }
+    } catch (error) { next(error); }
   };
 
   deleteBacCoefficient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const master = req.masterUser;
       const id = String(req.params.id);
-      const existing = await prisma.bacCoefficient.findUnique({ where: { id } });
+      const existing = await this.repo.findBacCoefficientById(id);
       if (!existing) {
         res.status(404).json({ success: false, message: 'Coefficient introuvable.' });
         return;
       }
-      await prisma.bacCoefficient.delete({ where: { id } });
+      await this.repo.deleteBacCoefficient(id);
       void logMasterAction({
         req,
         masterUserId: master.id,
@@ -307,52 +194,29 @@ export class MasterReferentielsController {
         description: `Suppression coefficient Bac ${existing.subjectName} (${existing.serie})`,
       });
       res.json({ success: true, message: 'Entrée supprimée.' });
-    } catch (error) {
-      next(error);
-    }
+    } catch (error) { next(error); }
   };
 
   // ─── 4. Matières & Volumes Horaires par Template ────────────────────────
   getTemplateSubjects = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { templateCode, classLevel, filiere, search, subsystem } = req.query;
+      const filter = {
+        templateCode: typeof templateCode === 'string' ? templateCode : undefined,
+        classLevel: typeof classLevel === 'string' ? classLevel : undefined,
+        filiere: typeof filiere === 'string' ? filiere : undefined,
+        search: typeof search === 'string' ? search : undefined,
+      };
 
       if (subsystem === 'ANGLOPHONE') {
-        const where: { [key: string]: unknown } = {};
-        if (templateCode && typeof templateCode === 'string') where.templateCode = templateCode;
-        if (classLevel && typeof classLevel === 'string') where.classLevel = classLevel;
-        if (filiere && typeof filiere === 'string') where.filiere = filiere;
-        if (search && typeof search === 'string') {
-          where.subjectName = { contains: search, mode: 'insensitive' };
-        }
-        const entries = await prisma.anglophoneSubjectLoad.findMany({
-          where,
-          orderBy: [{ templateCode: 'asc' }, { classLevel: 'asc' }, { subjectName: 'asc' }],
-          take: 300,
-        });
+        const entries = await this.repo.listAnglophoneSubjectLoads(filter);
         res.json({ success: true, data: entries, subsystem: 'ANGLOPHONE' });
         return;
       }
 
-      // Par défaut ou FRANCOPHONE
-      const where: { [key: string]: unknown } = {};
-      if (templateCode && typeof templateCode === 'string') where.templateCode = templateCode;
-      if (classLevel && typeof classLevel === 'string') where.classLevel = classLevel;
-      if (filiere && typeof filiere === 'string') where.filiere = filiere;
-      if (search && typeof search === 'string') {
-        where.subjectName = { contains: search, mode: 'insensitive' };
-      }
-
-      const entries = await prisma.cycleCoefficient.findMany({
-        where,
-        orderBy: [{ templateCode: 'asc' }, { classLevel: 'asc' }, { subjectName: 'asc' }],
-        take: 300,
-      });
-
+      const entries = await this.repo.listCycleCoefficients(filter);
       res.json({ success: true, data: entries, subsystem: 'FRANCOPHONE' });
-    } catch (error) {
-      next(error);
-    }
+    } catch (error) { next(error); }
   };
 
   saveTemplateSubject = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -374,82 +238,18 @@ export class MasterReferentielsController {
         return;
       }
 
-      let result;
-      if (subsystem === 'ANGLOPHONE') {
-        if (id) {
-          result = await prisma.anglophoneSubjectLoad.update({
-            where: { id },
-            data: {
-              templateCode,
-              classLevel,
-              subjectName: subjectName.trim(),
-              coefficient: Math.round(Number(coefficient)),
-              weeklyPeriods: weeklyPeriods ? Number(weeklyPeriods) : null,
-              filiere,
-            },
-          });
-        } else {
-          result = await prisma.anglophoneSubjectLoad.upsert({
-            where: {
-              templateCode_classLevel_subjectName_filiere: {
-                templateCode,
-                classLevel,
-                subjectName: subjectName.trim(),
-                filiere,
-              },
-            },
-            update: {
-              coefficient: Math.round(Number(coefficient)),
-              weeklyPeriods: weeklyPeriods ? Number(weeklyPeriods) : null,
-            },
-            create: {
-              templateCode,
-              classLevel,
-              subjectName: subjectName.trim(),
-              coefficient: Math.round(Number(coefficient)),
-              weeklyPeriods: weeklyPeriods ? Number(weeklyPeriods) : null,
-              filiere,
-            },
-          });
-        }
-      } else {
-        if (id) {
-          result = await prisma.cycleCoefficient.update({
-            where: { id },
-            data: {
-              templateCode,
-              classLevel,
-              subjectName: subjectName.trim(),
-              coefficient: Number(coefficient),
-              weeklyPeriods: weeklyPeriods ? Number(weeklyPeriods) : null,
-              filiere,
-            },
-          });
-        } else {
-          result = await prisma.cycleCoefficient.upsert({
-            where: {
-              templateCode_classLevel_subjectName_filiere: {
-                templateCode,
-                classLevel,
-                subjectName: subjectName.trim(),
-                filiere,
-              },
-            },
-            update: {
-              coefficient: Number(coefficient),
-              weeklyPeriods: weeklyPeriods ? Number(weeklyPeriods) : null,
-            },
-            create: {
-              templateCode,
-              classLevel,
-              subjectName: subjectName.trim(),
-              coefficient: Number(coefficient),
-              weeklyPeriods: weeklyPeriods ? Number(weeklyPeriods) : null,
-              filiere,
-            },
-          });
-        }
-      }
+      const input = {
+        id,
+        templateCode,
+        classLevel,
+        subjectName: String(subjectName).trim(),
+        coefficient: Number(coefficient),
+        weeklyPeriods: weeklyPeriods ? Number(weeklyPeriods) : null,
+        filiere,
+      };
+      const result = subsystem === 'ANGLOPHONE'
+        ? await this.repo.saveAnglophoneSubjectLoad(input)
+        : await this.repo.saveCycleCoefficient(input);
 
       void logMasterAction({
         req,
@@ -458,11 +258,8 @@ export class MasterReferentielsController {
         targetId: result.id,
         description: `Matière ${result.subjectName} (${result.templateCode} - ${result.classLevel}) enregistrée`,
       });
-
       res.json({ success: true, data: result });
-    } catch (error) {
-      next(error);
-    }
+    } catch (error) { next(error); }
   };
 
   deleteTemplateSubject = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -472,12 +269,12 @@ export class MasterReferentielsController {
       const { subsystem = 'FRANCOPHONE' } = req.query;
 
       if (subsystem === 'ANGLOPHONE') {
-        const existing = await prisma.anglophoneSubjectLoad.findUnique({ where: { id } });
+        const existing = await this.repo.findAnglophoneSubjectLoadById(id);
         if (!existing) {
           res.status(404).json({ success: false, message: 'Entrée introuvable.' });
           return;
         }
-        await prisma.anglophoneSubjectLoad.delete({ where: { id } });
+        await this.repo.deleteAnglophoneSubjectLoad(id);
         void logMasterAction({
           req,
           masterUserId: master.id,
@@ -486,12 +283,12 @@ export class MasterReferentielsController {
           description: `Suppression matière anglophone ${existing.subjectName} (${existing.templateCode})`,
         });
       } else {
-        const existing = await prisma.cycleCoefficient.findUnique({ where: { id } });
+        const existing = await this.repo.findCycleCoefficientById(id);
         if (!existing) {
           res.status(404).json({ success: false, message: 'Entrée introuvable.' });
           return;
         }
-        await prisma.cycleCoefficient.delete({ where: { id } });
+        await this.repo.deleteCycleCoefficient(id);
         void logMasterAction({
           req,
           masterUserId: master.id,
@@ -500,38 +297,21 @@ export class MasterReferentielsController {
           description: `Suppression matière cycle ${existing.subjectName} (${existing.templateCode})`,
         });
       }
-
       res.json({ success: true, message: 'Entrée supprimée.' });
-    } catch (error) {
-      next(error);
-    }
+    } catch (error) { next(error); }
   };
 
   // ─── 5. Programmes Officiels & Progressions Types ───────────────────────
   getProgressions = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { templateCode, level, search } = req.query;
-      const where: { [key: string]: unknown } = {};
-
-      if (templateCode && typeof templateCode === 'string') where.templateCode = templateCode;
-      if (level && typeof level === 'string') where.level = level;
-      if (search && typeof search === 'string') {
-        where.OR = [
-          { subjectName: { contains: search, mode: 'insensitive' } },
-          { titre: { contains: search, mode: 'insensitive' } },
-        ];
-      }
-
-      const progressions = await prisma.officialProgrammeProgression.findMany({
-        where,
-        orderBy: [{ templateCode: 'asc' }, { level: 'asc' }, { subjectName: 'asc' }],
-        take: 200,
+      const progressions = await this.repo.listProgressions({
+        templateCode: typeof templateCode === 'string' ? templateCode : undefined,
+        level: typeof level === 'string' ? level : undefined,
+        search: typeof search === 'string' ? search : undefined,
       });
-
       res.json({ success: true, data: progressions });
-    } catch (error) {
-      next(error);
-    }
+    } catch (error) { next(error); }
   };
 
   saveProgression = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -544,46 +324,16 @@ export class MasterReferentielsController {
         return;
       }
 
-      let result;
-      if (id) {
-        result = await prisma.officialProgrammeProgression.update({
-          where: { id },
-          data: {
-            templateCode,
-            level,
-            filiere: filiere ?? null,
-            subjectName: subjectName.trim(),
-            titre: titre.trim(),
-            chapitres,
-            active,
-          },
-        });
-      } else {
-        result = await prisma.officialProgrammeProgression.upsert({
-          where: {
-            templateCode_level_subjectName: {
-              templateCode,
-              level,
-              subjectName: subjectName.trim(),
-            },
-          },
-          update: {
-            filiere: filiere ?? null,
-            titre: titre.trim(),
-            chapitres,
-            active,
-          },
-          create: {
-            templateCode,
-            level,
-            filiere: filiere ?? null,
-            subjectName: subjectName.trim(),
-            titre: titre.trim(),
-            chapitres,
-            active,
-          },
-        });
-      }
+      const result = await this.repo.saveProgression({
+        id,
+        templateCode,
+        level,
+        filiere: filiere ?? null,
+        subjectName: String(subjectName).trim(),
+        titre: String(titre).trim(),
+        chapitres,
+        active,
+      });
 
       void logMasterAction({
         req,
@@ -592,23 +342,20 @@ export class MasterReferentielsController {
         targetId: result.id,
         description: `Progression officielle «${result.titre}» (${result.templateCode} - ${result.level}) enregistrée`,
       });
-
       res.json({ success: true, data: result });
-    } catch (error) {
-      next(error);
-    }
+    } catch (error) { next(error); }
   };
 
   deleteProgression = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const master = req.masterUser;
       const id = String(req.params.id);
-      const existing = await prisma.officialProgrammeProgression.findUnique({ where: { id } });
+      const existing = await this.repo.findProgressionById(id);
       if (!existing) {
         res.status(404).json({ success: false, message: 'Progression introuvable.' });
         return;
       }
-      await prisma.officialProgrammeProgression.delete({ where: { id } });
+      await this.repo.deleteProgression(id);
       void logMasterAction({
         req,
         masterUserId: master.id,
@@ -617,28 +364,19 @@ export class MasterReferentielsController {
         description: `Suppression progression ${existing.titre}`,
       });
       res.json({ success: true, message: 'Progression supprimée.' });
-    } catch (error) {
-      next(error);
-    }
+    } catch (error) { next(error); }
   };
 
   // ─── 6. Tarifs MINESEC Réglementaires ────────────────────────────────────
   getTarifsMinesec = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { anneeScolaire, typeFrais } = req.query;
-      const where: { [key: string]: unknown } = {};
-      if (anneeScolaire && typeof anneeScolaire === 'string') where.anneeScolaire = anneeScolaire;
-      if (typeFrais && typeof typeFrais === 'string') where.typeFrais = typeFrais as TypeFraisMinesec;
-
-      const tarifs = await prisma.tarifMinesecReference.findMany({
-        where,
-        orderBy: [{ anneeScolaire: 'desc' }, { typeFrais: 'asc' }],
+      const tarifs = await this.repo.listTarifsMinesec({
+        anneeScolaire: typeof anneeScolaire === 'string' ? anneeScolaire : undefined,
+        typeFrais: typeof typeFrais === 'string' ? (typeFrais as TypeFraisMinesec) : undefined,
       });
-
       res.json({ success: true, data: tarifs });
-    } catch (error) {
-      next(error);
-    }
+    } catch (error) { next(error); }
   };
 
   saveTarifMinesec = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -651,46 +389,15 @@ export class MasterReferentielsController {
         return;
       }
 
-      let result;
-      if (id) {
-        result = await prisma.tarifMinesecReference.update({
-          where: { id },
-          data: {
-            typeFrais,
-            anneeScolaire,
-            niveau: niveau ?? null,
-            montantFCFA: Number(montantFCFA),
-            description: description ?? null,
-            actif,
-          },
-        });
-      } else {
-        const existing = await prisma.tarifMinesecReference.findFirst({
-          where: { typeFrais, anneeScolaire, niveau: niveau ?? null },
-        });
-
-        if (existing) {
-          result = await prisma.tarifMinesecReference.update({
-            where: { id: existing.id },
-            data: {
-              montantFCFA: Number(montantFCFA),
-              description: description ?? null,
-              actif,
-            },
-          });
-        } else {
-          result = await prisma.tarifMinesecReference.create({
-            data: {
-              typeFrais,
-              anneeScolaire,
-              niveau: niveau ?? null,
-              montantFCFA: Number(montantFCFA),
-              description: description ?? null,
-              actif,
-            },
-          });
-        }
-      }
+      const result = await this.repo.saveTarifMinesec({
+        id,
+        typeFrais,
+        anneeScolaire,
+        niveau: niveau ?? null,
+        montantFCFA: Number(montantFCFA),
+        description: description ?? null,
+        actif,
+      });
 
       void logMasterAction({
         req,
@@ -699,26 +406,20 @@ export class MasterReferentielsController {
         targetId: result.id,
         description: `Tarif MINESEC ${result.typeFrais} (${result.anneeScolaire}) fixé à ${result.montantFCFA} FCFA`,
       });
-
       res.json({ success: true, data: result });
-    } catch (error) {
-      next(error);
-    }
+    } catch (error) { next(error); }
   };
 
   toggleTarifActive = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const master = req.masterUser;
       const id = String(req.params.id);
-      const existing = await prisma.tarifMinesecReference.findUnique({ where: { id } });
+      const existing = await this.repo.findTarifMinesecById(id);
       if (!existing) {
         res.status(404).json({ success: false, message: 'Tarif introuvable.' });
         return;
       }
-      const updated = await prisma.tarifMinesecReference.update({
-        where: { id },
-        data: { actif: !existing.actif },
-      });
+      const updated = await this.repo.updateTarifActive(id, !existing.actif);
       void logMasterAction({
         req,
         masterUserId: master.id,
@@ -727,8 +428,6 @@ export class MasterReferentielsController {
         description: `Tarif ${existing.typeFrais} (${existing.anneeScolaire}) ${updated.actif ? 'activé' : 'désactivé'}`,
       });
       res.json({ success: true, data: updated });
-    } catch (error) {
-      next(error);
-    }
+    } catch (error) { next(error); }
   };
 }

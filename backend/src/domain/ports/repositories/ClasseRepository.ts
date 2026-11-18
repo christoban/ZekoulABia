@@ -53,4 +53,10 @@ export interface ClasseRepository {
   /** Corbeille (Couche 1) — classes soft-deleted d'une école. */
   listerSupprimes(schoolId: string): Promise<Array<{ id: string; name: string; level: string | null; deletedAt: Date | null; deletedById: string | null }>>;
   trouverSupprime(id: string, schoolId: string): Promise<{ id: string } | null>;
+
+  /** Liste des élèves inscrits activement dans la classe pour génération de template Excel de notes. */
+  findElevesActifsPourTemplate(
+    schoolId: string,
+    classId: string,
+  ): Promise<Array<{ matricule: string | null; firstName: string; lastName: string }>>;
 }

@@ -5,17 +5,21 @@ import { CorbeilleController } from '@infrastructure/http/controllers/CorbeilleC
 import { ParentController } from '@infrastructure/http/controllers/ParentController';
 import { SchoolSettingsController } from '@infrastructure/http/controllers/SchoolSettingsController';
 import { OnboardingPEBSController } from '@infrastructure/http/controllers/OnboardingPEBSController';
+import { OnboardingTimetableController } from '@infrastructure/http/controllers/OnboardingTimetableController';
 import { PrismaUserRepository } from '@infrastructure/persistence/prisma/PrismaUserRepository';
 import { PrismaClasseRepository } from '@infrastructure/persistence/prisma/PrismaClasseRepository';
 import { PrismaMatiereRepository } from '@infrastructure/persistence/prisma/PrismaMatiereRepository';
 import { PrismaSchoolActivationRepository } from '@infrastructure/persistence/prisma/PrismaSchoolActivationRepository';
+import { PrismaOnboardingTimetableRepository } from '@infrastructure/persistence/prisma/PrismaOnboardingTimetableRepository';
 import { AIActionAuditAdapter } from '@infrastructure/services/ai/AIActionAuditAdapter';
 import { ActiverEtablissementUseCase } from '@application/school/ActiverEtablissementUseCase';
 import { ConfigurerEtablissementUseCase } from '@application/school/ConfigurerEtablissementUseCase';
 import { ListerTemplatesCatalogUseCase } from '@application/school/ListerTemplatesCatalogUseCase';
+import { creerCorbeilleRoutes } from '@infrastructure/http/routes/corbeille.routes';
+import { creerOnboardingTimetableRoutes } from '@infrastructure/http/routes/onboardingTimetable.routes';
+import { creerOnboardingPebsRoutes } from '@infrastructure/http/routes/onboardingPebs.routes';
 import { creerParentRoutes } from '@infrastructure/http/routes/parent.routes';
 import { creerSchoolSettingsRoutes } from '@infrastructure/http/routes/schoolSettings.routes';
-import { requireAuth, requireRole } from '../../http/middlewares/auth';
 
 type Container = ReturnType<typeof creerContainer>;
 
@@ -30,8 +34,7 @@ export function registerAuthOnboardingRoutes(app: Application, prismaParam: type
     new PrismaMatiereRepository(p),
     new AIActionAuditAdapter(p),
   );
-  app.get('/api/v2/corbeille', requireAuth, requireRole('ADMIN'), corbeilleController.lister);
-  app.post('/api/v2/corbeille/:type/:id/restore', requireAuth, requireRole('ADMIN'), corbeilleController.restaurer);
+  app.use('/api/v2/corbeille', creerCorbeilleRoutes(corbeilleController));
 
   const parentController = new ParentController(
     c.parent.obtenirEnfants,
@@ -55,45 +58,22 @@ export function registerAuthOnboardingRoutes(app: Application, prismaParam: type
   const schoolActivationRepository = new PrismaSchoolActivationRepository(p);
   const activerEtablissementUseCase = new ActiverEtablissementUseCase(schoolActivationRepository);
 
-  // ── Catalogue templates (public, lecture seule) ──
+  // ── Catalogue templates + Onboarding conversationnel Phase 2 ───────
   const listerTemplatesCatalogUseCase = new ListerTemplatesCatalogUseCase();
-  app.get('/api/v2/onboarding/template-catalog', async (_req, res) => {
-    const result = listerTemplatesCatalogUseCase.execute();
-    res.json({ success: true, data: result });
-  });
-
-  // ── Onboarding conversationnel Phase 2 : exécution déterministe ────
   const configurerEtablissementUseCase = new ConfigurerEtablissementUseCase(
     schoolActivationRepository,
     activerEtablissementUseCase,
     c.eleveOnboarding.repository,
     c.eleveOnboarding.changerGestionAdmin,
   );
+  const onboardingTimetableController = new OnboardingTimetableController(
+    listerTemplatesCatalogUseCase,
+    configurerEtablissementUseCase,
+    new PrismaOnboardingTimetableRepository(p),
+    c.events.publisher,
+  );
   const onboardingPEBSController = new OnboardingPEBSController();
-  app.post('/api/v2/onboarding/execute', requireAuth, requireRole('ADMIN'), async (req, res, next) => {
-    try {
-      const schoolId = req.user!.schoolId; // schoolId forcé depuis la session (sécurité)
-      const bodySchoolId = (req.body ?? {}).schoolId;
-      // Garantie d'isolation multi-tenant : refuser explicitement si le body tente de cibler une autre école.
-      if (bodySchoolId && bodySchoolId !== schoolId) {
-        res.status(403).json({ success: false, message: 'Accès refusé' });
-        return;
-      }
-      const state = { ...(req.body ?? {}), schoolId, adminUserId: req.user!.userId };
-      const result = await configurerEtablissementUseCase.execute(state);
-      const grid = await p.timetableGridConfig.findUnique({ where: { schoolId }, select: { schoolId: true } });
-      if (grid) void c.events.publisher.emit('timetable/grille.sauvee', { schoolId });
-      res.json({ success: true, data: result });
-    } catch (error) {
-      if (error instanceof Error) {
-        if (error.message.includes('introuvable')) { res.status(404).json({ success: false, message: error.message }); return; }
-        if (error.message.includes('Template inconnu')) { res.status(400).json({ success: false, message: error.message }); return; }
-        if (error.message.includes('déjà') || error.message.includes('approuvé') || error.message.includes('requis')) {
-          res.status(422).json({ success: false, message: error.message }); return;
-        }
-      }
-      next(error);
-    }
-  });
-  app.post('/api/v2/onboarding/analyze-pebs', requireAuth, requireRole('ADMIN'), onboardingPEBSController.analyze);
+
+  app.use('/api/v2/onboarding', creerOnboardingTimetableRoutes(onboardingTimetableController));
+  app.use('/api/v2/onboarding', creerOnboardingPebsRoutes(onboardingPEBSController));
 }

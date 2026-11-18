@@ -36,6 +36,7 @@ const DOMAIN = join(ROOT, 'domain');
 const DOMAIN_PORTS = join(ROOT, 'domain/ports');
 const APP = join(ROOT, 'application');
 const CONTROLLERS = join(ROOT, 'infrastructure/http/controllers');
+const BOOTSTRAP = join(ROOT, 'infrastructure/config/bootstrap');
 const INFRA = join(ROOT, 'infrastructure');
 
 // ---------------------------------------------------------------------------
@@ -276,31 +277,69 @@ describe('Garde-fou hexagonal — aucun "any" non justifié comme échappatoire 
 });
 
 describe('Garde-fou hexagonal — controllers HTTP passent par les use cases/ports', () => {
-  it('controllers HTTP ne font aucun accès direct this.prisma/ctx.prisma (hors AssistantController)', () => {
+  it('controllers HTTP ne font aucun accès direct this.prisma/ctx.prisma', () => {
     const violations: string[] = [];
     const motifs = ['this.prisma', 'ctx.prisma', 'req.prisma'];
     for (const fichier of listerFichiersTs(CONTROLLERS)) {
       const contenu = readFileSync(fichier, 'utf8');
       const nom = relative(CONTROLLERS, fichier);
-      if (nom.includes('AssistantController')) continue; // exception documentée (ActionContext.prisma requis par le catalogue copilot)
       for (const motif of motifs) {
         if (contenu.includes(motif)) violations.push(`${nom} → "${motif}"`);
       }
     }
-    expect(violations, `this.prisma dans controllers (hors AssistantController) :\n${violations.join('\n')}`).toEqual([]);
+    expect(violations, `this.prisma dans controllers :\n${violations.join('\n')}`).toEqual([]);
   });
 
-  it('controllers HTTP n\'importent jamais @prisma/client directement', () => {
+  it('controllers HTTP n\'importent jamais @prisma/client ni prisma.client directement', () => {
     const violations: string[] = [];
     for (const fichier of listerFichiersTs(CONTROLLERS)) {
       const contenu = readFileSync(fichier, 'utf8');
       const nom = relative(CONTROLLERS, fichier);
-      if (nom.includes('AssistantController')) continue;
       for (const spec of extraireImports(contenu)) {
-        if (spec === '@prisma/client') violations.push(nom);
+        if (spec === '@prisma/client' || spec.includes('prisma.client')) violations.push(`${nom} → "${spec}"`);
       }
     }
-    expect(violations, `@prisma/client importé directement dans un controller :\n${violations.join('\n')}`).toEqual([]);
+    expect(violations, `Client Prisma importé directement dans un controller :\n${violations.join('\n')}`).toEqual([]);
+  });
+});
+
+describe('Garde-fou hexagonal — bootstrap/, hex-allow-any et plafond 500 lignes', () => {
+  it('bootstrap/ ne déclare aucune route HTTP inline ni aucun appel direct p.<model>', () => {
+    const violations: string[] = [];
+    const routeRe = /\bapp\.(get|post|put|patch|delete)\s*\(/;
+    const prismaDirectRe = /\bp\.(?:\$transaction\b|\$queryRaw|\$executeRaw|[a-z][a-zA-Z0-9]*\.)/;
+    for (const fichier of listerFichiersTs(BOOTSTRAP)) {
+      const nom = relative(BOOTSTRAP, fichier);
+      const lignes = readFileSync(fichier, 'utf8').split('\n');
+      lignes.forEach((ligne, idx) => {
+        if (/^\s*(?:\/\/|\*)/.test(ligne)) return;
+        if (routeRe.test(ligne)) violations.push(`${nom}:${idx + 1} → route HTTP inline`);
+        if (prismaDirectRe.test(ligne)) violations.push(`${nom}:${idx + 1} → appel Prisma direct`);
+      });
+    }
+    expect(violations, `Logique/route inline dans bootstrap/ :\n${violations.join('\n')}`).toEqual([]);
+  });
+
+  it('backend/src/ ne contient plus aucune échappatoire hex-allow-any', () => {
+    const violations: string[] = [];
+    for (const fichier of listerFichiersTs(ROOT)) {
+      const lignes = readFileSync(fichier, 'utf8').split('\n');
+      lignes.forEach((ligne, idx) => {
+        if (/hex-allow-any/.test(ligne)) violations.push(`${relative(ROOT, fichier)}:${idx + 1}`);
+      });
+    }
+    expect(violations, `Échappatoire hex-allow-any détectée :\n${violations.join('\n')}`).toEqual([]);
+  });
+
+  it('chaque fichier source de backend/src/ respecte le plafond strict <= 500 lignes', () => {
+    const violations: string[] = [];
+    for (const fichier of listerFichiersTs(ROOT)) {
+      const nbLignes = readFileSync(fichier, 'utf8').split('\n').length;
+      if (nbLignes > 500) {
+        violations.push(`${relative(ROOT, fichier)} (${nbLignes} lignes > 500)`);
+      }
+    }
+    expect(violations, `Fichiers backend > 500 lignes :\n${violations.join('\n')}`).toEqual([]);
   });
 });
 

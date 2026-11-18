@@ -5,9 +5,8 @@
  * Regroupe toutes les requêtes Prisma que le contrôleur faisait directement (contexte
  * établissement injecté dans le prompt, historique de conversation, logs d'actions,
  * fiches d'aide contextuelle, journal de questions d'aide) — cohérence hexagonale : le
- * contrôleur ne touche plus PrismaClient. Les catalogues d'actions, eux, restent sur
- * `ActionContext` (qui expose toujours `prisma`) : un `execute()/undo()` du catalogue est
- * un use case métier qui a besoin du client vivant, hors de portée de ce port de lecture.
+ * contrôleur ne touche plus PrismaClient. Les catalogues d'actions passent également par
+ * `ActionContext.data` (`CopilotDataGateway`), hors de portée de ce port de lecture.
  */
 
 export interface SchoolContextDto {

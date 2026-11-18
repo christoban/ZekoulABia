@@ -22,9 +22,8 @@
  * Contrainte SOUPLE (objectif maximisé) : préférer la salle habituelle de la classe
  * (ClassRoomAssignment) — un cours dans sa salle habituelle vaut POIDS_SALLE_HABITUELLE points.
  */
-import { CpModel, CpSolver, weightedSum, setWorkerBridgeEnabled } from 'or-tools-wasm/cp-sat';
-import type { LinearExprLike } from 'or-tools-wasm/cp-sat';
-import { CreneauHoraire } from '@domain/entities/CreneauHoraire';
+import { CpSolver, setWorkerBridgeEnabled } from 'or-tools-wasm/cp-sat';
+import type { BoolVar } from 'or-tools-wasm/cp-sat';
 import type {
   SchedulingSolverPort,
   ProposerEmploiDuTempsInput,
@@ -33,17 +32,15 @@ import type {
   ExigenceSeance,
   CaseGrille,
   SalleDisponible,
-  CreneauOccupe,
-  IndisponibiliteEnseignant,
-  ContraintesDoucesOptions,
 } from '@domain/ports/services/SchedulingSolverPort';
-import { modeliserContraintesDouces } from '@infrastructure/scheduling/contraintesDouces';
 import type { Placement } from '@infrastructure/scheduling/contraintesDouces';
 import { NOMS_JOURS } from '@domain/types/joursSemaine';
-import { POIDS_NON_PLACEMENT } from '@domain/ports/services/SchedulingSolverPort';
-
-/** Poids de la seule contrainte souple de cette tranche (préférence salle habituelle). */
-const POIDS_SALLE_HABITUELLE = 10;
+import {
+  construireModeleCpSat,
+  construireSolutionSecours,
+  construireSuggestions,
+  diagnostiquerInfaisabilite,
+} from './orToolsModelBuilder';
 
 /** Nombre de workers CP-SAT — 1 suffit très largement à cette taille de problème (cf. spike). */
 const NB_WORKERS = 1;
@@ -54,139 +51,46 @@ export class ORToolsWasmAdapter implements SchedulingSolverPort {
   }
 
   async proposer(input: ProposerEmploiDuTempsInput): Promise<PropositionEmploiDuTemps> {
-    const { exigences, grille, sallesDisponibles, occupationExistante, salleHabituelleId, indisponibilitesEnseignants = [], contraintes, reglesPedagogiquesDures } = input;
+    const {
+      exigences,
+      grille,
+      sallesDisponibles,
+      occupationExistante,
+      salleHabituelleId,
+      indisponibilitesEnseignants = [],
+      contraintes,
+      reglesPedagogiquesDures,
+    } = input;
 
     if (exigences.length === 0) {
       return { statut: 'OPTIMAL', seances: [], scoreObjectif: 0, dureeResolutionMs: 0 };
     }
     if (grille.length === 0) {
       return {
-        statut: 'INFAISABLE', seances: [], scoreObjectif: 0, dureeResolutionMs: 0,
+        statut: 'INFAISABLE',
+        seances: [],
+        scoreObjectif: 0,
+        dureeResolutionMs: 0,
         raisonInfaisabilite: "La grille horaire de l'établissement ne contient aucun créneau — configurez-la avant de proposer un emploi du temps.",
       };
     }
 
-    const model = new CpModel();
-
-    // --- Variables : uniquement les placements RÉELLEMENT possibles ---
-    const placements: Placement[] = [];
-    const variables: ReturnType<CpModel['newBoolVar']>[] = [];
-
-    for (let e = 0; e < exigences.length; e++) {
-      const exigence = exigences[e]!;
-      const sallesCompatibles = sallesDisponibles
-        .map((salle, idx) => ({ salle, idx }))
-        .filter(({ salle }) => salleAccepteMatiere(salle, exigence));
-
-      if (sallesCompatibles.length === 0) {
-        return {
-          statut: 'INFAISABLE', seances: [], scoreObjectif: 0, dureeResolutionMs: 0,
-           raisonInfaisabilite: `Aucune salle compatible pour une matière ${exigence.subjectType} (matière ${exigence.subjectName ?? exigence.subjectId}) — une matière pratique exige une salle spécialisée (laboratoire, atelier, salle informatique ou terrain).`,
-           problemes: [`Aucune salle compatible pour ${exigence.subjectName ?? exigence.subjectId} (${exigence.subjectType}).`],
-           suggestions: [`Créez ou libérez une salle spécialisée pour ${exigence.subjectName ?? exigence.subjectId}.`],
-
-        };
-      }
-
-      let placementsPourCetteExigence = 0;
-      for (let c = 0; c < grille.length; c++) {
-        const caseGrille = grille[c]!;
-        if (estOccupe(occupationExistante, caseGrille, { teacherId: exigence.teacherId })) continue;
-        if (estIndisponible(indisponibilitesEnseignants, caseGrille, exigence.teacherId)) continue;
-
-        for (const { salle, idx: s } of sallesCompatibles) {
-          if (estOccupe(occupationExistante, caseGrille, { roomId: salle.roomId })) continue;
-
-          placements.push({ exigenceIdx: e, caseIdx: c, salleIdx: s });
-          variables.push(model.newBoolVar(`x_${e}_${c}_${s}`));
-          placementsPourCetteExigence++;
-        }
-      }
-
-      if (placementsPourCetteExigence === 0 && !input.placementPartiel) {
-        return {
-          statut: 'INFAISABLE', seances: [], scoreObjectif: 0, dureeResolutionMs: 0,
-           raisonInfaisabilite: `Aucun créneau libre pour ${exigence.subjectName ?? exigence.subjectId} : l'enseignant ou toutes les salles compatibles sont bloqués sur l'ensemble de la grille horaire.`,
-           problemes: diagnostiquerInfaisabilite(exigences, grille, sallesDisponibles, occupationExistante, indisponibilitesEnseignants, contraintes),
-           suggestions: [
-             `Vérifiez les indisponibilités de ${exigence.teacherName ?? exigence.teacherId} et l'occupation des salles compatibles pour ${exigence.subjectName ?? exigence.subjectId}.`,
-             ...construireSuggestions(contraintes),
-           ],
-
-        };
-      }
+    const modeleConstruit = construireModeleCpSat(input);
+    if ('proposition' in modeleConstruit) {
+      return modeleConstruit.proposition;
     }
 
-    if (!input.placementPartiel) {
-      for (let e = 0; e < exigences.length; e++) {
-        model.addExactlyOne(variablesOu(placements, variables, p => p.exigenceIdx === e));
-      }
-    } else {
-      for (let e = 0; e < exigences.length; e++) {
-        const candidates = variablesOu(placements, variables, p => p.exigenceIdx === e);
-        if (candidates.length > 0) model.addAtMostOne(candidates);
-      }
-    }
-
-    // --- Contrainte 2 (DURE) : la classe ne suit qu'une séance à la fois ---
-    if (contraintes?.conflitClasse !== false) {
-      for (let c = 0; c < grille.length; c++) {
-        const vars = variablesOu(placements, variables, p => p.caseIdx === c);
-        if (vars.length > 1) model.addAtMostOne(vars);
-      }
-    }
-
-    // --- Contrainte 3 (DURE) : conflit enseignant ---
-    if (contraintes?.conflitEnseignant !== false) {
-      const enseignants = [...new Set(exigences.map(e => e.teacherId))];
-      for (const teacherId of enseignants) {
-        for (let c = 0; c < grille.length; c++) {
-          const vars = variablesOu(
-            placements, variables,
-            p => p.caseIdx === c && exigences[p.exigenceIdx]!.teacherId === teacherId,
-          );
-          if (vars.length > 1) model.addAtMostOne(vars);
-        }
-      }
-    }
-
-    // --- Contrainte 4 (DURE) : conflit salle ---
-    if (contraintes?.conflitSalle !== false) {
-      for (let s = 0; s < sallesDisponibles.length; s++) {
-        for (let c = 0; c < grille.length; c++) {
-          const vars = variablesOu(placements, variables, p => p.caseIdx === c && p.salleIdx === s);
-          if (vars.length > 1) model.addAtMostOne(vars);
-        }
-      }
-    }
-
-    // --- Objectif (SOUPLE) : salle habituelle + contraintes douces V2.5, en UN SEUL maximize ---
-    const termes: { terme: LinearExprLike; coeff: number }[] = [];
-    if (salleHabituelleId) {
-      for (let i = 0; i < placements.length; i++) {
-        if (sallesDisponibles[placements[i]!.salleIdx]!.roomId === salleHabituelleId) {
-          termes.push({ terme: variables[i]!, coeff: POIDS_SALLE_HABITUELLE });
-        }
-      }
-    }
-    // Contraintes douces V2.5 (pénalités) + blocs de 2 h (DUR, §4) — un seul appel, qui gère
-    // aussi le cas options = undefined (blocs actifs par défaut, aucune pénalité).
-    if (input.placementPartiel) {
-      for (const variable of variables) termes.push({ terme: variable, coeff: POIDS_NON_PLACEMENT });
-    }
-    termes.push(...modeliserContraintesDouces({ model, placements, variables, exigences, grille, options: contraintes }));
-    let objectifExpr: LinearExprLike | null = null;
-    if (termes.length > 0) {
-      objectifExpr = weightedSum(termes.map(t => t.terme), termes.map(t => t.coeff));
-      model.maximize(objectifExpr);
-    }
+    const { model, placements, variables, objectifExpr, aObjectif } = modeleConstruit;
 
     // --- Résolution ---
     const solver = new CpSolver();
     const debut = performance.now();
-     // maxDeterministicTime est utilisé à la place d'une limite murale : la recherche reste reproductible,
+    // maxDeterministicTime est utilisé à la place d'une limite murale : la recherche reste reproductible,
     // mais la durée réelle peut varier selon la machine et la complexité restante.
-    const status = await solver.solve(model, { numSearchWorkers: NB_WORKERS, maxDeterministicTime: input.maxDeterministicTime ?? 60 });
+    const status = await solver.solve(model, {
+      numSearchWorkers: NB_WORKERS,
+      maxDeterministicTime: input.maxDeterministicTime ?? 60,
+    });
     const dureeResolutionMs = performance.now() - debut;
 
     const statusName = solver.statusName(status);
@@ -200,83 +104,31 @@ export class ORToolsWasmAdapter implements SchedulingSolverPort {
         };
       }
       return {
-        statut: 'INFAISABLE', seances: [], scoreObjectif: 0, dureeResolutionMs,
+        statut: 'INFAISABLE',
+        seances: [],
+        scoreObjectif: 0,
+        dureeResolutionMs,
         raisonInfaisabilite: `Aucune combinaison ne satisfait toutes les contraintes (statut solveur : ${statusName}).`,
-         problemes: [
-           ...(await this.diagnostiquerContraintesPedagogiques(input)),
-           ...diagnostiquerInfaisabilite(exigences, grille, sallesDisponibles, occupationExistante, indisponibilitesEnseignants, contraintes),
-         ],
-         suggestions: construireSuggestions(contraintes),
-
+        problemes: [
+          ...(await this.diagnostiquerContraintesPedagogiques(input)),
+          ...diagnostiquerInfaisabilite(exigences, grille, sallesDisponibles, occupationExistante, indisponibilitesEnseignants, contraintes),
+        ],
+        suggestions: construireSuggestions(contraintes),
       };
     }
 
-    // --- Extraire les séances retenues + score (réutilisé pour les alternatives) ---
-    const extraire = (): { seances: SeanceProposee[]; score: number; placedExigenceIndexes: number[] } => {
-      const seances: SeanceProposee[] = [];
-      const placedExigenceIndexes: number[] = [];
-      for (let i = 0; i < placements.length; i++) {
-        if (solver.value(variables[i]!) !== 1) continue;
-        const { exigenceIdx, caseIdx, salleIdx } = placements[i]!;
-        placedExigenceIndexes.push(exigenceIdx);
-        const exigence = exigences[exigenceIdx]!;
-        const caseGrille = grille[caseIdx]!;
-        seances.push({
-          subjectId: exigence.subjectId,
-          teacherId: exigence.teacherId,
-          roomId: sallesDisponibles[salleIdx]!.roomId,
-          dayOfWeek: caseGrille.dayOfWeek,
-          startTime: caseGrille.startTime,
-          endTime: caseGrille.endTime,
-        });
-      }
-      return { seances, score: termes.length > 0 ? solver.objectiveValue() : 0, placedExigenceIndexes };
-    };
-
-    const solution = extraire();
+    const solution = extraireSeancesSolution(solver, placements, variables, exigences, grille, sallesDisponibles, aObjectif);
     const { seances, score } = solution;
     const nonPlacees = input.placementPartiel ? calculerHeuresNonPlacees(exigences, solution.placedExigenceIndexes) : [];
 
-    const tempsLibres = maxTempsLibresParJour(seances, grille);
-    const avertissementsTempsLibres: string[] = [];
-    if (contraintes?.interdireTempsLibresConsecutifs && aDesTempsLibresConsecutifs(seances, grille)) {
-      if (reglesPedagogiquesDures) {
-        return {
-          statut: 'INFAISABLE', seances: [], scoreObjectif: 0, dureeResolutionMs,
-          raisonInfaisabilite: 'Impossible de séparer tous les temps libres sans modifier le volume pédagogique.',
-          problemes: ['Deux Temps libre consécutifs seraient nécessaires avec les contraintes actuelles.'],
-          suggestions: ['Réduisez ou ajustez le volume pédagogique, ou configurez une journée avec davantage de créneaux disponibles.'],
-        };
-      }
-      avertissementsTempsLibres.push('Temps libres consécutifs : préférence non respectée.');
-    }
-    if (contraintes?.maxTempsLibresParJour != null && tempsLibres > contraintes.maxTempsLibresParJour) {
-      if (reglesPedagogiquesDures) {
-        return {
-          statut: 'INFAISABLE', seances: [], scoreObjectif: 0, dureeResolutionMs,
-          raisonInfaisabilite: `La proposition dépasserait ${contraintes.maxTempsLibresParJour} Temps libre sur un même jour.`,
-          problemes: [`Le placement obtenu contient plus de ${contraintes.maxTempsLibresParJour} Temps libre sur au moins un jour.`],
-          suggestions: ['Réduisez le volume pédagogique ou augmentez les créneaux disponibles de la journée concernée.'],
-        };
-      }
-      avertissementsTempsLibres.push(`Maximum de ${contraintes.maxTempsLibresParJour} temps libres/jour dépassé (maximum obtenu : ${tempsLibres}).`);
+    const verificationTempsLibres = verifierContraintesTempsLibres(seances, grille, dureeResolutionMs, contraintes, reglesPedagogiquesDures);
+    if ('proposition' in verificationTempsLibres) {
+      return verificationTempsLibres.proposition;
     }
 
-    // --- Explain My Timetable (V2.5 §7) : une ligne par séance retenue ---
-    let explicatifs: string[] | undefined;
-    if (contraintes?.explicatifs) {
-      explicatifs = seances.map(s => {
-        const exigence = exigences.find(e => e.subjectId === s.subjectId);
-        const salle = sallesDisponibles.find(r => r.roomId === s.roomId);
-        const jour = NOMS_JOURS[s.dayOfWeek] ?? String(s.dayOfWeek);
-        const raison = s.roomId === salleHabituelleId
-          ? 'salle habituelle de la classe'
-          : exigence?.subjectType === 'PRACTICAL'
-            ? 'salle spécialisée exigée'
-            : 'première salle compatible libre';
-        return `${jour} ${s.startTime}-${s.endTime} · ${exigence?.subjectName ?? s.subjectId} (${exigence?.teacherName ?? s.teacherId}) · ${salle?.roomName ?? s.roomId} — ${raison}`;
-      });
-    }
+    const explicatifs = contraintes?.explicatifs
+      ? construireExplicatifs(seances, exigences, sallesDisponibles, salleHabituelleId)
+      : undefined;
 
     // --- Solutions multiples scorées (no-good re-solve, V2.5 §6) ---
     const solutionsAlternatives: { score: number; seances: SeanceProposee[] }[] = [];
@@ -297,24 +149,27 @@ export class ORToolsWasmAdapter implements SchedulingSolverPort {
         if (marge > 0 && objectifExpr) {
           model.addLinearConstraint(objectifExpr, score - marge, 1e9);
         }
-         const statusK = await solver.solve(model, { numSearchWorkers: NB_WORKERS, maxDeterministicTime: input.maxDeterministicTime ?? 60 });
+        const statusK = await solver.solve(model, {
+          numSearchWorkers: NB_WORKERS,
+          maxDeterministicTime: input.maxDeterministicTime ?? 60,
+        });
         const nomK = solver.statusName(statusK);
         if (nomK !== 'OPTIMAL' && nomK !== 'FEASIBLE') break;
-         const alternative = extraire();
-         solutionsAlternatives.push({ score: alternative.score, seances: alternative.seances });
+        const alternative = extraireSeancesSolution(solver, placements, variables, exigences, grille, sallesDisponibles, aObjectif);
+        solutionsAlternatives.push({ score: alternative.score, seances: alternative.seances });
       }
     }
 
     return {
-       statut: nonPlacees.length > 0 ? 'PARTIEL' : statusName,
-       seances,
-       scoreObjectif: score,
-       dureeResolutionMs,
-       ...(nonPlacees.length > 0 ? { heuresNonPlacees: nonPlacees } : {}),
-       ...(solutionsAlternatives.length > 0 ? { solutionsAlternatives } : {}),
-       ...(explicatifs ? { explicatifs } : {}),
-       ...(avertissementsTempsLibres.length > 0 ? { avertissements: avertissementsTempsLibres } : {}),
-     };
+      statut: nonPlacees.length > 0 ? 'PARTIEL' : statusName,
+      seances,
+      scoreObjectif: score,
+      dureeResolutionMs,
+      ...(nonPlacees.length > 0 ? { heuresNonPlacees: nonPlacees } : {}),
+      ...(solutionsAlternatives.length > 0 ? { solutionsAlternatives } : {}),
+      ...(explicatifs ? { explicatifs } : {}),
+      ...(verificationTempsLibres.avertissements.length > 0 ? { avertissements: verificationTempsLibres.avertissements } : {}),
+    };
   }
 
   private async diagnostiquerContraintesPedagogiques(input: ProposerEmploiDuTempsInput): Promise<string[]> {
@@ -331,135 +186,102 @@ export class ORToolsWasmAdapter implements SchedulingSolverPort {
   }
 }
 
-function construireSolutionSecours(
+function extraireSeancesSolution(
+  solver: CpSolver,
+  placements: Placement[],
+  variables: BoolVar[],
   exigences: ExigenceSeance[],
   grille: CaseGrille[],
   sallesDisponibles: SalleDisponible[],
-  placements: { exigenceIdx: number; caseIdx: number; salleIdx: number }[],
-  salleHabituelleId?: string,
-): { statut: 'FEASIBLE'; seances: SeanceProposee[]; scoreObjectif: number } | null {
-  const casesOccupees = new Set<string>();
-  const enseignantsOccupes = new Set<string>();
-  const sallesOccupees = new Set<string>();
+  aObjectif: boolean,
+): { seances: SeanceProposee[]; score: number; placedExigenceIndexes: number[] } {
   const seances: SeanceProposee[] = [];
-  let score = 0;
-  const ordre = exigences.map((_, index) => index).sort((a, b) => {
-    const countA = placements.filter(placement => placement.exigenceIdx === a).length;
-    const countB = placements.filter(placement => placement.exigenceIdx === b).length;
-    return countA - countB;
-  });
-
-  for (const exigenceIdx of ordre) {
-    const candidates = placements
-      .filter(placement => placement.exigenceIdx === exigenceIdx)
-      .sort((a, b) => {
-        const salleA = sallesDisponibles[a.salleIdx]!.roomId === salleHabituelleId ? 1 : 0;
-        const salleB = sallesDisponibles[b.salleIdx]!.roomId === salleHabituelleId ? 1 : 0;
-        return salleB - salleA;
-      });
-    const place = candidates.find(candidate => {
-      const caseGrille = grille[candidate.caseIdx]!;
-      const salle = sallesDisponibles[candidate.salleIdx]!;
-      const cleCase = `${caseGrille.dayOfWeek}|${caseGrille.startTime}|${caseGrille.endTime}`;
-      const cleEnseignant = `${exigences[exigenceIdx]!.teacherId}|${cleCase}`;
-      const cleSalle = `${salle.roomId}|${cleCase}`;
-      return !casesOccupees.has(cleCase) && !enseignantsOccupes.has(cleEnseignant) && !sallesOccupees.has(cleSalle);
-    });
-    if (!place) return null;
+  const placedExigenceIndexes: number[] = [];
+  for (let i = 0; i < placements.length; i++) {
+    if (solver.value(variables[i]!) !== 1) continue;
+    const { exigenceIdx, caseIdx, salleIdx } = placements[i]!;
+    placedExigenceIndexes.push(exigenceIdx);
     const exigence = exigences[exigenceIdx]!;
-    const caseGrille = grille[place.caseIdx]!;
-    const salle = sallesDisponibles[place.salleIdx]!;
-    const cleCase = `${caseGrille.dayOfWeek}|${caseGrille.startTime}|${caseGrille.endTime}`;
-    const cleEnseignant = `${exigence.teacherId}|${cleCase}`;
-    const cleSalle = `${salle.roomId}|${cleCase}`;
-    casesOccupees.add(cleCase);
-    enseignantsOccupes.add(cleEnseignant);
-    sallesOccupees.add(cleSalle);
-    seances.push({ subjectId: exigence.subjectId, teacherId: exigence.teacherId, roomId: salle.roomId, dayOfWeek: caseGrille.dayOfWeek, startTime: caseGrille.startTime, endTime: caseGrille.endTime });
-    if (salle.roomId === salleHabituelleId) score += POIDS_SALLE_HABITUELLE;
+    const caseGrille = grille[caseIdx]!;
+    seances.push({
+      subjectId: exigence.subjectId,
+      teacherId: exigence.teacherId,
+      roomId: sallesDisponibles[salleIdx]!.roomId,
+      dayOfWeek: caseGrille.dayOfWeek,
+      startTime: caseGrille.startTime,
+      endTime: caseGrille.endTime,
+    });
   }
-  return { statut: 'FEASIBLE', seances, scoreObjectif: score };
+  return { seances, score: aObjectif ? solver.objectiveValue() : 0, placedExigenceIndexes };
 }
 
-function diagnostiquerInfaisabilite(
-  exigences: ExigenceSeance[],
+function verifierContraintesTempsLibres(
+  seances: SeanceProposee[],
   grille: CaseGrille[],
+  dureeResolutionMs: number,
+  contraintes?: ProposerEmploiDuTempsInput['contraintes'],
+  reglesPedagogiquesDures?: boolean,
+): { ok: true; avertissements: string[] } | { ok: false; proposition: PropositionEmploiDuTemps } {
+  const tempsLibres = maxTempsLibresParJour(seances, grille);
+  const avertissements: string[] = [];
+
+  if (contraintes?.interdireTempsLibresConsecutifs && aDesTempsLibresConsecutifs(seances, grille)) {
+    if (reglesPedagogiquesDures) {
+      return {
+        ok: false,
+        proposition: {
+          statut: 'INFAISABLE',
+          seances: [],
+          scoreObjectif: 0,
+          dureeResolutionMs,
+          raisonInfaisabilite: 'Impossible de séparer tous les temps libres sans modifier le volume pédagogique.',
+          problemes: ['Deux Temps libre consécutifs seraient nécessaires avec les contraintes actuelles.'],
+          suggestions: ['Réduisez ou ajustez le volume pédagogique, ou configurez une journée avec davantage de créneaux disponibles.'],
+        },
+      };
+    }
+    avertissements.push('Temps libres consécutifs : préférence non respectée.');
+  }
+
+  if (contraintes?.maxTempsLibresParJour != null && tempsLibres > contraintes.maxTempsLibresParJour) {
+    if (reglesPedagogiquesDures) {
+      return {
+        ok: false,
+        proposition: {
+          statut: 'INFAISABLE',
+          seances: [],
+          scoreObjectif: 0,
+          dureeResolutionMs,
+          raisonInfaisabilite: `La proposition dépasserait ${contraintes.maxTempsLibresParJour} Temps libre sur un même jour.`,
+          problemes: [`Le placement obtenu contient plus de ${contraintes.maxTempsLibresParJour} Temps libre sur au moins un jour.`],
+          suggestions: ['Réduisez le volume pédagogique ou augmentez les créneaux disponibles de la journée concernée.'],
+        },
+      };
+    }
+    avertissements.push(`Maximum de ${contraintes.maxTempsLibresParJour} temps libres/jour dépassé (maximum obtenu : ${tempsLibres}).`);
+  }
+
+  return { ok: true, avertissements };
+}
+
+/** Explain My Timetable (V2.5 §7) : une ligne par séance retenue. */
+function construireExplicatifs(
+  seances: SeanceProposee[],
+  exigences: ExigenceSeance[],
   sallesDisponibles: SalleDisponible[],
-  occupationExistante: CreneauOccupe[],
-  indisponibilites: IndisponibiliteEnseignant[],
-  options?: ContraintesDoucesOptions,
+  salleHabituelleId?: string,
 ): string[] {
-  const problemes: string[] = [];
-  for (const exigence of exigences) {
-    const sallesCompatibles = sallesDisponibles.filter(salle => salleAccepteMatiere(salle, exigence));
-    if (sallesCompatibles.length === 0) {
-      problemes.push(`Aucune salle compatible pour ${exigence.subjectName ?? exigence.subjectId}.`);
-      continue;
-    }
-    const casesDisponibles = grille.filter(caseGrille =>
-      !estOccupe(occupationExistante, caseGrille, { teacherId: exigence.teacherId }) &&
-      !indisponibilites.some(indisponibilite =>
-        indisponibilite.teacherId === exigence.teacherId && estOccupe([indisponibilite], caseGrille, { teacherId: exigence.teacherId }),
-      ) &&
-      sallesCompatibles.some(salle => !estOccupe(occupationExistante, caseGrille, { roomId: salle.roomId })),
-    );
-    if (casesDisponibles.length === 0) {
-      const indisponible = indisponibilites.some(indisponibilite => indisponibilite.teacherId === exigence.teacherId);
-      const casesEnseignantLibres = grille.filter(caseGrille =>
-        !estOccupe(occupationExistante, caseGrille, { teacherId: exigence.teacherId }) &&
-        !indisponibilites.some(indisponibilite => indisponibilite.teacherId === exigence.teacherId && estOccupe([indisponibilite], caseGrille, { teacherId: exigence.teacherId })),
-      ).length;
-      if (casesEnseignantLibres === 0) {
-        problemes.push(`${exigence.subjectName ?? exigence.subjectId} / ${exigence.teacherName ?? exigence.teacherId} n'a aucune case disponible : l'enseignant est occupé ou déclaré indisponible sur toute la grille.`);
-      } else {
-        problemes.push(`${exigence.subjectName ?? exigence.subjectId} n'a aucune salle compatible libre${indisponible ? ' et l\'enseignant possède une indisponibilité' : ''}.`);
-      }
-    }
-  }
-  const parEnseignant = new Map<string, { nom: string; occurrences: number; matieres: string[] }>();
-  for (const exigence of exigences) {
-    const courant = parEnseignant.get(exigence.teacherId) ?? { nom: exigence.teacherName ?? exigence.teacherId, occurrences: 0, matieres: [] };
-    courant.occurrences += 1;
-    courant.matieres.push(exigence.subjectName ?? exigence.subjectId);
-    parEnseignant.set(exigence.teacherId, courant);
-  }
-  for (const [teacherId, info] of parEnseignant) {
-    const casesLibres = grille.filter(caseGrille =>
-      !estOccupe(occupationExistante, caseGrille, { teacherId }) &&
-      !indisponibilites.some(indisponibilite => indisponibilite.teacherId === teacherId && estOccupe([indisponibilite], caseGrille, { teacherId })),
-    ).length;
-    if (info.occurrences > casesLibres) {
-      problemes.push(`${info.nom} porte ${info.occurrences} séances (${info.matieres.join(', ')}), mais seulement ${casesLibres} créneaux sont libres : libérez ${info.occurrences - casesLibres} créneaux ou réaffectez la matière.`);
-    }
-  }
-  if (options?.interdireTempsLibresConsecutifs) {
-    problemes.push('La séparation des Temps libre consécutifs ne peut pas être obtenue avec les contraintes actuelles.');
-  }
-  if (options?.maxTempsLibresParJour != null) {
-    problemes.push(`La limite de ${options.maxTempsLibresParJour} Temps libre par jour entre en conflit avec les autres contraintes.`);
-  }
-  if (problemes.length === 0) {
-    problemes.push('Chaque séance possède des cases candidates, mais aucune combinaison globale ne respecte simultanément toutes les contraintes.');
-  }
-  return [...new Set(problemes)].slice(0, 8);
-}
-
-function construireSuggestions(options?: ContraintesDoucesOptions): string[] {
-  const suggestions = ['Libérez un créneau occupé ou ajustez les indisponibilités des enseignants.', 'Ajoutez une salle compatible si une matière pratique manque de place.'];
-  suggestions.push('Si le diagnostic indique les règles pédagogiques, vérifiez EPS/TM sur deux jours, les occurrences contiguës et les autres horaires déjà publiés.');
-  if (options?.interdireTempsLibresConsecutifs) suggestions.push('Réduisez le volume d\'une journée ou augmentez sa capacité pour séparer les Temps libre.');
-  if (options?.maxTempsLibresParJour != null) suggestions.push(`Réduisez le volume pédagogique ou augmentez les créneaux disponibles pour respecter au maximum ${options.maxTempsLibresParJour} Temps libre par jour.`);
-  return suggestions;
-}
-
-/**
- * Contrainte dure n°5 — une matière PRACTICAL exige une salle spécialisée. THEORETICAL et MIXED
- * s'accommodent de n'importe quelle salle (une salle normale convient pour un cours magistral,
- * et un labo peut accueillir un cours théorique sans que ce soit une erreur).
- */
-function salleAccepteMatiere(salle: SalleDisponible, exigence: ExigenceSeance): boolean {
-  if (exigence.subjectType !== 'PRACTICAL') return true;
-  return salle.type !== 'NORMAL';
+  return seances.map(s => {
+    const exigence = exigences.find(e => e.subjectId === s.subjectId);
+    const salle = sallesDisponibles.find(r => r.roomId === s.roomId);
+    const jour = NOMS_JOURS[s.dayOfWeek] ?? String(s.dayOfWeek);
+    const raison = s.roomId === salleHabituelleId
+      ? 'salle habituelle de la classe'
+      : exigence?.subjectType === 'PRACTICAL'
+        ? 'salle spécialisée exigée'
+        : 'première salle compatible libre';
+    return `${jour} ${s.startTime}-${s.endTime} · ${exigence?.subjectName ?? s.subjectId} (${exigence?.teacherName ?? s.teacherId}) · ${salle?.roomName ?? s.roomId} — ${raison}`;
+  });
 }
 
 function maxTempsLibresParJour(seances: SeanceProposee[], grille: CaseGrille[]): number {
@@ -498,55 +320,10 @@ function aDesTempsLibresConsecutifs(seances: SeanceProposee[], grille: CaseGrill
   return false;
 }
 
-/**
- * Chevauchement horaire avec un créneau déjà occupé ailleurs dans l'école. Réutilise la même
- * arithmétique que CreneauHoraire (debut < finExistant && fin > debutExistant) — la règle de
- * chevauchement n'existe qu'à un seul endroit dans le code.
- */
-function estOccupe(
-  occupation: CreneauOccupe[],
-  caseGrille: CaseGrille,
-  cible: { teacherId?: string; roomId?: string },
-): boolean {
-  const debut = CreneauHoraire.heureEnMinutes(caseGrille.startTime);
-  const fin = CreneauHoraire.heureEnMinutes(caseGrille.endTime);
-
-  return occupation.some(occupe => {
-    if (occupe.dayOfWeek !== caseGrille.dayOfWeek) return false;
-    const memeCible =
-      (cible.teacherId !== undefined && occupe.teacherId === cible.teacherId) ||
-      (cible.roomId !== undefined && occupe.roomId === cible.roomId);
-    if (!memeCible) return false;
-
-    const occupeDebut = CreneauHoraire.heureEnMinutes(occupe.startTime);
-    const occupeFin = CreneauHoraire.heureEnMinutes(occupe.endTime);
-    return debut < occupeFin && fin > occupeDebut;
-  });
-}
-
-/**
- * Contrainte DURE V2.4 — un enseignant indisponible sur une plage ne peut recevoir aucune séance
- * qui la chevauche. Même arithmétique de chevauchement que CreneauHoraire (une seule source).
- */
-function estIndisponible(
-  indisponibilites: IndisponibiliteEnseignant[],
-  caseGrille: CaseGrille,
-  teacherId: string,
-): boolean {
-  if (indisponibilites.length === 0) return false;
-  const debut = CreneauHoraire.heureEnMinutes(caseGrille.startTime);
-  const fin = CreneauHoraire.heureEnMinutes(caseGrille.endTime);
-
-  return indisponibilites.some(indispo => {
-    if (indispo.teacherId !== teacherId) return false;
-    if (indispo.dayOfWeek !== caseGrille.dayOfWeek) return false;
-    const indispoDebut = CreneauHoraire.heureEnMinutes(indispo.startTime);
-    const indispoFin = CreneauHoraire.heureEnMinutes(indispo.endTime);
-    return debut < indispoFin && fin > indispoDebut;
-  });
-}
-
-function calculerHeuresNonPlacees(exigences: ExigenceSeance[], indexesPlaces: number[]): Array<{ subjectId: string; teacherId: string; teacherName?: string; nbHeures: number; cause: string }> {
+function calculerHeuresNonPlacees(
+  exigences: ExigenceSeance[],
+  indexesPlaces: number[],
+): Array<{ subjectId: string; teacherId: string; teacherName?: string; nbHeures: number; cause: string }> {
   const places = new Set(indexesPlaces);
   const groupes = new Map<string, { subjectId: string; teacherId: string; teacherName?: string; minutes: number }>();
   exigences.forEach((exigence, index) => {
@@ -556,17 +333,11 @@ function calculerHeuresNonPlacees(exigences: ExigenceSeance[], indexesPlaces: nu
     entry.minutes += exigence.durationMinutes;
     groupes.set(key, entry);
   });
-  return [...groupes.values()].map(entry => ({ ...entry, nbHeures: entry.minutes / 60, cause: 'Aucune case libre compatible après maximisation des séances placées.' })).map(({ subjectId, teacherId, teacherName, nbHeures, cause }) => ({ subjectId, teacherId, teacherName, nbHeures, cause }));
-}
-
-function variablesOu(
-  placements: { exigenceIdx: number; caseIdx: number; salleIdx: number }[],
-  variables: ReturnType<CpModel['newBoolVar']>[],
-  predicat: (p: { exigenceIdx: number; caseIdx: number; salleIdx: number }) => boolean,
-): ReturnType<CpModel['newBoolVar']>[] {
-  const resultat: ReturnType<CpModel['newBoolVar']>[] = [];
-  for (let i = 0; i < placements.length; i++) {
-    if (predicat(placements[i]!)) resultat.push(variables[i]!);
-  }
-  return resultat;
+  return [...groupes.values()].map(entry => ({
+    subjectId: entry.subjectId,
+    teacherId: entry.teacherId,
+    teacherName: entry.teacherName,
+    nbHeures: entry.minutes / 60,
+    cause: 'Aucune case libre compatible après maximisation des séances placées.',
+  }));
 }

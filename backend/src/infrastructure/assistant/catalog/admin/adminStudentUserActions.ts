@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   type ActionDefinition,
+  defineAction,
   resolveClass,
   resolveStudent,
 } from '../catalogShared';
@@ -9,7 +10,7 @@ import type { AdminActionDeps } from '../adminActionCatalog';
 export function buildAdminStudentUserActions(deps: AdminActionDeps): ActionDefinition[] {
   return [
     // 10. Lister candidats CEP en attente — LECTURE SEULE
-    {
+    defineAction({
       name: 'lister_candidats_cep_en_attente',
       domain: 'concours',
       description:
@@ -18,24 +19,21 @@ export function buildAdminStudentUserActions(deps: AdminActionDeps): ActionDefin
       requiredPermission: null,
       inputSchema: z.object({}),
       async execute(_input, ctx) {
-        const candidats = await ctx.prisma.entranceExamCandidate.findMany({
-          where: { admissionStatus: 'ADMIS_PROVISOIRE', session: { schoolId: ctx.schoolId } },
-          select: { firstName: true, lastName: true, session: { select: { name: true } } },
-        });
+        const candidats = await ctx.data.adminOps.findCepPendingCandidates(ctx.schoolId);
         const resultLabel =
           candidats.length === 0
             ? 'Aucun candidat en attente de résultat CEP actuellement.'
             : `${candidats.length} candidat(s) en attente de résultat CEP : ` +
-              candidats.map((c) => `${c.firstName} ${c.lastName} (${c.session.name})`).join(', ');
+              candidats.map((c) => `${c.firstName} ${c.lastName} (${c.sessionName})`).join(', ');
         return { resultLabel, section: 'entrance-exams', entity: 'entranceExamCandidate' };
       },
       async undo() {
         throw new Error("Cette action est une simple consultation, il n'y a rien à annuler.");
       },
-    },
+    }),
 
     // 11. Inscrire un élève — NON destructif
-    {
+    defineAction({
       name: 'creer_eleve',
       domain: 'eleves',
       description: "Inscrit un nouvel élève dans une classe existante de l'établissement.",
@@ -70,7 +68,7 @@ export function buildAdminStudentUserActions(deps: AdminActionDeps): ActionDefin
           entity: 'user',
         };
       },
-      async undo(_params, undoData, ctx) {
+      async undo(_params, undoData: { userId: string }, ctx) {
         await deps.supprimerUtilisateur.execute({
           userId: String(undoData.userId),
           schoolId: ctx.schoolId,
@@ -78,10 +76,10 @@ export function buildAdminStudentUserActions(deps: AdminActionDeps): ActionDefin
           demandeurId: ctx.userId,
         });
       },
-    },
+    }),
 
     // 12. Modifier un élève — NON destructif
-    {
+    defineAction({
       name: 'modifier_eleve',
       domain: 'eleves',
       description: "Modifie les informations d'un élève déjà inscrit (prénom, nom, téléphone).",
@@ -96,10 +94,7 @@ export function buildAdminStudentUserActions(deps: AdminActionDeps): ActionDefin
       }),
       async execute(input, ctx) {
         const student = await resolveStudent(ctx, input.studentName, input.className);
-        const before = await ctx.prisma.user.findUnique({
-          where: { id: student.id },
-          select: { firstName: true, lastName: true, phone: true },
-        });
+        const before = await ctx.data.adminOps.findUserBasicIdentity(ctx.schoolId, student.id);
         await deps.modifierUtilisateur.execute({
           cibleUserId: student.id,
           demandeurId: ctx.userId,
@@ -116,21 +111,25 @@ export function buildAdminStudentUserActions(deps: AdminActionDeps): ActionDefin
           entity: 'user',
         };
       },
-      async undo(_params, undoData, ctx) {
+      async undo(
+        _params,
+        undoData: { userId: string; firstName?: string | null; lastName?: string | null; phone?: string | null },
+        ctx,
+      ) {
         await deps.modifierUtilisateur.execute({
           cibleUserId: String(undoData.userId),
           demandeurId: ctx.userId,
           demandeurRole: ctx.role,
           schoolId: ctx.schoolId,
-          firstName: (undoData.firstName as string | null) ?? undefined,
-          lastName: (undoData.lastName as string | null) ?? undefined,
-          phone: (undoData.phone as string | null) ?? undefined,
+          firstName: undoData.firstName ?? undefined,
+          lastName: undoData.lastName ?? undefined,
+          phone: undoData.phone ?? undefined,
         });
       },
-    },
+    }),
 
     // 13. Transférer un élève vers une autre classe — NON destructif (réversible)
-    {
+    defineAction({
       name: 'transferer_eleve',
       domain: 'eleves',
       description: "Transfère un élève de sa classe actuelle vers une autre classe.",
@@ -159,7 +158,7 @@ export function buildAdminStudentUserActions(deps: AdminActionDeps): ActionDefin
           entity: 'user',
         };
       },
-      async undo(_params, undoData, ctx) {
+      async undo(_params, undoData: { studentId: string; fromClasseId: string; toClasseId: string }, ctx) {
         await deps.transfererEleve.execute({
           studentId: String(undoData.studentId),
           fromClasseId: String(undoData.fromClasseId),
@@ -168,10 +167,10 @@ export function buildAdminStudentUserActions(deps: AdminActionDeps): ActionDefin
           demandeurId: ctx.userId,
         });
       },
-    },
+    }),
 
     // 43. Vérifier le matricule officiel d'un élève — LECTURE SEULE
-    {
+    defineAction({
       name: 'verifier_matricule_eleve',
       domain: 'eleves',
       description:
@@ -182,10 +181,7 @@ export function buildAdminStudentUserActions(deps: AdminActionDeps): ActionDefin
       inputSchema: z.object({ studentName: z.string().min(1), className: z.string().optional() }),
       async execute(input, ctx) {
         const student = await resolveStudent(ctx, input.studentName, input.className);
-        const profile = await ctx.prisma.studentProfile.findUnique({
-          where: { userId: student.id },
-          select: { id: true },
-        });
+        const profile = await ctx.data.adminOps.findStudentProfileIdByUserId(ctx.schoolId, student.id);
         if (!profile) throw new Error(`${student.name} n'a pas de profil élève associé.`);
         const r = await deps.verifierMatricule.execute(ctx.schoolId, profile.id);
         return { resultLabel: `${student.name} — ${r.message}`, section: 'matricules', entity: 'studentProfile' };
@@ -193,6 +189,6 @@ export function buildAdminStudentUserActions(deps: AdminActionDeps): ActionDefin
       async undo() {
         throw new Error("Cette action est une simple consultation, il n'y a rien à annuler.");
       },
-    },
+    }),
   ];
 }

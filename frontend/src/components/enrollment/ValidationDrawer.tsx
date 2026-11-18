@@ -1,22 +1,16 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import {
-  X,
-  CheckCircle2,
-  RotateCcw,
-  XCircle,
-  Download,
-  AlertTriangle,
-  Loader2,
-  Smartphone,
-  ShieldAlert,
-  FileCheck,
-} from 'lucide-react'
+import { X, AlertTriangle } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
-import EnrollmentPieceChecklist, { type PieceItem } from './EnrollmentPieceChecklist'
-import EnrollmentCompletenessRing from './EnrollmentCompletenessRing'
-import StudentFeesStatusBadge from './StudentFeesStatusBadge'
+import type { PieceItem } from './EnrollmentPieceChecklist'
+import ValidationDrawerDetails from './ValidationDrawerDetails'
+import {
+  type DrawerActionType,
+  executerValidationAction,
+  ValidationDrawerActionForm,
+  ValidationDrawerFooterBar,
+} from './ValidationDrawerActions'
 
 export interface DrawerDossier {
   id: string
@@ -61,7 +55,7 @@ export default function ValidationDrawer({
   const [error, setError] = useState<string | null>(null)
 
   // Modales d'actions
-  const [actionType, setActionType] = useState<'VALIDATE' | 'RETURN' | 'REJECT' | null>(null)
+  const [actionType, setActionType] = useState<DrawerActionType | null>(null)
   const [commentaire, setCommentaire] = useState('')
   const [derogationCapacite, setDerogationCapacite] = useState(false)
 
@@ -93,83 +87,22 @@ export default function ValidationDrawer({
 
   if (!isOpen || !dossier) return null
 
-  const handleValider = async () => {
+  const handleConfirmAction = async () => {
+    if (!actionType) return
     setActionLoading(true)
     setError(null)
-    try {
-      const res = await fetchApi(`/api/v2/eleve-onboarding/${dossier.id}/inscrire`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          derogationCapacite,
-          motifDerogation: derogationCapacite ? commentaire : undefined,
-        }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        onActionComplete()
-        onClose()
-      } else {
-        setError(data.message || 'Échec de la validation')
-      }
-    } catch {
-      setError('Erreur réseau lors de la validation')
-    } finally {
-      setActionLoading(false)
-    }
-  }
-
-  const handleRenvoyer = async () => {
-    if (!commentaire.trim()) {
-      setError('Le commentaire de renvoi est obligatoire pour guider la famille.')
-      return
-    }
-    setActionLoading(true)
-    setError(null)
-    try {
-      const res = await fetchApi(`/api/v2/eleve-onboarding/${dossier.id}/return`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ commentaire }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        onActionComplete()
-        onClose()
-      } else {
-        setError(data.message || 'Échec du renvoi')
-      }
-    } catch {
-      setError('Erreur réseau')
-    } finally {
-      setActionLoading(false)
-    }
-  }
-
-  const handleRejeter = async () => {
-    if (!commentaire.trim()) {
-      setError('Le motif de rejet est obligatoire.')
-      return
-    }
-    setActionLoading(true)
-    setError(null)
-    try {
-      const res = await fetchApi(`/api/v2/eleve-onboarding/${dossier.id}/reject`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: commentaire }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        onActionComplete()
-        onClose()
-      } else {
-        setError(data.message || 'Échec du rejet')
-      }
-    } catch {
-      setError('Erreur réseau')
-    } finally {
-      setActionLoading(false)
+    const result = await executerValidationAction({
+      dossierId: dossier.id,
+      actionType,
+      commentaire,
+      derogationCapacite,
+    })
+    setActionLoading(false)
+    if (result.ok) {
+      onActionComplete()
+      onClose()
+    } else {
+      setError(result.error)
     }
   }
 
@@ -254,303 +187,32 @@ export default function ValidationDrawer({
             </div>
           )}
 
-          {/* Fiche identité élève */}
-          <div
-            style={{
-              padding: 14,
-              borderRadius: 10,
-              background: 'var(--bg2, rgba(0,0,0,0.03))',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text, #111827)' }}>
-                {dossier.nomProvisoire}
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--text2, #4b5563)', marginTop: 2 }}>
-                Classe : <strong>{dossier.classe?.name || 'Non affectée'}</strong>
-              </div>
-              {dossier.numeroInterne && (
-                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--blue, #2563eb)', marginTop: 2 }}>
-                  N° Interne : {dossier.numeroInterne}
-                </div>
-              )}
-            </div>
-
-            <EnrollmentCompletenessRing
-              score={dossier.completenessScore ?? 0}
-              validableSousReserve={dossier.validableSousReserve}
-              size="md"
-            />
-          </div>
-
-          {/* Section Pièces justificatives */}
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
-                Pièces justificatives requises
-              </span>
-              <button
-                type="button"
-                onClick={loadPieces}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: 11,
-                  color: 'var(--blue, #2563eb)',
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                }}
-              >
-                Actualiser
-              </button>
-            </div>
-
-            {loadingPieces ? (
-              <div style={{ padding: 16, textAlign: 'center', color: 'var(--text3)' }}>
-                <Loader2 size={16} className="animate-spin" />
-              </div>
-            ) : (
-              <EnrollmentPieceChecklist
-                onboardingId={dossier.id}
-                pieces={pieces}
-                sourceType={dossier.sourceType}
-                onPieceUpdated={() => {
-                  loadPieces()
-                  onActionComplete()
-                }}
-              />
-            )}
-          </div>
-
-          {/* Contacts & Dispositifs */}
-          <div style={{ padding: 12, borderRadius: 8, border: '1px solid var(--border, #e5e7eb)' }}>
-            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Smartphone size={14} />
-              Contacts & Profil d&apos;accès
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--text2)', display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <div>Parent : {dossier.parentContactTelephone || dossier.contactTelephone || 'Non renseigné'}</div>
-              <div>Élève : {dossier.contactTelephone || 'Sans numéro propre'}</div>
-              <div>Smartphone élève : {dossier.eleveADispositif ? 'Oui' : 'Non (mode protégé / NO_LOGIN)'}</div>
-            </div>
-          </div>
-
-          {/* État des frais en lecture seule (Secrétariat) */}
-          {dossier.createdStudentId && (
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
-                État des frais scolaires
-              </div>
-              <StudentFeesStatusBadge studentId={dossier.createdStudentId} />
-            </div>
-          )}
-
-          {/* Téléchargement PDF */}
-          <a
-            href={`/api/v2/eleve-onboarding/${dossier.id}/fiche-pdf`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              padding: '9px 14px',
-              borderRadius: 8,
-              border: '1px solid var(--border, #e5e7eb)',
-              background: 'var(--surface, #fff)',
-              color: 'var(--text, #111827)',
-              fontSize: 12,
-              fontWeight: 600,
-              textDecoration: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-            }}
-          >
-            <Download size={15} />
-            Télécharger la fiche officielle (avec QR code)
-          </a>
+          <ValidationDrawerDetails
+            dossier={dossier}
+            pieces={pieces}
+            loadingPieces={loadingPieces}
+            onRefreshPieces={loadPieces}
+            onActionComplete={onActionComplete}
+          />
 
           {/* Formulaire de confirmation d'action */}
           {actionType && (
-            <div
-              style={{
-                padding: 14,
-                borderRadius: 10,
-                border: '1px solid var(--border, #e5e7eb)',
-                background: 'var(--surface2, #f9fafb)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 10,
-              }}
-            >
-              <div style={{ fontSize: 13, fontWeight: 700 }}>
-                {actionType === 'VALIDATE' && 'Confirmer la validation & inscription'}
-                {actionType === 'RETURN' && 'Renvoyer le dossier à la famille'}
-                {actionType === 'REJECT' && 'Rejeter définitivement la demande'}
-              </div>
-
-              {actionType === 'VALIDATE' && (
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={derogationCapacite}
-                    onChange={(e) => setDerogationCapacite(e.target.checked)}
-                  />
-                  Forcer l&apos;inscription sous dérogation de capacité
-                </label>
-              )}
-
-              {(actionType === 'RETURN' || actionType === 'REJECT' || derogationCapacite) && (
-                <textarea
-                  rows={3}
-                  placeholder={
-                    actionType === 'RETURN'
-                      ? 'Commentaire précisant les pièces ou informations manquantes...'
-                      : 'Motif justifié...'
-                  }
-                  value={commentaire}
-                  onChange={(e) => setCommentaire(e.target.value)}
-                  style={{
-                    padding: '8px 10px',
-                    borderRadius: 8,
-                    border: '1px solid var(--border, #e5e7eb)',
-                    fontSize: 12,
-                    width: '100%',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              )}
-
-              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                <button
-                  type="button"
-                  onClick={() => setActionType(null)}
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: 6,
-                    border: '1px solid var(--border, #e5e7eb)',
-                    background: 'transparent',
-                    fontSize: 12,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Annuler
-                </button>
-
-                <button
-                  type="button"
-                  disabled={actionLoading}
-                  onClick={
-                    actionType === 'VALIDATE'
-                      ? handleValider
-                      : actionType === 'RETURN'
-                      ? handleRenvoyer
-                      : handleRejeter
-                  }
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: 6,
-                    border: 'none',
-                    background:
-                      actionType === 'VALIDATE'
-                        ? 'var(--green, #16a34a)'
-                        : actionType === 'RETURN'
-                        ? '#d97706'
-                        : 'var(--red, #ef4444)',
-                    color: '#fff',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: actionLoading ? 'not-allowed' : 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                  }}
-                >
-                  {actionLoading && <Loader2 size={13} className="animate-spin" />}
-                  Confirmer
-                </button>
-              </div>
-            </div>
+            <ValidationDrawerActionForm
+              actionType={actionType}
+              commentaire={commentaire}
+              derogationCapacite={derogationCapacite}
+              actionLoading={actionLoading}
+              onCommentaireChange={setCommentaire}
+              onDerogationChange={setDerogationCapacite}
+              onCancel={() => setActionType(null)}
+              onConfirm={handleConfirmAction}
+            />
           )}
         </div>
 
         {/* Barre d'action permanente bas pour ADMIN */}
         {isAdmin && !actionType && dossier.status !== 'ACTIVATED' && (
-          <div
-            style={{
-              padding: '14px 20px',
-              borderTop: '1px solid var(--border, #e5e7eb)',
-              background: 'var(--surface2, #f9fafb)',
-              display: 'flex',
-              gap: 8,
-              justifyContent: 'flex-end',
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setActionType('REJECT')}
-              style={{
-                padding: '8px 12px',
-                borderRadius: 8,
-                border: '1px solid var(--border, #e5e7eb)',
-                background: 'transparent',
-                color: 'var(--red, #ef4444)',
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-              }}
-            >
-              <XCircle size={14} />
-              Rejeter
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActionType('RETURN')}
-              style={{
-                padding: '8px 12px',
-                borderRadius: 8,
-                border: '1px solid #d97706',
-                background: 'rgba(217,119,6,0.08)',
-                color: '#b45309',
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-              }}
-            >
-              <RotateCcw size={14} />
-              Renvoyer
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActionType('VALIDATE')}
-              style={{
-                padding: '8px 16px',
-                borderRadius: 8,
-                border: 'none',
-                background: 'var(--green, #16a34a)',
-                color: '#fff',
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-              }}
-            >
-              <CheckCircle2 size={14} />
-              Inscrire l&apos;élève
-            </button>
-          </div>
+          <ValidationDrawerFooterBar onSelectAction={setActionType} />
         )}
       </div>
     </div>

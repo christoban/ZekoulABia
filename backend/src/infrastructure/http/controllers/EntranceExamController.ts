@@ -3,25 +3,46 @@ import type { EntranceExamRepository } from '@domain/ports/repositories/Entrance
 import type { SchoolRepository } from '@domain/ports/repositories/SchoolRepository';
 import type { AIActionAuditPort } from '@domain/ports/services/AIActionAuditPort';
 import type { EntranceExamPdfPort } from '@domain/ports/services/EntranceExamPdfPort';
-import { CreerSessionConcoursUseCase } from '@application/entranceExam/CreerSessionConcoursUseCase';
-import { AjouterCandidatsConcoursUseCase } from '@application/entranceExam/AjouterCandidatsConcoursUseCase';
-import { CalculerAdmissionConcoursUseCase } from '@application/entranceExam/CalculerAdmissionConcoursUseCase';
-import { EnregistrerResultatCepUseCase } from '@application/entranceExam/EnregistrerResultatCepUseCase';
-import { ResumeSessionConcoursUseCase } from '@application/entranceExam/ResumeSessionConcoursUseCase';
-import { ScannerListeCandidatsUseCase } from '@application/entranceExam/ScannerListeCandidatsUseCase';
-import { DetecterAnomaliesConcoursUseCase } from '@application/entranceExam/DetecterAnomaliesConcoursUseCase';
-import { InscrireCandidatConcoursUseCase } from '@application/entranceExam/InscrireCandidatConcoursUseCase';
-import { RepartirCandidatsSallesUseCase } from '@application/entranceExam/RepartirCandidatsSallesUseCase';
-import { SaisirNotesConcoursUseCase } from '@application/entranceExam/SaisirNotesConcoursUseCase';
-import { SimulerDeliberationConcoursUseCase } from '@application/entranceExam/SimulerDeliberationConcoursUseCase';
-import { PublierResultatsConcoursUseCase } from '@application/entranceExam/PublierResultatsConcoursUseCase';
-import { FinaliserAdmissionsConcoursUseCase } from '@application/entranceExam/FinaliserAdmissionsConcoursUseCase';
-import { EnregistrerPresenceCandidatUseCase } from '@application/entranceExam/EnregistrerPresenceCandidatUseCase';
-import { EstimerCampagneSmsPublicationUseCase } from '@application/entranceExam/EstimerCampagneSmsPublicationUseCase';
-import { ProposerSaisieLotCepUseCase, type ItemSaisieLotCep } from '@application/entranceExam/ProposerSaisieLotCepUseCase';
-import { AppliquerSaisieLotCepUseCase } from '@application/entranceExam/AppliquerSaisieLotCepUseCase';
-import { parseDateFR } from '../../../shared/date/parseDateFR';
-import XLSX from 'xlsx';
+import type { CreerSessionConcoursUseCase } from '@application/entranceExam/CreerSessionConcoursUseCase';
+import type { AjouterCandidatsConcoursUseCase } from '@application/entranceExam/AjouterCandidatsConcoursUseCase';
+import type { CalculerAdmissionConcoursUseCase } from '@application/entranceExam/CalculerAdmissionConcoursUseCase';
+import type { EnregistrerResultatCepUseCase } from '@application/entranceExam/EnregistrerResultatCepUseCase';
+import type { ResumeSessionConcoursUseCase } from '@application/entranceExam/ResumeSessionConcoursUseCase';
+import type { ScannerListeCandidatsUseCase } from '@application/entranceExam/ScannerListeCandidatsUseCase';
+import type { DetecterAnomaliesConcoursUseCase } from '@application/entranceExam/DetecterAnomaliesConcoursUseCase';
+import type { InscrireCandidatConcoursUseCase } from '@application/entranceExam/InscrireCandidatConcoursUseCase';
+import type { RepartirCandidatsSallesUseCase } from '@application/entranceExam/RepartirCandidatsSallesUseCase';
+import type { SaisirNotesConcoursUseCase } from '@application/entranceExam/SaisirNotesConcoursUseCase';
+import type { SimulerDeliberationConcoursUseCase } from '@application/entranceExam/SimulerDeliberationConcoursUseCase';
+import type { PublierResultatsConcoursUseCase } from '@application/entranceExam/PublierResultatsConcoursUseCase';
+import type { FinaliserAdmissionsConcoursUseCase } from '@application/entranceExam/FinaliserAdmissionsConcoursUseCase';
+import type { EnregistrerPresenceCandidatUseCase } from '@application/entranceExam/EnregistrerPresenceCandidatUseCase';
+import type { EstimerCampagneSmsPublicationUseCase } from '@application/entranceExam/EstimerCampagneSmsPublicationUseCase';
+import type { ProposerSaisieLotCepUseCase } from '@application/entranceExam/ProposerSaisieLotCepUseCase';
+import type { AppliquerSaisieLotCepUseCase } from '@application/entranceExam/AppliquerSaisieLotCepUseCase';
+import {
+  ajouterCandidatsAction,
+  detecterAnomaliesAction,
+  enregistrerPresenceAction,
+  genererConvocationPdfAction,
+  genererEmargementPdfAction,
+  importCandidatsAction,
+  inscrireCandidatGuichetAction,
+  scannerAction,
+  type EntranceExamCandidateDeps,
+} from './helpers/entranceExamCandidateHelper';
+import {
+  appliquerLotCepAction,
+  calculerAdmissionAction,
+  enregistrerCepAction,
+  estimerCampagneSmsAction,
+  finaliserAdmissionsAction,
+  proposerLotCepAction,
+  publierResultatsAction,
+  saisirNotesAction,
+  simulerDeliberationAction,
+  type EntranceExamDeliberationDeps,
+} from './helpers/entranceExamDeliberationHelper';
 
 export class EntranceExamController {
   constructor(
@@ -47,6 +68,33 @@ export class EntranceExamController {
     private readonly _proposerSaisieLotCep?: ProposerSaisieLotCepUseCase,
     private readonly _appliquerSaisieLotCep?: AppliquerSaisieLotCepUseCase,
   ) {}
+
+  private get candidateDeps(): EntranceExamCandidateDeps {
+    return {
+      ajouterCandidats: this._ajouterCandidats,
+      scannerListe: this._scannerListe,
+      detecterAnomalies: this._detecterAnomalies,
+      inscrireCandidat: this._inscrireCandidat,
+      entranceExamRepository: this.entranceExamRepository,
+      schoolRepository: this.schoolRepository,
+      entranceExamPdfPort: this.entranceExamPdfPort,
+      enregistrerPresence: this._enregistrerPresence,
+    };
+  }
+
+  private get deliberationDeps(): EntranceExamDeliberationDeps {
+    return {
+      calculerAdmission: this._calculerAdmission,
+      enregistrerCep: this._enregistrerCep,
+      saisirNotes: this._saisirNotes,
+      simulerDeliberation: this._simulerDeliberation,
+      publierResultats: this._publierResultats,
+      finaliserAdmissions: this._finaliserAdmissions,
+      estimerCampagneSms: this._estimerCampagneSms,
+      proposerSaisieLotCep: this._proposerSaisieLotCep,
+      appliquerSaisieLotCep: this._appliquerSaisieLotCep,
+    };
+  }
 
   // GET /api/v2/entrance-exams
   lister = async (req: Request, res: Response, next: NextFunction) => {
@@ -166,351 +214,72 @@ export class EntranceExamController {
   };
 
   // POST /api/v2/entrance-exams/:id/candidates/register (Guichet)
-  inscrireCandidatGuichet = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const schoolId = req.user!.schoolId;
-      const sessionId = String(req.params['id']);
-      const { firstName, lastName, dateOfBirth, originSchool, parentPhone } = req.body;
-
-      if (!firstName || !lastName) {
-        res.status(400).json({ success: false, message: 'Nom et prénom requis' });
-        return;
-      }
-
-      const school = await this.schoolRepository.findById(schoolId);
-      const resultat = await this._inscrireCandidat.execute({
-        schoolId,
-        sessionId,
-        firstName,
-        lastName,
-        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
-        originSchool,
-        parentPhone,
-        schoolCodeOrName: school?.subdomain || school?.name,
-      });
-
-      res.status(201).json({ success: true, data: resultat });
-    } catch (err: unknown) {
-      res.status(400).json({ success: false, message: err instanceof Error ? err.message : 'Erreur d\'inscription' });
-    }
-  };
+  inscrireCandidatGuichet = (req: Request, res: Response, next: NextFunction): Promise<void> =>
+    inscrireCandidatGuichetAction(this.candidateDeps, req, res, next);
 
   // GET /api/v2/entrance-exams/candidates/:id/convocation-pdf
-  genererConvocationPdf = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const candidateId = String(req.params['id']);
-      const cand = await this.entranceExamRepository.trouverCandidatAvecSession(candidateId);
-      if (!cand || cand.session?.schoolId !== req.user!.schoolId) {
-        res.status(404).json({ success: false, message: 'Candidat introuvable' });
-        return;
-      }
-
-      const school = await this.schoolRepository.findById(req.user!.schoolId);
-      const subjects = cand.session?.subjects || [];
-
-      const pdf = await this.entranceExamPdfPort.genererConvocationPdf({
-        schoolName: school?.name || 'Établissement Scolaire',
-        sessionName: cand.session?.name || 'Concours d\'entrée',
-        examDate: cand.session?.examDate || new Date(),
-        candidateNumber: cand.candidateNumber || cand.id.slice(0, 8),
-        candidateFullName: `${cand.firstName} ${cand.lastName}`,
-        dateOfBirth: cand.dateOfBirth,
-        originSchool: cand.originSchool,
-        roomName: cand.room?.name,
-        deskNumber: cand.deskNumber,
-        subjects: subjects.map(s => ({ name: s.name, coefficient: s.coefficient, maxScore: s.maxScore })),
-      });
-
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `inline; filename="convocation_${cand.candidateNumber || cand.id}.pdf"`);
-      res.send(pdf);
-    } catch (err) { next(err); }
-  };
+  genererConvocationPdf = (req: Request, res: Response, next: NextFunction): Promise<void> =>
+    genererConvocationPdfAction(this.candidateDeps, req, res, next);
 
   // GET /api/v2/entrance-exams/:id/rooms/:roomId/emargement-pdf
-  genererEmargementPdf = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const sessionId = String(req.params['id']);
-      const roomId = String(req.params['roomId']);
-      const session = await this.entranceExamRepository.trouverSession(sessionId);
-      if (!session || session.schoolId !== req.user!.schoolId) {
-        res.status(404).json({ success: false, message: 'Session introuvable' });
-        return;
-      }
-
-      const candidats = await this.entranceExamRepository.listerCandidats(sessionId, { roomId, orderBy: 'nom' });
-      const school = await this.schoolRepository.findById(req.user!.schoolId);
-      const salle = candidats[0]?.room?.name || 'Salle d\'examen';
-
-      const pdf = await this.entranceExamPdfPort.genererListeEmargementPdf({
-        schoolName: school?.name || 'Établissement Scolaire',
-        sessionName: session.name,
-        examDate: session.examDate,
-        roomName: salle,
-        candidates: candidats.map(c => ({
-          candidateNumber: c.candidateNumber || c.id.slice(0, 6),
-          fullName: `${c.firstName} ${c.lastName}`,
-          deskNumber: c.deskNumber,
-          dateOfBirth: c.dateOfBirth,
-          originSchool: c.originSchool,
-        })),
-      });
-
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `inline; filename="emargement_${sessionId}_${roomId}.pdf"`);
-      res.send(pdf);
-    } catch (err) { next(err); }
-  };
+  genererEmargementPdf = (req: Request, res: Response, next: NextFunction): Promise<void> =>
+    genererEmargementPdfAction(this.candidateDeps, req, res, next);
 
   // POST /api/v2/entrance-exams/:id/emargement (Émargement jour J — support Idempotency-Key)
-  enregistrerPresence = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const schoolId = req.user!.schoolId;
-      const sessionId = String(req.params['id']);
-      const { candidateId, presenceStatus } = req.body as {
-        candidateId: string;
-        presenceStatus: 'PRESENT' | 'ABSENT' | 'ABANDON';
-      };
-
-      if (!candidateId || !presenceStatus) {
-        res.status(400).json({ success: false, message: 'candidateId et presenceStatus requis' });
-        return;
-      }
-
-      const useCase = this._enregistrerPresence ?? new EnregistrerPresenceCandidatUseCase(this.entranceExamRepository);
-      const data = await useCase.execute({
-        schoolId,
-        sessionId,
-        candidateId,
-        presenceStatus,
-      });
-
-      res.json({ success: true, data });
-    } catch (err) { next(err); }
-  };
+  enregistrerPresence = (req: Request, res: Response, next: NextFunction): Promise<void> =>
+    enregistrerPresenceAction(this.candidateDeps, req, res, next);
 
   // POST /api/v2/entrance-exams/candidates/:id/grades (Saisie des notes)
-  saisirNotes = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const schoolId = req.user!.schoolId;
-      const candidateId = String(req.params['id']);
-      const { sessionId, notes } = req.body;
-      if (!sessionId || !Array.isArray(notes)) {
-        res.status(400).json({ success: false, message: 'sessionId et notes (array) requis' });
-        return;
-      }
-
-      const resultat = await this._saisirNotes.execute({ schoolId, sessionId, candidateId, notes });
-      res.json({ success: true, data: resultat });
-    } catch (err) { next(err); }
-  };
+  saisirNotes = (req: Request, res: Response, next: NextFunction): Promise<void> =>
+    saisirNotesAction(this.deliberationDeps, req, res, next);
 
   // POST /api/v2/entrance-exams/:id/deliberation/simulate
-  simulerDeliberation = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const schoolId = req.user!.schoolId;
-      const sessionId = String(req.params['id']);
-      const { admissionThreshold, availableSeats, waitingListSeats, appliquer } = req.body;
-
-      const resultat = await this._simulerDeliberation.execute({
-        schoolId, sessionId,
-        admissionThreshold: admissionThreshold !== undefined ? Number(admissionThreshold) : undefined,
-        availableSeats: availableSeats !== undefined ? Number(availableSeats) : undefined,
-        waitingListSeats: waitingListSeats !== undefined ? Number(waitingListSeats) : undefined,
-        appliquer: Boolean(appliquer),
-      });
-
-      res.json({ success: true, data: resultat });
-    } catch (err) { next(err); }
-  };
+  simulerDeliberation = (req: Request, res: Response, next: NextFunction): Promise<void> =>
+    simulerDeliberationAction(this.deliberationDeps, req, res, next);
 
   // GET /api/v2/entrance-exams/:id/publish/estimate-sms
-  estimerCampagneSms = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const schoolId = req.user!.schoolId;
-      const sessionId = String(req.params['id']);
-      if (!this._estimerCampagneSms) {
-        res.status(501).json({ success: false, message: 'Service non disponible' });
-        return;
-      }
-      const resultat = await this._estimerCampagneSms.execute({ schoolId, sessionId });
-      res.json({ success: true, data: resultat });
-    } catch (err) { next(err); }
-  };
+  estimerCampagneSms = (req: Request, res: Response, next: NextFunction): Promise<void> =>
+    estimerCampagneSmsAction(this.deliberationDeps, req, res, next);
 
   // POST /api/v2/entrance-exams/:id/publish
-  publierResultats = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const schoolId = req.user!.schoolId;
-      const sessionId = String(req.params['id']);
-      const { confirmSmsCampaign, campaignId } = req.body || {};
-      const resultat = await this._publierResultats.execute({
-        schoolId,
-        sessionId,
-        confirmSmsCampaign: confirmSmsCampaign !== undefined ? Boolean(confirmSmsCampaign) : true,
-        campaignId: campaignId ? String(campaignId) : undefined,
-      });
-      res.json({ success: true, data: resultat });
-    } catch (err) { next(err); }
-  };
+  publierResultats = (req: Request, res: Response, next: NextFunction): Promise<void> =>
+    publierResultatsAction(this.deliberationDeps, req, res, next);
 
   // POST /api/v2/entrance-exams/:id/cep-batch/propose
-  proposerLotCep = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const schoolId = req.user!.schoolId;
-      const sessionId = String(req.params['id']);
-      const { items } = req.body as { items: ItemSaisieLotCep[] };
-      if (!items || !Array.isArray(items)) {
-        res.status(400).json({ success: false, message: 'items requis (tableau de résultats CEP)' });
-        return;
-      }
-      if (!this._proposerSaisieLotCep) {
-        res.status(501).json({ success: false, message: 'Service non disponible' });
-        return;
-      }
-      const resultat = await this._proposerSaisieLotCep.execute({ schoolId, sessionId, items });
-      res.json({ success: true, data: resultat });
-    } catch (err) { next(err); }
-  };
+  proposerLotCep = (req: Request, res: Response, next: NextFunction): Promise<void> =>
+    proposerLotCepAction(this.deliberationDeps, req, res, next);
 
   // POST /api/v2/entrance-exams/:id/cep-batch/apply
-  appliquerLotCep = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const schoolId = req.user!.schoolId;
-      const sessionId = String(req.params['id']);
-      const { decisions, promotionsIds } = req.body;
-      if (!decisions || !Array.isArray(decisions)) {
-        res.status(400).json({ success: false, message: 'decisions requises' });
-        return;
-      }
-      if (!this._appliquerSaisieLotCep) {
-        res.status(501).json({ success: false, message: 'Service non disponible' });
-        return;
-      }
-      const adminUserId = req.user!.userId;
-      const resultat = await this._appliquerSaisieLotCep.execute({
-        schoolId,
-        sessionId,
-        adminUserId,
-        decisions,
-        promotionsIds: Array.isArray(promotionsIds) ? promotionsIds : undefined,
-      });
-      res.json({ success: true, data: resultat });
-    } catch (err) { next(err); }
-  };
+  appliquerLotCep = (req: Request, res: Response, next: NextFunction): Promise<void> =>
+    appliquerLotCepAction(this.deliberationDeps, req, res, next);
 
   // POST /api/v2/entrance-exams/:id/finalize-admissions
-  finaliserAdmissions = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const schoolId = req.user!.schoolId;
-      const sessionId = String(req.params['id']);
-      const { traiterForfaitsEtRepechage } = req.body;
-
-      const resultat = await this._finaliserAdmissions.execute({
-        schoolId,
-        sessionId,
-        executantId: req.user!.userId,
-        traiterForfaitsEtRepechage: Boolean(traiterForfaitsEtRepechage),
-      });
-
-      res.json({ success: true, data: resultat });
-    } catch (err) { next(err); }
-  };
+  finaliserAdmissions = (req: Request, res: Response, next: NextFunction): Promise<void> =>
+    finaliserAdmissionsAction(this.deliberationDeps, req, res, next);
 
   // POST /api/v2/entrance-exams/:id/candidates
-  ajouterCandidats = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const schoolId = req.user!.schoolId;
-      const sessionId = String(req.params['id']);
-      const { candidats } = req.body as { candidats: Parameters<AjouterCandidatsConcoursUseCase['execute']>[0]['candidats'] };
-      if (!candidats || !Array.isArray(candidats)) {
-        res.status(400).json({ success: false, message: 'candidats (array) requis' });
-        return;
-      }
-      const result = await this._ajouterCandidats.execute({ schoolId, sessionId, candidats });
-      res.json({ success: true, data: result });
-    } catch (err) { next(err); }
-  };
+  ajouterCandidats = (req: Request, res: Response, next: NextFunction): Promise<void> =>
+    ajouterCandidatsAction(this.candidateDeps, req, res, next);
 
   // POST /api/v2/entrance-exams/:id/candidates/import
-  importCandidats = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const schoolId = req.user!.schoolId;
-      const sessionId = String(req.params['id']);
-      const file = req.file as Express.Multer.File;
-      if (!file) {
-        res.status(400).json({ success: false, message: 'Fichier requis' });
-        return;
-      }
-
-      const wb = XLSX.read(file.buffer, { type: 'buffer' });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json<Record<string, string>>(ws, { defval: '' });
-
-      const candidats = rows.map(r => ({
-        firstName: String(r.prenom || r.firstName || '').trim(),
-        lastName: String(r.nom || r.lastName || '').trim(),
-        dateOfBirth: parseDateFR(String(r.dateNaissance || r.dateOfBirth || '')) ?? undefined,
-        originSchool: String(r.ecoleOrigine || r.originSchool || '').trim() || undefined,
-        examScore: r.note || r.examScore ? Number(String(r.note || r.examScore).replace(',', '.')) : undefined,
-        parentPhone: String(r.telephoneParent || r.parentPhone || '').trim() || undefined,
-      })).filter(c => c.firstName && c.lastName);
-
-      const result = await this._ajouterCandidats.execute({ schoolId, sessionId, candidats });
-      res.json({ success: true, data: result });
-    } catch (err) { next(err); }
-  };
+  importCandidats = (req: Request, res: Response, next: NextFunction): Promise<void> =>
+    importCandidatsAction(this.candidateDeps, req, res, next);
 
   // POST /api/v2/entrance-exams/:id/compute-admission
-  calculer = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const schoolId = req.user!.schoolId;
-      const sessionId = String(req.params['id']);
-      const result = await this._calculerAdmission.execute({ schoolId, sessionId });
-      res.json({ success: true, data: result });
-    } catch (err) { next(err); }
-  };
+  calculer = (req: Request, res: Response, next: NextFunction): Promise<void> =>
+    calculerAdmissionAction(this.deliberationDeps, req, res, next);
 
   // POST /api/v2/entrance-exams/:id/candidates/scan
-  scanner = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const schoolId = req.user!.schoolId;
-      const sessionId = String(req.params['id']);
-      const { imageBase64, mimeType } = req.body as { imageBase64: string; mimeType?: string };
-      if (!imageBase64) {
-        res.status(400).json({ success: false, message: 'imageBase64 requis' });
-        return;
-      }
-      const result = await this._scannerListe.execute(schoolId, sessionId, imageBase64, mimeType);
-      res.json({ success: true, data: result });
-    } catch (err) { next(err); }
-  };
+  scanner = (req: Request, res: Response, next: NextFunction): Promise<void> =>
+    scannerAction(this.candidateDeps, req, res, next);
 
   // POST /api/v2/entrance-exams/:id/detect-anomalies
-  detecterAnomalies = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const schoolId = req.user!.schoolId;
-      const sessionId = String(req.params['id']);
-      const result = await this._detecterAnomalies.execute(schoolId, sessionId);
-      res.json({ success: true, data: result });
-    } catch (err) { next(err); }
-  };
+  detecterAnomalies = (req: Request, res: Response, next: NextFunction): Promise<void> =>
+    detecterAnomaliesAction(this.candidateDeps, req, res, next);
 
   // PATCH /api/v2/entrance-exams/candidates/:id/cep-result
-  enregistrerCep = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const schoolId = req.user!.schoolId;
-      const candidateId = String(req.params['id']);
-      const { cepResult } = req.body as { cepResult: 'REUSSI' | 'ECHOUE' };
-      if (!cepResult || !['REUSSI', 'ECHOUE'].includes(cepResult)) {
-        res.status(400).json({ success: false, message: 'cepResult requis (REUSSI ou ECHOUE)' });
-        return;
-      }
-      const enregistreParId = req.user!.userId;
-      const result = await this._enregistrerCep.execute({ schoolId, candidateId, cepResult, enregistreParId });
-      res.json({ success: true, data: result });
-    } catch (err) { next(err); }
-  };
+  enregistrerCep = (req: Request, res: Response, next: NextFunction): Promise<void> =>
+    enregistrerCepAction(this.deliberationDeps, req, res, next);
 
   // GET /api/v2/entrance-exams/:id/summary
   resume = async (req: Request, res: Response, next: NextFunction) => {

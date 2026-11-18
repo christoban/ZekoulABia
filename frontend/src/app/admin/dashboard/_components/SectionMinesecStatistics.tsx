@@ -1,83 +1,24 @@
 'use client'
+
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
-
-interface Props { onToast: (msg: string, type?: 'success' | 'error' | 'info') => void }
-
-interface InfrastructuresDetailMap {
-  commodites?: Record<string, boolean | null>
-  [subsystem: string]: Record<string, Record<string, number | null | undefined> | undefined> | Record<string, boolean | null> | undefined
-}
-
-interface Supplement {
-  hasTitreFoncier: boolean | null
-  siteProvisoire: boolean | null
-  distanceEtablissementProchePublic: number | null
-  superficieTerrainM2: number | null
-  superficieExtensionM2: number | null
-  natureVoiesAcces: string | null
-  nombreCycles: number | null
-  hasInternat: boolean | null
-  placesInternatFilles: number | null
-  placesInternatGarcons: number | null
-  ecolesPrimairesProximite: { moins1km?: number; entre1et3km?: number; entre4et5km?: number; plus5km?: number } | null
-  posteComptable: string | null
-  historiqueBip: { designation: string; anneeObtention: string }[] | null
-  infrastructuresDetail: InfrastructuresDetailMap | null
-  effectifsTechniquesDetail: EstpEntry[] | null
-  lastUpdatedAt: string | null
-}
-
-interface EstpEntry {
-  specialiteAcronyme: string
-  anneeEtude: string
-  divisions: number
-  fillesTotal: number
-  garconsTotal: number
-  fillesRedoublants: number
-  garconsRedoublants: number
-}
-
-interface ChampManquant { champ: string; label: string }
-interface ChampNonResolu { fieldCode: string; sheetName: string; cellReference: string; fieldLabel: string; raison: string }
-interface Submission { id: string; status: string; generatedAt: string; filePath: string | null }
-interface InfraRow { code: string; label: string; row: number }
-interface InfraBreakdownKey { key: string; label: string }
-interface Meta {
-  infraRows: InfraRow[]
-  infraBreakdownKeys: InfraBreakdownKey[]
-  commoditesRows: InfraRow[]
-  subsystems: { code: string; label: string }[]
-  specialitesTechniques: { acronyme: string; designationFr: string }[]
-  anneesEtudeEstp: { anneeEtude: string; capaciteMax: number }[]
-}
-
-const btnPri = { padding: '7px 14px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 12.5, cursor: 'pointer' as const }
-const btnSec = { padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 12.5, cursor: 'pointer' as const }
-const btnSmall = { padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600, fontSize: 11.5, cursor: 'pointer' as const }
-const inputStyle = { padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 12.5, width: '100%', boxSizing: 'border-box' as const }
-const smallInputStyle = { ...inputStyle, padding: '4px 8px', fontSize: 11.5 }
-const cardStyleCls = 'rounded-[12px] p-[12px] md:p-[16px] mb-[10px] md:mb-[14px] shadow-[0_1px_2px_rgba(20,20,15,0.05)] border border-[var(--border)]'
-const cardStyle = { background: 'var(--surface)' }
-
-function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text2)', margin: '8px 0 4px' }}>{children}</div>
-}
-
-function BoolSelect({ value, onChange }: { value: boolean | null | undefined; onChange: (v: boolean | null) => void }) {
-  const t = useT('admin')
-  return (
-    <select style={inputStyle} value={value === null || value === undefined ? '' : String(value)}
-      onChange={(e) => onChange(e.target.value === '' ? null : e.target.value === 'true')}>
-      <option value="">—</option>
-      <option value="true">{t('minesecStats.oui')}</option>
-      <option value="false">{t('minesecStats.non')}</option>
-    </select>
-  )
-}
-
 import { getCachedData, putCachedData } from '@/lib/offline/db'
+import MinesecSupplementTab from './minesecStats/MinesecSupplementTab'
+import MinesecGenererTab from './minesecStats/MinesecGenererTab'
+import {
+  btnPri,
+  btnSec,
+  type ChampManquant,
+  type ChampNonResolu,
+  type Meta,
+  type Submission,
+  type Supplement,
+} from './minesecStats/types'
+
+interface Props {
+  onToast: (msg: string, type?: 'success' | 'error' | 'info') => void
+}
 
 export default function SectionMinesecStatistics({ onToast }: Props) {
   const t = useT('admin')
@@ -173,80 +114,6 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
     } catch { onToast(t('minesecStats.errorGeneric'), 'error') } finally { setSaving(false) }
   }
 
-  // ── BIP ──
-  const addBip = () => {
-    const list = Array.isArray(form.historiqueBip) ? form.historiqueBip : []
-    setForm((f) => ({ ...f, historiqueBip: [...list, { designation: '', anneeObtention: '' }] }))
-  }
-  const updateBip = (idx: number, key: 'designation' | 'anneeObtention', value: string) => {
-    const list = [...(form.historiqueBip ?? [])]
-    list[idx] = { ...list[idx], [key]: value }
-    setForm((f) => ({ ...f, historiqueBip: list }))
-  }
-  const removeBip = (idx: number) => {
-    const list = [...(form.historiqueBip ?? [])]
-    list.splice(idx, 1)
-    setForm((f) => ({ ...f, historiqueBip: list }))
-  }
-
-  // ── Infrastructures ──
-  const [expandedInfraRow, setExpandedInfraRow] = useState<string | null>(null)
-  const setInfraValue = (subsystem: string, code: string, breakdownKey: string, value: number | null) => {
-    const detail: InfrastructuresDetailMap = { ...(form.infrastructuresDetail ?? {}) }
-    const subMap = (detail[subsystem] as Record<string, Record<string, number | null | undefined> | undefined> | undefined) ?? {}
-    const sub = { ...subMap }
-    sub[code] = { ...(sub[code] ?? {}), [breakdownKey]: value }
-    detail[subsystem] = sub
-    setForm((f) => ({ ...f, infrastructuresDetail: detail }))
-  }
-  const getInfraValue = (subsystem: string, code: string, breakdownKey: string): number | null => {
-    const subMap = form.infrastructuresDetail?.[subsystem] as Record<string, Record<string, number | null | undefined> | undefined> | undefined
-    return subMap?.[code]?.[breakdownKey] ?? null
-  }
-  const getInfraRowTotal = (subsystem: string, code: string): number => {
-    const subMap = form.infrastructuresDetail?.[subsystem] as Record<string, Record<string, number | null | undefined> | undefined> | undefined
-    const row = subMap?.[code]
-    if (!row) return 0
-    return ['definitifBon', 'definitifAcceptable', 'definitifMauvais', 'provisoireBon', 'provisoireAcceptable', 'provisoireMauvais']
-      .reduce((sum, k) => sum + (Number(row[k]) || 0), 0)
-  }
-  const setCommodite = (code: string, value: boolean | null) => {
-    const detail = { ...(form.infrastructuresDetail ?? {}) }
-    detail.commodites = { ...(detail.commodites ?? {}), [code]: value }
-    setForm((f) => ({ ...f, infrastructuresDetail: detail }))
-  }
-  const getCommodite = (code: string): boolean | null => form.infrastructuresDetail?.commodites?.[code] ?? null
-
-  // ── ESTP ──
-  const addEstpEntry = () => {
-    const list: EstpEntry[] = Array.isArray(form.effectifsTechniquesDetail) ? form.effectifsTechniquesDetail : []
-    setForm((f) => ({
-      ...f,
-      effectifsTechniquesDetail: [...list, {
-        specialiteAcronyme: meta?.specialitesTechniques[0]?.acronyme ?? '',
-        anneeEtude: meta?.anneesEtudeEstp[0]?.anneeEtude ?? '',
-        divisions: 1, fillesTotal: 0, garconsTotal: 0, fillesRedoublants: 0, garconsRedoublants: 0,
-      }],
-    }))
-  }
-  const updateEstpEntry = (idx: number, patch: Partial<EstpEntry>) => {
-    const list = [...(form.effectifsTechniquesDetail ?? [])]
-    list[idx] = { ...list[idx], ...patch }
-    setForm((f) => ({ ...f, effectifsTechniquesDetail: list }))
-  }
-  const removeEstpEntry = (idx: number) => {
-    const list = [...(form.effectifsTechniquesDetail ?? [])]
-    list.splice(idx, 1)
-    setForm((f) => ({ ...f, effectifsTechniquesDetail: list }))
-  }
-  const estpUsageParAnnee = useMemo(() => {
-    const usage: Record<string, number> = {}
-    for (const e of (form.effectifsTechniquesDetail ?? []) as EstpEntry[]) {
-      usage[e.anneeEtude] = (usage[e.anneeEtude] ?? 0) + 1
-    }
-    return usage
-  }, [form.effectifsTechniquesDetail])
-
   const genererDeclaration = async () => {
     setGenerating(true)
     setChampsManquants([])
@@ -288,322 +155,27 @@ export default function SectionMinesecStatistics({ onToast }: Props) {
       </div>
 
       {tab === 'supplement' && (
-        <div>
-          {supplement?.lastUpdatedAt && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <span style={{ fontSize: 11.5, color: 'var(--text3)' }}>
-                {t('minesecStats.lastUpdated')} : {new Date(supplement.lastUpdatedAt).toLocaleDateString()}
-              </span>
-              {isStale && (
-                <span style={{ fontSize: 10.5, fontWeight: 700, color: '#b45309', background: 'rgba(234,179,8,0.12)', padding: '2px 8px', borderRadius: 10 }}>
-                  {t('minesecStats.staleWarning')}
-                </span>
-              )}
-            </div>
-          )}
-          <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12 }}>{t('minesecStats.persistenceExplainer')}</p>
-
-          {/* Identification */}
-          <div className={cardStyleCls} style={cardStyle}>
-            <h3 className="text-[13px] md:text-[14px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{t('minesecStats.sectionIdentification')}</h3>
-
-            <FieldLabel>{t('minesecStats.fieldTitreFoncier')}</FieldLabel>
-            <BoolSelect value={form.hasTitreFoncier} onChange={(v) => setForm((f) => ({ ...f, hasTitreFoncier: v }))} />
-
-            <FieldLabel>{t('minesecStats.fieldSiteProvisoire')}</FieldLabel>
-            <BoolSelect value={form.siteProvisoire} onChange={(v) => setForm((f) => ({ ...f, siteProvisoire: v }))} />
-
-            <FieldLabel>{t('minesecStats.fieldDistance')}</FieldLabel>
-            <input style={inputStyle} type="number" value={form.distanceEtablissementProchePublic ?? ''} onChange={(e) => setForm((f) => ({ ...f, distanceEtablissementProchePublic: e.target.value === '' ? null : Number(e.target.value) }))} />
-
-            <FieldLabel>{t('minesecStats.fieldSuperficie')}</FieldLabel>
-            <input style={inputStyle} type="number" value={form.superficieTerrainM2 ?? ''} onChange={(e) => setForm((f) => ({ ...f, superficieTerrainM2: e.target.value === '' ? null : Number(e.target.value) }))} />
-
-            <FieldLabel>{t('minesecStats.fieldSuperficieExtension')}</FieldLabel>
-            <input style={inputStyle} type="number" value={form.superficieExtensionM2 ?? ''} onChange={(e) => setForm((f) => ({ ...f, superficieExtensionM2: e.target.value === '' ? null : Number(e.target.value) }))} />
-
-            <FieldLabel>{t('minesecStats.fieldNatureVoiesAcces')}</FieldLabel>
-            <input style={inputStyle} value={form.natureVoiesAcces ?? ''} onChange={(e) => setForm((f) => ({ ...f, natureVoiesAcces: e.target.value }))} />
-
-            <FieldLabel>{t('minesecStats.fieldNombreCycles')}</FieldLabel>
-            <input style={inputStyle} type="number" value={form.nombreCycles ?? ''} onChange={(e) => setForm((f) => ({ ...f, nombreCycles: e.target.value === '' ? null : Number(e.target.value) }))} />
-
-            <FieldLabel>{t('minesecStats.fieldInternat')}</FieldLabel>
-            <BoolSelect value={form.hasInternat} onChange={(v) => setForm((f) => ({ ...f, hasInternat: v }))} />
-
-            {form.hasInternat === true && (
-              <div style={{ display: 'flex', gap: 10 }}>
-                <div style={{ flex: 1 }}>
-                  <FieldLabel>{t('minesecStats.fieldPlacesFilles')}</FieldLabel>
-                  <input style={inputStyle} type="number" value={form.placesInternatFilles ?? ''} onChange={(e) => setForm((f) => ({ ...f, placesInternatFilles: e.target.value === '' ? null : Number(e.target.value) }))} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <FieldLabel>{t('minesecStats.fieldPlacesGarcons')}</FieldLabel>
-                  <input style={inputStyle} type="number" value={form.placesInternatGarcons ?? ''} onChange={(e) => setForm((f) => ({ ...f, placesInternatGarcons: e.target.value === '' ? null : Number(e.target.value) }))} />
-                </div>
-              </div>
-            )}
-
-            <FieldLabel>{t('minesecStats.fieldPosteComptable')}</FieldLabel>
-            <input style={inputStyle} value={form.posteComptable ?? ''} onChange={(e) => setForm((f) => ({ ...f, posteComptable: e.target.value }))} />
-
-            <FieldLabel>{t('minesecStats.fieldEcolesPrimaires')}</FieldLabel>
-            <div className="grid grid-cols-2 sm:flex gap-2 md:gap-2.5">
-              {(['moins1km', 'entre1et3km', 'entre4et5km', 'plus5km'] as const).map((key) => (
-                <div key={key} className="sm:flex-1">
-                  <div style={{ fontSize: 10.5, color: 'var(--text3)', marginBottom: 3 }}>{t(`minesecStats.ecolesPrimaires_${key}`)}</div>
-                  <input style={smallInputStyle} type="number"
-                    value={form.ecolesPrimairesProximite?.[key] ?? ''}
-                    onChange={(e) => setForm((f) => ({ ...f, ecolesPrimairesProximite: { ...(f.ecolesPrimairesProximite ?? {}), [key]: e.target.value === '' ? undefined : Number(e.target.value) } }))} />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Historique BIP */}
-          <div className={cardStyleCls} style={cardStyle}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <h3 className="text-[13px] md:text-[14px]" style={{ fontWeight: 700, color: 'var(--text)' }}>{t('minesecStats.sectionBip')}</h3>
-              <button onClick={addBip} style={btnSmall}>+ {t('minesecStats.addBip')}</button>
-            </div>
-            {(form.historiqueBip ?? []).length === 0 && (
-              <p style={{ fontSize: 12, color: 'var(--text3)' }}>{t('minesecStats.bipEmpty')}</p>
-            )}
-            {(form.historiqueBip ?? []).map((bip, idx: number) => (
-              <div key={idx} className="flex-wrap md:flex-nowrap" style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
-                <input className="flex-1 min-w-[140px]" style={inputStyle} placeholder={t('minesecStats.bipDesignation')} value={bip.designation} onChange={(e) => updateBip(idx, 'designation', e.target.value)} />
-                <input style={{ ...inputStyle, maxWidth: 110 }} placeholder={t('minesecStats.bipAnnee')} value={bip.anneeObtention} onChange={(e) => updateBip(idx, 'anneeObtention', e.target.value)} />
-                <button onClick={() => removeBip(idx)} style={{ ...btnSec, padding: '5px 10px', fontSize: 12, color: 'var(--red)', borderColor: 'var(--red)' }}>×</button>
-              </div>
-            ))}
-          </div>
-
-          {/* Infrastructures */}
-          {meta && (
-            <div className={cardStyleCls} style={cardStyle}>
-              <h3 className="text-[13px] md:text-[14px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 3 }}>{t('minesecStats.sectionInfrastructures')}</h3>
-              <p style={{ fontSize: 11.5, color: 'var(--text3)', marginBottom: 12 }}>{t('minesecStats.infrastructuresHint')}</p>
-
-              {meta.subsystems.map((s) => (
-                <div key={s.code} style={{ marginBottom: 16 }}>
-                  {meta.subsystems.length > 1 && (
-                    <h4 style={{ fontSize: 12, fontWeight: 700, color: 'var(--text2)', marginBottom: 6 }}>{s.label}</h4>
-                  )}
-                  <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
-                    {meta.infraRows.map((row) => {
-                      const total = getInfraRowTotal(s.code, row.code)
-                      const places = getInfraValue(s.code, row.code, 'placesDisponibles')
-                      const rowKey = `${s.code}__${row.code}`
-                      const isOpen = expandedInfraRow === rowKey
-                      return (
-                        <div key={row.code} style={{ borderTop: '1px solid var(--bg)' }}>
-                          <div onClick={() => setExpandedInfraRow(isOpen ? null : rowKey)}
-                            className="flex-wrap gap-[6px]"
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', cursor: 'pointer' }}>
-                            <span style={{ fontSize: 12.5, color: 'var(--text)' }}>{row.label}</span>
-                            <span className="gap-[8px] md:gap-[12px]" style={{ fontSize: 11.5, color: 'var(--text3)', display: 'flex' }}>
-                              <span>{t('minesecStats.infraTotalLocaux')}: <strong style={{ color: 'var(--text)' }}>{total}</strong></span>
-                              <span>{isOpen ? '▲' : '▼'}</span>
-                            </span>
-                          </div>
-                          {isOpen && (
-                            <div style={{ padding: '4px 12px 12px', background: 'var(--bg2)' }}>
-                              <div style={{ marginBottom: 8 }}>
-                                <div style={{ fontSize: 10.5, color: 'var(--text3)', marginBottom: 3 }}>{t('minesecStats.infraPlaces')}</div>
-                                <input style={{ ...smallInputStyle, maxWidth: 130 }} type="number" min={0}
-                                  value={places ?? ''}
-                                  onChange={(e) => setInfraValue(s.code, row.code, 'placesDisponibles', e.target.value === '' ? null : Number(e.target.value))} />
-                              </div>
-                              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                                {meta.infraBreakdownKeys.filter((b) => b.key !== 'placesDisponibles').map((b) => (
-                                  <div key={b.key} style={{ minWidth: 100 }}>
-                                    <div style={{ fontSize: 10.5, color: 'var(--text3)', marginBottom: 3 }}>{b.label}</div>
-                                    <input style={smallInputStyle} type="number" min={0}
-                                      value={getInfraValue(s.code, row.code, b.key) ?? ''}
-                                      onChange={(e) => setInfraValue(s.code, row.code, b.key, e.target.value === '' ? null : Number(e.target.value))} />
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
-
-              <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>{t('minesecStats.sectionCommodites')}</h4>
-              {meta.commoditesRows.map((row) => (
-                <div key={row.code} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid var(--bg)' }}>
-                  <span style={{ fontSize: 12.5, color: 'var(--text2)' }}>{row.label}</span>
-                  <div style={{ width: 130 }}>
-                    <BoolSelect value={getCommodite(row.code)} onChange={(v) => setCommodite(row.code, v)} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Effectifs techniques ESTP */}
-          {meta && meta.specialitesTechniques.length > 0 && (
-            <div className={cardStyleCls} style={cardStyle}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
-                <h3 className="text-[13px] md:text-[14px]" style={{ fontWeight: 700, color: 'var(--text)' }}>{t('minesecStats.sectionEstp')}</h3>
-                <button onClick={addEstpEntry} style={btnSmall}>+ {t('minesecStats.addEstp')}</button>
-              </div>
-              <p style={{ fontSize: 11.5, color: 'var(--text3)', marginBottom: 12 }}>{t('minesecStats.estpHint')}</p>
-
-              {(form.effectifsTechniquesDetail ?? []).length === 0 && (
-                <p style={{ fontSize: 12, color: 'var(--text3)' }}>{t('minesecStats.estpEmpty')}</p>
-              )}
-
-              {(form.effectifsTechniquesDetail ?? []).map((entry: EstpEntry, idx: number) => {
-                const anneeInfo = meta.anneesEtudeEstp.find((a) => a.anneeEtude === entry.anneeEtude)
-                const used = estpUsageParAnnee[entry.anneeEtude] ?? 0
-                const overCapacity = anneeInfo ? used > anneeInfo.capaciteMax : false
-                return (
-                  <div key={idx} style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 10, marginBottom: 8 }}>
-                    <div className="flex-wrap sm:flex-nowrap" style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
-                      <div className="flex-1 min-w-[150px] sm:flex-[2]">
-                        <div style={{ fontSize: 10.5, color: 'var(--text3)', marginBottom: 3 }}>{t('minesecStats.estpSpecialite')}</div>
-                        <select style={smallInputStyle} value={entry.specialiteAcronyme} onChange={(e) => updateEstpEntry(idx, { specialiteAcronyme: e.target.value })}>
-                          {meta.specialitesTechniques.map((s) => (
-                            <option key={s.acronyme} value={s.acronyme}>{s.acronyme} — {s.designationFr}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="flex-1 min-w-[90px]">
-                        <div style={{ fontSize: 10.5, color: 'var(--text3)', marginBottom: 3 }}>{t('minesecStats.estpAnnee')}</div>
-                        <select style={smallInputStyle} value={entry.anneeEtude} onChange={(e) => updateEstpEntry(idx, { anneeEtude: e.target.value })}>
-                          {meta.anneesEtudeEstp.map((a) => (
-                            <option key={a.anneeEtude} value={a.anneeEtude}>{a.anneeEtude}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <button onClick={() => removeEstpEntry(idx)} style={{ ...btnSec, padding: '4px 10px', fontSize: 11.5, color: 'var(--red)', borderColor: 'var(--red)', alignSelf: 'flex-end' }}>×</button>
-                    </div>
-                    <div className="grid grid-cols-3 sm:flex gap-2">
-                      {([
-                        ['divisions', 'estpDivisions'],
-                        ['fillesTotal', 'estpFillesTotal'],
-                        ['garconsTotal', 'estpGarconsTotal'],
-                        ['fillesRedoublants', 'estpFillesRedoublants'],
-                        ['garconsRedoublants', 'estpGarconsRedoublants'],
-                      ] as const).map(([key, labelKey]) => (
-                        <div key={key} className="sm:flex-1">
-                          <div style={{ fontSize: 10.5, color: 'var(--text3)', marginBottom: 3 }}>{t(`minesecStats.${labelKey}`)}</div>
-                          <input style={smallInputStyle} type="number" min={0} value={entry[key] ?? 0}
-                            onChange={(e) => updateEstpEntry(idx, { [key]: Number(e.target.value) } as Partial<EstpEntry>)} />
-                        </div>
-                      ))}
-                    </div>
-                    {overCapacity && (
-                      <p style={{ fontSize: 10.5, color: 'var(--red)', marginTop: 6 }}>{t('minesecStats.estpOverCapacity')}</p>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          )}
-
-          {champsManquants.length > 0 && (
-            <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid var(--red)', borderRadius: 10, padding: 12, marginBottom: 14 }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--red)', marginBottom: 6 }}>{t('minesecStats.champsManquantsTitle')}</p>
-              <ul style={{ margin: 0, paddingLeft: 16 }}>
-                {champsManquants.map((c) => <li key={c.champ} style={{ fontSize: 12, color: 'var(--text2)' }}>{c.label}</li>)}
-              </ul>
-            </div>
-          )}
-
-          <button onClick={saveSupplement} disabled={saving} style={btnPri}>{saving ? '...' : t('minesecStats.saveSupplement')}</button>
-        </div>
+        <MinesecSupplementTab
+          supplement={supplement}
+          isStale={isStale}
+          meta={meta}
+          form={form}
+          setForm={setForm}
+          champsManquants={champsManquants}
+          saving={saving}
+          onSave={saveSupplement}
+        />
       )}
 
       {tab === 'generer' && (
-        <div>
-          <div className={cardStyleCls} style={cardStyle}>
-            <p className="text-[11.5px] md:text-[12.5px]" style={{ color: 'var(--text2)', marginBottom: 12, lineHeight: 1.5 }}>{t('minesecStats.generateDescription')}</p>
-            <button onClick={genererDeclaration} disabled={generating} className="w-full justify-center" style={{ ...btnPri, display: 'inline-flex', alignItems: 'center' }}>
-              {generating ? '...' : t('minesecStats.generateBtn')}
-            </button>
-          </div>
-
-          {lastSubmission && (
-            <div className={cardStyleCls} style={{ ...cardStyle, border: '1.5px solid var(--green)' }}>
-              <p className="text-[12.5px] md:text-[13px]" style={{ fontWeight: 700, color: 'var(--green)', marginBottom: 6 }}>{t('minesecStats.generationSuccess')}</p>
-              <button onClick={() => downloadSubmission(lastSubmission.id)} style={btnSec}>{t('minesecStats.downloadBtn')}</button>
-
-              {champsNonResolus.length > 0 && (
-                <div style={{ marginTop: 12 }}>
-                  <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text2)', marginBottom: 6 }}>
-                    {t('minesecStats.champsNonResolusTitle', { count: String(champsNonResolus.length) })}
-                  </p>
-                  <div style={{ maxHeight: 220, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 7 }}>
-                    <div style={{ overflowX: 'auto' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, minWidth: 460 }}>
-                        <thead>
-                          <tr>
-                            {[t('minesecStats.colChamp'), t('minesecStats.colFeuille'), t('minesecStats.colRaison')].map((h) => (
-                              <th key={h} style={{ padding: '6px 10px', textAlign: 'left', background: 'var(--bg2)', color: 'var(--text3)', fontWeight: 700 }}>{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {champsNonResolus.map((c, i) => (
-                            <tr key={i} style={{ borderTop: '1px solid var(--bg)' }}>
-                              <td style={{ padding: '5px 10px', color: 'var(--text)' }}>{c.fieldLabel}</td>
-                              <td style={{ padding: '5px 10px', color: 'var(--text2)' }}>{c.sheetName}</td>
-                              <td style={{ padding: '5px 10px', color: 'var(--text3)' }}>{c.raison}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className={cardStyleCls} style={cardStyle}>
-            <h3 className="text-[13px] md:text-[14px]" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{t('minesecStats.historyTitle')}</h3>
-            {submissions.length === 0 ? (
-              <p style={{ fontSize: 12, color: 'var(--text3)' }}>{t('minesecStats.historyEmpty')}</p>
-            ) : (
-              <>
-              {/* ── Cartes empilées — mobile ── */}
-              <div className="md:hidden flex flex-col" style={{ gap: 6 }}>
-                {submissions.map((s) => (
-                  <div key={s.id} className="rounded-[10px] shadow-[0_1px_2px_rgba(20,20,15,0.05)]" style={{ background: 'var(--surface)', padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                    <div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>{new Date(s.generatedAt).toLocaleString()}</div>
-                      <div style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 2 }}>{s.status}</div>
-                    </div>
-                    {s.filePath && <button onClick={() => downloadSubmission(s.id)} style={{ padding: '5px 10px', borderRadius: 7, fontSize: 11, fontWeight: 700, background: 'var(--bg2)', color: 'var(--text)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>{t('minesecStats.downloadBtn')}</button>}
-                  </div>
-                ))}
-              </div>
-              {/* ── Tableau — desktop ── */}
-              <div className="hidden md:block" style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 460 }}>
-                  <tbody>
-                    {submissions.map((s) => (
-                      <tr key={s.id} style={{ borderTop: '1px solid var(--bg)' }}>
-                        <td style={{ padding: '6px 10px', color: 'var(--text2)' }}>{new Date(s.generatedAt).toLocaleString()}</td>
-                        <td style={{ padding: '6px 10px', color: 'var(--text2)' }}>{s.status}</td>
-                        <td style={{ padding: '6px 10px' }}>
-                          {s.filePath && <button onClick={() => downloadSubmission(s.id)} style={{ ...btnSec, padding: '3px 8px', fontSize: 11.5 }}>{t('minesecStats.downloadBtn')}</button>}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              </>
-            )}
-          </div>
-        </div>
+        <MinesecGenererTab
+          generating={generating}
+          lastSubmission={lastSubmission}
+          champsNonResolus={champsNonResolus}
+          submissions={submissions}
+          onGenerer={genererDeclaration}
+          onDownload={downloadSubmission}
+        />
       )}
     </div>
   )

@@ -1,421 +1,31 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { WifiOff, Save, Target, AlertTriangle, CheckCircle2, X, Download, Upload, Loader2, RefreshCw, Pencil } from 'lucide-react'
+import { WifiOff, Save, RefreshCw } from 'lucide-react'
 import type { UserInfo } from '../_types'
-import { fetchApi } from '@/lib/fetchApi'
 import { useT } from '@/lib/i18n'
-import { useSyncQueue } from '@/hooks/useSyncQueue'
-import { getCachedData, putCachedData, deleteCachedData } from '@/lib/offline/db'
-import { OfflineActionRefusedError } from '@/lib/offline/actionRegistry'
+import { useTeacherGrades } from './grades/useTeacherGrades'
+import GradesFilterBar from './grades/GradesFilterBar'
+import GradesEntryList from './grades/GradesEntryList'
+import RejectedGradesPanel from './grades/RejectedGradesPanel'
+import { sTitle, sSub, type TeacherGradeRow } from './grades/types'
 
 interface Props {
   onToast: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void
   user?: UserInfo | null
 }
 
-interface TeacherClassOption { id: string; name: string }
-interface TeacherSubjectOption { id: string; name: string }
-interface TeacherSequenceOption {
-  id: string
-  name: string
-  periodName?: string
-  academicYearId?: string
-  [key: string]: unknown
-}
-interface TeacherStudentRef {
-  id?: string
-  firstName: string
-  lastName: string
-  className?: string
-}
-interface TeacherGradeRow {
-  id?: string
-  studentId: string
-  student?: TeacherStudentRef | null
-  sequenceScore?: number | null
-  sequenceAverage?: number | null
-  observation?: string | null
-  validationStatus?: string
-  classId?: string
-  subjectId?: string
-  sequenceId?: string
-  rejectionReason?: string | null
-}
-
-export default function SectionTeacherGrades({ onToast, user }: Props) {
+export default function SectionTeacherGrades({ onToast, user: _user }: Props) {
   const t = useT('teacher')
   const tcommon = useT('common')
-  const [classes, setClasses] = useState<TeacherClassOption[]>([])
-  const [subjects, setSubjects] = useState<TeacherSubjectOption[]>([])
-  const [sequences, setSequences] = useState<TeacherSequenceOption[]>([])
-  const [selectedClass, setSelectedClass] = useState('')
-  const [selectedSubject, setSelectedSubject] = useState('')
-  const [selectedSequence, setSelectedSequence] = useState('')
-  const [grades, setGrades] = useState<TeacherGradeRow[]>([])
-  const [notes, setNotes] = useState<Record<string, number>>({})
-  const [observations, setObservations] = useState<Record<string, string>>({})
-  const [rejectedGrades, setRejectedGrades] = useState<TeacherGradeRow[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [rosterLabel, setRosterLabel] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
-  const [showDraftPrompt, setShowDraftPrompt] = useState(false)
-  const [localDraft, setLocalDraft] = useState<{ notes: Record<string, number>; observations: Record<string, string> } | null>(null)
-  const [importing, setImporting] = useState(false)
-  const [importResult, setImportResult] = useState<{ imported: number; errors: { line: number; matricule: string; error: string }[]; total: number } | null>(null)
+  const state = useTeacherGrades({ onToast, t })
 
-  const { isOnline, addToQueue } = useSyncQueue()
-
-  useEffect(() => {
-    if (navigator.onLine) {
-      Promise.all([
-        fetchApi('/api/v2/classes', { credentials: 'include' }).then(r => r.json()),
-        fetchApi('/api/v2/subjects', { credentials: 'include' }).then(r => r.json()),
-        fetchApi('/api/v2/academic-years', { credentials: 'include' }).then(r => r.json()),
-        fetchApi('/api/v2/grades?validationStatus=REJECTED', { credentials: 'include' }).then(r => r.json()),
-      ]).then(async ([clsRes, subRes, ayRes, rejRes]) => {
-        if (clsRes.success) {
-          setClasses(clsRes.data)
-          await putCachedData('teacher:classes', clsRes.data)
-        }
-        if (subRes.success) {
-          setSubjects(subRes.data)
-          await putCachedData('teacher:subjects', subRes.data)
-        }
-        if (ayRes.success) {
-          interface AySeqRaw { id: string; name: string; [key: string]: unknown }
-          interface AyPeriodRaw { name: string; sequences?: AySeqRaw[] }
-          interface AyYearRaw { id: string; periods?: AyPeriodRaw[] }
-          const seqs: TeacherSequenceOption[] = (ayRes.data as AyYearRaw[]).flatMap((ay) =>
-            ay.periods?.flatMap((p) =>
-              p.sequences?.map((s) => ({ ...s, periodName: p.name, academicYearId: ay.id })) || []
-            ) || []
-          )
-          setSequences(seqs)
-          await putCachedData('teacher:sequences', seqs)
-        }
-        if (rejRes.grades) setRejectedGrades(rejRes.grades)
-      }).catch(() => {}).finally(() => setLoading(false))
-    } else {
-      Promise.all([
-        getCachedData<TeacherClassOption[]>('teacher:classes'),
-        getCachedData<TeacherSubjectOption[]>('teacher:subjects'),
-        getCachedData<TeacherSequenceOption[]>('teacher:sequences'),
-      ]).then(([clsCache, subCache, seqCache]) => {
-        if (clsCache) setClasses(clsCache.data)
-        if (subCache) setSubjects(subCache.data)
-        if (seqCache) setSequences(seqCache.data)
-      }).catch(() => {}).finally(() => setLoading(false))
-    }
-  }, [])
-
-  // Chargement automatique lors de la sélection des 3 filtres
-  useEffect(() => {
-    if (selectedClass && selectedSubject && selectedSequence) {
-      loadGrades()
-    }
-  }, [selectedClass, selectedSubject, selectedSequence]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Rafraîchissement temps réel quand l'assistant IA saisit/soumet une note.
-  useEffect(() => {
-    const onChanged = (e: Event) => {
-      if ((e as CustomEvent<{ entity?: string }>).detail?.entity === 'grade' && selectedClass && selectedSubject && selectedSequence) loadGrades()
-    }
-    window.addEventListener('zekoulabia:data-changed', onChanged)
-    return () => window.removeEventListener('zekoulabia:data-changed', onChanged)
-  }, [selectedClass, selectedSubject, selectedSequence])  // eslint-disable-line react-hooks/exhaustive-deps
-
-  const loadGrades = async () => {
-    if (!selectedClass || !selectedSubject || !selectedSequence) {
-      onToast(t('grades_section.toast_select_filters'), 'warning')
-      return
-    }
-    setLoading(true)
-    setError(null)
-    setRosterLabel(null)
-    const draftKey = `draft:grades:${selectedClass}:${selectedSubject}:${selectedSequence}`
-    try {
-      if (!isOnline) {
-        const cached = await getCachedData<TeacherGradeRow[]>(`teacher:grades:${selectedClass}:${selectedSubject}:${selectedSequence}`)
-        const draft = await getCachedData<{ notes: Record<string, number>; observations: Record<string, string> }>(draftKey)
-        if (cached) {
-          setGrades(cached.data)
-          if (draft) {
-            setLocalDraft(draft.data as { notes: Record<string, number>; observations: Record<string, string> })
-            setShowDraftPrompt(true)
-          } else {
-            const n: Record<string, number> = {}
-            const o: Record<string, string> = {}
-            cached.data.forEach((g) => {
-              n[g.studentId] = g.sequenceScore ?? 0
-              o[g.studentId] = g.observation || ''
-            })
-            setNotes(n)
-            setObservations(o)
-          }
-        } else {
-          setGrades([])
-          onToast(t('grades_section.toast_no_cache'), 'warning')
-        }
-        return
-      }
-
-      // 1. Récupération systématique de la liste exhaustive des élèves de la classe
-      let allClassStudents: { id: string; firstName: string; lastName: string; name: string }[] = []
-      try {
-        const classStudentsRes = await fetchApi(`/api/v2/classes/${selectedClass}/students`, { credentials: 'include' }).then(r => r.json())
-        if (classStudentsRes.success && Array.isArray(classStudentsRes.data) && classStudentsRes.data.length > 0) {
-          interface RawClassStudent { id: string; firstName?: string | null; lastName?: string | null }
-          allClassStudents = (classStudentsRes.data as RawClassStudent[]).map((s) => ({
-            id: s.id,
-            firstName: s.firstName || '',
-            lastName: s.lastName || '',
-            name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || t('grades_section.unknown_student'),
-          }))
-        }
-      } catch { /* repli sur users */ }
-
-      if (allClassStudents.length === 0) {
-        try {
-          const usersRes = await fetchApi(`/api/v2/users?role=STUDENT&classId=${selectedClass}&limit=100`, { credentials: 'include' }).then(r => r.json())
-          if (usersRes.success && Array.isArray(usersRes.data) && usersRes.data.length > 0) {
-            interface RawUserStudent { id: string; firstName?: string | null; lastName?: string | null }
-            allClassStudents = (usersRes.data as RawUserStudent[]).map((u) => ({
-              id: u.id,
-              firstName: u.firstName || '',
-              lastName: u.lastName || '',
-              name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || t('grades_section.unknown_student'),
-            }))
-          }
-        } catch { /* ignore */ }
-      }
-
-      // 2. Récupération des notes existantes pour cette séquence
-      const url = `/api/v2/grades?classId=${selectedClass}&subjectId=${selectedSubject}&sequenceId=${selectedSequence}`
-      const res = await fetchApi(url, { credentials: 'include' }).then(r => r.json()).catch(() => ({ grades: [] }))
-      const gradesByStudentId = new Map<string, TeacherGradeRow>()
-      if (Array.isArray(res.grades)) {
-        (res.grades as TeacherGradeRow[]).forEach((g) => gradesByStudentId.set(g.studentId, g))
-      }
-
-      // 3. Fusion : chaque élève de la classe apparaît, avec sa note existante ou vide
-      let baseRows: TeacherGradeRow[] = allClassStudents.map(s => {
-        const existing = gradesByStudentId.get(s.id)
-        if (existing) return existing
-        return {
-          studentId: s.id,
-          student: { id: s.id, firstName: s.firstName, lastName: s.lastName },
-          sequenceScore: null,
-          sequenceAverage: null,
-          observation: '',
-        }
-      })
-
-      // Ajouter d'éventuels élèves présents dans res.grades mais absents du roster de base
-      if (Array.isArray(res.grades)) {
-        for (const g of res.grades) {
-          if (!baseRows.some(r => r.studentId === g.studentId)) {
-            baseRows.push(g)
-          }
-        }
-      }
-
-      // Initialisation des notes et observations saisies
-      const draft = await getCachedData<{ notes: Record<string, number>; observations: Record<string, string> }>(draftKey)
-      if (draft) {
-        setLocalDraft(draft.data as { notes: Record<string, number>; observations: Record<string, string> })
-        setShowDraftPrompt(true)
-      } else {
-        const n: Record<string, number> = {}
-        const o: Record<string, string> = {}
-        baseRows.forEach((r) => {
-          n[r.studentId] = r.sequenceScore ?? r.sequenceAverage ?? 0
-          o[r.studentId] = r.observation || ''
-        })
-        setNotes(n)
-        setObservations(o)
-      }
-
-      // Créneau électif (LV2 ou A-Level) : restreindre aux élèves ayant réellement cette matière
-      if (selectedSubject) {
-        try {
-          const roster = await fetchApi(`/api/v2/teacher/roster?classId=${selectedClass}&subjectId=${selectedSubject}`, { credentials: 'include' }).then(r => r.json())
-          if (roster?.success && roster.data.filtered) {
-            interface RosterStudent { id: string; firstName: string; lastName: string; className?: string }
-            const byId = new Map(baseRows.map((g) => [g.studentId, g]))
-            const rosterStudents = roster.data.students as RosterStudent[]
-            baseRows = rosterStudents.map((s) => {
-              const existing = byId.get(s.id)
-              const student = existing?.student ?? { id: s.id, firstName: s.firstName, lastName: s.lastName }
-              return { ...(existing ?? { studentId: s.id }), student: { ...student, className: s.className } }
-            })
-            setRosterLabel(roster.data.label)
-            // Restreindre la saisie aux seuls élèves du roster (évite d'enregistrer une note à un non-électeur)
-            const allowed = new Set<string>(rosterStudents.map((s) => s.id))
-            setNotes(prev => Object.fromEntries(Object.entries(prev).filter(([id]) => allowed.has(id))))
-            setObservations(prev => Object.fromEntries(Object.entries(prev).filter(([id]) => allowed.has(id))))
-          }
-        } catch { /* réseau : on garde la liste complète */ }
-      }
-
-      setGrades(baseRows)
-      await putCachedData(`teacher:grades:${selectedClass}:${selectedSubject}:${selectedSequence}`, baseRows)
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t('grades_section.toast_error'))
-    } finally {
-      setLoading(false)
-    }
+  const handleCorrectGrade = (g: TeacherGradeRow) => {
+    state.setSelectedClass(g.classId || '')
+    state.setSelectedSubject(g.subjectId || '')
+    state.setSelectedSequence(g.sequenceId || '')
+    state.loadGrades()
   }
 
-  const saveDraft = async () => {
-    if (!selectedClass || !selectedSubject || !selectedSequence) return
-    const gradesPayload = Object.entries(notes).map(([studentId, value]) => ({
-      studentId, value, observation: observations[studentId] || '',
-    }))
-    const draftKey = `draft:grades:${selectedClass}:${selectedSubject}:${selectedSequence}`
-
-    if (!isOnline) {
-      await putCachedData(draftKey, { notes, observations }) // affichage optimiste immédiat, inchangé
-      // Correctif critique : sans cette ligne, les valeurs saisies hors ligne n'étaient JAMAIS mises
-      // en file d'attente réelle — seulement mises en cache de lecture (disposable, effacé à la
-      // déconnexion). Voir CORRECTION A du document de revue.
-      await addToQueue({
-        type: 'GRADE_DRAFT_SAVE',
-        endpoint: '/api/v2/grades/draft',
-        method: 'POST',
-        payload: { classId: selectedClass, subjectId: selectedSubject, sequenceId: selectedSequence, grades: gradesPayload },
-      })
-      onToast(t('grades_section.toast_draft_saved_local'), 'info')
-      return
-    }
-
-    setSaving(true)
-    try {
-      const res = await fetchApi('/api/v2/grades/draft', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ classId: selectedClass, subjectId: selectedSubject, sequenceId: selectedSequence, grades: gradesPayload }),
-      }).then(r => r.json())
-      if (res.success) {
-        onToast(t('grades_section.toast_draft_saved'), 'info')
-        await deleteCachedData(draftKey)
-      } else {
-        onToast(res.message || t('grades_section.toast_error'), 'error')
-      }
-    } catch (err: unknown) {
-      onToast(err instanceof Error ? err.message : t('grades_section.toast_error'), 'error')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const submitGrades = async () => {
-    if (!selectedClass || !selectedSubject || !selectedSequence) return
-    const draftKey = `draft:grades:${selectedClass}:${selectedSubject}:${selectedSequence}`
-    const gradesPayload = Object.entries(notes).map(([studentId, value]) => ({
-      studentId, value, observation: observations[studentId] || '',
-    }))
-
-    // Le verrouillage (DRAFT→LOCKED) est irréversible — la garde vient du registre
-    // (GRADE = FORT → addToQueue lève OfflineActionRefusedError hors-ligne), plus du composant.
-    // Le brouillon reste sauvegardé localement via saveDraft().
-    setSaving(true)
-    try {
-      if (!isOnline) {
-        await addToQueue({
-          type: 'GRADE',
-          endpoint: '/api/v2/grades/bulk-lock',
-          method: 'POST',
-          payload: { classId: selectedClass, sequenceId: selectedSequence },
-        })
-        onToast(t('grades_section.toast_submit_queued'), 'warning')
-        return
-      }
-
-      const draftRes = await fetchApi('/api/v2/grades/draft', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ classId: selectedClass, subjectId: selectedSubject, sequenceId: selectedSequence, grades: gradesPayload }),
-      }).then(r => r.json())
-      if (!draftRes.success) {
-        onToast(draftRes.message || t('grades_section.toast_submit_error'), 'error')
-        return
-      }
-
-      const res = await fetchApi('/api/v2/grades/bulk-lock', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ classId: selectedClass, sequenceId: selectedSequence }),
-      }).then(r => r.json())
-      if (res.success) {
-        onToast(res.data?.message || t('grades_section.toast_submitted').replace('{count}', String(res.data?.notesVerrouillees ?? '?')), 'success')
-        await deleteCachedData(draftKey)
-        loadGrades()
-      } else {
-        onToast(res.message || t('grades_section.toast_error'), 'error')
-      }
-    } catch (err: unknown) {
-      onToast(err instanceof OfflineActionRefusedError ? err.message : (err instanceof Error ? err.message : t('grades_section.toast_error')), 'error')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const downloadTemplate = () => {
-    if (!selectedClass || !selectedSubject || !selectedSequence) {
-      onToast(t('grades_section.toast_select_template'), 'warning')
-      return
-    }
-    const url = `/api/v2/grades/template?classId=${selectedClass}&subjectId=${selectedSubject}&sequenceId=${selectedSequence}`
-    const a = document.createElement('a')
-    a.href = url
-    a.click()
-  }
-
-  const importFromExcel = async (file: File) => {
-    if (!selectedClass || !selectedSubject || !selectedSequence) {
-      onToast(t('grades_section.toast_select_import'), 'warning')
-      return
-    }
-    setImporting(true)
-    setImportResult(null)
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('classId', selectedClass)
-    formData.append('subjectId', selectedSubject)
-    formData.append('sequenceId', selectedSequence)
-    try {
-      const res = await fetchApi('/api/v2/grades/import', {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      }).then(r => r.json())
-      if (res.success) {
-        setImportResult(res)
-        onToast(
-          t('grades_section.toast_import_result').replace('{imported}', String(res.imported)) + (res.errors.length > 0 ? ` · ${t('grades_section.toast_import_errors').replace('{count}', String(res.errors.length))}` : ''),
-          res.errors.length > 0 ? 'warning' : 'success',
-        )
-        loadGrades()
-      } else {
-        onToast(res.message || t('grades_section.toast_import_error'), 'error')
-      }
-    } catch (err: unknown) {
-      onToast(err instanceof Error ? err.message : t('grades_section.toast_import_error'), 'error')
-    } finally {
-      setImporting(false)
-    }
-  }
-
-  const validatedCount = grades.filter((g) => g.validationStatus === 'VALIDATED' || g.validationStatus === 'LOCKED').length
-  const draftCount = grades.filter((g) => g.validationStatus === 'DRAFT' || !g.validationStatus).length
-  const rejectedCount = grades.filter((g) => g.validationStatus === 'REJECTED').length
-  const modifiableCount = draftCount + rejectedCount
-
-  if (loading && !grades.length) {
+  if (state.loading && !state.grades.length) {
     return (
       <div className="px-4 py-4 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ fontSize: 12.5, color: 'var(--text3)', fontWeight: 600 }}>{tcommon('status.loading')}</div>
@@ -423,12 +33,12 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
     )
   }
 
-  if (error) {
+  if (state.error) {
     return (
       <div className="px-4 py-4 md:px-6 md:py-5" style={{ height: '100%', overflowY: 'auto' }}>
         <div style={{ padding: 20, textAlign: 'center' }}>
-          <div style={{ color: 'var(--red)', fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>{error}</div>
-          <button onClick={loadGrades}
+          <div style={{ color: 'var(--red)', fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>{state.error}</div>
+          <button onClick={state.loadGrades}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 13px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}>
             <RefreshCw size={13} strokeWidth={2} />{t('grades_section.retry')}
           </button>
@@ -446,7 +56,7 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
         </div>
       </div>
 
-      {!isOnline && (
+      {!state.isOnline && (
         <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 8, padding: '8px 14px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ display: 'flex', alignItems: 'center' }}><WifiOff size={15} strokeWidth={2} /></span>
           <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--amber)' }}>{t('grades_section.offline_banner')}</span>
@@ -454,7 +64,7 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
       )}
 
       {/* Prompt restauration brouillon */}
-      {showDraftPrompt && localDraft && (
+      {state.showDraftPrompt && state.localDraft && (
         <div style={{ background: 'var(--amber-light)', border: '1.5px solid var(--amber)', borderRadius: 10, padding: '10px 14px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <span style={{ display: 'flex', alignItems: 'center' }}><Save size={18} strokeWidth={2} /></span>
           <div style={{ flex: '1 1 200px' }}>
@@ -463,14 +73,20 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
             <button
-              onClick={() => { setNotes(localDraft.notes); setObservations(localDraft.observations); setShowDraftPrompt(false) }}
+              onClick={() => {
+                if (state.localDraft) {
+                  state.setNotes(state.localDraft.notes)
+                  state.setObservations(state.localDraft.observations)
+                }
+                state.setShowDraftPrompt(false)
+              }}
               className="flex-1 sm:flex-initial h-9 px-3 rounded-lg text-xs font-bold"
               style={{ background: 'var(--amber)', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
             >
               {t('grades_section.draft_prompt_restore')}
             </button>
             <button
-              onClick={() => setShowDraftPrompt(false)}
+              onClick={() => state.setShowDraftPrompt(false)}
               className="flex-1 sm:flex-initial h-9 px-3 rounded-lg text-xs font-bold"
               style={{ background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }}
             >
@@ -480,409 +96,66 @@ export default function SectionTeacherGrades({ onToast, user }: Props) {
         </div>
       )}
 
-      {grades.length > 0 && (
+      {state.grades.length > 0 && (
         <div style={{ background: 'var(--bg2)', borderRadius: 10, padding: '10px 14px', marginBottom: 10 }}>
           <div className="flex flex-col sm:flex-row sm:justify-between text-xs font-bold text-[var(--text2)] gap-1 mb-1.5">
-            <span>{classes.find((c) => c.id === selectedClass)?.name || ''} — {subjects.find((s) => s.id === selectedSubject)?.name || ''}</span>
-            <span style={{ color: 'var(--green)' }}>{t('grades_section.progress_text').replace('{validated}', String(validatedCount)).replace('{total}', String(grades.length)).replace('{pct}', String(grades.length ? Math.round(validatedCount / grades.length * 100) : 0))}</span>
+            <span>{state.classes.find((c) => c.id === state.selectedClass)?.name || ''} — {state.subjects.find((s) => s.id === state.selectedSubject)?.name || ''}</span>
+            <span style={{ color: 'var(--green)' }}>{t('grades_section.progress_text').replace('{validated}', String(state.validatedCount)).replace('{total}', String(state.grades.length)).replace('{pct}', String(state.grades.length ? Math.round(state.validatedCount / state.grades.length * 100) : 0))}</span>
           </div>
           <div style={{ height: 6, background: 'var(--border2)', borderRadius: 6, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${grades.length ? Math.round(validatedCount / grades.length * 100) : 0}%`, background: 'var(--green)', borderRadius: 6, transition: 'width 1s' }} />
+            <div style={{ height: '100%', width: `${state.grades.length ? Math.round(state.validatedCount / state.grades.length * 100) : 0}%`, background: 'var(--green)', borderRadius: 6, transition: 'width 1s' }} />
           </div>
         </div>
       )}
 
       {/* Filtres + table */}
       <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden', marginBottom: 14 }}>
-        <div className="p-2.5 sm:p-3 border-b border-[var(--border)] flex flex-col sm:flex-row gap-2 sm:gap-2.5 items-stretch sm:items-center flex-wrap">
-          {/* Grille compacte des filtres : 2 colonnes sur mobile, flex en ligne sur desktop */}
-          <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 sm:gap-2.5 flex-1 items-center">
-            <select
-              className="w-full sm:w-auto h-9"
-              style={filterSt}
-              value={selectedClass}
-              onChange={e => setSelectedClass(e.target.value)}
-            >
-              <option value="">{t('grades_section.filter_class')}</option>
-              {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+        <GradesFilterBar
+          classes={state.classes}
+          subjects={state.subjects}
+          sequences={state.sequences}
+          selectedClass={state.selectedClass}
+          selectedSubject={state.selectedSubject}
+          selectedSequence={state.selectedSequence}
+          loading={state.loading}
+          importing={state.importing}
+          rosterLabel={state.rosterLabel}
+          importResult={state.importResult}
+          onSelectClass={state.setSelectedClass}
+          onSelectSubject={state.setSelectedSubject}
+          onSelectSequence={state.setSelectedSequence}
+          onLoadGrades={state.loadGrades}
+          onDownloadTemplate={state.downloadTemplate}
+          onImportExcel={state.importFromExcel}
+          onDismissImportResult={() => state.setImportResult(null)}
+          t={t}
+        />
 
-            <select
-              className="w-full sm:w-auto h-9"
-              style={filterSt}
-              value={selectedSubject}
-              onChange={e => setSelectedSubject(e.target.value)}
-            >
-              <option value="">{t('grades_section.filter_subject')}</option>
-              {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-
-            <select
-              className="w-full sm:w-auto h-9"
-              style={filterSt}
-              value={selectedSequence}
-              onChange={e => setSelectedSequence(e.target.value)}
-            >
-              <option value="">{t('grades_section.filter_sequence')}</option>
-              {sequences.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-
-            <button
-              className="w-full sm:w-auto h-9 px-4 shrink-0 inline-flex items-center justify-center font-bold"
-              style={btnPrim}
-              onClick={loadGrades}
-              disabled={loading}
-            >
-              {t('grades_section.load')}
-            </button>
-          </div>
-
-          <div className="flex gap-2 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-[var(--border)]">
-            <button
-              className="flex-1 sm:flex-initial h-8.5 px-2.5 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1.5"
-              style={btnSec}
-              onClick={downloadTemplate}
-              title={t('grades_section.template_tooltip')}
-            >
-              <Download size={13} strokeWidth={2} />
-              <span>{t('grades_section.download_template')}</span>
-            </button>
-            <label
-              className="flex-1 sm:flex-initial h-8.5 px-2.5 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1.5"
-              style={{ ...btnSec, cursor: importing ? 'not-allowed' : 'pointer', opacity: importing ? 0.6 : 1 }}
-            >
-              {importing ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : <Upload size={13} strokeWidth={2} />}
-              <span>{importing ? t('grades_section.import_loading') : t('grades_section.import_excel')}</span>
-              <input
-                type="file"
-                accept=".xlsx,.xls"
-                style={{ display: 'none' }}
-                disabled={importing}
-                onChange={e => {
-                  const file = e.target.files?.[0]
-                  if (file) { importFromExcel(file); e.target.value = '' }
-                }}
-              />
-            </label>
-          </div>
-        </div>
-
-        {rosterLabel && (
-          <div style={{ background: 'var(--blue-light)', border: '1.5px solid var(--blue)', borderRadius: 8, padding: '8px 14px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ display: 'flex', alignItems: 'center' }}><Target size={15} strokeWidth={2} /></span>
-            <span style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--blue)' }}>{rosterLabel}</span>
-          </div>
-        )}
-
-        {importResult && (
-          <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: importResult.errors.length > 0 ? 8 : 0 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontWeight: 800, fontSize: 13, color: importResult.errors.length > 0 ? 'var(--amber)' : 'var(--green)' }}>
-                {importResult.errors.length > 0 ? <AlertTriangle size={14} strokeWidth={2} /> : <CheckCircle2 size={14} strokeWidth={2} />}
-                {t('grades_section.toast_import_result').replace('{imported}', String(importResult.imported))}
-                {importResult.errors.length > 0 && ` · ${t('grades_section.toast_import_errors').replace('{count}', String(importResult.errors.length))}`}
-              </span>
-              <button
-                onClick={() => setImportResult(null)}
-                style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}>
-                <X size={15} strokeWidth={2} />
-              </button>
-            </div>
-            {importResult.errors.length > 0 && (
-              <div style={{ background: 'var(--red-light)', border: '1px solid rgba(220,38,38,0.2)', borderRadius: 7, overflow: 'hidden' }}>
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
-                    <thead>
-                      <tr>
-                        {[t('grades_section.import_table_line'), t('grades_section.import_table_matricule'), t('grades_section.import_table_error')].map(h => (
-                          <th key={h} style={{ ...thSt, background: 'var(--red-light)', color: 'var(--red)', padding: '6px 10px' }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {importResult.errors.map((e, i) => (
-                        <tr key={i} style={{ borderTop: '1px solid rgba(220,38,38,0.1)' }}>
-                          <td style={{ ...tdSt, color: 'var(--red)', fontWeight: 700, width: 50 }}>{e.line}</td>
-                          <td style={{ ...tdSt, fontWeight: 700 }}>{e.matricule || '—'}</td>
-                          <td style={{ ...tdSt, color: 'var(--red)' }}>{e.error}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {grades.length > 0 && (
-          <>
-            {/* ── VUE MOBILE: Cartes de saisie des notes tactiles ── */}
-            <div className="md:hidden divide-y divide-[var(--border)]">
-              {grades.map((g, i: number) => {
-                const sid = g.studentId || g.student?.id || ''
-                const name = g.student ? `${g.student.firstName} ${g.student.lastName}` : t('grades_section.unknown_student')
-                const status = g.validationStatus || 'DRAFT'
-                const sColors: Record<string, { bg: string; color: string }> = {
-                  DRAFT: { bg: 'var(--bg2)', color: 'var(--text2)' },
-                  SUBMITTED: { bg: 'var(--amber-light)', color: 'var(--amber)' },
-                  VALIDATED: { bg: 'var(--green-light)', color: 'var(--green)' },
-                  REJECTED: { bg: 'var(--red-light)', color: 'var(--red)' },
-                  LOCKED: { bg: 'var(--blue-light)', color: 'var(--blue)' },
-                }
-                const sc = sColors[status] || sColors.DRAFT
-                const isEditable = status === 'DRAFT' || status === 'REJECTED'
-                const currentScore = notes[sid] ?? 0
-
-                return (
-                  <div key={sid} className="p-3.5 space-y-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="w-6 h-6 rounded-md bg-[var(--bg2)] text-[11px] font-bold text-[var(--text3)] flex items-center justify-center shrink-0">
-                          {i + 1}
-                        </span>
-                        <div className="min-w-0">
-                          <div className="text-[13px] font-bold text-[var(--text)] truncate">
-                            {name}
-                          </div>
-                          {rosterLabel && g.student?.className && (
-                            <div className="text-[11px] font-semibold text-[var(--text3)]">
-                              {g.student.className}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: 10.5, fontWeight: 700, background: sc.bg, color: sc.color, whiteSpace: 'nowrap' }}>
-                        {status === 'DRAFT' ? t('grades_section.status_draft') : status === 'SUBMITTED' ? t('grades_section.status_submitted') : status === 'VALIDATED' ? t('grades_section.status_validated') : status === 'REJECTED' ? t('grades_section.status_rejected') : status === 'LOCKED' ? t('grades_section.status_locked') : status}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <input
-                          type="number"
-                          min={0}
-                          max={20}
-                          step={0.25}
-                          value={notes[sid] ?? 0}
-                          onChange={e => {
-                            const a = { ...notes }
-                            a[sid] = Number(e.target.value)
-                            setNotes(a)
-                          }}
-                          disabled={!isEditable}
-                          className="h-11 w-20 rounded-lg text-center text-base font-black border"
-                          style={{
-                            borderColor: 'var(--border2)',
-                            background: !isEditable ? 'var(--bg2)' : 'var(--surface)',
-                            color: currentScore < 10 ? 'var(--red)' : currentScore >= 16 ? 'var(--green)' : 'var(--text)',
-                            fontFamily: 'inherit',
-                          }}
-                        />
-                        <span className="text-xs font-bold text-[var(--text3)]">/ 20</span>
-                      </div>
-
-                      <input
-                        type="text"
-                        value={observations[sid] || ''}
-                        placeholder={t('grades_section.observation_placeholder')}
-                        onChange={e => {
-                          const a = { ...observations }
-                          a[sid] = e.target.value
-                          setObservations(a)
-                        }}
-                        disabled={!isEditable}
-                        className="h-11 flex-1 px-3 text-xs rounded-lg border outline-none min-w-0"
-                        style={{
-                          borderColor: 'var(--border2)',
-                          background: !isEditable ? 'var(--bg2)' : 'var(--surface)',
-                          color: 'var(--text)',
-                          fontFamily: 'inherit',
-                        }}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* ── VUE DESKTOP: Table complète conservée intacte ── */}
-            <div className="hidden md:block" style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
-                <thead>
-                  <tr>{[t('grades_section.table_num'), t('grades_section.table_student'), t('grades_section.table_grade'), t('grades_section.table_observation'), t('grades_section.table_status')].map(h => (
-                    <th key={h} style={thSt}>{h}</th>
-                  ))}</tr>
-                </thead>
-                <tbody>
-                  {grades.map((g, i: number) => {
-                    const sid = g.studentId || g.student?.id || ''
-                    const name = g.student ? `${g.student.firstName} ${g.student.lastName}` : t('grades_section.unknown_student')
-                    const status = g.validationStatus || 'DRAFT'
-                    const sColors: Record<string, { bg: string; color: string }> = {
-                      DRAFT: { bg: 'var(--bg2)', color: 'var(--text2)' },
-                      SUBMITTED: { bg: 'var(--amber-light)', color: 'var(--amber)' },
-                      VALIDATED: { bg: 'var(--green-light)', color: 'var(--green)' },
-                      REJECTED: { bg: 'var(--red-light)', color: 'var(--red)' },
-                      LOCKED: { bg: 'var(--blue-light)', color: 'var(--blue)' },
-                    }
-                    const sc = sColors[status] || sColors.DRAFT
-                    return (
-                      <tr key={sid}
-                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg)'}
-                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface)'}>
-                        <td style={{ ...tdSt, color: 'var(--text3)', width: 38 }}>{i + 1}</td>
-                        <td style={{ ...tdSt, fontWeight: 700, color: 'var(--text)' }}>
-                          {name}
-                          {rosterLabel && g.student?.className && <span style={{ fontWeight: 600, color: 'var(--text3)', fontSize: 11.5 }}> ({g.student.className})</span>}
-                        </td>
-                        <td style={tdSt}>
-                          <input type="number" min={0} max={20} step={0.25}
-                            value={notes[sid] ?? 0}
-                            onChange={e => {
-                              const a = { ...notes }
-                              a[sid] = Number(e.target.value)
-                              setNotes(a)
-                            }}
-                            disabled={status !== 'DRAFT' && status !== 'REJECTED'}
-                            style={{ width: 68, padding: '5px 8px', border: '1.5px solid var(--border2)', borderRadius: 7, fontSize: 13.5, fontWeight: 800, textAlign: 'center', fontFamily: 'inherit', outline: 'none', background: status !== 'DRAFT' && status !== 'REJECTED' ? 'var(--bg2)' : 'var(--surface)', color: (notes[sid] ?? 0) < 10 ? 'var(--red)' : (notes[sid] ?? 0) >= 16 ? 'var(--green)' : 'var(--text)' }}
-                          />
-                        </td>
-                        <td style={tdSt}>
-                          <input type="text" value={observations[sid] || ''} placeholder={t('grades_section.observation_placeholder')}
-                            onChange={e => {
-                              const a = { ...observations }
-                              a[sid] = e.target.value
-                              setObservations(a)
-                            }}
-                            disabled={status !== 'DRAFT' && status !== 'REJECTED'}
-                            style={{ width: 200, padding: '5px 9px', border: '1.5px solid var(--border2)', borderRadius: 7, fontSize: 12, fontFamily: 'inherit', outline: 'none', background: status !== 'DRAFT' && status !== 'REJECTED' ? 'var(--bg2)' : 'var(--surface)', color: 'var(--text)' }}
-                          />
-                        </td>
-                        <td style={tdSt}>
-                          <span style={{ padding: '2.5px 8px', borderRadius: 14, fontSize: 11, fontWeight: 700, background: sc.bg, color: sc.color }}>
-                            {status === 'DRAFT' ? t('grades_section.status_draft') : status === 'SUBMITTED' ? t('grades_section.status_submitted') : status === 'VALIDATED' ? t('grades_section.status_validated') : status === 'REJECTED' ? t('grades_section.status_rejected') : status === 'LOCKED' ? t('grades_section.status_locked') : status}
-                          </span>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Actions de sauvegarde & soumission */}
-            <div className="p-3 sm:p-3.5 border-t border-[var(--border)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <span className="text-xs text-[var(--text3)] font-semibold">
-                {t('grades_section.summary_draft').replace('{count}', String(draftCount))}{rejectedCount > 0 ? ` · ${t('grades_section.summary_rejected').replace('{count}', String(rejectedCount))}` : ''} · {t('grades_section.summary_submitted').replace('{count}', String(grades.filter((g) => g.validationStatus === 'SUBMITTED').length))}
-              </span>
-              <div className="flex gap-2 w-full sm:w-auto">
-                {modifiableCount > 0 ? (
-                  <>
-                    <button
-                      className="flex-1 sm:flex-initial h-11 sm:h-9 px-4 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-2 cursor-pointer"
-                      style={btnSec}
-                      onClick={saveDraft}
-                      disabled={saving}
-                    >
-                      {saving ? <Loader2 size={13} strokeWidth={2} className="animate-spin" /> : <Save size={13} strokeWidth={2} />}
-                      <span>{saving ? '...' : t('grades_section.draft_save')}</span>
-                    </button>
-                    <button
-                      className="flex-1 sm:flex-initial h-11 sm:h-9 px-4 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-2 text-white cursor-pointer"
-                      style={{ ...btnPrim, opacity: !isOnline ? 0.5 : 1, cursor: !isOnline ? 'not-allowed' : 'pointer' }}
-                      onClick={submitGrades}
-                      disabled={saving || !isOnline}
-                    >
-                      {!isOnline ? <WifiOff size={13} strokeWidth={2} /> : <Upload size={13} strokeWidth={2} />}
-                      <span>{saving ? '...' : isOnline ? t('grades_section.submit_online') : t('grades_section.submit_offline')}</span>
-                    </button>
-                  </>
-                ) : (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12.5, color: 'var(--green)', fontWeight: 700 }}>
-                    <CheckCircle2 size={14} strokeWidth={2} />
-                    {t('grades_section.all_submitted')}
-                  </span>
-                )}
-              </div>
-            </div>
-          </>
+        {state.grades.length > 0 && (
+          <GradesEntryList
+            grades={state.grades}
+            notes={state.notes}
+            observations={state.observations}
+            rosterLabel={state.rosterLabel}
+            saving={state.saving}
+            isOnline={state.isOnline}
+            draftCount={state.draftCount}
+            rejectedCount={state.rejectedCount}
+            modifiableCount={state.modifiableCount}
+            onNoteChange={(sid, val) => state.setNotes(prev => ({ ...prev, [sid]: val }))}
+            onObservationChange={(sid, val) => state.setObservations(prev => ({ ...prev, [sid]: val }))}
+            onSaveDraft={state.saveDraft}
+            onSubmitGrades={state.submitGrades}
+            t={t}
+          />
         )}
       </div>
 
-      {/* Notes rejetées */}
-      {rejectedGrades.length > 0 && (
-        <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1.5px solid rgba(220,38,38,0.3)', overflow: 'hidden' }}>
-          <div style={{ padding: '8px 14px', background: 'var(--red-light)', borderBottom: '1px solid rgba(220,38,38,0.15)', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <X size={14} strokeWidth={2} color="var(--red)" />
-            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--red)' }}>{t('grades_section.rejected_title').replace('{count}', String(rejectedGrades.length))}</span>
-          </div>
-          {/* Vue mobile: Cartes notes rejetées */}
-          <div className="md:hidden divide-y divide-[rgba(220,38,38,0.15)]">
-            {rejectedGrades.map((g) => (
-              <div key={g.id} className="p-3.5 space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className="text-[13px] font-bold text-[var(--text)]">{g.student?.firstName} {g.student?.lastName}</div>
-                    <div className="text-xs font-black text-[var(--red)] mt-0.5">{g.sequenceScore ?? '?'}/20</div>
-                  </div>
-                  <button
-                    className="h-9 px-3 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shrink-0"
-                    style={{ background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid rgba(217,119,6,0.3)', fontFamily: 'inherit' }}
-                    onClick={() => {
-                      setSelectedClass(g.classId || '')
-                      setSelectedSubject(g.subjectId || '')
-                      setSelectedSequence(g.sequenceId || '')
-                      loadGrades()
-                    }}>
-                    <Pencil size={12} strokeWidth={2} />
-                    <span>{t('grades_section.rejected_correct')}</span>
-                  </button>
-                </div>
-                <div className="text-xs text-[var(--red)] font-semibold bg-[rgba(220,38,38,0.06)] p-2 rounded-lg">
-                  {g.rejectionReason || t('grades_section.rejected_no_reason')}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Vue desktop: Table */}
-          <div className="hidden md:block" style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
-              <thead><tr>{[t('grades_section.rejected_table_student'), t('grades_section.rejected_table_grade'), t('grades_section.rejected_table_reason'), t('grades_section.rejected_table_actions')].map(h => <th key={h} style={thSt}>{h}</th>)}</tr></thead>
-              <tbody>
-                {rejectedGrades.map((g) => (
-                  <tr key={g.id}>
-                    <td style={{ ...tdSt, fontWeight: 700, color: 'var(--text)' }}>{g.student?.firstName} {g.student?.lastName}</td>
-                    <td style={{ ...tdSt, fontWeight: 800, color: 'var(--red)' }}>{g.sequenceScore ?? '?'}/20</td>
-                    <td style={{ ...tdSt, color: 'var(--red)', fontWeight: 700 }}>{g.rejectionReason || t('grades_section.rejected_no_reason')}</td>
-                    <td style={tdSt}>
-                      <button
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, fontSize: 12, fontWeight: 800, background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid rgba(217,119,6,0.3)', cursor: 'pointer', fontFamily: 'inherit' }}
-                        onClick={() => {
-                          setSelectedClass(g.classId || '')
-                          setSelectedSubject(g.subjectId || '')
-                          setSelectedSequence(g.sequenceId || '')
-                          loadGrades()
-                        }}>
-                        <Pencil size={13} strokeWidth={2} />{t('grades_section.rejected_correct')}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      <RejectedGradesPanel
+        rejectedGrades={state.rejectedGrades}
+        onCorrectGrade={handleCorrectGrade}
+        t={t}
+      />
     </div>
   )
 }
-
-const sTitle: React.CSSProperties = { fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 17, fontWeight: 700, color: 'var(--text)' }
-const sSub: React.CSSProperties = { fontSize: 12, color: 'var(--text3)', marginTop: 2 }
-const btnPrim: React.CSSProperties = { padding: '6px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
-const btnSec: React.CSSProperties = { padding: '6px 12px', borderRadius: 7, fontSize: 12.5, fontWeight: 700, background: 'var(--surface)', color: 'var(--text2)', border: '1.5px solid var(--border2)', cursor: 'pointer', fontFamily: 'inherit' }
-const filterSt: React.CSSProperties = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '5px 24px 5px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text)', cursor: 'pointer', outline: 'none', fontFamily: 'inherit', appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238c6b45' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }
-const thSt: React.CSSProperties = { padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 800, color: 'var(--text3)', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }
-const tdSt: React.CSSProperties = { padding: '8.5px 12px', fontSize: 12.5, color: 'var(--text2)', borderBottom: '1px solid var(--bg)', verticalAlign: 'middle' }

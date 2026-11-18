@@ -1,16 +1,18 @@
 import { z } from 'zod';
 import {
   type ActionDefinition,
+  defineAction,
   resolveClass,
   resolveTeacher,
   resolveSubject,
 } from '../catalogShared';
+import type { RoomStatus, RoomType } from '@domain/types/enums';
 import type { AdminActionDeps } from '../adminActionCatalog';
 
 export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefinition[] {
   return [
     // 1. Créer une classe — NON destructif
-    {
+    defineAction({
       name: 'creer_classe',
       domain: 'classes',
       description:
@@ -24,10 +26,7 @@ export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefi
         capacity: z.number().int().positive().optional().describe('Effectif maximum'),
       }),
       async execute(input, ctx) {
-        const anneeCourante = await ctx.prisma.academicYear.findFirst({
-          where: { schoolId: ctx.schoolId, isCurrent: true },
-          select: { id: true },
-        });
+        const anneeCourante = await ctx.data.adminOps.findCurrentAcademicYearId(ctx.schoolId);
         if (!anneeCourante) throw new Error('Aucune année académique courante — impossible de créer une classe.');
         const r = await deps.creerClasse.execute({
           schoolId: ctx.schoolId,
@@ -44,17 +43,17 @@ export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefi
           entity: 'class',
         };
       },
-      async undo(_params, undoData, ctx) {
+      async undo(_params, undoData: { classeId: string }, ctx) {
         await deps.supprimerClasse.execute({
           classeId: String(undoData.classeId),
           schoolId: ctx.schoolId,
           demandeurId: ctx.userId,
         });
       },
-    },
+    }),
 
     // 2. Créer une matière — NON destructif
-    {
+    defineAction({
       name: 'creer_matiere',
       domain: 'matieres',
       description: "Crée une nouvelle matière dans l'établissement.",
@@ -80,7 +79,7 @@ export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefi
           entity: 'subject',
         };
       },
-      async undo(_params, undoData, ctx) {
+      async undo(_params, undoData: { matiereId: string }, ctx) {
         await deps.supprimerMatiere.execute({
           matiereId: String(undoData.matiereId),
           schoolId: ctx.schoolId,
@@ -88,10 +87,10 @@ export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefi
           demandeurId: ctx.userId,
         });
       },
-    },
+    }),
 
     // 3. Assigner un enseignant à une matière — NON destructif
-    {
+    defineAction({
       name: 'assigner_enseignant_matiere',
       domain: 'matieres',
       description: "Assigne un enseignant à une matière (l'enseignant pourra y saisir des notes).",
@@ -118,7 +117,7 @@ export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefi
           entity: 'subject',
         };
       },
-      async undo(_params, undoData, ctx) {
+      async undo(_params, undoData: { teacherUserId: string; matiereId: string }, ctx) {
         await deps.assignerEnseignant.execute({
           teacherUserId: String(undoData.teacherUserId),
           matiereId: String(undoData.matiereId),
@@ -127,10 +126,10 @@ export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefi
           action: 'RETIRER',
         });
       },
-    },
+    }),
 
     // 4. Nommer un professeur principal — NON destructif (réversible)
-    {
+    defineAction({
       name: 'assigner_professeur_principal',
       domain: 'classes',
       description: "Nomme un enseignant professeur principal d'une classe.",
@@ -143,10 +142,7 @@ export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefi
       async execute(input, ctx) {
         const classe = await resolveClass(ctx, input.className);
         const teacher = await resolveTeacher(ctx, input.teacherName);
-        const before = await ctx.prisma.class.findUnique({
-          where: { id: classe.id },
-          select: { professorPrincipalId: true },
-        });
+        const before = await ctx.data.adminOps.findClassPrincipalId(ctx.schoolId, classe.id);
         await deps.assignerProfesseur.execute({
           classeId: classe.id,
           teacherUserId: teacher.id,
@@ -160,9 +156,9 @@ export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefi
           entity: 'class',
         };
       },
-      async undo(_params, undoData, ctx) {
+      async undo(_params, undoData: { classeId: string; previousTeacherUserId: string | null }, ctx) {
         const classeId = String(undoData.classeId);
-        const previous = undoData.previousTeacherUserId as string | null;
+        const previous = undoData.previousTeacherUserId;
         if (previous) {
           await deps.assignerProfesseur.execute({
             classeId,
@@ -171,13 +167,13 @@ export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefi
             demandeurRole: ctx.role,
           });
         } else {
-          await ctx.prisma.class.update({ where: { id: classeId }, data: { professorPrincipalId: null } });
+          await ctx.data.adminOps.clearClassPrincipal(ctx.schoolId, classeId);
         }
       },
-    },
+    }),
 
     // 5. Supprimer une classe — DESTRUCTIF
-    {
+    defineAction({
       name: 'supprimer_classe',
       domain: 'classes',
       description: 'Met une classe à la corbeille (récupérable pendant 30 jours).',
@@ -188,12 +184,10 @@ export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefi
       }),
       async summarizeDestructive(input, ctx) {
         const classe = await resolveClass(ctx, input.className);
-        const [students, grades] = await Promise.all([
-          ctx.prisma.enrollment.count({
-            where: { classId: classe.id, status: 'ACTIVE', academicYear: { isCurrent: true } },
-          }),
-          ctx.prisma.grade.count({ where: { classId: classe.id } }),
-        ]);
+        const { activeEnrollments: students, grades } = await ctx.data.adminOps.countClassDeletionImpact(
+          ctx.schoolId,
+          classe.id,
+        );
         const parts = [`${students} élève(s)`];
         if (grades > 0) parts.push(`${grades} note(s)`);
         parts.push('leur historique de présence et de paiement');
@@ -210,10 +204,10 @@ export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefi
       async undo() {
         throw new Error("Restaurez cette classe depuis l'écran Corbeille plutôt que depuis cette conversation.");
       },
-    },
+    }),
 
     // 6. Supprimer une matière — DESTRUCTIF
-    {
+    defineAction({
       name: 'supprimer_matiere',
       domain: 'matieres',
       description: 'Met une matière à la corbeille (récupérable pendant 30 jours).',
@@ -224,7 +218,7 @@ export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefi
       }),
       async summarizeDestructive(input, ctx) {
         const subject = await resolveSubject(ctx, input.subjectName);
-        const grades = await ctx.prisma.grade.count({ where: { subjectId: subject.id } });
+        const grades = await ctx.data.adminOps.countSubjectGrades(ctx.schoolId, subject.id);
         const suffix = grades > 0 ? ` — ${grades} note(s) rattachée(s) restent intactes` : '';
         return (
           `Cette action va mettre à la corbeille la matière « ${subject.name} »${suffix}. ` +
@@ -244,10 +238,10 @@ export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefi
       async undo() {
         throw new Error("Restaurez cette matière depuis l'écran Corbeille plutôt que depuis cette conversation.");
       },
-    },
+    }),
 
     // 14. Modifier une matière — NON destructif
-    {
+    defineAction({
       name: 'modifier_matiere',
       domain: 'matieres',
       description: 'Modifie une matière existante (nom, coefficient, heures par semaine).',
@@ -261,10 +255,7 @@ export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefi
       }),
       async execute(input, ctx) {
         const subject = await resolveSubject(ctx, input.subjectName);
-        const before = await ctx.prisma.subject.findUnique({
-          where: { id: subject.id },
-          select: { name: true, coefficient: true, hoursPerWeek: true },
-        });
+        const before = await ctx.data.adminOps.findSubjectEditableFields(ctx.schoolId, subject.id);
         await deps.modifierMatiere.execute({
           matiereId: subject.id,
           schoolId: ctx.schoolId,
@@ -285,19 +276,23 @@ export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefi
           entity: 'subject',
         };
       },
-      async undo(_params, undoData, ctx) {
+      async undo(
+        _params,
+        undoData: { matiereId: string; name?: string; coefficient?: number; hoursPerWeek?: number },
+        ctx,
+      ) {
         await deps.modifierMatiere.execute({
           matiereId: String(undoData.matiereId),
           schoolId: ctx.schoolId,
           demandeurRole: ctx.role,
-          name: undoData.name as string | undefined,
-          coefficient: undoData.coefficient as number | undefined,
-          hoursPerWeek: undoData.hoursPerWeek as number | undefined,
+          name: undoData.name,
+          coefficient: undoData.coefficient,
+          hoursPerWeek: undoData.hoursPerWeek,
         });
       },
-    },
+    }),
 
-    {
+    defineAction({
       name: 'creer_salles',
       domain: 'salle_gestion',
       description: "Crée plusieurs salles physiques en une seule action. Utilise cette action pour une liste de salles, par exemple pour créer 12 salles.",
@@ -339,18 +334,15 @@ export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefi
           entity: 'room',
         };
       },
-      async undo(_params, undoData, ctx) {
-        const roomIds = Array.isArray(undoData.roomIds) ? undoData.roomIds.map(String) : [];
+      async undo(_params, undoData: { roomIds: string[] }, ctx) {
+        const roomIds = (Array.isArray(undoData.roomIds) ? undoData.roomIds : []).map((id: unknown) => String(id));
         if (roomIds.length === 0) return;
-        const result = await ctx.prisma.room.updateMany({
-          where: { id: { in: roomIds }, schoolId: ctx.schoolId, deletedAt: null },
-          data: { deletedAt: new Date(), deletedById: ctx.userId },
-        });
-        if (result.count !== roomIds.length) throw new Error('Toutes les salles ne peuvent pas être annulées.');
+        const count = await ctx.data.adminOps.softDeleteRooms(ctx.schoolId, roomIds, ctx.userId);
+        if (count !== roomIds.length) throw new Error('Toutes les salles ne peuvent pas être annulées.');
       },
-    },
+    }),
 
-    {
+    defineAction({
       name: 'creer_salle',
       domain: 'salle_gestion',
       description: "Crée une salle physique dans l'établissement.",
@@ -377,16 +369,13 @@ export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefi
           entity: 'room',
         };
       },
-      async undo(_params, undoData, ctx) {
-        const result = await ctx.prisma.room.updateMany({
-          where: { id: String(undoData.roomId), schoolId: ctx.schoolId, deletedAt: null },
-          data: { deletedAt: new Date(), deletedById: ctx.userId },
-        });
-        if (result.count === 0) throw new Error('La salle à annuler est introuvable ou déjà supprimée.');
+      async undo(_params, undoData: { roomId: string }, ctx) {
+        const count = await ctx.data.adminOps.softDeleteRooms(ctx.schoolId, [String(undoData.roomId)], ctx.userId);
+        if (count === 0) throw new Error('La salle à annuler est introuvable ou déjà supprimée.');
       },
-    },
+    }),
 
-    {
+    defineAction({
       name: 'modifier_salle',
       domain: 'salle_gestion',
       description: 'Modifie une salle physique existante.',
@@ -401,10 +390,7 @@ export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefi
         status: z.enum(['ACTIVE', 'MAINTENANCE', 'INACTIVE']).optional().describe('Nouveau statut'),
       }),
       async execute(input, ctx) {
-        const room = await ctx.prisma.room.findFirst({
-          where: { schoolId: ctx.schoolId, name: input.roomName, deletedAt: null },
-          select: { id: true, name: true, type: true, capacity: true, equipment: true, status: true },
-        });
+        const room = await ctx.data.adminOps.findRoomByName(ctx.schoolId, input.roomName);
         if (!room) throw new Error(`Aucune salle nommée « ${input.roomName} » n'existe dans votre établissement.`);
         const hasChange = input.newName !== undefined || input.type !== undefined || input.capacity !== undefined || input.equipment !== undefined || input.status !== undefined;
         if (!hasChange) throw new Error('Précise au moins un champ à modifier pour la salle.');
@@ -432,23 +418,31 @@ export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefi
           entity: 'room',
         };
       },
-      async undo(_params, undoData, ctx) {
-        const result = await ctx.prisma.room.updateMany({
-          where: { id: String(undoData.roomId), schoolId: ctx.schoolId, deletedAt: null },
-          data: {
-            name: undoData.name as string,
-            type: undoData.type as 'NORMAL' | 'LABORATORY' | 'WORKSHOP' | 'COMPUTER_LAB' | 'FIELD',
-            capacity: undoData.capacity as number,
-            equipment: undoData.equipment as string[],
-            status: undoData.status as 'ACTIVE' | 'MAINTENANCE' | 'INACTIVE',
-          },
+      async undo(
+        _params,
+        undoData: {
+          roomId: string;
+          name: string;
+          type: RoomType;
+          capacity: number;
+          equipment: string[];
+          status: RoomStatus;
+        },
+        ctx,
+      ) {
+        const count = await ctx.data.adminOps.restoreRoomSnapshot(ctx.schoolId, String(undoData.roomId), {
+          name: undoData.name,
+          type: undoData.type,
+          capacity: undoData.capacity,
+          equipment: undoData.equipment,
+          status: undoData.status,
         });
-        if (result.count === 0) throw new Error('La salle à restaurer est introuvable.');
+        if (count === 0) throw new Error('La salle à restaurer est introuvable.');
       },
-    },
+    }),
 
     // 50. Professeur principal d'une classe — LECTURE SEULE
-    {
+    defineAction({
       name: 'professeur_principal_classe',
       domain: 'classes',
       description: "Indique qui est le professeur principal d'une classe donnée.",
@@ -457,18 +451,15 @@ export function buildAdminClassSubjectActions(deps: AdminActionDeps): ActionDefi
       inputSchema: z.object({ className: z.string().min(1) }),
       async execute(input, ctx) {
         const classe = await resolveClass(ctx, input.className);
-        const c = await ctx.prisma.class.findUnique({
-          where: { id: classe.id },
-          select: { professorPrincipal: { select: { firstName: true, lastName: true } } },
-        });
-        const resultLabel = c?.professorPrincipal
-          ? `Le professeur principal de ${classe.name} est ${c.professorPrincipal.firstName ?? ''} ${c.professorPrincipal.lastName ?? ''}`.trim()
+        const principal = await ctx.data.adminOps.findClassPrincipal(ctx.schoolId, classe.id);
+        const resultLabel = principal
+          ? `Le professeur principal de ${classe.name} est ${principal.firstName ?? ''} ${principal.lastName ?? ''}`.trim()
           : `${classe.name} n'a pas encore de professeur principal assigné.`;
         return { resultLabel, section: 'classes', entity: 'class' };
       },
       async undo() {
         throw new Error("Cette action est une simple consultation, il n'y a rien à annuler.");
       },
-    },
+    }),
   ];
 }

@@ -2,82 +2,16 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, CheckCircle2, ArrowLeft, KeyRound, Clock, EyeOff, Eye, Check } from 'lucide-react'
+import { Check } from 'lucide-react'
 import LanguageSwitch from '@/components/LanguageSwitch'
+import type { AlertState } from './_components/GroupLoginPrimitives'
+import {
+  GroupStep1Credentials,
+  GroupStep2Otp,
+  GroupStep3Mfa,
+} from './_components/GroupLoginSteps'
 
 const API_BASE = ''
-
-type AlertState = { msg: string; type: 'error' | 'success' }
-
-function maskEmail(email: string) {
-  const [local, domain] = email.split('@')
-  return (local?.[0] ?? '') + '***@' + (domain ?? '')
-}
-
-function Alert({ a }: { a: AlertState }) {
-  return (
-    <div style={{
-      padding: '12px 14px', borderRadius: 10, fontSize: 13, fontWeight: 700,
-      marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8,
-      background: a.type === 'error' ? 'var(--red-light)' : 'var(--green-light)',
-      border: a.type === 'error' ? '1px solid rgba(217,72,31,0.2)' : '1px solid rgba(47,143,91,0.2)',
-      color: a.type === 'error' ? 'var(--red)' : 'var(--success)'
-    }}>
-      <span style={{ display: 'flex', alignItems: 'center' }}>{a.type === 'error' ? <AlertTriangle size={16} /> : <CheckCircle2 size={16} />}</span><span>{a.msg}</span>
-    </div>
-  )
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ marginBottom: 16 }}>
-      <label style={{ fontSize: 12, fontWeight: 800, color: 'var(--text2)', marginBottom: 6, display: 'block', letterSpacing: '0.4px', textTransform: 'uppercase' }}>
-        {label}
-      </label>
-      {children}
-    </div>
-  )
-}
-
-function BackBtn({ onClick }: { onClick: () => void }) {
-  return (
-    <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: 'var(--text3)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit', marginBottom: 16, padding: 0 }}>
-      <ArrowLeft size={16} /> Retour
-    </button>
-  )
-}
-
-function FormHeader({ title, sub }: { title: string; sub: React.ReactNode }) {
-  return (
-    <div style={{ marginBottom: 20 }}>
-      <h1 style={{ fontFamily: 'var(--font-spectral),Spectral,serif', fontSize: 24, fontWeight: 700, color: 'var(--text)', margin: '0 0 6px', lineHeight: 1.2 }}>{title}</h1>
-      <div style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 500, lineHeight: 1.4 }}>{sub}</div>
-    </div>
-  )
-}
-
-function SubmitBtn({ loading, onClick, children }: { loading: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button onClick={onClick} disabled={loading} style={{
-      width: '100%', minHeight: 48, padding: 12, background: 'var(--primary)',
-      color: 'white', fontSize: 15, fontWeight: 800, border: 'none', borderRadius: 10,
-      cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'background 0.2s',
-      boxShadow: '0 4px 14px rgba(180,83,42,0.22)', marginTop: 8,
-      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: loading ? 0.85 : 1
-    }}
-    onMouseEnter={e => !loading && (e.currentTarget.style.background = 'var(--primary-hover)')}
-    onMouseLeave={e => !loading && (e.currentTarget.style.background = 'var(--primary)')}
-    >
-      {loading ? <div style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} /> : children}
-    </button>
-  )
-}
-
-const inputBaseStyle: React.CSSProperties = {
-  width: '100%', minHeight: 48, padding: '12px 14px', background: 'var(--surface)',
-  border: '1.5px solid var(--border)', borderRadius: 10, color: 'var(--text)',
-  fontSize: 16, fontFamily: 'inherit', fontWeight: 600, outline: 'none', transition: 'all 0.2s'
-}
 
 export default function GroupOwnerLogin() {
   const router = useRouter()
@@ -122,7 +56,7 @@ export default function GroupOwnerLogin() {
   useEffect(() => {
     if (step === 3 && !isRecovery) {
       setTotpSecs(30)
-      totpRef.current = setInterval(() => setTotpSecs(s => s > 1 ? s - 1 : 30), 1000)
+      totpRef.current = setInterval(() => setTotpSecs(s => (s > 1 ? s - 1 : 30)), 1000)
       return () => { if (totpRef.current) clearInterval(totpRef.current) }
     }
     if (totpRef.current) clearInterval(totpRef.current)
@@ -150,7 +84,7 @@ export default function GroupOwnerLogin() {
       setTimerSecs(timerSecsRef.current)
       if (timerSecsRef.current === 120) setResendEnabled(true)
       if (timerSecsRef.current <= 0) {
-        clearInterval(timerRef.current!)
+        if (timerRef.current) clearInterval(timerRef.current)
         setAlert2({ msg: 'Le code a expiré', type: 'error' })
       }
     }, 1000)
@@ -180,50 +114,8 @@ export default function GroupOwnerLogin() {
     }
   }
 
-  const handleOtpInput = (idx: number, val: string) => {
-    const digit = val.replace(/\D/g, '').slice(-1)
-    const next = [...otp]; next[idx] = digit; setOtp(next)
-    if (digit && idx < 5) setTimeout(() => otpRefs.current[idx + 1]?.focus(), 0)
-    if (digit && idx === 5 && next.join('').length === 6) setTimeout(() => autoSubmit2(next), 50)
-  }
-
-  const handleOtpKey = (idx: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !otp[idx] && idx > 0) {
-      const next = [...otp]; next[idx - 1] = ''; setOtp(next)
-      otpRefs.current[idx - 1]?.focus()
-    }
-  }
-
-  const autoSubmit2 = async (vals: string[]) => {
-    const code = vals.join('')
-    setAlert2(null); setLoading2(true)
-    try {
-      const res = await fetch(`${API_BASE}/api/v2/group/auth/verify-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email, otp: code }),
-      })
-      const data = await res.json()
-      if (!data.success) throw new Error(data.message)
-      if (timerRef.current) clearInterval(timerRef.current)
-      if (data.mfaRequired) {
-        setStep(3)
-      } else {
-        setAlert2({ msg: 'Authentification réussie — Redirection...', type: 'success' })
-        setTimeout(() => router.push('/group/dashboard'), 1500)
-      }
-    } catch (err: unknown) {
-      setAlert2({ msg: err instanceof Error ? err.message : 'Erreur', type: 'error' })
-    } finally {
-      setLoading2(false)
-    }
-  }
-
-  const handleStep2 = async () => {
-    const code = otp.join('')
+  const submitVerifyOtp = async (code: string) => {
     setAlert2(null)
-    if (code.length !== 6) { setAlert2({ msg: 'Code invalide — 6 chiffres requis', type: 'error' }); return }
     setLoading2(true)
     try {
       const res = await fetch(`${API_BASE}/api/v2/group/auth/verify-otp`, {
@@ -248,8 +140,36 @@ export default function GroupOwnerLogin() {
     }
   }
 
+  const handleOtpInput = (idx: number, val: string) => {
+    const digit = val.replace(/\D/g, '').slice(-1)
+    const next = [...otp]
+    next[idx] = digit
+    setOtp(next)
+    if (digit && idx < 5) setTimeout(() => otpRefs.current[idx + 1]?.focus(), 0)
+    if (digit && idx === 5 && next.join('').length === 6) setTimeout(() => void submitVerifyOtp(next.join('')), 50)
+  }
+
+  const handleOtpKey = (idx: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !otp[idx] && idx > 0) {
+      const next = [...otp]
+      next[idx - 1] = ''
+      setOtp(next)
+      otpRefs.current[idx - 1]?.focus()
+    }
+  }
+
+  const handleStep2 = async () => {
+    const code = otp.join('')
+    if (code.length !== 6) {
+      setAlert2({ msg: 'Code invalide — 6 chiffres requis', type: 'error' })
+      return
+    }
+    await submitVerifyOtp(code)
+  }
+
   const resendOtp = async () => {
-    setOtp(['', '', '', '', '', '']); setAlert2(null)
+    setOtp(['', '', '', '', '', ''])
+    setAlert2(null)
     try {
       const res = await fetch(`${API_BASE}/api/v2/group/auth/resend-otp`, {
         method: 'POST',
@@ -295,22 +215,6 @@ export default function GroupOwnerLogin() {
   handlersRef.current.s2 = handleStep2
   handlersRef.current.s3 = handleStep3
 
-  const timerMin = Math.floor(timerSecs / 60)
-  const timerSecDisp = timerSecs % 60
-  const totpCircumference = 144
-  const totpOffset = totpCircumference - (totpSecs / 30) * totpCircumference
-  const totpColor = totpSecs > 10 ? 'var(--primary)' : 'var(--red)'
-
-  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.target.style.borderColor = 'var(--accent)'
-    e.target.style.boxShadow = '0 0 0 3px rgba(227, 176, 75, 0.2)'
-  }
-
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.target.style.borderColor = 'var(--border)'
-    e.target.style.boxShadow = 'none'
-  }
-
   return (
     <div style={{
       minHeight: '100dvh',
@@ -323,7 +227,7 @@ export default function GroupOwnerLogin() {
       overflowX: 'hidden',
       paddingTop: 80,
       paddingBottom: 40,
-      fontFamily: 'var(--font-nunito), Nunito, sans-serif'
+      fontFamily: 'var(--font-nunito), Nunito, sans-serif',
     }}>
       {/* Motif géométrique discret */}
       <div className="login-bg" />
@@ -335,14 +239,14 @@ export default function GroupOwnerLogin() {
       <header style={{
         position: 'absolute', top: 5, left: 0, right: 0, zIndex: 10,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '16px 24px'
+        padding: '16px 24px',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
             width: 38, height: 38, borderRadius: 10,
             background: 'linear-gradient(135deg,var(--primary),var(--accent))',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 2px 10px rgba(180,83,42,0.22)', overflow: 'hidden'
+            boxShadow: '0 2px 10px rgba(180,83,42,0.22)', overflow: 'hidden',
           }}>
             <img src="/logo.svg" alt="ZekoulABia" style={{ width: '65%', height: '65%', objectFit: 'contain' }} />
           </div>
@@ -377,7 +281,14 @@ export default function GroupOwnerLogin() {
               const active = step === n, done = step > n
               return (
                 <div key={n} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flex: 1, position: 'relative' }}>
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, zIndex: 1, border: `2px solid ${done || active ? 'var(--primary)' : 'var(--border)'}`, color: done ? 'white' : active ? 'var(--primary)' : 'var(--text3)', background: done ? 'var(--primary)' : active ? 'var(--primary-light)' : 'var(--surface)', transition: 'all 0.3s' }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 13, fontWeight: 800, zIndex: 1,
+                    border: `2px solid ${done || active ? 'var(--primary)' : 'var(--border)'}`,
+                    color: done ? 'white' : active ? 'var(--primary)' : 'var(--text3)',
+                    background: done ? 'var(--primary)' : active ? 'var(--primary-light)' : 'var(--surface)',
+                    transition: 'all 0.3s',
+                  }}>
                     {done ? <Check size={16} /> : n}
                   </div>
                   <div style={{ fontSize: 11, fontWeight: 700, textAlign: 'center', color: done || active ? 'var(--primary)' : 'var(--text3)' }}>{label}</div>
@@ -387,123 +298,51 @@ export default function GroupOwnerLogin() {
           </div>
         </div>
 
-        {/* Étape 1 */}
         {step === 1 && (
-          <div>
-            <FormHeader title="Connexion Groupe Scolaire" sub="Entrez vos identifiants pour accéder au dashboard consolidé." />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--amber-light)', border: '1px solid rgba(217,119,6,0.2)', borderRadius: 10, padding: '10px 12px', marginBottom: 16, fontSize: 12, fontWeight: 700, color: 'var(--amber)' }}>
-              <KeyRound size={16} /> Connexion chiffrée — URL d'accès privée
-            </div>
-            {alert1 && <Alert a={alert1} />}
-            <Field label="Adresse email">
-              <input type="email" value={email} autoComplete="off" placeholder="fondateur@groupe-exemple.cm"
-                onChange={e => { setEmail(e.target.value); setAlert1(null) }}
-                onFocus={handleFocus} onBlur={handleBlur}
-                style={inputBaseStyle} />
-            </Field>
-            <Field label="Mot de passe">
-              <div style={{ position: 'relative' }}>
-                <input type={showPwd ? 'text' : 'password'} value={password} autoComplete="new-password" placeholder="••••••••••••"
-                  onChange={e => { setPassword(e.target.value); setAlert1(null) }}
-                  onFocus={handleFocus} onBlur={handleBlur}
-                  style={{ ...inputBaseStyle, paddingRight: 44 }} />
-                <button type="button" onClick={() => setShowPwd(s => !s)}
-                  aria-label={showPwd ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', padding: 6, minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {showPwd ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </Field>
-            <SubmitBtn loading={loading1} onClick={handleStep1}>Se connecter →</SubmitBtn>
-          </div>
+          <GroupStep1Credentials
+            email={email}
+            password={password}
+            showPwd={showPwd}
+            loading={loading1}
+            alert={alert1}
+            onEmailChange={val => { setEmail(val); setAlert1(null) }}
+            onPasswordChange={val => { setPassword(val); setAlert1(null) }}
+            onToggleShowPwd={() => setShowPwd(s => !s)}
+            onSubmit={handleStep1}
+          />
         )}
 
-        {/* Étape 2 */}
         {step === 2 && (
-          <div>
-            <BackBtn onClick={() => { setStep(1); if (timerRef.current) clearInterval(timerRef.current) }} />
-            <FormHeader
-              title="Vérification par email"
-              sub={<>Entrez le code à 6 chiffres envoyé à{' '}<span style={{ color: 'var(--primary)', fontWeight: 700 }}>{maskEmail(email)}</span><br />Validité : 10 minutes</>}
-            />
-            {alert2 && <Alert a={alert2} />}
-            <div style={{ display: 'flex', gap: 8, width: '100%', marginBottom: 14 }}>
-              {otp.map((v, i) => (
-                <input key={i}
-                  ref={el => { otpRefs.current[i] = el }}
-                  type="tel" maxLength={1} value={v}
-                  onChange={e => handleOtpInput(i, e.target.value)}
-                  onKeyDown={e => handleOtpKey(i, e)}
-                  onFocus={handleFocus} onBlur={handleBlur}
-                  style={{ flex: 1, minHeight: 52, textAlign: 'center', fontSize: 22, fontWeight: 900, background: v ? 'var(--primary-light)' : 'var(--surface)', border: `1.5px solid ${v ? 'var(--primary)' : 'var(--border)'}`, borderRadius: 10, outline: 'none', color: v ? 'var(--primary)' : 'var(--text)', fontFamily: 'inherit', transition: 'all 0.2s', minWidth: 0 }}
-                />
-              ))}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: timerSecs <= 60 ? 'var(--red)' : 'var(--amber)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Clock size={15} /> {timerMin}:{String(timerSecDisp).padStart(2, '0')}
-              </div>
-              <button onClick={resendOtp} disabled={!resendEnabled}
-                style={{ fontSize: 13, fontWeight: 700, color: resendEnabled ? 'var(--primary)' : 'var(--text3)', cursor: resendEnabled ? 'pointer' : 'default', background: 'none', border: 'none', fontFamily: 'inherit', padding: 0 }}>
-                Renvoyer le code
-              </button>
-            </div>
-            <SubmitBtn loading={loading2} onClick={handleStep2}>Vérifier le code →</SubmitBtn>
-          </div>
+          <GroupStep2Otp
+            email={email}
+            otp={otp}
+            timerSecs={timerSecs}
+            resendEnabled={resendEnabled}
+            loading={loading2}
+            alert={alert2}
+            setOtpRef={(i, el) => { otpRefs.current[i] = el }}
+            onBack={() => { setStep(1); if (timerRef.current) clearInterval(timerRef.current) }}
+            onOtpInput={handleOtpInput}
+            onOtpKey={handleOtpKey}
+            onResend={resendOtp}
+            onSubmit={handleStep2}
+          />
         )}
 
-        {/* Étape 3 */}
         {step === 3 && (
-          <div>
-            <BackBtn onClick={() => setStep(2)} />
-            <FormHeader
-              title="Authentification à deux facteurs"
-              sub={isRecovery
-                ? 'Entrez un de vos codes de récupération à usage unique.'
-                : "Entrez le code à 6 chiffres de votre application d'authentification."}
-            />
-            {alert3 && <Alert a={alert3} />}
-
-            {!isRecovery && (
-              <>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
-                  <div style={{ position: 'relative', width: 52, height: 52 }}>
-                    <svg width="52" height="52" viewBox="0 0 56 56" style={{ transform: 'rotate(-90deg)' }}>
-                      <circle cx="28" cy="28" r="23" fill="none" stroke="var(--border)" strokeWidth="4" />
-                      <circle cx="28" cy="28" r="23" fill="none" stroke={totpColor} strokeWidth="4" strokeLinecap="round"
-                        strokeDasharray={totpCircumference} strokeDashoffset={totpOffset}
-                        style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.3s' }} />
-                    </svg>
-                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontSize: 18, fontWeight: 900, color: totpColor, fontFamily: 'inherit' }}>{totpSecs}</div>
-                  </div>
-                </div>
-                <Field label="Code TOTP (6 chiffres)">
-                  <input type="tel" maxLength={6} value={totpCode} placeholder="123456" autoComplete="one-time-code"
-                    onChange={e => { setTotpCode(e.target.value.replace(/\D/g, '')); setAlert3(null) }}
-                    onFocus={handleFocus} onBlur={handleBlur}
-                    style={{ ...inputBaseStyle, textAlign: 'center', fontSize: 22, fontWeight: 900, letterSpacing: 6 }} />
-                </Field>
-              </>
-            )}
-
-            {isRecovery && (
-              <Field label="Code de récupération">
-                <input type="text" value={recoveryCode} placeholder="ABCD-1234-EFGH-5678" autoComplete="off"
-                  onChange={e => { setRecoveryCode(e.target.value); setAlert3(null) }}
-                  onFocus={handleFocus} onBlur={handleBlur}
-                  style={{ ...inputBaseStyle, letterSpacing: 2, fontSize: 16, fontWeight: 700 }} />
-              </Field>
-            )}
-
-            <div style={{ textAlign: 'center', marginBottom: 16 }}>
-              <button onClick={() => setIsRecovery(r => !r)}
-                style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 0' }}>
-                {isRecovery ? <><ArrowLeft size={15} /> Utiliser le code TOTP</> : <><KeyRound size={15} /> Utiliser un code de récupération</>}
-              </button>
-            </div>
-
-            <SubmitBtn loading={loading3} onClick={handleStep3}>Vérifier →</SubmitBtn>
-          </div>
+          <GroupStep3Mfa
+            totpSecs={totpSecs}
+            isRecovery={isRecovery}
+            totpCode={totpCode}
+            recoveryCode={recoveryCode}
+            loading={loading3}
+            alert={alert3}
+            onBack={() => setStep(2)}
+            onTotpChange={val => { setTotpCode(val); setAlert3(null) }}
+            onRecoveryChange={val => { setRecoveryCode(val); setAlert3(null) }}
+            onToggleRecovery={() => setIsRecovery(r => !r)}
+            onSubmit={handleStep3}
+          />
         )}
       </main>
     </div>

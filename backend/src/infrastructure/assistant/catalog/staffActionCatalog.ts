@@ -26,8 +26,8 @@ import type { CreerTransactionAPEEUseCase } from '@application/apee/CreerTransac
 import type { ValiderDepenseAPEEUseCase } from '@application/apee/ValiderDepenseAPEEUseCase';
 import type { AjouterSuiviUseCase } from '@application/orientation/AjouterSuiviUseCase';
 import {
-  type ActionContext,
   type ActionDefinition,
+  defineAction,
   resolveClass,
   resolveStudent,
   resolveCurrentAcademicYear,
@@ -77,7 +77,7 @@ export function buildStaffActionCatalog(deps: StaffActionDeps): ActionDefinition
     // l'exclusion de "tenir un conseil de classe complet" côté Admin.
 
     // 1. Enregistrer une sanction disciplinaire simple — NON destructif (réversible via lever_sanction)
-    {
+    defineAction({
       name: 'enregistrer_sanction',
       description:
         "Enregistre une sanction disciplinaire simple (avertissement oral, avertissement écrit, ou exclusion temporaire) pour un élève. " +
@@ -98,17 +98,14 @@ export function buildStaffActionCatalog(deps: StaffActionDeps): ActionDefinition
       }),
       async execute(input, ctx) {
         const student = await resolveStudent(ctx, input.studentName, input.className);
-        const record = await ctx.prisma.disciplineRecord.create({
-          data: {
-            schoolId: ctx.schoolId,
-            studentId: student.id,
-            type: input.type,
-            reason: input.reason,
-            decidedById: ctx.userId,
-            ...(input.startDate ? { startDate: new Date(input.startDate) } : {}),
-            ...(input.endDate ? { endDate: new Date(input.endDate) } : {}),
-          },
-          select: { id: true },
+        const record = await ctx.data.portal.createDisciplineRecord({
+          schoolId: ctx.schoolId,
+          studentId: student.id,
+          type: input.type,
+          reason: input.reason,
+          decidedById: ctx.userId,
+          startDate: input.startDate ? new Date(input.startDate) : undefined,
+          endDate: input.endDate ? new Date(input.endDate) : undefined,
         });
         await deps.notifierSanctionDisciplinaire(ctx.schoolId, student.id, student.name, input.type, input.reason).catch(() => {});
         return {
@@ -119,12 +116,12 @@ export function buildStaffActionCatalog(deps: StaffActionDeps): ActionDefinition
         };
       },
       async undo(_params, undoData, ctx) {
-        await ctx.prisma.disciplineRecord.update({ where: { id: String(undoData.recordId) }, data: { status: 'LIFTED' } });
+        await ctx.data.portal.liftDisciplineRecordById(ctx.schoolId, String(undoData.recordId));
       },
-    },
+    }),
 
     // 2. Lever une sanction — NON destructif
-    {
+    defineAction({
       name: 'lever_sanction',
       description: "Lève (annule) la sanction disciplinaire active la plus récente d'un élève.",
       destructive: false,
@@ -133,13 +130,9 @@ export function buildStaffActionCatalog(deps: StaffActionDeps): ActionDefinition
       inputSchema: z.object({ studentName: z.string().min(1), className: z.string().optional() }),
       async execute(input, ctx) {
         const student = await resolveStudent(ctx, input.studentName, input.className);
-        const record = await ctx.prisma.disciplineRecord.findFirst({
-          where: { schoolId: ctx.schoolId, studentId: student.id, status: 'ACTIVE' },
-          orderBy: { createdAt: 'desc' },
-          select: { id: true, type: true },
-        });
+        const record = await ctx.data.portal.findLatestActiveDisciplineRecord(ctx.schoolId, student.id);
         if (!record) throw new Error(`Aucune sanction active trouvée pour ${student.name}.`);
-        await ctx.prisma.disciplineRecord.update({ where: { id: record.id }, data: { status: 'LIFTED' } });
+        await ctx.data.portal.liftDisciplineRecordById(ctx.schoolId, record.id);
         return {
           resultLabel: `Sanction (${LABEL_TYPE_SANCTION[record.type] ?? record.type}) levée pour ${student.name}`,
           section: 'discipline',
@@ -149,10 +142,10 @@ export function buildStaffActionCatalog(deps: StaffActionDeps): ActionDefinition
       async undo() {
         throw new Error('La levée de sanction ne peut pas être annulée depuis le copilot — utilisez l\'écran Discipline.');
       },
-    },
+    }),
 
     // 3. Sanctions récentes d'un élève — LECTURE SEULE
-    {
+    defineAction({
       name: 'sanctions_recentes_eleve',
       description: "Liste les sanctions disciplinaires (actives ou levées) d'un élève.",
       destructive: false,
@@ -161,12 +154,7 @@ export function buildStaffActionCatalog(deps: StaffActionDeps): ActionDefinition
       inputSchema: z.object({ studentName: z.string().min(1), className: z.string().optional() }),
       async execute(input, ctx) {
         const student = await resolveStudent(ctx, input.studentName, input.className);
-        const records = await ctx.prisma.disciplineRecord.findMany({
-          where: { schoolId: ctx.schoolId, studentId: student.id },
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-          select: { type: true, reason: true, status: true, createdAt: true },
-        });
+        const records = await ctx.data.portal.findRecentDisciplineRecords(ctx.schoolId, student.id, 10);
         const resultLabel = records.length === 0
           ? `Aucune sanction enregistrée pour ${student.name}.`
           : `Sanctions de ${student.name} : ` + records.map((r) => `${LABEL_TYPE_SANCTION[r.type] ?? r.type} (${LABEL_STATUT_SANCTION[r.status] ?? r.status}, ${r.createdAt.toLocaleDateString('fr-FR')}) — ${r.reason}`).join(' ; ');
@@ -175,12 +163,12 @@ export function buildStaffActionCatalog(deps: StaffActionDeps): ActionDefinition
       async undo() {
         throw new Error('Cette action est une simple consultation, il n\'y a rien à annuler.');
       },
-    },
+    }),
 
     // ═══ APEE ═══
 
     // 4. Enregistrer une transaction APEE (collecte ou dépense) — NON destructif
-    {
+    defineAction({
       name: 'enregistrer_transaction_apee',
       description:
         "Enregistre une transaction APEE : une COLLECTE (montant reçu, considérée valide immédiatement) ou une DEPENSE " +
@@ -212,12 +200,12 @@ export function buildStaffActionCatalog(deps: StaffActionDeps): ActionDefinition
         };
       },
       async undo(_params, undoData, ctx) {
-        await ctx.prisma.aPEETransaction.delete({ where: { id: String(undoData.transactionId) } });
+        await ctx.data.portal.deleteApeeTransactionById(ctx.schoolId, String(undoData.transactionId));
       },
-    },
+    }),
 
     // 5. Valider une dépense APEE — NON annulable
-    {
+    defineAction({
       name: 'valider_depense_apee',
       description: "Valide une dépense APEE qui a déjà un justificatif joint — refuse si aucun justificatif n'a été téléversé.",
       destructive: false,
@@ -225,11 +213,7 @@ export function buildStaffActionCatalog(deps: StaffActionDeps): ActionDefinition
       allowedRoles: ['STAFF'],
       inputSchema: z.object({ description: z.string().min(1).describe('Description ou catégorie permettant de retrouver la dépense') }),
       async execute(input, ctx) {
-        const target = await ctx.prisma.aPEETransaction.findFirst({
-          where: { schoolId: ctx.schoolId, type: 'DEPENSE', valide: false, description: { contains: input.description, mode: 'insensitive' } },
-          orderBy: { createdAt: 'desc' },
-          select: { id: true, montant: true },
-        });
+        const target = await ctx.data.portal.findPendingApeeExpenseByDescription(ctx.schoolId, input.description);
         if (!target) throw new Error(`Aucune dépense APEE non validée trouvée correspondant à « ${input.description} ».`);
         await deps.validerDepenseAPEE.execute({ schoolId: ctx.schoolId, transactionId: target.id, valideParId: ctx.userId });
         return {
@@ -241,10 +225,10 @@ export function buildStaffActionCatalog(deps: StaffActionDeps): ActionDefinition
       async undo() {
         throw new Error('La validation d\'une dépense APEE ne peut pas être annulée depuis le copilot.');
       },
-    },
+    }),
 
     // 6. Solde APEE — LECTURE SEULE
-    {
+    defineAction({
       name: 'solde_apee',
       description: "Donne le solde actuel de l'APEE (total des collectes moins total des dépenses validées), et le nombre de dépenses en attente de justificatif ou de validation.",
       destructive: false,
@@ -252,27 +236,21 @@ export function buildStaffActionCatalog(deps: StaffActionDeps): ActionDefinition
       allowedRoles: ['STAFF'],
       inputSchema: z.object({}),
       async execute(_input, ctx) {
-        const [collectes, depenses, enAttente] = await Promise.all([
-          ctx.prisma.aPEETransaction.aggregate({ where: { schoolId: ctx.schoolId, type: 'COLLECTE' }, _sum: { montant: true } }),
-          ctx.prisma.aPEETransaction.aggregate({ where: { schoolId: ctx.schoolId, type: 'DEPENSE', valide: true }, _sum: { montant: true } }),
-          ctx.prisma.aPEETransaction.count({ where: { schoolId: ctx.schoolId, type: 'DEPENSE', valide: false } }),
-        ]);
-        const totalCollectes = collectes._sum.montant ?? 0;
-        const totalDepenses = depenses._sum.montant ?? 0;
+        const { totalCollectes, totalDepenses, pendingExpensesCount } = await ctx.data.portal.getApeeBalanceSummary(ctx.schoolId);
         return {
-          resultLabel: `Solde APEE : ${totalCollectes - totalDepenses} FCFA (${totalCollectes} FCFA collectés, ${totalDepenses} FCFA dépensés) — ${enAttente} dépense(s) en attente de justificatif ou de validation.`,
+          resultLabel: `Solde APEE : ${totalCollectes - totalDepenses} FCFA (${totalCollectes} FCFA collectés, ${totalDepenses} FCFA dépensés) — ${pendingExpensesCount} dépense(s) en attente de justificatif ou de validation.`,
           section: 'apee',
         };
       },
       async undo() {
         throw new Error('Cette action est une simple consultation, il n\'y a rien à annuler.');
       },
-    },
+    }),
 
     // ═══ Bibliothèque ═══
 
     // 7. Emprunter un livre — NON destructif (réversible via retourner_livre)
-    {
+    defineAction({
       name: 'emprunter_livre',
       description: "Enregistre l'emprunt d'un livre par un élève — refuse si aucun exemplaire n'est disponible.",
       destructive: false,
@@ -286,20 +264,15 @@ export function buildStaffActionCatalog(deps: StaffActionDeps): ActionDefinition
       }),
       async execute(input, ctx) {
         const student = await resolveStudent(ctx, input.studentName, input.className);
-        const book = await ctx.prisma.book.findFirst({
-          where: { schoolId: ctx.schoolId, title: { contains: input.bookTitle, mode: 'insensitive' } },
-          select: { id: true, title: true, available: true },
-        });
+        const book = await ctx.data.portal.findBookByTitleContains(ctx.schoolId, input.bookTitle);
         if (!book) throw new Error(`Aucun livre correspondant à « ${input.bookTitle} » n'existe dans le catalogue.`);
         if (book.available <= 0) throw new Error(`Aucun exemplaire disponible pour « ${book.title} ».`);
         const dueDate = input.dueDate ? new Date(input.dueDate) : new Date(Date.now() + 15 * 86400000);
-        const loan = await ctx.prisma.$transaction(async (tx) => {
-          const l = await tx.bookLoan.create({
-            data: { schoolId: ctx.schoolId, bookId: book.id, studentId: student.id, dueDate },
-            select: { id: true },
-          });
-          await tx.book.update({ where: { id: book.id }, data: { available: { decrement: 1 } } });
-          return l;
+        const loan = await ctx.data.portal.createBookLoanTransaction({
+          schoolId: ctx.schoolId,
+          bookId: book.id,
+          studentId: student.id,
+          dueDate,
         });
         return {
           resultLabel: `« ${book.title} » emprunté par ${student.name}, à retourner avant le ${dueDate.toLocaleDateString('fr-FR')}`,
@@ -309,15 +282,16 @@ export function buildStaffActionCatalog(deps: StaffActionDeps): ActionDefinition
         };
       },
       async undo(_params, undoData, ctx) {
-        await ctx.prisma.$transaction(async (tx) => {
-          await tx.bookLoan.delete({ where: { id: String(undoData.loanId) } });
-          await tx.book.update({ where: { id: String(undoData.bookId) }, data: { available: { increment: 1 } } });
+        await ctx.data.portal.cancelBookLoanTransaction({
+          schoolId: ctx.schoolId,
+          loanId: String(undoData.loanId),
+          bookId: String(undoData.bookId),
         });
       },
-    },
+    }),
 
     // 8. Retourner un livre — NON destructif
-    {
+    defineAction({
       name: 'retourner_livre',
       description: "Enregistre le retour d'un livre emprunté par un élève.",
       destructive: false,
@@ -326,26 +300,23 @@ export function buildStaffActionCatalog(deps: StaffActionDeps): ActionDefinition
       inputSchema: z.object({ studentName: z.string().min(1), className: z.string().optional(), bookTitle: z.string().optional().describe('Précisez si l\'élève a plusieurs emprunts actifs') }),
       async execute(input, ctx) {
         const student = await resolveStudent(ctx, input.studentName, input.className);
-        const loans = await ctx.prisma.bookLoan.findMany({
-          where: {
-            schoolId: ctx.schoolId,
-            studentId: student.id,
-            status: { in: ['ACTIVE', 'OVERDUE'] },
-            ...(input.bookTitle ? { book: { title: { contains: input.bookTitle, mode: 'insensitive' } } } : {}),
-          },
-          select: { id: true, bookId: true, book: { select: { title: true } } },
+        const loans = await ctx.data.portal.findActiveStudentBookLoans({
+          schoolId: ctx.schoolId,
+          studentId: student.id,
+          bookTitleContains: input.bookTitle ?? undefined,
         });
         if (loans.length === 0) throw new Error(`Aucun emprunt actif trouvé pour ${student.name}${input.bookTitle ? ` (« ${input.bookTitle} »)` : ''}.`);
         if (loans.length > 1) {
-          throw new Error(`${student.name} a plusieurs emprunts actifs : ${loans.map((l) => l.book.title).join(', ')}. Précisez le titre.`);
+          throw new Error(`${student.name} a plusieurs emprunts actifs : ${loans.map((l) => l.bookTitle).join(', ')}. Précisez le titre.`);
         }
         const loan = loans[0];
-        await ctx.prisma.$transaction(async (tx) => {
-          await tx.bookLoan.update({ where: { id: loan.id }, data: { status: 'RETURNED', returnedAt: new Date() } });
-          await tx.book.update({ where: { id: loan.bookId }, data: { available: { increment: 1 } } });
+        await ctx.data.portal.returnBookLoanTransaction({
+          schoolId: ctx.schoolId,
+          loanId: loan.id,
+          bookId: loan.bookId,
         });
         return {
-          resultLabel: `« ${loan.book.title} » retourné par ${student.name}`,
+          resultLabel: `« ${loan.bookTitle} » retourné par ${student.name}`,
           section: 'library',
           entity: 'bookLoan',
         };
@@ -353,10 +324,10 @@ export function buildStaffActionCatalog(deps: StaffActionDeps): ActionDefinition
       async undo() {
         throw new Error('Un retour de livre déjà enregistré ne peut pas être annulé depuis le copilot.');
       },
-    },
+    }),
 
     // 9. Livres disponibles — LECTURE SEULE
-    {
+    defineAction({
       name: 'livres_disponibles',
       description: "Recherche des livres dans le catalogue et indique le nombre d'exemplaires disponibles.",
       destructive: false,
@@ -364,17 +335,7 @@ export function buildStaffActionCatalog(deps: StaffActionDeps): ActionDefinition
       allowedRoles: ['STAFF'],
       inputSchema: z.object({ recherche: z.string().min(1).describe('Titre, auteur, ou mot-clé') }),
       async execute(input, ctx) {
-        const books = await ctx.prisma.book.findMany({
-          where: {
-            schoolId: ctx.schoolId,
-            OR: [
-              { title: { contains: input.recherche, mode: 'insensitive' } },
-              { author: { contains: input.recherche, mode: 'insensitive' } },
-            ],
-          },
-          select: { title: true, author: true, available: true, quantity: true },
-          take: 10,
-        });
+        const books = await ctx.data.portal.searchBooks(ctx.schoolId, input.recherche, 10);
         const resultLabel = books.length === 0
           ? `Aucun livre trouvé pour « ${input.recherche} ».`
           : books.map((b) => `« ${b.title} »${b.author ? ` (${b.author})` : ''} : ${b.available}/${b.quantity} disponible(s)`).join(' ; ');
@@ -383,12 +344,12 @@ export function buildStaffActionCatalog(deps: StaffActionDeps): ActionDefinition
       async undo() {
         throw new Error('Cette action est une simple consultation, il n\'y a rien à annuler.');
       },
-    },
+    }),
 
     // ═══ Orientation ═══
 
     // 10. Ajouter un suivi d'orientation — NON destructif (historique, mais non annulable une fois ajouté)
-    {
+    defineAction({
       name: 'ajouter_suivi_orientation',
       description:
         "Ajoute un suivi (entretien de suivi, évolution du niveau de risque) à la fiche d'orientation ouverte d'un élève, pour l'année scolaire courante. " +
@@ -407,13 +368,14 @@ export function buildStaffActionCatalog(deps: StaffActionDeps): ActionDefinition
       async execute(input, ctx) {
         const student = await resolveStudent(ctx, input.studentName, input.className);
         const year = await resolveCurrentAcademicYear(ctx);
-        const fiche = await ctx.prisma.ficheOrientation.findFirst({
-          where: { schoolId: ctx.schoolId, studentId: student.id, academicYearId: year.id, status: { in: ['OUVERTE', 'EN_COURS'] } },
-          select: { id: true },
+        const ficheId = await ctx.data.portal.findOpenOrientationFicheId({
+          schoolId: ctx.schoolId,
+          studentId: student.id,
+          academicYearId: year.id,
         });
-        if (!fiche) throw new Error(`Aucune fiche d'orientation ouverte pour ${student.name} sur l'année courante — créez-en une depuis l'écran Orientation d'abord.`);
+        if (!ficheId) throw new Error(`Aucune fiche d'orientation ouverte pour ${student.name} sur l'année courante — créez-en une depuis l'écran Orientation d'abord.`);
         await deps.ajouterSuiviOrientation.execute({
-          ficheId: fiche.id,
+          ficheId,
           schoolId: ctx.schoolId,
           riskLevel: input.riskLevel,
           mainConcern: input.mainConcern,
@@ -429,10 +391,10 @@ export function buildStaffActionCatalog(deps: StaffActionDeps): ActionDefinition
       async undo() {
         throw new Error('Un suivi d\'orientation ajouté ne peut pas être annulé depuis le copilot — utilisez l\'écran Orientation.');
       },
-    },
+    }),
 
     // 11. Élèves à risque en orientation — LECTURE SEULE
-    {
+    defineAction({
       name: 'eleves_a_risque_orientation',
       description: "Liste les élèves ayant une fiche d'orientation ouverte avec un niveau de risque élevé ou critique, pour l'année scolaire courante.",
       destructive: false,
@@ -448,25 +410,20 @@ export function buildStaffActionCatalog(deps: StaffActionDeps): ActionDefinition
           classId = classe.id;
           label = classe.name;
         }
-        const fiches = await ctx.prisma.ficheOrientation.findMany({
-          where: {
-            schoolId: ctx.schoolId,
-            academicYearId: year.id,
-            status: { in: ['OUVERTE', 'EN_COURS'] },
-            riskLevel: { in: ['ELEVE', 'CRITIQUE'] },
-            ...(classId ? { student: { studentProfile: { enrollmentsYearScoped: { some: { classId, status: 'ACTIVE' as const, academicYear: { isCurrent: true } } } } } } : {}),
-          },
-          select: { riskLevel: true, student: { select: { firstName: true, lastName: true } } },
+        const fiches = await ctx.data.portal.findOpenHighRiskOrientationFiches({
+          schoolId: ctx.schoolId,
+          academicYearId: year.id,
+          classId,
         });
         const resultLabel = fiches.length === 0
           ? `Aucun élève à risque élevé/critique en orientation pour ${label}.`
           : `${fiches.length} élève(s) à risque pour ${label} : ` +
-            fiches.map((f) => `${f.student.firstName ?? ''} ${f.student.lastName ?? ''} (${f.riskLevel})`.trim()).join(', ');
+            fiches.map((f) => `${f.firstName ?? ''} ${f.lastName ?? ''} (${f.riskLevel})`.trim()).join(', ');
         return { resultLabel, section: 'orientation' };
       },
       async undo() {
         throw new Error('Cette action est une simple consultation, il n\'y a rien à annuler.');
       },
-    },
+    }),
   ];
 }

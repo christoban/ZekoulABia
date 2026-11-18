@@ -9,10 +9,14 @@ import { PedagogieController } from '@infrastructure/http/controllers/PedagogieC
 import { TemplateController } from '@infrastructure/http/controllers/TemplateController';
 import { StudentDocumentController } from '@infrastructure/http/controllers/StudentDocumentController';
 import { InviteOnboardingController } from '@infrastructure/http/controllers/InviteOnboardingController';
+import { OnboardingStreamController } from '@infrastructure/http/controllers/OnboardingStreamController';
 import { BulletinValidationController } from '@infrastructure/http/controllers/BulletinValidationController';
 import { GroqIAService } from '@infrastructure/services/ai/GroqIAService';
 import { AIActionAuditAdapter } from '@infrastructure/services/ai/AIActionAuditAdapter';
 import { creerOnboardingRoutes } from '@infrastructure/http/routes/onboarding.routes';
+import { creerInviteOnboardingRoutes } from '@infrastructure/http/routes/inviteOnboarding.routes';
+import { creerOnboardingStreamRoutes } from '@infrastructure/http/routes/onboardingStream.routes';
+import { creerTemplateRoutes } from '@infrastructure/http/routes/template.routes';
 import { creerReportCardRoutes } from '@infrastructure/http/routes/reportCard.routes';
 import { creerClassCouncilRoutes } from '@infrastructure/http/routes/classCouncil.routes';
 import { creerBulletinValidationRoutes } from '@infrastructure/http/routes/bulletinValidation.routes';
@@ -26,7 +30,8 @@ import { AcademicProfileController } from '@infrastructure/http/controllers/Acad
 import { creerAcademicProfileRoutes } from '@infrastructure/http/routes/academicProfile.routes';
 import { PrismaEnrollmentRepository } from '@infrastructure/persistence/prisma/PrismaEnrollmentRepository';
 import { PrismaAnneeAcademiqueRepository } from '@infrastructure/persistence/prisma/PrismaAnneeAcademiqueRepository';
-import { requireAuth, requireRole } from '../../http/middlewares/auth';
+import { PrismaOnboardingStreamRepository } from '@infrastructure/persistence/prisma/PrismaOnboardingStreamRepository';
+import { requireAuth } from '../../http/middlewares/auth';
 
 type Container = ReturnType<typeof creerContainer>;
 
@@ -92,38 +97,12 @@ export function registerAcademicRoutes(app: Application, prismaParam: typeof pri
     c.school.invitationRepository,
     c.school.schoolRepository,
   );
-  app.get('/api/v2/onboarding/invite/:token', inviteOnboardingController.validateInvite);
-  app.post('/api/v2/onboarding/invite/:token/complete', inviteOnboardingController.completeOnboarding);
-  app.post('/api/v2/onboarding/preview-structure', inviteOnboardingController.previewStructure);
+  app.use('/api/v2/onboarding', creerInviteOnboardingRoutes(inviteOnboardingController));
 
-  app.get('/api/v2/onboarding/anglophone-streams', async (_req, res, next) => {
-    try {
-      const combos = await p.anglophoneStreamCombination.findMany({
-        orderBy: { filiere: 'asc' },
-      });
-      const toEntry = (combo: typeof combos[number]) => {
-        const core = Array.isArray(combo.coreSubjects) ? (combo.coreSubjects as string[]) : [];
-        const electives = Array.isArray(combo.electiveGroup)
-          ? (combo.electiveGroup as string[][]).flat().filter((x): x is string => typeof x === 'string')
-          : [];
-        const subjects = [...new Set([...core, ...electives])];
-        return {
-          code: combo.filiere,
-          type: combo.type,
-          label: combo.description ?? core.join(', '),
-          coreSubjects: core,
-          subjects,
-        };
-      };
-      res.json({
-        success: true,
-        data: {
-          arts:    combos.filter(ct => ct.type === 'ARTS').map(toEntry),
-          science: combos.filter(ct => ct.type === 'SCIENCES').map(toEntry),
-        },
-      });
-    } catch (err) { next(err); }
-  });
+  const onboardingStreamController = new OnboardingStreamController(
+    new PrismaOnboardingStreamRepository(p),
+  );
+  app.use('/api/v2/onboarding', creerOnboardingStreamRoutes(onboardingStreamController));
 
   const templateController = new TemplateController(
     c.school.classeRepository,
@@ -131,11 +110,7 @@ export function registerAcademicRoutes(app: Application, prismaParam: typeof pri
     c.school.matiereRepository,
     c.school.departmentRepository,
   );
-  app.get('/api/v2/templates/import-eleves', requireAuth, requireRole('ADMIN'), templateController.importEleves);
-  app.get('/api/v2/templates/import-enseignants', requireAuth, requireRole('ADMIN'), templateController.importEnseignants);
-  app.get('/api/v2/templates/import-staff', requireAuth, requireRole('ADMIN'), templateController.importStaff);
-  app.get('/api/v2/templates/import-parents', requireAuth, requireRole('ADMIN'), templateController.importParents);
-  app.get('/api/v2/templates/import-classes', requireAuth, requireRole('ADMIN'), templateController.importClasses);
+  app.use('/api/v2/templates', creerTemplateRoutes(templateController));
 
   const studentDocumentController = new StudentDocumentController(
     c.studentDocument.studentProfileRepository,

@@ -1,10 +1,22 @@
-import type { Prisma, PrismaClient } from '@prisma/client';
-import { Bulletin } from '@domain/entities/Bulletin';
+import type { PrismaClient } from '@prisma/client';
+import type { Bulletin } from '@domain/entities/Bulletin';
 import type { BulletinValidationStatus } from '@domain/types/enums';
-import type { BulletinRepository, BulletinAvecContexteClasse, BulletinEnrichi, BulletinExportData } from '@domain/ports/repositories/BulletinRepository';
-import type { BulletinTemplate, ReportCardStatus } from '@domain/types/enums';
-
-type ReportCardAvecLignes = Prisma.ReportCardGetPayload<{ include: { subjectLines: true } }>;
+import type {
+  BulletinRepository,
+  BulletinAvecContexteClasse,
+  BulletinEnrichi,
+  BulletinExportData,
+} from '@domain/ports/repositories/BulletinRepository';
+import { whereProfilesParClasse } from '@application/shared/studentEnrollment';
+import {
+  buildBulletinCreateData,
+  findForExportBulletinsOp,
+  findForPdfBulletinOp,
+  findPaginatedBulletinsOp,
+  getMoyennesClasseOp,
+  getStatsValidationParClasseOp,
+  toBulletinDomain,
+} from './helpers/bulletinMappingHelpers';
 
 export class PrismaBulletinRepository implements BulletinRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -14,8 +26,7 @@ export class PrismaBulletinRepository implements BulletinRepository {
       where: { id },
       include: { subjectLines: true },
     });
-    if (!data) return null;
-    return this.toDomain(data);
+    return data ? toBulletinDomain(data) : null;
   }
 
   async findByEleve(studentId: string, academicYearId: string): Promise<Bulletin[]> {
@@ -23,19 +34,15 @@ export class PrismaBulletinRepository implements BulletinRepository {
       where: { studentId, academicYearId },
       include: { subjectLines: true },
     });
-    return data.map(d => this.toDomain(d));
+    return data.map(toBulletinDomain);
   }
 
-  async findByEleveEtPeriode(
-    studentId: string,
-    academicPeriodId: string
-  ): Promise<Bulletin | null> {
+  async findByEleveEtPeriode(studentId: string, academicPeriodId: string): Promise<Bulletin | null> {
     const data = await this.prisma.reportCard.findUnique({
       where: { studentId_academicPeriodId: { studentId, academicPeriodId } },
       include: { subjectLines: true },
     });
-    if (!data) return null;
-    return this.toDomain(data);
+    return data ? toBulletinDomain(data) : null;
   }
 
   async findByClasse(classId: string, academicPeriodId: string): Promise<Bulletin[]> {
@@ -43,13 +50,13 @@ export class PrismaBulletinRepository implements BulletinRepository {
       where: { enrollmentsYearScoped: { some: { classId, status: 'ACTIVE' as const, academicYear: { isCurrent: true } } } },
       select: { userId: true },
     });
-    const studentIds = eleves.map(e => e.userId);
+    const studentIds = eleves.map((e) => e.userId);
 
     const data = await this.prisma.reportCard.findMany({
       where: { studentId: { in: studentIds }, academicPeriodId },
       include: { subjectLines: true },
     });
-    return data.map(d => this.toDomain(d));
+    return data.map(toBulletinDomain);
   }
 
   async findBySchool(schoolId: string, academicYearId: string): Promise<Bulletin[]> {
@@ -57,7 +64,7 @@ export class PrismaBulletinRepository implements BulletinRepository {
       where: { schoolId, academicYearId },
       include: { subjectLines: true },
     });
-    return data.map(d => this.toDomain(d));
+    return data.map(toBulletinDomain);
   }
 
   async findWithClasseContext(bulletinId: string, schoolId: string): Promise<BulletinAvecContexteClasse | null> {
@@ -81,7 +88,7 @@ export class PrismaBulletinRepository implements BulletinRepository {
       },
     });
     if (!data) return null;
-    const bulletin = this.toDomain(data);
+    const bulletin = toBulletinDomain(data);
     const professorPrincipalId = data.student?.studentProfile?.enrollmentsYearScoped?.[0]?.class?.professorPrincipalId ?? null;
     return { bulletin, professorPrincipalId };
   }
@@ -110,7 +117,7 @@ export class PrismaBulletinRepository implements BulletinRepository {
       },
     });
     if (!data) return null;
-    const bulletin = this.toDomain(data);
+    const bulletin = toBulletinDomain(data);
     const professorPrincipalId = data.student?.studentProfile?.enrollmentsYearScoped?.[0]?.class?.professorPrincipalId ?? null;
     const sectionCode = data.student?.studentProfile?.enrollmentsYearScoped?.[0]?.class?.section?.code ?? null;
     return {
@@ -129,8 +136,7 @@ export class PrismaBulletinRepository implements BulletinRepository {
       orderBy: { createdAt: 'desc' },
       select: { generalAverage: true },
     });
-    if (!data) return null;
-    return { generalAverage: data.generalAverage ?? null };
+    return data ? { generalAverage: data.generalAverage ?? null } : null;
   }
 
   async findByEleveFiltre(params: { schoolId: string; studentId: string; academicYearId?: string; classWorkflowStatusIn?: string[] }): Promise<Record<string, unknown>[]> {
@@ -156,113 +162,19 @@ export class PrismaBulletinRepository implements BulletinRepository {
     page: number;
     limit: number;
   }): Promise<{ items: Record<string, unknown>[]; total: number }> {
-    const { whereElevesParClasse } = await import('@application/shared/studentEnrollment');
-    const where: Record<string, unknown> = { schoolId: params.schoolId };
-    if (params.academicYearId) where.academicYearId = params.academicYearId;
-    if (params.academicPeriodId) where.academicPeriodId = params.academicPeriodId;
-    if (params.classId) (where as Record<string, unknown>).student = whereElevesParClasse(params.classId);
-    if (params.studentId !== undefined) where.studentId = params.studentId;
-    if (params.classWorkflowStatusIn) where.classWorkflowStatus = { in: params.classWorkflowStatusIn };
-    const [total, items] = await Promise.all([
-      this.prisma.reportCard.count({ where: where as never }),
-      this.prisma.reportCard.findMany({
-        where: where as never,
-        include: {
-          academicYear: true,
-          academicPeriod: true,
-          student: { select: { id: true, firstName: true, lastName: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip: (params.page - 1) * params.limit,
-        take: params.limit,
-      }),
-    ]);
-    return { items: items as unknown as Record<string, unknown>[], total };
+    return findPaginatedBulletinsOp(this.prisma, params);
   }
 
   async getStatsValidationParClasse(params: { classId: string; schoolId: string; sequenceIds: string[] }): Promise<{ total: number; DRAFT: number; LOCKED: number }> {
-    const where: Record<string, unknown> = { schoolId: params.schoolId, classId: params.classId };
-    if (params.sequenceIds.length > 0) (where as Record<string, unknown>).sequenceId = { in: params.sequenceIds };
-    const grades = await this.prisma.grade.findMany({ where: where as never, select: { validationStatus: true } });
-    const stats: { total: number; DRAFT: number; LOCKED: number } = { total: grades.length, DRAFT: 0, LOCKED: 0 };
-    for (const g of grades) {
-      if (g.validationStatus === 'DRAFT') stats.DRAFT++;
-      else if (g.validationStatus === 'LOCKED') stats.LOCKED++;
-    }
-    return stats;
+    return getStatsValidationParClasseOp(this.prisma, params);
   }
 
-  async getMoyennesClasse(
-    classId: string,
-    academicPeriodId: string
-  ): Promise<{ studentId: string; generalAverage: number }[]> {
-    const eleves = await this.prisma.studentProfile.findMany({
-      where: { enrollmentsYearScoped: { some: { classId, status: 'ACTIVE' as const, academicYear: { isCurrent: true } } } },
-      select: { userId: true },
-    });
-    const studentIds = eleves.map(e => e.userId);
-
-    const bulletins = await this.prisma.reportCard.findMany({
-      where: { studentId: { in: studentIds }, academicPeriodId },
-      select: { studentId: true, generalAverage: true },
-    });
-
-    return bulletins
-      .filter(b => b.generalAverage !== null)
-      .map(b => ({ studentId: b.studentId, generalAverage: b.generalAverage! }));
+  async getMoyennesClasse(classId: string, academicPeriodId: string): Promise<{ studentId: string; generalAverage: number }[]> {
+    return getMoyennesClasseOp(this.prisma, classId, academicPeriodId);
   }
 
   async save(bulletin: Bulletin): Promise<void> {
-    const data = bulletin.toObject();
-    await this.prisma.reportCard.create({
-      data: {
-        id: data.id,
-        schoolId: data.schoolId,
-        studentId: data.studentId,
-        academicYearId: data.academicYearId,
-        academicPeriodId: data.academicPeriodId,
-        sectionId: data.sectionId,
-        template: data.template,
-        validationStatus: data.validationStatus,
-        generalAverage: data.generalAverage,
-        rank: data.rank,
-        rankTrimestre1: data.rankTrimestre1,
-        rankTrimestre2: data.rankTrimestre2,
-        rankTrimestre3: data.rankTrimestre3,
-        totalStudents: data.totalStudents,
-        mention: data.mention,
-        absenceCount: data.absenceCount,
-        classMasterComment: data.classMasterComment,
-        conductGrade: data.conductGrade,
-        aiComment: data.aiComment,
-        isGenerated: data.isGenerated,
-        pdfUrl: data.pdfUrl,
-        createdAt: data.createdAt,
-        subjectLines: {
-          create: data.lignesMatiere.map(l => ({
-            id: l.id,
-            subjectId: l.subjectId,
-            subjectName: l.subjectName,
-            coefficient: l.coefficient,
-            seq1Score: l.seq1Score,
-            seq2Score: l.seq2Score,
-            compositionScore: l.compositionScore,
-            classTestScore: l.classTestScore,
-            terminalExamScore: l.terminalExamScore,
-            theoreticalScore: l.theoreticalScore,
-            practicalScore: l.practicalScore,
-            professionalAttitude: l.professionalAttitude,
-            oralScore: l.oralScore,
-            selfDevelopmentScore: l.selfDevelopmentScore,
-            subjectAverage: l.subjectAverage,
-            weightedScore: l.weightedScore,
-            subjectRank: l.subjectRank,
-            teacherComment: l.teacherComment,
-            competenceLabel: l.competenceLabel,
-          })),
-        },
-      },
-    });
+    await this.prisma.reportCard.create({ data: buildBulletinCreateData(bulletin) });
   }
 
   async update(bulletin: Bulletin): Promise<void> {
@@ -303,7 +215,7 @@ export class PrismaBulletinRepository implements BulletinRepository {
     classId: string,
     academicPeriodId: string,
     schoolId: string,
-    status: BulletinValidationStatus | null
+    status: BulletinValidationStatus | null,
   ): Promise<number> {
     const result = await this.prisma.reportCard.updateMany({
       where: {
@@ -311,9 +223,7 @@ export class PrismaBulletinRepository implements BulletinRepository {
         academicPeriodId,
         student: {
           studentProfile: {
-            enrollmentsYearScoped: {
-              some: { classId, status: 'ACTIVE', academicYear: { isCurrent: true } },
-            },
+            enrollmentsYearScoped: { some: { classId, status: 'ACTIVE', academicYear: { isCurrent: true } } },
           },
         },
       },
@@ -334,7 +244,6 @@ export class PrismaBulletinRepository implements BulletinRepository {
   }
 
   async findTableauHonneur(params: { classId: string; schoolId: string; academicPeriodId: string; top: number }): Promise<{ student: { firstName: string; lastName: string }; generalAverage: number; mention: string | null }[]> {
-    const { whereProfilesParClasse } = await import('@application/shared/studentEnrollment');
     const rows = await this.prisma.reportCard.findMany({
       where: {
         schoolId: params.schoolId,
@@ -350,7 +259,6 @@ export class PrismaBulletinRepository implements BulletinRepository {
   }
 
   async findForAnnual(params: { classId: string; schoolId: string; periodIds: string[] }): Promise<{ studentId: string; student: { firstName: string; lastName: string }; generalAverage: number | null }[]> {
-    const { whereProfilesParClasse } = await import('@application/shared/studentEnrollment');
     const rows = await this.prisma.reportCard.findMany({
       where: {
         schoolId: params.schoolId,
@@ -363,80 +271,15 @@ export class PrismaBulletinRepository implements BulletinRepository {
   }
 
   async findForExport(schoolId: string, academicPeriodId: string, classId?: string): Promise<BulletinExportData[]> {
-    let studentIdFilter: { in: string[] } | undefined = undefined;
-    if (classId) {
-      const eleves = await this.prisma.studentProfile.findMany({
-        where: { enrollmentsYearScoped: { some: { classId, status: 'ACTIVE' as const, academicYear: { isCurrent: true } } } },
-        select: { userId: true },
-      });
-      studentIdFilter = { in: eleves.map(e => e.userId) };
-    }
-
-    const rows = await this.prisma.reportCard.findMany({
-      where: {
-        schoolId,
-        academicPeriodId,
-        ...(studentIdFilter ? { studentId: studentIdFilter } : {}),
-      },
-      include: {
-        academicYear: true,
-        academicPeriod: true,
-        student: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            studentProfile: {
-              select: {
-                enrollmentsYearScoped: {
-                  where: { status: 'ACTIVE', academicYear: { isCurrent: true } },
-                  select: { class: { select: { name: true, section: { select: { code: true } } } } },
-                  take: 1,
-                },
-              },
-            },
-          },
-        },
-        subjectLines: { orderBy: { subjectName: 'asc' } },
-        school: { include: { schoolConfig: true, schoolSettings: true } },
-        section: { select: { code: true } },
-      },
-    });
-    return rows as unknown as BulletinExportData[];
+    return findForExportBulletinsOp(this.prisma, schoolId, academicPeriodId, classId);
   }
 
   async findExportDataByPeriode(schoolId: string, academicPeriodId: string, classId?: string): Promise<BulletinExportData[]> {
-    return this.findForExport(schoolId, academicPeriodId, classId);
+    return findForExportBulletinsOp(this.prisma, schoolId, academicPeriodId, classId);
   }
 
   async findForPdf(bulletinId: string, schoolId: string): Promise<BulletinExportData | null> {
-    const row = await this.prisma.reportCard.findFirst({
-      where: { id: bulletinId, schoolId },
-      include: {
-        academicYear: true,
-        academicPeriod: true,
-        student: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            studentProfile: {
-              select: {
-                enrollmentsYearScoped: {
-                  where: { status: 'ACTIVE', academicYear: { isCurrent: true } },
-                  select: { class: { select: { name: true, section: { select: { code: true } } } } },
-                  take: 1,
-                },
-              },
-            },
-          },
-        },
-        subjectLines: { orderBy: { subjectName: 'asc' } },
-        school: { include: { schoolConfig: true, schoolSettings: true } },
-        section: { select: { code: true } },
-      },
-    });
-    return row as unknown as BulletinExportData | null;
+    return findForPdfBulletinOp(this.prisma, bulletinId, schoolId);
   }
 
   async upsertBulletin(data: { schoolId: string; studentId: string; academicYearId: string; academicPeriodId: string; generalAverage: number; rank: number | null; mention: string; absenceCount: number }): Promise<{ id: string }> {
@@ -483,58 +326,6 @@ export class PrismaBulletinRepository implements BulletinRepository {
         seq2Score: ligne.seq2Score,
         subjectAverage: Math.round(ligne.subjectAverage * 100) / 100,
       },
-    });
-  }
-
-  private toDomain(data: ReportCardAvecLignes): Bulletin {
-    return Bulletin.reconstituer({
-      id: data.id,
-      schoolId: data.schoolId,
-      studentId: data.studentId,
-      academicYearId: data.academicYearId,
-      academicPeriodId: data.academicPeriodId,
-      sectionId: data.sectionId ?? undefined,
-      template: data.template as BulletinTemplate,
-      validationStatus: data.validationStatus as ReportCardStatus,
-      generalAverage: data.generalAverage ?? undefined,
-      rank: data.rank ?? undefined,
-      rankTrimestre1: data.rankTrimestre1 ?? undefined,
-      rankTrimestre2: data.rankTrimestre2 ?? undefined,
-      rankTrimestre3: data.rankTrimestre3 ?? undefined,
-      totalStudents: data.totalStudents ?? undefined,
-      mention: data.mention ?? undefined,
-      absenceCount: data.absenceCount,
-      classMasterComment: data.classMasterComment ?? undefined,
-      conductGrade: data.conductGrade ?? undefined,
-      aiComment: data.aiComment ?? undefined,
-      isGenerated: data.isGenerated,
-      pdfUrl: data.pdfUrl ?? undefined,
-      createdAt: data.createdAt,
-      lignesMatiere: (data.subjectLines ?? []).map((l) => ({
-        id: l.id,
-        subjectId: l.subjectId,
-        subjectName: l.subjectName,
-        coefficient: l.coefficient,
-        seq1Score: l.seq1Score ?? undefined,
-        seq2Score: l.seq2Score ?? undefined,
-        compositionScore: l.compositionScore ?? undefined,
-        seq3Score: l.seq3Score ?? undefined,
-        seq4Score: l.seq4Score ?? undefined,
-        seq5Score: l.seq5Score ?? undefined,
-        seq6Score: l.seq6Score ?? undefined,
-        classTestScore: l.classTestScore ?? undefined,
-        terminalExamScore: l.terminalExamScore ?? undefined,
-        theoreticalScore: l.theoreticalScore ?? undefined,
-        practicalScore: l.practicalScore ?? undefined,
-        professionalAttitude: l.professionalAttitude ?? undefined,
-        oralScore: l.oralScore ?? undefined,
-        selfDevelopmentScore: l.selfDevelopmentScore ?? undefined,
-        subjectAverage: l.subjectAverage ?? undefined,
-        weightedScore: l.weightedScore ?? undefined,
-        subjectRank: l.subjectRank ?? undefined,
-        teacherComment: l.teacherComment ?? undefined,
-        competenceLabel: l.competenceLabel ?? undefined,
-      })),
     });
   }
 }

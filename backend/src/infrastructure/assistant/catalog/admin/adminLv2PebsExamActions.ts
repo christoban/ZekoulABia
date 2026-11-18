@@ -1,12 +1,12 @@
 import { z } from 'zod';
 import {
   type ActionDefinition,
+  defineAction,
   resolveClass,
   resolveStudent,
   resolveSubject,
   resolveCurrentAcademicYear,
 } from '../catalogShared';
-import { whereProfilesParClasse } from '@application/shared/studentEnrollment';
 import { resolveEntranceExamSession, resolvePebsSession } from './adminHelpers';
 import type { AdminActionDeps } from '../adminActionCatalog';
 import type { PebsFiliere } from '@domain/types/enums';
@@ -14,7 +14,7 @@ import type { PebsFiliere } from '@domain/types/enums';
 export function buildAdminLv2PebsExamActions(deps: AdminActionDeps): ActionDefinition[] {
   return [
     // 7. Créer une session de concours d'entrée — NON destructif
-    {
+    defineAction({
       name: 'creer_session_concours_entree',
       domain: 'concours',
       description:
@@ -45,13 +45,13 @@ export function buildAdminLv2PebsExamActions(deps: AdminActionDeps): ActionDefin
           entity: 'entranceExamSession',
         };
       },
-      async undo(_params, undoData, ctx) {
-        await ctx.prisma.entranceExamSession.delete({ where: { id: String(undoData.sessionId) } });
+      async undo(_params, undoData: { sessionId: string }, ctx) {
+        await ctx.data.adminOps.deleteEntranceExamSession(ctx.schoolId, String(undoData.sessionId));
       },
-    },
+    }),
 
     // 8. Créer une session de sélection PEBS — NON destructif
-    {
+    defineAction({
       name: 'creer_session_selection_pebs',
       domain: 'lv2_pebs',
       description:
@@ -87,13 +87,13 @@ export function buildAdminLv2PebsExamActions(deps: AdminActionDeps): ActionDefin
           entity: 'pebsExamSession',
         };
       },
-      async undo(_params, undoData, ctx) {
-        await ctx.prisma.pebsExamSession.delete({ where: { id: String(undoData.sessionId) } });
+      async undo(_params, undoData: { sessionId: string }, ctx) {
+        await ctx.data.adminOps.deletePebsExamSession(ctx.schoolId, String(undoData.sessionId));
       },
-    },
+    }),
 
     // 9. Ouvrir une fenêtre de choix LV2 — NON destructif
-    {
+    defineAction({
       name: 'ouvrir_fenetre_choix_lv2',
       domain: 'lv2_pebs',
       description:
@@ -122,13 +122,13 @@ export function buildAdminLv2PebsExamActions(deps: AdminActionDeps): ActionDefin
           entity: 'lv2ChoiceWindow',
         };
       },
-      async undo(_params, undoData, ctx) {
-        await ctx.prisma.lv2ChoiceWindow.update({ where: { id: String(undoData.windowId) }, data: { status: 'CLOSED' } });
+      async undo(_params, undoData: { windowId: string }, ctx) {
+        await ctx.data.adminOps.closeLv2ChoiceWindow(ctx.schoolId, String(undoData.windowId));
       },
-    },
+    }),
 
     // 15. Affecter la LV2 d'un élève — NON destructif (réversible)
-    {
+    defineAction({
       name: 'affecter_lv2_eleve',
       domain: 'lv2_pebs',
       description: "Affecte (ou retire, si subjectName omis) la LV2 (deuxième langue vivante) d'UN élève précis.",
@@ -142,10 +142,7 @@ export function buildAdminLv2PebsExamActions(deps: AdminActionDeps): ActionDefin
       async execute(input, ctx) {
         const student = await resolveStudent(ctx, input.studentName, input.className);
         const subject = input.subjectName ? await resolveSubject(ctx, input.subjectName) : null;
-        const before = await ctx.prisma.studentProfile.findFirst({
-          where: { userId: student.id },
-          select: { lv2SubjectId: true },
-        });
+        const before = await ctx.data.adminOps.findStudentLv2SubjectId(ctx.schoolId, student.id);
         await deps.affecterLV2Eleve.execute({
           studentUserId: student.id,
           schoolId: ctx.schoolId,
@@ -158,17 +155,17 @@ export function buildAdminLv2PebsExamActions(deps: AdminActionDeps): ActionDefin
           entity: 'studentProfile',
         };
       },
-      async undo(_params, undoData, ctx) {
+      async undo(_params, undoData: { studentUserId: string; previousLv2SubjectId: string | null }, ctx) {
         await deps.affecterLV2Eleve.execute({
           studentUserId: String(undoData.studentUserId),
           schoolId: ctx.schoolId,
-          lv2SubjectId: (undoData.previousLv2SubjectId as string | null) ?? null,
+          lv2SubjectId: undoData.previousLv2SubjectId ?? null,
         });
       },
-    },
+    }),
 
     // 16. Affecter la LV2 en masse à toute une classe — NON destructif (réversible)
-    {
+    defineAction({
       name: 'affecter_lv2_masse',
       domain: 'lv2_pebs',
       description: "Affecte (ou retire, si subjectName omis) la même LV2 à TOUS les élèves d'une classe en une fois.",
@@ -181,10 +178,7 @@ export function buildAdminLv2PebsExamActions(deps: AdminActionDeps): ActionDefin
       async execute(input, ctx) {
         const classe = await resolveClass(ctx, input.className);
         const subject = input.subjectName ? await resolveSubject(ctx, input.subjectName) : null;
-        const profiles = await ctx.prisma.studentProfile.findMany({
-          where: { ...whereProfilesParClasse(classe.id) },
-          select: { userId: true, lv2SubjectId: true },
-        });
+        const profiles = await ctx.data.adminOps.findClassStudentsLv2(ctx.schoolId, classe.id);
         const r = await deps.affecterLV2Masse.execute({
           studentUserIds: profiles.map((p) => p.userId),
           schoolId: ctx.schoolId,
@@ -197,9 +191,8 @@ export function buildAdminLv2PebsExamActions(deps: AdminActionDeps): ActionDefin
           entity: 'studentProfile',
         };
       },
-      async undo(_params, undoData, ctx) {
-        const previous = undoData.previous as { userId: string; lv2SubjectId: string | null }[];
-        for (const p of previous) {
+      async undo(_params, undoData: { previous: { userId: string; lv2SubjectId: string | null }[] }, ctx) {
+        for (const p of undoData.previous) {
           await deps.affecterLV2Eleve.execute({
             studentUserId: p.userId,
             schoolId: ctx.schoolId,
@@ -207,10 +200,10 @@ export function buildAdminLv2PebsExamActions(deps: AdminActionDeps): ActionDefin
           });
         }
       },
-    },
+    }),
 
     // 17. Affecter la filière PEBS d'un élève — NON destructif (réversible)
-    {
+    defineAction({
       name: 'affecter_pebs_eleve',
       domain: 'lv2_pebs',
       description: "Affecte (ou retire, si filiere omis) la filière PEBS (Programme Spécial Bilingue) d'UN élève précis.",
@@ -223,10 +216,7 @@ export function buildAdminLv2PebsExamActions(deps: AdminActionDeps): ActionDefin
       }),
       async execute(input, ctx) {
         const student = await resolveStudent(ctx, input.studentName, input.className);
-        const before = await ctx.prisma.studentProfile.findFirst({
-          where: { userId: student.id },
-          select: { pebsFiliere: true },
-        });
+        const before = await ctx.data.adminOps.findStudentPebsFiliere(ctx.schoolId, student.id);
         await deps.affecterPEBSEleve.execute({
           studentUserId: student.id,
           schoolId: ctx.schoolId,
@@ -241,17 +231,17 @@ export function buildAdminLv2PebsExamActions(deps: AdminActionDeps): ActionDefin
           entity: 'studentProfile',
         };
       },
-      async undo(_params, undoData, ctx) {
+      async undo(_params, undoData: { studentUserId: string; previousPebsFiliere: PebsFiliere | null }, ctx) {
         await deps.affecterPEBSEleve.execute({
           studentUserId: String(undoData.studentUserId),
           schoolId: ctx.schoolId,
-          pebsFiliere: (undoData.previousPebsFiliere as PebsFiliere | null) ?? null,
+          pebsFiliere: undoData.previousPebsFiliere ?? null,
         });
       },
-    },
+    }),
 
     // 18. Affecter la filière PEBS en masse à toute une classe — NON destructif (réversible)
-    {
+    defineAction({
       name: 'affecter_pebs_masse',
       domain: 'lv2_pebs',
       description: "Affecte (ou retire, si filiere omis) la même filière PEBS à TOUS les élèves d'une classe en une fois.",
@@ -263,10 +253,7 @@ export function buildAdminLv2PebsExamActions(deps: AdminActionDeps): ActionDefin
       }),
       async execute(input, ctx) {
         const classe = await resolveClass(ctx, input.className);
-        const profiles = await ctx.prisma.studentProfile.findMany({
-          where: { ...whereProfilesParClasse(classe.id) },
-          select: { userId: true, pebsFiliere: true },
-        });
+        const profiles = await ctx.data.adminOps.findClassStudentsPebs(ctx.schoolId, classe.id);
         const r = await deps.affecterPEBSMasse.execute({
           studentUserIds: profiles.map((p) => p.userId),
           schoolId: ctx.schoolId,
@@ -279,16 +266,15 @@ export function buildAdminLv2PebsExamActions(deps: AdminActionDeps): ActionDefin
           entity: 'studentProfile',
         };
       },
-      async undo(_params, undoData, ctx) {
-        const previous = undoData.previous as { userId: string; pebsFiliere: PebsFiliere | null }[];
-        for (const p of previous) {
+      async undo(_params, undoData: { previous: { userId: string; pebsFiliere: PebsFiliere | null }[] }, ctx) {
+        for (const p of undoData.previous) {
           await deps.affecterPEBSEleve.execute({ studentUserId: p.userId, schoolId: ctx.schoolId, pebsFiliere: p.pebsFiliere });
         }
       },
-    },
+    }),
 
     // 19. Compter les élèves d'une classe par LV2 — LECTURE SEULE
-    {
+    defineAction({
       name: 'compter_eleves_par_lv2',
       domain: 'lv2_pebs',
       description: "Compte combien d'élèves d'une classe ont chaque LV2 affectée, et combien n'en ont aucune.",
@@ -297,13 +283,10 @@ export function buildAdminLv2PebsExamActions(deps: AdminActionDeps): ActionDefin
       inputSchema: z.object({ className: z.string().min(1) }),
       async execute(input, ctx) {
         const classe = await resolveClass(ctx, input.className);
-        const profiles = await ctx.prisma.studentProfile.findMany({
-          where: { ...whereProfilesParClasse(classe.id) },
-          select: { lv2Subject: { select: { name: true } } },
-        });
+        const profiles = await ctx.data.adminOps.findClassStudentLv2Names(ctx.schoolId, classe.id);
         const counts = new Map<string, number>();
         for (const p of profiles) {
-          const key = p.lv2Subject?.name ?? 'Aucune LV2';
+          const key = p.lv2SubjectName ?? 'Aucune LV2';
           counts.set(key, (counts.get(key) ?? 0) + 1);
         }
         const resultLabel =
@@ -314,10 +297,10 @@ export function buildAdminLv2PebsExamActions(deps: AdminActionDeps): ActionDefin
       async undo() {
         throw new Error("Cette action est une simple consultation, il n'y a rien à annuler.");
       },
-    },
+    }),
 
     // 20. Lister les élèves sans LV2 dans une classe — LECTURE SEULE
-    {
+    defineAction({
       name: 'lister_eleves_sans_lv2',
       domain: 'lv2_pebs',
       description: "Liste les élèves d'une classe qui n'ont pas encore de LV2 affectée.",
@@ -326,24 +309,21 @@ export function buildAdminLv2PebsExamActions(deps: AdminActionDeps): ActionDefin
       inputSchema: z.object({ className: z.string().min(1) }),
       async execute(input, ctx) {
         const classe = await resolveClass(ctx, input.className);
-        const profiles = await ctx.prisma.studentProfile.findMany({
-          where: { ...whereProfilesParClasse(classe.id), lv2SubjectId: null },
-          select: { user: { select: { firstName: true, lastName: true } } },
-        });
+        const profiles = await ctx.data.adminOps.findClassStudentsWithoutLv2(ctx.schoolId, classe.id);
         const resultLabel =
           profiles.length === 0
             ? `Tous les élèves de ${classe.name} ont une LV2 affectée.`
             : `${profiles.length} élève(s) de ${classe.name} sans LV2 : ` +
-              profiles.map((p) => `${p.user.firstName ?? ''} ${p.user.lastName ?? ''}`.trim()).join(', ');
+              profiles.map((p) => `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim()).join(', ');
         return { resultLabel, section: 'lv2-choice', entity: 'studentProfile' };
       },
       async undo() {
         throw new Error("Cette action est une simple consultation, il n'y a rien à annuler.");
       },
-    },
+    }),
 
     // 21. Répartition PEBS d'une classe — LECTURE SEULE
-    {
+    defineAction({
       name: 'repartition_pebs_classe',
       domain: 'lv2_pebs',
       description: "Donne la répartition des élèves d'une classe entre filière PEBS francophone, anglophone, et non-PEBS.",
@@ -352,10 +332,7 @@ export function buildAdminLv2PebsExamActions(deps: AdminActionDeps): ActionDefin
       inputSchema: z.object({ className: z.string().min(1) }),
       async execute(input, ctx) {
         const classe = await resolveClass(ctx, input.className);
-        const profiles = await ctx.prisma.studentProfile.findMany({
-          where: { ...whereProfilesParClasse(classe.id) },
-          select: { pebsFiliere: true },
-        });
+        const profiles = await ctx.data.adminOps.findClassStudentsPebs(ctx.schoolId, classe.id);
         const frPebs = profiles.filter((p) => p.pebsFiliere === 'FR_PEBS').length;
         const enPebs = profiles.filter((p) => p.pebsFiliere === 'EN_PEBS').length;
         const nonPebs = profiles.length - frPebs - enPebs;
@@ -368,10 +345,10 @@ export function buildAdminLv2PebsExamActions(deps: AdminActionDeps): ActionDefin
       async undo() {
         throw new Error("Cette action est une simple consultation, il n'y a rien à annuler.");
       },
-    },
+    }),
 
     // 39. Résumé d'une session de concours — LECTURE SEULE
-    {
+    defineAction({
       name: 'resume_session_concours',
       domain: 'concours',
       description:
@@ -391,10 +368,10 @@ export function buildAdminLv2PebsExamActions(deps: AdminActionDeps): ActionDefin
       async undo() {
         throw new Error("Cette action est une simple consultation, il n'y a rien à annuler.");
       },
-    },
+    }),
 
     // 40. Calculer l'admission d'une session de concours
-    {
+    defineAction({
       name: 'calculer_admission_concours',
       domain: 'concours',
       description:
@@ -417,10 +394,10 @@ export function buildAdminLv2PebsExamActions(deps: AdminActionDeps): ActionDefin
           "Le calcul d'admission ne peut pas être annulé depuis le copilot — utilisez l'écran Concours pour ajuster manuellement.",
         );
       },
-    },
+    }),
 
     // 41. Résumé d'une session PEBS — LECTURE SEULE
-    {
+    defineAction({
       name: 'resume_session_pebs',
       domain: 'lv2_pebs',
       description:
@@ -439,10 +416,10 @@ export function buildAdminLv2PebsExamActions(deps: AdminActionDeps): ActionDefin
       async undo() {
         throw new Error("Cette action est une simple consultation, il n'y a rien à annuler.");
       },
-    },
+    }),
 
     // 42. Calculer la sélection d'une session PEBS
-    {
+    defineAction({
       name: 'calculer_selection_pebs',
       domain: 'lv2_pebs',
       description:
@@ -465,6 +442,6 @@ export function buildAdminLv2PebsExamActions(deps: AdminActionDeps): ActionDefin
           "Le calcul de sélection ne peut pas être annulé depuis le copilot — utilisez l'écran PEBS pour ajuster manuellement.",
         );
       },
-    },
+    }),
   ];
 }

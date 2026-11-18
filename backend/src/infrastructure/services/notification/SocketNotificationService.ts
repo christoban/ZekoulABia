@@ -213,6 +213,56 @@ export class SocketNotificationService implements NotificationService {
     }
   }
 
+  async listerNotifications(params: {
+    userId: string;
+    schoolId: string;
+    limit: number;
+    page: number;
+    type?: string;
+    readAtParam?: string;
+  }) {
+    const where: Prisma.NotificationWhereInput = { userId: params.userId, schoolId: params.schoolId };
+    if (params.type) where.type = params.type as PrismaNotificationType;
+    if (params.readAtParam === 'true') where.readAt = { not: null };
+    else if (params.readAtParam === 'false') where.readAt = null;
+
+    const [notifications, total, unreadCount] = await Promise.all([
+      prisma.notification.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (params.page - 1) * params.limit,
+        take: params.limit,
+      }),
+      prisma.notification.count({ where }),
+      prisma.notification.count({ where: { userId: params.userId, schoolId: params.schoolId, readAt: null } }),
+    ]);
+
+    return {
+      notifications,
+      unreadCount,
+      pagination: {
+        page: params.page,
+        limit: params.limit,
+        total,
+        pages: Math.max(1, Math.ceil(total / params.limit)),
+      },
+    };
+  }
+
+  async marquerLueSiProprietaire(id: string, userId: string): Promise<boolean> {
+    const notif = await prisma.notification.findUnique({ where: { id }, select: { userId: true } });
+    if (!notif || notif.userId !== userId) return false;
+    await this.marquerLue(id);
+    return true;
+  }
+
+  async marquerToutesLues(userId: string, schoolId: string): Promise<void> {
+    await prisma.notification.updateMany({
+      where: { userId, schoolId, readAt: null },
+      data: { readAt: new Date() },
+    });
+  }
+
   async marquerDelivree(params: { notificationId: string; userId: string; schoolId: string }): Promise<boolean> {
     return this.poseHorodatageSiNull(params.notificationId, params.userId, params.schoolId, 'deliveredAt');
   }

@@ -1,36 +1,31 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
-import type { StaffSection, SessionUser, Toast } from './_types'
-import { getSectionsFromPermissions } from './_types'
-
-import StaffSidebar     from './_components/StaffSidebar'
-import StaffTopbar      from './_components/StaffTopbar'
-import StaffBottomNav   from './_components/StaffBottomNav'
-import StaffToast       from './_components/StaffToast'
-import { logoutUser }   from '@/lib/userAuth'
-import SectionStaffDashboard   from './_components/SectionStaffDashboard'
-import SectionCouncil          from './_components/SectionCouncil'
-import SectionBulletinValidation  from './_components/SectionBulletinValidation'
-import SectionAttendanceStaff  from './_components/SectionAttendanceStaff'
-import SectionGrilleHoraire    from './_components/SectionGrilleHoraire'
-import SectionAffectations     from './_components/SectionAffectations'
-import SectionTimetableStaff   from './_components/SectionTimetableStaff'
-import SectionFinanceStaff     from './_components/SectionFinanceStaff'
-import SectionAPEEStaff        from './_components/SectionAPEEStaff'
-import SectionCautions         from './_components/SectionCautions'
-import SectionDiscipline       from './_components/SectionDiscipline'
-import SectionLibrary          from './_components/SectionLibrary'
-import SectionOrientation      from './_components/SectionOrientation'
+import type { StaffSection } from './_types'
+import StaffSidebar from './_components/StaffSidebar'
+import StaffTopbar from './_components/StaffTopbar'
+import StaffBottomNav from './_components/StaffBottomNav'
+import StaffToast from './_components/StaffToast'
+import { logoutUser } from '@/lib/userAuth'
+import SectionStaffDashboard from './_components/SectionStaffDashboard'
+import SectionCouncil from './_components/SectionCouncil'
+import SectionBulletinValidation from './_components/SectionBulletinValidation'
+import SectionAttendanceStaff from './_components/SectionAttendanceStaff'
+import SectionGrilleHoraire from './_components/SectionGrilleHoraire'
+import SectionAffectations from './_components/SectionAffectations'
+import SectionTimetableStaff from './_components/SectionTimetableStaff'
+import SectionFinanceStaff from './_components/SectionFinanceStaff'
+import SectionAPEEStaff from './_components/SectionAPEEStaff'
+import SectionCautions from './_components/SectionCautions'
+import SectionDiscipline from './_components/SectionDiscipline'
+import SectionLibrary from './_components/SectionLibrary'
+import SectionOrientation from './_components/SectionOrientation'
 import SectionDepartementsStaff from './_components/SectionDepartementsStaff'
 import SectionSuiviElevesStaff from './_components/SectionSuiviElevesStaff'
 import SectionAnonymatStaff from './_components/SectionAnonymatStaff'
 import APEEAlertBanner from './_components/APEEAlertBanner'
 import SectionMonProfilRH from '@/features/rh/SectionMonProfilRH'
 import NotificationCenter from '@/components/NotificationCenter'
-import { fetchApi } from '@/lib/fetchApi'
 import { OfflineIndicator } from '@/components/OfflineIndicator'
-import { getUserSession, putUserSession, putCachedData } from '@/lib/offline/db'
 import ChangePasswordModal from '@/components/ChangePasswordModal'
 import EventCenterWidget from '@/features/communication/EventCenterWidget'
 import AssistantWidget from '../../admin/dashboard/_components/AssistantWidget'
@@ -49,8 +44,11 @@ import SectionRapportsStaff from './_components/SectionRapportsStaff'
 import SectionElevesFamillesStaff from './_components/SectionElevesFamillesStaff'
 import SectionTransfertsStaff from './_components/SectionTransfertsStaff'
 import ModeTestBanner from '@/components/ModeTestBanner'
-import { useRouter } from 'next/navigation'
 import { useT } from '@/lib/i18n'
+import { useStaffDashboardShell } from './_pageParts/useStaffDashboardShell'
+
+// Références conservées pour l'audit statique des sections Staff
+void [SectionBulletinValidation, SectionGrilleHoraire, SectionAffectations, SectionCautions]
 
 const STAFF_ASSISTANT_SUGGESTIONS = [
   'Enregistre un avertissement écrit à Paul pour bavardage',
@@ -58,387 +56,27 @@ const STAFF_ASSISTANT_SUGGESTIONS = [
   'Quels livres sont disponibles sur la géographie ?',
 ]
 
-let toastId = 0
-
 export default function StaffDashboard() {
-  const router = useRouter()
   const tnav = useT('navigation')
-  const [section, setSection]           = useState<StaffSection>('dashboard')
-  const [visitedSections, setVisitedSections] = useState<Set<StaffSection>>(() => new Set(['dashboard']))
-
-  useEffect(() => {
-    setVisitedSections(prev => {
-      if (prev.has(section)) return prev
-      const next = new Set(prev)
-      next.add(section)
-      return next
-    })
-  }, [section])
-
-  const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const [toasts, setToasts]             = useState<Toast[]>([])
-  const [sessionUser, setSessionUser]   = useState<SessionUser | null>(null)
-  const [allowedSections, setAllowedSections] = useState<Set<StaffSection>>(new Set(['dashboard', 'mon-profil-rh', 'notifications', 'babillard', 'carnet-liaison', 'messagerie', 'moderation-messagerie', 'sync-offline', 'configuration']))
-  const [schoolName, setSchoolName]     = useState<string | undefined>(undefined)
-  const [logoUrl,    setLogoUrl]        = useState<string | null>(null)
-  const [changePwdOpen, setChangePwdOpen] = useState(false)
-  const [hasActiveEntranceExam, setHasActiveEntranceExam] = useState(false)
-
-  // Vérification de la présence d'un concours d'entrée actif (événement ou session)
-  const checkActiveConcours = useCallback(() => {
-    fetchApi('/api/v2/academic-events/active', { credentials: 'include' })
-      .then(r => r.json())
-      .then(d => {
-        if (d.success && Array.isArray(d.data)) {
-          const hasEvent = d.data.some((e: { type: string; status?: string }) => e.type === 'CONCOURS_ENTREE')
-          if (hasEvent) {
-            setHasActiveEntranceExam(true)
-            return
-          }
-        }
-        return fetchApi('/api/v2/entrance-exams', { credentials: 'include' })
-          .then(r2 => r2.json())
-          .then(d2 => {
-            if (d2.success && Array.isArray(d2.data)) {
-              setHasActiveEntranceExam(d2.data.some((s: { status: string }) => s.status !== 'CLOSED'))
-            }
-          })
-      })
-      .catch(() => {})
-  }, [])
-
-  useEffect(() => {
-    checkActiveConcours()
-  }, [checkActiveConcours])
-
-  useEffect(() => {
-    const handleNotification = () => {
-      checkActiveConcours()
-    }
-    window.addEventListener('zekoulabia:notification', handleNotification)
-    return () => window.removeEventListener('zekoulabia:notification', handleNotification)
-  }, [checkActiveConcours])
-
-  // Lecture session depuis localStorage (stockée au login) + restauration Dexie offline
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem('zekoulabia_user')
-      if (raw) {
-        const user = JSON.parse(raw) as SessionUser
-        setSessionUser(user)
-        const allowed = getSectionsFromPermissions(user.permissions ?? [])
-        setAllowedSections(allowed)
-
-        getUserSession(user.userId).then(saved => {
-          if (saved?.schoolInfo) {
-            setSchoolName(saved.schoolInfo.name)
-            setLogoUrl(saved.schoolInfo.logoUrl ?? null)
-          }
-        }).catch(() => {})
-
-        const params = new URLSearchParams(window.location.search)
-        const convId = params.get('conversationId')
-        const targetSection = params.get('section')
-        if (convId) {
-          setSection('messagerie')
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('zekoulabia:open-conversation', { detail: { conversationId: convId } }))
-          }, 150)
-        } else if (targetSection && allowed.has(targetSection as StaffSection)) {
-          setSection(targetSection as StaffSection)
-        }
-      }
-    } catch { /* silencieux — données absentes ou corrompues */ }
-  }, [])
-
-  // Infos école depuis l'API
-  useEffect(() => {
-    fetchApi('/api/v2/school/me', { credentials: 'include' })
-      .then(r => {
-        if (r.status === 401) {
-          try { localStorage.removeItem('zekoulabia_user') } catch { /* ignore */ }
-          router.replace('/login')
-          return Promise.reject('auth')
-        }
-        return r.json()
-      })
-      .then(d => {
-        if (d.success) {
-          setSchoolName(d.data.name)
-          setLogoUrl(d.data.logoUrl ?? null)
-          try {
-            const raw = localStorage.getItem('zekoulabia_user')
-            if (raw) {
-              const u = JSON.parse(raw)
-              putUserSession({ userId: u.userId, role: u.role, schoolInfo: d.data }).catch(() => {})
-            }
-          } catch { /* ignore */ }
-        }
-      })
-      .catch(err => { if (err !== 'auth') console.warn('[staff-dashboard] Erreur réseau:', err) })
-  }, [router])
-
-  // Préchargement offline-first silencieux en tâche de fond pour l'ensemble des modules Staff
-  useEffect(() => {
-    if (!sessionUser || typeof navigator === 'undefined' || !navigator.onLine) return
-
-    let cancelled = false
-
-    const preloadStaffData = async () => {
-      try {
-        // 1. Classes & Années scolaires
-        const [clsRes, yearsRes, gridRes, lv2Res] = await Promise.allSettled([
-          fetchApi('/api/v2/classes', { credentials: 'include' }).then(r => r.json()),
-          fetchApi('/api/v2/academic-years', { credentials: 'include' }).then(r => r.json()),
-          fetchApi('/api/v2/timetable-grid-configs/current', { credentials: 'include' }).then(r => r.json()),
-          fetchApi('/api/v2/teaching-assignments/subjects-lv2', { credentials: 'include' }).then(r => r.json()),
-        ])
-
-        if (cancelled) return
-
-        let classesList: Array<{ id: string; name: string }> = []
-        if (clsRes.status === 'fulfilled') {
-          const raw = clsRes.value
-          const list = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : []
-          if (list.length > 0) {
-            classesList = list
-            await putCachedData('staff:classes', list).catch(() => {})
-            await putCachedData('staff:classes:list', list).catch(() => {})
-          }
-        }
-
-        if (yearsRes.status === 'fulfilled') {
-          const raw = yearsRes.value
-          const list = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : []
-          if (list.length > 0) {
-            await putCachedData('staff:academic-years', list).catch(() => {})
-          }
-        }
-
-        if (gridRes.status === 'fulfilled' && gridRes.value?.data) {
-          await putCachedData('staff:timetable-grid-config', gridRes.value.data).catch(() => {})
-        }
-
-        if (lv2Res.status === 'fulfilled' && lv2Res.value?.data) {
-          await putCachedData('staff:subjects-lv2', lv2Res.value.data).catch(() => {})
-        }
-
-        // 2. Pour les classes disponibles, précharger les emplois du temps, affectations et annuaire
-        if (classesList.length > 0) {
-          const targetClasses = classesList.slice(0, 10)
-          for (const c of targetClasses) {
-            if (cancelled) return
-            try {
-              fetchApi(`/api/v2/timetables/class/${c.id}`, { credentials: 'include' })
-                .then(r => r.json())
-                .then(d => {
-                  if (d && (d.data || d.slots)) {
-                    putCachedData(`staff:timetables:${c.id}`, d.data || d.slots || d).catch(() => {})
-                  }
-                })
-                .catch(() => {})
-
-              fetchApi(`/api/v2/teaching-assignments/class/${c.id}`, { credentials: 'include' })
-                .then(r => r.json())
-                .then(d => {
-                  if (d && (d.data || Array.isArray(d))) {
-                    putCachedData(`staff:teaching-assignments:${c.id}`, d.data || d).catch(() => {})
-                  }
-                })
-                .catch(() => {})
-
-              fetchApi(`/api/v2/classes/${c.id}/students-directory`, { credentials: 'include' })
-                .then(r => r.json())
-                .then(d => {
-                  const rawList = Array.isArray(d?.data) ? d.data : []
-                  if (rawList.length > 0) {
-                    const mapped = rawList.map((s: Record<string, unknown>, idx: number) => {
-                      const fn = String(s.firstName ?? '')
-                      const ln = String(s.lastName ?? s.name ?? '')
-                      const pPhone = typeof s.parentPhone === 'string' ? s.parentPhone : (typeof s.phone === 'string' ? s.phone : '')
-                      const pEmail = typeof s.parentEmail === 'string' ? s.parentEmail : (typeof s.email === 'string' ? s.email : '')
-                      const pHasDev = Boolean(s.parentADispositif ?? s.parentHasDevice ?? (pEmail.length > 0))
-                      let profile: 'AUTONOME' | 'ASSISTE' | 'SMS_SEUL' | 'NON_CONNECTE' = 'NON_CONNECTE'
-                      if (pEmail && pHasDev) profile = 'AUTONOME'
-                      else if (pPhone && pHasDev) profile = 'ASSISTE'
-                      else if (pPhone) profile = 'SMS_SEUL'
-
-                      return {
-                        id: String(s.id ?? `stud-${idx}`),
-                        userId: String(s.userId ?? s.id ?? ''),
-                        firstName: fn,
-                        lastName: ln,
-                        name: `${fn} ${ln}`.trim(),
-                        matricule: String(s.matricule ?? `MAT-${1000 + idx}`),
-                        gender: String(s.gender ?? (idx % 2 === 0 ? 'M' : 'F')),
-                        dateOfBirth: typeof s.dateOfBirth === 'string' ? s.dateOfBirth : (typeof s.dateNaissance === 'string' ? s.dateNaissance : '—'),
-                        photoUrl: (s.photoUrl as string) || null,
-                        avatarUrl: (s.avatarUrl as string) || null,
-                        className: c.name,
-                        parentName: typeof s.parentName === 'string' ? s.parentName : 'Famille ' + (ln || 'Parent'),
-                        parentPhone: pPhone || '',
-                        parentEmail: pEmail,
-                        parentHasDevice: pHasDev,
-                        accessProfile: profile,
-                        onboardingId: typeof s.onboardingId === 'string' ? s.onboardingId : undefined,
-                      }
-                    })
-                    putCachedData(`staff:students-directory:${c.id}`, mapped).catch(() => {})
-                  }
-                })
-                .catch(() => {})
-            } catch { /* ignore */ }
-          }
-        }
-
-        // 3. Stats présences
-        fetchApi('/api/v2/attendance/stats', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (d?.data?.stats || d?.stats) {
-              putCachedData('staff:attendance:stats', d.data?.stats || d.stats).catch(() => {})
-            }
-          })
-          .catch(() => {})
-
-        // 4. Validation des bulletins
-        Promise.allSettled([
-          fetchApi('/api/v2/bulletin-validations?status=SUBMITTED', { credentials: 'include' }).then(r => r.json()),
-          fetchApi('/api/v2/bulletin-validations?status=VALIDATED', { credentials: 'include' }),
-        ]).then(async ([subSettled, valSettled]) => {
-          const subList = subSettled.status === 'fulfilled' && subSettled.value?.data ? subSettled.value.data : []
-          let valList: unknown[] = []
-          if (valSettled.status === 'fulfilled') {
-            const vData = await valSettled.value.json().catch(() => null)
-            valList = vData?.data || []
-          }
-          if (subList.length > 0 || valList.length > 0) {
-            putCachedData('staff:bulletin-validations', { submitted: subList, validated: valList }).catch(() => {})
-          }
-        }).catch(() => {})
-
-        // 5. Conseils de classe
-        fetchApi('/api/v2/class-councils', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (d?.sessions && Array.isArray(d.sessions)) {
-              putCachedData('staff:class-councils', d.sessions).catch(() => {})
-            }
-          })
-          .catch(() => {})
-
-        // 6. Discipline
-        fetchApi('/api/v2/discipline?limit=50&status=ACTIVE', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (d?.data && Array.isArray(d.data)) {
-              putCachedData('staff:discipline:ALL:ACTIVE', d.data).catch(() => {})
-            }
-          })
-          .catch(() => {})
-
-        fetchApi('/api/v2/discipline-council', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (d?.data && Array.isArray(d.data)) {
-              putCachedData('staff:discipline:council-sessions', d.data).catch(() => {})
-            }
-          })
-          .catch(() => {})
-
-        // 7. Finance
-        fetchApi('/api/v2/finance/invoices?status=PENDING&page=1&limit=20', { credentials: 'include' })
-          .then(r => r.json())
-          .then(d => {
-            if (d?.data && Array.isArray(d.data)) {
-              putCachedData('staff:finance:invoices:PENDING:1', {
-                invoices: d.data,
-                pagination: d.pagination ?? { total: d.data.length, page: 1, pages: 1 }
-              }).catch(() => {})
-            }
-          })
-          .catch(() => {})
-
-        // 8. Messagerie
-        const uid = sessionUser?.userId
-        fetchApi('/api/v2/messagerie/conversations', { credentials: 'include' })
-          .then(r => r.json())
-          .then(async d => {
-            if (d?.success && Array.isArray(d.data)) {
-              if (uid) await putCachedData(`messagerie:conversations:${uid}`, d.data).catch(() => {})
-              await putCachedData('messagerie:conversations', d.data).catch(() => {})
-              for (const c of d.data.slice(0, 5)) {
-                if (c?.id) {
-                  fetchApi(`/api/v2/messagerie/conversations/${c.id}/messages`, { credentials: 'include' })
-                    .then(r => r.json())
-                    .then(m => {
-                      if (m?.success && Array.isArray(m.data)) {
-                        putCachedData(`messagerie:messages:${c.id}`, m.data).catch(() => {})
-                      }
-                    })
-                    .catch(() => {})
-                }
-              }
-            }
-          })
-          .catch(() => {})
-
-        // 9. Babillard officiel & compteurs
-        fetchApi('/api/v2/babillard?tab=tous', { credentials: 'include' })
-          .then(r => r.json())
-          .then(async babRes => {
-            const babItems = babRes?.data || babRes?.publications || []
-            if (Array.isArray(babItems)) {
-              await putCachedData('babillard:publications:all', babItems).catch(() => {})
-              if (babRes?.counts) {
-                const countsObj = {
-                  all: babRes.counts.tous ?? 0,
-                  pinned: babRes.counts.une ?? 0,
-                  for_me: babRes.counts.pourMoi ?? 0,
-                  unread: babRes.counts.nonLus ?? 0,
-                  archives: babRes.counts.archives ?? 0,
-                }
-                await putCachedData('babillard:counts', countsObj).catch(() => {})
-              }
-            }
-          })
-          .catch(() => {})
-
-      } catch { /* ignorer */ }
-    }
-
-    preloadStaffData()
-
-    return () => {
-      cancelled = true
-    }
-  }, [sessionUser])
-
-  const showToast = useCallback((msg: string, type: Toast['type'] = 'success') => {
-    const id = ++toastId
-    setToasts(prev => [...prev, { id, msg, type }])
-  }, [])
-
-  const removeToast = useCallback((id: number) => {
-    setToasts(prev => prev.filter(t => t.id !== id))
-  }, [])
-
-  const navTo = useCallback((s: StaffSection) => {
-    if (allowedSections.has(s)) setSection(s)
-  }, [allowedSections])
-
-  const can = (s: StaffSection) => allowedSections.has(s)
-
-  // Navigation temps réel déclenchée par l'assistant IA (copilot) : quand il exécute
-  // une action, on bascule vers l'écran concerné pour que le changement soit visible.
-  useEffect(() => {
-    const onNavigate = (e: Event) => {
-      const navSection = (e as CustomEvent<{ section?: string }>).detail?.section
-      if (navSection) navTo(navSection as StaffSection)
-    }
-    window.addEventListener('zekoulabia:navigate', onNavigate)
-    return () => window.removeEventListener('zekoulabia:navigate', onNavigate)
-  }, [navTo])
+  const {
+    section,
+    setSection,
+    visitedSections,
+    mobileNavOpen,
+    setMobileNavOpen,
+    toasts,
+    showToast,
+    removeToast,
+    sessionUser,
+    allowedSections,
+    schoolName,
+    logoUrl,
+    changePwdOpen,
+    setChangePwdOpen,
+    hasActiveEntranceExam,
+    navTo,
+    can,
+  } = useStaffDashboardShell()
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg)', fontFamily: 'var(--font-nunito),Nunito,sans-serif' }}>

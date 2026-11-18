@@ -59,4 +59,5 @@ export class InMemoryClasseRepository implements ClasseRepository {
     return null;
   }
   async findByNameContient(_schoolId: string, _name: string) { return null; }
+  async findElevesActifsPourTemplate(_schoolId: string, _classId: string) { return []; }
 }

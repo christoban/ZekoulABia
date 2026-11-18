@@ -4,7 +4,6 @@ import type { ModifierMatiereUseCase } from '@application/subject/ModifierMatier
 import type { AssignerEnseignantMatiereUseCase } from '@application/subject/AssignerEnseignantMatiereUseCase';
 import type { DefinirCoefficientUseCase } from '@application/subject/DefinirCoefficientUseCase';
 import type { SupprimerMatiereUseCase } from '@application/subject/SupprimerMatiereUseCase';
-import { prisma } from '@infrastructure/persistence/prisma/prisma.client';
 import { journaliserActionIA } from '@infrastructure/services/ai/AIActionAuditLogger';
 
 export class SubjectController {
@@ -24,7 +23,7 @@ export class SubjectController {
         demandeurRole: user.role,
         ...req.body,
       });
-      journaliserActionIA(prisma, {
+      journaliserActionIA({
         actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
         // Bug indépendant : CreerMatiereResultat expose `matiereId`, jamais `id` — le cast
         // masquait un ciblage d'audit toujours undefined pour cette action.
@@ -34,7 +33,7 @@ export class SubjectController {
       res.status(201).json({ success: true, data: resultat });
     } catch (error) {
       const user = req.user;
-      journaliserActionIA(prisma, {
+      journaliserActionIA({
         actorUserId: user?.userId, actorRole: user?.role, schoolId: user?.schoolId,
         actionName: 'creer_matiere', origin: 'UI_DIRECT', outcome: 'ERREUR',
         refusalReason: error instanceof Error ? error.message : undefined, parametersSummary: req.body,
@@ -52,7 +51,7 @@ export class SubjectController {
         demandeurRole: user.role,
         ...req.body,
       });
-      journaliserActionIA(prisma, {
+      journaliserActionIA({
         actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
         actionName: 'modifier_matiere', targetType: 'Subject', targetId: req.params.id as string,
         origin: 'UI_DIRECT', outcome: 'SUCCES', parametersSummary: req.body,
@@ -60,7 +59,7 @@ export class SubjectController {
       res.json({ success: true, message: 'Matière mise à jour' });
     } catch (error) {
       const user = req.user;
-      journaliserActionIA(prisma, {
+      journaliserActionIA({
         actorUserId: user?.userId, actorRole: user?.role, schoolId: user?.schoolId,
         actionName: 'modifier_matiere', targetType: 'Subject', targetId: req.params.id as string,
         origin: 'UI_DIRECT', outcome: 'ERREUR',
@@ -88,7 +87,7 @@ export class SubjectController {
         action,
       });
 
-      journaliserActionIA(prisma, {
+      journaliserActionIA({
         actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
         actionName: 'assigner_enseignant_matiere', targetType: 'Subject', targetId: subjectId,
         origin: 'UI_DIRECT', outcome: 'SUCCES', parametersSummary: { teacherUserId: req.params.teacherId, subjectId, action },
@@ -99,7 +98,7 @@ export class SubjectController {
       });
     } catch (error) {
       const user = req.user;
-      journaliserActionIA(prisma, {
+      journaliserActionIA({
         actorUserId: user?.userId, actorRole: user?.role, schoolId: user?.schoolId,
         actionName: 'assigner_enseignant_matiere', targetType: 'Subject', targetId: req.body?.subjectId,
         origin: 'UI_DIRECT', outcome: 'ERREUR',
@@ -141,7 +140,7 @@ export class SubjectController {
         demandeurRole: user.role,
         demandeurId: user.userId,
       });
-      journaliserActionIA(prisma, {
+      journaliserActionIA({
         actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
         actionName: 'supprimer_matiere', targetType: 'Subject', targetId: req.params.id as string,
         origin: 'UI_DIRECT', outcome: 'SUCCES', parametersSummary: req.body,
@@ -149,7 +148,7 @@ export class SubjectController {
       res.json({ success: true, message: 'Matière mise à la corbeille' });
     } catch (error) {
       const user = req.user;
-      journaliserActionIA(prisma, {
+      journaliserActionIA({
         actorUserId: user?.userId, actorRole: user?.role, schoolId: user?.schoolId,
         actionName: 'supprimer_matiere', targetType: 'Subject', targetId: req.params.id as string,
         origin: 'UI_DIRECT', outcome: 'ERREUR',

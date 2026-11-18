@@ -1,17 +1,17 @@
 import { z } from 'zod';
 import {
   type ActionDefinition,
+  defineAction,
   resolveClass,
   resolveStudent,
 } from '../catalogShared';
-import { whereProfilesParClasse } from '@application/shared/studentEnrollment';
 import { resolveEmployee } from './adminHelpers';
 import type { AdminActionDeps } from '../adminActionCatalog';
 
 export function buildAdminHrCommRiskActions(deps: AdminActionDeps): ActionDefinition[] {
   return [
     // 48. Traiter (approuver/rejeter) une demande de congé — NON annulable
-    {
+    defineAction({
       name: 'traiter_demande_conge',
       domain: 'enseignants_rh',
       description:
@@ -24,11 +24,7 @@ export function buildAdminHrCommRiskActions(deps: AdminActionDeps): ActionDefini
       }),
       async execute(input, ctx) {
         const employee = await resolveEmployee(ctx, input.employeeName);
-        const demande = await ctx.prisma.leaveRequest.findFirst({
-          where: { schoolId: ctx.schoolId, userId: employee.id, statut: 'PENDING' },
-          orderBy: { createdAt: 'desc' },
-          select: { id: true },
-        });
+        const demande = await ctx.data.adminOps.findLatestPendingLeaveRequest(ctx.schoolId, employee.id);
         if (!demande) throw new Error(`Aucune demande de congé en attente pour ${employee.name}.`);
         await deps.traiterDemandeConge(ctx.schoolId, demande.id, input.decision, ctx.userId);
         const label = input.decision === 'APPROVED' ? 'approuvée' : 'rejetée';
@@ -39,10 +35,10 @@ export function buildAdminHrCommRiskActions(deps: AdminActionDeps): ActionDefini
           "Le traitement d'une demande de congé ne peut pas être annulé depuis le copilot — utilisez l'écran Ressources Humaines.",
         );
       },
-    },
+    }),
 
     // 49. Enseignants sans diplôme renseigné — LECTURE SEULE
-    {
+    defineAction({
       name: 'enseignants_sans_diplome',
       domain: 'enseignants_rh',
       description: "Liste les enseignants dont aucun diplôme n'est renseigné dans leur dossier RH.",
@@ -50,14 +46,8 @@ export function buildAdminHrCommRiskActions(deps: AdminActionDeps): ActionDefini
       requiredPermission: null,
       inputSchema: z.object({}),
       async execute(_input, ctx) {
-        const enseignants = await ctx.prisma.user.findMany({
-          where: { schoolId: ctx.schoolId, role: 'TEACHER' },
-          select: { firstName: true, lastName: true, employeeFile: { select: { diplomes: true } } },
-        });
-        const sansDiplome = enseignants.filter((e) => {
-          const diplomes = e.employeeFile?.diplomes;
-          return !Array.isArray(diplomes) || diplomes.length === 0;
-        });
+        const enseignants = await ctx.data.adminOps.findTeachersWithDiplomas(ctx.schoolId);
+        const sansDiplome = enseignants.filter((e) => !Array.isArray(e.diplomes) || e.diplomes.length === 0);
         const resultLabel =
           sansDiplome.length === 0
             ? 'Tous les enseignants ont au moins un diplôme renseigné.'
@@ -68,10 +58,10 @@ export function buildAdminHrCommRiskActions(deps: AdminActionDeps): ActionDefini
       async undo() {
         throw new Error("Cette action est une simple consultation, il n'y a rien à annuler.");
       },
-    },
+    }),
 
     // 51. Alertes de retard sur les programmes — LECTURE SEULE
-    {
+    defineAction({
       name: 'alertes_retard_programme',
       domain: 'enseignants_rh',
       description:
@@ -103,10 +93,10 @@ export function buildAdminHrCommRiskActions(deps: AdminActionDeps): ActionDefini
       async undo() {
         throw new Error("Cette action est une simple consultation, il n'y a rien à annuler.");
       },
-    },
+    }),
 
     // 52. Diffuser un message SMS/email à un groupe ciblé — NON annulable
-    {
+    defineAction({
       name: 'diffuser_message',
       domain: 'communication',
       description:
@@ -152,10 +142,10 @@ export function buildAdminHrCommRiskActions(deps: AdminActionDeps): ActionDefini
           "Une diffusion de message ne peut pas être annulée depuis le copilot — les messages sont déjà partis.",
         );
       },
-    },
+    }),
 
     // 53. Lister les élèves à risque — LECTURE SEULE
-    {
+    defineAction({
       name: 'lister_eleves_a_risque',
       domain: 'sante_risque',
       description:
@@ -168,29 +158,11 @@ export function buildAdminHrCommRiskActions(deps: AdminActionDeps): ActionDefini
       }),
       async execute(input, ctx) {
         const classe = input.className ? await resolveClass(ctx, input.className) : null;
-        const config = await ctx.prisma.schoolConfig
-          .findUnique({ where: { schoolId: ctx.schoolId }, select: { aiRiskThreshold: true, aiRiskThresholdCritical: true } })
-          .catch(() => null);
+        const config = await ctx.data.adminOps.findSchoolRiskThresholds(ctx.schoolId).catch(() => null);
         const warningThreshold = config?.aiRiskThreshold ?? 50;
         const criticalThreshold = config?.aiRiskThresholdCritical ?? 30;
 
-        const eleves = await ctx.prisma.studentProfile.findMany({
-          where: {
-            user: { schoolId: ctx.schoolId },
-            ...(classe ? whereProfilesParClasse(classe.id) : {}),
-            healthScore: { lte: warningThreshold },
-          },
-          select: {
-            healthScore: true,
-            user: { select: { firstName: true, lastName: true } },
-            enrollmentsYearScoped: {
-              where: { status: 'ACTIVE', academicYear: { isCurrent: true } },
-              select: { class: { select: { name: true } } },
-              take: 1,
-            },
-          },
-          orderBy: { healthScore: 'asc' },
-        });
+        const eleves = await ctx.data.adminOps.findAtRiskStudents(ctx.schoolId, warningThreshold, classe?.id);
 
         if (eleves.length === 0) {
           return {
@@ -207,8 +179,8 @@ export function buildAdminHrCommRiskActions(deps: AdminActionDeps): ActionDefini
             .map((e) => {
               const score = e.healthScore ?? 75;
               const niveau = score <= criticalThreshold ? 'CRITIQUE' : 'à surveiller';
-              const className = e.enrollmentsYearScoped[0]?.class?.name ?? 'N/A';
-              return `${e.user.firstName ?? ''} ${e.user.lastName ?? ''}`.trim() + ` (${className}, ${score}/100, ${niveau})`;
+              const className = e.className ?? 'N/A';
+              return `${e.firstName ?? ''} ${e.lastName ?? ''}`.trim() + ` (${className}, ${score}/100, ${niveau})`;
             })
             .join(', ');
         return { resultLabel, section: 'ai', entity: 'studentProfile' };
@@ -216,10 +188,10 @@ export function buildAdminHrCommRiskActions(deps: AdminActionDeps): ActionDefini
       async undo() {
         throw new Error("Cette action est une simple consultation, il n'y a rien à annuler.");
       },
-    },
+    }),
 
     // 54. Résumé du risque d'un élève précis — LECTURE SEULE
-    {
+    defineAction({
       name: 'resume_risque_eleve',
       domain: 'sante_risque',
       description:
@@ -233,17 +205,10 @@ export function buildAdminHrCommRiskActions(deps: AdminActionDeps): ActionDefini
       }),
       async execute(input, ctx) {
         const student = await resolveStudent(ctx, input.studentName, input.className);
-        const profile = await ctx.prisma.studentProfile.findFirst({
-          where: { userId: student.id },
-          select: { healthScore: true },
-        });
+        const profile = await ctx.data.adminOps.findStudentHealthScore(ctx.schoolId, student.id);
         const score = profile?.healthScore ?? 75;
 
-        const conseil = await ctx.prisma.studentRecommendation.findFirst({
-          where: { studentId: student.id, recipientRole: 'TEACHER' },
-          orderBy: { createdAt: 'desc' },
-          select: { content: true, contextType: true, createdAt: true },
-        });
+        const conseil = await ctx.data.adminOps.findLatestStudentRecommendation(ctx.schoolId, student.id, 'TEACHER');
 
         let resultLabel = `${student.name} (${student.className ?? 'N/A'}) : indice de santé scolaire ${score}/100.`;
         if (conseil) {
@@ -256,6 +221,6 @@ export function buildAdminHrCommRiskActions(deps: AdminActionDeps): ActionDefini
       async undo() {
         throw new Error("Cette action est une simple consultation, il n'y a rien à annuler.");
       },
-    },
+    }),
   ];
 }

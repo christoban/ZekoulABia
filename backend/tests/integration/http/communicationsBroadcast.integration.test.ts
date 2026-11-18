@@ -12,14 +12,13 @@
  *  2. Le filtre paymentStatus ne retient que les élèves dont la DERNIÈRE facture a ce statut.
  *  3. broadcastLog.target (colonne JSON) persiste bien après le retrait du cast.
  */
-import { describe, it, expect, beforeAll, afterAll, mock } from 'bun:test';
+import { describe, it, expect, beforeAll, afterAll } from 'bun:test';
 import { creerEleveAvecClasse } from '@application/shared/studentEnrollment';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
 import type { Server } from 'http';
 import type { AddressInfo } from 'net';
-import * as smsServiceReel from '../../../src/infrastructure/services/sms/SmsService.ts';
 import { PrismaEnrollmentRepository } from '@infrastructure/persistence/prisma/PrismaEnrollmentRepository';
 import { prismaTest } from '../../helpers/prismaTestClient.ts';
 import { creerEcoleTest, creerUtilisateurTest, nettoyerEcole } from '../../helpers/dbFixtures.ts';
@@ -30,17 +29,8 @@ if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET non défini — requis dans .env.test pour ce test.');
 }
 
-// .env fournit un TECHSOFT_API_KEY réel (chargé par Bun même avec --env-file .env.test) —
-// sans ce mock, ce test enverrait un vrai SMS via l'API TechSoft à chaque exécution.
-// isSmsConfigured() force le chemin "simulated" ; sendSMS() reste neutralisé en filet de
-// sécurité si jamais le mock ne s'applique pas au module déjà importé ailleurs. On repart du
-// module réel importé statiquement (pas d'import() du même spécificateur DANS la factory du
-// mock — ça provoque une résolution circulaire qui bloque indéfiniment).
-mock.module('../../../src/infrastructure/services/sms/SmsService.ts', () => ({
-  ...smsServiceReel,
-  isSmsConfigured: () => false,
-  sendSMS: async () => ({ success: false, error: 'sendSMS mocké — ne doit jamais être appelé dans ce test' }),
-}));
+const originalTechsoftApiKey = process.env.TECHSOFT_API_KEY;
+process.env.TECHSOFT_API_KEY = '';
 
 const { bootstrapHexagonal } = await import('@infrastructure/config/hexagonal.bootstrap');
 
@@ -123,6 +113,7 @@ async function attendre<T>(lecture: () => Promise<T | null>, timeoutMs = 3000): 
 }
 
 afterAll(async () => {
+  process.env.TECHSOFT_API_KEY = originalTechsoftApiKey;
   await new Promise<void>((resolve) => server.close(() => resolve()));
   await prismaTest.aIActionAuditLog.deleteMany({ where: { schoolId } });
   await prismaTest.broadcastLog.deleteMany({ where: { schoolId } });

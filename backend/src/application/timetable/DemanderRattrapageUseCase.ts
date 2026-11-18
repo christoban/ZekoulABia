@@ -1,7 +1,8 @@
 import type { NotificationService } from '@domain/ports/services/NotificationService';
 import type { UserRepository } from '@domain/ports/repositories/UserRepository';
 import type { RattachementEnseignantRepository } from '@domain/ports/repositories/RattachementEnseignantRepository';
-import type { Language } from '../../domain/policies/LanguagePolicy';
+import type { SchoolRepository } from '@domain/ports/repositories/SchoolRepository';
+import { resolveLanguage, type Language } from '../../domain/policies/LanguagePolicy';
 
 export interface DemanderRattrapageCommande {
   schoolId: string;
@@ -20,6 +21,7 @@ export class DemanderRattrapageUseCase {
     private readonly userRepository: UserRepository,
     private readonly notificationService: NotificationService,
     private readonly rattachementRepository: RattachementEnseignantRepository,
+    private readonly schoolRepository?: SchoolRepository,
   ) {}
 
   async execute(commande: DemanderRattrapageCommande): Promise<void> {
@@ -43,7 +45,12 @@ export class DemanderRattrapageUseCase {
       u => u.aPermission('MANAGE_TIMETABLE') || u.aPermission('MANAGE_ATTENDANCE')
     );
 
-    const lang = commande.lang ?? 'fr';
+    let lang = commande.lang;
+    if (!lang && this.schoolRepository) {
+      const school = await this.schoolRepository.findById(commande.schoolId);
+      lang = resolveLanguage(school?.subsystem);
+    }
+    lang = lang ?? 'fr';
     const dateStr = commande.proposedDate.toLocaleDateString(lang === 'en' ? 'en-GB' : 'fr-FR');
     const horaire = commande.proposedStartTime
       ? (lang === 'en'

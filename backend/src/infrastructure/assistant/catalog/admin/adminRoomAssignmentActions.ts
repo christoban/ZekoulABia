@@ -1,10 +1,10 @@
 import { z } from 'zod'
-import { norm, resolveCurrentAcademicYear, type ActionDefinition } from '../catalogShared'
+import { defineAction, norm, resolveCurrentAcademicYear, type ActionDefinition } from '../catalogShared'
 import type { AdminActionDeps } from '../adminActionCatalog'
 
 export function buildAdminRoomAssignmentActions(deps: AdminActionDeps): ActionDefinition[] {
   return [
-    {
+    defineAction({
       name: 'affecter_salles_naturelles',
       domain: 'salle_affectation',
       description: 'Affecte automatiquement à chaque classe la salle active portant exactement le même nom. Ignore les classes qui ont déjà une salle habituelle.',
@@ -13,20 +13,14 @@ export function buildAdminRoomAssignmentActions(deps: AdminActionDeps): ActionDe
       inputSchema: z.object({}),
       async execute(_input, ctx) {
         const annee = await resolveCurrentAcademicYear(ctx)
-        const classes = await ctx.prisma.class.findMany({
-          where: { schoolId: ctx.schoolId, academicYearId: annee.id, status: 'ACTIVE', deletedAt: null },
-          select: { id: true, name: true },
-          orderBy: { name: 'asc' },
-        })
-        const rooms = await ctx.prisma.room.findMany({
-          where: { schoolId: ctx.schoolId, status: 'ACTIVE', deletedAt: null },
-          select: { id: true, name: true },
-        })
+        const classes = await ctx.data.adminOps.findActiveClassesByAcademicYear(ctx.schoolId, annee.id)
+        const rooms = await ctx.data.adminOps.findActiveRoomsBySchool(ctx.schoolId)
         const roomByName = new Map(rooms.map(room => [norm(room.name), room]))
-        const previous = await ctx.prisma.classRoomAssignment.findMany({
-          where: { schoolId: ctx.schoolId, academicYearId: annee.id, classId: { in: classes.map(classe => classe.id) } },
-          select: { classId: true, roomId: true },
-        })
+        const previous = await ctx.data.adminOps.findClassRoomAssignments(
+          ctx.schoolId,
+          annee.id,
+          classes.map(classe => classe.id),
+        )
         const assignedClasses = new Set(previous.map(assignment => assignment.classId))
         const previousByClass = new Map(previous.map(assignment => [assignment.classId, assignment.roomId]))
         const affected: { classId: string; className: string; roomId: string; previousRoomId: string | null }[] = []
@@ -69,9 +63,13 @@ export function buildAdminRoomAssignmentActions(deps: AdminActionDeps): ActionDe
           entity: 'room',
         }
       },
-      async undo(_params, undoData, ctx) {
+      async undo(
+        _params,
+        undoData: { academicYearId: string; previous: { classId: string; previousRoomId: string | null }[] },
+        ctx,
+      ) {
         const academicYearId = String(undoData.academicYearId)
-        const previous = Array.isArray(undoData.previous) ? undoData.previous : []
+        const previous = undoData.previous ?? []
         for (const item of previous) {
           if (item.previousRoomId) {
             await deps.assignerSalleClasse.execute({
@@ -91,8 +89,8 @@ export function buildAdminRoomAssignmentActions(deps: AdminActionDeps): ActionDe
           }
         }
       },
-    },
-    {
+    }),
+    defineAction({
       name: 'affecter_salle_classes',
       domain: 'salle_affectation',
       description: 'Affecte une salle habituelle à une ou plusieurs classes de l’année courante.',
@@ -104,19 +102,13 @@ export function buildAdminRoomAssignmentActions(deps: AdminActionDeps): ActionDe
       }),
       async execute(input, ctx) {
         const annee = await resolveCurrentAcademicYear(ctx)
-        const room = await ctx.prisma.room.findFirst({
-          where: { schoolId: ctx.schoolId, name: input.roomName, status: 'ACTIVE', deletedAt: null },
-          select: { id: true, name: true },
-        })
+        const room = await ctx.data.adminOps.findActiveRoomByName(ctx.schoolId, input.roomName)
         if (!room) throw new Error(`Aucune salle active nommée « ${input.roomName} » n'existe dans votre établissement.`)
 
         const requestedNames: string[] = [...new Set<string>(input.classNames.map((name: string) => norm(name)))]
         if (requestedNames.length !== input.classNames.length) throw new Error('La liste contient plusieurs fois la même classe.')
 
-        const classes = await ctx.prisma.class.findMany({
-          where: { schoolId: ctx.schoolId, academicYearId: annee.id, status: 'ACTIVE', deletedAt: null },
-          select: { id: true, name: true },
-        })
+        const classes = await ctx.data.adminOps.findActiveClassesByAcademicYear(ctx.schoolId, annee.id)
         const selectedClasses = requestedNames.map(requestedName => {
           const exact = classes.filter(classe => norm(classe.name) === requestedName)
           const matches = exact.length > 0 ? exact : classes.filter(classe => norm(classe.name).replace(/\s+/g, '') === requestedName.replace(/\s+/g, ''))
@@ -125,10 +117,11 @@ export function buildAdminRoomAssignmentActions(deps: AdminActionDeps): ActionDe
           return matches[0]
         })
 
-        const previous = await ctx.prisma.classRoomAssignment.findMany({
-          where: { schoolId: ctx.schoolId, academicYearId: annee.id, classId: { in: selectedClasses.map(classe => classe.id) } },
-          select: { classId: true, roomId: true },
-        })
+        const previous = await ctx.data.adminOps.findClassRoomAssignments(
+          ctx.schoolId,
+          annee.id,
+          selectedClasses.map(classe => classe.id),
+        )
         const previousByClass = new Map(previous.map(assignment => [assignment.classId, assignment.roomId]))
         const erreurs: string[] = []
         for (const classe of selectedClasses) {
@@ -160,9 +153,13 @@ export function buildAdminRoomAssignmentActions(deps: AdminActionDeps): ActionDe
           entity: 'room',
         }
       },
-      async undo(_params, undoData, ctx) {
+      async undo(
+        _params,
+        undoData: { academicYearId: string; previous: { classId: string; previousRoomId: string | null }[] },
+        ctx,
+      ) {
         const academicYearId = String(undoData.academicYearId)
-        const previous = Array.isArray(undoData.previous) ? undoData.previous : []
+        const previous = undoData.previous ?? []
         for (const item of previous) {
           if (item.previousRoomId) {
             await deps.assignerSalleClasse.execute({
@@ -182,6 +179,6 @@ export function buildAdminRoomAssignmentActions(deps: AdminActionDeps): ActionDe
           }
         }
       },
-    },
+    }),
   ]
 }

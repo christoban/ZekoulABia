@@ -8,9 +8,9 @@ import { enregistrerMessageSupprime } from '../outbound/SuppressedOutboundMessag
 // + la table des messages supprimés.
 const MSG_ID_SUPPRIME = "suppressed";
 
-const BASE_URL = process.env.TECHSOFT_BASE_URL || "https://app.techsoft-sms.com/api/http";
-const API_KEY = process.env.TECHSOFT_API_KEY || "";
-const SENDER_ID = process.env.TECHSOFT_SENDER_ID || "TechSoft";
+const getBaseUrl = () => process.env.TECHSOFT_BASE_URL || "https://app.techsoft-sms.com/api/http";
+const getApiKey = () => process.env.TECHSOFT_API_KEY || "";
+const getSenderId = () => process.env.TECHSOFT_SENDER_ID || "TechSoft";
 
 function normalizePhone(raw: string): string {
   const digits = raw.replace(/[\s+]/g, "");
@@ -30,11 +30,14 @@ export const sendSMS = async (
     await enregistrerMessageSupprime({ channel: 'SMS', eventType: 'sms', recipient: to, schoolId });
     return { success: true, msgId: MSG_ID_SUPPRIME };
   }
+  if (!isSmsConfigured()) {
+    return { success: false, error: "SMS API key is missing" };
+  }
   try {
-    const response = await axios.post(`${BASE_URL}/sms/send`, {
-      api_token: API_KEY,
+    const response = await axios.post(`${getBaseUrl()}/sms/send`, {
+      api_token: getApiKey(),
       recipient: normalizePhone(to),
-      sender_id: SENDER_ID,
+      sender_id: getSenderId(),
       type: "plain",
       message,
     }, {
@@ -80,10 +83,10 @@ export const sendBulkSMS = async (
     const recipient = chunk.map(normalizePhone).join(",");
 
     try {
-      const response = await axios.post(`${BASE_URL}/sms/send`, {
-        api_token: API_KEY,
+      const response = await axios.post(`${getBaseUrl()}/sms/send`, {
+        api_token: getApiKey(),
         recipient,
-        sender_id: SENDER_ID,
+        sender_id: getSenderId(),
         type: "plain",
         message,
       }, {
@@ -119,7 +122,7 @@ type SendSmsResult = {
 };
 
 // ─── VÉRIFIER CONFIGURATION SMS ──────────────────────────────
-export const isSmsConfigured = () => Boolean(API_KEY);
+export const isSmsConfigured = () => Boolean(getApiKey());
 
 // ─── ENVOYER SMS (API secondaire compatible hexagonal) ───────
 export const sendSms = async (input: SendSmsInput): Promise<SendSmsResult> => {
@@ -141,10 +144,10 @@ export const sendSms = async (input: SendSmsInput): Promise<SendSmsResult> => {
   }
 
   try {
-    const response = await axios.post(`${BASE_URL}/sms/send`, {
-      api_token: API_KEY,
+    const response = await axios.post(`${getBaseUrl()}/sms/send`, {
+      api_token: getApiKey(),
       recipient: normalizePhone(input.to),
-      sender_id: SENDER_ID,
+      sender_id: getSenderId(),
       type: "plain",
       message: input.message,
     }, {
@@ -175,9 +178,9 @@ export const getSmsDeliveryStatus = async (providerMessageId: string) => {
 
   try {
     // GET /sms/{uid} — api_token envoyé dans le corps JSON selon la doc TechSoft
-    const response = await axios.get(`${BASE_URL}/sms/${providerMessageId}`, {
+    const response = await axios.get(`${getBaseUrl()}/sms/${providerMessageId}`, {
       headers: { "Content-Type": "application/json", "Accept": "application/json" },
-      data: { api_token: API_KEY },
+      data: { api_token: getApiKey() },
     });
 
     const data = response.data;

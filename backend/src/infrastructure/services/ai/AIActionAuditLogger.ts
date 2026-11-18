@@ -9,6 +9,7 @@
  * doit jamais bloquer l'action métier elle-même.
  */
 import type { PrismaClient, Prisma } from '@prisma/client';
+import { prisma as defaultPrisma } from '@infrastructure/persistence/prisma/prisma.client';
 import { messageErreur } from '@application/shared/messageErreur';
 
 export type AIActionOrigin = 'UI_DIRECT' | 'AI_ASSISTANT';
@@ -43,8 +44,15 @@ function sanitizeParams(params: unknown): Record<string, unknown> | undefined {
   return out;
 }
 
-export function journaliserActionIA(prisma: PrismaClient, params: JournaliserActionParams): void {
-  prisma.aIActionAuditLog
+export function journaliserActionIA(params: JournaliserActionParams): void;
+export function journaliserActionIA(prisma: PrismaClient, params: JournaliserActionParams): void;
+export function journaliserActionIA(
+  prismaOrParams: PrismaClient | JournaliserActionParams,
+  maybeParams?: JournaliserActionParams,
+): void {
+  const client = maybeParams ? (prismaOrParams as PrismaClient) : defaultPrisma;
+  const params = maybeParams ?? (prismaOrParams as JournaliserActionParams);
+  client.aIActionAuditLog
     .create({
       data: {
         actorUserId: params.actorUserId,

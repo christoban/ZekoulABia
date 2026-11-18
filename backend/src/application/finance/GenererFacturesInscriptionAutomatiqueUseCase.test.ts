@@ -69,6 +69,7 @@ describe('GenererFacturesInscriptionAutomatiqueUseCase', () => {
     restaurer: async () => {},
     listerSupprimes: async () => [],
     trouverSupprime: async () => null,
+    findElevesActifsPourTemplate: async () => [],
   };
 
   beforeEach(() => {

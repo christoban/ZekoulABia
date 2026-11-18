@@ -17,6 +17,7 @@ import { creerGroupTransferRoutes } from '@infrastructure/http/routes/groupTrans
 import { creerAdminGroupTransferRoutes } from '@infrastructure/http/routes/adminGroupTransfer.routes';
 import { SchoolTemplateAdminController } from '@infrastructure/http/controllers/SchoolTemplateAdminController';
 import { MasterReferentielsController } from '@infrastructure/http/controllers/MasterReferentielsController';
+import { PrismaMasterReferentielsRepository } from '@infrastructure/persistence/prisma/PrismaMasterReferentielsRepository';
 import { creerSchoolTemplateAdminRoutes } from '@infrastructure/http/routes/schoolTemplateAdmin.routes';
 import { creerMasterReferentielsRoutes } from '@infrastructure/http/routes/masterReferentiels.routes';
 import { PublierVersionTemplateUseCase } from '@application/schoolSettings/PublierVersionTemplateUseCase';
@@ -256,7 +257,7 @@ export function registerUserRoutes(app: Application, prismaParam: typeof prisma 
   app.use('/api/v2/master/platform-settings', creerPlatformSettingsRoutes(platformSettingsController));
   app.use('/api/v2/platform-settings/public', creerPublicPlatformSettingsRoutes(platformSettingsController));
 
-  const masterReferentielsController = new MasterReferentielsController();
+  const masterReferentielsController = new MasterReferentielsController(new PrismaMasterReferentielsRepository(p));
   app.use('/api/v2/master/referentiels', creerMasterReferentielsRoutes(masterReferentielsController));
 
   // V0.4 — Publication de versions + ré-application en masse (master-admin)
