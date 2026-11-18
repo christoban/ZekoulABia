@@ -26,6 +26,12 @@ export interface BulletinExportData {
   academicYearId: string;
   academicPeriodId: string;
   template: BulletinTemplate | string | null;
+  templateVersion?: number;
+  computationVersion?: number;
+  snapshotData?: unknown;
+  contentHash?: string | null;
+  verifyToken?: string | null;
+  reprintCount?: number;
   generalAverage: number | null;
   rank: number | null;
   totalStudents: number | null;
@@ -39,6 +45,12 @@ export interface BulletinExportData {
     firstName: string;
     lastName: string;
     studentProfile: {
+      matricule?: string | null;
+      dateOfBirth?: Date | null;
+      placeOfBirth?: string | null;
+      gender?: string | null;
+      isRepeater?: boolean;
+      photoUrl?: string | null;
       enrollmentsYearScoped: Array<{ class: { name: string; section: { code: string } | null } | null }>;
     } | null;
   };
@@ -62,6 +74,14 @@ export interface BulletinExportData {
     selfDevelopmentScore: number | null;
     subjectAverage: number | null;
     weightedScore: number | null;
+    subjectRank?: number | null;
+    groupKey?: string | null;
+    groupLabel?: string | null;
+    groupOrder?: number | null;
+    teacherName?: string | null;
+    classSubjectAverage?: number | null;
+    minSubjectAverage?: number | null;
+    maxSubjectAverage?: number | null;
     teacherComment: string | null;
     competenceLabel: string | null;
   }>;
@@ -70,9 +90,28 @@ export interface BulletinExportData {
     name: string;
     subsystem: string | null;
     schoolConfig: { bulletinTemplate?: string | null } | null;
-    schoolSettings: { timezone?: string | null; locale?: string | null } | null;
+    schoolSettings: { timezone?: string | null; locale?: string | null; schoolMotto?: string | null } | null;
   } | null;
   section: { code: string } | null;
+}
+
+export interface BulletinRevocationArchiveRecord {
+  id: string;
+  originalReportCardId: string;
+  schoolId: string;
+  studentId: string;
+  academicYearId: string;
+  academicPeriodId: string;
+  computationVersion: number;
+  templateVersion: number;
+  generalAverage: number | null;
+  rank: number | null;
+  snapshotData: unknown;
+  contentHash: string | null;
+  verifyToken: string | null;
+  revokedById: string;
+  revocationReason: string;
+  revokedAt: Date;
 }
 
 export interface BulletinRepository {
@@ -113,6 +152,8 @@ export interface BulletinRepository {
   // Écriture
   save(bulletin: Bulletin): Promise<void>;
   update(bulletin: Bulletin): Promise<void>;
+  archiverEtRemplacerRevoque(revokedBulletin: Bulletin, replacement: Bulletin): Promise<void>;
+  findRevocationsByStudent(schoolId: string, studentId: string): Promise<BulletinRevocationArchiveRecord[]>;
   updatePdfUrl(bulletinId: string, pdfUrl: string): Promise<void>;
   updateClassMasterComment(bulletinId: string, comment: string): Promise<void>;
   updateAiComment(bulletinId: string, comment: string): Promise<void>;

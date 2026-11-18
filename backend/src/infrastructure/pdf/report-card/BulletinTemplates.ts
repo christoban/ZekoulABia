@@ -1,5 +1,6 @@
 import PDFDocument from "pdfkit";
 import QRCode from "qrcode";
+import type { StudentBulletinSnapshot } from "@domain/types/bulletinSnapshot";
 import {
   drawBulletinHeader,
   drawBulletinFooter,
@@ -30,6 +31,12 @@ type SubjectLine = {
   selfDevelopmentScore?: number | null;
   subjectAverage?: number | null;
   weightedScore?: number | null;
+  subjectRank?: number | null;
+  groupKey?: string | null;
+  groupLabel?: string | null;
+  groupOrder?: number | null;
+  teacherName?: string | null;
+  classSubjectAverage?: number | null;
   teacherComment?: string | null;
   competenceLabel?: string | null;
 };
@@ -48,6 +55,13 @@ type BulletinData = {
   absenceCount?: number;
   mention: string;
   classMasterComment?: string | null;
+  nomProfesseurPrincipal?: string;
+  moyenneClasse?: number;
+  moyennePremier?: number;
+  moyenneDernier?: number;
+  nbAdmis?: number;
+  tauxReussite?: number;
+  snapshot?: StudentBulletinSnapshot;
   subjectLines: SubjectLine[];
   isOfficial?: boolean;
   verifyUrl?: string;

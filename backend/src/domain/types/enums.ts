@@ -21,7 +21,7 @@ export type SchoolLevel = 'PRESCHOOL' | 'PRIMARY' | 'SECONDARY' | 'MULTI';
 
 export type GradeValidationStatus = 'DRAFT' | 'LOCKED';
 export type BulletinTemplate = 'FR_SECONDARY' | 'EN_SECONDARY' | 'TECHNICAL_FR' | 'PRIMARY' | 'ANNUAL' | 'MONTHLY';
-export type ReportCardStatus = 'DRAFT' | 'GENERATED' | 'SENT';
+export type ReportCardStatus = 'DRAFT' | 'GENERATED' | 'SENT' | 'REVOKED';
 export type BulletinValidationStatus = 'SUBMITTED' | 'VALIDATED' | 'PUBLISHED';
 export type AssessmentSessionStatus = 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 

@@ -9,10 +9,35 @@ export class PrismaClasseCoefficientRepository implements ClasseCoefficientRepos
   constructor(private readonly prisma: PrismaClient) {}
 
   async findOverride(classId: string, subjectId: string): Promise<ClassSubjectOverrideRecord | null> {
-    const data = await this.prisma.classSubjectOverride.findUnique({
+    return this.prisma.classSubjectOverride.findUnique({
       where: { classId_subjectId: { classId, subjectId } },
     });
-    return data as ClassSubjectOverrideRecord | null;
+  }
+
+  async findCurriculumConfigsForClass(params: {
+    schoolId: string;
+    classId: string;
+    classLevel?: string | null;
+    serieCode?: string | null;
+  }): Promise<{
+    overrides: ClassSubjectOverrideRecord[];
+    levelCoefficients: SubjectCoefficientRecord[];
+  }> {
+    const [overrides, levelCoefficients] = await Promise.all([
+      this.prisma.classSubjectOverride.findMany({
+        where: { schoolId: params.schoolId, classId: params.classId },
+      }),
+      params.classLevel
+        ? this.prisma.subjectCoefficient.findMany({
+            where: {
+              schoolId: params.schoolId,
+              classLevel: params.classLevel,
+              ...(params.serieCode ? { OR: [{ serieCode: params.serieCode }, { serieCode: null }] } : {}),
+            },
+          })
+        : Promise.resolve([]),
+    ]);
+    return { overrides, levelCoefficients };
   }
 
   async upsertOverride(params: {
@@ -20,18 +45,28 @@ export class PrismaClasseCoefficientRepository implements ClasseCoefficientRepos
     classId: string;
     subjectId: string;
     coefficient: number;
+    groupKey?: string | null;
+    groupLabel?: string | null;
+    groupOrder?: number | null;
   }): Promise<ClassSubjectOverrideRecord> {
-    const data = await this.prisma.classSubjectOverride.upsert({
+    return this.prisma.classSubjectOverride.upsert({
       where: { classId_subjectId: { classId: params.classId, subjectId: params.subjectId } },
       create: {
         schoolId: params.schoolId,
         classId: params.classId,
         subjectId: params.subjectId,
         coefficient: params.coefficient,
+        groupKey: params.groupKey ?? null,
+        groupLabel: params.groupLabel ?? null,
+        groupOrder: params.groupOrder ?? null,
       },
-      update: { coefficient: params.coefficient },
+      update: {
+        coefficient: params.coefficient,
+        ...(params.groupKey !== undefined ? { groupKey: params.groupKey } : {}),
+        ...(params.groupLabel !== undefined ? { groupLabel: params.groupLabel } : {}),
+        ...(params.groupOrder !== undefined ? { groupOrder: params.groupOrder } : {}),
+      },
     });
-    return data as ClassSubjectOverrideRecord;
   }
 
   async deleteOverride(classId: string, subjectId: string): Promise<void> {
@@ -46,8 +81,11 @@ export class PrismaClasseCoefficientRepository implements ClasseCoefficientRepos
     classLevel: string;
     serieCode: string | null;
     coefficient: number;
+    groupKey?: string | null;
+    groupLabel?: string | null;
+    groupOrder?: number | null;
   }): Promise<SubjectCoefficientRecord> {
-    const data = await this.prisma.subjectCoefficient.upsert({
+    return this.prisma.subjectCoefficient.upsert({
       where: {
         schoolId_subjectId_classLevel_serieCode: {
           schoolId: params.schoolId,
@@ -62,10 +100,17 @@ export class PrismaClasseCoefficientRepository implements ClasseCoefficientRepos
         classLevel: params.classLevel ?? '',
         serieCode: params.serieCode,
         coefficient: params.coefficient,
+        groupKey: params.groupKey ?? null,
+        groupLabel: params.groupLabel ?? null,
+        groupOrder: params.groupOrder ?? null,
       },
-      update: { coefficient: params.coefficient },
+      update: {
+        coefficient: params.coefficient,
+        ...(params.groupKey !== undefined ? { groupKey: params.groupKey } : {}),
+        ...(params.groupLabel !== undefined ? { groupLabel: params.groupLabel } : {}),
+        ...(params.groupOrder !== undefined ? { groupOrder: params.groupOrder } : {}),
+      },
     });
-    return data as unknown as SubjectCoefficientRecord;
   }
 
   async deleteCoefficientsForSubject(params: {

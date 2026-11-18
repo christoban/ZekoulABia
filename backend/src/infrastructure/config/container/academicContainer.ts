@@ -7,6 +7,7 @@ import { PrismaBulletinValidationRepository } from '@infrastructure/persistence/
 import { PrismaMessagerieRepository } from '@infrastructure/persistence/prisma/PrismaMessagerieRepository';
 import { PrismaSousGroupeRepository } from '@infrastructure/persistence/prisma/PrismaSousGroupeRepository';
 import { PrismaClasseCoefficientRepository } from '@infrastructure/persistence/prisma/PrismaClasseCoefficientRepository';
+import { PrismaDisciplineRepository } from '@infrastructure/persistence/prisma/PrismaDisciplineRepository';
 import { PrismaPromotionRepository } from '@infrastructure/persistence/prisma/PrismaPromotionRepository';
 import { PrismaClassCouncilPreviewQueryPort } from '@infrastructure/persistence/prisma/PrismaClassCouncilPreviewQueryPort';
 import { PrismaAcademicProfileQueryRepository } from '@infrastructure/persistence/prisma/PrismaAcademicProfileQueryRepository';
@@ -64,6 +65,7 @@ export function createAcademicContainer(core: CoreContainerContext) {
   const messagerieRepository = new PrismaMessagerieRepository(prisma);
   const sousGroupeRepository = new PrismaSousGroupeRepository(prisma);
   const classeCoefficientRepository = new PrismaClasseCoefficientRepository(prisma);
+  const disciplineRepository = new PrismaDisciplineRepository(prisma);
   const promotionRepository = new PrismaPromotionRepository(prisma, core.enrollmentRepository);
 
   const envoyerBulletinsUseCase = new EnvoyerBulletinsUseCase(
@@ -87,6 +89,9 @@ export function createAcademicContainer(core: CoreContainerContext) {
       core.schoolRepository,
       core.sectionRepository,
       studentProfileRepository,
+      classeCoefficientRepository,
+      teachingAssignmentRepository,
+      disciplineRepository,
     ),
     envoyer: envoyerBulletinsUseCase,
     verifierDisponibilite: new VerifierDisponibiliteBulletinUseCase(

@@ -5,6 +5,12 @@ export interface StudentBulletinOptions {
   studentId: string;
   lv2SubjectId: string | null;
   alevelSubjectIds: string[];
+  matricule?: string | null;
+  dateOfBirth?: Date | null;
+  placeOfBirth?: string | null;
+  gender?: string | null;
+  isRepeater?: boolean;
+  photoUrl?: string | null;
 }
 
 /**

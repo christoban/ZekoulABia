@@ -255,8 +255,8 @@ export const drawBulletinHeader = (
   }
 
   doc.fontSize(16).font("Helvetica-Bold").text(schoolName, { align: "center" });
-  if (schoolMotto) {
-    doc.fontSize(9).font("Helvetica-Oblique").text(schoolMotto, { align: "center" });
+  if (schoolMotto && schoolMotto.trim().length > 0) {
+    doc.fontSize(9).font("Helvetica-Oblique").text(schoolMotto.trim(), { align: "center" });
   }
   doc.moveDown(0.3);
 

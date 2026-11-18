@@ -36,6 +36,13 @@ export interface LigneMatiereProps {
   subjectAverage?: number;
   weightedScore?: number;
   subjectRank?: number;
+  groupKey?: string;
+  groupLabel?: string;
+  groupOrder?: number;
+  teacherName?: string;
+  classSubjectAverage?: number;
+  minSubjectAverage?: number;
+  maxSubjectAverage?: number;
   teacherComment?: string;
   competenceLabel?: string; // Libellé compétence visée — bulletins bilingues
 }
@@ -50,7 +57,16 @@ export interface BulletinProps {
   academicPeriodId: string;
   sectionId?: string;
   template: BulletinTemplate;
+  templateVersion?: number;
+  computationVersion?: number;
+  snapshotData?: unknown;
+  contentHash?: string;
+  verifyToken?: string;
+  reprintCount?: number;
   validationStatus: ReportCardStatus;
+  revokedAt?: Date;
+  revokedById?: string;
+  revocationReason?: string;
 
   generalAverage?: number;
   rank?: number;
@@ -97,6 +113,9 @@ export class Bulletin {
     return new Bulletin({
       ...props,
       id: crypto.randomUUID(),
+      templateVersion: 1,
+      computationVersion: 2,
+      reprintCount: 0,
       validationStatus: 'DRAFT',
       isGenerated: false,
       absenceCount: 0,
@@ -118,6 +137,11 @@ export class Bulletin {
   get academicPeriodId(): string { return this.props.academicPeriodId; }
   get template(): BulletinTemplate { return this.props.template; }
   get validationStatus(): ReportCardStatus { return this.props.validationStatus; }
+  get computationVersion(): number { return this.props.computationVersion ?? 1; }
+  get templateVersion(): number { return this.props.templateVersion ?? 1; }
+  get snapshotData(): unknown { return this.props.snapshotData; }
+  get contentHash(): string | undefined { return this.props.contentHash; }
+  get verifyToken(): string | undefined { return this.props.verifyToken; }
   get generalAverage(): number | undefined { return this.props.generalAverage; }
   get rank(): number | undefined { return this.props.rank; }
   get mention(): string | undefined { return this.props.mention; }
@@ -200,6 +224,39 @@ export class Bulletin {
     this.props.isGenerated = true;
     this.props.pdfUrl = pdfUrl;
     this.props.validationStatus = 'GENERATED';
+  }
+
+  /**
+   * Scelle le snapshot JSON immuable du bulletin avec son empreinte SHA-256 et son jeton QR.
+   */
+  scellerSnapshot(params: {
+    snapshotData: unknown;
+    contentHash: string;
+    verifyToken: string;
+    computationVersion?: number;
+    templateVersion?: number;
+  }): void {
+    if (this.props.isGenerated) {
+      throw new Error('Impossible de modifier le snapshot d’un bulletin déjà scellé');
+    }
+    this.props.snapshotData = params.snapshotData;
+    this.props.contentHash = params.contentHash;
+    this.props.verifyToken = params.verifyToken;
+    this.props.computationVersion = params.computationVersion ?? 2;
+    this.props.templateVersion = params.templateVersion ?? 1;
+  }
+
+  /**
+   * Révoque officiellement ce bulletin (uniquement lors d'une régénération contrôlée Admin avec motif).
+   */
+  revoquer(params: { revokedById: string; reason: string; revokedAt?: Date }): void {
+    if (!params.reason || !params.reason.trim()) {
+      throw new Error('Un motif obligatoire est requis pour révoquer un bulletin.');
+    }
+    this.props.validationStatus = 'REVOKED';
+    this.props.revokedById = params.revokedById;
+    this.props.revocationReason = params.reason.trim();
+    this.props.revokedAt = params.revokedAt ?? new Date();
   }
 
   /**

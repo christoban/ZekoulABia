@@ -1,9 +1,16 @@
 import { Bulletin } from '@domain/entities/Bulletin';
-import type { BulletinRepository, BulletinAvecContexteClasse, BulletinEnrichi, BulletinExportData } from '@domain/ports/repositories/BulletinRepository';
+import type {
+  BulletinRepository,
+  BulletinAvecContexteClasse,
+  BulletinEnrichi,
+  BulletinExportData,
+  BulletinRevocationArchiveRecord,
+} from '@domain/ports/repositories/BulletinRepository';
 
 export class InMemoryBulletinRepository implements BulletinRepository {
   private store = new Map<string, Bulletin>();
   private periodeStore = new Map<string, Bulletin>(); // key: studentId:academicPeriodId
+  private revocations: BulletinRevocationArchiveRecord[] = [];
   private classesParEleve = new Map<string, string>();
   private profPrincipalByClasse = new Map<string, string>();
   private sectionCodeByClasse = new Map<string, string>();
@@ -129,6 +136,37 @@ export class InMemoryBulletinRepository implements BulletinRepository {
     this.store.set(b.id, b);
     const props = b.toObject();
     this.periodeStore.set(`${props.studentId}:${props.academicPeriodId}`, b);
+  }
+
+  async archiverEtRemplacerRevoque(revokedBulletin: Bulletin, replacement: Bulletin): Promise<void> {
+    const rev = revokedBulletin.toObject();
+    this.revocations.push({
+      id: crypto.randomUUID(),
+      originalReportCardId: rev.id,
+      schoolId: rev.schoolId,
+      studentId: rev.studentId,
+      academicYearId: rev.academicYearId,
+      academicPeriodId: rev.academicPeriodId,
+      computationVersion: rev.computationVersion ?? 1,
+      templateVersion: rev.templateVersion ?? 1,
+      generalAverage: rev.generalAverage ?? null,
+      rank: rev.rank ?? null,
+      snapshotData: rev.snapshotData ?? null,
+      contentHash: rev.contentHash ?? null,
+      verifyToken: rev.verifyToken ?? null,
+      revokedById: rev.revokedById ?? 'SYSTEM',
+      revocationReason: rev.revocationReason ?? 'Régénération contrôlée',
+      revokedAt: rev.revokedAt ?? new Date(),
+    });
+    this.store.delete(rev.id);
+    this.periodeStore.delete(`${rev.studentId}:${rev.academicPeriodId}`);
+    await this.save(replacement);
+  }
+
+  async findRevocationsByStudent(schoolId: string, studentId: string): Promise<BulletinRevocationArchiveRecord[]> {
+    return this.revocations
+      .filter(r => r.schoolId === schoolId && r.studentId === studentId)
+      .sort((a, b) => b.revokedAt.getTime() - a.revokedAt.getTime());
   }
 
   async updatePdfUrl(bulletinId: string, pdfUrl: string): Promise<void> {

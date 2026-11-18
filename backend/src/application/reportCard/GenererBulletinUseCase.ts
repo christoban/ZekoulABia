@@ -1,8 +1,11 @@
 /**
  * APPLICATION LAYER — Use Case : Générer les bulletins d'une classe
  *
- * Loi 4 : bloqué si une note n'est pas LOCKED.
- * Calcule les moyennes, rangs, mentions puis génère les PDFs.
+ * Lois appliquées :
+ * - Loi 4 : bloqué si une note de la classe n'est pas LOCKED.
+ * - Loi 5b : bloqué si le Conseil de Classe n'est pas LOCKED.
+ * - Loi 6 : verrouille les notes LOCKED après génération du bulletin.
+ * - Régénération contrôlée : réservée ADMIN avec motif obligatoire (archive REVOKED tracée).
  */
 import { Bulletin } from '@domain/entities/Bulletin';
 import type { NoteRepository } from '@domain/ports/repositories/NoteRepository';
@@ -17,11 +20,18 @@ import type { ClassCouncilRepository } from '@domain/ports/repositories/ClassCou
 import type { SchoolRepository } from '@domain/ports/repositories/SchoolRepository';
 import type { SectionRepository } from '@domain/ports/repositories/SectionRepository';
 import type { StudentProfileRepository } from '@domain/ports/repositories/StudentProfileRepository';
+import type { ClasseCoefficientRepository } from '@domain/ports/repositories/ClasseCoefficientRepository';
+import type { TeachingAssignmentRepository } from '@domain/ports/repositories/TeachingAssignmentRepository';
+import type { DisciplineRepository } from '@domain/ports/repositories/DisciplineRepository';
 import type { BulletinTemplate } from '@domain/types/enums';
-import { BulletinSnapshotBuilder } from '@domain/services/bulletin/BulletinSnapshotBuilder';
-import type { SnapshotNoteInput, SnapshotSubjectInput } from '@domain/types/bulletinSnapshot';
 import { resolveHasCoefficientForClass } from '@domain/subsystems/SubsystemDefaults';
 import { resolveLanguage } from '../../domain/policies/LanguagePolicy';
+import {
+  chargerNotesEtSequencesClasse,
+  construireEtEnrichirSnapshotsClasse,
+  resoudreVerifyBaseUrl,
+  snapshotToLignesMatiere,
+} from './bulletinSnapshotEnricher';
 
 export interface GenererBulletinCommande {
   schoolId: string;
@@ -30,13 +40,17 @@ export interface GenererBulletinCommande {
   academicYearId: string;
   template: BulletinTemplate;
   nomEtablissement: string;
+  schoolMotto?: string;
   logoUrl?: string;
   demandeurId: string;
+  demandeurRole?: string;
+  forceRegenerate?: boolean;
+  motifRegeneration?: string;
 }
 
 export interface GenererBulletinResultat {
   bulletinsGeneres: number;
-  bulletinsIgnores: number; // déjà générés
+  bulletinsIgnores: number;
   message: string;
 }
 
@@ -54,30 +68,42 @@ export class GenererBulletinUseCase {
     private readonly schoolRepository: SchoolRepository,
     private readonly sectionRepository: SectionRepository,
     private readonly studentProfileRepository: StudentProfileRepository,
+    private readonly classeCoefficientRepository?: ClasseCoefficientRepository,
+    private readonly teachingAssignmentRepository?: TeachingAssignmentRepository,
+    private readonly disciplineRepository?: DisciplineRepository,
   ) {}
 
   async execute(commande: GenererBulletinCommande): Promise<GenererBulletinResultat> {
-    // 1. Vérifier Loi 4 — toutes les notes doivent être LOCKED
-    const notesNonValidees = await this.noteRepository.findNotesNonValideesParClasse(
-      commande.classId,
-      commande.academicPeriodId
-    );
+    if (commande.forceRegenerate) {
+      if (commande.demandeurRole !== 'ADMIN') {
+        throw new Error('Seul un administrateur (ADMIN) peut révoquer et régénérer un bulletin existant.');
+      }
+      if (!commande.motifRegeneration || commande.motifRegeneration.trim().length === 0) {
+        throw new Error('Un motif obligatoire (motifRegeneration) est requis pour régénérer un bulletin.');
+      }
+    }
 
     const classe = await this.classeRepository.findById(commande.classId);
     if (!classe) throw new Error(`Classe introuvable : ${commande.classId}`);
 
-    // Période/année inexistantes — vérifié ICI, avant le calcul des élèves ayant des notes :
-    // sinon un academicPeriodId invalide fait tomber silencieusement dans le early-return "Aucun
-    // élève avec des notes validées" (aucune séquence ne peut matcher une période qui n'existe
-    // pas), masquant la vraie cause derrière un message trompeur.
     const periode = await this.anneeRepository.findPeriodeById(commande.academicPeriodId, commande.schoolId);
     if (!periode) throw new Error('Période académique introuvable');
 
     const annee = await this.anneeRepository.findById(commande.academicYearId);
     if (!annee) throw new Error('Année académique introuvable');
 
-    // Lance BulletinBloqueError si des notes ne sont pas validées
-    Bulletin.verifierPrerequisGeneration(notesNonValidees, classe.nomComplet);
+    const isAnnual = commande.template === 'ANNUAL';
+    const ctx = await chargerNotesEtSequencesClasse({
+      classId: commande.classId,
+      academicYearId: commande.academicYearId,
+      academicPeriodId: commande.academicPeriodId,
+      isAnnual,
+      anneeRepository: this.anneeRepository,
+      noteRepository: this.noteRepository,
+    });
+
+    // Loi 4 — toutes les notes doivent être LOCKED
+    Bulletin.verifierPrerequisGeneration(ctx.notesNonValidees, classe.nomComplet);
 
     // Loi 5b — le conseil de classe doit être LOCKED avant la génération des bulletins
     const conseilVerrouille = await this.classCouncilRepository.sessionVerrouilleeExiste(
@@ -90,144 +116,44 @@ export class GenererBulletinUseCase {
       );
     }
 
-    // 2. Récupérer les élèves ayant des notes dans cette classe sur la période
-    // findByRole renvoie TOUS les élèves de l'école — on filtre via les notes par séquence
-    const sequences = await this.anneeRepository.findSequencesByPeriode(commande.academicPeriodId);
-    const notesDeClasse: import('@domain/entities/Note').Note[] = [];
-    for (const seq of sequences) {
-      const notes = await this.noteRepository.findByClasse(commande.classId, seq.id);
-      notesDeClasse.push(...notes);
-    }
-    const studentIdsClasse = [...new Set(notesDeClasse.map((n) => n.studentId))];
-
+    const studentIdsClasse = new Set(ctx.notesDeClasse.map((n) => n.studentId));
     const eleves = await this.userRepository.findByRole(commande.schoolId, 'STUDENT');
-    const elevesClasse = eleves.filter((e) => e.isActive && studentIdsClasse.includes(e.id));
+    const elevesClasse = eleves.filter((e) => e.isActive && studentIdsClasse.has(e.id));
 
     if (elevesClasse.length === 0) {
       return { bulletinsGeneres: 0, bulletinsIgnores: 0, message: 'Aucun élève avec des notes validées dans cette classe' };
     }
 
-    // 3. Récupérer l'école, la section et les matières
     const school = await this.schoolRepository.findById(commande.schoolId);
-    if (!school) {
-      throw new Error(`Établissement ${commande.schoolId} introuvable`);
-    }
+    if (!school) throw new Error(`Établissement ${commande.schoolId} introuvable`);
 
-    let sectionCode: string | null = null;
-    if (classe.sectionId) {
-      const section = await this.sectionRepository.findById(classe.sectionId);
-      if (section) {
-        sectionCode = section.code;
-      }
-    }
-
+    const section = classe.sectionId ? await this.sectionRepository.findById(classe.sectionId) : null;
+    const sectionCode = section?.code ?? null;
     const langue = resolveLanguage(school.subsystem, sectionCode);
     const hasCoefficientBySubject = resolveHasCoefficientForClass(school, classe.level ?? null, sectionCode);
-    const matieres = await this.matiereRepository.findBySchool(commande.schoolId);
-    const matiereParId = new Map(matieres.map((m) => [m.id, m]));
 
-    // 4. Charger LV2 + A-Level pour filtrage strict en amont de tout calcul
-    const lv2Map = new Map<string, string | null>();
-    const lv2SubjectIds = new Set<string>(await this.matiereRepository.findIdsLV2BySchool(commande.schoolId));
-    const alevelMap = new Map<string, string[]>();
-
-    const profiles = await this.studentProfileRepository.findBulletinOptionsByStudentIds(
-      elevesClasse.map((eleve) => eleve.id),
-    );
-    for (const profile of profiles) {
-      lv2Map.set(profile.studentId, profile.lv2SubjectId);
-      if (profile.alevelSubjectIds.length > 0) {
-        alevelMap.set(profile.studentId, profile.alevelSubjectIds);
-      }
-    }
-
-    // 5. Construire les snapshots de toute la classe via l'unique moteur mathématique du domaine
-    const subjectsInput: SnapshotSubjectInput[] = matieres.map((m) => ({
-      id: m.id,
-      name: m.name,
-      coefficient: m.coefficient,
-      isLV2: lv2SubjectIds.has(m.id),
-      subjectType: m.subjectType,
-    }));
-    const knownSubjectIds = new Set(subjectsInput.map((s) => s.id));
-    for (const n of notesDeClasse) {
-      if (!knownSubjectIds.has(n.subjectId)) {
-        knownSubjectIds.add(n.subjectId);
-        subjectsInput.push({
-          id: n.subjectId,
-          name: matiereParId.get(n.subjectId)?.name ?? `Matière (${n.subjectId.slice(0, 6)})`,
-          coefficient: n.coefficient,
-          isLV2: lv2SubjectIds.has(n.subjectId),
-        });
-      }
-    }
-
-    const notesInput: SnapshotNoteInput[] = notesDeClasse.map((n) => {
-      const obj = n.toObject();
-      return {
-        id: obj.id,
-        studentId: obj.studentId,
-        subjectId: obj.subjectId,
-        sequenceId: obj.sequenceId,
-        coefficient: obj.coefficient,
-        maxValue: obj.maxValue,
-        sequenceScore: obj.sequenceScore,
-        classTestScore: obj.classTestScore,
-        terminalExamScore: obj.terminalExamScore,
-        theoreticalScore: obj.theoreticalScore,
-        practicalScore: obj.practicalScore,
-        professionalAttitude: obj.professionalAttitude,
-        oralScore: obj.oralScore,
-        selfDevelopmentScore: obj.selfDevelopmentScore,
-        sequenceAverage: obj.sequenceAverage,
-        validationStatus: obj.validationStatus,
-        isAbsentGrade: obj.isAbsentGrade,
-        observation: obj.observation,
-      };
-    });
-
-    const orderedSeqs = [...sequences].sort((a, b) => a.orderIndex - b.orderIndex);
-    const { snapshotsByStudentId, classProfile } = BulletinSnapshotBuilder.buildClassSnapshots({
-      students: elevesClasse.map((e) => ({
-        id: e.id,
-        lv2SubjectId: lv2Map.get(e.id) ?? null,
-        alevelSubjectIds: alevelMap.get(e.id) ?? null,
-      })),
-      subjects: subjectsInput,
-      sequences: orderedSeqs.map((s) => ({ id: s.id, name: s.name, orderIndex: s.orderIndex })),
-      notes: notesInput,
+    const bundle = await construireEtEnrichirSnapshotsClasse({
+      school,
+      classe,
+      academicPeriodId: commande.academicPeriodId,
+      periodIds: ctx.periodIds,
+      sequences: ctx.sequences,
+      notesDeClasse: ctx.notesDeClasse,
+      elevesClasse,
       hasCoefficientBySubject,
-      excludeAbsentGrades: true,
-      isAnnual: commande.template === 'ANNUAL',
+      template: commande.template,
+      langue,
+      matiereRepository: this.matiereRepository,
+      userRepository: this.userRepository,
+      presenceRepository: this.presenceRepository,
+      classCouncilRepository: this.classCouncilRepository,
+      studentProfileRepository: this.studentProfileRepository,
+      classeCoefficientRepository: this.classeCoefficientRepository,
+      teachingAssignmentRepository: this.teachingAssignmentRepository,
+      disciplineRepository: this.disciplineRepository,
     });
 
-    // 6. Calculer la mention selon le template et la langue
-    const mentionEn = (m: number): string =>
-      m >= 18 ? 'Excellent' : m >= 16 ? 'Very Good' : m >= 14 ? 'Good' : m >= 12 ? 'Fair' : m >= 10 ? 'Pass' : 'Poor';
-    const mentionApc = (m: number): string =>
-      m >= 18 ? 'Expert' : m >= 15 ? 'Acquis' : m >= 11 ? 'ECA' : 'NA';
-    const mentionFr = (m: number): string =>
-      m >= 18 ? 'Excellent' : m >= 16 ? 'Très Bien' : m >= 14 ? 'Bien' : m >= 12 ? 'Assez Bien'
-        : m >= 10 ? 'Passable' : m >= 8 ? 'Insuffisant' : m >= 6 ? 'Très Insuffisant' : 'Médiocre';
-
-    const calculerMention = (moyenne: number): string => {
-      if (commande.template === 'EN_SECONDARY') return mentionEn(moyenne);
-      if (commande.template === 'MONTHLY') return mentionApc(moyenne);
-      if (commande.template === 'PRIMARY') return langue === 'en' ? mentionEn(moyenne) : mentionApc(moyenne);
-      if (commande.template === 'ANNUAL') return langue === 'en' ? mentionEn(moyenne) : mentionFr(moyenne);
-      return mentionFr(moyenne);
-    };
-
-    const [seqA, seqB] = orderedSeqs;
-    const seq1Label = seqA?.name || 'SÉQ 1';
-    const seq2Label = seqB?.name || 'SÉQ 2';
-
-    const professorPrincipal = classe.professorPrincipalId
-      ? await this.userRepository.findById(classe.professorPrincipalId)
-      : null;
-    const verifyBase = (process.env.FRONTEND_URL || process.env.CLIENT_URL || process.env.APP_URL || 'http://localhost:3000').trim().replace(/\/+$/, '');
-
-    // 7. Générer et persister le bulletin pour chaque élève (un bulletin déjà GENERATED est immuable)
+    const verifyBase = resoudreVerifyBaseUrl();
     let generes = 0;
     let ignores = 0;
 
@@ -236,104 +162,84 @@ export class GenererBulletinUseCase {
         eleve.id,
         commande.academicPeriodId,
       );
-      if (bulletinExistant?.estGenere()) {
+      if (bulletinExistant?.estGenere() && !commande.forceRegenerate) {
         ignores++;
         continue;
       }
 
-      const snapshot = snapshotsByStudentId.get(eleve.id);
-      if (!snapshot || snapshot.subjectLines.length === 0) {
-        continue;
-      }
-
-      const statsPresence = await this.presenceRepository.getStatistiquesEleve(
-        eleve.id,
-        commande.academicPeriodId,
-      );
+      const entry = bundle.entriesByStudentId.get(eleve.id);
+      if (!entry) continue;
 
       const bulletin = Bulletin.create({
         schoolId: commande.schoolId,
         studentId: eleve.id,
         academicYearId: commande.academicYearId,
         academicPeriodId: commande.academicPeriodId,
+        sectionId: classe.sectionId,
         template: commande.template,
       });
 
-      bulletin.definirLignesMatiere(
-        snapshot.subjectLines.map((l) => ({
-          id: crypto.randomUUID(),
-          subjectId: l.subjectId,
-          subjectName: l.subjectName,
-          coefficient: l.coefficient,
-          seq1Score: l.seq1Score,
-          seq2Score: l.seq2Score,
-          seq3Score: l.seq3Score,
-          seq4Score: l.seq4Score,
-          seq5Score: l.seq5Score,
-          seq6Score: l.seq6Score,
-          classTestScore: l.classTestScore,
-          terminalExamScore: l.terminalExamScore,
-          theoreticalScore: l.theoreticalScore,
-          practicalScore: l.practicalScore,
-          professionalAttitude: l.professionalAttitude,
-          oralScore: l.oralScore,
-          selfDevelopmentScore: l.selfDevelopmentScore,
-          subjectAverage: l.subjectAverage,
-          weightedScore: l.weightedScore,
-          subjectRank: l.subjectRank,
-          teacherComment: l.teacherComment,
-          competenceLabel: l.competenceLabel,
-        })),
-      );
-
+      bulletin.definirLignesMatiere(snapshotToLignesMatiere(entry.snapshot));
       bulletin.definirResultats({
-        generalAverage: snapshot.generalAverage,
-        rank: snapshot.rank,
-        totalStudents: snapshot.totalStudents,
-        mention: calculerMention(snapshot.generalAverage),
-        absenceCount: statsPresence.joursAbsent,
-        rankTrimestre1: snapshot.rankTrimestre1,
-        rankTrimestre2: snapshot.rankTrimestre2,
-        rankTrimestre3: snapshot.rankTrimestre3,
+        generalAverage: entry.snapshot.generalAverage,
+        rank: entry.snapshot.rank,
+        totalStudents: entry.snapshot.totalStudents,
+        mention: entry.mention,
+        absenceCount: entry.absenceCount,
+        rankTrimestre1: entry.snapshot.rankTrimestre1,
+        rankTrimestre2: entry.snapshot.rankTrimestre2,
+        rankTrimestre3: entry.snapshot.rankTrimestre3,
+      });
+      bulletin.scellerSnapshot({
+        snapshotData: entry.snapshot,
+        contentHash: entry.contentHash,
+        verifyToken: entry.verifyToken,
+        computationVersion: 2,
+        templateVersion: 1,
       });
 
-      const verifyUrl = `${verifyBase}/verify/${bulletin.id}`;
-
+      const verifyUrl = `${verifyBase}/verify/${bulletin.id}?token=${entry.verifyToken}`;
       await this.pdfService.genererBulletin({
         bulletin: bulletin.toObject(),
         nomEleve: eleve.nomComplet,
         nomClasse: classe.nomComplet,
         nomEtablissement: commande.nomEtablissement,
+        schoolMotto: commande.schoolMotto,
         logoUrl: commande.logoUrl,
         anneeAcademique: annee.name,
         nomPeriode: periode.name,
-        nomProfesseurPrincipal: professorPrincipal?.nomComplet,
-        moyenneClasse: classProfile.classAverage,
-        moyennePremier: classProfile.topAverage,
-        moyenneDernier: classProfile.lowAverage,
-        nbAdmis: classProfile.passCount,
-        tauxReussite: classProfile.passRate,
+        nomProfesseurPrincipal: bundle.mainTeacherName ?? undefined,
+        moyenneClasse: bundle.classProfile.classAverage,
+        moyennePremier: bundle.classProfile.topAverage,
+        moyenneDernier: bundle.classProfile.lowAverage,
+        nbAdmis: bundle.classProfile.passCount,
+        tauxReussite: bundle.classProfile.passRate,
         langue,
         verifyUrl,
-        seq1Label,
-        seq2Label,
+        seq1Label: ctx.rawSeqNames[0],
+        seq2Label: ctx.rawSeqNames[1],
+        snapshot: entry.snapshot,
       });
 
-      const pdfUrl = `bulletins/${commande.schoolId}/${bulletin.id}.pdf`;
-      bulletin.marquerGenere(pdfUrl);
+      bulletin.marquerGenere(`bulletins/${commande.schoolId}/${bulletin.id}.pdf`);
 
-      if (bulletinExistant) {
+      if (bulletinExistant?.estGenere()) {
+        bulletinExistant.revoquer({
+          revokedById: commande.demandeurId,
+          reason: commande.motifRegeneration!.trim(),
+        });
+        await this.bulletinRepository.archiverEtRemplacerRevoque(bulletinExistant, bulletin);
+      } else if (bulletinExistant) {
         await this.bulletinRepository.delete(bulletinExistant.toObject().id);
+        await this.bulletinRepository.save(bulletin);
+      } else {
+        await this.bulletinRepository.save(bulletin);
       }
-      await this.bulletinRepository.save(bulletin);
 
-      // Loi 6 — verrouiller les notes LOCKED après génération du bulletin
-      await this.noteRepository.verrouillerNotesValidees(
-        eleve.id,
-        commande.classId,
-        commande.academicPeriodId,
-      );
-
+      // Loi 6 — verrouiller les notes LOCKED sur chaque période source après génération
+      for (const pid of ctx.periodIds) {
+        await this.noteRepository.verrouillerNotesValidees(eleve.id, commande.classId, pid);
+      }
       generes++;
     }
 

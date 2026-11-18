@@ -20,6 +20,12 @@ export class PrismaStudentProfileRepository implements StudentProfileRepository 
       select: {
         userId: true,
         lv2SubjectId: true,
+        matricule: true,
+        dateOfBirth: true,
+        placeOfBirth: true,
+        gender: true,
+        isRepeater: true,
+        photoUrl: true,
         alevelSubjects: {
           select: {
             subjectId: true,
@@ -34,6 +40,12 @@ export class PrismaStudentProfileRepository implements StudentProfileRepository 
       alevelSubjectIds: profile.alevelSubjects.map(
         (subject) => subject.subjectId,
       ),
+      matricule: profile.matricule,
+      dateOfBirth: profile.dateOfBirth,
+      placeOfBirth: profile.placeOfBirth,
+      gender: profile.gender,
+      isRepeater: profile.isRepeater,
+      photoUrl: profile.photoUrl,
     }));
   }
 

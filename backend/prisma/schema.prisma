@@ -764,7 +764,9 @@ model StudentProfile {
   // Distinct de matriculeSource, qui décrit le CANAL (import/scraping), pas la confiance du matching.
   matriculeMatchType    String?
   dateOfBirth           DateTime?
+  placeOfBirth          String?
   gender                String?
+  isRepeater            Boolean                     @default(false)
   exitYear              String?
   studentStatus         StudentStatus               @default(ACTIVE)
   healthScore           Int?                        @default(75)
@@ -1037,6 +1039,9 @@ model SubjectCoefficient {
   classLevel    String
   serieCode     String?
   coefficient   Float
+  groupKey      String?
+  groupLabel    String?
+  groupOrder    Int?
   // Volume horaire hebdomadaire officiel. Null pour les templates sans source fiable
   // (ex. 2nd cycle francophone BacCoefficient n'en fournit pas).
   weeklyPeriods Int?
@@ -1053,6 +1058,9 @@ model ClassSubjectOverride {
   classId     String
   subjectId   String
   coefficient Float
+  groupKey    String?
+  groupLabel  String?
+  groupOrder  Int?
   school      School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   class       Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
   subject     Subject @relation(fields: [subjectId], references: [id])
@@ -1354,6 +1362,9 @@ model Subject {
   subjectType            SubjectType                   @default(THEORETICAL)
   departmentId           String?
   isLV2                  Boolean                       @default(false)
+  groupKey               String?
+  groupLabel             String?
+  groupOrder             Int?
   // Matière réservée aux membres d'un StudentGroup précis (ex. "English Literature" → Group
   // "Bilingue" du GroupSet "Programme") — les élèves hors de ce Group n'ont simplement pas de
   // séance, pas d'erreur. Distinct du fan-out par GroupSet entier (LV2), piloté par
@@ -1593,9 +1604,18 @@ model ReportCard {
   classMasterComment  String?
   conductGrade        String?
   template            BulletinTemplate          @default(FR_SECONDARY)
+  templateVersion     Int                       @default(1)
+  computationVersion  Int                       @default(2)
+  snapshotData        Json?
+  contentHash         String?
+  verifyToken         String?                   @unique
+  reprintCount        Int                       @default(0)
   totalStudents       Int?
   validationStatus    ReportCardStatus          @default(DRAFT)
   classWorkflowStatus BulletinValidationStatus?
+  revokedAt           DateTime?
+  revokedById         String?
+  revocationReason    String?
   sectionId           String?
   academicPeriod      AcademicPeriod            @relation(fields: [academicPeriodId], references: [id])
   academicYear        AcademicYear              @relation(fields: [academicYearId], references: [id])
@@ -1631,12 +1651,41 @@ model ReportCardSubjectLine {
   subjectAverage       Float?
   weightedScore        Float?
   subjectRank          Int?
+  groupKey             String?
+  groupLabel           String?
+  groupOrder           Int?
+  teacherName          String?
+  classSubjectAverage  Float?
+  minSubjectAverage    Float?
+  maxSubjectAverage    Float?
   teacherComment       String?
   competenceLabel      String? // Libellé court de la compétence visée (bulletins bilingues Garoua)
   reportCard           ReportCard @relation(fields: [reportCardId], references: [id], onDelete: Cascade)
   subject              Subject    @relation(fields: [subjectId], references: [id])
 
   @@unique([reportCardId, subjectId])
+}
+
+model BulletinRevocationArchive {
+  id                   String   @id @default(cuid())
+  originalReportCardId String
+  schoolId             String
+  studentId            String
+  academicYearId       String
+  academicPeriodId     String
+  computationVersion   Int
+  templateVersion      Int      @default(1)
+  generalAverage       Float?
+  rank                 Int?
+  snapshotData         Json?
+  contentHash          String?
+  verifyToken          String?
+  revokedById          String
+  revocationReason     String
+  revokedAt            DateTime @default(now())
+
+  @@index([schoolId, studentId])
+  @@index([originalReportCardId])
 }
 
 model Exam {
@@ -3232,6 +3281,7 @@ enum ReportCardStatus {
   DRAFT
   GENERATED
   SENT
+  REVOKED
 }
 
 enum SubjectType {

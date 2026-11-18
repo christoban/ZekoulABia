@@ -49,12 +49,12 @@ export function drawHeader(
     .fillColor("white")
     .text(school.name.toUpperCase(), 40, 36, { align: "center", width: 515 });
 
-  if (school.motto) {
+  if (school.motto && school.motto.trim().length > 0) {
     doc
       .fontSize(8)
       .font("Helvetica-Oblique")
       .fillColor("#cbd5e1")
-      .text(`"${school.motto}"`, 40, 52, { align: "center", width: 515 });
+      .text(`"${school.motto.trim()}"`, 40, 52, { align: "center", width: 515 });
   }
 
   if (school.ville || school.bp || school.tel) {

@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { Prisma, PrismaClient } from '@prisma/client';
 import type { Bulletin } from '@domain/entities/Bulletin';
 import type { BulletinValidationStatus } from '@domain/types/enums';
 import type {
@@ -6,6 +6,7 @@ import type {
   BulletinAvecContexteClasse,
   BulletinEnrichi,
   BulletinExportData,
+  BulletinRevocationArchiveRecord,
 } from '@domain/ports/repositories/BulletinRepository';
 import { whereProfilesParClasse } from '@application/shared/studentEnrollment';
 import {
@@ -182,7 +183,16 @@ export class PrismaBulletinRepository implements BulletinRepository {
     await this.prisma.reportCard.update({
       where: { id: data.id },
       data: {
+        templateVersion: data.templateVersion ?? 1,
+        computationVersion: data.computationVersion ?? 2,
+        snapshotData: data.snapshotData === undefined ? undefined : (data.snapshotData as Prisma.InputJsonValue),
+        contentHash: data.contentHash,
+        verifyToken: data.verifyToken,
+        reprintCount: data.reprintCount ?? 0,
         validationStatus: data.validationStatus,
+        revokedAt: data.revokedAt,
+        revokedById: data.revokedById,
+        revocationReason: data.revocationReason,
         generalAverage: data.generalAverage,
         rank: data.rank,
         mention: data.mention,
@@ -193,6 +203,40 @@ export class PrismaBulletinRepository implements BulletinRepository {
         isGenerated: data.isGenerated,
         pdfUrl: data.pdfUrl,
       },
+    });
+  }
+
+  async archiverEtRemplacerRevoque(revokedBulletin: Bulletin, replacement: Bulletin): Promise<void> {
+    const revoked = revokedBulletin.toObject();
+    await this.prisma.$transaction(async (tx) => {
+      await tx.bulletinRevocationArchive.create({
+        data: {
+          originalReportCardId: revoked.id,
+          schoolId: revoked.schoolId,
+          studentId: revoked.studentId,
+          academicYearId: revoked.academicYearId,
+          academicPeriodId: revoked.academicPeriodId,
+          computationVersion: revoked.computationVersion ?? 1,
+          templateVersion: revoked.templateVersion ?? 1,
+          generalAverage: revoked.generalAverage ?? null,
+          rank: revoked.rank ?? null,
+          snapshotData: revoked.snapshotData === undefined ? undefined : (revoked.snapshotData as Prisma.InputJsonValue),
+          contentHash: revoked.contentHash ?? null,
+          verifyToken: revoked.verifyToken ?? null,
+          revokedById: revoked.revokedById ?? 'SYSTEM',
+          revocationReason: revoked.revocationReason ?? 'Régénération contrôlée',
+          revokedAt: revoked.revokedAt ?? new Date(),
+        },
+      });
+      await tx.reportCard.delete({ where: { id: revoked.id } });
+      await tx.reportCard.create({ data: buildBulletinCreateData(replacement) });
+    });
+  }
+
+  async findRevocationsByStudent(schoolId: string, studentId: string): Promise<BulletinRevocationArchiveRecord[]> {
+    return this.prisma.bulletinRevocationArchive.findMany({
+      where: { schoolId, studentId },
+      orderBy: { revokedAt: 'desc' },
     });
   }
 
@@ -290,6 +334,7 @@ export class PrismaBulletinRepository implements BulletinRepository {
         studentId: data.studentId,
         academicYearId: data.academicYearId,
         academicPeriodId: data.academicPeriodId,
+        computationVersion: 2,
         generalAverage: Math.round(data.generalAverage * 100) / 100,
         rank: data.rank,
         mention: data.mention,
@@ -297,6 +342,7 @@ export class PrismaBulletinRepository implements BulletinRepository {
         isGenerated: true,
       },
       update: {
+        computationVersion: 2,
         generalAverage: Math.round(data.generalAverage * 100) / 100,
         rank: data.rank,
         mention: data.mention,

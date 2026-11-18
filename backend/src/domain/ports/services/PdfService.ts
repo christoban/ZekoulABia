@@ -4,12 +4,14 @@
  */
 import type { BulletinTemplate } from '@domain/types/enums';
 import type { BulletinProps } from '@domain/entities/Bulletin';
+import type { StudentBulletinSnapshot } from '@domain/types/bulletinSnapshot';
 
 export interface ContexteBulletin {
   bulletin: BulletinProps;
   nomEleve: string;
   nomClasse: string;
   nomEtablissement: string;
+  schoolMotto?: string;
   logoUrl?: string;
   anneeAcademique: string;
   nomPeriode: string;
@@ -24,6 +26,7 @@ export interface ContexteBulletin {
   verifyUrl?: string;
   seq1Label?: string;
   seq2Label?: string;
+  snapshot?: StudentBulletinSnapshot;
 }
 
 export interface TableauHonneurLigne {

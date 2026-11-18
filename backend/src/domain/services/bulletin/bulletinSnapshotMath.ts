@@ -11,6 +11,7 @@ import type {
   SnapshotStudentInput,
   SnapshotSubjectInput,
 } from '@domain/types/bulletinSnapshot';
+import type { SubjectType } from '@domain/types/enums';
 import {
   calculateAverageScoreOn20,
   calculerMoyenneSequence,
@@ -18,6 +19,37 @@ import {
 } from '@domain/rules/GradingEngine';
 
 export const round2 = (n: number): number => Math.round((n + Number.EPSILON) * 100) / 100;
+
+export function resolveCurriculumSubjectConfig(params: {
+  subject: { coefficient: number; subjectType?: SubjectType; groupKey?: string | null; groupLabel?: string | null; groupOrder?: number | null };
+  levelCoeff?: { coefficient: number; groupKey?: string | null; groupLabel?: string | null; groupOrder?: number | null };
+  classOverride?: { coefficient: number; groupKey?: string | null; groupLabel?: string | null; groupOrder?: number | null };
+  educationType?: string | null;
+}): { coefficient: number; groupKey: string; groupLabel: string; groupOrder: number } {
+  const coefficient = params.classOverride?.coefficient ?? params.levelCoeff?.coefficient ?? params.subject.coefficient;
+  const customKey = params.classOverride?.groupKey ?? params.levelCoeff?.groupKey ?? params.subject.groupKey;
+  const customLabel = params.classOverride?.groupLabel ?? params.levelCoeff?.groupLabel ?? params.subject.groupLabel;
+  const customOrder = params.classOverride?.groupOrder ?? params.levelCoeff?.groupOrder ?? params.subject.groupOrder;
+
+  if (customKey) {
+    return {
+      coefficient,
+      groupKey: customKey,
+      groupLabel: customLabel ?? customKey,
+      groupOrder: customOrder ?? 99,
+    };
+  }
+
+  const isTech = params.educationType === 'TECHNICAL' || params.educationType === 'PROFESSIONAL';
+  if (isTech) {
+    if (params.subject.subjectType === 'PRACTICAL' || params.subject.subjectType === 'MIXED') {
+      return { coefficient, groupKey: 'PROFESSIONNEL', groupLabel: 'Enseignement Professionnel', groupOrder: 2 };
+    }
+    return { coefficient, groupKey: 'GENERAL', groupLabel: 'Enseignement Général', groupOrder: 1 };
+  }
+
+  return { coefficient, groupKey: 'DEFAULT', groupLabel: 'Matières', groupOrder: 99 };
+}
 
 export function assignCompetitionRanks(items: Array<{ id: string; value: number }>): Map<string, number> {
   const sorted = [...items].sort((a, b) => b.value - a.value);
@@ -263,3 +295,4 @@ export function resolveAnnualGeneralAverage(params: {
   }
   return params.weightedSubjectAvg;
 }
+

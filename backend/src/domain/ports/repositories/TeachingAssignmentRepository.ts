@@ -10,7 +10,12 @@ export interface TeachingAssignmentData {
   academicYearId: string;
 }
 
+export interface TeachingAssignmentWithTeacher extends TeachingAssignmentData {
+  teacherName?: string;
+}
+
 export interface TeachingAssignmentRepository {
   findByClassSubjectAndSchool(classId: string, subjectId: string, schoolId: string): Promise<TeachingAssignmentData | null>;
   findUnique(classId: string, subjectId: string, schoolId?: string): Promise<TeachingAssignmentData | null>;
+  findByClassAndSchool(classId: string, schoolId: string): Promise<TeachingAssignmentWithTeacher[]>;
 }

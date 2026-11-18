@@ -4,7 +4,7 @@
  * Un BulletinSnapshot est la photographie scellée et immuable des résultats d'un élève.
  * Le moteur de rendu (PDFKit / Chromium) ne calcule jamais : il lit ce snapshot.
  */
-import type { GradeValidationStatus, SubjectType } from '@domain/types/enums';
+import type { CouncilDecision, GradeValidationStatus, SubjectType } from '@domain/types/enums';
 
 export type AnnualAveragePolicyMode =
   | 'SIX_SEQUENCES_ARITHMETIC'   // Défaut MINESEC/MINEDUB : (MoySeq1 + ... + MoySeq6) / N_sequences
@@ -74,6 +74,46 @@ export interface BulletinSnapshotBuildInput {
   requireLockedGrades?: boolean;
 }
 
+export interface StudentIdentitySnapshot {
+  studentId: string;
+  fullName: string;
+  firstName: string;
+  lastName: string;
+  matricule: string | null;
+  dateOfBirth: string | null;
+  placeOfBirth: string | null;
+  gender: string | null;
+  isRepeater: boolean;
+  photoUrl: string | null;
+}
+
+export interface BulletinConductSanctionItem {
+  id: string;
+  type: string;
+  reason: string;
+  createdAt: string;
+}
+
+export interface BulletinConductSnapshot {
+  justifiedAbsenceHours: number;
+  unjustifiedAbsenceHours: number;
+  totalAbsenceHours: number;
+  totalAbsenceDays: number;
+  lateCount: number;
+  warningsCount: number;
+  blamesCount: number;
+  exclusionsCount: number;
+  sanctions: BulletinConductSanctionItem[];
+}
+
+export interface BulletinCouncilDecisionSnapshot {
+  decision: CouncilDecision;
+  observations: string | null;
+  honorRoll: boolean;
+  encouragements: boolean;
+  congratulations: boolean;
+}
+
 export interface BulletinSubjectSnapshotLine {
   subjectId: string;
   subjectName: string;
@@ -128,6 +168,8 @@ export interface BulletinClassProfile {
 
 export interface StudentBulletinSnapshot {
   studentId: string;
+  computationVersion: number;
+  templateVersion: number;
   generalAverage: number;
   totalCoefficient: number;
   totalWeightedScore: number;
@@ -138,6 +180,11 @@ export interface StudentBulletinSnapshot {
   rankTrimestre1?: number;
   rankTrimestre2?: number;
   rankTrimestre3?: number;
+  studentIdentity?: StudentIdentitySnapshot;
+  mainTeacherName?: string | null;
+  conduct?: BulletinConductSnapshot;
+  councilDecision?: BulletinCouncilDecisionSnapshot;
+  classProfile?: BulletinClassProfile;
   subjectLines: BulletinSubjectSnapshotLine[];
   groupSummaries: BulletinGroupSummary[];
 }

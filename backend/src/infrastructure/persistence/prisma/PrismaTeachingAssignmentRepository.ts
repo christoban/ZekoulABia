@@ -1,5 +1,8 @@
 import type { PrismaClient } from '@prisma/client';
-import type { TeachingAssignmentRepository } from '@domain/ports/repositories/TeachingAssignmentRepository';
+import type {
+  TeachingAssignmentRepository,
+  TeachingAssignmentWithTeacher,
+} from '@domain/ports/repositories/TeachingAssignmentRepository';
 
 export class PrismaTeachingAssignmentRepository implements TeachingAssignmentRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -22,5 +25,21 @@ export class PrismaTeachingAssignmentRepository implements TeachingAssignmentRep
       return null;
     }
     return assignment;
+  }
+
+  async findByClassAndSchool(classId: string, schoolId: string): Promise<TeachingAssignmentWithTeacher[]> {
+    const rows = await this.prisma.teachingAssignment.findMany({
+      where: { classId, schoolId },
+      include: { teacher: { select: { firstName: true, lastName: true } } },
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      classId: r.classId,
+      subjectId: r.subjectId,
+      teacherId: r.teacherId,
+      schoolId: r.schoolId,
+      academicYearId: r.academicYearId,
+      teacherName: `${r.teacher.firstName} ${r.teacher.lastName}`.trim(),
+    }));
   }
 }

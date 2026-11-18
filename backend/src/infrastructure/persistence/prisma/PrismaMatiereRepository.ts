@@ -90,6 +90,9 @@ export class PrismaMatiereRepository implements MatiereRepository {
         coefficient: matiere.coefficient,
         hoursPerWeek: matiere.hoursPerWeek,
         subjectType: matiere.subjectType,
+        ...(matiere.groupKey !== undefined ? { groupKey: matiere.groupKey } : {}),
+        ...(matiere.groupLabel !== undefined ? { groupLabel: matiere.groupLabel } : {}),
+        ...(matiere.groupOrder !== undefined ? { groupOrder: matiere.groupOrder } : {}),
       },
     });
   }
@@ -160,6 +163,9 @@ export class PrismaMatiereRepository implements MatiereRepository {
       classLevel: r.classLevel,
       serieCode: r.serieCode ?? undefined,
       coefficient: r.coefficient,
+      groupKey: r.groupKey ?? undefined,
+      groupLabel: r.groupLabel ?? undefined,
+      groupOrder: r.groupOrder ?? undefined,
     }));
   }
 
@@ -181,8 +187,16 @@ export class PrismaMatiereRepository implements MatiereRepository {
             classLevel: c.classLevel,
             serieCode: c.serieCode,
             coefficient: c.coefficient,
+            groupKey: c.groupKey ?? null,
+            groupLabel: c.groupLabel ?? null,
+            groupOrder: c.groupOrder ?? null,
           },
-          update: { coefficient: c.coefficient },
+          update: {
+            coefficient: c.coefficient,
+            ...(c.groupKey !== undefined ? { groupKey: c.groupKey } : {}),
+            ...(c.groupLabel !== undefined ? { groupLabel: c.groupLabel } : {}),
+            ...(c.groupOrder !== undefined ? { groupOrder: c.groupOrder } : {}),
+          },
         })
       )
     );
@@ -223,6 +237,9 @@ export class PrismaMatiereRepository implements MatiereRepository {
       coefficient: data.coefficient,
       hoursPerWeek: data.hoursPerWeek,
       subjectType: data.subjectType,
+      groupKey: data.groupKey ?? undefined,
+      groupLabel: data.groupLabel ?? undefined,
+      groupOrder: data.groupOrder ?? undefined,
     };
   }
 }

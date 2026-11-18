@@ -15,6 +15,12 @@ import { PrismaStudentRecommendationRepository } from "../../persistence/prisma/
 import { PrismaSchoolConfigRepository } from "../../persistence/prisma/PrismaSchoolConfigRepository";
 import { PrismaTeachingAssignmentRepository } from "../../persistence/prisma/PrismaTeachingAssignmentRepository";
 import { PrismaStudentProfileRepository } from "../../persistence/prisma/PrismaStudentProfileRepository";
+import { PrismaClasseRepository } from "../../persistence/prisma/PrismaClasseRepository";
+import { PrismaClassCouncilRepository } from "../../persistence/prisma/PrismaClassCouncilRepository";
+import { PrismaSectionRepository } from "../../persistence/prisma/PrismaSectionRepository";
+import { PrismaClasseCoefficientRepository } from "../../persistence/prisma/PrismaClasseCoefficientRepository";
+import { PrismaDisciplineRepository } from "../../persistence/prisma/PrismaDisciplineRepository";
+import { BulletinBloqueError } from "@domain/errors/BulletinBloqueError";
 import { DetecterChuteMoyenneUseCase, trouverSequencePrecedente } from "@application/grade/DetecterChuteMoyenneUseCase";
 import { GenererBulletinsInngestUseCase } from "@application/reportCard/GenererBulletinsInngestUseCase";
 import { ErreurNonRetriable } from "@application/shared/ErreurNonRetriable";
@@ -64,6 +70,13 @@ export const generateReportCards = inngest.createFunction(
       new PrismaSchoolRepository(prisma),
       new PrismaMatiereRepository(prisma),
       new NodemailerEmailService(),
+      new PrismaClasseRepository(prisma),
+      new PrismaClassCouncilRepository(prisma),
+      new PrismaSectionRepository(prisma),
+      new PrismaStudentProfileRepository(prisma),
+      new PrismaClasseCoefficientRepository(prisma),
+      new PrismaTeachingAssignmentRepository(prisma),
+      new PrismaDisciplineRepository(prisma),
     );
 
     const { academicYear, academicPeriod, generatedStudents } = await step.run("generate-report-cards", async () => {
@@ -72,7 +85,7 @@ export const generateReportCards = inngest.createFunction(
         if (!result.generatedStudents.length) return { academicYear: result.academicYear, academicPeriod: result.academicPeriod, generatedStudents: [] as string[] };
         return { academicYear: result.academicYear, academicPeriod: result.academicPeriod, generatedStudents: result.generatedStudents };
       } catch (err) {
-        if (err instanceof ErreurNonRetriable) throw new NonRetriableError(err.message);
+        if (err instanceof ErreurNonRetriable || err instanceof BulletinBloqueError) throw new NonRetriableError(err.message);
         throw err;
       }
     });

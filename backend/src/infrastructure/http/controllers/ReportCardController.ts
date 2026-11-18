@@ -50,7 +50,7 @@ export class ReportCardController {
   genererBulletins = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const user = req.user;
-      let { classId, academicPeriodId, academicYearId, template, nomEtablissement, logoUrl } = req.body;
+      let { classId, academicPeriodId, academicYearId, template, nomEtablissement, logoUrl, schoolMotto, forceRegenerate, motifRegeneration } = req.body;
 
       if (!classId) {
         res.status(400).json({ success: false, message: 'classId requis' });
@@ -88,7 +88,8 @@ export class ReportCardController {
 
       const resultat = await this.generer.execute({
         schoolId: user.schoolId, classId, academicPeriodId, academicYearId,
-        template: template as BulletinTemplate, nomEtablissement, logoUrl, demandeurId: user.userId,
+        template: template as BulletinTemplate, nomEtablissement, schoolMotto, logoUrl,
+        demandeurId: user.userId, demandeurRole: user.role, forceRegenerate: Boolean(forceRegenerate), motifRegeneration,
       });
 
       this.audit.journaliser({
@@ -128,6 +129,14 @@ export class ReportCardController {
       }
       if (error instanceof Error && error.message.includes('Conseil de Classe')) {
         res.status(422).json({ success: false, code: 'CONSEIL_REQUIS', message: error.message });
+        return;
+      }
+      if (error instanceof Error && error.message.includes('Seul un administrateur')) {
+        res.status(403).json({ success: false, code: 'FORBIDDEN_REGENERATION', message: error.message });
+        return;
+      }
+      if (error instanceof Error && error.message.includes('motif obligatoire')) {
+        res.status(400).json({ success: false, code: 'MOTIF_REGENERATION_REQUIS', message: error.message });
         return;
       }
       next(error);

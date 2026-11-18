@@ -10,6 +10,9 @@ export interface MatiereProps {
   coefficient: number;
   hoursPerWeek: number;
   subjectType: 'THEORETICAL' | 'PRACTICAL' | 'MIXED';
+  groupKey?: string;
+  groupLabel?: string;
+  groupOrder?: number;
 }
 
 export interface CoefficientMatiere {
@@ -17,6 +20,9 @@ export interface CoefficientMatiere {
   classLevel: string;
   serieCode?: string;
   coefficient: number;
+  groupKey?: string;
+  groupLabel?: string;
+  groupOrder?: number;
 }
 
 export interface MatiereRepository {

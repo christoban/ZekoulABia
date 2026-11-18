@@ -160,7 +160,17 @@ export class BulletinSnapshotBuilder {
     );
 
     const snapshotsByStudentId = new Map<string, StudentBulletinSnapshot>();
-    const allAvgs: number[] = [];
+    const allAvgs = input.students.map((s) => generalAvgByStudent.get(s.id) ?? 0);
+
+    const passCount = allAvgs.filter((a) => a >= passThreshold).length;
+    const classProfile: BulletinClassProfile = {
+      classSize: allAvgs.length,
+      classAverage: allAvgs.length > 0 ? round2(allAvgs.reduce((a, b) => a + b, 0) / allAvgs.length) : 0,
+      topAverage: allAvgs.length > 0 ? Math.max(...allAvgs) : 0,
+      lowAverage: allAvgs.length > 0 ? Math.min(...allAvgs) : 0,
+      passCount,
+      passRate: allAvgs.length > 0 ? round2((passCount / allAvgs.length) * 100) : 0,
+    };
 
     for (const student of input.students) {
       const lines = linesByStudent.get(student.id) ?? [];
@@ -173,10 +183,11 @@ export class BulletinSnapshotBuilder {
         }
       }
       const genAvg = generalAvgByStudent.get(student.id) ?? 0;
-      allAvgs.push(genAvg);
 
       snapshotsByStudentId.set(student.id, {
         studentId: student.id,
+        computationVersion: 2,
+        templateVersion: 1,
         generalAverage: genAvg,
         totalCoefficient: round2(lines.reduce((s, l) => s + (input.hasCoefficientBySubject ? l.coefficient : 1), 0)),
         totalWeightedScore: round2(lines.reduce((s, l) => s + l.weightedScore, 0)),
@@ -187,20 +198,11 @@ export class BulletinSnapshotBuilder {
         rankTrimestre1: input.isAnnual ? t1Ranks.get(student.id) : undefined,
         rankTrimestre2: input.isAnnual ? t2Ranks.get(student.id) : undefined,
         rankTrimestre3: input.isAnnual ? t3Ranks.get(student.id) : undefined,
+        classProfile,
         subjectLines: lines,
         groupSummaries: groups,
       });
     }
-
-    const passCount = allAvgs.filter((a) => a >= passThreshold).length;
-    const classProfile: BulletinClassProfile = {
-      classSize: allAvgs.length,
-      classAverage: allAvgs.length > 0 ? round2(allAvgs.reduce((a, b) => a + b, 0) / allAvgs.length) : 0,
-      topAverage: allAvgs.length > 0 ? Math.max(...allAvgs) : 0,
-      lowAverage: allAvgs.length > 0 ? Math.min(...allAvgs) : 0,
-      passCount,
-      passRate: allAvgs.length > 0 ? round2((passCount / allAvgs.length) * 100) : 0,
-    };
 
     return { snapshotsByStudentId, classProfile };
   }

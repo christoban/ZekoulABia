@@ -133,6 +133,7 @@ export class PrismaClassCouncilRepository implements ClassCouncilRepository {
   async sessionExistente(classId: string, academicPeriodId: string): Promise<ClassCouncilSessionData | null> {
     return this.prisma.classCouncilSession.findFirst({
       where: { classId, academicPeriodId },
+      include: { decisions: true },
     }) as Promise<ClassCouncilSessionData | null>;
   }
 
