@@ -1,7 +1,8 @@
 import type { BulletinTemplate } from '@domain/types/enums';
+import type { IAService } from '@domain/ports/services/IAService';
 import type { FactureRepository } from '@domain/ports/repositories/FactureRepository';
 import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolConfigRepository';
-import type { BulletinExportData } from '@domain/ports/repositories/BulletinRepository';
+import type { BulletinExportData, BulletinRepository } from '@domain/ports/repositories/BulletinRepository';
 import { resolveLanguage } from '@domain/policies/LanguagePolicy';
 import { generateBulletinPdf } from '@infrastructure/pdf/report-card/index';
 import { getMention } from '@infrastructure/pdf/report-card/BulletinPdfHelpers';
@@ -129,4 +130,64 @@ export function extractCommentPromptMetrics(
   const pointsForts = lines.filter((s) => (s.subjectAverage ?? 0) >= 14).map((s) => s.subjectName).slice(0, 3);
   const pointsFaibles = lines.filter((s) => (s.subjectAverage ?? 0) < 10).map((s) => s.subjectName).slice(0, 3);
   return { evolution, pointsForts, pointsFaibles };
+}
+
+export async function addClassMasterCommentOp(params: {
+  bulletinId: string;
+  schoolId: string;
+  userId: string;
+  role: string;
+  classMasterComment: unknown;
+  bulletinRepository: BulletinRepository;
+}): Promise<{ status: number; body: Record<string, unknown> }> {
+  if (typeof params.classMasterComment !== 'string' || !params.classMasterComment.trim()) {
+    return { status: 400, body: { success: false, message: 'classMasterComment (string non vide) requis' } };
+  }
+  const ctx = await params.bulletinRepository.findWithClasseContext(params.bulletinId, params.schoolId);
+  if (!ctx) return { status: 404, body: { success: false, message: 'Bulletin introuvable' } };
+  if (params.role !== 'ADMIN' && ctx.professorPrincipalId !== params.userId) {
+    return {
+      status: 403,
+      body: { success: false, message: 'Seul le Professeur Principal de cette classe ou un Admin peut écrire ce commentaire' },
+    };
+  }
+  await params.bulletinRepository.updateClassMasterComment(params.bulletinId, params.classMasterComment.trim());
+  return { status: 200, body: { success: true, message: 'Commentaire enregistré' } };
+}
+
+export async function generateBulletinAiCommentOp(params: {
+  bulletinId: string;
+  schoolId: string;
+  userId: string;
+  role: string;
+  bulletinRepository: BulletinRepository;
+  iaService: IAService;
+}): Promise<{ status: number; body: Record<string, unknown> }> {
+  const enriched = await params.bulletinRepository.findEnrichedById(params.bulletinId, params.schoolId);
+  if (!enriched) return { status: 404, body: { success: false, message: 'Bulletin introuvable' } };
+  if (params.role !== 'ADMIN' && enriched.professorPrincipalId !== params.userId) {
+    return {
+      status: 403,
+      body: { success: false, message: 'Seul le Professeur Principal de cette classe ou un Admin peut générer ce commentaire' },
+    };
+  }
+  const reportCard = enriched.bulletin;
+  const previous = await params.bulletinRepository.findPreviousByStudent(reportCard.studentId, params.schoolId, reportCard.id);
+  const { evolution, pointsForts, pointsFaibles } = extractCommentPromptMetrics(
+    previous?.generalAverage,
+    reportCard.generalAverage,
+    reportCard.lignesMatiere,
+  );
+  const langue = resolveLanguage(enriched.schoolSubsystem, enriched.sectionCode);
+  const nomEleve = `${enriched.studentFirstName ?? ''} ${enriched.studentLastName ?? ''}`.trim();
+  const comment = await params.iaService.genererCommentaireBulletin({
+    nomEleve,
+    moyenneGenerale: reportCard.generalAverage ?? 0,
+    evolution,
+    pointsForts,
+    pointsFaibles,
+    langue: langue.toUpperCase() as 'FR' | 'EN',
+  });
+  await params.bulletinRepository.updateAiComment(reportCard.id, comment);
+  return { status: 200, body: { success: true, comment } };
 }
