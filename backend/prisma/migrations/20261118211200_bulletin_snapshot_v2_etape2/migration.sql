@@ -73,3 +73,4 @@ CREATE INDEX "BulletinRevocationArchive_originalReportCardId_idx" ON "BulletinRe
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ReportCard_verifyToken_key" ON "ReportCard"("verifyToken");
+
