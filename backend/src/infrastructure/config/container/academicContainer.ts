@@ -102,6 +102,7 @@ export function createAcademicContainer(core: CoreContainerContext) {
       bulletinAssignmentRepository,
       bulletinRenderer,
       bulletinPdfStorage,
+      core.sequenceAbsenceRepository,
     ),
     envoyer: envoyerBulletinsUseCase,
     verifierDisponibilite: new VerifierDisponibiliteBulletinUseCase(

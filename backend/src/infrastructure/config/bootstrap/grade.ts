@@ -3,6 +3,7 @@ import { prisma } from '@infrastructure/persistence/prisma/prisma.client';
 import { creerContainer } from '@infrastructure/config/container';
 import { GradeController } from '@infrastructure/http/controllers/GradeController';
 import { AttendanceController } from '@infrastructure/http/controllers/AttendanceController';
+import { SequenceAbsenceController } from '@infrastructure/http/controllers/SequenceAbsenceController';
 import { AIActionAuditAdapter } from '@infrastructure/services/ai/AIActionAuditAdapter';
 import { TimetableController } from '@infrastructure/http/controllers/TimetableController';
 import { TimetableAutoController } from '@infrastructure/http/controllers/TimetableAutoController';
@@ -105,7 +106,12 @@ export function registerGradeRoutes(app: Application, prismaParam: typeof prisma
   );
   app.use('/api/v2/timetables', creerTimetableAutoRoutes(timetableAutoController));
 
+  const sequenceAbsenceController = new SequenceAbsenceController(
+    c.attendance.saisirHeuresSequence,
+    c.attendance.sequenceAbsenceRepository,
+  );
+
   app.use('/api/v2/grades', creerGradeRoutes(gradeController));
-  app.use('/api/v2/attendance', creerAttendanceRoutes(attendanceController));
+  app.use('/api/v2/attendance', creerAttendanceRoutes(attendanceController, sequenceAbsenceController));
   app.use('/api/v2/timetables', creerTimetableRoutes(timetableController));
 }

@@ -15,6 +15,10 @@ import type { StudentProfileRepository, StudentBulletinOptions } from '@domain/p
 import type { ClasseCoefficientRepository, ClassSubjectOverrideRecord, SubjectCoefficientRecord } from '@domain/ports/repositories/ClasseCoefficientRepository';
 import type { TeachingAssignmentRepository } from '@domain/ports/repositories/TeachingAssignmentRepository';
 import type { DisciplineRepository, DisciplineRecordData } from '@domain/ports/repositories/DisciplineRepository';
+import type {
+  SequenceAbsenceSummaryRecord,
+  SequenceAbsenceSummaryRepository,
+} from '@domain/ports/repositories/SequenceAbsenceSummaryRepository';
 import type { Classe } from '@domain/entities/Classe';
 import type { School } from '@domain/entities/School';
 import type { Note } from '@domain/entities/Note';
@@ -137,7 +141,10 @@ export async function construireEtEnrichirSnapshotsClasse(params: {
   classeCoefficientRepository?: ClasseCoefficientRepository;
   teachingAssignmentRepository?: TeachingAssignmentRepository;
   disciplineRepository?: DisciplineRepository;
+  sequenceAbsenceRepository?: SequenceAbsenceSummaryRepository;
   groupingScheme?: BulletinGroupingScheme | null;
+  passThresholdOn20?: number;
+  sequenceCalculationMode?: 'single' | 'triple' | 'weighted';
 }): Promise<ClassSnapshotsBundle> {
   const matieres = await params.matiereRepository.findBySchool(params.school.id);
   const overrideMap = new Map<string, ClassSubjectOverrideRecord>();
@@ -204,7 +211,9 @@ export async function construireEtEnrichirSnapshotsClasse(params: {
     notes: mapNotesToSnapshotInputs(params.notesDeClasse),
     hasCoefficientBySubject: params.hasCoefficientBySubject,
     excludeAbsentGrades: true,
+    passThresholdOn20: params.passThresholdOn20 ?? 10,
     isAnnual: params.template === 'ANNUAL',
+    sequenceCalculationMode: params.sequenceCalculationMode,
   });
 
   const professorPrincipal = params.classe.professorPrincipalId
@@ -231,6 +240,20 @@ export async function construireEtEnrichirSnapshotsClasse(params: {
     }
   }
 
+  const sequenceAbsencesByStudent = new Map<string, SequenceAbsenceSummaryRecord[]>();
+  if (params.sequenceAbsenceRepository) {
+    const seqAbsRows = await params.sequenceAbsenceRepository.findByClassAndPeriods(
+      params.school.id,
+      params.classe.id,
+      params.periodIds,
+    );
+    for (const r of seqAbsRows) {
+      const arr = sequenceAbsencesByStudent.get(r.studentId) ?? [];
+      arr.push(r);
+      sequenceAbsencesByStudent.set(r.studentId, arr);
+    }
+  }
+
   const councilSession = await params.classCouncilRepository.sessionExistente(params.classe.id, params.academicPeriodId);
   const councilByStudent = new Map<string, { decision: CouncilDecision; observations: string | null }>();
   for (const d of councilSession?.decisions ?? []) {
@@ -248,7 +271,12 @@ export async function construireEtEnrichirSnapshotsClasse(params: {
       absenceCount += (await params.presenceRepository.getStatistiquesEleve(eleve.id, pid)).joursAbsent;
     }
 
-    const conduct = buildConductForStudent(presencesByStudent.get(eleve.id) ?? [], sanctionsByStudent.get(eleve.id) ?? [], absenceCount);
+    const conduct = buildConductForStudent(
+      presencesByStudent.get(eleve.id) ?? [],
+      sanctionsByStudent.get(eleve.id) ?? [],
+      absenceCount,
+      sequenceAbsencesByStudent.get(eleve.id) ?? [],
+    );
     const enriched: StudentBulletinSnapshot = {
       ...baseSnapshot,
       computationVersion: 2,

@@ -84,10 +84,10 @@ export class MeasuredPdfKitBulletinRenderer implements BulletinRendererPort {
             drawStudentCardBlock(doc, fonts, block, snapshot, options);
             break;
           case 'subjectTable':
-            drawMeasuredSubjectTable(doc, fonts, block, snapshot, options.language, baseFontSize);
+            drawMeasuredSubjectTable(doc, fonts, block, snapshot, options.language, baseFontSize, options);
             break;
           case 'classProfile':
-            drawClassProfileBlock(doc, fonts, block, snapshot, options.language);
+            drawClassProfileBlock(doc, fonts, block, snapshot, options.language, options);
             break;
           case 'councilDecision':
             drawCouncilDecisionBlock(doc, fonts, block, snapshot, options);

@@ -8,7 +8,12 @@ import type {
   SubjectTableColumnKey,
   SubjectTableColumnSpec,
 } from '@domain/types/bulletinTemplateSpec';
+import type { BulletinRenderOptions } from '@domain/ports/services/BulletinRendererPort';
 import type { FontSet, MeasuredPdfDoc } from './measuredHeaderHelpers';
+import {
+  buildDynamicFormulaHint,
+  formatLocalizedNumber,
+} from './measuredFormatHelpers';
 
 export function resolveApcCote(average: number): 'A+' | 'A' | 'ECA' | 'NA' {
   if (average >= 18) return 'A+';
@@ -27,7 +32,7 @@ export function formatRankLabel(rank: number, isEn: boolean): string {
 }
 
 export function formatSubjectCell(line: BulletinSubjectSnapshotLine, key: SubjectTableColumnKey, isEn = false): string {
-  const num = (v: number | undefined): string => (v === undefined ? '—' : v.toFixed(2));
+  const num = (v: number | undefined): string => formatLocalizedNumber(v, isEn, 2);
   switch (key) {
     case 'subjectName': return line.subjectName;
     case 'coefficient': return String(line.coefficient);
@@ -43,11 +48,11 @@ export function formatSubjectCell(line: BulletinSubjectSnapshotLine, key: Subjec
     case 'practicalScore': return num(line.practicalScore);
     case 'oralScore': return num(line.oralScore);
     case 'selfDevelopmentScore': return num(line.selfDevelopmentScore);
-    case 'subjectAverage': return line.subjectAverage.toFixed(2);
-    case 'weightedScore': return line.weightedScore.toFixed(2);
+    case 'subjectAverage': return num(line.subjectAverage);
+    case 'weightedScore': return num(line.weightedScore);
     case 'subjectRank': return formatRankLabel(line.subjectRank, isEn);
     case 'cote': return resolveApcCote(line.subjectAverage);
-    case 'classSubjectAverage': return line.classSubjectAverage.toFixed(2);
+    case 'classSubjectAverage': return num(line.classSubjectAverage);
     case 'teacherComment': return line.teacherComment ?? '—';
     case 'teacherName': return line.teacherName ?? '—';
     case 'competenceLabel': return line.competenceLabel ?? '—';
@@ -108,10 +113,11 @@ function drawGroupSubtotalRow(
   const h = 14;
   const y = doc.y;
   doc.rect(left, y, totalW, h).fillAndStroke('#e2e8f0', '#334155');
-  const rk = formatRankLabel(grp.groupRank, isEn);
+  const totalStr = formatLocalizedNumber(grp.totalWeightedScore, isEn, 2);
+  const avgStr = formatLocalizedNumber(grp.groupAverage, isEn, 2);
   const text = isEn
-    ? `Subtotal ${grp.groupLabel} — Coef: ${grp.totalCoefficient}  |  Total: ${grp.totalWeightedScore.toFixed(2)}  |  Group Avg: ${grp.groupAverage.toFixed(2)}/20 (Rank ${rk}/${grp.groupTotalStudents})`
-    : `Sous-total ${grp.groupLabel} — Coef : ${grp.totalCoefficient}  |  Total : ${grp.totalWeightedScore.toFixed(2)}  |  Moyenne : ${grp.groupAverage.toFixed(2)}/20 (Rang ${rk}/${grp.groupTotalStudents})`;
+    ? `Subtotal ${grp.groupLabel} — Coef: ${grp.totalCoefficient}  |  Total: ${totalStr}  |  Group Avg: ${avgStr}/20`
+    : `Sous-total ${grp.groupLabel} — Coef : ${grp.totalCoefficient}  |  Total : ${totalStr}  |  Moyenne du groupe : ${avgStr}/20`;
   doc.font(fonts.bold).fontSize(7).fillColor('#0f172a').text(text, left + 5, y + 3.5, { width: totalW - 10 });
   doc.y = y + h;
 }
@@ -123,6 +129,7 @@ export function drawMeasuredSubjectTable(
   snapshot: StudentBulletinSnapshot,
   language: 'fr' | 'en',
   fontSize: number,
+  options?: BulletinRenderOptions,
 ): void {
   const left = doc.page.margins.left;
   const usableW = doc.page.width - left - doc.page.margins.right;
@@ -134,12 +141,17 @@ export function drawMeasuredSubjectTable(
   const bottomLimit = doc.page.height - doc.page.margins.bottom - 18;
   const isEn = language === 'en';
 
-  if (spec.formulaHint && spec.formulaHint.trim().length > 0) {
+  const resolvedFormulaHint =
+    spec.formulaHint && spec.formulaHint.trim().length > 0
+      ? spec.formulaHint.trim()
+      : buildDynamicFormulaHint(options?.gradingPolicy, isEn, spec.appreciationScale);
+  if (resolvedFormulaHint.length > 0) {
     const hy = doc.y;
-    doc.rect(left, hy, totalW, 13).fillAndStroke('#f8fafc', '#94a3b8');
-    doc.font(fonts.italic).fontSize(6.5).fillColor('#334155')
-      .text(spec.formulaHint, left + 4, hy + 3, { width: totalW - 8, align: 'center' });
-    doc.y = hy + 14;
+    doc.font(fonts.italic).fontSize(6.5);
+    const hintH = Math.max(13, Math.ceil(doc.heightOfString(resolvedFormulaHint, { width: totalW - 8 }) + 5));
+    doc.rect(left, hy, totalW, hintH).fillAndStroke('#f8fafc', '#94a3b8');
+    doc.fillColor('#334155').text(resolvedFormulaHint, left + 4, hy + 3, { width: totalW - 8, align: 'center' });
+    doc.y = hy + hintH + 1;
   }
 
   const ensureSpace = (needed: number) => {
@@ -206,14 +218,5 @@ export function drawMeasuredSubjectTable(
       drawGroupSubtotalRow(doc, fonts, grp.summary, left, totalW, isEn);
     }
   }
-
-  ensureSpace(18);
-  const sy = doc.y;
-  doc.rect(left, sy, totalW, 15).fillAndStroke('#1e293b', '#0f172a');
-  const totalRk = formatRankLabel(snapshot.rank, isEn);
-  const seqText = isEn
-    ? `PERIOD RESULT — Total Coef: ${snapshot.totalCoefficient}  |  Total Weighted: ${snapshot.totalWeightedScore.toFixed(2)}  |  General Avg: ${snapshot.generalAverage.toFixed(2)}/20  |  Rank: ${totalRk}/${snapshot.totalStudents}  |  Grade: ${resolveApcCote(snapshot.generalAverage)}`
-    : `RÉSULTAT PÉRIODIQUE — Total Coef : ${snapshot.totalCoefficient}  |  Total Points : ${snapshot.totalWeightedScore.toFixed(2)}  |  Moyenne Générale : ${snapshot.generalAverage.toFixed(2)}/20  |  Rang : ${totalRk}/${snapshot.totalStudents}  |  Cote : ${resolveApcCote(snapshot.generalAverage)}`;
-  doc.font(fonts.bold).fontSize(7.2).fillColor('#ffffff').text(seqText, left + 5, sy + 4, { width: totalW - 10, align: 'center' });
-  doc.y = sy + 20;
+  doc.y += 4;
 }

@@ -12,6 +12,7 @@ import { RulesBasedPredictionService } from '@infrastructure/services/ai/RulesBa
 import { TabPfnPredictionService } from '@infrastructure/services/ai/TabPfnPredictionService';
 import { EnregistrerPresenceUseCase } from '@application/attendance/EnregistrerPresenceUseCase';
 import { TraiterSmsPresenceUseCase } from '@application/attendance/TraiterSmsPresenceUseCase';
+import { SaisirHeuresAbsenceSequenceUseCase } from '@application/attendance/SaisirHeuresAbsenceSequenceUseCase';
 import { ObtenirEnfantsUseCase } from '@application/parent/ObtenirEnfantsUseCase';
 import { ObtenirAlertesSoldeUseCase } from '@application/parent/ObtenirAlertesSoldeUseCase';
 import { VerifierAccesEnfantUseCase } from '@application/parent/VerifierAccesEnfantUseCase';
@@ -72,6 +73,12 @@ export function createCommunicationContainer(core: CoreContainerContext) {
         core.userRepository,
         core.presenceRepository,
       ),
+      saisirHeuresSequence: new SaisirHeuresAbsenceSequenceUseCase(
+        core.sequenceAbsenceRepository,
+        core.classeRepository,
+        core.anneeRepository,
+      ),
+      sequenceAbsenceRepository: core.sequenceAbsenceRepository,
       presenceRepository: core.presenceRepository,
       userRepository: core.userRepository,
       parentRepository: core.parentRepository,

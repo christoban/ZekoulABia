@@ -11,6 +11,8 @@ import type { DisciplineRecordData } from '@domain/ports/repositories/Discipline
 import type { Note } from '@domain/entities/Note';
 import type { Presence } from '@domain/entities/Presence';
 import type { LigneMatiereProps } from '@domain/entities/Bulletin';
+import type { SequenceAbsenceSummaryRecord } from '@domain/ports/repositories/SequenceAbsenceSummaryRepository';
+import { MatiereSansGroupeError, type MissingSubjectGroupItem } from '@domain/errors/MatiereSansGroupeError';
 import type { BulletinTemplate, CouncilDecision } from '@domain/types/enums';
 import type {
   BulletinConductSnapshot,
@@ -112,15 +114,21 @@ export function snapshotToLignesMatiere(snapshot: StudentBulletinSnapshot): Lign
   }));
 }
 
-export function formatAbsenceHoursDisplay(hours: number | null | undefined): string {
+export function formatAbsenceHoursDisplay(
+  hours: number | null | undefined,
+  lang: 'fr' | 'en' = 'fr',
+): string {
   if (hours === null || hours === undefined || Number.isNaN(hours)) return '—';
-  return `${hours} h`;
+  const rounded = (Math.round(hours * 100) / 100).toFixed(2);
+  const formatted = lang === 'fr' ? rounded.replace('.', ',') : rounded;
+  return `${formatted} h`;
 }
 
 export function buildConductForStudent(
   presences: Presence[],
   sanctions: DisciplineRecordData[],
   fallbackAbsenceDays: number,
+  sequenceAbsences: SequenceAbsenceSummaryRecord[] = [],
 ): BulletinConductSnapshot {
   let lateCount = 0;
 
@@ -136,17 +144,30 @@ export function buildConductForStudent(
     (s) => s.type === 'TEMP_EXCLUSION' || s.type === 'PERMANENT_EXCLUSION',
   ).length;
 
-  // Attendance ne porte ni horaire ni lien fiable vers TimetableSlot :
-  // ne jamais inventer de durée estimée (1h/4h) sur un document officiel.
+  // Source consolidée par séquence (Surveillant général / Admin) ; null => « — » (aucune estimation).
+  const hasConsolidatedHours = sequenceAbsences.length > 0;
+  const justifiedAbsenceHours = hasConsolidatedHours
+    ? Math.round(sequenceAbsences.reduce((sum, r) => sum + r.justifiedHours, 0) * 100) / 100
+    : null;
+  const unjustifiedAbsenceHours = hasConsolidatedHours
+    ? Math.round(sequenceAbsences.reduce((sum, r) => sum + r.unjustifiedHours, 0) * 100) / 100
+    : null;
+  const totalAbsenceHours =
+    justifiedAbsenceHours !== null && unjustifiedAbsenceHours !== null
+      ? Math.round((justifiedAbsenceHours + unjustifiedAbsenceHours) * 100) / 100
+      : null;
+  const consignesCount = sequenceAbsences.reduce((sum, r) => sum + (r.consignesCount ?? 0), 0);
+
   return {
-    justifiedAbsenceHours: null,
-    unjustifiedAbsenceHours: null,
-    totalAbsenceHours: null,
+    justifiedAbsenceHours,
+    unjustifiedAbsenceHours,
+    totalAbsenceHours,
     totalAbsenceDays: fallbackAbsenceDays,
     lateCount,
     warningsCount,
     blamesCount,
     exclusionsCount,
+    consignesCount,
     sanctions: sanctions.map((s) => ({
       id: s.id,
       type: s.type,
@@ -187,55 +208,82 @@ export function buildSubjectInputsWithCurriculum(params: {
 }): SnapshotSubjectInput[] {
   const matiereParId = new Map(params.matieres.map((m) => [m.id, m]));
   const gradedSubjectIds = new Set(params.notesDeClasse.map((n) => n.subjectId));
+  const missingSubjects: MissingSubjectGroupItem[] = [];
+  const subjectsInput: SnapshotSubjectInput[] = [];
 
-  const subjectsInput: SnapshotSubjectInput[] = params.matieres.map((m) => {
+  for (const m of params.matieres) {
     const schemeForSubject = gradedSubjectIds.has(m.id) ? params.groupingScheme : 'FLAT';
-    const cfg = resolveCurriculumSubjectConfig({
-      subject: m,
-      levelCoeff: params.levelCoeffMap.get(m.id),
-      classOverride: params.overrideMap.get(m.id),
-      educationType: params.educationType,
-      groupingScheme: schemeForSubject,
-    });
-    return {
-      id: m.id,
-      name: m.name,
-      coefficient: cfg.coefficient,
-      isLV2: params.lv2SubjectIds.has(m.id),
-      subjectType: m.subjectType,
-      groupKey: cfg.groupKey,
-      groupLabel: cfg.groupLabel,
-      groupOrder: cfg.groupOrder,
-      teacherName: params.teacherBySubject.get(m.id),
-    };
-  });
+    try {
+      const cfg = resolveCurriculumSubjectConfig({
+        subject: m,
+        levelCoeff: params.levelCoeffMap.get(m.id),
+        classOverride: params.overrideMap.get(m.id),
+        educationType: params.educationType,
+        groupingScheme: schemeForSubject,
+      });
+      subjectsInput.push({
+        id: m.id,
+        name: m.name,
+        coefficient: cfg.coefficient,
+        isLV2: params.lv2SubjectIds.has(m.id),
+        subjectType: m.subjectType,
+        groupKey: cfg.groupKey,
+        groupLabel: cfg.groupLabel,
+        groupOrder: cfg.groupOrder,
+        teacherName: params.teacherBySubject.get(m.id),
+      });
+    } catch (err) {
+      if (err instanceof MatiereSansGroupeError) {
+        missingSubjects.push({ subjectId: m.id, subjectName: m.name, subjectCode: m.code ?? null });
+      } else {
+        throw err;
+      }
+    }
+  }
 
-  const knownIds = new Set(subjectsInput.map((s) => s.id));
+  const knownIds = new Set([...matiereParId.keys()]);
   for (const n of params.notesDeClasse) {
     if (knownIds.has(n.subjectId)) continue;
     knownIds.add(n.subjectId);
     const mat = matiereParId.get(n.subjectId);
-    const fallbackCfg = resolveCurriculumSubjectConfig({
-      subject: {
+    const name = mat?.name ?? `Matière (${n.subjectId.slice(0, 6)})`;
+    try {
+      const fallbackCfg = resolveCurriculumSubjectConfig({
+        subject: {
+          id: n.subjectId,
+          name,
+          code: mat?.code ?? null,
+          coefficient: n.coefficient,
+        },
+        educationType: params.educationType,
+        groupingScheme: params.groupingScheme,
+      });
+      subjectsInput.push({
         id: n.subjectId,
-        name: mat?.name ?? `Matière (${n.subjectId.slice(0, 6)})`,
-        code: mat?.code ?? null,
-        coefficient: n.coefficient,
-      },
-      educationType: params.educationType,
-      groupingScheme: params.groupingScheme,
-    });
-    subjectsInput.push({
-      id: n.subjectId,
-      name: mat?.name ?? `Matière (${n.subjectId.slice(0, 6)})`,
-      coefficient: fallbackCfg.coefficient,
-      isLV2: params.lv2SubjectIds.has(n.subjectId),
-      groupKey: fallbackCfg.groupKey,
-      groupLabel: fallbackCfg.groupLabel,
-      groupOrder: fallbackCfg.groupOrder,
-      teacherName: params.teacherBySubject.get(n.subjectId),
+        name,
+        coefficient: fallbackCfg.coefficient,
+        isLV2: params.lv2SubjectIds.has(n.subjectId),
+        groupKey: fallbackCfg.groupKey,
+        groupLabel: fallbackCfg.groupLabel,
+        groupOrder: fallbackCfg.groupOrder,
+        teacherName: params.teacherBySubject.get(n.subjectId),
+      });
+    } catch (err) {
+      if (err instanceof MatiereSansGroupeError) {
+        missingSubjects.push({ subjectId: n.subjectId, subjectName: name, subjectCode: mat?.code ?? null });
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  if (missingSubjects.length > 0) {
+    throw new MatiereSansGroupeError({
+      groupingScheme: params.groupingScheme ?? 'CUSTOM',
+      missingSubjects,
     });
   }
+
   return subjectsInput;
 }
 

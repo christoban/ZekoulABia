@@ -22,6 +22,7 @@ import { PrismaClassCouncilRepository } from '@infrastructure/persistence/prisma
 import { PrismaFactureRepository } from '@infrastructure/persistence/prisma/PrismaFactureRepository';
 import { PrismaDepartmentRepository } from '@infrastructure/persistence/prisma/PrismaDepartmentRepository';
 import { PrismaStaffAttendanceRepository } from '@infrastructure/persistence/prisma/PrismaStaffAttendanceRepository';
+import { PrismaSequenceAbsenceSummaryRepository } from '@infrastructure/persistence/prisma/PrismaSequenceAbsenceSummaryRepository';
 import { PrismaSchoolSettingsRepository } from '@infrastructure/persistence/prisma/PrismaSchoolSettingsRepository';
 import { ActivityLogAdapter } from '@infrastructure/services/audit/ActivityLogAdapter';
 import { AIActionAuditAdapter } from '@infrastructure/services/ai/AIActionAuditAdapter';
@@ -61,6 +62,7 @@ export function createCoreContainerContext() {
   const factureRepository = new PrismaFactureRepository(prisma);
   const departmentRepository = new PrismaDepartmentRepository(prisma);
   const staffAttendanceRepository = new PrismaStaffAttendanceRepository(prisma);
+  const sequenceAbsenceRepository = new PrismaSequenceAbsenceSummaryRepository(prisma);
   const schoolSettingsRepository = new PrismaSchoolSettingsRepository(prisma);
   const statisticsQueryRepository = new PrismaStatisticsQueryRepository(prisma);
 
@@ -112,6 +114,7 @@ export function createCoreContainerContext() {
     factureRepository,
     departmentRepository,
     staffAttendanceRepository,
+    sequenceAbsenceRepository,
     schoolSettingsRepository,
     statisticsQueryRepository,
     metricCache,

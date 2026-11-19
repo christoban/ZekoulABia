@@ -19,6 +19,7 @@ import {
   assignCompetitionRanks,
   buildGroupSummariesForStudent,
   buildStudentSubjectLines,
+  computeClassProfile,
   computeStudentSequenceAndTermAverages,
   isSubjectAllowedForStudent,
   resolveAnnualGeneralAverage,
@@ -161,16 +162,7 @@ export class BulletinSnapshotBuilder {
 
     const snapshotsByStudentId = new Map<string, StudentBulletinSnapshot>();
     const allAvgs = input.students.map((s) => generalAvgByStudent.get(s.id) ?? 0);
-
-    const passCount = allAvgs.filter((a) => a >= passThreshold).length;
-    const classProfile: BulletinClassProfile = {
-      classSize: allAvgs.length,
-      classAverage: allAvgs.length > 0 ? round2(allAvgs.reduce((a, b) => a + b, 0) / allAvgs.length) : 0,
-      topAverage: allAvgs.length > 0 ? Math.max(...allAvgs) : 0,
-      lowAverage: allAvgs.length > 0 ? Math.min(...allAvgs) : 0,
-      passCount,
-      passRate: allAvgs.length > 0 ? round2((passCount / allAvgs.length) * 100) : 0,
-    };
+    const classProfile = computeClassProfile(allAvgs, passThreshold, input.classSizeOverride);
 
     for (const student of input.students) {
       const lines = linesByStudent.get(student.id) ?? [];

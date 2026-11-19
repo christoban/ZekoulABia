@@ -18,3 +18,4 @@ export interface BulletinTemplateAssignmentRepository {
   save(input: SaveBulletinTemplateAssignmentInput): Promise<BulletinTemplateAssignmentRule>;
   delete(id: string, schoolId: string): Promise<void>;
 }
+

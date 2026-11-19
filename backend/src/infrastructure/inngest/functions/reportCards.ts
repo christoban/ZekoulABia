@@ -21,6 +21,7 @@ import { PrismaSectionRepository } from "../../persistence/prisma/PrismaSectionR
 import { PrismaClasseCoefficientRepository } from "../../persistence/prisma/PrismaClasseCoefficientRepository";
 import { PrismaDisciplineRepository } from "../../persistence/prisma/PrismaDisciplineRepository";
 import { PrismaBulletinTemplateAssignmentRepository } from "../../persistence/prisma/PrismaBulletinTemplateAssignmentRepository";
+import { PrismaSequenceAbsenceSummaryRepository } from "../../persistence/prisma/PrismaSequenceAbsenceSummaryRepository";
 import { MeasuredPdfKitBulletinRenderer } from "../../pdf/renderer/MeasuredPdfKitBulletinRenderer";
 import { createBulletinPdfStorageAdapter } from "../../services/storage/S3CompatibleBulletinPdfStorageAdapter";
 import { BulletinBloqueError } from "@domain/errors/BulletinBloqueError";
@@ -85,6 +86,7 @@ export const generateReportCards = inngest.createFunction(
       new PrismaBulletinTemplateAssignmentRepository(prisma),
       new MeasuredPdfKitBulletinRenderer(),
       createBulletinPdfStorageAdapter(),
+      new PrismaSequenceAbsenceSummaryRepository(prisma),
     );
 
     const { academicYear, academicPeriod, generatedStudents } = await step.run("generate-report-cards", async () => {

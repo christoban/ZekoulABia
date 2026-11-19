@@ -19,4 +19,12 @@ export interface SchoolConfigData {
   bulletinTemplate?: BulletinTemplate;
   bulletinGroupingScheme?: BulletinGroupingScheme;
   useMeasuredBulletinRenderer?: boolean;
+  sequenceCalculationMode?: string;
+  classTestWeight?: number;
+  terminalExamWeight?: number;
+  ds1Weight?: number;
+  ds2Weight?: number;
+  compositionWeight?: number;
+  passMark?: number;
+  councilPassMark?: number;
 }

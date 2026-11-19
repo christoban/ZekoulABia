@@ -49,6 +49,7 @@ export const GENERAL_GROUPED_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec
       showLogo: true,
       showCoatOfArms: true,
       showMotto: true,
+      periodLabelMode: 'AUTO',
     },
     {
       type: 'studentCard',
@@ -59,8 +60,6 @@ export const GENERAL_GROUPED_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec
       grouping: 'byGroup',
       showGroupSubtotals: true,
       appreciationScale: 'A+/A/ECA/NA',
-      formulaHint:
-        'Règle de calcul : EVA/20 = moyenne des évaluations (CC/DS)   |   Cotes : A+ [18-20] • A [15-17,99] • ECA [11-14,99] • NA [<11]',
       columns: [
         { key: 'subjectName', labelFr: 'MATIÈRES', labelEn: 'SUBJECTS', ratio: 19, align: 'left' },
         { key: 'seq1Score', labelFr: 'CC /20', labelEn: 'CA /20', ratio: 6.5, align: 'center' },
@@ -80,17 +79,29 @@ export const GENERAL_GROUPED_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec
     },
     {
       type: 'councilDecision',
-      items: ['honorRoll', 'encouragements', 'congratulations', 'warning', 'blame', 'decision', 'observations'],
+      items: [
+        'honorRoll',
+        'encouragements',
+        'congratulations',
+        'workWarning',
+        'conductWarning',
+        'blame',
+        'disciplinaryCouncil',
+        'exclusion',
+        'decision',
+        'observations',
+      ],
     },
     {
       type: 'conductSummary',
       absenceUnit: 'hours',
-      fields: ['absJ', 'absNJ', 'totalHours', 'late', 'warnings', 'blames', 'exclusions'],
+      fields: ['absJ', 'absNJ', 'totalHours', 'late', 'consignes', 'warnings', 'blames', 'exclusions'],
     },
     {
       type: 'signatures',
-      slots: ['parent', 'mainTeacher', 'principal'],
+      slots: ['mainTeacher', 'parent', 'principal'],
       showStamp: true,
+      showPlaceholder: false,
       showPlaceDate: true,
     },
     {
@@ -166,3 +177,4 @@ export function createNewTemplateSpecVersion(
   };
   return deepFreezeSpec(nextSpec);
 }
+

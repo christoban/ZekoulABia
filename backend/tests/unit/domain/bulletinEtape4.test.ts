@@ -71,6 +71,7 @@ function buildSealedSnapshot(studentAverage = 16): StudentBulletinSnapshot {
       warningsCount: 0,
       blamesCount: 0,
       exclusionsCount: 0,
+      consignesCount: 0,
       sanctions: [],
     },
     councilDecision: {
@@ -380,7 +381,7 @@ describe('Étape 4 — Regroupements par code, Famille A immuable, Affectations 
       expect(regeneratedBuf).not.toBeNull();
       expect(renderCalls).toBe(2);
       expect(existsSync(diskPath)).toBe(true);
-      expect(drawnTexts.some((t) => t.includes('16.00'))).toBe(true);
+      expect(drawnTexts.some((t) => t.includes('16,00'))).toBe(true);
       expect(drawnTexts.some((t) => t.includes('LIVE MODIFIÉE'))).toBe(false);
     } finally {
       PDFDocument.prototype.text = origText;
@@ -416,3 +417,4 @@ describe('Étape 4 — Regroupements par code, Famille A immuable, Affectations 
     expect(renderCalls).toBe(2);
   });
 });
+

@@ -124,6 +124,7 @@ export function handleGenerateBulletinsError(error: unknown, res: Response, next
       subjectName: error.subjectName,
       subjectCode: error.subjectCode,
       groupingScheme: error.groupingScheme,
+      missingSubjects: error.missingSubjects,
     });
     return;
   }

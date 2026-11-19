@@ -186,6 +186,7 @@ model School {
   publicationLectures          PublicationLecture[]
   babillardAudits              BabillardAudit[]
   attendances                  Attendance[]
+  sequenceAbsenceSummaries     StudentSequenceAbsenceSummary[]
   classes                      Class[]
   classCouncilSessions         ClassCouncilSession[]
   bulletinValidationSessions   BulletinValidationSession[]
@@ -636,6 +637,8 @@ model User {
   attendancesAsTeacher            Attendance[]                @relation("TeacherAttendances")
   attendancesAsStudent            Attendance[]                @relation("StudentAttendances")
   attendancesJustified            Attendance[]                @relation("JustifiedAttendances")
+  studentSequenceAbsences         StudentSequenceAbsenceSummary[] @relation("StudentSequenceAbsences")
+  recordedSequenceAbsences        StudentSequenceAbsenceSummary[] @relation("RecordedSequenceAbsences")
   councilDecisions                ClassCouncilDecision[]      @relation("CouncilDecisionStudent")
   councilPresided                 ClassCouncilSession[]       @relation("CouncilPresidedBy")
   bulletinSessionsSubmitted       BulletinValidationSession[] @relation("BulletinSessionSubmittedBy")
@@ -1219,9 +1222,10 @@ model AcademicYear {
   school               School                   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   exams                Exam[]
   grades               Grade[]
-  reportCards          ReportCard[]
-  timetables           Timetable[]
-  studentPromotions    StudentPromotion[]
+  reportCards              ReportCard[]
+  timetables               Timetable[]
+  sequenceAbsenceSummaries StudentSequenceAbsenceSummary[]
+  studentPromotions        StudentPromotion[]
   classPromotions      ClassPromotion[]
   programmes           Programme[]
   cahierDeTexte        CahierDeTexte[]
@@ -1268,6 +1272,7 @@ model AcademicPeriod {
   academicYear               AcademicYear                @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
   sequences                  AcademicSequence[]
   attendances                Attendance[]
+  sequenceAbsenceSummaries   StudentSequenceAbsenceSummary[]
   classCouncilSessions       ClassCouncilSession[]
   bulletinValidationSessions BulletinValidationSession[]
   reportCards                ReportCard[]
@@ -1287,6 +1292,7 @@ model AcademicSequence {
   school             School                        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   grades             Grade[]
   assessmentSessions HarmonizedAssessmentSession[]
+  sequenceAbsences   StudentSequenceAbsenceSummary[]
 
   @@unique([academicPeriodId, orderIndex])
   @@index([schoolId])
@@ -1319,6 +1325,7 @@ model Class {
   serie                      String?
   professorPrincipalId       String?                       @unique
   attendances                Attendance[]
+  sequenceAbsenceSummaries   StudentSequenceAbsenceSummary[]
   school                     School                        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   academicYear               AcademicYear                  @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
   section                    Section?                      @relation(fields: [sectionId], references: [id])
@@ -1540,6 +1547,32 @@ model Attendance {
   @@index([schoolId, classId, date])
   @@index([schoolId, studentId])
   @@index([schoolId, studentId, date, period])
+}
+
+model StudentSequenceAbsenceSummary {
+  id               String           @id @default(cuid())
+  schoolId         String
+  studentId        String
+  classId          String
+  academicYearId   String
+  academicPeriodId String
+  sequenceId       String
+  justifiedHours   Float            @default(0)
+  unjustifiedHours Float            @default(0)
+  consignesCount   Int              @default(0)
+  recordedById     String
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  school           School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student          User             @relation("StudentSequenceAbsences", fields: [studentId], references: [id], onDelete: Cascade)
+  recordedBy       User             @relation("RecordedSequenceAbsences", fields: [recordedById], references: [id])
+  class            Class            @relation(fields: [classId], references: [id], onDelete: Cascade)
+  academicYear     AcademicYear     @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  academicPeriod   AcademicPeriod   @relation(fields: [academicPeriodId], references: [id], onDelete: Cascade)
+  sequence         AcademicSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, sequenceId])
+  @@index([schoolId, classId, academicPeriodId])
 }
 
 model Grade {

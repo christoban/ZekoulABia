@@ -67,6 +67,7 @@ export interface BulletinSnapshotBuildInput {
   hasCoefficientBySubject: boolean;
   excludeAbsentGrades?: boolean;
   passThresholdOn20?: number;
+  classSizeOverride?: number;
   isAnnual?: boolean;
   annualPolicy?: AnnualAveragePolicyMode;
   sequenceCalculationMode?: 'single' | 'triple' | 'weighted';
@@ -104,6 +105,7 @@ export interface BulletinConductSnapshot {
   warningsCount: number;
   blamesCount: number;
   exclusionsCount: number;
+  consignesCount: number;
   sanctions: BulletinConductSanctionItem[];
 }
 

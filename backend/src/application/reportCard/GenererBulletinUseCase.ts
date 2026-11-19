@@ -27,10 +27,12 @@ import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolCo
 import type { BulletinTemplateAssignmentRepository } from '@domain/ports/repositories/BulletinTemplateAssignmentRepository';
 import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
 import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
+import type { SequenceAbsenceSummaryRepository } from '@domain/ports/repositories/SequenceAbsenceSummaryRepository';
 import type { BulletinTemplate } from '@domain/types/enums';
 import { resolveHasCoefficientForClass } from '@domain/subsystems/SubsystemDefaults';
 import { resolveLanguage } from '../../domain/policies/LanguagePolicy';
 import {
+  normalizeSequenceCalculationMode,
   renderAndStoreBulletinIfSpecActive,
   resolveClassGenerationPlan,
 } from './bulletinPdfLifecycle';
@@ -83,6 +85,7 @@ export class GenererBulletinUseCase {
     private readonly assignmentRepository?: BulletinTemplateAssignmentRepository,
     private readonly bulletinRenderer?: BulletinRendererPort,
     private readonly bulletinPdfStorage?: BulletinPdfStoragePort,
+    private readonly sequenceAbsenceRepository?: SequenceAbsenceSummaryRepository,
   ) {}
 
   async execute(commande: GenererBulletinCommande): Promise<GenererBulletinResultat> {
@@ -174,7 +177,10 @@ export class GenererBulletinUseCase {
       classeCoefficientRepository: this.classeCoefficientRepository,
       teachingAssignmentRepository: this.teachingAssignmentRepository,
       disciplineRepository: this.disciplineRepository,
+      sequenceAbsenceRepository: this.sequenceAbsenceRepository,
       groupingScheme: plan.groupingScheme,
+      passThresholdOn20: plan.passThresholdOn20,
+      sequenceCalculationMode: normalizeSequenceCalculationMode(plan.gradingPolicy.mode),
     });
 
     const verifyBase = resoudreVerifyBaseUrl();
@@ -240,7 +246,10 @@ export class GenererBulletinUseCase {
         periodName: periode.name,
         yearName: annee.name,
         mention: entry.mention,
+        classMasterComment: entry.snapshot.councilDecision?.observations ?? undefined,
         language: langue,
+        isAnnual: effectiveTemplate === 'ANNUAL',
+        gradingPolicy: plan.gradingPolicy,
         schoolMotto: commande.schoolMotto,
         verifyUrl,
         verifyToken: entry.verifyToken,

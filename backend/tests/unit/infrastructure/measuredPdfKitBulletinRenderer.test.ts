@@ -112,6 +112,7 @@ function buildSnapshot(subjectCount: number): StudentBulletinSnapshot {
       warningsCount: 0,
       blamesCount: 0,
       exclusionsCount: 0,
+      consignesCount: 0,
       sanctions: [],
     },
     councilDecision: {
@@ -217,7 +218,7 @@ describe('MeasuredPdfKitBulletinRenderer — Étape 3', () => {
       expect(drawnTexts).toContain('ECA');
       expect(drawnTexts).toContain('NA');
       expect(drawnTexts.some((t) => t.includes('Abs. justifiées : —') && t.includes('Abs. non justifiées : —'))).toBe(true);
-      expect(drawnTexts.some((t) => t.includes('DUPLICATA #2'))).toBe(true);
+      expect(drawnTexts.some((t) => t.includes('DUPLICATA n° 2'))).toBe(true);
       expect(drawnTexts.some((t) => t.trim() === '' || t.trim() === '""')).toBe(false);
     } finally {
       PDFDocument.prototype.addPage = origAddPage;

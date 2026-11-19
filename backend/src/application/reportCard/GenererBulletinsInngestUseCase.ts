@@ -25,6 +25,7 @@ import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolCo
 import type { BulletinTemplateAssignmentRepository } from '@domain/ports/repositories/BulletinTemplateAssignmentRepository';
 import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
 import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
+import type { SequenceAbsenceSummaryRepository } from '@domain/ports/repositories/SequenceAbsenceSummaryRepository';
 import type { BulletinTemplate } from '@domain/types/enums';
 import { resolveHasCoefficientForClass } from '@domain/subsystems/SubsystemDefaults';
 import { resolveLanguage } from '../../domain/policies/LanguagePolicy';
@@ -35,6 +36,7 @@ import {
   snapshotToLignesMatiere,
 } from './bulletinSnapshotEnricher';
 import {
+  normalizeSequenceCalculationMode,
   renderAndStoreBulletinIfSpecActive,
   resolveClassGenerationPlan,
 } from './bulletinPdfLifecycle';
@@ -81,6 +83,7 @@ export class GenererBulletinsInngestUseCase {
     private readonly assignmentRepository?: BulletinTemplateAssignmentRepository,
     private readonly bulletinRenderer?: BulletinRendererPort,
     private readonly bulletinPdfStorage?: BulletinPdfStoragePort,
+    private readonly sequenceAbsenceRepository?: SequenceAbsenceSummaryRepository,
   ) {}
 
   async generer(
@@ -173,7 +176,10 @@ export class GenererBulletinsInngestUseCase {
         classeCoefficientRepository: this.classeCoefficientRepository,
         teachingAssignmentRepository: this.teachingAssignmentRepository,
         disciplineRepository: this.disciplineRepository,
+        sequenceAbsenceRepository: this.sequenceAbsenceRepository,
         groupingScheme: plan.groupingScheme,
+        passThresholdOn20: plan.passThresholdOn20,
+        sequenceCalculationMode: normalizeSequenceCalculationMode(plan.gradingPolicy.mode),
       });
 
       const verifyBase = resoudreVerifyBaseUrl();
@@ -231,7 +237,10 @@ export class GenererBulletinsInngestUseCase {
           periodName: periode.name,
           yearName: academicYear.name,
           mention: entry.mention,
+          classMasterComment: entry.snapshot.councilDecision?.observations ?? undefined,
           language: langue,
+          isAnnual: plan.template === 'ANNUAL',
+          gradingPolicy: plan.gradingPolicy,
           verifyUrl: `${verifyBase}/verify/${bulletin.id}?token=${entry.verifyToken}`,
           verifyToken: entry.verifyToken,
           studentPhotoUrl: rawPhotoByStudent.get(eleve.id),

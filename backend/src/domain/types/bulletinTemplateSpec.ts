@@ -42,6 +42,15 @@ export interface SubjectTableColumnSpec {
   align?: 'left' | 'center' | 'right';
 }
 
+export type PeriodLabelMode =
+  | 'AUTO'
+  | 'EVALUATION'
+  | 'SEQUENCE'
+  | 'TRIMESTER'
+  | 'TERM'
+  | 'ANNUAL'
+  | 'MONTHLY';
+
 export interface OfficialHeaderBlockSpec {
   type: 'officialHeader';
   bilingual: boolean;
@@ -49,6 +58,7 @@ export interface OfficialHeaderBlockSpec {
   showLogo: boolean;
   showCoatOfArms: boolean;
   showMotto: boolean;
+  periodLabelMode?: PeriodLabelMode;
 }
 
 export interface StudentCardBlockSpec {
@@ -70,21 +80,35 @@ export interface ClassProfileBlockSpec {
   fields: Array<'classAverage' | 'topAverage' | 'lowAverage' | 'passCount' | 'passRate'>;
 }
 
+export type CouncilDecisionSpecItem =
+  | 'honorRoll'
+  | 'encouragements'
+  | 'congratulations'
+  | 'decision'
+  | 'observations'
+  | 'warning'
+  | 'workWarning'
+  | 'conductWarning'
+  | 'blame'
+  | 'disciplinaryCouncil'
+  | 'exclusion';
+
 export interface CouncilDecisionBlockSpec {
   type: 'councilDecision';
-  items: Array<'honorRoll' | 'encouragements' | 'congratulations' | 'decision' | 'observations' | 'warning' | 'blame'>;
+  items: CouncilDecisionSpecItem[];
 }
 
 export interface ConductSummaryBlockSpec {
   type: 'conductSummary';
   absenceUnit: 'hours' | 'days';
-  fields: Array<'absJ' | 'absNJ' | 'totalHours' | 'days' | 'late' | 'warnings' | 'blames' | 'exclusions'>;
+  fields: Array<'absJ' | 'absNJ' | 'totalHours' | 'days' | 'late' | 'consignes' | 'warnings' | 'blames' | 'exclusions'>;
 }
 
 export interface SignaturesBlockSpec {
   type: 'signatures';
   slots: Array<'parent' | 'mainTeacher' | 'vicePrincipal' | 'principal'>;
   showStamp: boolean;
+  showPlaceholder?: boolean;
   showPlaceDate: boolean;
 }
 

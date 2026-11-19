@@ -487,7 +487,8 @@ describe('Étape 2 — Parité Sync/Inngest, Snapshot v2, Régénération, ANNUA
     expect(snap.conduct?.totalAbsenceDays).toBe(2);
     expect(formatAbsenceHoursDisplay(snap.conduct?.justifiedAbsenceHours)).toBe('—');
     expect(formatAbsenceHoursDisplay(snap.conduct?.unjustifiedAbsenceHours)).toBe('—');
-    expect(formatAbsenceHoursDisplay(6)).toBe('6 h');
+    expect(formatAbsenceHoursDisplay(6)).toBe('6,00 h');
+    expect(formatAbsenceHoursDisplay(4.5, 'en')).toBe('4.50 h');
 
     const drawnTexts: string[] = [];
     const origText = PDFDocument.prototype.text;

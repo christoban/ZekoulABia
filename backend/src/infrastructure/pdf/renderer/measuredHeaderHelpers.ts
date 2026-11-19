@@ -7,6 +7,7 @@ import type {
   StudentCardBlockSpec,
 } from '@domain/types/bulletinTemplateSpec';
 import type { BulletinRenderOptions } from '@domain/ports/services/BulletinRendererPort';
+import { formatPeriodBannerTitle } from './measuredFormatHelpers';
 
 export type MeasuredPdfDoc = InstanceType<typeof PDFDocument>;
 
@@ -118,14 +119,20 @@ export function drawOfficialHeaderBlock(
     cursorY = doc.y;
   }
 
-  const titleLabel = isEn
-    ? `REPORT CARD — ${options.periodName} (${options.yearName})`
-    : `BULLETIN SCOLAIRE — ${options.periodName} (${options.yearName})`;
-  doc.rect(left, cursorY + 3, usableW, 17).fillAndStroke('#e2e8f0', '#0f172a');
-  doc.font(fonts.bold).fontSize(9).fillColor('#0f172a').text(titleLabel, left + 4, cursorY + 6.5, { width: usableW - (options.isDuplicate ? 95 : 8), align: 'center' });
+  const titleLabel = formatPeriodBannerTitle(
+    options.periodName,
+    options.yearName,
+    isEn,
+    spec.periodLabelMode,
+    options.isAnnual,
+  );
+  const bannerColor = options.school.accentColor?.trim() || '#e2e8f0';
+  doc.rect(left, cursorY + 3, usableW, 17).fillAndStroke(bannerColor, '#0f172a');
+  doc.font(fonts.bold).fontSize(9).fillColor('#0f172a').text(titleLabel, left + 4, cursorY + 6.5, { width: usableW - (options.isDuplicate ? 105 : 8), align: 'center' });
 
   if (options.isDuplicate) {
-    const dupLabel = `DUPLICATA #${options.reprintCount ?? 1}`;
+    const dupNum = options.reprintCount && options.reprintCount > 0 ? options.reprintCount : 1;
+    const dupLabel = isEn ? `DUPLICATE #${dupNum}` : `DUPLICATA n° ${dupNum}`;
     doc.font(fonts.bold).fontSize(7.5).fillColor('#0f172a').text(dupLabel, left, cursorY + 7, { width: usableW - 6, align: 'right' });
   }
   doc.y = cursorY + 23;
@@ -189,3 +196,4 @@ export function drawStudentCardBlock(
   }
   doc.y = startY + boxH + 5;
 }
+

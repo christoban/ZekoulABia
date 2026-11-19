@@ -7,40 +7,81 @@ import type {
 } from '@domain/types/enums';
 import { getPublishedTemplateSpec } from '@domain/templates/bulletinCatalog';
 
+import {
+  NIVEAUX_ESG,
+  NIVEAUX_ESG_EN,
+  NIVEAUX_PRIMAIRES,
+} from '@domain/ports/repositories/StatisticalQueryPort';
+import {
+  ANGLOPHONE_SECONDARY_LEVELS,
+  FIRST_CYCLE_LEVELS,
+  PRESCHOOL_LEVELS,
+  PRIMARY_LEVELS,
+  SECOND_CYCLE_LEVELS,
+  SERIES_BY_LEVEL,
+  TECHNICAL_LEVELS,
+} from '@domain/value-objects/SerieBAC';
+
 export type SectionCycle = 'maternelle' | 'primaire' | 'secondaire_1' | 'secondaire_2' | 'technique';
 export type SubSystemCode = 'MATERNELLE' | 'FR_PRIMAIRE' | 'EN_PRIMAIRE' | 'FR_SECONDARY' | 'EN_SECONDARY';
 
+function expandCurriculumClassLevels(): readonly string[] {
+  const ordered = new Set<string>();
+  const addAll = (items: readonly string[]) => {
+    for (const item of items) ordered.add(item);
+  };
+
+  // Sources canoniques du domaine (curricula FR/EN/Technique/Primaire/Maternelle)
+  addAll(NIVEAUX_ESG);
+  addAll(FIRST_CYCLE_LEVELS);
+  addAll(SECOND_CYCLE_LEVELS);
+  addAll(Object.keys(SERIES_BY_LEVEL));
+  addAll(NIVEAUX_ESG_EN);
+  addAll(ANGLOPHONE_SECONDARY_LEVELS);
+  addAll(NIVEAUX_PRIMAIRES);
+  addAll(PRIMARY_LEVELS);
+  addAll(PRESCHOOL_LEVELS);
+  addAll(TECHNICAL_LEVELS);
+
+  // Variantes d'écriture courantes dérivées des constantes (accents / espaces)
+  if (ordered.has('1ere')) ordered.add('1ère');
+  if (ordered.has('Tle')) ordered.add('Terminale');
+  for (const lvl of NIVEAUX_PRIMAIRES) {
+    const m = /^Class(\d+)$/.exec(lvl);
+    if (m) ordered.add(`Class ${m[1]}`);
+  }
+  for (const lvl of PRESCHOOL_LEVELS) {
+    const m = /^Nursery(\d+)$/.exec(lvl);
+    if (m) ordered.add(`Nursery ${m[1]}`);
+  }
+  // Niveaux complémentaires technique / BFI
+  addAll(['1ereAnnee', '2eAnnee', '3eAnnee', '4eAnnee', '2ndeTech', '1ereTech', 'TleTech']);
+
+  return Array.from(ordered);
+}
+
 /**
- * Valeurs canoniques de `Class.level` reconnues par le curriculum ZekoulABia.
- * Tout libellé libre hors de cette liste est rejeté à la création d'une affectation.
+ * Valeurs canoniques de `Class.level` dérivées des constantes curricula du code.
+ * Complétées dynamiquement par les niveaux réellement présents en base (`Class.level`) lors de l'enregistrement.
  */
-export const KNOWN_CLASS_LEVELS: readonly string[] = [
-  // Secondaire général francophone & anglophone
-  '6e', '5e', '4e', '3e', '2nde', '1ere', '1ère', 'Tle', 'Terminale',
-  'Form1', 'Form2', 'Form3', 'Form4', 'Form5', 'LowerSixth', 'UpperSixth',
-  // Primaire francophone & anglophone
-  'SIL', 'CP', 'CE1', 'CE2', 'CM1', 'CM2',
-  'Class1', 'Class2', 'Class3', 'Class4', 'Class5', 'Class6',
-  'Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5', 'Class 6',
-  // Préscolaire / Maternelle
-  'PS', 'MS', 'GS', 'Petite section', 'Moyenne section', 'Grande section',
-  'Nursery1', 'Nursery2', 'Nursery 1', 'Nursery 2',
-  // Technique & Professionnel
-  '1ereAnnee', '2eAnnee', '3eAnnee', '4eAnnee', 'Année1', 'Année2', 'Annee1', 'Annee2',
-  'CAP1', 'CAP2', 'CAP3', 'CAP4', 'BT1', 'BT2', 'BT3',
-  '2ndeTech', '1ereTech', 'TleTech', 'IND', 'STT', 'G2', 'F1', 'SAR', 'SM', 'COUTURE',
-] as const;
+export const KNOWN_CLASS_LEVELS: readonly string[] = expandCurriculumClassLevels();
 
 const KNOWN_CLASS_LEVEL_SET = new Set<string>(KNOWN_CLASS_LEVELS);
 
-export function assertValidClassLevel(classLevel: string | null | undefined): string | null {
+export function assertValidClassLevel(
+  classLevel: string | null | undefined,
+  extraKnownLevels?: Iterable<string | null | undefined>,
+): string | null {
   if (classLevel === undefined || classLevel === null || classLevel === '') return null;
-  if (!KNOWN_CLASS_LEVEL_SET.has(classLevel)) {
-    throw new Error(
-      `Niveau de classe invalide "${classLevel}" : doit correspondre à une valeur canonique de Class.level.`,
-    );
+  if (KNOWN_CLASS_LEVEL_SET.has(classLevel)) return classLevel;
+  if (extraKnownLevels) {
+    for (const lvl of extraKnownLevels) {
+      if (lvl && lvl === classLevel) return classLevel;
+    }
   }
-  return classLevel;
+  throw new Error(
+    `Niveau de classe invalide "${classLevel}" : doit correspondre à une valeur canonique ou existante de Class.level.`,
+  );
 }
 
 export interface BulletinTemplateAssignmentRule {

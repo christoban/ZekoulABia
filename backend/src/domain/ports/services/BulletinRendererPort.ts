@@ -25,6 +25,16 @@ export interface SchoolIdentityRenderContext {
   accentColor?: string | null;
 }
 
+export interface BulletinGradingPolicy {
+  mode: string;
+  evalCount?: number;
+  classTestWeight?: number;
+  terminalExamWeight?: number;
+  ds1Weight?: number;
+  ds2Weight?: number;
+  compositionWeight?: number;
+}
+
 export interface BulletinRenderOptions {
   className: string;
   periodName: string;
@@ -32,14 +42,17 @@ export interface BulletinRenderOptions {
   mention: string;
   classMasterComment?: string | null;
   isOfficial?: boolean;
+  isAnnual?: boolean;
   verifyUrl?: string;
   verifyToken?: string;
+  shortVerifyCode?: string;
   isDuplicate?: boolean;
   reprintCount?: number;
   seq1Label?: string;
   seq2Label?: string;
   language: 'fr' | 'en';
   school: SchoolIdentityRenderContext;
+  gradingPolicy?: BulletinGradingPolicy;
   studentPhotoBuffer?: Buffer | null;
   issuedAt?: Date;
 }

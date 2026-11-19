@@ -10,9 +10,13 @@
  */
 import type { BulletinExportData, BulletinRepository } from '@domain/ports/repositories/BulletinRepository';
 import type { BulletinTemplateAssignmentRepository } from '@domain/ports/repositories/BulletinTemplateAssignmentRepository';
-import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolConfigRepository';
+import type { SchoolConfigData, SchoolConfigRepository } from '@domain/ports/repositories/SchoolConfigRepository';
 import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
-import type { BulletinRendererPort, BulletinRenderOptions } from '@domain/ports/services/BulletinRendererPort';
+import type {
+  BulletinGradingPolicy,
+  BulletinRendererPort,
+  BulletinRenderOptions,
+} from '@domain/ports/services/BulletinRendererPort';
 import type { StudentBulletinSnapshot } from '@domain/types/bulletinSnapshot';
 import type { BulletinTemplateSpec } from '@domain/types/bulletinTemplateSpec';
 import type { BulletinGroupingScheme, BulletinTemplate } from '@domain/types/enums';
@@ -34,6 +38,24 @@ export interface ResolvedGenerationRenderPlan {
   groupingScheme: BulletinGroupingScheme;
   useMeasuredRenderer: boolean;
   spec: Readonly<BulletinTemplateSpec> | null;
+  passThresholdOn20: number;
+  gradingPolicy: BulletinGradingPolicy;
+}
+
+export function extractGradingPolicy(config?: Partial<SchoolConfigData> | null): BulletinGradingPolicy {
+  return {
+    mode: config?.sequenceCalculationMode ?? 'single',
+    classTestWeight: config?.classTestWeight ?? undefined,
+    terminalExamWeight: config?.terminalExamWeight ?? undefined,
+    ds1Weight: config?.ds1Weight ?? undefined,
+    ds2Weight: config?.ds2Weight ?? undefined,
+    compositionWeight: config?.compositionWeight ?? undefined,
+  };
+}
+
+export function normalizeSequenceCalculationMode(mode?: string | null): 'single' | 'triple' | 'weighted' {
+  if (mode === 'triple' || mode === 'weighted') return mode;
+  return 'single';
 }
 
 export async function resolveClassGenerationPlan(params: {
@@ -75,6 +97,8 @@ export async function resolveClassGenerationPlan(params: {
     groupingScheme: resolved.groupingScheme,
     useMeasuredRenderer: spec !== null,
     spec,
+    passThresholdOn20: schoolConfig?.passMark ?? 10,
+    gradingPolicy: extractGradingPolicy(schoolConfig),
   };
 }
 
@@ -115,6 +139,16 @@ export function buildRenderOptionsForExport(
     : `${params.verifyBaseUrl}/verify/${reportCard.id}`;
   const reprintCount = reportCard.reprintCount ?? 0;
 
+  const sc = reportCard.school?.schoolConfig;
+  const gradingPolicy: BulletinGradingPolicy = {
+    mode: sc?.sequenceCalculationMode ?? 'single',
+    classTestWeight: sc?.classTestWeight ?? undefined,
+    terminalExamWeight: sc?.terminalExamWeight ?? undefined,
+    ds1Weight: sc?.ds1Weight ?? undefined,
+    ds2Weight: sc?.ds2Weight ?? undefined,
+    compositionWeight: sc?.compositionWeight ?? undefined,
+  };
+
   return {
     className: cls?.name ?? '—',
     periodName: reportCard.academicPeriod?.name ?? '—',
@@ -122,12 +156,14 @@ export function buildRenderOptionsForExport(
     mention: reportCard.mention ?? '—',
     classMasterComment: reportCard.classMasterComment,
     isOfficial: params.role !== 'PARENT',
+    isAnnual: reportCard.template === 'ANNUAL',
     verifyUrl,
     verifyToken,
     isDuplicate: reprintCount > 0,
     reprintCount,
     language: params.language,
     studentPhotoBuffer,
+    gradingPolicy,
     school: {
       schoolName: reportCard.school?.name ?? 'Établissement',
       schoolMotto: params.schoolMotto ?? reportCard.school?.schoolSettings?.schoolMotto ?? '',
@@ -270,6 +306,8 @@ export async function renderAndStoreBulletinIfSpecActive(params: {
   mention: string;
   classMasterComment?: string | null;
   language: 'fr' | 'en';
+  isAnnual?: boolean;
+  gradingPolicy?: BulletinGradingPolicy;
   schoolMotto?: string | null;
   verifyUrl: string;
   verifyToken: string;
@@ -286,11 +324,13 @@ export async function renderAndStoreBulletinIfSpecActive(params: {
     mention: params.mention,
     classMasterComment: params.classMasterComment,
     isOfficial: true,
+    isAnnual: params.isAnnual,
     verifyUrl: params.verifyUrl,
     verifyToken: params.verifyToken,
     isDuplicate: false,
     reprintCount: 0,
     language: params.language,
+    gradingPolicy: params.gradingPolicy,
     studentPhotoBuffer,
     school: {
       schoolName: params.school.name,

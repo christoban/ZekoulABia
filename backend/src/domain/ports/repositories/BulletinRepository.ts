@@ -100,6 +100,13 @@ export interface BulletinExportData {
       bulletinTemplate?: string | null;
       bulletinGroupingScheme?: BulletinGroupingScheme | null;
       useMeasuredBulletinRenderer?: boolean;
+      sequenceCalculationMode?: string | null;
+      classTestWeight?: number | null;
+      terminalExamWeight?: number | null;
+      ds1Weight?: number | null;
+      ds2Weight?: number | null;
+      compositionWeight?: number | null;
+      passMark?: number | null;
     } | null;
     schoolSettings: { timezone?: string | null; locale?: string | null; schoolMotto?: string | null } | null;
   } | null;

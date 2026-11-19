@@ -4,6 +4,7 @@
  */
 import type {
   AnnualAveragePolicyMode,
+  BulletinClassProfile,
   BulletinGroupSummary,
   BulletinSubjectSnapshotLine,
   SnapshotNoteInput,
@@ -328,5 +329,23 @@ export function resolveAnnualGeneralAverage(params: {
     return vals.length > 0 ? round2(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
   }
   return params.weightedSubjectAvg;
+}
+
+export function computeClassProfile(
+  generalAverages: number[],
+  passThresholdOn20: number,
+  classSizeOverride?: number,
+): BulletinClassProfile {
+  const effectiveSize = Math.max(generalAverages.length, classSizeOverride ?? generalAverages.length);
+  const passCount = generalAverages.filter((a) => a >= passThresholdOn20).length;
+  return {
+    classSize: effectiveSize,
+    classAverage:
+      generalAverages.length > 0 ? round2(generalAverages.reduce((a, b) => a + b, 0) / generalAverages.length) : 0,
+    topAverage: generalAverages.length > 0 ? Math.max(...generalAverages) : 0,
+    lowAverage: generalAverages.length > 0 ? Math.min(...generalAverages) : 0,
+    passCount,
+    passRate: effectiveSize > 0 ? round2((passCount / effectiveSize) * 100) : 0,
+  };
 }
 

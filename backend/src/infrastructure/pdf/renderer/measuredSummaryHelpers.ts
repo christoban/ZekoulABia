@@ -3,17 +3,19 @@ import type {
   ClassProfileBlockSpec,
   ConductSummaryBlockSpec,
   CouncilDecisionBlockSpec,
+  CouncilDecisionSpecItem,
   SignaturesBlockSpec,
   VerifyQrBlockSpec,
 } from '@domain/types/bulletinTemplateSpec';
 import type { BulletinRenderOptions } from '@domain/ports/services/BulletinRendererPort';
 import { formatAbsenceHoursDisplay } from '@application/reportCard/bulletinEnrichmentHelpers';
 import type { FontSet, MeasuredPdfDoc } from './measuredHeaderHelpers';
-import { formatRankLabel } from './measuredSubjectTableHelpers';
+import { formatRankLabel, resolveApcCote } from './measuredSubjectTableHelpers';
+import { formatLocalizedNumber, formatLocalizedPercent } from './measuredFormatHelpers';
 
-function translateCouncilDecisionLabel(decision: string | undefined, isEn: boolean): string {
+function translateAnnualDecisionLabel(decision: string | undefined, isEn: boolean): string {
   switch (decision) {
-    case 'PASS': return isEn ? 'Promoted / Pass' : 'Admis(e) / Travail satisfaisant';
+    case 'PASS': return isEn ? 'Promoted to next class' : 'Admis(e) en classe supérieure';
     case 'REPEAT': return isEn ? 'Repeat Advised' : 'Redoublement conseillé';
     case 'DELIBERATION': return isEn ? 'Under Deliberation' : 'À délibérer en conseil';
     default: return '—';
@@ -33,6 +35,7 @@ export function drawClassProfileBlock(
   spec: ClassProfileBlockSpec,
   snapshot: StudentBulletinSnapshot,
   language: 'fr' | 'en',
+  options?: BulletinRenderOptions,
 ): void {
   const cp = snapshot.classProfile;
   const isEn = language === 'en';
@@ -40,23 +43,71 @@ export function drawClassProfileBlock(
   const usableW = doc.page.width - left - doc.page.margins.right;
   const parts: string[] = [];
 
-  if (spec.fields.includes('classAverage')) parts.push(`${isEn ? 'Class Avg' : 'Moy. classe'} : ${cp ? cp.classAverage.toFixed(2) : '—'}/20`);
-  if (spec.fields.includes('topAverage')) parts.push(`${isEn ? 'Highest' : 'Premier'} : ${cp ? cp.topAverage.toFixed(2) : '—'}`);
-  if (spec.fields.includes('lowAverage')) parts.push(`${isEn ? 'Lowest' : 'Dernier'} : ${cp ? cp.lowAverage.toFixed(2) : '—'}`);
-  if (spec.fields.includes('passCount')) parts.push(`${isEn ? 'Passed' : 'Admis'} : ${cp ? `${cp.passCount}/${cp.classSize}` : '—'}`);
-  if (spec.fields.includes('passRate')) parts.push(`${isEn ? 'Pass Rate' : 'Taux réussite'} : ${cp ? `${cp.passRate.toFixed(1)} %` : '—'}`);
+  if (spec.fields.includes('classAverage')) {
+    parts.push(`${isEn ? 'Class Avg' : 'Moy. classe'} : ${cp ? `${formatLocalizedNumber(cp.classAverage, isEn)}/20` : '—'}`);
+  }
+  if (spec.fields.includes('topAverage')) {
+    parts.push(`${isEn ? 'Highest' : 'Premier'} : ${cp ? `${formatLocalizedNumber(cp.topAverage, isEn)}/20` : '—'}`);
+  }
+  if (spec.fields.includes('lowAverage')) {
+    parts.push(`${isEn ? 'Lowest' : 'Dernier'} : ${cp ? `${formatLocalizedNumber(cp.lowAverage, isEn)}/20` : '—'}`);
+  }
+  if (spec.fields.includes('passCount')) {
+    parts.push(`${isEn ? 'Passed' : 'Admis'} : ${cp ? `${cp.passCount}/${cp.classSize}` : '—'}`);
+  }
+  if (spec.fields.includes('passRate')) {
+    parts.push(`${isEn ? 'Pass Rate' : 'Taux réussite'} : ${cp ? formatLocalizedPercent(cp.passRate, isEn, 2) : '—'}`);
+  }
 
-  const summary = `${isEn ? 'CLASS RESULT' : 'RÉSULTAT & PROFIL DE CLASSE'} — ${isEn ? 'General Avg' : 'Moyenne générale'} : ${snapshot.generalAverage.toFixed(2)}/20 | ${isEn ? 'Rank' : 'Rang'} : ${formatRankLabel(snapshot.rank, isEn)}/${snapshot.totalStudents}`;
+  const sectionLabel = options?.isAnnual
+    ? (isEn ? 'ANNUAL RESULT & CLASS PROFILE' : 'RÉSULTAT ANNUEL & PROFIL DE LA CLASSE')
+    : (isEn ? 'PERIOD RESULT & CLASS PROFILE' : 'RÉSULTAT PÉRIODIQUE & PROFIL DE LA CLASSE');
+  const rk = formatRankLabel(snapshot.rank, isEn);
+  const cote = resolveApcCote(snapshot.generalAverage);
+  const mentionPart = options?.mention && options.mention !== '—' ? `  |  Mention : ${options.mention}` : '';
+
+  const studentLine = isEn
+    ? `${sectionLabel} — Total Coef: ${snapshot.totalCoefficient}  |  Total Weighted: ${formatLocalizedNumber(snapshot.totalWeightedScore, true)}  |  General Avg: ${formatLocalizedNumber(snapshot.generalAverage, true)}/20  |  Rank: ${rk}/${snapshot.totalStudents}  |  Grade: ${cote}${mentionPart}`
+    : `${sectionLabel} — Total Coef : ${snapshot.totalCoefficient}  |  Total Points : ${formatLocalizedNumber(snapshot.totalWeightedScore, false)}  |  Moyenne Générale : ${formatLocalizedNumber(snapshot.generalAverage, false)}/20  |  Rang : ${rk}/${snapshot.totalStudents}  |  Cote : ${cote}${mentionPart}`;
+
   const detail = parts.join('   |   ');
-  doc.font(fonts.regular).fontSize(7.5);
-  const h = Math.max(30, 18 + doc.heightOfString(detail, { width: usableW - 12 }));
+  doc.font(fonts.bold).fontSize(7.6);
+  const hStudent = doc.heightOfString(studentLine, { width: usableW - 12 });
+  doc.font(fonts.regular).fontSize(7.4);
+  const hDetail = doc.heightOfString(detail, { width: usableW - 12 });
+  const h = Math.max(32, Math.ceil(hStudent + hDetail + 12));
   ensureBlockSpace(doc, h + 4);
 
   const y = doc.y;
   doc.rect(left, y, usableW, h).fillAndStroke('#f1f5f9', '#334155');
-  doc.font(fonts.bold).fontSize(8.2).fillColor('#0f172a').text(summary, left + 6, y + 4, { width: usableW - 12 });
-  doc.font(fonts.regular).fontSize(7.5).fillColor('#1e293b').text(detail, left + 6, y + 16, { width: usableW - 12 });
+  doc.font(fonts.bold).fontSize(7.6).fillColor('#0f172a').text(studentLine, left + 6, y + 4, { width: usableW - 12 });
+  doc.font(fonts.regular).fontSize(7.4).fillColor('#1e293b').text(detail, left + 6, y + 6 + hStudent, { width: usableW - 12 });
   doc.y = y + h + 5;
+}
+
+function buildCouncilItemLabel(
+  item: CouncilDecisionSpecItem,
+  snapshot: StudentBulletinSnapshot,
+  isEn: boolean,
+): string | null {
+  const dec = snapshot.councilDecision;
+  const conduct = snapshot.conduct;
+  const mark = (v: boolean | undefined) => (v ? '[X]' : '[ ]');
+
+  switch (item) {
+    case 'honorRoll': return `${mark(dec?.honorRoll)} ${isEn ? 'Honor Roll' : "Tableau d'honneur"}`;
+    case 'encouragements': return `${mark(dec?.encouragements)} Encouragements`;
+    case 'congratulations': return `${mark(dec?.congratulations)} ${isEn ? 'Congratulations' : 'Félicitations'}`;
+    case 'workWarning': return `[ ] ${isEn ? 'Work Warning' : 'Avertissement travail'}`;
+    case 'conductWarning': return `${mark((conduct?.warningsCount ?? 0) > 0)} ${isEn ? 'Conduct Warning' : 'Avertissement conduite'}`;
+    case 'warning': return `${mark((conduct?.warningsCount ?? 0) > 0)} ${isEn ? 'Warning' : 'Avertissement'}`;
+    case 'blame': return `${mark((conduct?.blamesCount ?? 0) > 0)} ${isEn ? 'Blame' : 'Blâme'}`;
+    case 'disciplinaryCouncil': return `[ ] ${isEn ? 'Disciplinary Council' : 'Conseil de discipline'}`;
+    case 'exclusion': return `${mark((conduct?.exclusionsCount ?? 0) > 0)} ${isEn ? 'Exclusion' : 'Exclusion'}`;
+    case 'decision':
+    case 'observations':
+      return null;
+  }
 }
 
 export function drawCouncilDecisionBlock(
@@ -71,21 +122,25 @@ export function drawCouncilDecisionBlock(
   const left = doc.page.margins.left;
   const usableW = doc.page.width - left - doc.page.margins.right;
 
-  const mark = (v: boolean | undefined) => (v ? '[X]' : '[ ]');
   const flags: string[] = [];
-  if (spec.items.includes('honorRoll')) flags.push(`${mark(dec?.honorRoll)} ${isEn ? 'Honor Roll' : "Tableau d'honneur"}`);
-  if (spec.items.includes('encouragements')) flags.push(`${mark(dec?.encouragements)} Encouragements`);
-  if (spec.items.includes('congratulations')) flags.push(`${mark(dec?.congratulations)} ${isEn ? 'Congratulations' : 'Félicitations'}`);
-  if (spec.items.includes('warning')) flags.push(`${mark((snapshot.conduct?.warningsCount ?? 0) > 0)} ${isEn ? 'Warning' : 'Avertissement'}`);
-  if (spec.items.includes('blame')) flags.push(`${mark((snapshot.conduct?.blamesCount ?? 0) > 0)} ${isEn ? 'Blame' : 'Blâme'}`);
+  for (const item of spec.items) {
+    const label = buildCouncilItemLabel(item, snapshot, isEn);
+    if (label) flags.push(label);
+  }
 
   const lines: string[] = [];
-  lines.push(`${isEn ? 'COUNCIL DECISION' : 'DÉCISION DU CONSEIL'} (${options.mention}) : ${translateCouncilDecisionLabel(dec?.decision, isEn)}`);
-  if (flags.length > 0) lines.push(flags.join('   '));
-  const obs = dec?.observations ?? options.classMasterComment;
-  if (spec.items.includes('observations') && obs) lines.push(`${isEn ? 'Observations' : 'Appréciation générale'} : ${obs}`);
+  if (options.isAnnual && spec.items.includes('decision')) {
+    lines.push(`${isEn ? 'COUNCIL DECISION' : 'DÉCISION DU CONSEIL'} (${options.mention}) : ${translateAnnualDecisionLabel(dec?.decision, isEn)}`);
+  } else {
+    const mentionSuffix = options.mention && options.mention !== '—' ? ` — Mention : ${options.mention}` : '';
+    lines.push(`${isEn ? 'CLASS COUNCIL DECISION' : 'DÉCISION DU CONSEIL DE CLASSE'}${mentionSuffix}`);
+  }
+  if (flags.length > 0) lines.push(flags.join('   •   '));
+  if (spec.items.includes('observations') && dec?.observations) {
+    lines.push(`${isEn ? 'Council Remarks' : 'Observations du conseil'} : ${dec.observations}`);
+  }
 
-  doc.font(fonts.regular).fontSize(7.5);
+  doc.font(fonts.regular).fontSize(7.4);
   const textH = lines.reduce((sum, l) => sum + doc.heightOfString(l, { width: usableW - 12 }) + 2, 8);
   const h = Math.max(28, textH);
   ensureBlockSpace(doc, h + 4);
@@ -94,9 +149,9 @@ export function drawCouncilDecisionBlock(
   doc.rect(left, y, usableW, h).strokeColor('#334155').lineWidth(0.7).stroke();
   let cy = y + 4;
   lines.forEach((line, idx) => {
-    doc.font(idx === 0 ? fonts.bold : fonts.regular).fontSize(idx === 0 ? 8 : 7.5).fillColor('#0f172a')
+    doc.font(idx === 0 ? fonts.bold : fonts.regular).fontSize(idx === 0 ? 7.8 : 7.3).fillColor('#0f172a')
       .text(line, left + 6, cy, { width: usableW - 12 });
-    cy = doc.y + 1;
+    cy = doc.y + 1.5;
   });
   doc.y = y + h + 5;
 }
@@ -114,24 +169,25 @@ export function drawConductSummaryBlock(
   const usableW = doc.page.width - left - doc.page.margins.right;
   const items: string[] = [];
 
-  if (spec.fields.includes('absJ')) items.push(`${isEn ? 'Justified Abs.' : 'Abs. justifiées'} : ${formatAbsenceHoursDisplay(c?.justifiedAbsenceHours)}`);
-  if (spec.fields.includes('absNJ')) items.push(`${isEn ? 'Unjustified Abs.' : 'Abs. non justifiées'} : ${formatAbsenceHoursDisplay(c?.unjustifiedAbsenceHours)}`);
-  if (spec.fields.includes('totalHours')) items.push(`${isEn ? 'Total Hours' : 'Total heures'} : ${formatAbsenceHoursDisplay(c?.totalAbsenceHours)}`);
+  if (spec.fields.includes('absJ')) items.push(`${isEn ? 'Justified Abs.' : 'Abs. justifiées'} : ${formatAbsenceHoursDisplay(c?.justifiedAbsenceHours, language)}`);
+  if (spec.fields.includes('absNJ')) items.push(`${isEn ? 'Unjustified Abs.' : 'Abs. non justifiées'} : ${formatAbsenceHoursDisplay(c?.unjustifiedAbsenceHours, language)}`);
+  if (spec.fields.includes('totalHours')) items.push(`${isEn ? 'Total Hours' : 'Total heures'} : ${formatAbsenceHoursDisplay(c?.totalAbsenceHours, language)}`);
   if (spec.fields.includes('days')) items.push(`${isEn ? 'Absent Days' : 'Jours absents'} : ${c?.totalAbsenceDays ?? 0}`);
   if (spec.fields.includes('late')) items.push(`${isEn ? 'Late' : 'Retards'} : ${c?.lateCount ?? 0}`);
+  if (spec.fields.includes('consignes')) items.push(`${isEn ? 'Detentions' : 'Consignes'} : ${c?.consignesCount ?? 0}`);
   if (spec.fields.includes('warnings')) items.push(`${isEn ? 'Warnings' : 'Avertissements'} : ${c?.warningsCount ?? 0}`);
   if (spec.fields.includes('blames')) items.push(`${isEn ? 'Blames' : 'Blâmes'} : ${c?.blamesCount ?? 0}`);
   if (spec.fields.includes('exclusions')) items.push(`${isEn ? 'Exclusions' : 'Exclusions'} : ${c?.exclusionsCount ?? 0}`);
 
   const line = `${isEn ? 'CONDUCT & ATTENDANCE' : 'ASSIDUITÉ & CONDUITE'} — ${items.join('  |  ')}`;
-  doc.font(fonts.regular).fontSize(7.5);
-  const h = Math.max(22, doc.heightOfString(line, { width: usableW - 12 }) + 10);
+  doc.font(fonts.regular).fontSize(7.4);
+  const h = Math.max(22, Math.ceil(doc.heightOfString(line, { width: usableW - 12 }) + 10));
   ensureBlockSpace(doc, h + 4);
 
   const y = doc.y;
   doc.rect(left, y, usableW, h).strokeColor('#334155').lineWidth(0.6).stroke();
-  doc.font(fonts.regular).fontSize(7.5).fillColor('#0f172a').text(line, left + 6, y + 6, { width: usableW - 12 });
-  doc.y = y + h + 6;
+  doc.font(fonts.regular).fontSize(7.4).fillColor('#0f172a').text(line, left + 6, y + 6, { width: usableW - 12 });
+  doc.y = y + h + 5;
 }
 
 export function drawSignaturesAndQrBlock(
@@ -145,50 +201,69 @@ export function drawSignaturesAndQrBlock(
   const isEn = options.language === 'en';
   const left = doc.page.margins.left;
   const usableW = doc.page.width - left - doc.page.margins.right;
-  const neededH = 68;
+  const boxH = 66;
+  const neededH = boxH + 20;
   ensureBlockSpace(doc, neededH);
 
   const y = doc.y;
   if (sigSpec?.showPlaceDate) {
-    const city = options.school.city?.trim() || 'Cameroun';
+    const city = options.school.city?.trim();
     const dStr = (options.issuedAt ?? new Date()).toLocaleDateString(isEn ? 'en-GB' : 'fr-FR');
-    doc.font(fonts.italic).fontSize(7.5).fillColor('#0f172a')
-      .text(isEn ? `Issued at ${city}, on ${dStr}` : `Fait à ${city}, le ${dStr}`, left, y, { width: usableW, align: 'right' });
+    const dateLine = city
+      ? (isEn ? `Issued at ${city}, on ${dStr}` : `Fait à ${city}, le ${dStr}`)
+      : (isEn ? `Issued on ${dStr}` : `Fait le ${dStr}`);
+    doc.font(fonts.italic).fontSize(7.3).fillColor('#0f172a')
+      .text(dateLine, left, y, { width: usableW, align: 'right' });
   }
 
-  const qrSize = qrSpec && qrBuffer ? 48 : 0;
-  const sigAreaW = qrSpec && qrBuffer ? usableW - qrSize - 12 : usableW;
-  const slots = sigSpec?.slots ?? ['parent', 'mainTeacher', 'principal'];
+  const qrSize = qrSpec && qrBuffer ? 60 : 0;
+  const sigAreaW = qrSpec && qrBuffer ? usableW - qrSize - 10 : usableW;
+  const slots = sigSpec?.slots ?? ['mainTeacher', 'parent', 'principal'];
   const labelsMap: Record<string, string> = {
-    parent: isEn ? 'Parent / Guardian' : 'Visa Parent',
-    mainTeacher: isEn ? 'Class Master' : 'Professeur Principal',
-    vicePrincipal: isEn ? 'Vice-Principal' : 'Le Censeur',
-    principal: isEn ? 'The Principal' : "Le Chef d'Établissement",
+    mainTeacher: isEn ? 'Class Master Remarks & Visa' : 'Appréciation du professeur titulaire',
+    parent: isEn ? 'Parent / Guardian Remarks & Signature' : 'Observations et signature des parents',
+    vicePrincipal: isEn ? 'Vice-Principal Remarks & Visa' : 'Observations et visa du censeur',
+    principal: isEn ? 'Principal Remarks & Visa' : "Observations et visa du chef d'établissement",
   };
 
-  const slotW = sigAreaW / slots.length;
-  const sigTop = y + 12;
+  const gap = 6;
+  const boxW = (sigAreaW - gap * (slots.length - 1)) / slots.length;
+  const boxTop = y + 12;
+
   slots.forEach((slot, idx) => {
-    const sx = left + idx * slotW;
-    doc.font(fonts.bold).fontSize(7.5).fillColor('#0f172a').text(labelsMap[slot] ?? slot, sx + 2, sigTop, { width: slotW - 4, align: 'center' });
-    if (slot === 'principal' && sigSpec?.showStamp) {
-      doc.rect(sx + 10, sigTop + 11, slotW - 20, 26).dash(2, { space: 2 }).strokeColor('#64748b').lineWidth(0.5).stroke();
-      doc.undash();
-      doc.font(fonts.italic).fontSize(6).fillColor('#64748b')
-        .text(isEn ? 'Stamp & Signature' : 'Cachet & Signature', sx + 12, sigTop + 21, { width: slotW - 24, align: 'center' });
-    } else {
-      doc.moveTo(sx + 10, sigTop + 34).lineTo(sx + slotW - 10, sigTop + 34).strokeColor('#64748b').lineWidth(0.5).stroke();
+    const sx = left + idx * (boxW + gap);
+    doc.rect(sx, boxTop, boxW, boxH).strokeColor('#334155').lineWidth(0.7).stroke();
+    doc.rect(sx, boxTop, boxW, 13).fillAndStroke('#e2e8f0', '#334155');
+    doc.font(fonts.bold).fontSize(6.6).fillColor('#0f172a')
+      .text(labelsMap[slot] ?? slot, sx + 3, boxTop + 3.5, { width: boxW - 6, align: 'center' });
+
+    if (slot === 'mainTeacher' && options.classMasterComment && options.classMasterComment.trim().length > 0) {
+      doc.font(fonts.regular).fontSize(6.8).fillColor('#0f172a')
+        .text(options.classMasterComment.trim(), sx + 4, boxTop + 16, { width: boxW - 8, height: boxH - 20 });
+    } else if (slot === 'principal') {
+      const innerY = boxTop + 15;
+      const innerH = boxH - 18;
+      if (options.school.stampBuffer) {
+        try { doc.image(options.school.stampBuffer, sx + 6, innerY, { fit: [boxW * 0.45, innerH] }); } catch { /* ignore */ }
+      }
+      if (options.school.principalSignatureBuffer) {
+        try { doc.image(options.school.principalSignatureBuffer, sx + boxW * 0.48, innerY, { fit: [boxW * 0.46, innerH] }); } catch { /* ignore */ }
+      }
+      if (!options.school.stampBuffer && !options.school.principalSignatureBuffer && sigSpec?.showStamp && sigSpec?.showPlaceholder) {
+        doc.font(fonts.italic).fontSize(6.2).fillColor('#64748b')
+          .text(isEn ? 'Stamp & Signature' : 'Cachet & Signature', sx + 6, boxTop + 34, { width: boxW - 12, align: 'center' });
+      }
     }
   });
 
   if (qrSpec && qrBuffer) {
     const qx = left + usableW - qrSize;
-    doc.image(qrBuffer, qx, y + 10, { fit: [qrSize, qrSize] });
-    if (qrSpec.showVerificationCode && options.verifyToken) {
+    doc.image(qrBuffer, qx, boxTop, { fit: [qrSize, qrSize] });
+    const displayCode = options.shortVerifyCode || options.verifyToken?.slice(0, 12);
+    if (qrSpec.showVerificationCode && displayCode) {
       doc.font(fonts.regular).fontSize(5.5).fillColor('#334155')
-        .text(options.verifyToken.slice(0, 12), qx - 4, y + 10 + qrSize + 2, { width: qrSize + 8, align: 'center' });
+        .text(displayCode, qx - 2, boxTop + qrSize + 2, { width: qrSize + 4, align: 'center' });
     }
   }
   doc.y = y + neededH;
 }
-

@@ -31,7 +31,13 @@ export class PrismaBulletinTemplateAssignmentRepository implements BulletinTempl
   }
 
   async save(input: SaveBulletinTemplateAssignmentInput): Promise<BulletinTemplateAssignmentRule> {
-    let resolvedLevel = assertValidClassLevel(input.classLevel);
+    const dbClassLevels = await this.prisma.class.findMany({
+      where: { schoolId: input.schoolId },
+      distinct: ['level'],
+      select: { level: true },
+    });
+    const extraLevels = dbClassLevels.map((c) => c.level);
+    let resolvedLevel = assertValidClassLevel(input.classLevel, extraLevels);
     if (input.classId) {
       const cls = await this.prisma.class.findFirst({
         where: { id: input.classId, schoolId: input.schoolId },
@@ -39,7 +45,7 @@ export class PrismaBulletinTemplateAssignmentRepository implements BulletinTempl
       });
       if (!cls) throw new Error(`Classe introuvable pour l'affectation : ${input.classId}`);
       if (cls.level) {
-        resolvedLevel = assertValidClassLevel(cls.level);
+        resolvedLevel = assertValidClassLevel(cls.level, extraLevels);
       }
     }
 
@@ -76,3 +82,4 @@ export class PrismaBulletinTemplateAssignmentRepository implements BulletinTempl
     });
   }
 }
+
