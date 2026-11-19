@@ -22,3 +22,4 @@ export function creerMasterBulletinAtelierRoutes(controller: MasterBulletinAteli
 
   return router;
 }
+

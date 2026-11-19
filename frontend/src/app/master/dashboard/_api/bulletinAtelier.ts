@@ -176,3 +176,4 @@ export async function fetchAtelierPreviewPdfBlob(
   }
   return res.blob()
 }
+

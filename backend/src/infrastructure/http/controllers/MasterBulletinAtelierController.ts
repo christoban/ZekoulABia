@@ -406,3 +406,4 @@ export class MasterBulletinAtelierController {
     } catch (error) { next(error); }
   };
 }
+

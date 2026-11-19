@@ -185,3 +185,4 @@ export async function renderAtelierPreviewPdf(params: {
     school: schoolIdentity,
   });
 }
+
