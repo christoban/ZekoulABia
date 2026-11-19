@@ -5,19 +5,34 @@
  * Chaque famille (A..F) et chaque variante calibrée par un établissement s'appuie sur ce schéma.
  */
 
+import type { BulletinCalculationMode } from '@domain/types/bulletinSnapshot';
 import type { BulletinGroupingScheme } from '@domain/services/bulletin/bulletinGroupingSchemes';
 import type { BulletinTemplate } from '@domain/types/enums';
 
 export type BulletinFamilyKey = 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
 
+export type BulletinLayoutVariant =
+  | 'STANDARD_GROUPED'
+  | 'ANNUAL_BILINGUAL'
+  | 'TECHNICAL_GROUPED'
+  | 'BILINGUAL_APC'
+  | 'EN_SECONDARY'
+  | 'PRIMARY_POINTS_RATIO';
+
 export type SubjectTableColumnKey =
   | 'subjectName'
+  | 'rawMark'
+  | 'maxMark'
+  | 'learningUnit'
   | 'seq1Score'
   | 'seq2Score'
   | 'seq3Score'
   | 'seq4Score'
   | 'seq5Score'
   | 'seq6Score'
+  | 'trim1Average'
+  | 'trim2Average'
+  | 'trim3Average'
   | 'classTestScore'
   | 'terminalExamScore'
   | 'theoreticalScore'
@@ -32,7 +47,9 @@ export type SubjectTableColumnKey =
   | 'classSubjectAverage'
   | 'teacherComment'
   | 'teacherName'
-  | 'competenceLabel';
+  | 'teacherVisa'
+  | 'competenceLabel'
+  | 'competenceLevel';
 
 export interface SubjectTableColumnSpec {
   key: SubjectTableColumnKey;
@@ -69,7 +86,9 @@ export interface StudentCardBlockSpec {
 export interface SubjectTableBlockSpec {
   type: 'subjectTable';
   grouping: 'byGroup' | 'flat';
+  groupByDomain?: boolean;
   showGroupSubtotals: boolean;
+  showTotalBar?: boolean;
   appreciationScale: 'A+/A/ECA/NA' | 'APC_TEXT' | 'FREE_TEXT';
   formulaHint?: string;
   columns: SubjectTableColumnSpec[];
@@ -132,6 +151,10 @@ export interface BulletinTemplateSpec {
   id: string;
   familyKey: BulletinFamilyKey;
   targetTemplate?: BulletinTemplate;
+  layoutVariant?: BulletinLayoutVariant;
+  calculationMode?: BulletinCalculationMode;
+  showGroupRankInSubtotal?: boolean;
+  validationNotice?: string;
   name: string;
   version: number;
   status?: 'DRAFT' | 'PUBLISHED';
@@ -144,5 +167,17 @@ export interface BulletinTemplateSpec {
     margin: number;
   };
   blocks: BulletinTemplateBlock[];
+}
+
+export function deepFreezeSpec<T>(value: T): Readonly<T> {
+  if (value === null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) {
+    for (const item of value) deepFreezeSpec(item);
+  } else {
+    for (const key of Object.keys(value)) {
+      deepFreezeSpec((value as Record<string, unknown>)[key]);
+    }
+  }
+  return Object.freeze(value);
 }
 

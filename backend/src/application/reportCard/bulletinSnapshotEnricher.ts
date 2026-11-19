@@ -26,6 +26,7 @@ import type { Presence } from '@domain/entities/Presence';
 import type { BulletinTemplate, CouncilDecision } from '@domain/types/enums';
 import type { BulletinGroupingScheme } from '@domain/services/bulletin/bulletinGroupingSchemes';
 import type {
+  BulletinCalculationMode,
   BulletinClassProfile,
   SnapshotSequenceInput,
   StudentBulletinSnapshot,
@@ -146,6 +147,7 @@ export async function construireEtEnrichirSnapshotsClasse(params: {
   sequenceAbsenceRepository?: SequenceAbsenceSummaryRepository;
   groupingScheme?: BulletinGroupingScheme | null;
   passThresholdOn20?: number;
+  calculationMode?: BulletinCalculationMode;
   sequenceCalculationMode?: 'single' | 'triple' | 'weighted';
 }): Promise<ClassSnapshotsBundle> {
   const matieres = await params.matiereRepository.findBySchool(params.school.id);
@@ -215,6 +217,7 @@ export async function construireEtEnrichirSnapshotsClasse(params: {
     excludeAbsentGrades: true,
     passThresholdOn20: params.passThresholdOn20 ?? 10,
     isAnnual: params.template === 'ANNUAL',
+    calculationMode: params.calculationMode,
     sequenceCalculationMode: params.sequenceCalculationMode,
   });
 
@@ -297,7 +300,9 @@ export async function construireEtEnrichirSnapshotsClasse(params: {
         photoUrl: sanitizePhotoReferenceForSnapshot(opt?.photoUrl, eleve.id),
       },
       conduct,
-      councilDecision: buildCouncilDecisionSnapshot(councilByStudent.get(eleve.id), baseSnapshot.generalAverage, conduct.exclusionsCount),
+      councilDecision: buildCouncilDecisionSnapshot(councilByStudent.get(eleve.id), baseSnapshot.generalAverage, conduct.exclusionsCount, {
+        isAnnual: params.template === 'ANNUAL',
+      }),
       classProfile,
     };
 

@@ -17,6 +17,7 @@ import type {
 import { calculateAverageScoreOn20 } from '@domain/rules/GradingEngine';
 import {
   assignCompetitionRanks,
+  buildGroupBreakdownsForStudent,
   buildGroupSummariesForStudent,
   buildStudentSubjectLines,
   computeClassProfile,
@@ -50,10 +51,12 @@ export class BulletinSnapshotBuilder {
       return seqSlotById.has(n.sequenceId) && subjectById.has(n.subjectId);
     });
 
+    const calculationMode = input.calculationMode ?? 'WEIGHTED_AVERAGE';
     const linesByStudent = new Map<string, BulletinSubjectSnapshotLine[]>();
-    const seqAvgsByStudent = new Map<string, Array<{ sequenceId: string; name: string; orderIndex: number; average: number | null }>>();
+    const seqAvgsByStudent = new Map<string, Array<{ sequenceId: string; name: string; orderIndex: number; average: number | null; rank?: number }>>();
     const termAvgsByStudent = new Map<string, { trim1?: number; trim2?: number; trim3?: number }>();
     const generalAvgByStudent = new Map<string, number>();
+    const rawTotalsByStudent = new Map<string, { totalRawMarks: number; totalMaxMarks: number }>();
 
     for (const student of input.students) {
       const studentNotes = validNotes.filter((n) => {
@@ -74,12 +77,6 @@ export class BulletinSnapshotBuilder {
       });
       linesByStudent.set(student.id, lines);
 
-      const weightedAvg = calculateAverageScoreOn20(
-        lines.map((l) => ({ scoreOn20: l.subjectAverage, percentage: l.subjectAverage * 5, coefficient: l.coefficient })),
-        input.hasCoefficientBySubject,
-        false,
-      );
-
       const { sequenceAverages, termAverages } = computeStudentSequenceAndTermAverages({
         studentNotes,
         orderedSequences,
@@ -91,9 +88,22 @@ export class BulletinSnapshotBuilder {
       seqAvgsByStudent.set(student.id, sequenceAverages);
       termAvgsByStudent.set(student.id, termAverages);
 
-      const generalAvg = input.isAnnual
-        ? resolveAnnualGeneralAverage({ annualPolicy, weightedSubjectAvg: weightedAvg, sequenceAverages, termAverages })
-        : weightedAvg;
+      let generalAvg: number;
+      if (calculationMode === 'POINTS_RATIO') {
+        const totalRawMarks = round2(lines.reduce((s, l) => s + (l.rawMark ?? l.subjectAverage), 0));
+        const totalMaxMarks = round2(lines.reduce((s, l) => s + (l.maxMark ?? 20), 0));
+        rawTotalsByStudent.set(student.id, { totalRawMarks, totalMaxMarks });
+        generalAvg = totalMaxMarks > 0 ? round2((totalRawMarks / totalMaxMarks) * 20) : 0;
+      } else {
+        const weightedAvg = calculateAverageScoreOn20(
+          lines.map((l) => ({ scoreOn20: l.subjectAverage, percentage: l.subjectAverage * 5, coefficient: l.coefficient })),
+          input.hasCoefficientBySubject,
+          false,
+        );
+        generalAvg = input.isAnnual
+          ? resolveAnnualGeneralAverage({ annualPolicy, weightedSubjectAvg: weightedAvg, sequenceAverages, termAverages })
+          : weightedAvg;
+      }
       generalAvgByStudent.set(student.id, generalAvg);
     }
 
@@ -159,6 +169,16 @@ export class BulletinSnapshotBuilder {
     const t3Ranks = assignCompetitionRanks(
       input.students.filter((s) => termAvgsByStudent.get(s.id)?.trim3 !== undefined).map((s) => ({ id: s.id, value: termAvgsByStudent.get(s.id)!.trim3! })),
     );
+    orderedSequences.forEach((_seq, seqIdx) => {
+      const entries = input.students
+        .map((s) => ({ id: s.id, value: seqAvgsByStudent.get(s.id)?.[seqIdx]?.average }))
+        .filter((e): e is { id: string; value: number } => e.value !== null && e.value !== undefined);
+      const ranks = assignCompetitionRanks(entries);
+      for (const e of entries) {
+        const slot = seqAvgsByStudent.get(e.id)?.[seqIdx];
+        if (slot) slot.rank = ranks.get(e.id);
+      }
+    });
 
     const snapshotsByStudentId = new Map<string, StudentBulletinSnapshot>();
     const allAvgs = input.students.map((s) => generalAvgByStudent.get(s.id) ?? 0);
@@ -175,17 +195,22 @@ export class BulletinSnapshotBuilder {
         }
       }
       const genAvg = generalAvgByStudent.get(student.id) ?? 0;
+      const rawTotals = rawTotalsByStudent.get(student.id);
+      const seqAvgs = seqAvgsByStudent.get(student.id);
 
       snapshotsByStudentId.set(student.id, {
         studentId: student.id,
         computationVersion: 2,
         templateVersion: 1,
+        calculationMode,
+        totalRawMarks: rawTotals?.totalRawMarks,
+        totalMaxMarks: rawTotals?.totalMaxMarks,
         generalAverage: genAvg,
         totalCoefficient: round2(lines.reduce((s, l) => s + (input.hasCoefficientBySubject ? l.coefficient : 1), 0)),
         totalWeightedScore: round2(lines.reduce((s, l) => s + l.weightedScore, 0)),
         rank: generalRanks.get(student.id) ?? input.students.length,
         totalStudents: input.students.length,
-        sequenceAverages: input.isAnnual ? seqAvgsByStudent.get(student.id) : undefined,
+        sequenceAverages: seqAvgs && seqAvgs.length > 0 ? seqAvgs : undefined,
         termAverages: input.isAnnual ? termAvgsByStudent.get(student.id) : undefined,
         rankTrimestre1: input.isAnnual ? t1Ranks.get(student.id) : undefined,
         rankTrimestre2: input.isAnnual ? t2Ranks.get(student.id) : undefined,
@@ -193,6 +218,7 @@ export class BulletinSnapshotBuilder {
         classProfile,
         subjectLines: lines,
         groupSummaries: groups,
+        groupBreakdowns: buildGroupBreakdownsForStudent(lines, groups, input.hasCoefficientBySubject),
       });
     }
 

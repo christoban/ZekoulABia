@@ -5,6 +5,7 @@
 import type {
   AnnualAveragePolicyMode,
   BulletinClassProfile,
+  BulletinGroupPeriodBreakdown,
   BulletinGroupSummary,
   BulletinSubjectSnapshotLine,
   SnapshotNoteInput,
@@ -99,7 +100,33 @@ export function assignCompetitionRanks(items: Array<{ id: string; value: number 
   return ranks;
 }
 
-export function resolveNoteScoreOn20(
+export function resolveApcCote(average: number): 'A+' | 'A' | 'ECA' | 'NA' {
+  if (average >= 18) return 'A+';
+  if (average >= 15) return 'A';
+  if (average >= 11) return 'ECA';
+  return 'NA';
+}
+
+export function resolveApcCompetenceLevel(average: number): string {
+  if (average >= 18) return 'Niveau Expert / High Profile';
+  if (average >= 15) return 'Compétence Acquise / Acquired';
+  if (average >= 11) return "En cours d'acquisition / Ongoing";
+  return 'Non acquis / Not Acquired';
+}
+
+export function resolveGroupCompetenceLabel(average: number): string {
+  if (average >= 10) return 'Compétence acquise';
+  if (average >= 8) return "Compétence en cours d'acquisition";
+  return 'Compétence non acquise';
+}
+
+function meanOfDefined(values: Array<number | undefined>): number | undefined {
+  const valid = values.filter((v): v is number => v !== undefined);
+  if (valid.length === 0) return undefined;
+  return round2(valid.reduce((s, v) => s + v, 0) / valid.length);
+}
+
+export function resolveNoteRawScore(
   note: SnapshotNoteInput,
   mode: 'single' | 'triple' | 'weighted',
 ): number {
@@ -119,7 +146,16 @@ export function resolveNoteScoreOn20(
           },
           mode,
         );
-  return maxVal === 20 ? round2(raw) : normalizeScoreOn20({ rawScore: raw, maxScore: maxVal });
+  return round2(raw);
+}
+
+export function resolveNoteScoreOn20(
+  note: SnapshotNoteInput,
+  mode: 'single' | 'triple' | 'weighted',
+): number {
+  const maxVal = note.maxValue ?? 20;
+  const raw = resolveNoteRawScore(note, mode);
+  return maxVal === 20 ? raw : normalizeScoreOn20({ rawScore: raw, maxScore: maxVal });
 }
 
 export function isSubjectAllowedForStudent(
@@ -179,9 +215,16 @@ export function buildStudentSubjectLines(params: {
     }
 
     const subjectAvg = round2(scoredEntries.reduce((sum, e) => sum + e.score, 0) / scoredEntries.length);
+    const lastNote = scoredEntries[scoredEntries.length - 1]!.note;
+    const rawMark = round2(
+      scoredEntries.reduce((sum, e) => sum + resolveNoteRawScore(e.note, params.seqMode), 0) / scoredEntries.length,
+    );
+    const maxMark = subject.maxMark ?? lastNote.maxValue ?? 20;
     const effCoeff = params.hasCoefficientBySubject ? (subject.coefficient ?? 1) : 1;
     const weightedScore = round2(subjectAvg * effCoeff);
-    const lastNote = scoredEntries[scoredEntries.length - 1]!.note;
+    const trim1Average = meanOfDefined([seqScores[0], seqScores[1]]);
+    const trim2Average = meanOfDefined([seqScores[2], seqScores[3]]);
+    const trim3Average = meanOfDefined([seqScores[4], seqScores[5]]);
     const observation =
       [...scoredEntries].reverse().find((e) => e.note.observation && e.note.observation.trim().length > 0)?.note.observation ?? undefined;
     const isLv2Display = subject.isLV2 && params.student.lv2SubjectId === subject.id && !subject.name.includes('(LV2)');
@@ -190,6 +233,10 @@ export function buildStudentSubjectLines(params: {
       subjectId,
       subjectName: isLv2Display ? `${subject.name} (LV2)` : subject.name,
       coefficient: subject.coefficient ?? 1,
+      rawMark,
+      maxMark,
+      learningDomain: subject.learningDomain,
+      learningUnit: subject.learningUnit,
       groupKey: subject.groupKey ?? 'DEFAULT',
       groupLabel: subject.groupLabel ?? 'Matières',
       groupOrder: subject.groupOrder ?? 99,
@@ -199,6 +246,9 @@ export function buildStudentSubjectLines(params: {
       seq4Score: seqScores[3],
       seq5Score: seqScores[4],
       seq6Score: seqScores[5],
+      trim1Average,
+      trim2Average,
+      trim3Average,
       classTestScore: lastNote.classTestScore ?? undefined,
       terminalExamScore: lastNote.terminalExamScore ?? undefined,
       theoreticalScore: lastNote.theoreticalScore ?? undefined,
@@ -216,6 +266,8 @@ export function buildStudentSubjectLines(params: {
       teacherComment: observation,
       teacherName: subject.teacherName,
       competenceLabel: subject.competenceLabel,
+      competenceCote: resolveApcCote(subjectAvg),
+      competenceLevelLabel: resolveApcCompetenceLevel(subjectAvg),
     });
   }
 
@@ -281,6 +333,22 @@ export function computeStudentSequenceAndTermAverages(params: {
   return { sequenceAverages, termAverages };
 }
 
+function computeGroupFieldAverage(
+  groupLines: BulletinSubjectSnapshotLine[],
+  getter: (line: BulletinSubjectSnapshotLine) => number | undefined,
+  hasCoefficientBySubject: boolean,
+): number | undefined {
+  const valid = groupLines
+    .map((l) => ({ score: getter(l), coeff: hasCoefficientBySubject ? l.coefficient : 1 }))
+    .filter((x): x is { score: number; coeff: number } => x.score !== undefined);
+  if (valid.length === 0) return undefined;
+  return calculateAverageScoreOn20(
+    valid.map((v) => ({ scoreOn20: v.score, percentage: v.score * 5, coefficient: v.coeff })),
+    hasCoefficientBySubject,
+    false,
+  );
+}
+
 export function buildGroupSummariesForStudent(
   lines: BulletinSubjectSnapshotLine[],
   hasCoefficientBySubject: boolean,
@@ -294,22 +362,47 @@ export function buildGroupSummariesForStudent(
   const groups: BulletinGroupSummary[] = [];
   for (const [groupKey, groupLines] of linesByGroup.entries()) {
     const first = groupLines[0]!;
+    const groupAverage = calculateAverageScoreOn20(
+      groupLines.map((l) => ({ scoreOn20: l.subjectAverage, percentage: l.subjectAverage * 5, coefficient: l.coefficient })),
+      hasCoefficientBySubject,
+      false,
+    );
     groups.push({
       groupKey,
       groupLabel: first.groupLabel,
       groupOrder: first.groupOrder,
       totalCoefficient: round2(groupLines.reduce((s, l) => s + (hasCoefficientBySubject ? l.coefficient : 1), 0)),
       totalWeightedScore: round2(groupLines.reduce((s, l) => s + l.weightedScore, 0)),
-      groupAverage: calculateAverageScoreOn20(
-        groupLines.map((l) => ({ scoreOn20: l.subjectAverage, percentage: l.subjectAverage * 5, coefficient: l.coefficient })),
-        hasCoefficientBySubject,
-        false,
-      ),
+      groupAverage,
       groupRank: 1,
       groupTotalStudents: 1,
     });
   }
   return groups.sort((a, b) => a.groupOrder - b.groupOrder);
+}
+
+export function buildGroupBreakdownsForStudent(
+  lines: BulletinSubjectSnapshotLine[],
+  groups: BulletinGroupSummary[],
+  hasCoefficientBySubject: boolean,
+): Record<string, BulletinGroupPeriodBreakdown> {
+  const out: Record<string, BulletinGroupPeriodBreakdown> = {};
+  for (const grp of groups) {
+    const groupLines = lines.filter((l) => l.groupKey === grp.groupKey);
+    out[grp.groupKey] = {
+      seq1Average: computeGroupFieldAverage(groupLines, (l) => l.seq1Score, hasCoefficientBySubject),
+      seq2Average: computeGroupFieldAverage(groupLines, (l) => l.seq2Score, hasCoefficientBySubject),
+      seq3Average: computeGroupFieldAverage(groupLines, (l) => l.seq3Score, hasCoefficientBySubject),
+      seq4Average: computeGroupFieldAverage(groupLines, (l) => l.seq4Score, hasCoefficientBySubject),
+      seq5Average: computeGroupFieldAverage(groupLines, (l) => l.seq5Score, hasCoefficientBySubject),
+      seq6Average: computeGroupFieldAverage(groupLines, (l) => l.seq6Score, hasCoefficientBySubject),
+      trim1Average: computeGroupFieldAverage(groupLines, (l) => l.trim1Average, hasCoefficientBySubject),
+      trim2Average: computeGroupFieldAverage(groupLines, (l) => l.trim2Average, hasCoefficientBySubject),
+      trim3Average: computeGroupFieldAverage(groupLines, (l) => l.trim3Average, hasCoefficientBySubject),
+      groupCompetenceLabel: resolveGroupCompetenceLabel(grp.groupAverage),
+    };
+  }
+  return out;
 }
 
 export function resolveAnnualGeneralAverage(params: {

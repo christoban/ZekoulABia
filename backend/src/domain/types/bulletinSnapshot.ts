@@ -6,6 +6,8 @@
  */
 import type { CouncilDecision, GradeValidationStatus, SubjectType } from '@domain/types/enums';
 
+export type BulletinCalculationMode = 'WEIGHTED_AVERAGE' | 'POINTS_RATIO';
+
 export type AnnualAveragePolicyMode =
   | 'SIX_SEQUENCES_ARITHMETIC'   // Défaut MINESEC/MINEDUB : (MoySeq1 + ... + MoySeq6) / N_sequences
   | 'THREE_TERMS_ARITHMETIC'     // (MoyTrim1 + MoyTrim2 + MoyTrim3) / N_trimestres
@@ -23,6 +25,9 @@ export interface SnapshotSubjectInput {
   id: string;
   name: string;
   coefficient: number;
+  maxMark?: number;
+  learningDomain?: string;
+  learningUnit?: string;
   isLV2?: boolean;
   subjectType?: SubjectType;
   groupKey?: string;
@@ -69,6 +74,7 @@ export interface BulletinSnapshotBuildInput {
   passThresholdOn20?: number;
   classSizeOverride?: number;
   isAnnual?: boolean;
+  calculationMode?: BulletinCalculationMode;
   annualPolicy?: AnnualAveragePolicyMode;
   sequenceCalculationMode?: 'single' | 'triple' | 'weighted';
   /** Par défaut true (Loi 4) : ne retient que les notes LOCKED */
@@ -100,6 +106,12 @@ export interface BulletinConductSnapshot {
   justifiedAbsenceHours: number | null;
   unjustifiedAbsenceHours: number | null;
   totalAbsenceHours: number | null;
+  trimesterAbsences?: {
+    t1?: { j: number | null; nj: number | null };
+    t2?: { j: number | null; nj: number | null };
+    t3?: { j: number | null; nj: number | null };
+  };
+  workDayPenaltyDays?: number | null;
   totalAbsenceDays: number;
   lateCount: number;
   warningsCount: number;
@@ -115,12 +127,38 @@ export interface BulletinCouncilDecisionSnapshot {
   honorRoll: boolean;
   encouragements: boolean;
   congratulations: boolean;
+  workWarning?: boolean;
+  workBlame?: boolean;
+  conductWarning?: boolean;
+  conductBlame?: boolean;
+  promotedToClass?: string | null;
+  repeatClass?: string | null;
+  excluded?: boolean;
+  exclusionReasons?: {
+    insufficientAverage?: boolean;
+    alreadyRepeated?: boolean;
+    deplorableConduct?: boolean;
+    tooManyAbsences?: boolean;
+    tooOld?: boolean;
+  };
+  apcObservations?: {
+    makingProgress?: boolean;
+    declining?: boolean;
+    conductWarning?: boolean;
+    tooManyAbsences?: boolean;
+    riskOfExpulsion?: boolean;
+    effortRequiredIn?: string | null;
+  };
 }
 
 export interface BulletinSubjectSnapshotLine {
   subjectId: string;
   subjectName: string;
   coefficient: number;
+  rawMark?: number;
+  maxMark?: number;
+  learningDomain?: string;
+  learningUnit?: string;
   groupKey: string;
   groupLabel: string;
   groupOrder: number;
@@ -130,6 +168,9 @@ export interface BulletinSubjectSnapshotLine {
   seq4Score?: number;
   seq5Score?: number;
   seq6Score?: number;
+  trim1Average?: number;
+  trim2Average?: number;
+  trim3Average?: number;
   classTestScore?: number;
   terminalExamScore?: number;
   theoreticalScore?: number;
@@ -147,6 +188,8 @@ export interface BulletinSubjectSnapshotLine {
   teacherComment?: string;
   teacherName?: string;
   competenceLabel?: string;
+  competenceCote?: 'A+' | 'A' | 'ECA' | 'NA';
+  competenceLevelLabel?: string;
 }
 
 export interface BulletinGroupSummary {
@@ -158,6 +201,19 @@ export interface BulletinGroupSummary {
   groupAverage: number;
   groupRank: number;
   groupTotalStudents: number;
+}
+
+export interface BulletinGroupPeriodBreakdown {
+  seq1Average?: number;
+  seq2Average?: number;
+  seq3Average?: number;
+  seq4Average?: number;
+  seq5Average?: number;
+  seq6Average?: number;
+  trim1Average?: number;
+  trim2Average?: number;
+  trim3Average?: number;
+  groupCompetenceLabel?: string;
 }
 
 export interface BulletinClassProfile {
@@ -173,12 +229,15 @@ export interface StudentBulletinSnapshot {
   studentId: string;
   computationVersion: number;
   templateVersion: number;
+  calculationMode?: BulletinCalculationMode;
+  totalRawMarks?: number;
+  totalMaxMarks?: number;
   generalAverage: number;
   totalCoefficient: number;
   totalWeightedScore: number;
   rank: number;
   totalStudents: number;
-  sequenceAverages?: Array<{ sequenceId: string; name: string; orderIndex: number; average: number | null }>;
+  sequenceAverages?: Array<{ sequenceId: string; name: string; orderIndex: number; average: number | null; rank?: number }>;
   termAverages?: { trim1?: number; trim2?: number; trim3?: number };
   rankTrimestre1?: number;
   rankTrimestre2?: number;
@@ -190,6 +249,7 @@ export interface StudentBulletinSnapshot {
   classProfile?: BulletinClassProfile;
   subjectLines: BulletinSubjectSnapshotLine[];
   groupSummaries: BulletinGroupSummary[];
+  groupBreakdowns?: Record<string, BulletinGroupPeriodBreakdown>;
 }
 
 export interface ClassBulletinSnapshotsResult {

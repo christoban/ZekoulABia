@@ -28,6 +28,12 @@ import {
   drawCouncilDecisionBlock,
   drawSignaturesAndQrBlock,
 } from './measuredSummaryHelpers';
+import {
+  drawAnnualBilingualSummary,
+  drawBilingualApcSummary,
+  drawPrimaryPointsRatioSummary,
+  drawTechnicalGroupedSummary,
+} from './measuredFamilySummaryHelpers';
 
 function collectPdfBuffer(
   doc: InstanceType<typeof PDFDocument>,
@@ -45,6 +51,13 @@ function collectPdfBuffer(
       reject(err);
     }
   });
+}
+
+function resolveTableFontSize(snapshot: StudentBulletinSnapshot, templateSpec: BulletinTemplateSpec): number {
+  const count = snapshot.subjectLines.length;
+  if (templateSpec.layoutVariant === 'ANNUAL_BILINGUAL') return count >= 14 ? 5.9 : 6.2;
+  if (templateSpec.layoutVariant === 'PRIMARY_POINTS_RATIO') return count >= 20 ? 5.9 : 6.4;
+  return count >= 18 ? 6.7 : count >= 14 ? 7.1 : 7.6;
 }
 
 export class MeasuredPdfKitBulletinRenderer implements BulletinRendererPort {
@@ -67,8 +80,13 @@ export class MeasuredPdfKitBulletinRenderer implements BulletinRendererPort {
           }).catch(() => null)
         : null;
 
-    const subjectCount = snapshot.subjectLines.length;
-    const baseFontSize = subjectCount >= 18 ? 6.8 : subjectCount >= 14 ? 7.2 : 7.8;
+    const baseFontSize = resolveTableFontSize(snapshot, templateSpec);
+    const variant = templateSpec.layoutVariant;
+    const usesFamilyFooter =
+      variant === 'ANNUAL_BILINGUAL' ||
+      variant === 'TECHNICAL_GROUPED' ||
+      variant === 'BILINGUAL_APC' ||
+      variant === 'PRIMARY_POINTS_RATIO';
 
     const doc = new PDFDocument({
       size: templateSpec.page.size,
@@ -89,16 +107,16 @@ export class MeasuredPdfKitBulletinRenderer implements BulletinRendererPort {
             drawStudentCardBlock(doc, fonts, block, snapshot, options);
             break;
           case 'subjectTable':
-            drawMeasuredSubjectTable(doc, fonts, block, snapshot, options.language, baseFontSize, options);
+            drawMeasuredSubjectTable(doc, fonts, block, snapshot, options.language, baseFontSize, options, templateSpec);
             break;
           case 'classProfile':
-            drawClassProfileBlock(doc, fonts, block, snapshot, options.language, options);
+            if (!usesFamilyFooter) drawClassProfileBlock(doc, fonts, block, snapshot, options.language, options);
             break;
           case 'councilDecision':
-            drawCouncilDecisionBlock(doc, fonts, block, snapshot, options);
+            if (!usesFamilyFooter) drawCouncilDecisionBlock(doc, fonts, block, snapshot, options);
             break;
           case 'conductSummary':
-            drawConductSummaryBlock(doc, fonts, block, snapshot, options.language);
+            if (!usesFamilyFooter) drawConductSummaryBlock(doc, fonts, block, snapshot, options.language);
             break;
           case 'signatures':
           case 'verifyQr':
@@ -106,8 +124,24 @@ export class MeasuredPdfKitBulletinRenderer implements BulletinRendererPort {
         }
       }
 
-      if (sigBlock || qrBlock) {
+      if (variant === 'ANNUAL_BILINGUAL') {
+        drawAnnualBilingualSummary(doc, fonts, snapshot, options, qrBuffer);
+      } else if (variant === 'TECHNICAL_GROUPED') {
+        drawTechnicalGroupedSummary(doc, fonts, snapshot, options, qrBuffer);
+      } else if (variant === 'BILINGUAL_APC') {
+        drawBilingualApcSummary(doc, fonts, snapshot, options, qrBuffer);
+      } else if (variant === 'PRIMARY_POINTS_RATIO') {
+        drawPrimaryPointsRatioSummary(doc, fonts, snapshot, options, qrBuffer);
+      } else if (sigBlock || qrBlock) {
         drawSignaturesAndQrBlock(doc, fonts, sigBlock, qrBlock, options, qrBuffer);
+      }
+
+      if (templateSpec.validationNotice) {
+        const left = doc.page.margins.left;
+        const usableW = doc.page.width - left - doc.page.margins.right;
+        const yNotice = Math.min(doc.y + 1, doc.page.height - doc.page.margins.bottom - 9);
+        doc.font(fonts.italic).fontSize(5.8).fillColor('#64748b')
+          .text(`[${templateSpec.validationNotice}]`, left, yNotice, { width: usableW, align: 'right' });
       }
     });
   }
@@ -123,4 +157,3 @@ export class MeasuredPdfKitBulletinRenderer implements BulletinRendererPort {
     return out;
   }
 }
-

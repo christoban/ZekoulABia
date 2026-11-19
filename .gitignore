@@ -48,3 +48,6 @@ skills-lock.json
 
 .vscode/
 .mimicode/
+
+# Photos réelles de référence (données élèves protégées)
+/bulletin/

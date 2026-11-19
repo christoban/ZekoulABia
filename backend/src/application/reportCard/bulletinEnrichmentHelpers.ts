@@ -186,18 +186,20 @@ export function buildCouncilDecisionSnapshot(
   dec: { decision: CouncilDecision; observations: string | null } | undefined,
   generalAverage: number,
   exclusionsCount: number,
+  options?: { isAnnual?: boolean },
 ): BulletinCouncilDecisionSnapshot | undefined {
   if (!dec) return undefined;
   const obsLower = (dec.observations ?? '').toLowerCase();
+  const autoPeriodFlags = !options?.isAnnual;
   return {
     decision: dec.decision,
     observations: dec.observations,
-    honorRoll: obsLower.includes('tableau') || (generalAverage >= 12 && exclusionsCount === 0),
-    encouragements: obsLower.includes('encouragement') || (generalAverage >= 14 && exclusionsCount === 0),
+    honorRoll: obsLower.includes('tableau') || (autoPeriodFlags && generalAverage >= 12 && exclusionsCount === 0),
+    encouragements: obsLower.includes('encouragement') || (autoPeriodFlags && generalAverage >= 14 && exclusionsCount === 0),
     congratulations:
       obsLower.includes('félicitation') ||
       obsLower.includes('felicitation') ||
-      (generalAverage >= 16 && exclusionsCount === 0),
+      (autoPeriodFlags && generalAverage >= 16 && exclusionsCount === 0),
   };
 }
 

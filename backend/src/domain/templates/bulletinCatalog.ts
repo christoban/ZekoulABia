@@ -6,21 +6,43 @@
  * nouvelle version (`version + 1`) sans jamais altérer la version déjà émise.
  */
 import type { BulletinTemplate } from '@domain/types/enums';
-import type { BulletinTemplateBlock, BulletinTemplateSpec } from '@domain/types/bulletinTemplateSpec';
+import {
+  deepFreezeSpec,
+  type BulletinTemplateBlock,
+  type BulletinTemplateSpec,
+} from '@domain/types/bulletinTemplateSpec';
+import {
+  ANNUAL_BILINGUAL_SPEC_ID,
+  ANNUAL_BILINGUAL_V1,
+  BILINGUAL_APC_SPEC_ID,
+  BILINGUAL_APC_V1,
+  EN_SECONDARY_SPEC_ID,
+  EN_SECONDARY_V1,
+  PRIMARY_POINTS_RATIO_EN_SPEC_ID,
+  PRIMARY_POINTS_RATIO_EN_V1,
+  PRIMARY_POINTS_RATIO_FR_SPEC_ID,
+  PRIMARY_POINTS_RATIO_FR_V1,
+  TECH_GROUPED_SPEC_ID,
+  TECH_GROUPED_V1,
+} from './bulletinCatalogFamilies';
+
+export {
+  deepFreezeSpec,
+  ANNUAL_BILINGUAL_SPEC_ID,
+  ANNUAL_BILINGUAL_V1,
+  BILINGUAL_APC_SPEC_ID,
+  BILINGUAL_APC_V1,
+  EN_SECONDARY_SPEC_ID,
+  EN_SECONDARY_V1,
+  PRIMARY_POINTS_RATIO_EN_SPEC_ID,
+  PRIMARY_POINTS_RATIO_EN_V1,
+  PRIMARY_POINTS_RATIO_FR_SPEC_ID,
+  PRIMARY_POINTS_RATIO_FR_V1,
+  TECH_GROUPED_SPEC_ID,
+  TECH_GROUPED_V1,
+};
 
 export const GENERAL_GROUPED_SPEC_ID = 'GENERAL_GROUPED_V1' as const;
-
-export function deepFreezeSpec<T>(value: T): Readonly<T> {
-  if (value === null || typeof value !== 'object') return value;
-  if (Array.isArray(value)) {
-    for (const item of value) deepFreezeSpec(item);
-  } else {
-    for (const key of Object.keys(value)) {
-      deepFreezeSpec((value as Record<string, unknown>)[key]);
-    }
-  }
-  return Object.freeze(value);
-}
 
 function cloneSpec(spec: BulletinTemplateSpec): BulletinTemplateSpec {
   return structuredClone(spec);
@@ -112,7 +134,15 @@ export const GENERAL_GROUPED_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec
   ],
 });
 
-const PUBLISHED_CATALOG: readonly Readonly<BulletinTemplateSpec>[] = [GENERAL_GROUPED_V1];
+const PUBLISHED_CATALOG: readonly Readonly<BulletinTemplateSpec>[] = [
+  GENERAL_GROUPED_V1,
+  TECH_GROUPED_V1,
+  BILINGUAL_APC_V1,
+  ANNUAL_BILINGUAL_V1,
+  EN_SECONDARY_V1,
+  PRIMARY_POINTS_RATIO_EN_V1,
+  PRIMARY_POINTS_RATIO_FR_V1,
+];
 
 export function listPublishedTemplateSpecs(): readonly Readonly<BulletinTemplateSpec>[] {
   return PUBLISHED_CATALOG;

@@ -185,6 +185,7 @@ export class GenererBulletinsInngestUseCase {
         sequenceAbsenceRepository: this.sequenceAbsenceRepository,
         groupingScheme: plan.groupingScheme,
         passThresholdOn20: plan.passThresholdOn20,
+        calculationMode: plan.spec?.calculationMode,
         sequenceCalculationMode: normalizeSequenceCalculationMode(plan.gradingPolicy.mode),
       });
 
