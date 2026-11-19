@@ -174,3 +174,4 @@ export function drawSignaturesAndQrBlock(
   }
   doc.y = y + neededH;
 }
+

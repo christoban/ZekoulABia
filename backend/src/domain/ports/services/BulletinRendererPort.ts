@@ -58,3 +58,4 @@ export interface BulletinRendererPort {
     templateSpec: BulletinTemplateSpec,
   ): Promise<Buffer[]>;
 }
+

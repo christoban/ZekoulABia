@@ -49,3 +49,4 @@ Dans `backend/src/application/school/curriculum/`, les ensembles suivants ne dé
 | `francophone/primaire.ts` & `primaire-apc.ts` | `PRIMAIRE_FR`, `MATERNELLE_FR`, `COMPLEXE_SCOLAIRE` | **Vide** (aucun `groupKey` sur les matières ou domaines APC) |
 | `anglophone/secondary.ts` | `GHS_EN`, `GSS_EN`, `PRIVE_EN`, `LYCEE_BILINGUE` (Form 1 → Upper Sixth) | **Vide** (aucun `groupKey`) |
 | `anglophone/primary.ts` | `PRIMARY_EN`, `NURSERY_EN`, `PRIMARY_BILINGUAL` (Nursery → Class 6) | **Vide** (aucun `groupKey`) |
+

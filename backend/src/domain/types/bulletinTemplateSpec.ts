@@ -115,3 +115,4 @@ export interface BulletinTemplateSpec {
   };
   blocks: BulletinTemplateBlock[];
 }
+

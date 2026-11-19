@@ -255,3 +255,4 @@ describe('PostgreSQL — archiverEtRemplacerRevoque & contraintes ReportCard', (
     expect(code).toBe('P2002');
   });
 });
+
