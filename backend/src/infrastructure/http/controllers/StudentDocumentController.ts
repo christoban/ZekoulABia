@@ -11,10 +11,8 @@ import {
   generateLettreTransfertPdf,
 } from '../../pdf/school-documents/SchoolDocumentPdfRenderer';
 import { resolveLanguage } from '../../../domain/policies/LanguagePolicy';
-import { resolveFrontendUrl } from '../../config/EnvAppConfig.ts';
+import { resolvePublicVerifyBaseUrl } from '../../config/EnvAppConfig.ts';
 import { setVerifyNoIndexHeaders, verifyPublicDocumentOp } from './helpers/verifyPublicDocumentOp';
-
-const VERIFY_BASE = resolveFrontendUrl();
 
 function classeActuelle(student: { enrollmentsYearScoped: { class: { name: string; section: { code: string } | null } | null }[] | undefined }) {
   return student?.enrollmentsYearScoped?.[0]?.class ?? null;
@@ -115,7 +113,7 @@ export class StudentDocumentController {
         gender: student.gender ?? undefined,
         status: student.studentStatus,
         generatedAt: new Date(),
-        verifyUrl: `${VERIFY_BASE}/verify/${doc.id}`,
+        verifyUrl: `${resolvePublicVerifyBaseUrl()}/verify/${doc.id}`,
         language: lang,
       });
 
@@ -185,7 +183,7 @@ export class StudentDocumentController {
         emergencyContact: parent ? `${parent.lastName} ${parent.firstName}` : undefined,
         emergencyPhone: parent?.phone ?? student.user.phone ?? undefined,
         generatedAt: new Date(),
-        verifyUrl: `${VERIFY_BASE}/verify/${doc.id}`,
+        verifyUrl: `${resolvePublicVerifyBaseUrl()}/verify/${doc.id}`,
         language: lang,
       });
 
@@ -257,7 +255,7 @@ export class StudentDocumentController {
         motif: motif || student.studentStatus,
         lastAverage: lastBulletin?.generalAverage ?? undefined,
         generatedAt: new Date(),
-        verifyUrl: `${VERIFY_BASE}/verify/${doc.id}`,
+        verifyUrl: `${resolvePublicVerifyBaseUrl()}/verify/${doc.id}`,
         language: lang,
       });
 

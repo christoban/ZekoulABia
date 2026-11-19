@@ -28,10 +28,14 @@ import type { BulletinTemplateAssignmentRepository } from '@domain/ports/reposit
 import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
 import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
 import type { SequenceAbsenceSummaryRepository } from '@domain/ports/repositories/SequenceAbsenceSummaryRepository';
+import type { SchoolIdentityKitRepository } from '@domain/ports/repositories/SchoolIdentityKitRepository';
+import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
 import type { BulletinTemplate } from '@domain/types/enums';
 import { resolveHasCoefficientForClass } from '@domain/subsystems/SubsystemDefaults';
+import { buildLongTokenVerifyUrl } from '@domain/policies/BulletinVerifyCrypto';
 import { resolveLanguage } from '../../domain/policies/LanguagePolicy';
 import {
+  createBatchSchoolIdentityContextCache,
   normalizeSequenceCalculationMode,
   renderAndStoreBulletinIfSpecActive,
   resolveClassGenerationPlan,
@@ -86,6 +90,8 @@ export class GenererBulletinUseCase {
     private readonly bulletinRenderer?: BulletinRendererPort,
     private readonly bulletinPdfStorage?: BulletinPdfStoragePort,
     private readonly sequenceAbsenceRepository?: SequenceAbsenceSummaryRepository,
+    private readonly schoolIdentityKitRepository?: SchoolIdentityKitRepository,
+    private readonly schoolAssetStorage?: SchoolAssetStoragePort,
   ) {}
 
   async execute(commande: GenererBulletinCommande): Promise<GenererBulletinResultat> {
@@ -189,6 +195,22 @@ export class GenererBulletinUseCase {
       const opts = await this.studentProfileRepository.findBulletinOptionsByStudentIds(elevesClasse.map((e) => e.id));
       for (const o of opts) rawPhotoByStudent.set(o.studentId, o.photoUrl);
     }
+    const identityKit =
+      plan.useMeasuredRenderer && this.schoolIdentityKitRepository
+        ? await this.schoolIdentityKitRepository.findBySchoolId(commande.schoolId)
+        : null;
+    const schoolObj = school.toObject();
+    const cachedBatchSchoolIdentity = plan.useMeasuredRenderer
+      ? await createBatchSchoolIdentityContextCache({
+          schoolName: schoolObj.name,
+          fallbackMotto: commande.schoolMotto,
+          fallbackCity: schoolObj.city,
+          fallbackPhone: schoolObj.phone,
+          fallbackLogoUrl: schoolObj.logoUrl ?? commande.logoUrl,
+          kit: identityKit,
+          schoolAssetStorage: this.schoolAssetStorage,
+        }).getForLanguage(langue)
+      : undefined;
     let generes = 0;
     let ignores = 0;
 
@@ -235,7 +257,7 @@ export class GenererBulletinUseCase {
         templateVersion: plan.templateVersion,
       });
 
-      const verifyUrl = `${verifyBase}/verify/${entry.verifyToken}`;
+      const verifyUrl = buildLongTokenVerifyUrl(verifyBase, entry.verifyToken);
       const storedKey = await renderAndStoreBulletinIfSpecActive({
         bulletinId: bulletin.id,
         schoolId: commande.schoolId,
@@ -243,6 +265,7 @@ export class GenererBulletinUseCase {
         snapshot: entry.snapshot,
         spec: plan.spec,
         school: school.toObject(),
+        schoolIdentity: cachedBatchSchoolIdentity,
         className: classe.nomComplet,
         periodName: periode.name,
         yearName: annee.name,

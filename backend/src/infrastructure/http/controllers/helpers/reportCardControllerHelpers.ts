@@ -9,12 +9,12 @@ import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetS
 import { LocalAndDataUriSchoolAssetStorageAdapter } from '@infrastructure/services/storage/LocalAndDataUriSchoolAssetStorageAdapter';
 import { getOrRegenerateSealedBulletinPdf } from '@application/reportCard/bulletinPdfLifecycle';
 import { resolveLanguage } from '@domain/policies/LanguagePolicy';
+import { buildLongTokenVerifyUrl } from '@domain/policies/BulletinVerifyCrypto';
 import { generateBulletinPdf } from '@infrastructure/pdf/report-card/index';
 import { getMention } from '@infrastructure/pdf/report-card/BulletinPdfHelpers';
 import { getEffectiveSchoolSettings } from '@infrastructure/services/school-settings/SchoolSettingsService';
-import { resolveFrontendUrl } from '@infrastructure/config/EnvAppConfig';
+import { resolvePublicVerifyBaseUrl } from '@infrastructure/config/EnvAppConfig';
 
-const VERIFY_BASE = resolveFrontendUrl();
 const DEFAULT_SCHOOL_ASSET_STORAGE = new LocalAndDataUriSchoolAssetStorageAdapter();
 
 export async function isBulletinBlockedByUnpaidFees(params: {
@@ -71,9 +71,19 @@ export async function renderReportCardPdfBuffer(
     bulletinPdfStorage?: BulletinPdfStoragePort;
     schoolAssetStorage?: SchoolAssetStoragePort;
     forceRegenerateFromSnapshot?: boolean;
+    persistRegeneratedPdf?: boolean;
   },
 ): Promise<{ pdfBuffer: Buffer; filename: string; studentName: string }> {
-  const settings = cachedSettings ?? (await getEffectiveSchoolSettings(schoolId));
+  const inlineSettings =
+    reportCard.school && 'schoolSettings' in reportCard.school
+      ? {
+          schoolName: reportCard.school.name,
+          schoolMotto: reportCard.school.schoolSettings?.schoolMotto ?? reportCard.school.identityKit?.mottoFr ?? '',
+          schoolLogoUrl: reportCard.school.logoUrl ?? '',
+        }
+      : null;
+  const settings = cachedSettings ?? inlineSettings ?? (await getEffectiveSchoolSettings(schoolId));
+  const verifyBase = resolvePublicVerifyBaseUrl();
   const studentName = `${reportCard.student.firstName} ${reportCard.student.lastName}`.trim();
   const periodName = reportCard.academicPeriod?.name ?? '—';
   const template = (reportCard.template ?? 'FR_SECONDARY') as BulletinTemplate;
@@ -88,9 +98,10 @@ export async function renderReportCardPdfBuffer(
     reportCard,
     role,
     language: langue,
-    verifyBaseUrl: VERIFY_BASE,
+    verifyBaseUrl: verifyBase,
     schoolMotto: settings.schoolMotto,
     forceRegenerateFromSnapshot: measuredDeps?.forceRegenerateFromSnapshot,
+    persistRegeneratedPdf: measuredDeps?.persistRegeneratedPdf,
     bulletinRenderer: measuredDeps?.bulletinRenderer,
     bulletinPdfStorage: measuredDeps?.bulletinPdfStorage,
     schoolAssetStorage: measuredDeps?.schoolAssetStorage ?? DEFAULT_SCHOOL_ASSET_STORAGE,
@@ -137,7 +148,9 @@ export async function renderReportCardPdfBuffer(
       competenceLabel: line.competenceLabel,
     })),
     isOfficial: role !== 'PARENT',
-    verifyUrl: `${VERIFY_BASE}/verify/${reportCard.id}`,
+    verifyUrl: reportCard.verifyToken
+      ? buildLongTokenVerifyUrl(verifyBase, reportCard.verifyToken)
+      : `${verifyBase}/verify/${reportCard.id}`,
   });
 
   return { pdfBuffer, filename, studentName };

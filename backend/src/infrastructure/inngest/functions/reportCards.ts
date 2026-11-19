@@ -22,8 +22,10 @@ import { PrismaClasseCoefficientRepository } from "../../persistence/prisma/Pris
 import { PrismaDisciplineRepository } from "../../persistence/prisma/PrismaDisciplineRepository";
 import { PrismaBulletinTemplateAssignmentRepository } from "../../persistence/prisma/PrismaBulletinTemplateAssignmentRepository";
 import { PrismaSequenceAbsenceSummaryRepository } from "../../persistence/prisma/PrismaSequenceAbsenceSummaryRepository";
+import { PrismaSchoolIdentityKitRepository } from "../../persistence/prisma/PrismaSchoolIdentityKitRepository";
 import { MeasuredPdfKitBulletinRenderer } from "../../pdf/renderer/MeasuredPdfKitBulletinRenderer";
 import { createBulletinPdfStorageAdapter } from "../../services/storage/S3CompatibleBulletinPdfStorageAdapter";
+import { LocalAndDataUriSchoolAssetStorageAdapter } from "../../services/storage/LocalAndDataUriSchoolAssetStorageAdapter";
 import { BulletinBloqueError } from "@domain/errors/BulletinBloqueError";
 import { MatiereSansGroupeError } from "@domain/errors/MatiereSansGroupeError";
 import { DetecterChuteMoyenneUseCase, trouverSequencePrecedente } from "@application/grade/DetecterChuteMoyenneUseCase";
@@ -87,6 +89,8 @@ export const generateReportCards = inngest.createFunction(
       new MeasuredPdfKitBulletinRenderer(),
       createBulletinPdfStorageAdapter(),
       new PrismaSequenceAbsenceSummaryRepository(prisma),
+      new PrismaSchoolIdentityKitRepository(prisma),
+      new LocalAndDataUriSchoolAssetStorageAdapter(),
     );
 
     const { academicYear, academicPeriod, generatedStudents } = await step.run("generate-report-cards", async () => {

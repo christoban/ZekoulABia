@@ -57,6 +57,7 @@ import { bootstrapHexagonal } from './infrastructure/config/hexagonal.bootstrap'
 import { prisma } from '@infrastructure/persistence/prisma/prisma.client';
 import { idempotency } from './infrastructure/http/middlewares/idempotency.ts';
 import { checkLibreOfficeAvailable } from '@application/statisticalCampaign/xlsEngine';
+import { resolveTrustProxyConfig } from './infrastructure/config/EnvAppConfig.ts';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -66,8 +67,9 @@ const PORT = process.env.PORT || 5000;
 const httpServer = createServer(app);
 const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
 
-if (["1", "true"].includes((process.env.TRUST_PROXY || "").toLowerCase())) {
-  app.set("trust proxy", 1);
+const trustProxy = resolveTrustProxyConfig();
+if (trustProxy !== false) {
+  app.set("trust proxy", trustProxy);
 }
 
 // next add security middlewares/headers + make sure to listen on *root file* for changes

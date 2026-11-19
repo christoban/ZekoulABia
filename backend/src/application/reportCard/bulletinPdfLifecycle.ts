@@ -3,7 +3,7 @@
  *
  * Responsabilités :
  * - Vérifier l'éligibilité au renderer mesuré (flag SchoolConfig.useMeasuredBulletinRenderer + spec publiée).
- * - Rendre et stocker le PDF figé lors de la génération / validation / publication.
+ * - Rendre et stocker le PDF figé lors de la génération / validation / publication (avec cache médias par lot).
  * - Au téléchargement : servir le PDF stocké ; s'il est absent du stockage, le régénérer
  *   exclusivement depuis snapshotData + spec figée (templateSpecId + templateVersion), jamais
  *   depuis les données vivantes, puis le re-stocker.
@@ -13,7 +13,6 @@ import type { BulletinTemplateAssignmentRepository } from '@domain/ports/reposit
 import type { SchoolConfigData, SchoolConfigRepository } from '@domain/ports/repositories/SchoolConfigRepository';
 import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
 import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
-import type { SchoolIdentityKitRecord } from '@domain/ports/repositories/SchoolIdentityKitRepository';
 import type {
   BulletinGradingPolicy,
   BulletinRendererPort,
@@ -27,13 +26,23 @@ import {
   resolveEffectiveTemplateAssignment,
   resolvePeriodKindFromName,
 } from '@domain/policies/BulletinTemplatePolicy';
-import { deriveShortVerifyCode } from '@domain/policies/BulletinVerifyCrypto';
+import {
+  buildLongTokenVerifyUrl,
+  deriveShortVerifyCode,
+} from '@domain/policies/BulletinVerifyCrypto';
 import {
   findDefaultSpecForTemplate,
   getPublishedTemplateSpec,
 } from '@domain/templates/bulletinCatalog';
 import { resolveLanguage } from '@domain/policies/LanguagePolicy';
 import { decodeBase64PhotoUrl, resoudreVerifyBaseUrl } from './bulletinEnrichmentHelpers';
+import {
+  buildSchoolIdentityRenderContext,
+  cleanOptionalText,
+  createBatchSchoolIdentityContextCache,
+} from './bulletinIdentityContext';
+
+export { buildSchoolIdentityRenderContext, createBatchSchoolIdentityContextCache };
 
 export interface ResolvedGenerationRenderPlan {
   template: BulletinTemplate;
@@ -126,58 +135,6 @@ export function resolveActiveSpecForBulletin(params: {
   return findDefaultSpecForTemplate(params.template);
 }
 
-function cleanOpt(val: string | null | undefined): string | null {
-  const t = val?.trim();
-  return t && t.length > 0 ? t : null;
-}
-
-export async function buildSchoolIdentityRenderContext(params: {
-  schoolName: string;
-  language: 'fr' | 'en';
-  fallbackMotto?: string | null;
-  fallbackCity?: string | null;
-  fallbackPhone?: string | null;
-  fallbackLogoUrl?: string | null;
-  kit?: SchoolIdentityKitRecord | null;
-  schoolAssetStorage?: SchoolAssetStoragePort;
-}): Promise<SchoolIdentityRenderContext> {
-  const isEn = params.language === 'en';
-  const k = params.kit;
-  const storage = params.schoolAssetStorage;
-  const pick = (fr?: string | null, en?: string | null) =>
-    cleanOpt(isEn ? (en ?? fr) : (fr ?? en));
-
-  const [logoBuffer, coatOfArmsBuffer, stampBuffer, principalSignatureBuffer, censorSignatureBuffer] = storage
-    ? await Promise.all([
-        storage.readAssetBuffer(k?.logoAssetKey ?? params.fallbackLogoUrl),
-        k?.useCoatOfArms ? storage.readAssetBuffer(k.coatOfArmsAssetKey) : Promise.resolve(null),
-        storage.readAssetBuffer(k?.stampAssetKey),
-        storage.readAssetBuffer(k?.principalSignatureAssetKey),
-        storage.readAssetBuffer(k?.censorSignatureAssetKey),
-      ])
-    : [null, null, null, null, null];
-
-  return {
-    schoolName: params.schoolName,
-    schoolMotto: pick(k?.mottoFr, k?.mottoEn) ?? cleanOpt(params.fallbackMotto),
-    regionalDelegation: pick(k?.regionalDelegationFr, k?.regionalDelegationEn),
-    departmentalDelegation: pick(k?.departmentalDelegationFr, k?.departmentalDelegationEn),
-    city: cleanOpt(k?.city) ?? cleanOpt(params.fallbackCity),
-    phone: cleanOpt(k?.phone) ?? cleanOpt(params.fallbackPhone),
-    bp: cleanOpt(k?.poBox),
-    foundingYear: k?.foundingYear ?? null,
-    authorizationNumber: cleanOpt(k?.authorizationNumber),
-    accentColor: cleanOpt(k?.accentColor),
-    coatOfArmsEnabled: k?.useCoatOfArms ?? false,
-    logoUrl: cleanOpt(params.fallbackLogoUrl),
-    logoBuffer,
-    coatOfArmsBuffer,
-    stampBuffer,
-    principalSignatureBuffer,
-    censorSignatureBuffer,
-  };
-}
-
 export function buildRenderOptionsForExport(
   reportCard: BulletinExportData,
   params: {
@@ -194,8 +151,8 @@ export function buildRenderOptionsForExport(
   const shortVerifyCode =
     reportCard.shortVerifyCode ?? (verifyToken ? deriveShortVerifyCode(verifyToken) : undefined);
   const verifyUrl = verifyToken
-    ? `${params.verifyBaseUrl}/verify/${verifyToken}`
-    : `${params.verifyBaseUrl}/verify/${reportCard.id}`;
+    ? buildLongTokenVerifyUrl(params.verifyBaseUrl, verifyToken)
+    : `${params.verifyBaseUrl.trim().replace(/\/+$/, '')}/verify/${reportCard.id}`;
   const reprintCount = reportCard.reprintCount ?? 0;
 
   const sc = reportCard.school?.schoolConfig;
@@ -213,19 +170,19 @@ export function buildRenderOptionsForExport(
   const defaultSchoolCtx: SchoolIdentityRenderContext = params.schoolIdentity ?? {
     schoolName: reportCard.school?.name ?? 'Établissement',
     schoolMotto:
-      cleanOpt(isEn ? (kit?.mottoEn ?? kit?.mottoFr) : (kit?.mottoFr ?? kit?.mottoEn)) ??
-      cleanOpt(params.schoolMotto) ??
-      cleanOpt(reportCard.school?.schoolSettings?.schoolMotto),
-    regionalDelegation: cleanOpt(isEn ? (kit?.regionalDelegationEn ?? kit?.regionalDelegationFr) : (kit?.regionalDelegationFr ?? kit?.regionalDelegationEn)),
-    departmentalDelegation: cleanOpt(isEn ? (kit?.departmentalDelegationEn ?? kit?.departmentalDelegationFr) : (kit?.departmentalDelegationFr ?? kit?.departmentalDelegationEn)),
-    city: cleanOpt(kit?.city) ?? cleanOpt(reportCard.school?.city),
-    phone: cleanOpt(kit?.phone) ?? cleanOpt(reportCard.school?.phone),
-    bp: cleanOpt(kit?.poBox),
+      cleanOptionalText(isEn ? (kit?.mottoEn ?? kit?.mottoFr) : (kit?.mottoFr ?? kit?.mottoEn)) ??
+      cleanOptionalText(params.schoolMotto) ??
+      cleanOptionalText(reportCard.school?.schoolSettings?.schoolMotto),
+    regionalDelegation: cleanOptionalText(isEn ? (kit?.regionalDelegationEn ?? kit?.regionalDelegationFr) : (kit?.regionalDelegationFr ?? kit?.regionalDelegationEn)),
+    departmentalDelegation: cleanOptionalText(isEn ? (kit?.departmentalDelegationEn ?? kit?.departmentalDelegationFr) : (kit?.departmentalDelegationFr ?? kit?.departmentalDelegationEn)),
+    city: cleanOptionalText(kit?.city) ?? cleanOptionalText(reportCard.school?.city),
+    phone: cleanOptionalText(kit?.phone) ?? cleanOptionalText(reportCard.school?.phone),
+    bp: cleanOptionalText(kit?.poBox),
     foundingYear: kit?.foundingYear ?? null,
-    authorizationNumber: cleanOpt(kit?.authorizationNumber),
-    accentColor: cleanOpt(kit?.accentColor),
+    authorizationNumber: cleanOptionalText(kit?.authorizationNumber),
+    accentColor: cleanOptionalText(kit?.accentColor),
     coatOfArmsEnabled: kit?.useCoatOfArms ?? false,
-    logoUrl: cleanOpt(reportCard.school?.logoUrl),
+    logoUrl: cleanOptionalText(reportCard.school?.logoUrl),
   };
 
   return {
@@ -273,6 +230,17 @@ export async function sealAndStoreBulletinsForClass(params: {
   );
   if (rows.length === 0) return { sealedCount: 0 };
 
+  const firstSchool = rows[0]?.school;
+  const batchIdentityCache = createBatchSchoolIdentityContextCache({
+    schoolName: firstSchool?.name ?? 'Établissement',
+    fallbackMotto: firstSchool?.schoolSettings?.schoolMotto,
+    fallbackCity: firstSchool?.city,
+    fallbackPhone: firstSchool?.phone,
+    fallbackLogoUrl: firstSchool?.logoUrl,
+    kit: firstSchool?.identityKit,
+    schoolAssetStorage: params.schoolAssetStorage,
+  });
+
   const verifyBaseUrl = params.verifyBaseUrl ?? resoudreVerifyBaseUrl();
   let sealedCount = 0;
 
@@ -290,16 +258,7 @@ export async function sealAndStoreBulletinsForClass(params: {
     const sectionCode =
       row.section?.code ?? row.student?.studentProfile?.enrollmentsYearScoped?.[0]?.class?.section?.code ?? null;
     const language = resolveLanguage(row.school?.subsystem, sectionCode);
-    const schoolIdentity = await buildSchoolIdentityRenderContext({
-      schoolName: row.school?.name ?? 'Établissement',
-      language,
-      fallbackMotto: row.school?.schoolSettings?.schoolMotto,
-      fallbackCity: row.school?.city,
-      fallbackPhone: row.school?.phone,
-      fallbackLogoUrl: row.school?.logoUrl,
-      kit: row.school?.identityKit,
-      schoolAssetStorage: params.schoolAssetStorage,
-    });
+    const schoolIdentity = await batchIdentityCache.getForLanguage(language);
     const options = buildRenderOptionsForExport(row, {
       role: 'ADMIN',
       language,
@@ -333,6 +292,7 @@ export async function getOrRegenerateSealedBulletinPdf(params: {
   verifyBaseUrl: string;
   schoolMotto?: string | null;
   forceRegenerateFromSnapshot?: boolean;
+  persistRegeneratedPdf?: boolean;
   bulletinRenderer?: BulletinRendererPort;
   bulletinPdfStorage?: BulletinPdfStoragePort;
   schoolAssetStorage?: SchoolAssetStoragePort;
@@ -356,7 +316,6 @@ export async function getOrRegenerateSealedBulletinPdf(params: {
     }
   }
 
-  // PDF absent du stockage ou réédition DUPLICATA : régénération stricte depuis snapshotData + spec figée
   const schoolIdentity = await buildSchoolIdentityRenderContext({
     schoolName: params.reportCard.school?.name ?? 'Établissement',
     language: params.language,
@@ -376,7 +335,7 @@ export async function getOrRegenerateSealedBulletinPdf(params: {
   });
   const pdfBuffer = await params.bulletinRenderer.render(params.reportCard.snapshotData, spec, options);
 
-  if (params.bulletinPdfStorage && !params.forceRegenerateFromSnapshot) {
+  if (params.bulletinPdfStorage && (!params.forceRegenerateFromSnapshot || params.persistRegeneratedPdf)) {
     const key =
       params.reportCard.pdfUrl ||
       params.bulletinPdfStorage.buildStorageKey({
@@ -398,6 +357,7 @@ export async function renderAndStoreBulletinIfSpecActive(params: {
   snapshot: StudentBulletinSnapshot;
   spec: Readonly<BulletinTemplateSpec> | null;
   school: { name: string; city?: string; phone?: string; region?: string; logoUrl?: string };
+  schoolIdentity?: SchoolIdentityRenderContext;
   className: string;
   periodName: string;
   yearName: string;
@@ -432,13 +392,13 @@ export async function renderAndStoreBulletinIfSpecActive(params: {
     language: params.language,
     gradingPolicy: params.gradingPolicy,
     studentPhotoBuffer,
-    school: {
+    school: params.schoolIdentity ?? {
       schoolName: params.school.name,
-      schoolMotto: cleanOpt(params.schoolMotto),
-      city: cleanOpt(params.school.city),
-      phone: cleanOpt(params.school.phone),
+      schoolMotto: cleanOptionalText(params.schoolMotto),
+      city: cleanOptionalText(params.school.city),
+      phone: cleanOptionalText(params.school.phone),
       regionalDelegation: null,
-      logoUrl: cleanOpt(params.school.logoUrl),
+      logoUrl: cleanOptionalText(params.school.logoUrl),
     },
   };
   const pdfBuffer = await params.bulletinRenderer.render(params.snapshot, params.spec, options);

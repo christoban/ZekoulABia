@@ -30,8 +30,11 @@ export function creerReportCardRoutes(controller: ReportCardController): Router 
   // Historique bulletins
   router.get('/', requireAuth, controller.lister);
 
-  // Téléchargement PDF individuel
+  // Téléchargement PDF individuel (lecture simple : n'incrémente jamais le compteur duplicata)
   router.get('/:id/pdf', requireAuth, controller.telechargerPdf);
+
+  // Réédition contrôlée d'un duplicata officiel (ADMIN / STAFF, motif obligatoire + journal d'audit)
+  router.post('/:id/reprint', sensitiveWriteLimiter, requireAuth, requireRole('ADMIN', 'STAFF'), controller.reimprimerDuplicata);
 
   return router;
 }

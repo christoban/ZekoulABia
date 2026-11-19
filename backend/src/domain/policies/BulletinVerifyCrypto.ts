@@ -25,6 +25,29 @@ export function deriveShortVerifyCode(tokenOrId: string): string {
   return `ZK-${digest.slice(0, 4)}-${digest.slice(4, 8)}`;
 }
 
+/** Vérifie qu'un jeton de QR code possède au moins 128 bits d'entropie hexadécimale (32+ chars hex). */
+export function isLongVerifyToken(token: string | null | undefined): boolean {
+  if (!token) return false;
+  return /^[0-9a-f]{32,128}$/i.test(token.trim());
+}
+
+/** Reconnaît le format court imprimé lisible (ZK-XXXX-XXXX) sans le confondre avec le jeton long. */
+export function isShortVerifyCode(value: string | null | undefined): boolean {
+  if (!value) return false;
+  return /^ZK-[0-9A-F]{4}-[0-9A-F]{4}$/i.test(value.trim());
+}
+
+/** Construit l'URL officielle encodée dans le QR code : uniquement basée sur le jeton long cryptographique. */
+export function buildLongTokenVerifyUrl(baseUrl: string, verifyToken: string): string {
+  if (!isLongVerifyToken(verifyToken)) {
+    throw new Error(
+      `URL QR refusée : verifyToken doit être un jeton cryptographique >= 128 bits (reçu "${verifyToken}").`,
+    );
+  }
+  const cleanBase = baseUrl.trim().replace(/\/+$/, '');
+  return `${cleanBase}/verify/${verifyToken.trim()}`;
+}
+
 /**
  * Masque l'identité complète sur la page publique /verify : "KAMGA Jean-Baptiste" -> "KAMGA J."
  */

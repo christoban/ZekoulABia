@@ -62,8 +62,8 @@ export class MeasuredPdfKitBulletinRenderer implements BulletinRendererPort {
         ? await QRCode.toBuffer(options.verifyUrl, {
             type: 'png',
             errorCorrectionLevel: 'M',
-            margin: 1,
-            width: 180,
+            margin: 2,
+            scale: 6,
           }).catch(() => null)
         : null;
 

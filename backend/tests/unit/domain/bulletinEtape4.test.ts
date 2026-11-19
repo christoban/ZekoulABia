@@ -303,7 +303,7 @@ describe('Étape 4 — Regroupements par code, Famille A immuable, Affectations 
     bulletin.scellerSnapshot({
       snapshotData: sealedSnapshot,
       contentHash: 'hash-1',
-      verifyToken: 'tok-abc-123',
+      verifyToken: 'a1b2c3d4e5f60718293a4b5c6d7e8f901122334455667788',
       computationVersion: 2,
       templateSpecId: 'GENERAL_GROUPED_V1',
       templateVersion: 1,

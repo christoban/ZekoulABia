@@ -344,19 +344,26 @@ describe('Étape 5 — Identité école, Assets validés, QR >= 20 mm, /verify p
     expect(docV2.studentMaskedName).toBe('KAMGA J.');
     expect(maskStudentPublicName('Jean-Baptiste', 'KAMGA')).toBe('KAMGA J.');
     expect(docV2.legacyFormat).toBe(false);
-    // Zéro fuite de données sensibles
-    expect(JSON.stringify(docV2)).not.toContain('16.5');
+    // Étape 5 bis : le jeton long expose MOYENNE GÉNÉRALE + RANG + date d'émission (sans notes par matière, matricule ni conduite)
+    expect(docV2.lookupMode).toBe('LONG_TOKEN');
+    expect(docV2.generalAverage).toBe(16.5);
+    expect(docV2.rank).toBe(1);
     expect(JSON.stringify(docV2)).not.toContain('Très Bien');
     expect(JSON.stringify(docV2)).not.toContain('Jean-Baptiste');
+    expect(JSON.stringify(docV2)).not.toContain('MAT-001');
 
-    // Aussi vérifiable par shortVerifyCode ZK-XXXX-XXXX
+    // Vérification manuelle par shortVerifyCode ZK-XXXX-XXXX -> statut uniquement, ZERO chiffre
     const shortRes = await verifyPublicDocumentOp({
       documentId: deriveShortVerifyCode(tokV2),
       documentRepository: emptyDocRepo,
       bulletinRepository: repo,
       schoolRepository: schoolRepo,
     });
-    expect((shortRes.body.document as Record<string, unknown>).status).toBe('AUTHENTIC');
+    const shortDoc = shortRes.body.document as Record<string, unknown>;
+    expect(shortDoc.lookupMode).toBe('SHORT_CODE');
+    expect(shortDoc.status).toBe('AUTHENTIC');
+    expect(JSON.stringify(shortDoc)).not.toContain('16.5');
+    expect(JSON.stringify(shortDoc)).not.toContain('KAMGA');
 
     // 2. Ancien format v1 sans snapshot
     const tokV1 = genererVerifyToken();

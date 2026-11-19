@@ -247,21 +247,78 @@ export class ReportCardController {
         });
         if (blocked) { res.status(403).json({ success: false, code: 'BULLETIN_BLOCKED_UNPAID_FEES', message: 'Téléchargement du bulletin bloqué en raison de frais de scolarité impayés' }); return; }
       }
-      const isReprint = String(req.query.reprint).toLowerCase() === 'true';
-      if (isReprint) {
-        if (role !== 'ADMIN' && role !== 'STAFF') {
-          res.status(403).json({ success: false, message: 'Seuls ADMIN ou STAFF peuvent émettre un duplicata.' });
-          return;
-        }
-        reportCard.reprintCount = await this.bulletinRepository.incrementReprintCount(reportCard.id, user.schoolId);
-      }
       const { pdfBuffer, filename } = await renderReportCardPdfBuffer(reportCard, user.schoolId, role, undefined, {
         bulletinRenderer: this.bulletinRenderer,
         bulletinPdfStorage: this.bulletinPdfStorage,
-        forceRegenerateFromSnapshot: isReprint,
       });
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+      res.end(pdfBuffer);
+    } catch (error) { next(error); }
+  };
+
+  // POST /api/v2/report-cards/:id/reprint (ADMIN / STAFF avec motif obligatoire + audit)
+  reimprimerDuplicata = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = req.user;
+      const role = String(user.role).toUpperCase();
+      if (role !== 'ADMIN' && role !== 'STAFF') {
+        res.status(403).json({ success: false, message: 'Seuls ADMIN ou STAFF peuvent émettre un duplicata officiel.' });
+        return;
+      }
+
+      const rawMotif =
+        typeof req.body?.motif === 'string'
+          ? req.body.motif
+          : typeof req.body?.reason === 'string'
+            ? req.body.reason
+            : '';
+      const motif = rawMotif.trim();
+      if (!motif) {
+        res.status(400).json({
+          success: false,
+          message: 'Un motif obligatoire (motif) est requis pour réimprimer un duplicata.',
+        });
+        return;
+      }
+
+      const reportCard = await this.bulletinRepository.findForPdf(req.params.id as string, user.schoolId);
+      if (!reportCard) {
+        res.status(404).json({ success: false, message: 'Bulletin introuvable' });
+        return;
+      }
+
+      const nextCount = await this.bulletinRepository.incrementReprintCount(reportCard.id, user.schoolId);
+      reportCard.reprintCount = nextCount;
+
+      const { pdfBuffer, filename } = await renderReportCardPdfBuffer(reportCard, user.schoolId, role, undefined, {
+        bulletinRenderer: this.bulletinRenderer,
+        bulletinPdfStorage: this.bulletinPdfStorage,
+        forceRegenerateFromSnapshot: true,
+        persistRegeneratedPdf: true,
+      });
+
+      this.audit.journaliser({
+        actorUserId: user.userId,
+        actorRole: user.role,
+        schoolId: user.schoolId,
+        actionName: 'reimprimer_duplicata_bulletin',
+        targetType: 'ReportCard',
+        targetId: reportCard.id,
+        origin: 'UI_DIRECT',
+        outcome: 'SUCCES',
+        parametersSummary: {
+          bulletinId: reportCard.id,
+          studentId: reportCard.studentId,
+          reprintCount: nextCount,
+          motif,
+        },
+      });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('X-Reprint-Count', String(nextCount));
+      res.setHeader('Content-Disposition', `inline; filename="duplicata-${nextCount}-${filename}"`);
       res.setHeader('Content-Length', pdfBuffer.length);
       res.end(pdfBuffer);
     } catch (error) { next(error); }

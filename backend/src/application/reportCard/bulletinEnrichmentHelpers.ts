@@ -52,7 +52,13 @@ export function decodeBase64PhotoUrl(photoUrl: string | null | undefined): Buffe
 }
 
 export function resoudreVerifyBaseUrl(): string {
-  return (process.env.FRONTEND_URL || process.env.CLIENT_URL || process.env.APP_URL || 'http://localhost:3000')
+  return (
+    process.env.PUBLIC_VERIFY_BASE_URL ||
+    process.env.FRONTEND_URL ||
+    process.env.CLIENT_URL ||
+    process.env.APP_URL ||
+    'http://localhost:3000'
+  )
     .trim()
     .replace(/\/+$/, '');
 }

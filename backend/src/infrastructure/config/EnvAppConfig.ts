@@ -30,6 +30,16 @@ export class EnvAppConfig implements AppConfigPort {
     return raw.trim().replace(/\/+$/, '');
   }
 
+  publicVerifyBaseUrl(): string {
+    const raw =
+      process.env.PUBLIC_VERIFY_BASE_URL ||
+      process.env.FRONTEND_URL ||
+      process.env.CLIENT_URL ||
+      process.env.APP_URL ||
+      'http://localhost:3000';
+    return raw.trim().replace(/\/+$/, '');
+  }
+
   masterEntryUrl(): string {
     const customUrl = process.env.MASTER_ENTRY_URL || process.env.MASTER_LOGIN_URL;
     if (customUrl?.trim()) {
@@ -56,7 +66,23 @@ export class EnvAppConfig implements AppConfigPort {
 
 export const envAppConfig = new EnvAppConfig();
 
+export function resolveTrustProxyConfig(env: NodeJS.ProcessEnv = process.env): number | boolean {
+  const raw = env.TRUST_PROXY?.trim();
+  if (raw !== undefined && raw !== '') {
+    const lower = raw.toLowerCase();
+    if (lower === 'false' || lower === '0') return false;
+    if (lower === 'true') return 1;
+    const num = Number(raw);
+    if (Number.isInteger(num) && num >= 1) return num;
+  }
+  if (env.RAILWAY_ENVIRONMENT || env.RAILWAY_PROJECT_ID || env.RAILWAY_SERVICE_ID) {
+    return 1;
+  }
+  return false;
+}
+
 export const resolveFrontendUrl = (): string => envAppConfig.frontendBaseUrl();
+export const resolvePublicVerifyBaseUrl = (): string => envAppConfig.publicVerifyBaseUrl();
 export const resolveMasterEntryUrl = (): string => envAppConfig.masterEntryUrl();
 export const resolveMasterLoginUrl = (): string => envAppConfig.masterEntryUrl();
 export const resolveMasterDashboardUrl = (): string => envAppConfig.masterEntryUrl();

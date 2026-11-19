@@ -133,6 +133,9 @@ export interface BulletinPublicVerifyRecord {
   contentHash: string | null;
   verifyToken: string | null;
   shortVerifyCode: string | null;
+  generalAverage: number | null;
+  rank: number | null;
+  totalStudents: number | null;
   reprintCount: number;
   validationStatus: string;
   revokedAt: Date | null;

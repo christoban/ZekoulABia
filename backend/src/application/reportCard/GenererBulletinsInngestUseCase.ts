@@ -26,8 +26,11 @@ import type { BulletinTemplateAssignmentRepository } from '@domain/ports/reposit
 import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
 import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
 import type { SequenceAbsenceSummaryRepository } from '@domain/ports/repositories/SequenceAbsenceSummaryRepository';
+import type { SchoolIdentityKitRepository } from '@domain/ports/repositories/SchoolIdentityKitRepository';
+import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
 import type { BulletinTemplate } from '@domain/types/enums';
 import { resolveHasCoefficientForClass } from '@domain/subsystems/SubsystemDefaults';
+import { buildLongTokenVerifyUrl } from '@domain/policies/BulletinVerifyCrypto';
 import { resolveLanguage } from '../../domain/policies/LanguagePolicy';
 import {
   chargerNotesEtSequencesClasse,
@@ -36,6 +39,7 @@ import {
   snapshotToLignesMatiere,
 } from './bulletinSnapshotEnricher';
 import {
+  createBatchSchoolIdentityContextCache,
   normalizeSequenceCalculationMode,
   renderAndStoreBulletinIfSpecActive,
   resolveClassGenerationPlan,
@@ -84,6 +88,8 @@ export class GenererBulletinsInngestUseCase {
     private readonly bulletinRenderer?: BulletinRendererPort,
     private readonly bulletinPdfStorage?: BulletinPdfStoragePort,
     private readonly sequenceAbsenceRepository?: SequenceAbsenceSummaryRepository,
+    private readonly schoolIdentityKitRepository?: SchoolIdentityKitRepository,
+    private readonly schoolAssetStorage?: SchoolAssetStoragePort,
   ) {}
 
   async generer(
@@ -188,6 +194,21 @@ export class GenererBulletinsInngestUseCase {
         const opts = await this.studentProfileRepository.findBulletinOptionsByStudentIds(elevesClasse.map((e) => e.id));
         for (const o of opts) rawPhotoByStudent.set(o.studentId, o.photoUrl);
       }
+      const identityKit =
+        plan.useMeasuredRenderer && this.schoolIdentityKitRepository
+          ? await this.schoolIdentityKitRepository.findBySchoolId(academicYear.schoolId)
+          : null;
+      const schoolObj = school.toObject();
+      const cachedBatchSchoolIdentity = plan.useMeasuredRenderer
+        ? await createBatchSchoolIdentityContextCache({
+            schoolName: schoolObj.name,
+            fallbackCity: schoolObj.city,
+            fallbackPhone: schoolObj.phone,
+            fallbackLogoUrl: schoolObj.logoUrl,
+            kit: identityKit,
+            schoolAssetStorage: this.schoolAssetStorage,
+          }).getForLanguage(langue)
+        : undefined;
 
       const targets = studentId ? elevesClasse.filter((e) => e.id === studentId) : elevesClasse;
       for (const eleve of targets) {
@@ -234,6 +255,7 @@ export class GenererBulletinsInngestUseCase {
           snapshot: entry.snapshot,
           spec: plan.spec,
           school: school.toObject(),
+          schoolIdentity: cachedBatchSchoolIdentity,
           className: classe.nomComplet,
           periodName: periode.name,
           yearName: academicYear.name,
@@ -242,7 +264,7 @@ export class GenererBulletinsInngestUseCase {
           language: langue,
           isAnnual: plan.template === 'ANNUAL',
           gradingPolicy: plan.gradingPolicy,
-          verifyUrl: `${verifyBase}/verify/${entry.verifyToken}`,
+          verifyUrl: buildLongTokenVerifyUrl(verifyBase, entry.verifyToken),
           verifyToken: entry.verifyToken,
           shortVerifyCode: entry.shortVerifyCode,
           studentPhotoUrl: rawPhotoByStudent.get(eleve.id),

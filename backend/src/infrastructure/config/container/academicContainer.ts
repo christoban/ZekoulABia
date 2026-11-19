@@ -9,9 +9,11 @@ import { PrismaSousGroupeRepository } from '@infrastructure/persistence/prisma/P
 import { PrismaClasseCoefficientRepository } from '@infrastructure/persistence/prisma/PrismaClasseCoefficientRepository';
 import { PrismaDisciplineRepository } from '@infrastructure/persistence/prisma/PrismaDisciplineRepository';
 import { PrismaBulletinTemplateAssignmentRepository } from '@infrastructure/persistence/prisma/PrismaBulletinTemplateAssignmentRepository';
+import { PrismaSchoolIdentityKitRepository } from '@infrastructure/persistence/prisma/PrismaSchoolIdentityKitRepository';
 import { PrismaPromotionRepository } from '@infrastructure/persistence/prisma/PrismaPromotionRepository';
 import { MeasuredPdfKitBulletinRenderer } from '@infrastructure/pdf/renderer/MeasuredPdfKitBulletinRenderer';
 import { createBulletinPdfStorageAdapter } from '@infrastructure/services/storage/S3CompatibleBulletinPdfStorageAdapter';
+import { LocalAndDataUriSchoolAssetStorageAdapter } from '@infrastructure/services/storage/LocalAndDataUriSchoolAssetStorageAdapter';
 import { PrismaClassCouncilPreviewQueryPort } from '@infrastructure/persistence/prisma/PrismaClassCouncilPreviewQueryPort';
 import { PrismaAcademicProfileQueryRepository } from '@infrastructure/persistence/prisma/PrismaAcademicProfileQueryRepository';
 import { GenererBulletinUseCase } from '@application/reportCard/GenererBulletinUseCase';
@@ -70,6 +72,8 @@ export function createAcademicContainer(core: CoreContainerContext) {
   const classeCoefficientRepository = new PrismaClasseCoefficientRepository(prisma);
   const disciplineRepository = new PrismaDisciplineRepository(prisma);
   const bulletinAssignmentRepository = new PrismaBulletinTemplateAssignmentRepository(prisma);
+  const schoolIdentityKitRepository = new PrismaSchoolIdentityKitRepository(prisma);
+  const schoolAssetStorage = new LocalAndDataUriSchoolAssetStorageAdapter();
   const promotionRepository = new PrismaPromotionRepository(prisma, core.enrollmentRepository);
   const bulletinRenderer = new MeasuredPdfKitBulletinRenderer();
   const bulletinPdfStorage = createBulletinPdfStorageAdapter();
@@ -103,6 +107,8 @@ export function createAcademicContainer(core: CoreContainerContext) {
       bulletinRenderer,
       bulletinPdfStorage,
       core.sequenceAbsenceRepository,
+      schoolIdentityKitRepository,
+      schoolAssetStorage,
     ),
     envoyer: envoyerBulletinsUseCase,
     verifierDisponibilite: new VerifierDisponibiliteBulletinUseCase(

@@ -13,23 +13,31 @@ import {
   FileText,
   Loader2,
   Copy,
+  Award,
 } from 'lucide-react'
 import Link from 'next/link'
 import LanguageSwitch from '@/components/LanguageSwitch'
 
 type VerifyStatus = 'AUTHENTIC' | 'REVOKED' | 'TAMPERED' | 'NOT_FOUND'
+type LookupMode = 'LONG_TOKEN' | 'SHORT_CODE'
 
 interface VerifiedDocument {
   id: string
   shortVerifyCode?: string
+  lookupMode?: LookupMode
   status?: VerifyStatus
   type: string
-  school: string
+  school?: string
   yearName?: string
   periodName?: string
   className?: string
   classLevel?: string | null
   studentMaskedName?: string
+  generalAverage?: number | null
+  generalAverageDisplay?: string
+  rank?: number | null
+  totalStudents?: number | null
+  rankDisplay?: string
   issuedAt?: string
   generatedAt?: string
   revokedAt?: string
@@ -92,6 +100,7 @@ export default function VerifyDocumentPage() {
   const isAuthentic = !loading && Boolean(doc) && effectiveStatus === 'AUTHENTIC' && doc?.authentic === true
   const isRevoked = !loading && Boolean(doc) && (effectiveStatus === 'REVOKED' || effectiveStatus === 'TAMPERED')
   const isNotFound = !loading && (!doc || effectiveStatus === 'NOT_FOUND' || Boolean(error))
+  const isShortLookup = doc?.lookupMode === 'SHORT_CODE'
 
   const studentDisplay = doc?.studentMaskedName ?? doc?.data?.studentName
   const classDisplay = doc?.className ?? doc?.data?.className
@@ -214,17 +223,19 @@ export default function VerifyDocumentPage() {
             <p style={{ margin: 0, fontSize: 13, color: 'var(--text2)', lineHeight: 1.5 }}>
               {doc.message || 'Ce document a été révoqué ou remplacé par une nouvelle version officielle.'}
             </p>
-            <div style={{
-              width: '100%', background: 'var(--bg2)', border: '1px solid var(--border)',
-              borderRadius: 12, padding: 14, textAlign: 'left', fontSize: 12, color: 'var(--text2)',
-              display: 'flex', flexDirection: 'column', gap: 6,
-            }}>
-              <div><strong>Établissement :</strong> {doc.school}</div>
-              {studentDisplay && <div><strong>Élève :</strong> {studentDisplay}</div>}
-              {doc.revokedAt && (
-                <div><strong>Révoqué le :</strong> {new Date(doc.revokedAt).toLocaleDateString('fr-FR')}</div>
-              )}
-            </div>
+            {!isShortLookup && doc.school && (
+              <div style={{
+                width: '100%', background: 'var(--bg2)', border: '1px solid var(--border)',
+                borderRadius: 12, padding: 14, textAlign: 'left', fontSize: 12, color: 'var(--text2)',
+                display: 'flex', flexDirection: 'column', gap: 6,
+              }}>
+                <div><strong>Établissement :</strong> {doc.school}</div>
+                {studentDisplay && <div><strong>Élève :</strong> {studentDisplay}</div>}
+                {doc.revokedAt && (
+                  <div><strong>Révoqué le :</strong> {new Date(doc.revokedAt).toLocaleDateString('fr-FR')}</div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -248,7 +259,7 @@ export default function VerifyDocumentPage() {
               }}>
                 <Shield size={14} /> AUTHENTIQUE
               </span>
-              {doc.isDuplicate && (doc.reprintCount ?? 0) > 0 && (
+              {!isShortLookup && doc.isDuplicate && (doc.reprintCount ?? 0) > 0 && (
                 <span style={{
                   display: 'inline-flex', alignItems: 'center', gap: 5,
                   padding: '6px 12px', borderRadius: 20,
@@ -277,59 +288,92 @@ export default function VerifyDocumentPage() {
               Code : <strong style={{ color: 'var(--text)' }}>{doc.shortVerifyCode ?? doc.id}</strong>
             </span>
 
-            <div style={{
-              width: '100%', background: 'var(--bg2)', border: '1px solid var(--border)',
-              borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column',
-              gap: 12, textAlign: 'left', marginBottom: 18,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <Building2 size={16} style={{ color: 'var(--primary)', marginTop: 2, flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Établissement émetteur</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{doc.school}</div>
-                </div>
+            {isShortLookup ? (
+              <div style={{
+                width: '100%', background: 'var(--bg2)', border: '1px solid var(--border)',
+                borderRadius: 12, padding: 16, fontSize: 13, color: 'var(--text2)', lineHeight: 1.5, marginBottom: 14,
+              }}>
+                {doc.message || 'Référence reconnue authentique dans le registre officiel. Scannez le QR code pour comparer les résultats.'}
               </div>
-
-              {studentDisplay && (
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <User size={16} style={{ color: 'var(--blue)', marginTop: 2, flexShrink: 0 }} />
-                  <div>
-                    <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Élève</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{studentDisplay}</div>
-                  </div>
-                </div>
-              )}
-
-              {(classDisplay || yearDisplay || periodDisplay) && (
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <FileText size={16} style={{ color: 'var(--amber)', marginTop: 2, flexShrink: 0 }} />
-                  <div>
-                    <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Scolarité</div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
-                      {[classDisplay, periodDisplay, yearDisplay].filter(Boolean).join(' • ')}
+            ) : (
+              <>
+                <div style={{
+                  width: '100%', background: 'var(--bg2)', border: '1px solid var(--border)',
+                  borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column',
+                  gap: 12, textAlign: 'left', marginBottom: 18,
+                }}>
+                  {doc.school && (
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <Building2 size={16} style={{ color: 'var(--primary)', marginTop: 2, flexShrink: 0 }} />
+                      <div>
+                        <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Établissement émetteur</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{doc.school}</div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              )}
+                  )}
 
-              {issuedDisplay && (
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <Calendar size={16} style={{ color: 'var(--text3)', marginTop: 2, flexShrink: 0 }} />
-                  <div>
-                    <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Émis le</div>
-                    <div style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 500 }}>
-                      {new Date(issuedDisplay).toLocaleString('fr-FR', {
-                        day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
-                      })}
+                  {studentDisplay && (
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <User size={16} style={{ color: 'var(--blue)', marginTop: 2, flexShrink: 0 }} />
+                      <div>
+                        <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Élève</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{studentDisplay}</div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              )}
-            </div>
+                  )}
 
-            <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.4 }}>
-              Ce sceau numérique confirme l&apos;authenticité et l&apos;intégrité du document officiel délivré par l&apos;établissement.
-            </div>
+                  {(classDisplay || yearDisplay || periodDisplay) && (
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <FileText size={16} style={{ color: 'var(--amber)', marginTop: 2, flexShrink: 0 }} />
+                      <div>
+                        <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Classe &amp; Période</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+                          {[classDisplay, periodDisplay, yearDisplay].filter(Boolean).join(' • ')}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {(doc.generalAverageDisplay || doc.rankDisplay) && (
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <Award size={16} style={{ color: 'var(--success)', marginTop: 2, flexShrink: 0 }} />
+                      <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+                        {doc.generalAverageDisplay && (
+                          <div>
+                            <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Moyenne générale</div>
+                            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>{doc.generalAverageDisplay}</div>
+                          </div>
+                        )}
+                        {doc.rankDisplay && (
+                          <div>
+                            <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Rang</div>
+                            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>{doc.rankDisplay}</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {issuedDisplay && (
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <Calendar size={16} style={{ color: 'var(--text3)', marginTop: 2, flexShrink: 0 }} />
+                      <div>
+                        <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Date d&apos;émission</div>
+                        <div style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 500 }}>
+                          {new Date(issuedDisplay).toLocaleString('fr-FR', {
+                            day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.4 }}>
+                  Comparez la moyenne générale, le rang et le nom masqué avec votre document papier. Les notes détaillées et la conduite restent privées.
+                </div>
+              </>
+            )}
           </div>
         )}
 
