@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { requireAuth, requireRole } from '../middlewares/auth.ts';
+import { publicVerifyLimiter } from '../middlewares/rateLimit.ts';
 import type { StudentDocumentController } from '@infrastructure/http/controllers/StudentDocumentController';
 
 export function creerStudentDocumentRoutes(controller: StudentDocumentController): Router {
@@ -42,8 +43,8 @@ export function creerStudentDocumentRoutes(controller: StudentDocumentController
     controller.getLettreTransfert
   );
 
-  // Vérification publique — sans auth
-  router.get('/verify/:documentId', controller.verifyDocument);
+  // Vérification publique — sans auth (rate limitée + noindex)
+  router.get('/verify/:documentId', publicVerifyLimiter, controller.verifyDocument);
 
   return router;
 }

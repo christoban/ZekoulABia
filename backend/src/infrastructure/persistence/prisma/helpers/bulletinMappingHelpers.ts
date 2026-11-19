@@ -1,6 +1,10 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { Bulletin } from '@domain/entities/Bulletin';
-import type { BulletinExportData } from '@domain/ports/repositories/BulletinRepository';
+import type {
+  BulletinExportData,
+  BulletinPublicVerifyRecord,
+  BulletinRevocationLookupRecord,
+} from '@domain/ports/repositories/BulletinRepository';
 import type { BulletinTemplate, BulletinValidationStatus, ReportCardStatus } from '@domain/types/enums';
 import { whereElevesParClasse } from '@application/shared/studentEnrollment';
 
@@ -32,7 +36,7 @@ export const EXPORT_BULLETIN_INCLUDE = {
     },
   },
   subjectLines: { orderBy: [{ groupOrder: 'asc' }, { subjectName: 'asc' }] },
-  school: { include: { schoolConfig: true, schoolSettings: true } },
+  school: { include: { schoolConfig: true, schoolSettings: true, identityKit: true } },
   section: { select: { code: true } },
 } satisfies Prisma.ReportCardInclude;
 
@@ -51,6 +55,7 @@ export function toBulletinDomain(data: ReportCardAvecLignes): Bulletin {
     snapshotData: data.snapshotData ?? undefined,
     contentHash: data.contentHash ?? undefined,
     verifyToken: data.verifyToken ?? undefined,
+    shortVerifyCode: data.shortVerifyCode ?? undefined,
     reprintCount: data.reprintCount ?? 0,
     validationStatus: data.validationStatus as ReportCardStatus,
     revokedAt: data.revokedAt ?? undefined,
@@ -121,6 +126,7 @@ export function buildBulletinCreateData(bulletin: Bulletin): Prisma.ReportCardUn
     snapshotData: data.snapshotData === undefined ? undefined : (data.snapshotData as Prisma.InputJsonValue),
     contentHash: data.contentHash,
     verifyToken: data.verifyToken,
+    shortVerifyCode: data.shortVerifyCode,
     reprintCount: data.reprintCount ?? 0,
     validationStatus: data.validationStatus,
     revokedAt: data.revokedAt,
@@ -293,4 +299,101 @@ export async function findForPdfBulletinOp(
     include: EXPORT_BULLETIN_INCLUDE,
   });
   return row as unknown as BulletinExportData | null;
+}
+
+export async function findPublicVerifyRecordOp(
+  prisma: PrismaClient,
+  tokenOrCodeOrId: string,
+): Promise<BulletinPublicVerifyRecord | null> {
+  const key = tokenOrCodeOrId.trim();
+  if (!key) return null;
+  const row = await prisma.reportCard.findFirst({
+    where: {
+      OR: [
+        { verifyToken: key },
+        { shortVerifyCode: key.toUpperCase() },
+        { id: key },
+      ],
+    },
+    include: {
+      school: { select: { name: true } },
+      academicYear: { select: { name: true } },
+      academicPeriod: { select: { name: true } },
+      student: {
+        select: {
+          firstName: true,
+          lastName: true,
+          studentProfile: {
+            select: {
+              enrollmentsYearScoped: {
+                where: { status: 'ACTIVE' },
+                orderBy: { createdAt: 'desc' },
+                take: 1,
+                select: { class: { select: { name: true, level: true } } },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+  if (!row) return null;
+  const cls = row.student?.studentProfile?.enrollmentsYearScoped?.[0]?.class;
+  return {
+    id: row.id,
+    schoolId: row.schoolId,
+    schoolName: row.school?.name ?? 'Établissement',
+    studentFirstName: row.student?.firstName ?? '',
+    studentLastName: row.student?.lastName ?? '',
+    className: cls?.name ?? null,
+    classLevel: cls?.level ?? null,
+    academicYearName: row.academicYear?.name ?? null,
+    academicPeriodName: row.academicPeriod?.name ?? null,
+    issuedAt: row.createdAt,
+    computationVersion: row.computationVersion,
+    templateSpecId: row.templateSpecId,
+    templateVersion: row.templateVersion,
+    snapshotData: row.snapshotData,
+    contentHash: row.contentHash,
+    verifyToken: row.verifyToken,
+    shortVerifyCode: row.shortVerifyCode,
+    reprintCount: row.reprintCount,
+    validationStatus: row.validationStatus,
+    revokedAt: row.revokedAt,
+  };
+}
+
+export async function findRevocationByTokenOrIdOp(
+  prisma: PrismaClient,
+  tokenOrCodeOrId: string,
+): Promise<BulletinRevocationLookupRecord | null> {
+  const key = tokenOrCodeOrId.trim();
+  if (!key) return null;
+  const rev = await prisma.bulletinRevocationArchive.findFirst({
+    where: {
+      OR: [
+        { verifyToken: key },
+        { shortVerifyCode: key.toUpperCase() },
+        { originalReportCardId: key },
+      ],
+    },
+    orderBy: { revokedAt: 'desc' },
+  });
+  if (!rev) return null;
+
+  const [school, year, period, student] = await Promise.all([
+    prisma.school.findUnique({ where: { id: rev.schoolId }, select: { name: true } }),
+    prisma.academicYear.findUnique({ where: { id: rev.academicYearId }, select: { name: true } }),
+    prisma.academicPeriod.findUnique({ where: { id: rev.academicPeriodId }, select: { name: true } }),
+    prisma.user.findUnique({ where: { id: rev.studentId }, select: { firstName: true, lastName: true } }),
+  ]);
+
+  return {
+    ...rev,
+    schoolName: school?.name ?? null,
+    academicYearName: year?.name ?? null,
+    academicPeriodName: period?.name ?? null,
+    studentFirstName: student?.firstName ?? null,
+    studentLastName: student?.lastName ?? null,
+  };
 }

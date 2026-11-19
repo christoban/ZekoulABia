@@ -2,22 +2,49 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import { CheckCircle2, XCircle, Shield, Building2, Calendar, User, FileText, Loader2 } from 'lucide-react'
+import {
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  Shield,
+  Building2,
+  Calendar,
+  User,
+  FileText,
+  Loader2,
+  Copy,
+} from 'lucide-react'
 import Link from 'next/link'
 import LanguageSwitch from '@/components/LanguageSwitch'
 
+type VerifyStatus = 'AUTHENTIC' | 'REVOKED' | 'TAMPERED' | 'NOT_FOUND'
+
 interface VerifiedDocument {
   id: string
+  shortVerifyCode?: string
+  status?: VerifyStatus
   type: string
   school: string
-  generatedAt: string
+  yearName?: string
+  periodName?: string
+  className?: string
+  classLevel?: string | null
+  studentMaskedName?: string
+  issuedAt?: string
+  generatedAt?: string
+  revokedAt?: string
+  reprintCount?: number
+  isDuplicate?: boolean
+  computationVersion?: number
+  legacyFormat?: boolean
+  formatNotice?: string | null
   authentic: boolean
+  message?: string
   data?: {
     studentName?: string
-    matricule?: string | null
     className?: string
     yearName?: string
-    motif?: string
+    periodName?: string
     [key: string]: unknown
   }
 }
@@ -33,17 +60,23 @@ export default function VerifyDocumentPage() {
   useEffect(() => {
     if (!documentId) {
       setLoading(false)
-      setError('Identifiant de document manquant')
+      setError('Identifiant de vérification manquant')
       return
     }
 
-    fetch(`/api/v2/verify/${encodeURIComponent(documentId)}`)
+    const search = typeof window !== 'undefined' ? window.location.search : ''
+    const queryToken = new URLSearchParams(search).get('token')
+    const url = queryToken
+      ? `/api/v2/verify/${encodeURIComponent(documentId)}?token=${encodeURIComponent(queryToken)}`
+      : `/api/v2/verify/${encodeURIComponent(documentId)}`
+
+    fetch(url)
       .then(async (res) => {
         const json = await res.json().catch(() => ({}))
-        if (!res.ok || !json.success) {
-          setError(json.message || 'Document introuvable ou signature invalide')
+        if (!res.ok || !json.document) {
+          setError(json.message || 'Document introuvable ou code de vérification invalide.')
         } else {
-          setDoc(json.document)
+          setDoc(json.document as VerifiedDocument)
         }
       })
       .catch(() => {
@@ -53,6 +86,18 @@ export default function VerifyDocumentPage() {
         setLoading(false)
       })
   }, [documentId])
+
+  const effectiveStatus: VerifyStatus =
+    doc?.status ?? (doc ? (doc.authentic ? 'AUTHENTIC' : 'REVOKED') : 'NOT_FOUND')
+  const isAuthentic = !loading && Boolean(doc) && effectiveStatus === 'AUTHENTIC' && doc?.authentic === true
+  const isRevoked = !loading && Boolean(doc) && (effectiveStatus === 'REVOKED' || effectiveStatus === 'TAMPERED')
+  const isNotFound = !loading && (!doc || effectiveStatus === 'NOT_FOUND' || Boolean(error))
+
+  const studentDisplay = doc?.studentMaskedName ?? doc?.data?.studentName
+  const classDisplay = doc?.className ?? doc?.data?.className
+  const yearDisplay = doc?.yearName ?? doc?.data?.yearName
+  const periodDisplay = doc?.periodName ?? doc?.data?.periodName
+  const issuedDisplay = doc?.issuedAt ?? doc?.generatedAt
 
   return (
     <div style={{
@@ -68,13 +113,9 @@ export default function VerifyDocumentPage() {
       paddingBottom: 40,
       fontFamily: 'var(--font-nunito), Nunito, sans-serif'
     }}>
-      {/* Motif géométrique discret */}
       <div className="login-bg" />
-
-      {/* Bande multicolore camerounaise */}
       <div className="deco-band" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, height: 5 }} />
 
-      {/* En-tête commun */}
       <header style={{
         position: 'absolute', top: 5, left: 0, right: 0, zIndex: 10,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -101,7 +142,6 @@ export default function VerifyDocumentPage() {
         <LanguageSwitch compact />
       </header>
 
-      {/* Carte principale */}
       <main style={{
         position: 'relative',
         zIndex: 1,
@@ -120,109 +160,128 @@ export default function VerifyDocumentPage() {
         {loading && (
           <div style={{ padding: '36px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
             <Loader2 size={36} className="animate-spin" style={{ color: 'var(--primary)' }} />
-            <span style={{ fontSize: 14, color: 'var(--text2)', fontWeight: 600 }}>Vérification de l'authenticité en cours...</span>
+            <span style={{ fontSize: 14, color: 'var(--text2)', fontWeight: 600 }}>Vérification de l&apos;authenticité en cours...</span>
           </div>
         )}
 
-        {!loading && error && (
+        {isNotFound && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, width: '100%' }}>
-            <div
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: '50%',
-                background: 'var(--red-light)',
-                color: 'var(--red)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
+            <div style={{
+              width: 64, height: 64, borderRadius: '50%',
+              background: 'var(--red-light)', color: 'var(--red)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
               <XCircle size={36} />
             </div>
             <div>
+              <span style={{
+                display: 'inline-block', padding: '4px 12px', borderRadius: 20,
+                background: 'var(--red-light)', color: 'var(--red)',
+                fontSize: 11, fontWeight: 800, marginBottom: 8,
+              }}>
+                INTROUVABLE
+              </span>
               <h1 style={{ margin: '0 0 6px 0', fontSize: 20, fontWeight: 800, color: 'var(--red)', fontFamily: 'var(--font-spectral),Spectral,serif' }}>
                 Document non authentifié
               </h1>
               <p style={{ margin: 0, fontSize: 13, color: 'var(--text2)' }}>
-                {error}
+                {error || 'Document introuvable ou code de vérification invalide.'}
               </p>
-            </div>
-            <div
-              style={{
-                padding: '12px 16px',
-                borderRadius: 10,
-                background: 'var(--red-light)',
-                border: '1px solid rgba(217,72,31,0.2)',
-                fontSize: 12,
-                color: 'var(--red)',
-                marginTop: 4,
-                width: '100%'
-              }}
-            >
-              Ce document n'existe pas dans le registre sécurisé ou a été révoqué.
             </div>
           </div>
         )}
 
-        {!loading && doc && (
+        {isRevoked && doc && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, width: '100%' }}>
+            <div style={{
+              width: 64, height: 64, borderRadius: '50%',
+              background: 'var(--amber-light, #fef3c7)', color: 'var(--amber, #b45309)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <AlertTriangle size={34} />
+            </div>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '6px 14px', borderRadius: 20,
+              background: 'var(--amber-light, #fef3c7)', color: 'var(--amber, #b45309)',
+              fontSize: 12, fontWeight: 800,
+            }}>
+              {effectiveStatus === 'TAMPERED' ? 'INTÉGRITÉ COMPROMISE' : 'RÉVOQUÉ OU REMPLACÉ'}
+            </div>
+            <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: 'var(--text)', fontFamily: 'var(--font-spectral),Spectral,serif' }}>
+              {doc.type}
+            </h1>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--text2)', lineHeight: 1.5 }}>
+              {doc.message || 'Ce document a été révoqué ou remplacé par une nouvelle version officielle.'}
+            </p>
+            <div style={{
+              width: '100%', background: 'var(--bg2)', border: '1px solid var(--border)',
+              borderRadius: 12, padding: 14, textAlign: 'left', fontSize: 12, color: 'var(--text2)',
+              display: 'flex', flexDirection: 'column', gap: 6,
+            }}>
+              <div><strong>Établissement :</strong> {doc.school}</div>
+              {studentDisplay && <div><strong>Élève :</strong> {studentDisplay}</div>}
+              {doc.revokedAt && (
+                <div><strong>Révoqué le :</strong> {new Date(doc.revokedAt).toLocaleDateString('fr-FR')}</div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {isAuthentic && doc && (
           <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: '50%',
-                background: 'var(--green-light)',
-                color: 'var(--success)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 16,
-              }}
-            >
+            <div style={{
+              width: 64, height: 64, borderRadius: '50%',
+              background: 'var(--green-light)', color: 'var(--success)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: 14,
+            }}>
               <CheckCircle2 size={36} />
             </div>
 
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 14px',
-                borderRadius: 20,
-                background: 'var(--green-light)',
-                border: '1px solid rgba(47, 143, 91, 0.25)',
-                color: 'var(--success)',
-                fontSize: 12,
-                fontWeight: 800,
-                marginBottom: 14,
-              }}
-            >
-              <Shield size={14} /> DOCUMENT OFFICIEL AUTHENTIFIÉ
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginBottom: 14 }}>
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '6px 14px', borderRadius: 20,
+                background: 'var(--green-light)', border: '1px solid rgba(47, 143, 91, 0.25)',
+                color: 'var(--success)', fontSize: 12, fontWeight: 800,
+              }}>
+                <Shield size={14} /> AUTHENTIQUE
+              </span>
+              {doc.isDuplicate && (doc.reprintCount ?? 0) > 0 && (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  padding: '6px 12px', borderRadius: 20,
+                  background: 'var(--bg2)', border: '1px solid var(--border)',
+                  color: 'var(--text)', fontSize: 12, fontWeight: 700,
+                }}>
+                  <Copy size={13} /> Duplicata n° {doc.reprintCount}
+                </span>
+              )}
+              {doc.legacyFormat && (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center',
+                  padding: '6px 12px', borderRadius: 20,
+                  background: 'var(--bg2)', border: '1px solid var(--border)',
+                  color: 'var(--text2)', fontSize: 11, fontWeight: 700,
+                }}>
+                  {doc.formatNotice || 'Ancien format (v1)'}
+                </span>
+              )}
             </div>
 
             <h1 style={{ margin: '0 0 4px 0', fontSize: 22, fontWeight: 800, color: 'var(--text)', fontFamily: 'var(--font-spectral),Spectral,serif' }}>
               {doc.type}
             </h1>
-            <span style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 20 }}>
-              Référence : <strong style={{ color: 'var(--text)' }}>{doc.id}</strong>
+            <span style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 18 }}>
+              Code : <strong style={{ color: 'var(--text)' }}>{doc.shortVerifyCode ?? doc.id}</strong>
             </span>
 
-            {/* Fiche d'informations certifiées */}
-            <div
-              style={{
-                width: '100%',
-                background: 'var(--bg2)',
-                border: '1px solid var(--border)',
-                borderRadius: 12,
-                padding: 16,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 12,
-                textAlign: 'left',
-                marginBottom: 20,
-              }}
-            >
+            <div style={{
+              width: '100%', background: 'var(--bg2)', border: '1px solid var(--border)',
+              borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column',
+              gap: 12, textAlign: 'left', marginBottom: 18,
+            }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                 <Building2 size={16} style={{ color: 'var(--primary)', marginTop: 2, flexShrink: 0 }} />
                 <div>
@@ -231,60 +290,52 @@ export default function VerifyDocumentPage() {
                 </div>
               </div>
 
-              {doc.data?.studentName && (
+              {studentDisplay && (
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                   <User size={16} style={{ color: 'var(--blue)', marginTop: 2, flexShrink: 0 }} />
                   <div>
-                    <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Élève concerné</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{doc.data.studentName}</div>
-                    {doc.data.matricule && (
-                      <div style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 500 }}>Matricule : {doc.data.matricule}</div>
-                    )}
+                    <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Élève</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{studentDisplay}</div>
                   </div>
                 </div>
               )}
 
-              {doc.data?.className && (
+              {(classDisplay || yearDisplay || periodDisplay) && (
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                   <FileText size={16} style={{ color: 'var(--amber)', marginTop: 2, flexShrink: 0 }} />
                   <div>
-                    <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Classe & Année</div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Scolarité</div>
                     <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
-                      {doc.data.className} {doc.data.yearName ? `• ${doc.data.yearName}` : ''}
+                      {[classDisplay, periodDisplay, yearDisplay].filter(Boolean).join(' • ')}
                     </div>
                   </div>
                 </div>
               )}
 
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <Calendar size={16} style={{ color: 'var(--text3)', marginTop: 2, flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Délivré le</div>
-                  <div style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 500 }}>
-                    {new Date(doc.generatedAt).toLocaleString('fr-FR', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+              {issuedDisplay && (
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <Calendar size={16} style={{ color: 'var(--text3)', marginTop: 2, flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Émis le</div>
+                    <div style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 500 }}>
+                      {new Date(issuedDisplay).toLocaleString('fr-FR', {
+                        day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                      })}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.4 }}>
-              Ce sceau numérique atteste que ce document a été généré via le système d'information ZekoulABia et que son intégrité est certifiée conforme par l'établissement.
+              Ce sceau numérique confirme l&apos;authenticité et l&apos;intégrité du document officiel délivré par l&apos;établissement.
             </div>
           </div>
         )}
 
-        <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--border)', width: '100%' }}>
-          <Link
-            href="/login"
-            style={{ fontSize: 13, color: 'var(--primary)', textDecoration: 'none', fontWeight: 700, transition: 'color 0.15s' }}
-          >
-            ← Retour à l'accueil
+        <div style={{ marginTop: 22, paddingTop: 14, borderTop: '1px solid var(--border)', width: '100%' }}>
+          <Link href="/login" style={{ fontSize: 13, color: 'var(--primary)', textDecoration: 'none', fontWeight: 700 }}>
+            ← Retour à l&apos;accueil
           </Link>
         </div>
       </main>

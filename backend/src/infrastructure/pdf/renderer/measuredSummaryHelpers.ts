@@ -8,6 +8,7 @@ import type {
   VerifyQrBlockSpec,
 } from '@domain/types/bulletinTemplateSpec';
 import type { BulletinRenderOptions } from '@domain/ports/services/BulletinRendererPort';
+import { deriveShortVerifyCode } from '@domain/policies/BulletinVerifyCrypto';
 import { formatAbsenceHoursDisplay } from '@application/reportCard/bulletinEnrichmentHelpers';
 import type { FontSet, MeasuredPdfDoc } from './measuredHeaderHelpers';
 import { formatRankLabel, resolveApcCote } from './measuredSubjectTableHelpers';
@@ -240,6 +241,8 @@ export function drawSignaturesAndQrBlock(
     if (slot === 'mainTeacher' && options.classMasterComment && options.classMasterComment.trim().length > 0) {
       doc.font(fonts.regular).fontSize(6.8).fillColor('#0f172a')
         .text(options.classMasterComment.trim(), sx + 4, boxTop + 16, { width: boxW - 8, height: boxH - 20 });
+    } else if (slot === 'vicePrincipal' && options.school.censorSignatureBuffer) {
+      try { doc.image(options.school.censorSignatureBuffer, sx + 8, boxTop + 15, { fit: [boxW - 16, boxH - 18] }); } catch { /* ignore */ }
     } else if (slot === 'principal') {
       const innerY = boxTop + 15;
       const innerH = boxH - 18;
@@ -259,7 +262,7 @@ export function drawSignaturesAndQrBlock(
   if (qrSpec && qrBuffer) {
     const qx = left + usableW - qrSize;
     doc.image(qrBuffer, qx, boxTop, { fit: [qrSize, qrSize] });
-    const displayCode = options.shortVerifyCode || options.verifyToken?.slice(0, 12);
+    const displayCode = options.shortVerifyCode || (options.verifyToken ? deriveShortVerifyCode(options.verifyToken) : undefined);
     if (qrSpec.showVerificationCode && displayCode) {
       doc.font(fonts.regular).fontSize(5.5).fillColor('#334155')
         .text(displayCode, qx - 2, boxTop + qrSize + 2, { width: qrSize + 4, align: 'center' });

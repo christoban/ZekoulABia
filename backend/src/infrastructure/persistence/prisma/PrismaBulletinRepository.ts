@@ -6,7 +6,8 @@ import type {
   BulletinAvecContexteClasse,
   BulletinEnrichi,
   BulletinExportData,
-  BulletinRevocationArchiveRecord,
+  BulletinPublicVerifyRecord,
+  BulletinRevocationLookupRecord,
 } from '@domain/ports/repositories/BulletinRepository';
 import { whereProfilesParClasse } from '@application/shared/studentEnrollment';
 import {
@@ -14,6 +15,8 @@ import {
   findForExportBulletinsOp,
   findForPdfBulletinOp,
   findPaginatedBulletinsOp,
+  findPublicVerifyRecordOp,
+  findRevocationByTokenOrIdOp,
   getMoyennesClasseOp,
   getStatsValidationParClasseOp,
   toBulletinDomain,
@@ -189,6 +192,7 @@ export class PrismaBulletinRepository implements BulletinRepository {
         snapshotData: data.snapshotData === undefined ? undefined : (data.snapshotData as Prisma.InputJsonValue),
         contentHash: data.contentHash,
         verifyToken: data.verifyToken,
+        shortVerifyCode: data.shortVerifyCode,
         reprintCount: data.reprintCount ?? 0,
         validationStatus: data.validationStatus,
         revokedAt: data.revokedAt,
@@ -225,6 +229,7 @@ export class PrismaBulletinRepository implements BulletinRepository {
           snapshotData: revoked.snapshotData === undefined ? undefined : (revoked.snapshotData as Prisma.InputJsonValue),
           contentHash: revoked.contentHash ?? null,
           verifyToken: revoked.verifyToken ?? null,
+          shortVerifyCode: revoked.shortVerifyCode ?? null,
           revokedById: revoked.revokedById ?? 'SYSTEM',
           revocationReason: revoked.revocationReason ?? 'Régénération contrôlée',
           revokedAt: revoked.revokedAt ?? new Date(),
@@ -235,10 +240,42 @@ export class PrismaBulletinRepository implements BulletinRepository {
     });
   }
 
-  async findRevocationsByStudent(schoolId: string, studentId: string): Promise<BulletinRevocationArchiveRecord[]> {
-    return this.prisma.bulletinRevocationArchive.findMany({
+  async findRevocationsByStudent(schoolId: string, studentId: string): Promise<BulletinRevocationLookupRecord[]> {
+    const rows = await this.prisma.bulletinRevocationArchive.findMany({
       where: { schoolId, studentId },
       orderBy: { revokedAt: 'desc' },
+    });
+    return rows.map((r) => ({
+      ...r,
+      schoolName: null,
+      academicYearName: null,
+      academicPeriodName: null,
+      studentFirstName: null,
+      studentLastName: null,
+    }));
+  }
+
+  async findRevocationByTokenOrId(tokenOrCodeOrId: string): Promise<BulletinRevocationLookupRecord | null> {
+    return findRevocationByTokenOrIdOp(this.prisma, tokenOrCodeOrId);
+  }
+
+  async findPublicVerifyRecord(tokenOrCodeOrId: string): Promise<BulletinPublicVerifyRecord | null> {
+    return findPublicVerifyRecordOp(this.prisma, tokenOrCodeOrId);
+  }
+
+  async incrementReprintCount(bulletinId: string, schoolId: string): Promise<number> {
+    return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.reportCard.findFirst({
+        where: { id: bulletinId, schoolId },
+        select: { id: true },
+      });
+      if (!existing) throw new Error(`Bulletin introuvable pour réimpression : ${bulletinId}`);
+      const updated = await tx.reportCard.update({
+        where: { id: bulletinId },
+        data: { reprintCount: { increment: 1 } },
+        select: { reprintCount: true },
+      });
+      return updated.reprintCount;
     });
   }
 

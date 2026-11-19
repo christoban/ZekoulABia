@@ -38,6 +38,7 @@ import {
   calculerMentionBulletin,
   canonicalHashSnapshot,
   decodeBase64PhotoUrl,
+  deriveShortVerifyCode,
   formatAbsenceHoursDisplay,
   genererVerifyToken,
   mapNotesToSnapshotInputs,
@@ -69,6 +70,7 @@ export interface EnrichedSnapshotEntry {
   absenceCount: number;
   contentHash: string;
   verifyToken: string;
+  shortVerifyCode: string;
 }
 
 export interface ClassSnapshotsBundle {
@@ -299,12 +301,14 @@ export async function construireEtEnrichirSnapshotsClasse(params: {
       classProfile,
     };
 
+    const verifyToken = genererVerifyToken();
     entriesByStudentId.set(eleve.id, {
       snapshot: enriched,
       mention: calculerMentionBulletin(enriched.generalAverage, params.template, params.langue),
       absenceCount,
       contentHash: canonicalHashSnapshot(enriched),
-      verifyToken: genererVerifyToken(),
+      verifyToken,
+      shortVerifyCode: deriveShortVerifyCode(verifyToken),
     });
   }
 

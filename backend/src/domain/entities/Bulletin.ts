@@ -8,6 +8,7 @@
  */
 import type { BulletinTemplate, ReportCardStatus } from '@domain/types/enums';
 import { BulletinBloqueError } from '@domain/errors/BulletinBloqueError';
+import { deriveShortVerifyCode } from '@domain/policies/BulletinVerifyCrypto';
 
 // --- Ligne matière (value object imbriqué) ---
 
@@ -63,6 +64,7 @@ export interface BulletinProps {
   snapshotData?: unknown;
   contentHash?: string;
   verifyToken?: string;
+  shortVerifyCode?: string;
   reprintCount?: number;
   validationStatus: ReportCardStatus;
   revokedAt?: Date;
@@ -144,6 +146,8 @@ export class Bulletin {
   get snapshotData(): unknown { return this.props.snapshotData; }
   get contentHash(): string | undefined { return this.props.contentHash; }
   get verifyToken(): string | undefined { return this.props.verifyToken; }
+  get shortVerifyCode(): string | undefined { return this.props.shortVerifyCode; }
+  get reprintCount(): number { return this.props.reprintCount ?? 0; }
   get generalAverage(): number | undefined { return this.props.generalAverage; }
   get rank(): number | undefined { return this.props.rank; }
   get mention(): string | undefined { return this.props.mention; }
@@ -235,6 +239,7 @@ export class Bulletin {
     snapshotData: unknown;
     contentHash: string;
     verifyToken: string;
+    shortVerifyCode?: string;
     computationVersion?: number;
     templateSpecId?: string;
     templateVersion?: number;
@@ -245,6 +250,7 @@ export class Bulletin {
     this.props.snapshotData = params.snapshotData;
     this.props.contentHash = params.contentHash;
     this.props.verifyToken = params.verifyToken;
+    this.props.shortVerifyCode = params.shortVerifyCode ?? deriveShortVerifyCode(params.verifyToken);
     this.props.computationVersion = params.computationVersion ?? 2;
     this.props.templateSpecId = params.templateSpecId;
     this.props.templateVersion = params.templateVersion ?? 1;

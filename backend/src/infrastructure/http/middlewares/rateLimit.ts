@@ -120,3 +120,15 @@ export const resultatsConcoursLimiter = rateLimit({
   },
 });
 
+export const publicVerifyLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    status: 'RATE_LIMITED',
+    message: 'Trop de requêtes de vérification. Veuillez réessayer dans une minute.',
+  },
+});
+

@@ -229,12 +229,13 @@ export class GenererBulletinUseCase {
         snapshotData: entry.snapshot,
         contentHash: entry.contentHash,
         verifyToken: entry.verifyToken,
+        shortVerifyCode: entry.shortVerifyCode,
         computationVersion: 2,
         templateSpecId: plan.templateSpecId ?? undefined,
         templateVersion: plan.templateVersion,
       });
 
-      const verifyUrl = `${verifyBase}/verify/${bulletin.id}?token=${entry.verifyToken}`;
+      const verifyUrl = `${verifyBase}/verify/${entry.verifyToken}`;
       const storedKey = await renderAndStoreBulletinIfSpecActive({
         bulletinId: bulletin.id,
         schoolId: commande.schoolId,
@@ -253,6 +254,7 @@ export class GenererBulletinUseCase {
         schoolMotto: commande.schoolMotto,
         verifyUrl,
         verifyToken: entry.verifyToken,
+        shortVerifyCode: entry.shortVerifyCode,
         studentPhotoUrl: rawPhotoByStudent.get(eleve.id),
         bulletinRenderer: this.bulletinRenderer,
         bulletinPdfStorage: this.bulletinPdfStorage,

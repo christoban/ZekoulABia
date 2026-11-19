@@ -5,6 +5,8 @@ import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolCo
 import type { BulletinExportData, BulletinRepository } from '@domain/ports/repositories/BulletinRepository';
 import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
 import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
+import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
+import { LocalAndDataUriSchoolAssetStorageAdapter } from '@infrastructure/services/storage/LocalAndDataUriSchoolAssetStorageAdapter';
 import { getOrRegenerateSealedBulletinPdf } from '@application/reportCard/bulletinPdfLifecycle';
 import { resolveLanguage } from '@domain/policies/LanguagePolicy';
 import { generateBulletinPdf } from '@infrastructure/pdf/report-card/index';
@@ -13,6 +15,7 @@ import { getEffectiveSchoolSettings } from '@infrastructure/services/school-sett
 import { resolveFrontendUrl } from '@infrastructure/config/EnvAppConfig';
 
 const VERIFY_BASE = resolveFrontendUrl();
+const DEFAULT_SCHOOL_ASSET_STORAGE = new LocalAndDataUriSchoolAssetStorageAdapter();
 
 export async function isBulletinBlockedByUnpaidFees(params: {
   schoolConfigRepository?: SchoolConfigRepository;
@@ -66,6 +69,8 @@ export async function renderReportCardPdfBuffer(
   measuredDeps?: {
     bulletinRenderer?: BulletinRendererPort;
     bulletinPdfStorage?: BulletinPdfStoragePort;
+    schoolAssetStorage?: SchoolAssetStoragePort;
+    forceRegenerateFromSnapshot?: boolean;
   },
 ): Promise<{ pdfBuffer: Buffer; filename: string; studentName: string }> {
   const settings = cachedSettings ?? (await getEffectiveSchoolSettings(schoolId));
@@ -85,8 +90,10 @@ export async function renderReportCardPdfBuffer(
     language: langue,
     verifyBaseUrl: VERIFY_BASE,
     schoolMotto: settings.schoolMotto,
+    forceRegenerateFromSnapshot: measuredDeps?.forceRegenerateFromSnapshot,
     bulletinRenderer: measuredDeps?.bulletinRenderer,
     bulletinPdfStorage: measuredDeps?.bulletinPdfStorage,
+    schoolAssetStorage: measuredDeps?.schoolAssetStorage ?? DEFAULT_SCHOOL_ASSET_STORAGE,
   });
   if (sealedBuffer) {
     return { pdfBuffer: sealedBuffer, filename, studentName };

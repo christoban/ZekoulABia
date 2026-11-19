@@ -12,10 +12,13 @@ import type { BulletinExportData, BulletinRepository } from '@domain/ports/repos
 import type { BulletinTemplateAssignmentRepository } from '@domain/ports/repositories/BulletinTemplateAssignmentRepository';
 import type { SchoolConfigData, SchoolConfigRepository } from '@domain/ports/repositories/SchoolConfigRepository';
 import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
+import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
+import type { SchoolIdentityKitRecord } from '@domain/ports/repositories/SchoolIdentityKitRepository';
 import type {
   BulletinGradingPolicy,
   BulletinRendererPort,
   BulletinRenderOptions,
+  SchoolIdentityRenderContext,
 } from '@domain/ports/services/BulletinRendererPort';
 import type { StudentBulletinSnapshot } from '@domain/types/bulletinSnapshot';
 import type { BulletinTemplateSpec } from '@domain/types/bulletinTemplateSpec';
@@ -24,6 +27,7 @@ import {
   resolveEffectiveTemplateAssignment,
   resolvePeriodKindFromName,
 } from '@domain/policies/BulletinTemplatePolicy';
+import { deriveShortVerifyCode } from '@domain/policies/BulletinVerifyCrypto';
 import {
   findDefaultSpecForTemplate,
   getPublishedTemplateSpec,
@@ -122,6 +126,58 @@ export function resolveActiveSpecForBulletin(params: {
   return findDefaultSpecForTemplate(params.template);
 }
 
+function cleanOpt(val: string | null | undefined): string | null {
+  const t = val?.trim();
+  return t && t.length > 0 ? t : null;
+}
+
+export async function buildSchoolIdentityRenderContext(params: {
+  schoolName: string;
+  language: 'fr' | 'en';
+  fallbackMotto?: string | null;
+  fallbackCity?: string | null;
+  fallbackPhone?: string | null;
+  fallbackLogoUrl?: string | null;
+  kit?: SchoolIdentityKitRecord | null;
+  schoolAssetStorage?: SchoolAssetStoragePort;
+}): Promise<SchoolIdentityRenderContext> {
+  const isEn = params.language === 'en';
+  const k = params.kit;
+  const storage = params.schoolAssetStorage;
+  const pick = (fr?: string | null, en?: string | null) =>
+    cleanOpt(isEn ? (en ?? fr) : (fr ?? en));
+
+  const [logoBuffer, coatOfArmsBuffer, stampBuffer, principalSignatureBuffer, censorSignatureBuffer] = storage
+    ? await Promise.all([
+        storage.readAssetBuffer(k?.logoAssetKey ?? params.fallbackLogoUrl),
+        k?.useCoatOfArms ? storage.readAssetBuffer(k.coatOfArmsAssetKey) : Promise.resolve(null),
+        storage.readAssetBuffer(k?.stampAssetKey),
+        storage.readAssetBuffer(k?.principalSignatureAssetKey),
+        storage.readAssetBuffer(k?.censorSignatureAssetKey),
+      ])
+    : [null, null, null, null, null];
+
+  return {
+    schoolName: params.schoolName,
+    schoolMotto: pick(k?.mottoFr, k?.mottoEn) ?? cleanOpt(params.fallbackMotto),
+    regionalDelegation: pick(k?.regionalDelegationFr, k?.regionalDelegationEn),
+    departmentalDelegation: pick(k?.departmentalDelegationFr, k?.departmentalDelegationEn),
+    city: cleanOpt(k?.city) ?? cleanOpt(params.fallbackCity),
+    phone: cleanOpt(k?.phone) ?? cleanOpt(params.fallbackPhone),
+    bp: cleanOpt(k?.poBox),
+    foundingYear: k?.foundingYear ?? null,
+    authorizationNumber: cleanOpt(k?.authorizationNumber),
+    accentColor: cleanOpt(k?.accentColor),
+    coatOfArmsEnabled: k?.useCoatOfArms ?? false,
+    logoUrl: cleanOpt(params.fallbackLogoUrl),
+    logoBuffer,
+    coatOfArmsBuffer,
+    stampBuffer,
+    principalSignatureBuffer,
+    censorSignatureBuffer,
+  };
+}
+
 export function buildRenderOptionsForExport(
   reportCard: BulletinExportData,
   params: {
@@ -129,17 +185,22 @@ export function buildRenderOptionsForExport(
     language: 'fr' | 'en';
     verifyBaseUrl: string;
     schoolMotto?: string | null;
+    schoolIdentity?: SchoolIdentityRenderContext;
   },
 ): BulletinRenderOptions {
   const cls = reportCard.student?.studentProfile?.enrollmentsYearScoped?.[0]?.class;
   const studentPhotoBuffer = decodeBase64PhotoUrl(reportCard.student?.studentProfile?.photoUrl);
   const verifyToken = reportCard.verifyToken ?? undefined;
+  const shortVerifyCode =
+    reportCard.shortVerifyCode ?? (verifyToken ? deriveShortVerifyCode(verifyToken) : undefined);
   const verifyUrl = verifyToken
-    ? `${params.verifyBaseUrl}/verify/${reportCard.id}?token=${verifyToken}`
+    ? `${params.verifyBaseUrl}/verify/${verifyToken}`
     : `${params.verifyBaseUrl}/verify/${reportCard.id}`;
   const reprintCount = reportCard.reprintCount ?? 0;
 
   const sc = reportCard.school?.schoolConfig;
+  const kit = reportCard.school?.identityKit;
+  const isEn = params.language === 'en';
   const gradingPolicy: BulletinGradingPolicy = {
     mode: sc?.sequenceCalculationMode ?? 'single',
     classTestWeight: sc?.classTestWeight ?? undefined,
@@ -147,6 +208,24 @@ export function buildRenderOptionsForExport(
     ds1Weight: sc?.ds1Weight ?? undefined,
     ds2Weight: sc?.ds2Weight ?? undefined,
     compositionWeight: sc?.compositionWeight ?? undefined,
+  };
+
+  const defaultSchoolCtx: SchoolIdentityRenderContext = params.schoolIdentity ?? {
+    schoolName: reportCard.school?.name ?? 'Établissement',
+    schoolMotto:
+      cleanOpt(isEn ? (kit?.mottoEn ?? kit?.mottoFr) : (kit?.mottoFr ?? kit?.mottoEn)) ??
+      cleanOpt(params.schoolMotto) ??
+      cleanOpt(reportCard.school?.schoolSettings?.schoolMotto),
+    regionalDelegation: cleanOpt(isEn ? (kit?.regionalDelegationEn ?? kit?.regionalDelegationFr) : (kit?.regionalDelegationFr ?? kit?.regionalDelegationEn)),
+    departmentalDelegation: cleanOpt(isEn ? (kit?.departmentalDelegationEn ?? kit?.departmentalDelegationFr) : (kit?.departmentalDelegationFr ?? kit?.departmentalDelegationEn)),
+    city: cleanOpt(kit?.city) ?? cleanOpt(reportCard.school?.city),
+    phone: cleanOpt(kit?.phone) ?? cleanOpt(reportCard.school?.phone),
+    bp: cleanOpt(kit?.poBox),
+    foundingYear: kit?.foundingYear ?? null,
+    authorizationNumber: cleanOpt(kit?.authorizationNumber),
+    accentColor: cleanOpt(kit?.accentColor),
+    coatOfArmsEnabled: kit?.useCoatOfArms ?? false,
+    logoUrl: cleanOpt(reportCard.school?.logoUrl),
   };
 
   return {
@@ -159,19 +238,13 @@ export function buildRenderOptionsForExport(
     isAnnual: reportCard.template === 'ANNUAL',
     verifyUrl,
     verifyToken,
+    shortVerifyCode,
     isDuplicate: reprintCount > 0,
     reprintCount,
     language: params.language,
     studentPhotoBuffer,
     gradingPolicy,
-    school: {
-      schoolName: reportCard.school?.name ?? 'Établissement',
-      schoolMotto: params.schoolMotto ?? reportCard.school?.schoolSettings?.schoolMotto ?? '',
-      city: reportCard.school?.city ?? null,
-      phone: reportCard.school?.phone ?? null,
-      regionalDelegation: reportCard.school?.region ? `Délégation Régionale : ${reportCard.school.region}` : null,
-      logoUrl: reportCard.school?.logoUrl ?? null,
-    },
+    school: defaultSchoolCtx,
   };
 }
 
@@ -183,6 +256,7 @@ export async function sealAndStoreBulletinsForClass(params: {
   bulletinRenderer?: BulletinRendererPort;
   bulletinPdfStorage?: BulletinPdfStoragePort;
   schoolConfigRepository?: SchoolConfigRepository;
+  schoolAssetStorage?: SchoolAssetStoragePort;
   verifyBaseUrl?: string;
 }): Promise<{ sealedCount: number }> {
   if (!params.bulletinRenderer || !params.bulletinPdfStorage) {
@@ -216,10 +290,21 @@ export async function sealAndStoreBulletinsForClass(params: {
     const sectionCode =
       row.section?.code ?? row.student?.studentProfile?.enrollmentsYearScoped?.[0]?.class?.section?.code ?? null;
     const language = resolveLanguage(row.school?.subsystem, sectionCode);
+    const schoolIdentity = await buildSchoolIdentityRenderContext({
+      schoolName: row.school?.name ?? 'Établissement',
+      language,
+      fallbackMotto: row.school?.schoolSettings?.schoolMotto,
+      fallbackCity: row.school?.city,
+      fallbackPhone: row.school?.phone,
+      fallbackLogoUrl: row.school?.logoUrl,
+      kit: row.school?.identityKit,
+      schoolAssetStorage: params.schoolAssetStorage,
+    });
     const options = buildRenderOptionsForExport(row, {
       role: 'ADMIN',
       language,
       verifyBaseUrl,
+      schoolIdentity,
     });
 
     const pdfBuffer = await params.bulletinRenderer.render(row.snapshotData, spec, options);
@@ -247,8 +332,10 @@ export async function getOrRegenerateSealedBulletinPdf(params: {
   language: 'fr' | 'en';
   verifyBaseUrl: string;
   schoolMotto?: string | null;
+  forceRegenerateFromSnapshot?: boolean;
   bulletinRenderer?: BulletinRendererPort;
   bulletinPdfStorage?: BulletinPdfStoragePort;
+  schoolAssetStorage?: SchoolAssetStoragePort;
 }): Promise<Buffer | null> {
   const useMeasured = params.reportCard.school?.schoolConfig?.useMeasuredBulletinRenderer === true;
   const spec = resolveActiveSpecForBulletin({
@@ -262,23 +349,34 @@ export async function getOrRegenerateSealedBulletinPdf(params: {
     return null;
   }
 
-  if (params.bulletinPdfStorage && params.reportCard.pdfUrl) {
+  if (!params.forceRegenerateFromSnapshot && params.bulletinPdfStorage && params.reportCard.pdfUrl) {
     const cached = await params.bulletinPdfStorage.readPdf(params.reportCard.pdfUrl);
     if (cached && cached.length > 0) {
       return cached;
     }
   }
 
-  // PDF absent du stockage : régénération stricte depuis snapshotData + spec figée (jamais depuis les données vivantes)
+  // PDF absent du stockage ou réédition DUPLICATA : régénération stricte depuis snapshotData + spec figée
+  const schoolIdentity = await buildSchoolIdentityRenderContext({
+    schoolName: params.reportCard.school?.name ?? 'Établissement',
+    language: params.language,
+    fallbackMotto: params.schoolMotto ?? params.reportCard.school?.schoolSettings?.schoolMotto,
+    fallbackCity: params.reportCard.school?.city,
+    fallbackPhone: params.reportCard.school?.phone,
+    fallbackLogoUrl: params.reportCard.school?.logoUrl,
+    kit: params.reportCard.school?.identityKit,
+    schoolAssetStorage: params.schoolAssetStorage,
+  });
   const options = buildRenderOptionsForExport(params.reportCard, {
     role: params.role,
     language: params.language,
     verifyBaseUrl: params.verifyBaseUrl,
     schoolMotto: params.schoolMotto,
+    schoolIdentity,
   });
   const pdfBuffer = await params.bulletinRenderer.render(params.reportCard.snapshotData, spec, options);
 
-  if (params.bulletinPdfStorage) {
+  if (params.bulletinPdfStorage && !params.forceRegenerateFromSnapshot) {
     const key =
       params.reportCard.pdfUrl ||
       params.bulletinPdfStorage.buildStorageKey({
@@ -311,6 +409,7 @@ export async function renderAndStoreBulletinIfSpecActive(params: {
   schoolMotto?: string | null;
   verifyUrl: string;
   verifyToken: string;
+  shortVerifyCode?: string;
   studentPhotoUrl?: string | null;
   bulletinRenderer?: BulletinRendererPort;
   bulletinPdfStorage?: BulletinPdfStoragePort;
@@ -327,6 +426,7 @@ export async function renderAndStoreBulletinIfSpecActive(params: {
     isAnnual: params.isAnnual,
     verifyUrl: params.verifyUrl,
     verifyToken: params.verifyToken,
+    shortVerifyCode: params.shortVerifyCode ?? deriveShortVerifyCode(params.verifyToken),
     isDuplicate: false,
     reprintCount: 0,
     language: params.language,
@@ -334,11 +434,11 @@ export async function renderAndStoreBulletinIfSpecActive(params: {
     studentPhotoBuffer,
     school: {
       schoolName: params.school.name,
-      schoolMotto: params.schoolMotto ?? '',
-      city: params.school.city ?? null,
-      phone: params.school.phone ?? null,
-      regionalDelegation: params.school.region ? `Délégation Régionale : ${params.school.region}` : null,
-      logoUrl: params.school.logoUrl ?? null,
+      schoolMotto: cleanOpt(params.schoolMotto),
+      city: cleanOpt(params.school.city),
+      phone: cleanOpt(params.school.phone),
+      regionalDelegation: null,
+      logoUrl: cleanOpt(params.school.logoUrl),
     },
   };
   const pdfBuffer = await params.bulletinRenderer.render(params.snapshot, params.spec, options);

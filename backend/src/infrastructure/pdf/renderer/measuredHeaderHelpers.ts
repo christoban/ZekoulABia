@@ -89,14 +89,25 @@ export function drawOfficialHeaderBlock(
       .text('MINISTRY OF SECONDARY EDUCATION', rightX, y0 + 16.5, { width: colW, align: 'center' });
   }
 
-  if (spec.showLogo && options.school.logoBuffer) {
-    try { doc.image(options.school.logoBuffer, left + usableW / 2 - 20, y0, { fit: [40, 34] }); } catch { /* ignore invalid image */ }
+  const hasLogo = spec.showLogo && Boolean(options.school.logoBuffer);
+  const hasCoat = spec.showCoatOfArms && Boolean(options.school.coatOfArmsEnabled) && Boolean(options.school.coatOfArmsBuffer);
+
+  if (hasLogo && hasCoat) {
+    try { doc.image(options.school.logoBuffer!, left + usableW / 2 - 28, y0, { fit: [26, 26] }); } catch { /* ignore invalid image */ }
+    try { doc.image(options.school.coatOfArmsBuffer!, left + usableW / 2 + 2, y0, { fit: [26, 26] }); } catch { /* ignore invalid image */ }
+  } else if (hasLogo) {
+    try { doc.image(options.school.logoBuffer!, left + usableW / 2 - 20, y0, { fit: [40, 34] }); } catch { /* ignore invalid image */ }
+  } else if (hasCoat) {
+    try { doc.image(options.school.coatOfArmsBuffer!, left + usableW / 2 - 20, y0, { fit: [40, 34] }); } catch { /* ignore invalid image */ }
   }
 
   let cursorY = y0 + 29;
-  if (spec.showDelegations && (options.school.regionalDelegation || options.school.departmentalDelegation)) {
-    const delText = [options.school.regionalDelegation, options.school.departmentalDelegation].filter(Boolean).join(' • ');
-    doc.font(fonts.regular).fontSize(6.5).fillColor('#334155').text(delText, left, cursorY, { width: usableW, align: 'center' });
+  const delParts = [
+    options.school.regionalDelegation?.trim(),
+    options.school.departmentalDelegation?.trim(),
+  ].filter((v): v is string => Boolean(v && v.length > 0));
+  if (spec.showDelegations && delParts.length > 0) {
+    doc.font(fonts.regular).fontSize(6.5).fillColor('#334155').text(delParts.join(' • '), left, cursorY, { width: usableW, align: 'center' });
     cursorY = doc.y + 1;
   }
 
@@ -110,8 +121,10 @@ export function drawOfficialHeaderBlock(
   const contactParts = [
     options.school.city?.trim(),
     options.school.bp?.trim() ? `BP ${options.school.bp.trim()}` : null,
-    options.school.phone?.trim() ? `Tél : ${options.school.phone.trim()}` : null,
-  ].filter(Boolean);
+    options.school.phone?.trim() ? `${isEn ? 'Tel' : 'Tél'} : ${options.school.phone.trim()}` : null,
+    options.school.foundingYear ? `${isEn ? 'Est.' : 'Fondé en'} ${options.school.foundingYear}` : null,
+    options.school.authorizationNumber?.trim() ? `${isEn ? 'Auth.' : 'Aut. n°'} ${options.school.authorizationNumber.trim()}` : null,
+  ].filter((v): v is string => Boolean(v && v.length > 0));
   if (contactParts.length > 0) subMeta.push(contactParts.join(' • '));
 
   if (subMeta.length > 0) {

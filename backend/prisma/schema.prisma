@@ -208,6 +208,7 @@ model School {
   payments                     Payment[]
   reportCards                  ReportCard[]
   bulletinTemplateAssignments  BulletinTemplateAssignment[]
+  identityKit                  SchoolIdentityKit?
   template                     SchoolTemplate?                 @relation(fields: [templateCode], references: [code])
   schoolConfig                 SchoolConfig?
   invites                      SchoolInvite[]
@@ -1647,6 +1648,7 @@ model ReportCard {
   snapshotData        Json?
   contentHash         String?
   verifyToken         String?                   @unique
+  shortVerifyCode     String?                   @unique
   reprintCount        Int                       @default(0)
   totalStudents       Int?
   validationStatus    ReportCardStatus          @default(DRAFT)
@@ -1719,12 +1721,43 @@ model BulletinRevocationArchive {
   snapshotData         Json?
   contentHash          String?
   verifyToken          String?
+  shortVerifyCode      String?
   revokedById          String
   revocationReason     String
   revokedAt            DateTime @default(now())
 
   @@index([schoolId, studentId])
   @@index([originalReportCardId])
+  @@index([verifyToken])
+  @@index([shortVerifyCode])
+}
+
+model SchoolIdentityKit {
+  id                         String   @id @default(cuid())
+  schoolId                   String   @unique
+  regionalDelegationFr       String?
+  regionalDelegationEn       String?
+  departmentalDelegationFr   String?
+  departmentalDelegationEn   String?
+  mottoFr                    String?
+  mottoEn                    String?
+  poBox                      String?
+  city                       String?
+  phone                      String?
+  foundingYear               Int?
+  authorizationNumber        String?
+  accentColor                String?
+  logoAssetKey               String?
+  coatOfArmsAssetKey         String?
+  stampAssetKey              String?
+  principalSignatureAssetKey String?
+  censorSignatureAssetKey    String?
+  useCoatOfArms              Boolean  @default(false)
+  updatedById                String?
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 }
 
 model BulletinTemplateAssignment {

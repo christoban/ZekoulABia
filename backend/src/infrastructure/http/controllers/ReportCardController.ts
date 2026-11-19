@@ -247,9 +247,18 @@ export class ReportCardController {
         });
         if (blocked) { res.status(403).json({ success: false, code: 'BULLETIN_BLOCKED_UNPAID_FEES', message: 'Téléchargement du bulletin bloqué en raison de frais de scolarité impayés' }); return; }
       }
+      const isReprint = String(req.query.reprint).toLowerCase() === 'true';
+      if (isReprint) {
+        if (role !== 'ADMIN' && role !== 'STAFF') {
+          res.status(403).json({ success: false, message: 'Seuls ADMIN ou STAFF peuvent émettre un duplicata.' });
+          return;
+        }
+        reportCard.reprintCount = await this.bulletinRepository.incrementReprintCount(reportCard.id, user.schoolId);
+      }
       const { pdfBuffer, filename } = await renderReportCardPdfBuffer(reportCard, user.schoolId, role, undefined, {
         bulletinRenderer: this.bulletinRenderer,
         bulletinPdfStorage: this.bulletinPdfStorage,
+        forceRegenerateFromSnapshot: isReprint,
       });
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `inline; filename="${filename}"`);

@@ -18,10 +18,13 @@ export interface SchoolIdentityRenderContext {
   bp?: string | null;
   logoUrl?: string | null;
   coatOfArmsEnabled?: boolean;
+  foundingYear?: number | null;
+  authorizationNumber?: string | null;
   logoBuffer?: Buffer | null;
   coatOfArmsBuffer?: Buffer | null;
   stampBuffer?: Buffer | null;
   principalSignatureBuffer?: Buffer | null;
+  censorSignatureBuffer?: Buffer | null;
   accentColor?: string | null;
 }
 

@@ -12,6 +12,7 @@ import {
 } from '../../pdf/school-documents/SchoolDocumentPdfRenderer';
 import { resolveLanguage } from '../../../domain/policies/LanguagePolicy';
 import { resolveFrontendUrl } from '../../config/EnvAppConfig.ts';
+import { setVerifyNoIndexHeaders, verifyPublicDocumentOp } from './helpers/verifyPublicDocumentOp';
 
 const VERIFY_BASE = resolveFrontendUrl();
 
@@ -274,66 +275,15 @@ export class StudentDocumentController {
   // ─── GET /api/v2/verify/:documentId (PUBLIC) ─────────────────
   verifyDocument = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const documentId = req.params.documentId as string;
-
-      const doc = await this.documentRepository.findById(documentId);
-
-      if (!doc) {
-        // Recherche dans les bulletins de notes (ReportCard)
-        const bulletin = await this.bulletinRepository.findById(documentId);
-        if (bulletin) {
-          const bObj = bulletin.toObject();
-          const school = await this.schoolRepository.findById(bObj.schoolId);
-          const studentProfile = await this.studentProfileRepository.findForDocument(bObj.studentId, bObj.schoolId);
-          const studentName = studentProfile?.user
-            ? `${studentProfile.user.lastName} ${studentProfile.user.firstName}`
-            : 'Élève';
-
-          res.json({
-            success: true,
-            document: {
-              id: bObj.id.slice(0, 8).toUpperCase(),
-              type: 'Bulletin de notes',
-              school: school?.name ?? '—',
-              generatedAt: bObj.createdAt,
-              data: {
-                studentName,
-                matricule: studentProfile?.matricule ?? null,
-                className: classeActuelle(studentProfile)?.name ?? '—',
-                generalAverage: bObj.generalAverage != null ? `${bObj.generalAverage.toFixed(2)} / 20` : '—',
-                rank: bObj.rank && bObj.totalStudents ? `${bObj.rank} / ${bObj.totalStudents}` : bObj.rank ?? '—',
-                mention: bObj.mention ?? '—',
-              },
-              authentic: true,
-            },
-          });
-          return;
-        }
-
-        res.status(404).json({ success: false, message: 'Document introuvable ou invalide.' });
-        return;
-      }
-
-      const school = await this.schoolRepository.findById(doc.schoolId);
-
-      const typeLabel: Record<string, string> = {
-        CERTIFICATE: 'Certificat de scolarité',
-        STUDENT_CARD: "Carte d'identité scolaire",
-        TRANSFER_LETTER: 'Lettre de transfert',
-        REPORT_CARD: 'Bulletin de notes',
-      };
-
-      res.json({
-        success: true,
-        document: {
-          id: doc.id.slice(0, 8).toUpperCase(),
-          type: typeLabel[doc.type] ?? doc.type,
-          school: school?.name ?? '—',
-          generatedAt: doc.generatedAt,
-          data: doc.dataSnapshot,
-          authentic: true,
-        },
+      setVerifyNoIndexHeaders(res);
+      const out = await verifyPublicDocumentOp({
+        documentId: String(req.params.documentId ?? ''),
+        queryToken: typeof req.query.token === 'string' ? req.query.token : undefined,
+        documentRepository: this.documentRepository,
+        bulletinRepository: this.bulletinRepository,
+        schoolRepository: this.schoolRepository,
       });
+      res.status(out.statusCode).json(out.body);
     } catch (err) {
       next(err);
     }

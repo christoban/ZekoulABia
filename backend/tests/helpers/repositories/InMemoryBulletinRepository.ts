@@ -4,13 +4,15 @@ import type {
   BulletinAvecContexteClasse,
   BulletinEnrichi,
   BulletinExportData,
+  BulletinPublicVerifyRecord,
   BulletinRevocationArchiveRecord,
+  BulletinRevocationLookupRecord,
 } from '@domain/ports/repositories/BulletinRepository';
 
 export class InMemoryBulletinRepository implements BulletinRepository {
   private store = new Map<string, Bulletin>();
   private periodeStore = new Map<string, Bulletin>(); // key: studentId:academicPeriodId
-  private revocations: BulletinRevocationArchiveRecord[] = [];
+  private revocations: BulletinRevocationLookupRecord[] = [];
   private classesParEleve = new Map<string, string>();
   private profPrincipalByClasse = new Map<string, string>();
   private sectionCodeByClasse = new Map<string, string>();
@@ -140,6 +142,7 @@ export class InMemoryBulletinRepository implements BulletinRepository {
 
   async archiverEtRemplacerRevoque(revokedBulletin: Bulletin, replacement: Bulletin): Promise<void> {
     const rev = revokedBulletin.toObject();
+    const nm = this.studentNames.get(rev.studentId);
     this.revocations.push({
       id: crypto.randomUUID(),
       originalReportCardId: rev.id,
@@ -155,9 +158,15 @@ export class InMemoryBulletinRepository implements BulletinRepository {
       snapshotData: rev.snapshotData ?? null,
       contentHash: rev.contentHash ?? null,
       verifyToken: rev.verifyToken ?? null,
+      shortVerifyCode: rev.shortVerifyCode ?? null,
       revokedById: rev.revokedById ?? 'SYSTEM',
       revocationReason: rev.revocationReason ?? 'Régénération contrôlée',
       revokedAt: rev.revokedAt ?? new Date(),
+      schoolName: 'Établissement Test',
+      academicYearName: rev.academicYearId,
+      academicPeriodName: rev.academicPeriodId,
+      studentFirstName: nm?.firstName ?? null,
+      studentLastName: nm?.lastName ?? null,
     });
     this.store.delete(rev.id);
     this.periodeStore.delete(`${rev.studentId}:${rev.academicPeriodId}`);
@@ -354,5 +363,63 @@ export class InMemoryBulletinRepository implements BulletinRepository {
       }
     }
     return count;
+  }
+
+  async findPublicVerifyRecord(tokenOrCodeOrId: string): Promise<BulletinPublicVerifyRecord | null> {
+    const key = tokenOrCodeOrId.trim();
+    const upper = key.toUpperCase();
+    for (const b of this.store.values()) {
+      const o = b.toObject();
+      if (o.id === key || o.verifyToken === key || (o.shortVerifyCode && o.shortVerifyCode.toUpperCase() === upper)) {
+        const nm = this.studentNames.get(o.studentId) ?? { firstName: '', lastName: '' };
+        return {
+          id: o.id,
+          schoolId: o.schoolId,
+          schoolName: 'Établissement Test',
+          studentFirstName: nm.firstName,
+          studentLastName: nm.lastName,
+          className: this.classesParEleve.get(o.studentId) ?? null,
+          classLevel: null,
+          academicYearName: o.academicYearId,
+          academicPeriodName: o.academicPeriodId,
+          issuedAt: o.createdAt,
+          computationVersion: o.computationVersion ?? 1,
+          templateSpecId: o.templateSpecId ?? null,
+          templateVersion: o.templateVersion ?? 1,
+          snapshotData: o.snapshotData ?? null,
+          contentHash: o.contentHash ?? null,
+          verifyToken: o.verifyToken ?? null,
+          shortVerifyCode: o.shortVerifyCode ?? null,
+          reprintCount: o.reprintCount ?? 0,
+          validationStatus: o.validationStatus,
+          revokedAt: o.revokedAt ?? null,
+        };
+      }
+    }
+    return null;
+  }
+
+  async findRevocationByTokenOrId(tokenOrCodeOrId: string): Promise<BulletinRevocationLookupRecord | null> {
+    const key = tokenOrCodeOrId.trim();
+    const upper = key.toUpperCase();
+    return (
+      this.revocations.find(
+        (r) =>
+          r.originalReportCardId === key ||
+          r.verifyToken === key ||
+          (r.shortVerifyCode && r.shortVerifyCode.toUpperCase() === upper),
+      ) ?? null
+    );
+  }
+
+  async incrementReprintCount(bulletinId: string, schoolId: string): Promise<number> {
+    const b = this.store.get(bulletinId);
+    if (!b || b.schoolId !== schoolId) throw new Error(`Bulletin introuvable : ${bulletinId}`);
+    const obj = b.toObject();
+    const next = (obj.reprintCount ?? 0) + 1;
+    const updated = Bulletin.reconstituer({ ...obj, reprintCount: next });
+    this.store.set(bulletinId, updated);
+    this.periodeStore.set(`${obj.studentId}:${obj.academicPeriodId}`, updated);
+    return next;
   }
 }

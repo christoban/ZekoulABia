@@ -59,7 +59,12 @@ export class MeasuredPdfKitBulletinRenderer implements BulletinRendererPort {
     const sigBlock = templateSpec.blocks.find((b): b is SignaturesBlockSpec => b.type === 'signatures');
     const qrBuffer =
       qrBlock && options.verifyUrl
-        ? await QRCode.toBuffer(options.verifyUrl, { type: 'png', margin: 1, width: 120 }).catch(() => null)
+        ? await QRCode.toBuffer(options.verifyUrl, {
+            type: 'png',
+            errorCorrectionLevel: 'M',
+            margin: 1,
+            width: 180,
+          }).catch(() => null)
         : null;
 
     const subjectCount = snapshot.subjectLines.length;

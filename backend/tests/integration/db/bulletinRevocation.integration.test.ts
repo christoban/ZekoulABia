@@ -2,11 +2,14 @@ import { describe, it, expect, afterEach } from 'bun:test';
 import { Bulletin } from '@domain/entities/Bulletin';
 import { PrismaBulletinRepository } from '@infrastructure/persistence/prisma/PrismaBulletinRepository';
 import { PrismaBulletinTemplateAssignmentRepository } from '@infrastructure/persistence/prisma/PrismaBulletinTemplateAssignmentRepository';
+import { PrismaSchoolIdentityKitRepository } from '@infrastructure/persistence/prisma/PrismaSchoolIdentityKitRepository';
+import { deriveShortVerifyCode } from '@domain/policies/BulletinVerifyCrypto';
 import { prismaTest } from '../../helpers/prismaTestClient.ts';
 import { creerEcoleTest, creerUtilisateurTest, nettoyerEcole } from '../../helpers/dbFixtures.ts';
 
 const repo = new PrismaBulletinRepository(prismaTest);
 const assignmentRepo = new PrismaBulletinTemplateAssignmentRepository(prismaTest);
+const kitRepo = new PrismaSchoolIdentityKitRepository(prismaTest);
 
 async function setupFixtures(suffix: string) {
   const school = await creerEcoleTest(prismaTest, `revocation-${suffix}`);
@@ -295,6 +298,78 @@ describe('PostgreSQL — archiverEtRemplacerRevoque & contraintes ReportCard', (
         template: 'FR_SECONDARY', templateSpecId: 'GENERAL_GROUPED_V1',
       }),
     ).rejects.toThrow(/Niveau de classe invalide/);
+  });
+
+  it('Étape 5 PostgreSQL : persiste SchoolIdentityKit, vérifie par verifyToken/shortVerifyCode, trace révocations et incrémente reprintCount', async () => {
+    const { school, studentA, admin, year, period, subject } = await setupFixtures('etape5');
+    createdSchoolIds.push(school.id);
+
+    const kit = await kitRepo.upsert({
+      schoolId: school.id,
+      regionalDelegationFr: 'Délégation Régionale du Nord',
+      mottoFr: 'Savoir et Rigueur',
+      poBox: '842',
+      city: 'Garoua',
+      foundingYear: 1998,
+      authorizationNumber: 'MINESEC-98',
+      useCoatOfArms: true,
+      updatedById: admin.id,
+    });
+    expect(kit.regionalDelegationFr).toBe('Délégation Régionale du Nord');
+    expect(kit.foundingYear).toBe(1998);
+    expect((await kitRepo.findBySchoolId(school.id))?.poBox).toBe('842');
+
+    const tokenV1 = `tok-pg-v1-${Date.now()}`;
+    const b1 = buildSealedBulletin({
+      schoolId: school.id,
+      studentId: studentA.id,
+      academicYearId: year.id,
+      academicPeriodId: period.id,
+      subjectId: subject.id,
+      average: 14,
+      verifyToken: tokenV1,
+      computationVersion: 2,
+    });
+    await repo.save(b1);
+
+    const short1 = deriveShortVerifyCode(tokenV1);
+    const activeByTok = await repo.findPublicVerifyRecord(tokenV1);
+    const activeByShort = await repo.findPublicVerifyRecord(short1);
+    expect(activeByTok?.id).toBe(b1.id);
+    expect(activeByShort?.shortVerifyCode).toBe(short1);
+
+    // Incrément atomique de reprintCount
+    const c1 = await repo.incrementReprintCount(b1.id, school.id);
+    const c2 = await repo.incrementReprintCount(b1.id, school.id);
+    expect(c1).toBe(1);
+    expect(c2).toBe(2);
+    expect((await repo.findPublicVerifyRecord(tokenV1))?.reprintCount).toBe(2);
+
+    // Inclusion de SchoolIdentityKit dans findForExport
+    const exported = await repo.findForExport(school.id, period.id);
+    expect(exported[0]?.school?.identityKit?.mottoFr).toBe('Savoir et Rigueur');
+
+    // Après révocation & remplacement : ancien token retrouvé dans l'archive, nouveau dans ReportCard
+    b1.revoquer({ revokedById: admin.id, reason: 'Correction note PostgreSQL' });
+    const tokenV2 = `tok-pg-v2-${Date.now()}`;
+    const b2 = buildSealedBulletin({
+      schoolId: school.id,
+      studentId: studentA.id,
+      academicYearId: year.id,
+      academicPeriodId: period.id,
+      subjectId: subject.id,
+      average: 15,
+      verifyToken: tokenV2,
+      computationVersion: 2,
+    });
+    await repo.archiverEtRemplacerRevoque(b1, b2);
+
+    expect(await repo.findPublicVerifyRecord(tokenV1)).toBeNull();
+    const revLookup = await repo.findRevocationByTokenOrId(tokenV1);
+    expect(revLookup?.originalReportCardId).toBe(b1.id);
+    expect(revLookup?.shortVerifyCode).toBe(short1);
+    expect(revLookup?.schoolName).toBe(school.name);
+    expect((await repo.findPublicVerifyRecord(tokenV2))?.id).toBe(b2.id);
   });
 });
 

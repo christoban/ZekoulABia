@@ -4,8 +4,9 @@
  * Rassemble le mapping curriculum (groupes + coefficients), le calcul des heures de conduite J/NJ,
  * les mentions par template/langue, le hachage SHA-256 et la conversion vers LigneMatiereProps.
  */
-import { createHash, randomBytes } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import type { MatiereProps, CoefficientMatiere } from '@domain/ports/repositories/MatiereRepository';
+import { canonicalHashSnapshot, deriveShortVerifyCode } from '@domain/policies/BulletinVerifyCrypto';
 import type { ClassSubjectOverrideRecord, SubjectCoefficientRecord } from '@domain/ports/repositories/ClasseCoefficientRepository';
 import type { DisciplineRecordData } from '@domain/ports/repositories/DisciplineRepository';
 import type { Note } from '@domain/entities/Note';
@@ -60,9 +61,7 @@ export function genererVerifyToken(): string {
   return randomBytes(24).toString('hex');
 }
 
-export function canonicalHashSnapshot(snapshot: StudentBulletinSnapshot): string {
-  return createHash('sha256').update(JSON.stringify(snapshot)).digest('hex');
-}
+export { canonicalHashSnapshot, deriveShortVerifyCode };
 
 export function calculerMentionBulletin(moyenne: number, template: BulletinTemplate, langue: 'fr' | 'en'): string {
   const mentionEn = (m: number): string =>

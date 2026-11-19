@@ -2,8 +2,8 @@
  * DOMAIN LAYER — Port Repository Bulletin (ReportCard)
  */
 import type { Bulletin } from '@domain/entities/Bulletin';
-import type { BulletinGroupingScheme, BulletinValidationStatus } from '@domain/types/enums';
-import type { BulletinTemplate } from '@domain/types/enums';
+import type { BulletinGroupingScheme, BulletinValidationStatus, BulletinTemplate } from '@domain/types/enums';
+import type { SchoolIdentityKitRecord } from './SchoolIdentityKitRepository';
 
 export interface BulletinAvecContexteClasse {
   bulletin: Bulletin;
@@ -32,6 +32,7 @@ export interface BulletinExportData {
   snapshotData?: unknown;
   contentHash?: string | null;
   verifyToken?: string | null;
+  shortVerifyCode?: string | null;
   reprintCount?: number;
   pdfUrl?: string | null;
   generalAverage: number | null;
@@ -109,8 +110,32 @@ export interface BulletinExportData {
       passMark?: number | null;
     } | null;
     schoolSettings: { timezone?: string | null; locale?: string | null; schoolMotto?: string | null } | null;
+    identityKit?: SchoolIdentityKitRecord | null;
   } | null;
   section: { code: string } | null;
+}
+
+export interface BulletinPublicVerifyRecord {
+  id: string;
+  schoolId: string;
+  schoolName: string;
+  studentFirstName: string;
+  studentLastName: string;
+  className: string | null;
+  classLevel: string | null;
+  academicYearName: string | null;
+  academicPeriodName: string | null;
+  issuedAt: Date;
+  computationVersion: number;
+  templateSpecId: string | null;
+  templateVersion: number;
+  snapshotData: unknown;
+  contentHash: string | null;
+  verifyToken: string | null;
+  shortVerifyCode: string | null;
+  reprintCount: number;
+  validationStatus: string;
+  revokedAt: Date | null;
 }
 
 export interface BulletinRevocationArchiveRecord {
@@ -128,9 +153,18 @@ export interface BulletinRevocationArchiveRecord {
   snapshotData: unknown;
   contentHash: string | null;
   verifyToken: string | null;
+  shortVerifyCode: string | null;
   revokedById: string;
   revocationReason: string;
   revokedAt: Date;
+}
+
+export interface BulletinRevocationLookupRecord extends BulletinRevocationArchiveRecord {
+  schoolName: string | null;
+  academicYearName: string | null;
+  academicPeriodName: string | null;
+  studentFirstName: string | null;
+  studentLastName: string | null;
 }
 
 export interface BulletinRepository {
@@ -147,6 +181,8 @@ export interface BulletinRepository {
   findForExport(schoolId: string, academicPeriodId: string, classId?: string): Promise<BulletinExportData[]>;
   findExportDataByPeriode(schoolId: string, academicPeriodId: string, classId?: string): Promise<BulletinExportData[]>;
   findForPdf(bulletinId: string, schoolId: string): Promise<BulletinExportData | null>;
+  findPublicVerifyRecord(tokenOrCodeOrId: string): Promise<BulletinPublicVerifyRecord | null>;
+  findRevocationByTokenOrId(tokenOrCodeOrId: string): Promise<BulletinRevocationLookupRecord | null>;
 
   // Listing — report-card controller (mesBulletins / lister)
   findByEleveFiltre(params: { schoolId: string; studentId: string; academicYearId?: string; classWorkflowStatusIn?: string[] }): Promise<Record<string, unknown>[]>;
@@ -175,6 +211,7 @@ export interface BulletinRepository {
   findRevocationsByStudent(schoolId: string, studentId: string): Promise<BulletinRevocationArchiveRecord[]>;
   updatePdfUrl(bulletinId: string, pdfUrl: string): Promise<void>;
   updatePdfMetadata(bulletinId: string, params: { pdfUrl: string; templateSpecId?: string | null; templateVersion?: number }): Promise<void>;
+  incrementReprintCount(bulletinId: string, schoolId: string): Promise<number>;
   updateClassMasterComment(bulletinId: string, comment: string): Promise<void>;
   updateAiComment(bulletinId: string, comment: string): Promise<void>;
   majStatutWorkflowParClasse(classId: string, academicPeriodId: string, schoolId: string, status: BulletinValidationStatus | null): Promise<number>;
