@@ -144,15 +144,47 @@ const PUBLISHED_CATALOG: readonly Readonly<BulletinTemplateSpec>[] = [
   PRIMARY_POINTS_RATIO_FR_V1,
 ];
 
+const customSpecsRegistry: Array<Readonly<BulletinTemplateSpec>> = [];
+
+export function registerTemplateSpecVersion(spec: BulletinTemplateSpec): Readonly<BulletinTemplateSpec> {
+  const frozen = Object.isFrozen(spec) ? spec : deepFreezeSpec(structuredClone(spec));
+  const exists = [...PUBLISHED_CATALOG, ...customSpecsRegistry].some(
+    (s) => s.id === frozen.id && s.version === frozen.version,
+  );
+  if (exists) {
+    throw new Error(`La spec "${frozen.id}" v${frozen.version} existe déjà et est immuable.`);
+  }
+  customSpecsRegistry.push(frozen);
+  return frozen;
+}
+
+export function listAllTemplateSpecs(options?: { includeDrafts?: boolean }): readonly Readonly<BulletinTemplateSpec>[] {
+  const all = [...PUBLISHED_CATALOG, ...customSpecsRegistry];
+  if (options?.includeDrafts) return all;
+  return all.filter((s) => s.status !== 'DRAFT');
+}
+
 export function listPublishedTemplateSpecs(): readonly Readonly<BulletinTemplateSpec>[] {
-  return PUBLISHED_CATALOG;
+  return listAllTemplateSpecs({ includeDrafts: false });
+}
+
+export function getTemplateSpecAnyStatus(
+  specId: string,
+  version?: number,
+): Readonly<BulletinTemplateSpec> | null {
+  const matches = listAllTemplateSpecs({ includeDrafts: true }).filter((s) => s.id === specId);
+  if (matches.length === 0) return null;
+  if (version !== undefined) {
+    return matches.find((s) => s.version === version) ?? null;
+  }
+  return matches.slice().sort((a, b) => b.version - a.version)[0] ?? null;
 }
 
 export function getPublishedTemplateSpec(
   specId: string,
   version?: number,
 ): Readonly<BulletinTemplateSpec> | null {
-  const matches = PUBLISHED_CATALOG.filter((s) => s.id === specId);
+  const matches = listPublishedTemplateSpecs().filter((s) => s.id === specId);
   if (matches.length === 0) return null;
   if (version !== undefined) {
     return matches.find((s) => s.version === version) ?? null;
@@ -163,7 +195,7 @@ export function getPublishedTemplateSpec(
 export function findDefaultSpecForTemplate(
   template: BulletinTemplate,
 ): Readonly<BulletinTemplateSpec> | null {
-  return PUBLISHED_CATALOG.find((s) => s.targetTemplate === template && s.status === 'PUBLISHED') ?? null;
+  return listPublishedTemplateSpecs().find((s) => s.targetTemplate === template && s.status === 'PUBLISHED') ?? null;
 }
 
 export function hasPublishedTemplateSpecForTemplate(template: BulletinTemplate): boolean {
@@ -175,6 +207,8 @@ export interface TemplateSpecUpdateDraft {
   language?: 'fr' | 'en' | 'bilingual';
   grayscaleFirst?: boolean;
   defaultGroupingScheme?: BulletinTemplateSpec['defaultGroupingScheme'];
+  showGroupRankInSubtotal?: boolean;
+  validationNotice?: string;
   page?: Partial<BulletinTemplateSpec['page']>;
   blocks?: BulletinTemplateBlock[];
   publish?: boolean;
@@ -191,18 +225,24 @@ export function createNewTemplateSpecVersion(
     deepFreezeSpec(publishedSpec);
   }
   const base = cloneSpec(publishedSpec);
+  const existingVersions = listAllTemplateSpecs({ includeDrafts: true })
+    .filter((s) => s.id === base.id)
+    .map((s) => s.version);
+  const nextVersion = Math.max(base.version, ...existingVersions, 0) + 1;
   const nextSpec: BulletinTemplateSpec = {
     ...base,
     name: changes.name ?? base.name,
     language: changes.language ?? base.language,
     grayscaleFirst: changes.grayscaleFirst ?? base.grayscaleFirst,
     defaultGroupingScheme: changes.defaultGroupingScheme ?? base.defaultGroupingScheme,
+    showGroupRankInSubtotal: changes.showGroupRankInSubtotal ?? base.showGroupRankInSubtotal,
+    validationNotice: changes.validationNotice !== undefined ? changes.validationNotice : base.validationNotice,
     page: {
       ...base.page,
       ...(changes.page ?? {}),
     },
     blocks: changes.blocks ? structuredClone(changes.blocks) : base.blocks,
-    version: publishedSpec.version + 1,
+    version: nextVersion,
     status: changes.publish === false ? 'DRAFT' : 'PUBLISHED',
   };
   return deepFreezeSpec(nextSpec);

@@ -6,6 +6,7 @@ import MasterBottomNav from './_components/MasterBottomNav'
 import SectionOverview from './_components/SectionOverview'
 import SectionSchools from './_components/SectionSchools'
 import SectionReferentielsHub from './_components/SectionReferentielsHub'
+import SectionBulletinAtelier from './_components/SectionBulletinAtelier'
 import SectionLogs from './_components/SectionLogs'
 import SectionModeTest from './_components/SectionModeTest'
 import SectionTeam from './_components/SectionTeam'
@@ -131,6 +132,7 @@ export default function SuperAdminDashboard() {
   const [logs, setLogs] = useState<AuditLogDto[]>([])
   const [logsLoading, setLogsLoading] = useState(true)
   const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null)
+  const [atelierSchoolId, setAtelierSchoolId] = useState<string | null>(null)
   const [suspendTarget, setSuspendTarget] = useState<{ id: string; name: string; subdomain: string } | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
   const [confirmActionTarget, setConfirmActionTarget] = useState<import('./_types').ConfirmActionTarget | null>(null)
@@ -358,6 +360,12 @@ export default function SuperAdminDashboard() {
           </div>
         )}
 
+        {visitedSections.has('atelier-bulletins') && (
+          <div style={{ display: section === 'atelier-bulletins' ? 'block' : 'none', height: '100%' }}>
+            <SectionBulletinAtelier schools={schools} initialSchoolId={atelierSchoolId} onToast={showToast} />
+          </div>
+        )}
+
         {visitedSections.has('logs') && (
           <div style={{ display: section === 'logs' ? 'block' : 'none', height: '100%' }}>
             <SectionLogs logs={logs} loading={logsLoading} onChangePwd={() => setModal('changePwd')} mfaEnabled={mfaEnabled} />
@@ -414,6 +422,11 @@ export default function SuperAdminDashboard() {
         onSuspend={(id, name, subdomain) => {
           setSlideOver(false)
           openSuspend(id, name, subdomain)
+        }}
+        onOpenAtelier={(id) => {
+          setAtelierSchoolId(id)
+          setSlideOver(false)
+          setSection('atelier-bulletins')
         }}
       />
 

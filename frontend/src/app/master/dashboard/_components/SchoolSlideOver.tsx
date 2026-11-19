@@ -10,6 +10,7 @@ interface Props {
   loading: boolean
   onClose: () => void
   onSuspend: (id: string, name: string, subdomain: string) => void
+  onOpenAtelier?: (schoolId: string) => void
 }
 
 const PLAN_LABELS: Record<string, string> = { DISCOVERY: 'Découverte', STANDARD: 'Standard', PREMIUM: 'Premium', ETABLISSEMENT_PLUS: 'Établissement+ (Groupe)' }
@@ -18,7 +19,7 @@ function initials(name: string): string {
   return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?'
 }
 
-export default function SchoolSlideOver({ open, schoolDetail, loading, onClose, onSuspend }: Props) {
+export default function SchoolSlideOver({ open, schoolDetail, loading, onClose, onSuspend, onOpenAtelier }: Props) {
   const t = useT('master')
   if (!open) return null
 
@@ -141,7 +142,21 @@ export default function SchoolSlideOver({ open, schoolDetail, loading, onClose, 
             </div>
 
             {/* Footer */}
-            <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', gap: 10, flexShrink: 0 }}>
+            <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', gap: 10, flexWrap: 'wrap', flexShrink: 0 }}>
+              {onOpenAtelier && (
+                <button
+                  type="button"
+                  onClick={() => onOpenAtelier(schoolDetail.id)}
+                  style={{
+                    flex: 1, padding: '10px 14px', borderRadius: 10, fontSize: 13, fontWeight: 800,
+                    background: 'var(--primary)', color: '#fff', border: 'none',
+                    cursor: 'pointer', fontFamily: 'inherit',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  }}
+                >
+                  <FileText size={15} /> {t('slideover.open_atelier')}
+                </button>
+              )}
               <button style={{
                 flex: 1, padding: '10px 14px', borderRadius: 10, fontSize: 13, fontWeight: 800,
                 background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border2)',

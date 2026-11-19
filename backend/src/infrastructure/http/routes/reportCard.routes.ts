@@ -6,11 +6,17 @@ import { sensitiveWriteLimiter } from '../middlewares/rateLimit.ts';
 export function creerReportCardRoutes(controller: ReportCardController): Router {
   const router = Router();
 
+  // Prévisualisation lecture seule du modèle officiel configuré pour l'école (élève fictif)
+  router.get('/template-preview', requireAuth, requireRole('ADMIN', 'STAFF'), controller.previsualiserModeleOfficiel);
+
   // Vérification pré-génération
   router.get('/check/:classId', requireAuth, controller.verifierDisponibilite);
 
   // Génération via use case hexagonal (remplace l'ancien /generate/:classId + Inngest trigger)
   router.post('/generate', sensitiveWriteLimiter, requireAuth, requireRole('ADMIN', 'STAFF'), controller.genererBulletins);
+
+  // Export PDF unique fusionné de toute la classe
+  router.post('/export-pdf/:classId', sensitiveWriteLimiter, requireAuth, requireRole('ADMIN', 'STAFF'), controller.exporterPdfClasse);
 
   // Export ZIP en masse
   router.post('/export/:classId', sensitiveWriteLimiter, requireAuth, requireRole('ADMIN', 'STAFF'), controller.exporterZip);

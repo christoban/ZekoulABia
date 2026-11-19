@@ -73,5 +73,13 @@ export interface BulletinRendererPort {
     items: Array<{ snapshot: StudentBulletinSnapshot; options: BulletinRenderOptions }>,
     templateSpec: BulletinTemplateSpec,
   ): Promise<Buffer[]>;
+
+  renderMergedClassPdf?(
+    items: Array<{
+      snapshot: StudentBulletinSnapshot;
+      templateSpec: BulletinTemplateSpec;
+      options: BulletinRenderOptions;
+    }>,
+  ): Promise<Buffer>;
 }
 

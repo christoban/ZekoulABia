@@ -9,6 +9,7 @@ import {
   Shield,
   FlaskConical,
   Users,
+  FileText,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 // Conservés pour la référence d'intégration i18n/thème vérifiée par les tests de navigation Master
@@ -35,12 +36,13 @@ interface Props {
 }
 
 const NAV: MasterNavItem[] = [
-  { id: 'overview',     labelKey: 'nav.overview',     icon: LayoutDashboard },
-  { id: 'schools',      labelKey: 'nav.schools',      icon: Building2 },
-  { id: 'referentiels', labelKey: 'nav.referentiels', icon: BookOpen },
-  { id: 'logs',         labelKey: 'nav.logs',         icon: Shield },
-  { id: 'mode-test',    labelKey: 'nav.mode_test',    icon: FlaskConical },
-  { id: 'team',         labelKey: 'nav.team',         icon: Users },
+  { id: 'overview',          labelKey: 'nav.overview',          icon: LayoutDashboard },
+  { id: 'schools',           labelKey: 'nav.schools',           icon: Building2 },
+  { id: 'referentiels',      labelKey: 'nav.referentiels',      icon: BookOpen },
+  { id: 'atelier-bulletins', labelKey: 'nav.atelier_bulletins', icon: FileText },
+  { id: 'logs',              labelKey: 'nav.logs',              icon: Shield },
+  { id: 'mode-test',         labelKey: 'nav.mode_test',         icon: FlaskConical },
+  { id: 'team',              labelKey: 'nav.team',              icon: Users },
 ]
 
 function isNavVisible(id: Section, role?: string): boolean {

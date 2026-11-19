@@ -3,6 +3,7 @@ import { prisma } from '@infrastructure/persistence/prisma/prisma.client';
 import { creerContainer } from '@infrastructure/config/container';
 import { SchoolOnboardingController } from '@infrastructure/http/controllers/SchoolOnboardingController';
 import { ReportCardController } from '@infrastructure/http/controllers/ReportCardController';
+import { MasterBulletinAtelierController } from '@infrastructure/http/controllers/MasterBulletinAtelierController';
 import { ClassCouncilController } from '@infrastructure/http/controllers/ClassCouncilController';
 import { AcademicYearController } from '@infrastructure/http/controllers/AcademicYearController';
 import { PedagogieController } from '@infrastructure/http/controllers/PedagogieController';
@@ -18,6 +19,7 @@ import { creerInviteOnboardingRoutes } from '@infrastructure/http/routes/inviteO
 import { creerOnboardingStreamRoutes } from '@infrastructure/http/routes/onboardingStream.routes';
 import { creerTemplateRoutes } from '@infrastructure/http/routes/template.routes';
 import { creerReportCardRoutes } from '@infrastructure/http/routes/reportCard.routes';
+import { creerMasterBulletinAtelierRoutes } from '@infrastructure/http/routes/masterBulletinAtelier.routes';
 import { creerClassCouncilRoutes } from '@infrastructure/http/routes/classCouncil.routes';
 import { creerBulletinValidationRoutes } from '@infrastructure/http/routes/bulletinValidation.routes';
 import { creerAssessmentRoutes } from '@infrastructure/http/routes/assessment.routes';
@@ -65,6 +67,20 @@ export function registerAcademicRoutes(app: Application, prismaParam: typeof pri
     c.school.schoolConfigRepository,
     c.reportCard.bulletinRenderer,
     c.reportCard.bulletinPdfStorage,
+    c.reportCard.bulletinAssignmentRepository,
+    c.reportCard.schoolIdentityKitRepository,
+    c.reportCard.schoolAssetStorage,
+  );
+
+  const masterBulletinAtelierController = new MasterBulletinAtelierController(
+    c.masterAdmin.queryRepository,
+    c.school.schoolRepository,
+    c.school.schoolConfigRepository,
+    c.reportCard.schoolIdentityKitRepository,
+    c.reportCard.bulletinAssignmentRepository,
+    c.school.classeRepository,
+    c.reportCard.bulletinRenderer,
+    c.reportCard.schoolAssetStorage,
   );
 
   const classCouncilController = new ClassCouncilController(
@@ -150,6 +166,7 @@ export function registerAcademicRoutes(app: Application, prismaParam: typeof pri
   app.use('/api/v2/pedagogie', requireAuth, creerPedagogieRoutes(pedagogieController));
 
   app.use('/api/v2/onboarding', creerOnboardingRoutes(onboardingController));
+  app.use('/api/v2/master/bulletin-atelier', creerMasterBulletinAtelierRoutes(masterBulletinAtelierController));
   app.use('/api/v2/report-cards', creerReportCardRoutes(reportCardController));
   app.use('/api/v2/class-councils', creerClassCouncilRoutes(classCouncilController));
   app.use('/api/v2/bulletin-validations', creerBulletinValidationRoutes(bulletinValidationController));

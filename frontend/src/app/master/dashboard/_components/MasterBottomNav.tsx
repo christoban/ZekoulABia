@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { LayoutDashboard, Building2, BookOpen, Shield, FlaskConical, Users } from 'lucide-react'
+import { LayoutDashboard, Building2, BookOpen, Shield, FlaskConical, Users, FileText } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import type { Section } from '../_types'
 import { AppBottomNav } from '@/components/shell/AppBottomNav'
@@ -38,6 +38,12 @@ const NAV_ITEMS: BottomNavItem[] = [
     section: 'referentiels',
     labelKey: 'nav.referentiels_short',
     icon: BookOpen,
+  },
+  {
+    id: 'atelier-bulletins',
+    section: 'atelier-bulletins',
+    labelKey: 'nav.atelier_bulletins_short',
+    icon: FileText,
   },
   {
     id: 'logs',

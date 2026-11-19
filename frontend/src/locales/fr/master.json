@@ -6,6 +6,8 @@
     "schools": "Écoles",
     "referentiels": "Référentiels Nationaux",
     "referentiels_short": "Référentiels",
+    "atelier_bulletins": "Atelier Bulletins",
+    "atelier_bulletins_short": "Atelier",
     "logs": "Logs & Sécurité",
     "logs_short": "Sécurité",
     "mode_test": "Mode test",
@@ -189,6 +191,7 @@
     "general_info": "Informations générales",
     "recent_invites": "Invitations récentes",
     "edit": "Modifier",
-    "suspend": "Suspendre"
+    "suspend": "Suspendre",
+    "open_atelier": "Atelier Bulletins"
   }
 }

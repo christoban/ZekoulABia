@@ -6,6 +6,8 @@
     "schools": "Schools",
     "referentiels": "National Curricula",
     "referentiels_short": "Curricula",
+    "atelier_bulletins": "Report Card Studio",
+    "atelier_bulletins_short": "Studio",
     "logs": "Logs & Security",
     "logs_short": "Security",
     "mode_test": "Test Mode",
@@ -189,6 +191,7 @@
     "general_info": "General information",
     "recent_invites": "Recent invitations",
     "edit": "Edit",
-    "suspend": "Suspend"
+    "suspend": "Suspend",
+    "open_atelier": "Report Card Studio"
   }
 }

@@ -21,7 +21,7 @@ export type {
   MasterTeamRole,
 }
 
-export type Section = 'overview' | 'schools' | 'referentiels' | 'logs' | 'mode-test' | 'team'
+export type Section = 'overview' | 'schools' | 'referentiels' | 'atelier-bulletins' | 'logs' | 'mode-test' | 'team'
 export type ReferentielModule = 'calendar' | 'bac' | 'templates' | 'progressions' | 'tarifs'
 export type SchoolTab = 'all' | 'pending' | 'approved' | 'active' | 'suspended' | 'draft' | 'rejected'
 export type LogTab = 'emails' | 'auth' | 'security'

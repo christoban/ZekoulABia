@@ -15,6 +15,12 @@ import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolCo
 import type { AIActionAuditPort } from '@domain/ports/services/AIActionAuditPort';
 import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
 import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
+import type { BulletinTemplateAssignmentRepository } from '@domain/ports/repositories/BulletinTemplateAssignmentRepository';
+import type { SchoolIdentityKitRepository } from '@domain/ports/repositories/SchoolIdentityKitRepository';
+import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
+import type { BulletinTemplate } from '@domain/types/enums';
+import { GENERAL_GROUPED_V1, findDefaultSpecForTemplate, getPublishedTemplateSpec } from '@domain/templates/bulletinCatalog';
+import { renderAtelierPreviewPdf } from '@application/reportCard/bulletinAtelierPreview';
 import {
   addClassMasterCommentOp,
   filterParentReportCardsByUnpaidFees,
@@ -26,6 +32,7 @@ import {
   handleGenerateBulletinsError,
   resolveGenerateBulletinParams,
   resolveSendBulletinsParams,
+  streamClassReportCardsMergedPdf,
   streamClassReportCardsZip,
   triggerBulletinSmsFireAndForget,
 } from './helpers/reportCardGenerationOps';
@@ -48,6 +55,9 @@ export class ReportCardController {
     private readonly schoolConfigRepository?: SchoolConfigRepository,
     private readonly bulletinRenderer?: BulletinRendererPort,
     private readonly bulletinPdfStorage?: BulletinPdfStoragePort,
+    private readonly assignmentRepository?: BulletinTemplateAssignmentRepository,
+    private readonly schoolIdentityKitRepository?: SchoolIdentityKitRepository,
+    private readonly schoolAssetStorage?: SchoolAssetStoragePort,
   ) {}
 
   // POST /api/v2/report-cards/generate
@@ -137,6 +147,95 @@ export class ReportCardController {
       }
       next(error);
     }
+  };
+
+  // POST /api/v2/report-cards/export-pdf/:classId (PDF unique multi-pages de la classe)
+  exporterPdfClasse = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      await streamClassReportCardsMergedPdf({
+        res, schoolId: req.user.schoolId, classId: req.params.classId as string,
+        requestedPeriodId: req.body?.academicPeriodId as string | undefined,
+        anneeRepository: this.anneeRepository, bulletinRepository: this.bulletinRepository,
+        bulletinRenderer: this.bulletinRenderer, schoolAssetStorage: this.schoolAssetStorage,
+      });
+    } catch (error) {
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, message: error instanceof Error ? error.message : 'Erreur lors de la génération du PDF de classe' });
+        return;
+      }
+      next(error);
+    }
+  };
+
+  // GET /api/v2/report-cards/template-preview (Admin / Staff : prévisualisation lecture seule du modèle configuré par ZekoulABia)
+  previsualiserModeleOfficiel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const schoolId = req.user.schoolId;
+      const [school, schoolConfig, assignments, identityKit] = await Promise.all([
+        this.schoolRepository.findById(schoolId),
+        this.schoolConfigRepository ? this.schoolConfigRepository.findBySchoolId(schoolId) : Promise.resolve(null),
+        this.assignmentRepository ? this.assignmentRepository.findBySchool(schoolId) : Promise.resolve([]),
+        this.schoolIdentityKitRepository ? this.schoolIdentityKitRepository.findBySchoolId(schoolId) : Promise.resolve(null),
+      ]);
+      if (!school) {
+        res.status(404).json({ success: false, message: 'Établissement introuvable.' });
+        return;
+      }
+      const requestedSpecId = typeof req.query.templateSpecId === 'string' ? req.query.templateSpecId : undefined;
+      const requestedVer = req.query.templateVersion ? Number(req.query.templateVersion) : undefined;
+      const defaultTpl = (schoolConfig?.bulletinTemplate ?? 'FR_SECONDARY') as BulletinTemplate;
+      const firstActive = assignments.find((a) => a.isActive);
+      const activeSpec =
+        (requestedSpecId ? getPublishedTemplateSpec(requestedSpecId, requestedVer) : null) ??
+        (firstActive ? getPublishedTemplateSpec(firstActive.templateSpecId, firstActive.templateVersion) : null) ??
+        findDefaultSpecForTemplate(defaultTpl) ??
+        GENERAL_GROUPED_V1;
+      const useMeasured = Boolean(schoolConfig?.useMeasuredBulletinRenderer);
+      const ready = useMeasured || assignments.length > 0;
+
+      if (req.query.format === 'pdf') {
+        if (!this.bulletinRenderer) {
+          res.status(501).json({ success: false, message: 'Moteur de rendu PDF mesuré non câblé.' });
+          return;
+        }
+        const sObj = school.toObject();
+        const pdfBuffer = await renderAtelierPreviewPdf({
+          schoolName: sObj.name,
+          fallbackCity: sObj.city,
+          fallbackPhone: sObj.phone,
+          fallbackLogoUrl: sObj.logoUrl,
+          kit: identityKit,
+          spec: activeSpec,
+          renderer: this.bulletinRenderer,
+          schoolAssetStorage: this.schoolAssetStorage,
+        });
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="modele-officiel-${activeSpec.id}.pdf"`);
+        res.setHeader('Content-Length', pdfBuffer.length);
+        res.end(pdfBuffer);
+        return;
+      }
+
+      res.json({
+        success: true,
+        data: {
+          ready,
+          useMeasuredBulletinRenderer: useMeasured,
+          defaultTemplate: defaultTpl,
+          defaultGroupingScheme: schoolConfig?.bulletinGroupingScheme ?? 'FLAT',
+          activeSpec: {
+            id: activeSpec.id,
+            version: activeSpec.version,
+            name: activeSpec.name,
+            familyKey: activeSpec.familyKey,
+            language: activeSpec.language,
+            validationNotice: activeSpec.validationNotice ?? null,
+          },
+          assignmentsCount: assignments.filter((a) => a.isActive).length,
+          hasIdentityKit: Boolean(identityKit),
+        },
+      });
+    } catch (error) { next(error); }
   };
 
   // POST /api/v2/report-cards/export/:classId

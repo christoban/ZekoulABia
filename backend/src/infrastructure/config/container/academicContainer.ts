@@ -143,6 +143,8 @@ export function createAcademicContainer(core: CoreContainerContext) {
     bulletinAssignmentRepository,
     bulletinRenderer,
     bulletinPdfStorage,
+    schoolIdentityKitRepository,
+    schoolAssetStorage,
     studentRecommendationRepository,
   };
 

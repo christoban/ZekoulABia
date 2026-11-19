@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { PartyPopper, Search, AlertTriangle, CheckCircle2, Loader2, FileText, BarChart3, Package, Upload, Eye } from 'lucide-react'
+import { PartyPopper, Search, AlertTriangle, CheckCircle2, Loader2, FileText, BarChart3, Package, Upload, Eye, Copy } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { fetchApi } from '@/lib/fetchApi'
 import { getCachedData, putCachedData } from '@/lib/offline/db'
@@ -8,6 +8,7 @@ import AnimatedBackground from '@/components/AnimatedBackground'
 import DelegationSupervisionBanner from './DelegationSupervisionBanner'
 import ExamensOfficielsPanel from '@/features/examens/ExamensOfficielsPanel'
 import BulletinAiCommentBtn from './BulletinAiCommentBtn'
+import { SchoolOfficialTemplateBanner, ReprintDuplicateModal, downloadClassMergedPdf, downloadClassZipArchive, type ReprintTarget } from './bulletins/BulletinSchoolPreviewAndReprintModal'
 
 import type { AdminSection } from '../_types'
 
@@ -50,7 +51,9 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
   const [loadingCheck, setLoadingCheck]     = useState(false)
   const [generating, setGenerating]         = useState(false)
   const [exporting, setExporting]           = useState(false)
+  const [exportingPdf, setExportingPdf]     = useState(false)
   const [sending, setSending]               = useState(false)
+  const [reprintTarget, setReprintTarget]   = useState<ReprintTarget | null>(null)
   const [celebrate, setCelebrate]           = useState(false)
   const [subTab, setSubTab]                 = useState<'bulletins' | 'examens'>('bulletins')
 
@@ -180,30 +183,17 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
   const handleExportZip = async () => {
     if (!classId) return
     setExporting(true)
-    try {
-      const res = await fetchApi(`/api/v2/report-cards/export/${classId}`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...(check?.periodId ? { academicPeriodId: check.periodId } : {}),
-        }),
-      })
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}))
-        throw new Error(errData.message || 'Erreur lors de l\'export du ZIP')
-      }
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url; a.download = `bulletins-${classId}.zip`; a.click()
-      URL.revokeObjectURL(url)
-      onToast('ZIP téléchargé avec succès', 'success')
-    } catch (err) {
-      onToast(err instanceof Error ? err.message : 'Erreur export', 'error')
-    } finally {
-      setExporting(false)
-    }
+    try { await downloadClassZipArchive({ classId, periodId: check?.periodId, onToast }) }
+    catch (err) { onToast(err instanceof Error ? err.message : 'Erreur export', 'error') }
+    finally { setExporting(false) }
+  }
+
+  const handleExportPdfClass = async () => {
+    if (!classId) return
+    setExportingPdf(true)
+    try { await downloadClassMergedPdf({ classId, periodId: check?.periodId, onToast }) }
+    catch (err) { onToast(err instanceof Error ? err.message : 'Erreur export PDF', 'error') }
+    finally { setExportingPdf(false) }
   }
 
   const handleSendParents = async () => {
@@ -304,6 +294,8 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
 
       <DelegationSupervisionBanner actorTitle="Saisie : Titulaire de classe | Validation : Censeur & Direction" domainLabel="Bulletins & Évaluations" onNav={onNav} />
 
+      <SchoolOfficialTemplateBanner onToast={onToast} />
+
       {/* RACI 2-Step Validation Banner */}
       <div className="mb-3.5 p-2.5 rounded-lg border border-purple-500/20 bg-purple-500/5 text-xs text-[var(--text)] flex items-center justify-between gap-2.5 shadow-xs">
         <div className="flex items-center gap-2.5">
@@ -371,7 +363,10 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
                 <BarChart3 size={14} /> Bulletins générés ({reportCards.length})
               </span>
               {reportCards.length > 0 && (
-                <div style={{ display: 'flex', gap: 6 }}>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <button className="text-[11px] md:text-[12px] px-[9px] py-[4.5px] md:px-[11px] md:py-[5px] rounded-[7px] border-0 md:border md:border-[1.5px] md:border-[var(--border2)] bg-[var(--bg2)] md:bg-[var(--surface)]" style={{ fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }} onClick={handleExportPdfClass} disabled={exportingPdf}>
+                    {exportingPdf ? <Loader2 size={12} className="animate-spin" /> : <FileText size={12} />} PDF Classe
+                  </button>
                   <button className="text-[11px] md:text-[12px] px-[9px] py-[4.5px] md:px-[11px] md:py-[5px] rounded-[7px] border-0 md:border md:border-[1.5px] md:border-[var(--border2)] bg-[var(--bg2)] md:bg-[var(--surface)]" style={{ fontWeight: 700, color: 'var(--text2)', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }} onClick={handleExportZip} disabled={exporting}>
                     {exporting ? <Loader2 size={12} className="animate-spin" /> : <Package size={12} />} ZIP
                   </button>
@@ -400,10 +395,16 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
                         {b.generalAverage != null ? `${b.generalAverage.toFixed(2)}/20` : '—'} · {b.rank != null ? `${b.rank}e` : '—'}
                       </div>
                     </div>
-                    <button className="text-[10.5px] px-[9px] py-[4.5px] rounded-[6px] border-0" style={{ background: 'var(--bg2)', color: 'var(--text2)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}
-                      onClick={() => window.open(`/api/v2/report-cards/${b.id}/pdf`, '_blank')}>
-                      <Eye size={12} /> PDF
-                    </button>
+                    <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+                      <button className="text-[10.5px] px-[9px] py-[4.5px] rounded-[6px] border-0" style={{ background: 'var(--bg2)', color: 'var(--text2)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                        onClick={() => window.open(`/api/v2/report-cards/${b.id}/pdf`, '_blank')}>
+                        <Eye size={12} /> PDF
+                      </button>
+                      <button className="text-[10.5px] px-[9px] py-[4.5px] rounded-[6px] border-0" style={{ background: 'var(--amber-light)', color: 'var(--amber)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                        onClick={() => setReprintTarget({ id: b.id, studentName: b.student ? `${b.student.firstName} ${b.student.lastName}` : 'Élève' })}>
+                        <Copy size={12} /> Duplicata
+                      </button>
+                    </div>
                   </div>
                 ))}
                 {reportCards.length > 15 && (
@@ -440,6 +441,7 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
                         <td style={tdSt}>
                           <div style={{ display: 'inline-flex', gap: 6, alignItems: 'flex-start', flexWrap: 'wrap' }}>
                             <button style={{ ...btnSec, display: 'inline-flex', alignItems: 'center', gap: 5 }} onClick={() => window.open(`/api/v2/report-cards/${b.id}/pdf`, '_blank')}><Eye size={13} /> PDF</button>
+                            <button style={{ ...btnSec, display: 'inline-flex', alignItems: 'center', gap: 5 }} onClick={() => setReprintTarget({ id: b.id, studentName: b.student ? `${b.student.firstName} ${b.student.lastName}` : 'Élève' })}><Copy size={13} /> Duplicata</button>
                             <BulletinAiCommentBtn studentName={b.student ? `${b.student.firstName} ${b.student.lastName}` : 'Élève'} average={b.generalAverage ?? null} className={className} onToast={onToast} />
                           </div>
                         </td>
@@ -468,6 +470,7 @@ export default function SectionBulletins({ onToast, onNav }: Props) {
           <div className="text-[12px] md:text-[13px]" style={{ color: 'var(--text3)' }}>Choisissez une classe et cliquez sur « Charger » pour voir les bulletins.</div>
         </div>
       )}
+      <ReprintDuplicateModal target={reprintTarget} onClose={() => setReprintTarget(null)} onToast={onToast} />
       </>)}
     </div>
   )

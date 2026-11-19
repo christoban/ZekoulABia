@@ -7,11 +7,20 @@ import type { SchoolRepository } from '@domain/ports/repositories/SchoolReposito
 import type { SectionRepository } from '@domain/ports/repositories/SectionRepository';
 import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
 import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
+import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
 import type { BulletinTemplate } from '@domain/types/enums';
 import { BulletinBloqueError } from '@domain/errors/BulletinBloqueError';
 import { MatiereSansGroupeError } from '@domain/errors/MatiereSansGroupeError';
+import { GENERAL_GROUPED_V1, findDefaultSpecForTemplate, getPublishedTemplateSpec } from '@domain/templates/bulletinCatalog';
 import { resolveLanguage } from '../../../../domain/policies/LanguagePolicy';
+import {
+  buildRenderOptionsForExport,
+  createBatchSchoolIdentityContextCache,
+  isStudentBulletinSnapshot,
+} from '@application/reportCard/bulletinPdfLifecycle';
+import { resolvePublicVerifyBaseUrl } from '@infrastructure/config/EnvAppConfig';
 import { getEffectiveSchoolSettings } from '../../../services/school-settings/SchoolSettingsService';
+import { LocalAndDataUriSchoolAssetStorageAdapter } from '../../../services/storage/LocalAndDataUriSchoolAssetStorageAdapter';
 import { notifyBulletinSms } from '@infrastructure/services/sms/SmsNotificationService';
 import { renderReportCardPdfBuffer } from './reportCardControllerHelpers';
 
@@ -213,6 +222,39 @@ export async function resolveSendBulletinsParams(params: {
   return { data: { classId, academicPeriodId, nomEtablissement, nomPeriode, langue } };
 }
 
+async function resolveExportPeriodAndBulletins(params: {
+  res: Response;
+  schoolId: string;
+  classId: string;
+  requestedPeriodId?: string;
+  anneeRepository: AnneeAcademiqueRepository;
+  bulletinRepository: BulletinRepository;
+}) {
+  let academicPeriodId = params.requestedPeriodId;
+  if (!academicPeriodId) {
+    const currentYear = await params.anneeRepository.findCourante(params.schoolId);
+    if (currentYear) {
+      const periodes = await params.anneeRepository.findPeriodesByAnnee(currentYear.id);
+      const currentPeriod = periodes.find((p) => p.isCurrent) || periodes[0];
+      academicPeriodId = currentPeriod?.id;
+    }
+  }
+  if (!academicPeriodId) {
+    params.res.status(400).json({ success: false, message: 'academicPeriodId requis ou aucune période active trouvée' });
+    return null;
+  }
+
+  const reportCards = await params.bulletinRepository.findForExport(params.schoolId, academicPeriodId, params.classId);
+  if (!reportCards.length) {
+    params.res.status(404).json({
+      success: false,
+      message: "Aucun bulletin trouvé pour cette classe et cette période. Veuillez d'abord générer les bulletins.",
+    });
+    return null;
+  }
+  return { academicPeriodId, reportCards };
+}
+
 export async function streamClassReportCardsZip(params: {
   res: Response;
   schoolId: string;
@@ -223,38 +265,17 @@ export async function streamClassReportCardsZip(params: {
   bulletinRenderer?: BulletinRendererPort;
   bulletinPdfStorage?: BulletinPdfStoragePort;
 }): Promise<void> {
-  const { res, schoolId, classId, anneeRepository, bulletinRepository } = params;
-  let academicPeriodId = params.requestedPeriodId;
-
-  if (!academicPeriodId) {
-    const currentYear = await anneeRepository.findCourante(schoolId);
-    if (currentYear) {
-      const periodes = await anneeRepository.findPeriodesByAnnee(currentYear.id);
-      const currentPeriod = periodes.find((p) => p.isCurrent) || periodes[0];
-      academicPeriodId = currentPeriod?.id;
-    }
-  }
-  if (!academicPeriodId) {
-    res.status(400).json({ success: false, message: 'academicPeriodId requis ou aucune période active trouvée' });
-    return;
-  }
-
-  const reportCards = await bulletinRepository.findForExport(schoolId, academicPeriodId, classId);
-  if (!reportCards.length) {
-    res.status(404).json({
-      success: false,
-      message: "Aucun bulletin trouvé pour cette classe et cette période. Veuillez d'abord générer les bulletins.",
-    });
-    return;
-  }
+  const { res, schoolId, classId } = params;
+  const ctx = await resolveExportPeriodAndBulletins(params);
+  if (!ctx) return;
 
   const settings = await getEffectiveSchoolSettings(schoolId);
   res.setHeader('Content-Type', 'application/zip');
-  res.setHeader('Content-Disposition', `attachment; filename="bulletins-${classId}-${academicPeriodId}.zip"`);
+  res.setHeader('Content-Disposition', `attachment; filename="bulletins-${classId}-${ctx.academicPeriodId}.zip"`);
 
   const archive = new ZipArchive({ zlib: { level: 6 } });
   archive.pipe(res);
-  for (const reportCard of reportCards) {
+  for (const reportCard of ctx.reportCards) {
     const { pdfBuffer, studentName } = await renderReportCardPdfBuffer(reportCard, schoolId, 'ADMIN', settings, {
       bulletinRenderer: params.bulletinRenderer,
       bulletinPdfStorage: params.bulletinPdfStorage,
@@ -262,4 +283,74 @@ export async function streamClassReportCardsZip(params: {
     archive.append(pdfBuffer, { name: `bulletin-${studentName.replace(/\s+/g, '-')}.pdf` });
   }
   await archive.finalize();
+}
+
+export async function streamClassReportCardsMergedPdf(params: {
+  res: Response;
+  schoolId: string;
+  classId: string;
+  requestedPeriodId?: string;
+  anneeRepository: AnneeAcademiqueRepository;
+  bulletinRepository: BulletinRepository;
+  bulletinRenderer?: BulletinRendererPort;
+  schoolAssetStorage?: SchoolAssetStoragePort;
+}): Promise<void> {
+  const { res, schoolId, classId, bulletinRenderer } = params;
+  if (!bulletinRenderer?.renderMergedClassPdf) {
+    res.status(501).json({ success: false, message: 'Le moteur PDF fusionné par classe n’est pas configuré.' });
+    return;
+  }
+  const ctx = await resolveExportPeriodAndBulletins(params);
+  if (!ctx) return;
+
+  const firstSchool = ctx.reportCards[0]?.school;
+  const identityCache = createBatchSchoolIdentityContextCache({
+    schoolName: firstSchool?.name ?? 'Établissement',
+    fallbackMotto: firstSchool?.schoolSettings?.schoolMotto,
+    fallbackCity: firstSchool?.city,
+    fallbackPhone: firstSchool?.phone,
+    fallbackLogoUrl: firstSchool?.logoUrl,
+    kit: firstSchool?.identityKit,
+    schoolAssetStorage: params.schoolAssetStorage ?? new LocalAndDataUriSchoolAssetStorageAdapter(),
+  });
+  const verifyBaseUrl = resolvePublicVerifyBaseUrl();
+
+  const items = [];
+  for (const rc of ctx.reportCards) {
+    if (!isStudentBulletinSnapshot(rc.snapshotData)) continue;
+    const tpl = (rc.template ?? 'FR_SECONDARY') as BulletinTemplate;
+    const spec =
+      (rc.templateSpecId ? getPublishedTemplateSpec(rc.templateSpecId, rc.templateVersion) : null) ??
+      findDefaultSpecForTemplate(tpl) ??
+      GENERAL_GROUPED_V1;
+    const sectionCode =
+      rc.section?.code ?? rc.student?.studentProfile?.enrollmentsYearScoped?.[0]?.class?.section?.code ?? null;
+    const language = resolveLanguage(rc.school?.subsystem, sectionCode);
+    const schoolIdentity = await identityCache.getForLanguage(language);
+    items.push({
+      snapshot: rc.snapshotData,
+      templateSpec: spec,
+      options: buildRenderOptionsForExport(rc, {
+        role: 'ADMIN',
+        language,
+        verifyBaseUrl,
+        schoolMotto: rc.school?.schoolSettings?.schoolMotto,
+        schoolIdentity,
+      }),
+    });
+  }
+
+  if (items.length === 0) {
+    res.status(400).json({
+      success: false,
+      message: "Aucun bulletin scellé exploitable pour générer le PDF fusionné de la classe.",
+    });
+    return;
+  }
+
+  const pdfBuffer = await bulletinRenderer.renderMergedClassPdf(items);
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="bulletins-classe-${classId}-${ctx.academicPeriodId}.pdf"`);
+  res.setHeader('Content-Length', pdfBuffer.length);
+  res.end(pdfBuffer);
 }

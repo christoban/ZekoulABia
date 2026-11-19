@@ -4,9 +4,16 @@
  */
 import type { BulletinGroupingScheme, BulletinTemplate } from '@domain/types/enums';
 
+export interface UpsertBulletinConfigInput {
+  bulletinTemplate?: BulletinTemplate;
+  bulletinGroupingScheme?: BulletinGroupingScheme;
+  useMeasuredBulletinRenderer?: boolean;
+}
+
 export interface SchoolConfigRepository {
   findBySchool(schoolId: string): Promise<SchoolConfigData | null>;
   findBySchoolId(schoolId: string): Promise<SchoolConfigData | null>;
+  upsertBulletinConfig?(schoolId: string, input: UpsertBulletinConfigInput): Promise<SchoolConfigData>;
 }
 
 export interface SchoolConfigData {
