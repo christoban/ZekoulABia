@@ -23,9 +23,17 @@ import type { StudentProfileRepository } from '@domain/ports/repositories/Studen
 import type { ClasseCoefficientRepository } from '@domain/ports/repositories/ClasseCoefficientRepository';
 import type { TeachingAssignmentRepository } from '@domain/ports/repositories/TeachingAssignmentRepository';
 import type { DisciplineRepository } from '@domain/ports/repositories/DisciplineRepository';
+import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolConfigRepository';
+import type { BulletinTemplateAssignmentRepository } from '@domain/ports/repositories/BulletinTemplateAssignmentRepository';
+import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
+import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
 import type { BulletinTemplate } from '@domain/types/enums';
 import { resolveHasCoefficientForClass } from '@domain/subsystems/SubsystemDefaults';
 import { resolveLanguage } from '../../domain/policies/LanguagePolicy';
+import {
+  renderAndStoreBulletinIfSpecActive,
+  resolveClassGenerationPlan,
+} from './bulletinPdfLifecycle';
 import {
   chargerNotesEtSequencesClasse,
   construireEtEnrichirSnapshotsClasse,
@@ -71,6 +79,10 @@ export class GenererBulletinUseCase {
     private readonly classeCoefficientRepository?: ClasseCoefficientRepository,
     private readonly teachingAssignmentRepository?: TeachingAssignmentRepository,
     private readonly disciplineRepository?: DisciplineRepository,
+    private readonly schoolConfigRepository?: SchoolConfigRepository,
+    private readonly assignmentRepository?: BulletinTemplateAssignmentRepository,
+    private readonly bulletinRenderer?: BulletinRendererPort,
+    private readonly bulletinPdfStorage?: BulletinPdfStoragePort,
   ) {}
 
   async execute(commande: GenererBulletinCommande): Promise<GenererBulletinResultat> {
@@ -92,7 +104,18 @@ export class GenererBulletinUseCase {
     const annee = await this.anneeRepository.findById(commande.academicYearId);
     if (!annee) throw new Error('Année académique introuvable');
 
-    const isAnnual = commande.template === 'ANNUAL';
+    const plan = await resolveClassGenerationPlan({
+      schoolId: commande.schoolId,
+      classId: commande.classId,
+      classLevel: classe.level ?? null,
+      periodName: periode.name,
+      requestedTemplate: commande.template,
+      schoolConfigRepository: this.schoolConfigRepository,
+      assignmentRepository: this.assignmentRepository,
+    });
+    const effectiveTemplate = plan.template;
+
+    const isAnnual = effectiveTemplate === 'ANNUAL';
     const ctx = await chargerNotesEtSequencesClasse({
       classId: commande.classId,
       academicYearId: commande.academicYearId,
@@ -141,7 +164,7 @@ export class GenererBulletinUseCase {
       notesDeClasse: ctx.notesDeClasse,
       elevesClasse,
       hasCoefficientBySubject,
-      template: commande.template,
+      template: effectiveTemplate,
       langue,
       matiereRepository: this.matiereRepository,
       userRepository: this.userRepository,
@@ -151,9 +174,15 @@ export class GenererBulletinUseCase {
       classeCoefficientRepository: this.classeCoefficientRepository,
       teachingAssignmentRepository: this.teachingAssignmentRepository,
       disciplineRepository: this.disciplineRepository,
+      groupingScheme: plan.groupingScheme,
     });
 
     const verifyBase = resoudreVerifyBaseUrl();
+    const rawPhotoByStudent = new Map<string, string | null>();
+    if (this.studentProfileRepository && plan.useMeasuredRenderer) {
+      const opts = await this.studentProfileRepository.findBulletinOptionsByStudentIds(elevesClasse.map((e) => e.id));
+      for (const o of opts) rawPhotoByStudent.set(o.studentId, o.photoUrl);
+    }
     let generes = 0;
     let ignores = 0;
 
@@ -176,7 +205,7 @@ export class GenererBulletinUseCase {
         academicYearId: commande.academicYearId,
         academicPeriodId: commande.academicPeriodId,
         sectionId: classe.sectionId,
-        template: commande.template,
+        template: effectiveTemplate,
       });
 
       bulletin.definirLignesMatiere(snapshotToLignesMatiere(entry.snapshot));
@@ -195,33 +224,56 @@ export class GenererBulletinUseCase {
         contentHash: entry.contentHash,
         verifyToken: entry.verifyToken,
         computationVersion: 2,
-        templateVersion: 1,
+        templateSpecId: plan.templateSpecId ?? undefined,
+        templateVersion: plan.templateVersion,
       });
 
       const verifyUrl = `${verifyBase}/verify/${bulletin.id}?token=${entry.verifyToken}`;
-      await this.pdfService.genererBulletin({
-        bulletin: bulletin.toObject(),
-        nomEleve: eleve.nomComplet,
-        nomClasse: classe.nomComplet,
-        nomEtablissement: commande.nomEtablissement,
-        schoolMotto: commande.schoolMotto,
-        logoUrl: commande.logoUrl,
-        anneeAcademique: annee.name,
-        nomPeriode: periode.name,
-        nomProfesseurPrincipal: bundle.mainTeacherName ?? undefined,
-        moyenneClasse: bundle.classProfile.classAverage,
-        moyennePremier: bundle.classProfile.topAverage,
-        moyenneDernier: bundle.classProfile.lowAverage,
-        nbAdmis: bundle.classProfile.passCount,
-        tauxReussite: bundle.classProfile.passRate,
-        langue,
-        verifyUrl,
-        seq1Label: ctx.rawSeqNames[0],
-        seq2Label: ctx.rawSeqNames[1],
+      const storedKey = await renderAndStoreBulletinIfSpecActive({
+        bulletinId: bulletin.id,
+        schoolId: commande.schoolId,
+        academicPeriodId: commande.academicPeriodId,
         snapshot: entry.snapshot,
+        spec: plan.spec,
+        school: school.toObject(),
+        className: classe.nomComplet,
+        periodName: periode.name,
+        yearName: annee.name,
+        mention: entry.mention,
+        language: langue,
+        schoolMotto: commande.schoolMotto,
+        verifyUrl,
+        verifyToken: entry.verifyToken,
+        studentPhotoUrl: rawPhotoByStudent.get(eleve.id),
+        bulletinRenderer: this.bulletinRenderer,
+        bulletinPdfStorage: this.bulletinPdfStorage,
       });
 
-      bulletin.marquerGenere(`bulletins/${commande.schoolId}/${bulletin.id}.pdf`);
+      if (!storedKey) {
+        await this.pdfService.genererBulletin({
+          bulletin: bulletin.toObject(),
+          nomEleve: eleve.nomComplet,
+          nomClasse: classe.nomComplet,
+          nomEtablissement: commande.nomEtablissement,
+          schoolMotto: commande.schoolMotto,
+          logoUrl: commande.logoUrl,
+          anneeAcademique: annee.name,
+          nomPeriode: periode.name,
+          nomProfesseurPrincipal: bundle.mainTeacherName ?? undefined,
+          moyenneClasse: bundle.classProfile.classAverage,
+          moyennePremier: bundle.classProfile.topAverage,
+          moyenneDernier: bundle.classProfile.lowAverage,
+          nbAdmis: bundle.classProfile.passCount,
+          tauxReussite: bundle.classProfile.passRate,
+          langue,
+          verifyUrl,
+          seq1Label: ctx.rawSeqNames[0],
+          seq2Label: ctx.rawSeqNames[1],
+          snapshot: entry.snapshot,
+        });
+      }
+
+      bulletin.marquerGenere(storedKey ?? `bulletins/${commande.schoolId}/${bulletin.id}.pdf`);
 
       if (bulletinExistant?.estGenere()) {
         bulletinExistant.revoquer({

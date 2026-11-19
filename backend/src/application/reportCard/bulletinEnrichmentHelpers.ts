@@ -20,6 +20,33 @@ import type {
   StudentBulletinSnapshot,
 } from '@domain/types/bulletinSnapshot';
 import { resolveCurriculumSubjectConfig } from '@domain/services/bulletin/bulletinSnapshotMath';
+import type { BulletinGroupingScheme } from '@domain/services/bulletin/bulletinGroupingSchemes';
+
+export function sanitizePhotoReferenceForSnapshot(
+  photoUrl: string | null | undefined,
+  studentId: string,
+): string | null {
+  if (!photoUrl) return null;
+  const trimmed = photoUrl.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith('data:')) {
+    return `ref:student-photo:${studentId}`;
+  }
+  return trimmed;
+}
+
+export function decodeBase64PhotoUrl(photoUrl: string | null | undefined): Buffer | null {
+  if (!photoUrl || !photoUrl.startsWith('data:image/')) return null;
+  const commaIdx = photoUrl.indexOf(',');
+  if (commaIdx === -1) return null;
+  const b64 = photoUrl.slice(commaIdx + 1).trim();
+  if (!b64) return null;
+  try {
+    return Buffer.from(b64, 'base64');
+  } catch {
+    return null;
+  }
+}
 
 export function resoudreVerifyBaseUrl(): string {
   return (process.env.FRONTEND_URL || process.env.CLIENT_URL || process.env.APP_URL || 'http://localhost:3000')
@@ -156,14 +183,19 @@ export function buildSubjectInputsWithCurriculum(params: {
   levelCoeffMap: Map<string, SubjectCoefficientRecord | CoefficientMatiere>;
   teacherBySubject: Map<string, string>;
   educationType: string | null | undefined;
+  groupingScheme?: BulletinGroupingScheme | null;
 }): SnapshotSubjectInput[] {
   const matiereParId = new Map(params.matieres.map((m) => [m.id, m]));
+  const gradedSubjectIds = new Set(params.notesDeClasse.map((n) => n.subjectId));
+
   const subjectsInput: SnapshotSubjectInput[] = params.matieres.map((m) => {
+    const schemeForSubject = gradedSubjectIds.has(m.id) ? params.groupingScheme : 'FLAT';
     const cfg = resolveCurriculumSubjectConfig({
       subject: m,
       levelCoeff: params.levelCoeffMap.get(m.id),
       classOverride: params.overrideMap.get(m.id),
       educationType: params.educationType,
+      groupingScheme: schemeForSubject,
     });
     return {
       id: m.id,
@@ -182,13 +214,20 @@ export function buildSubjectInputsWithCurriculum(params: {
   for (const n of params.notesDeClasse) {
     if (knownIds.has(n.subjectId)) continue;
     knownIds.add(n.subjectId);
+    const mat = matiereParId.get(n.subjectId);
     const fallbackCfg = resolveCurriculumSubjectConfig({
-      subject: { coefficient: n.coefficient },
+      subject: {
+        id: n.subjectId,
+        name: mat?.name ?? `Matière (${n.subjectId.slice(0, 6)})`,
+        code: mat?.code ?? null,
+        coefficient: n.coefficient,
+      },
       educationType: params.educationType,
+      groupingScheme: params.groupingScheme,
     });
     subjectsInput.push({
       id: n.subjectId,
-      name: matiereParId.get(n.subjectId)?.name ?? `Matière (${n.subjectId.slice(0, 6)})`,
+      name: mat?.name ?? `Matière (${n.subjectId.slice(0, 6)})`,
       coefficient: fallbackCfg.coefficient,
       isLV2: params.lv2SubjectIds.has(n.subjectId),
       groupKey: fallbackCfg.groupKey,

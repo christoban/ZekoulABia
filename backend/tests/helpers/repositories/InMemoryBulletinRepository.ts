@@ -148,6 +148,7 @@ export class InMemoryBulletinRepository implements BulletinRepository {
       academicYearId: rev.academicYearId,
       academicPeriodId: rev.academicPeriodId,
       computationVersion: rev.computationVersion ?? 1,
+      templateSpecId: rev.templateSpecId ?? null,
       templateVersion: rev.templateVersion ?? 1,
       generalAverage: rev.generalAverage ?? null,
       rank: rev.rank ?? null,
@@ -184,6 +185,18 @@ export class InMemoryBulletinRepository implements BulletinRepository {
         Bulletin.reconstituer({ ...props, pdfUrl, isGenerated: true })
       );
     }
+  }
+
+  async updatePdfMetadata(
+    bulletinId: string,
+    params: { pdfUrl: string; templateSpecId?: string | null; templateVersion?: number },
+  ): Promise<void> {
+    const bulletin = this.store.get(bulletinId);
+    if (!bulletin) throw new Error('Bulletin introuvable');
+    bulletin.scellerStockagePdf(params);
+    const props = bulletin.toObject();
+    this.store.set(bulletinId, Bulletin.reconstituer({ ...props, isGenerated: true }));
+    this.periodeStore.set(`${props.studentId}:${props.academicPeriodId}`, Bulletin.reconstituer({ ...props, isGenerated: true }));
   }
 
   async updateClassMasterComment(bulletinId: string, comment: string): Promise<void> {

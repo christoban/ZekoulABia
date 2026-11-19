@@ -5,6 +5,9 @@
  * Chaque famille (A..F) et chaque variante calibrée par un établissement s'appuie sur ce schéma.
  */
 
+import type { BulletinGroupingScheme } from '@domain/services/bulletin/bulletinGroupingSchemes';
+import type { BulletinTemplate } from '@domain/types/enums';
+
 export type BulletinFamilyKey = 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
 
 export type SubjectTableColumnKey =
@@ -104,8 +107,11 @@ export type BulletinTemplateBlock =
 export interface BulletinTemplateSpec {
   id: string;
   familyKey: BulletinFamilyKey;
+  targetTemplate?: BulletinTemplate;
   name: string;
   version: number;
+  status?: 'DRAFT' | 'PUBLISHED';
+  defaultGroupingScheme?: BulletinGroupingScheme;
   language: 'fr' | 'en' | 'bilingual';
   grayscaleFirst: boolean;
   page: {

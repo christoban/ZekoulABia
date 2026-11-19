@@ -4,6 +4,11 @@ import type { StudentBulletinSnapshot } from '@domain/types/bulletinSnapshot';
 import type { BulletinTemplateSpec } from '@domain/types/bulletinTemplateSpec';
 import type { BulletinRenderOptions } from '@domain/ports/services/BulletinRendererPort';
 import { MeasuredPdfKitBulletinRenderer } from '@infrastructure/pdf/renderer/MeasuredPdfKitBulletinRenderer';
+import {
+  registerEmbeddedFonts,
+  resolveEmbeddedFontPaths,
+  verifyEmbeddedFontsExist,
+} from '@infrastructure/pdf/renderer/measuredHeaderHelpers';
 
 const LONG_COMMENT =
   'Travail très sérieux tout au long du trimestre. L’élève maîtrise les notions théoriques et résout avec rigueur les exercices complexes ; il convient toutefois d’approfondir la justification écrite des étapes intermédiaires et d’accorder davantage d’attention aux applications expérimentales pour viser la mention Très Bien.';
@@ -219,6 +224,15 @@ describe('MeasuredPdfKitBulletinRenderer — Étape 3', () => {
       PDFDocument.prototype.rect = origRect;
       PDFDocument.prototype.text = origText;
     }
+  });
+
+  it('vérifie la présence des polices TTF embarquées et échoue explicitement si une police est introuvable', () => {
+    expect(() => verifyEmbeddedFontsExist()).not.toThrow();
+    const missingPaths = resolveEmbeddedFontPaths('/dossier/polices/inexistant');
+    expect(() => verifyEmbeddedFontsExist(missingPaths)).toThrow(/Police TTF embarquée introuvable/);
+
+    const doc = new PDFDocument({ size: 'A4' });
+    expect(() => registerEmbeddedFonts(doc, '/dossier/polices/inexistant')).toThrow(/Police TTF embarquée introuvable/);
   });
 
   it('génère un lot complet de 60 bulletins (18 matières) largement sous le seuil de 3 minutes', async () => {

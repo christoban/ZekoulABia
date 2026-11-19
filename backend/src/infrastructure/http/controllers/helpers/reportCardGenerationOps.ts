@@ -5,8 +5,11 @@ import type { BulletinRepository } from '@domain/ports/repositories/BulletinRepo
 import type { ClasseRepository } from '@domain/ports/repositories/ClasseRepository';
 import type { SchoolRepository } from '@domain/ports/repositories/SchoolRepository';
 import type { SectionRepository } from '@domain/ports/repositories/SectionRepository';
+import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
+import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
 import type { BulletinTemplate } from '@domain/types/enums';
 import { BulletinBloqueError } from '@domain/errors/BulletinBloqueError';
+import { MatiereSansGroupeError } from '@domain/errors/MatiereSansGroupeError';
 import { resolveLanguage } from '../../../../domain/policies/LanguagePolicy';
 import { getEffectiveSchoolSettings } from '../../../services/school-settings/SchoolSettingsService';
 import { notifyBulletinSms } from '@infrastructure/services/sms/SmsNotificationService';
@@ -112,6 +115,18 @@ export function triggerBulletinSmsFireAndForget(params: {
 }
 
 export function handleGenerateBulletinsError(error: unknown, res: Response, next: NextFunction): void {
+  if (error instanceof MatiereSansGroupeError) {
+    res.status(422).json({
+      success: false,
+      code: 'MATIERE_SANS_GROUPE',
+      message: error.message,
+      subjectId: error.subjectId,
+      subjectName: error.subjectName,
+      subjectCode: error.subjectCode,
+      groupingScheme: error.groupingScheme,
+    });
+    return;
+  }
   if (error instanceof BulletinBloqueError) {
     res.status(422).json({
       success: false,
@@ -204,6 +219,8 @@ export async function streamClassReportCardsZip(params: {
   requestedPeriodId?: string;
   anneeRepository: AnneeAcademiqueRepository;
   bulletinRepository: BulletinRepository;
+  bulletinRenderer?: BulletinRendererPort;
+  bulletinPdfStorage?: BulletinPdfStoragePort;
 }): Promise<void> {
   const { res, schoolId, classId, anneeRepository, bulletinRepository } = params;
   let academicPeriodId = params.requestedPeriodId;
@@ -237,7 +254,10 @@ export async function streamClassReportCardsZip(params: {
   const archive = new ZipArchive({ zlib: { level: 6 } });
   archive.pipe(res);
   for (const reportCard of reportCards) {
-    const { pdfBuffer, studentName } = await renderReportCardPdfBuffer(reportCard, schoolId, 'ADMIN', settings);
+    const { pdfBuffer, studentName } = await renderReportCardPdfBuffer(reportCard, schoolId, 'ADMIN', settings, {
+      bulletinRenderer: params.bulletinRenderer,
+      bulletinPdfStorage: params.bulletinPdfStorage,
+    });
     archive.append(pdfBuffer, { name: `bulletin-${studentName.replace(/\s+/g, '-')}.pdf` });
   }
   await archive.finalize();

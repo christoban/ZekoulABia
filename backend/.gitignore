@@ -14,6 +14,7 @@ node_modules
 storage/statistical-submissions/
 storage/minedub-reports/
 storage/hr-documents/
+storage/bulletins/
 
 # Pièces jointes déposées par les utilisateurs (babillard, documents) — artefacts runtime
 uploads/

@@ -13,6 +13,8 @@ import type { ParentRepository } from '@domain/ports/repositories/ParentReposito
 import type { FactureRepository } from '@domain/ports/repositories/FactureRepository';
 import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolConfigRepository';
 import type { AIActionAuditPort } from '@domain/ports/services/AIActionAuditPort';
+import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
+import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
 import {
   addClassMasterCommentOp,
   filterParentReportCardsByUnpaidFees,
@@ -44,6 +46,8 @@ export class ReportCardController {
     private readonly listerUseCase?: ListerBulletinsUseCase,
     private readonly factureRepository?: FactureRepository,
     private readonly schoolConfigRepository?: SchoolConfigRepository,
+    private readonly bulletinRenderer?: BulletinRendererPort,
+    private readonly bulletinPdfStorage?: BulletinPdfStoragePort,
   ) {}
 
   // POST /api/v2/report-cards/generate
@@ -142,6 +146,7 @@ export class ReportCardController {
         res, schoolId: req.user.schoolId, classId: req.params.classId as string,
         requestedPeriodId: req.body?.academicPeriodId as string | undefined,
         anneeRepository: this.anneeRepository, bulletinRepository: this.bulletinRepository,
+        bulletinRenderer: this.bulletinRenderer, bulletinPdfStorage: this.bulletinPdfStorage,
       });
     } catch (error) {
       if (!res.headersSent) {
@@ -242,7 +247,10 @@ export class ReportCardController {
         });
         if (blocked) { res.status(403).json({ success: false, code: 'BULLETIN_BLOCKED_UNPAID_FEES', message: 'Téléchargement du bulletin bloqué en raison de frais de scolarité impayés' }); return; }
       }
-      const { pdfBuffer, filename } = await renderReportCardPdfBuffer(reportCard, user.schoolId, role);
+      const { pdfBuffer, filename } = await renderReportCardPdfBuffer(reportCard, user.schoolId, role, undefined, {
+        bulletinRenderer: this.bulletinRenderer,
+        bulletinPdfStorage: this.bulletinPdfStorage,
+      });
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
       res.setHeader('Content-Length', pdfBuffer.length);

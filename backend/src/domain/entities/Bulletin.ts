@@ -57,6 +57,7 @@ export interface BulletinProps {
   academicPeriodId: string;
   sectionId?: string;
   template: BulletinTemplate;
+  templateSpecId?: string;
   templateVersion?: number;
   computationVersion?: number;
   snapshotData?: unknown;
@@ -136,6 +137,7 @@ export class Bulletin {
   get academicYearId(): string { return this.props.academicYearId; }
   get academicPeriodId(): string { return this.props.academicPeriodId; }
   get template(): BulletinTemplate { return this.props.template; }
+  get templateSpecId(): string | undefined { return this.props.templateSpecId; }
   get validationStatus(): ReportCardStatus { return this.props.validationStatus; }
   get computationVersion(): number { return this.props.computationVersion ?? 1; }
   get templateVersion(): number { return this.props.templateVersion ?? 1; }
@@ -234,6 +236,7 @@ export class Bulletin {
     contentHash: string;
     verifyToken: string;
     computationVersion?: number;
+    templateSpecId?: string;
     templateVersion?: number;
   }): void {
     if (this.props.isGenerated) {
@@ -243,7 +246,25 @@ export class Bulletin {
     this.props.contentHash = params.contentHash;
     this.props.verifyToken = params.verifyToken;
     this.props.computationVersion = params.computationVersion ?? 2;
+    this.props.templateSpecId = params.templateSpecId;
     this.props.templateVersion = params.templateVersion ?? 1;
+  }
+
+  /**
+   * Fige la clé de stockage du PDF rendu et la version exacte du modèle lors de la validation/publication.
+   */
+  scellerStockagePdf(params: {
+    pdfUrl: string;
+    templateSpecId?: string | null;
+    templateVersion?: number;
+  }): void {
+    this.props.pdfUrl = params.pdfUrl;
+    if (params.templateSpecId !== undefined) {
+      this.props.templateSpecId = params.templateSpecId ?? undefined;
+    }
+    if (params.templateVersion !== undefined) {
+      this.props.templateVersion = params.templateVersion;
+    }
   }
 
   /**

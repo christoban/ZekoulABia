@@ -3,6 +3,9 @@ import type { IAService } from '@domain/ports/services/IAService';
 import type { FactureRepository } from '@domain/ports/repositories/FactureRepository';
 import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolConfigRepository';
 import type { BulletinExportData, BulletinRepository } from '@domain/ports/repositories/BulletinRepository';
+import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
+import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
+import { getOrRegenerateSealedBulletinPdf } from '@application/reportCard/bulletinPdfLifecycle';
 import { resolveLanguage } from '@domain/policies/LanguagePolicy';
 import { generateBulletinPdf } from '@infrastructure/pdf/report-card/index';
 import { getMention } from '@infrastructure/pdf/report-card/BulletinPdfHelpers';
@@ -60,6 +63,10 @@ export async function renderReportCardPdfBuffer(
   schoolId: string,
   role: string,
   cachedSettings?: Awaited<ReturnType<typeof getEffectiveSchoolSettings>>,
+  measuredDeps?: {
+    bulletinRenderer?: BulletinRendererPort;
+    bulletinPdfStorage?: BulletinPdfStoragePort;
+  },
 ): Promise<{ pdfBuffer: Buffer; filename: string; studentName: string }> {
   const settings = cachedSettings ?? (await getEffectiveSchoolSettings(schoolId));
   const studentName = `${reportCard.student.firstName} ${reportCard.student.lastName}`.trim();
@@ -70,6 +77,20 @@ export async function renderReportCardPdfBuffer(
     reportCard.student?.studentProfile?.enrollmentsYearScoped?.[0]?.class?.section?.code ??
     null;
   const langue = resolveLanguage(reportCard.school?.subsystem, sectionCode);
+  const filename = `bulletin-${studentName.replace(/\s+/g, '-')}-${periodName.replace(/\s+/g, '-')}.pdf`;
+
+  const sealedBuffer = await getOrRegenerateSealedBulletinPdf({
+    reportCard,
+    role,
+    language: langue,
+    verifyBaseUrl: VERIFY_BASE,
+    schoolMotto: settings.schoolMotto,
+    bulletinRenderer: measuredDeps?.bulletinRenderer,
+    bulletinPdfStorage: measuredDeps?.bulletinPdfStorage,
+  });
+  if (sealedBuffer) {
+    return { pdfBuffer: sealedBuffer, filename, studentName };
+  }
 
   const pdfBuffer = await generateBulletinPdf(template, {
     schoolName: settings.schoolName ?? reportCard.school?.name ?? 'École',
@@ -112,7 +133,6 @@ export async function renderReportCardPdfBuffer(
     verifyUrl: `${VERIFY_BASE}/verify/${reportCard.id}`,
   });
 
-  const filename = `bulletin-${studentName.replace(/\s+/g, '-')}-${periodName.replace(/\s+/g, '-')}.pdf`;
   return { pdfBuffer, filename, studentName };
 }
 

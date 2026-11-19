@@ -183,6 +183,7 @@ export class PrismaBulletinRepository implements BulletinRepository {
     await this.prisma.reportCard.update({
       where: { id: data.id },
       data: {
+        templateSpecId: data.templateSpecId,
         templateVersion: data.templateVersion ?? 1,
         computationVersion: data.computationVersion ?? 2,
         snapshotData: data.snapshotData === undefined ? undefined : (data.snapshotData as Prisma.InputJsonValue),
@@ -217,6 +218,7 @@ export class PrismaBulletinRepository implements BulletinRepository {
           academicYearId: revoked.academicYearId,
           academicPeriodId: revoked.academicPeriodId,
           computationVersion: revoked.computationVersion ?? 1,
+          templateSpecId: revoked.templateSpecId ?? null,
           templateVersion: revoked.templateVersion ?? 1,
           generalAverage: revoked.generalAverage ?? null,
           rank: revoked.rank ?? null,
@@ -244,6 +246,21 @@ export class PrismaBulletinRepository implements BulletinRepository {
     await this.prisma.reportCard.update({
       where: { id: bulletinId },
       data: { pdfUrl, isGenerated: true },
+    });
+  }
+
+  async updatePdfMetadata(
+    bulletinId: string,
+    params: { pdfUrl: string; templateSpecId?: string | null; templateVersion?: number },
+  ): Promise<void> {
+    await this.prisma.reportCard.update({
+      where: { id: bulletinId },
+      data: {
+        pdfUrl: params.pdfUrl,
+        isGenerated: true,
+        ...(params.templateSpecId !== undefined ? { templateSpecId: params.templateSpecId } : {}),
+        ...(params.templateVersion !== undefined ? { templateVersion: params.templateVersion } : {}),
+      },
     });
   }
 

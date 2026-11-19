@@ -2,7 +2,7 @@
  * DOMAIN LAYER — Port Repository Bulletin (ReportCard)
  */
 import type { Bulletin } from '@domain/entities/Bulletin';
-import type { BulletinValidationStatus } from '@domain/types/enums';
+import type { BulletinGroupingScheme, BulletinValidationStatus } from '@domain/types/enums';
 import type { BulletinTemplate } from '@domain/types/enums';
 
 export interface BulletinAvecContexteClasse {
@@ -26,12 +26,14 @@ export interface BulletinExportData {
   academicYearId: string;
   academicPeriodId: string;
   template: BulletinTemplate | string | null;
+  templateSpecId?: string | null;
   templateVersion?: number;
   computationVersion?: number;
   snapshotData?: unknown;
   contentHash?: string | null;
   verifyToken?: string | null;
   reprintCount?: number;
+  pdfUrl?: string | null;
   generalAverage: number | null;
   rank: number | null;
   totalStudents: number | null;
@@ -51,7 +53,7 @@ export interface BulletinExportData {
       gender?: string | null;
       isRepeater?: boolean;
       photoUrl?: string | null;
-      enrollmentsYearScoped: Array<{ class: { name: string; section: { code: string } | null } | null }>;
+      enrollmentsYearScoped: Array<{ class: { id?: string; name: string; level?: string | null; section: { code: string } | null } | null }>;
     } | null;
   };
   subjectLines: Array<{
@@ -88,8 +90,17 @@ export interface BulletinExportData {
   school: {
     id: string;
     name: string;
+    city?: string | null;
+    region?: string | null;
+    phone?: string | null;
+    address?: string | null;
+    logoUrl?: string | null;
     subsystem: string | null;
-    schoolConfig: { bulletinTemplate?: string | null } | null;
+    schoolConfig: {
+      bulletinTemplate?: string | null;
+      bulletinGroupingScheme?: BulletinGroupingScheme | null;
+      useMeasuredBulletinRenderer?: boolean;
+    } | null;
     schoolSettings: { timezone?: string | null; locale?: string | null; schoolMotto?: string | null } | null;
   } | null;
   section: { code: string } | null;
@@ -103,6 +114,7 @@ export interface BulletinRevocationArchiveRecord {
   academicYearId: string;
   academicPeriodId: string;
   computationVersion: number;
+  templateSpecId: string | null;
   templateVersion: number;
   generalAverage: number | null;
   rank: number | null;
@@ -155,6 +167,7 @@ export interface BulletinRepository {
   archiverEtRemplacerRevoque(revokedBulletin: Bulletin, replacement: Bulletin): Promise<void>;
   findRevocationsByStudent(schoolId: string, studentId: string): Promise<BulletinRevocationArchiveRecord[]>;
   updatePdfUrl(bulletinId: string, pdfUrl: string): Promise<void>;
+  updatePdfMetadata(bulletinId: string, params: { pdfUrl: string; templateSpecId?: string | null; templateVersion?: number }): Promise<void>;
   updateClassMasterComment(bulletinId: string, comment: string): Promise<void>;
   updateAiComment(bulletinId: string, comment: string): Promise<void>;
   majStatutWorkflowParClasse(classId: string, academicPeriodId: string, schoolId: string, status: BulletinValidationStatus | null): Promise<number>;

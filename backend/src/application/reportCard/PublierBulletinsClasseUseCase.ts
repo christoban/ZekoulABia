@@ -4,7 +4,11 @@
  */
 import type { BulletinRepository } from '@domain/ports/repositories/BulletinRepository';
 import type { BulletinValidationRepository } from '@domain/ports/repositories/BulletinValidationRepository';
+import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolConfigRepository';
+import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
+import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
 import type { EnvoyerBulletinsUseCase } from './EnvoyerBulletinsUseCase';
+import { sealAndStoreBulletinsForClass } from './bulletinPdfLifecycle';
 
 export interface PublierBulletinsCommande {
   schoolId: string;
@@ -22,6 +26,9 @@ export class PublierBulletinsClasseUseCase {
     private readonly bulletinValidationRepository: BulletinValidationRepository,
     private readonly bulletinRepository: BulletinRepository,
     private readonly envoyerBulletins: EnvoyerBulletinsUseCase,
+    private readonly bulletinRenderer?: BulletinRendererPort,
+    private readonly bulletinPdfStorage?: BulletinPdfStoragePort,
+    private readonly schoolConfigRepository?: SchoolConfigRepository,
   ) {}
 
   async execute(commande: PublierBulletinsCommande) {
@@ -50,13 +57,23 @@ export class PublierBulletinsClasseUseCase {
     // 4. Publier la session (PUBLISHED)
     const publishedSession = await this.bulletinValidationRepository.publierSession(sessionId);
 
-    // 5. Mettre à jour le workflow des bulletins
+    // 5. Mettre à jour le workflow des bulletins et sceller le PDF stocké
     await this.bulletinRepository.majStatutWorkflowParClasse(
       session.classId,
       session.academicPeriodId,
       schoolId,
       'PUBLISHED',
     );
+
+    await sealAndStoreBulletinsForClass({
+      classId: session.classId,
+      academicPeriodId: session.academicPeriodId,
+      schoolId,
+      bulletinRepository: this.bulletinRepository,
+      bulletinRenderer: this.bulletinRenderer,
+      bulletinPdfStorage: this.bulletinPdfStorage,
+      schoolConfigRepository: this.schoolConfigRepository,
+    });
 
     // 6. Envoyer les emails aux parents
     const envoiResultat = await this.envoyerBulletins.execute({

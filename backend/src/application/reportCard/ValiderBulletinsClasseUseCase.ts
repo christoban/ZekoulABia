@@ -4,6 +4,10 @@
  */
 import type { BulletinRepository } from '@domain/ports/repositories/BulletinRepository';
 import type { BulletinValidationRepository } from '@domain/ports/repositories/BulletinValidationRepository';
+import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolConfigRepository';
+import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
+import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
+import { sealAndStoreBulletinsForClass } from './bulletinPdfLifecycle';
 
 export interface ValiderBulletinsCommande {
   schoolId: string;
@@ -17,6 +21,9 @@ export class ValiderBulletinsClasseUseCase {
   constructor(
     private readonly bulletinValidationRepository: BulletinValidationRepository,
     private readonly bulletinRepository: BulletinRepository,
+    private readonly bulletinRenderer?: BulletinRendererPort,
+    private readonly bulletinPdfStorage?: BulletinPdfStoragePort,
+    private readonly schoolConfigRepository?: SchoolConfigRepository,
   ) {}
 
   async execute(commande: ValiderBulletinsCommande) {
@@ -51,6 +58,16 @@ export class ValiderBulletinsClasseUseCase {
       schoolId,
       'VALIDATED',
     );
+
+    await sealAndStoreBulletinsForClass({
+      classId: session.classId,
+      academicPeriodId: session.academicPeriodId,
+      schoolId,
+      bulletinRepository: this.bulletinRepository,
+      bulletinRenderer: this.bulletinRenderer,
+      bulletinPdfStorage: this.bulletinPdfStorage,
+      schoolConfigRepository: this.schoolConfigRepository,
+    });
 
     return { session: updated };
   }

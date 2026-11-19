@@ -17,11 +17,11 @@ import type {
   BulletinRenderOptions,
 } from '@domain/ports/services/BulletinRendererPort';
 import {
-  drawMeasuredSubjectTable,
   drawOfficialHeaderBlock,
   drawStudentCardBlock,
   registerEmbeddedFonts,
-} from './measuredHeaderAndTableHelpers';
+} from './measuredHeaderHelpers';
+import { drawMeasuredSubjectTable } from './measuredSubjectTableHelpers';
 import {
   drawClassProfileBlock,
   drawConductSummaryBlock,

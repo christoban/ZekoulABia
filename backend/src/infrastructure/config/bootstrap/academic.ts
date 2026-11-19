@@ -63,6 +63,8 @@ export function registerAcademicRoutes(app: Application, prismaParam: typeof pri
     c.reportCard.lister,
     c.finance.factureRepository,
     c.school.schoolConfigRepository,
+    c.reportCard.bulletinRenderer,
+    c.reportCard.bulletinPdfStorage,
   );
 
   const classCouncilController = new ClassCouncilController(

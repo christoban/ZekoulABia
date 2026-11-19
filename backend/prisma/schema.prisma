@@ -206,6 +206,7 @@ model School {
   offlineQueue                 OfflineQueue[]
   payments                     Payment[]
   reportCards                  ReportCard[]
+  bulletinTemplateAssignments  BulletinTemplateAssignment[]
   template                     SchoolTemplate?                 @relation(fields: [templateCode], references: [code])
   schoolConfig                 SchoolConfig?
   invites                      SchoolInvite[]
@@ -311,8 +312,10 @@ model SchoolConfig {
   aiRiskThreshold                  Int              @default(50)
   aiRiskThresholdCritical          Int              @default(30)
   subjectDropThreshold             Float            @default(3)
-  bulletinTemplate                 BulletinTemplate @default(FR_SECONDARY)
-  gradesPerTerm                    Int              @default(2)
+  bulletinTemplate                 BulletinTemplate       @default(FR_SECONDARY)
+  bulletinGroupingScheme           BulletinGroupingScheme @default(FLAT)
+  useMeasuredBulletinRenderer      Boolean                @default(false)
+  gradesPerTerm                    Int                    @default(2)
   sequenceCalculationMode          String           @default("single")
   legalMaxContributionFirstCycle   Int              @default(7500)
   legalMaxContributionSecondCycle  Int              @default(10000)
@@ -1322,6 +1325,7 @@ model Class {
   professorPrincipal         User?                         @relation("ClassProfessorPrincipal", fields: [professorPrincipalId], references: [id])
   classCouncilSessions       ClassCouncilSession[]
   bulletinValidationSessions BulletinValidationSession[]
+  bulletinTemplateAssignments BulletinTemplateAssignment[]
   subGroups                  ClassSubGroup[]
   exams                      Exam[]
   grades                     Grade[]
@@ -1604,6 +1608,7 @@ model ReportCard {
   classMasterComment  String?
   conductGrade        String?
   template            BulletinTemplate          @default(FR_SECONDARY)
+  templateSpecId      String?
   templateVersion     Int                       @default(1)
   computationVersion  Int                       @default(2)
   snapshotData        Json?
@@ -1674,6 +1679,7 @@ model BulletinRevocationArchive {
   academicYearId       String
   academicPeriodId     String
   computationVersion   Int
+  templateSpecId       String?
   templateVersion      Int      @default(1)
   generalAverage       Float?
   rank                 Int?
@@ -1686,6 +1692,27 @@ model BulletinRevocationArchive {
 
   @@index([schoolId, studentId])
   @@index([originalReportCardId])
+}
+
+model BulletinTemplateAssignment {
+  id              String                  @id @default(cuid())
+  schoolId        String
+  classLevel      String?
+  classId         String?
+  periodKind      BulletinPeriodKind      @default(SEQUENCE)
+  template        BulletinTemplate        @default(FR_SECONDARY)
+  templateSpecId  String                  @default("GENERAL_GROUPED_V1")
+  templateVersion Int                     @default(1)
+  groupingScheme  BulletinGroupingScheme?
+  isActive        Boolean                 @default(true)
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  class  Class? @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, classLevel, classId, periodKind])
+  @@index([schoolId, periodKind, isActive])
 }
 
 model Exam {
@@ -3275,6 +3302,21 @@ enum BulletinTemplate {
   PRIMARY
   ANNUAL // Bulletin annuel récapitulatif (3 trimestres + jusqu'à 6 évaluations côte à côte)
   MONTHLY // Bulletin mensuel primaire anglophone
+}
+
+enum BulletinGroupingScheme {
+  FLAT
+  GROUP_1_2_3
+  SCI_LIT_OTHER
+  TECH_GEN_PRO_DIV
+  CUSTOM
+}
+
+enum BulletinPeriodKind {
+  SEQUENCE
+  TRIMESTER
+  ANNUAL
+  MONTHLY
 }
 
 enum ReportCardStatus {

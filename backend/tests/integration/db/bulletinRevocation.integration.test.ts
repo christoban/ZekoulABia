@@ -1,10 +1,12 @@
 import { describe, it, expect, afterEach } from 'bun:test';
 import { Bulletin } from '@domain/entities/Bulletin';
 import { PrismaBulletinRepository } from '@infrastructure/persistence/prisma/PrismaBulletinRepository';
+import { PrismaBulletinTemplateAssignmentRepository } from '@infrastructure/persistence/prisma/PrismaBulletinTemplateAssignmentRepository';
 import { prismaTest } from '../../helpers/prismaTestClient.ts';
 import { creerEcoleTest, creerUtilisateurTest, nettoyerEcole } from '../../helpers/dbFixtures.ts';
 
 const repo = new PrismaBulletinRepository(prismaTest);
+const assignmentRepo = new PrismaBulletinTemplateAssignmentRepository(prismaTest);
 
 async function setupFixtures(suffix: string) {
   const school = await creerEcoleTest(prismaTest, `revocation-${suffix}`);
@@ -253,6 +255,46 @@ describe('PostgreSQL — archiverEtRemplacerRevoque & contraintes ReportCard', (
       code = (err as { code?: string }).code;
     }
     expect(code).toBe('P2002');
+  });
+
+  it('applique NULLS NOT DISTINCT sur BulletinTemplateAssignment et rejette un niveau libre', async () => {
+    const school = await creerEcoleTest(prismaTest, 'assign-uniq');
+    createdSchoolIds.push(school.id);
+
+    await assignmentRepo.save({
+      schoolId: school.id, classLevel: null, classId: null, periodKind: 'SEQUENCE',
+      template: 'FR_SECONDARY', templateSpecId: 'GENERAL_GROUPED_V1', groupingScheme: 'SCI_LIT_OTHER',
+    });
+
+    let codeNullNull: string | undefined;
+    try {
+      await assignmentRepo.save({
+        schoolId: school.id, classLevel: null, classId: null, periodKind: 'SEQUENCE',
+        template: 'FR_SECONDARY', templateSpecId: 'GENERAL_GROUPED_V1', groupingScheme: 'GROUP_1_2_3',
+      });
+    } catch (err) { codeNullNull = (err as { code?: string }).code; }
+    expect(codeNullNull).toBe('P2002');
+
+    await assignmentRepo.save({
+      schoolId: school.id, classLevel: '3e', classId: null, periodKind: 'SEQUENCE',
+      template: 'FR_SECONDARY', templateSpecId: 'GENERAL_GROUPED_V1', groupingScheme: 'SCI_LIT_OTHER',
+    });
+
+    let codeLevelNull: string | undefined;
+    try {
+      await assignmentRepo.save({
+        schoolId: school.id, classLevel: '3e', classId: null, periodKind: 'SEQUENCE',
+        template: 'FR_SECONDARY', templateSpecId: 'GENERAL_GROUPED_V1', groupingScheme: 'GROUP_1_2_3',
+      });
+    } catch (err) { codeLevelNull = (err as { code?: string }).code; }
+    expect(codeLevelNull).toBe('P2002');
+
+    await expect(
+      assignmentRepo.save({
+        schoolId: school.id, classLevel: 'Niveau Libre Invalide', classId: null, periodKind: 'TRIMESTER',
+        template: 'FR_SECONDARY', templateSpecId: 'GENERAL_GROUPED_V1',
+      }),
+    ).rejects.toThrow(/Niveau de classe invalide/);
   });
 });
 

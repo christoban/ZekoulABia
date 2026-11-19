@@ -12,6 +12,11 @@ import type {
   SnapshotSubjectInput,
 } from '@domain/types/bulletinSnapshot';
 import type { SubjectType } from '@domain/types/enums';
+import { MatiereSansGroupeError } from '@domain/errors/MatiereSansGroupeError';
+import {
+  resolveGroupBySubjectCode,
+  type BulletinGroupingScheme,
+} from './bulletinGroupingSchemes';
 import {
   calculateAverageScoreOn20,
   calculerMoyenneSequence,
@@ -21,16 +26,27 @@ import {
 export const round2 = (n: number): number => Math.round((n + Number.EPSILON) * 100) / 100;
 
 export function resolveCurriculumSubjectConfig(params: {
-  subject: { coefficient: number; subjectType?: SubjectType; groupKey?: string | null; groupLabel?: string | null; groupOrder?: number | null };
+  subject: {
+    id?: string;
+    name?: string;
+    code?: string | null;
+    coefficient: number;
+    subjectType?: SubjectType;
+    groupKey?: string | null;
+    groupLabel?: string | null;
+    groupOrder?: number | null;
+  };
   levelCoeff?: { coefficient: number; groupKey?: string | null; groupLabel?: string | null; groupOrder?: number | null };
   classOverride?: { coefficient: number; groupKey?: string | null; groupLabel?: string | null; groupOrder?: number | null };
   educationType?: string | null;
+  groupingScheme?: BulletinGroupingScheme | null;
 }): { coefficient: number; groupKey: string; groupLabel: string; groupOrder: number } {
   const coefficient = params.classOverride?.coefficient ?? params.levelCoeff?.coefficient ?? params.subject.coefficient;
   const customKey = params.classOverride?.groupKey ?? params.levelCoeff?.groupKey ?? params.subject.groupKey;
   const customLabel = params.classOverride?.groupLabel ?? params.levelCoeff?.groupLabel ?? params.subject.groupLabel;
   const customOrder = params.classOverride?.groupOrder ?? params.levelCoeff?.groupOrder ?? params.subject.groupOrder;
 
+  // Priorité 1..3 : surcharge établissement (ClassSubjectOverride -> SubjectCoefficient -> Subject)
   if (customKey) {
     return {
       coefficient,
@@ -40,6 +56,24 @@ export function resolveCurriculumSubjectConfig(params: {
     };
   }
 
+  // Priorité 4 : schéma de regroupement explicite (mapping par code matière ; blocage si absent)
+  const scheme = params.groupingScheme;
+  if (scheme && scheme !== 'FLAT') {
+    if (scheme !== 'CUSTOM') {
+      const resolved = resolveGroupBySubjectCode(scheme, params.subject.code);
+      if (resolved) {
+        return { coefficient, ...resolved };
+      }
+    }
+    throw new MatiereSansGroupeError({
+      subjectId: params.subject.id ?? 'unknown',
+      subjectName: params.subject.name ?? 'Matière inconnue',
+      subjectCode: params.subject.code,
+      groupingScheme: scheme,
+    });
+  }
+
+  // Défaut FLAT / sans schéma : aucune devinette pour le secondaire général
   const isTech = params.educationType === 'TECHNICAL' || params.educationType === 'PROFESSIONAL';
   if (isTech) {
     if (params.subject.subjectType === 'PRACTICAL' || params.subject.subjectType === 'MIXED') {

@@ -8,7 +8,10 @@ import { PrismaMessagerieRepository } from '@infrastructure/persistence/prisma/P
 import { PrismaSousGroupeRepository } from '@infrastructure/persistence/prisma/PrismaSousGroupeRepository';
 import { PrismaClasseCoefficientRepository } from '@infrastructure/persistence/prisma/PrismaClasseCoefficientRepository';
 import { PrismaDisciplineRepository } from '@infrastructure/persistence/prisma/PrismaDisciplineRepository';
+import { PrismaBulletinTemplateAssignmentRepository } from '@infrastructure/persistence/prisma/PrismaBulletinTemplateAssignmentRepository';
 import { PrismaPromotionRepository } from '@infrastructure/persistence/prisma/PrismaPromotionRepository';
+import { MeasuredPdfKitBulletinRenderer } from '@infrastructure/pdf/renderer/MeasuredPdfKitBulletinRenderer';
+import { createBulletinPdfStorageAdapter } from '@infrastructure/services/storage/S3CompatibleBulletinPdfStorageAdapter';
 import { PrismaClassCouncilPreviewQueryPort } from '@infrastructure/persistence/prisma/PrismaClassCouncilPreviewQueryPort';
 import { PrismaAcademicProfileQueryRepository } from '@infrastructure/persistence/prisma/PrismaAcademicProfileQueryRepository';
 import { GenererBulletinUseCase } from '@application/reportCard/GenererBulletinUseCase';
@@ -66,7 +69,10 @@ export function createAcademicContainer(core: CoreContainerContext) {
   const sousGroupeRepository = new PrismaSousGroupeRepository(prisma);
   const classeCoefficientRepository = new PrismaClasseCoefficientRepository(prisma);
   const disciplineRepository = new PrismaDisciplineRepository(prisma);
+  const bulletinAssignmentRepository = new PrismaBulletinTemplateAssignmentRepository(prisma);
   const promotionRepository = new PrismaPromotionRepository(prisma, core.enrollmentRepository);
+  const bulletinRenderer = new MeasuredPdfKitBulletinRenderer();
+  const bulletinPdfStorage = createBulletinPdfStorageAdapter();
 
   const envoyerBulletinsUseCase = new EnvoyerBulletinsUseCase(
     core.bulletinRepository,
@@ -92,6 +98,10 @@ export function createAcademicContainer(core: CoreContainerContext) {
       classeCoefficientRepository,
       teachingAssignmentRepository,
       disciplineRepository,
+      core.schoolConfigRepository,
+      bulletinAssignmentRepository,
+      bulletinRenderer,
+      bulletinPdfStorage,
     ),
     envoyer: envoyerBulletinsUseCase,
     verifierDisponibilite: new VerifierDisponibiliteBulletinUseCase(
@@ -105,15 +115,27 @@ export function createAcademicContainer(core: CoreContainerContext) {
       core.bulletinRepository,
       bulletinValidationRepository,
     ),
-    validerBulletins: new ValiderBulletinsClasseUseCase(bulletinValidationRepository, core.bulletinRepository),
+    validerBulletins: new ValiderBulletinsClasseUseCase(
+      bulletinValidationRepository,
+      core.bulletinRepository,
+      bulletinRenderer,
+      bulletinPdfStorage,
+      core.schoolConfigRepository,
+    ),
     publierBulletins: new PublierBulletinsClasseUseCase(
       bulletinValidationRepository,
       core.bulletinRepository,
       envoyerBulletinsUseCase,
+      bulletinRenderer,
+      bulletinPdfStorage,
+      core.schoolConfigRepository,
     ),
     bulletinValidationRepository,
     bulletinRepository: core.bulletinRepository,
     parentRepository: core.parentRepository,
+    bulletinAssignmentRepository,
+    bulletinRenderer,
+    bulletinPdfStorage,
     studentRecommendationRepository,
   };
 

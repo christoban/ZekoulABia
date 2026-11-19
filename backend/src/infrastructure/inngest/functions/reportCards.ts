@@ -20,7 +20,11 @@ import { PrismaClassCouncilRepository } from "../../persistence/prisma/PrismaCla
 import { PrismaSectionRepository } from "../../persistence/prisma/PrismaSectionRepository";
 import { PrismaClasseCoefficientRepository } from "../../persistence/prisma/PrismaClasseCoefficientRepository";
 import { PrismaDisciplineRepository } from "../../persistence/prisma/PrismaDisciplineRepository";
+import { PrismaBulletinTemplateAssignmentRepository } from "../../persistence/prisma/PrismaBulletinTemplateAssignmentRepository";
+import { MeasuredPdfKitBulletinRenderer } from "../../pdf/renderer/MeasuredPdfKitBulletinRenderer";
+import { createBulletinPdfStorageAdapter } from "../../services/storage/S3CompatibleBulletinPdfStorageAdapter";
 import { BulletinBloqueError } from "@domain/errors/BulletinBloqueError";
+import { MatiereSansGroupeError } from "@domain/errors/MatiereSansGroupeError";
 import { DetecterChuteMoyenneUseCase, trouverSequencePrecedente } from "@application/grade/DetecterChuteMoyenneUseCase";
 import { GenererBulletinsInngestUseCase } from "@application/reportCard/GenererBulletinsInngestUseCase";
 import { ErreurNonRetriable } from "@application/shared/ErreurNonRetriable";
@@ -77,6 +81,10 @@ export const generateReportCards = inngest.createFunction(
       new PrismaClasseCoefficientRepository(prisma),
       new PrismaTeachingAssignmentRepository(prisma),
       new PrismaDisciplineRepository(prisma),
+      new PrismaSchoolConfigRepository(prisma),
+      new PrismaBulletinTemplateAssignmentRepository(prisma),
+      new MeasuredPdfKitBulletinRenderer(),
+      createBulletinPdfStorageAdapter(),
     );
 
     const { academicYear, academicPeriod, generatedStudents } = await step.run("generate-report-cards", async () => {
@@ -85,7 +93,9 @@ export const generateReportCards = inngest.createFunction(
         if (!result.generatedStudents.length) return { academicYear: result.academicYear, academicPeriod: result.academicPeriod, generatedStudents: [] as string[] };
         return { academicYear: result.academicYear, academicPeriod: result.academicPeriod, generatedStudents: result.generatedStudents };
       } catch (err) {
-        if (err instanceof ErreurNonRetriable || err instanceof BulletinBloqueError) throw new NonRetriableError(err.message);
+        if (err instanceof ErreurNonRetriable || err instanceof BulletinBloqueError || err instanceof MatiereSansGroupeError) {
+          throw new NonRetriableError(err.message);
+        }
         throw err;
       }
     });

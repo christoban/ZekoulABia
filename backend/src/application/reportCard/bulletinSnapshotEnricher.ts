@@ -20,6 +20,7 @@ import type { School } from '@domain/entities/School';
 import type { Note } from '@domain/entities/Note';
 import type { Presence } from '@domain/entities/Presence';
 import type { BulletinTemplate, CouncilDecision } from '@domain/types/enums';
+import type { BulletinGroupingScheme } from '@domain/services/bulletin/bulletinGroupingSchemes';
 import type {
   BulletinClassProfile,
   SnapshotSequenceInput,
@@ -32,14 +33,23 @@ import {
   buildSubjectInputsWithCurriculum,
   calculerMentionBulletin,
   canonicalHashSnapshot,
+  decodeBase64PhotoUrl,
   formatAbsenceHoursDisplay,
   genererVerifyToken,
   mapNotesToSnapshotInputs,
   resoudreVerifyBaseUrl,
+  sanitizePhotoReferenceForSnapshot,
   snapshotToLignesMatiere,
 } from './bulletinEnrichmentHelpers';
 
-export { calculerMentionBulletin, formatAbsenceHoursDisplay, resoudreVerifyBaseUrl, snapshotToLignesMatiere };
+export {
+  calculerMentionBulletin,
+  decodeBase64PhotoUrl,
+  formatAbsenceHoursDisplay,
+  resoudreVerifyBaseUrl,
+  sanitizePhotoReferenceForSnapshot,
+  snapshotToLignesMatiere,
+};
 
 export interface LoadedClassPeriodContext {
   periodIds: string[];
@@ -127,6 +137,7 @@ export async function construireEtEnrichirSnapshotsClasse(params: {
   classeCoefficientRepository?: ClasseCoefficientRepository;
   teachingAssignmentRepository?: TeachingAssignmentRepository;
   disciplineRepository?: DisciplineRepository;
+  groupingScheme?: BulletinGroupingScheme | null;
 }): Promise<ClassSnapshotsBundle> {
   const matieres = await params.matiereRepository.findBySchool(params.school.id);
   const overrideMap = new Map<string, ClassSubjectOverrideRecord>();
@@ -168,6 +179,7 @@ export async function construireEtEnrichirSnapshotsClasse(params: {
     levelCoeffMap,
     teacherBySubject,
     educationType: params.school.toObject().educationType,
+    groupingScheme: params.groupingScheme,
   });
 
   const profilesMap = new Map<string, StudentBulletinOptions>();
@@ -252,7 +264,7 @@ export async function construireEtEnrichirSnapshotsClasse(params: {
         placeOfBirth: opt?.placeOfBirth ?? null,
         gender: opt?.gender ?? null,
         isRepeater: opt?.isRepeater ?? false,
-        photoUrl: opt?.photoUrl ?? null,
+        photoUrl: sanitizePhotoReferenceForSnapshot(opt?.photoUrl, eleve.id),
       },
       conduct,
       councilDecision: buildCouncilDecisionSnapshot(councilByStudent.get(eleve.id), baseSnapshot.generalAverage, conduct.exclusionsCount),

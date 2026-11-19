@@ -21,6 +21,9 @@ COPY prisma ./prisma
 RUN bunx prisma generate
 
 COPY . .
+RUN test -f /app/assets/fonts/LiberationSans-Regular.ttf \
+    && test -f /app/assets/fonts/LiberationSans-Bold.ttf \
+    && test -f /app/assets/fonts/LiberationSans-Italic.ttf
 
 ENV NODE_ENV=production
 EXPOSE 5000

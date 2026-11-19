@@ -8,7 +8,17 @@ import type {
 } from '@domain/types/bulletinTemplateSpec';
 import type { BulletinRenderOptions } from '@domain/ports/services/BulletinRendererPort';
 import { formatAbsenceHoursDisplay } from '@application/reportCard/bulletinEnrichmentHelpers';
-import type { FontSet, MeasuredPdfDoc } from './measuredHeaderAndTableHelpers';
+import type { FontSet, MeasuredPdfDoc } from './measuredHeaderHelpers';
+import { formatRankLabel } from './measuredSubjectTableHelpers';
+
+function translateCouncilDecisionLabel(decision: string | undefined, isEn: boolean): string {
+  switch (decision) {
+    case 'PASS': return isEn ? 'Promoted / Pass' : 'Admis(e) / Travail satisfaisant';
+    case 'REPEAT': return isEn ? 'Repeat Advised' : 'Redoublement conseillé';
+    case 'DELIBERATION': return isEn ? 'Under Deliberation' : 'À délibérer en conseil';
+    default: return '—';
+  }
+}
 
 function ensureBlockSpace(doc: MeasuredPdfDoc, neededHeight: number): void {
   const limit = doc.page.height - doc.page.margins.bottom;
@@ -36,7 +46,7 @@ export function drawClassProfileBlock(
   if (spec.fields.includes('passCount')) parts.push(`${isEn ? 'Passed' : 'Admis'} : ${cp ? `${cp.passCount}/${cp.classSize}` : '—'}`);
   if (spec.fields.includes('passRate')) parts.push(`${isEn ? 'Pass Rate' : 'Taux réussite'} : ${cp ? `${cp.passRate.toFixed(1)} %` : '—'}`);
 
-  const summary = `${isEn ? 'CLASS RESULT' : 'RÉSULTAT & PROFIL DE CLASSE'} — ${isEn ? 'General Avg' : 'Moyenne générale'} : ${snapshot.generalAverage.toFixed(2)}/20 | ${isEn ? 'Rank' : 'Rang'} : ${snapshot.rank}e/${snapshot.totalStudents}`;
+  const summary = `${isEn ? 'CLASS RESULT' : 'RÉSULTAT & PROFIL DE CLASSE'} — ${isEn ? 'General Avg' : 'Moyenne générale'} : ${snapshot.generalAverage.toFixed(2)}/20 | ${isEn ? 'Rank' : 'Rang'} : ${formatRankLabel(snapshot.rank, isEn)}/${snapshot.totalStudents}`;
   const detail = parts.join('   |   ');
   doc.font(fonts.regular).fontSize(7.5);
   const h = Math.max(30, 18 + doc.heightOfString(detail, { width: usableW - 12 }));
@@ -70,7 +80,7 @@ export function drawCouncilDecisionBlock(
   if (spec.items.includes('blame')) flags.push(`${mark((snapshot.conduct?.blamesCount ?? 0) > 0)} ${isEn ? 'Blame' : 'Blâme'}`);
 
   const lines: string[] = [];
-  lines.push(`${isEn ? 'COUNCIL DECISION' : 'DÉCISION DU CONSEIL'} (${options.mention}) : ${dec?.decision ?? '—'}`);
+  lines.push(`${isEn ? 'COUNCIL DECISION' : 'DÉCISION DU CONSEIL'} (${options.mention}) : ${translateCouncilDecisionLabel(dec?.decision, isEn)}`);
   if (flags.length > 0) lines.push(flags.join('   '));
   const obs = dec?.observations ?? options.classMasterComment;
   if (spec.items.includes('observations') && obs) lines.push(`${isEn ? 'Observations' : 'Appréciation générale'} : ${obs}`);
@@ -115,13 +125,13 @@ export function drawConductSummaryBlock(
 
   const line = `${isEn ? 'CONDUCT & ATTENDANCE' : 'ASSIDUITÉ & CONDUITE'} — ${items.join('  |  ')}`;
   doc.font(fonts.regular).fontSize(7.5);
-  const h = Math.max(20, doc.heightOfString(line, { width: usableW - 12 }) + 8);
+  const h = Math.max(22, doc.heightOfString(line, { width: usableW - 12 }) + 10);
   ensureBlockSpace(doc, h + 4);
 
   const y = doc.y;
   doc.rect(left, y, usableW, h).strokeColor('#334155').lineWidth(0.6).stroke();
-  doc.font(fonts.regular).fontSize(7.5).fillColor('#0f172a').text(line, left + 6, y + 4, { width: usableW - 12 });
-  doc.y = y + h + 5;
+  doc.font(fonts.regular).fontSize(7.5).fillColor('#0f172a').text(line, left + 6, y + 6, { width: usableW - 12 });
+  doc.y = y + h + 6;
 }
 
 export function drawSignaturesAndQrBlock(
@@ -147,7 +157,7 @@ export function drawSignaturesAndQrBlock(
   }
 
   const qrSize = qrSpec && qrBuffer ? 48 : 0;
-  const sigAreaW = qrSpec && qrBuffer ? usableW - qrSize - 10 : usableW;
+  const sigAreaW = qrSpec && qrBuffer ? usableW - qrSize - 12 : usableW;
   const slots = sigSpec?.slots ?? ['parent', 'mainTeacher', 'principal'];
   const labelsMap: Record<string, string> = {
     parent: isEn ? 'Parent / Guardian' : 'Visa Parent',
@@ -161,7 +171,14 @@ export function drawSignaturesAndQrBlock(
   slots.forEach((slot, idx) => {
     const sx = left + idx * slotW;
     doc.font(fonts.bold).fontSize(7.5).fillColor('#0f172a').text(labelsMap[slot] ?? slot, sx + 2, sigTop, { width: slotW - 4, align: 'center' });
-    doc.moveTo(sx + 8, sigTop + 34).lineTo(sx + slotW - 8, sigTop + 34).strokeColor('#64748b').lineWidth(0.5).stroke();
+    if (slot === 'principal' && sigSpec?.showStamp) {
+      doc.rect(sx + 10, sigTop + 11, slotW - 20, 26).dash(2, { space: 2 }).strokeColor('#64748b').lineWidth(0.5).stroke();
+      doc.undash();
+      doc.font(fonts.italic).fontSize(6).fillColor('#64748b')
+        .text(isEn ? 'Stamp & Signature' : 'Cachet & Signature', sx + 12, sigTop + 21, { width: slotW - 24, align: 'center' });
+    } else {
+      doc.moveTo(sx + 10, sigTop + 34).lineTo(sx + slotW - 10, sigTop + 34).strokeColor('#64748b').lineWidth(0.5).stroke();
+    }
   });
 
   if (qrSpec && qrBuffer) {
