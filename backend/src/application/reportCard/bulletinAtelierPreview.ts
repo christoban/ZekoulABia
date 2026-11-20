@@ -4,11 +4,12 @@
 import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
 import type { SchoolIdentityKitRecord } from '@domain/ports/repositories/SchoolIdentityKitRepository';
 import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
-import type { BulletinTemplateSpec } from '@domain/types/bulletinTemplateSpec';
+import type { BulletinTemplateSpec, CouncilDecisionBlockSpec } from '@domain/types/bulletinTemplateSpec';
 import type { StudentBulletinSnapshot } from '@domain/types/bulletinSnapshot';
 import { buildLongTokenVerifyUrl, deriveShortVerifyCode } from '@domain/policies/BulletinVerifyCrypto';
+import { resolveCouncilDistinctions } from '@domain/services/bulletin/bulletinCouncilPolicy';
 import { createBatchSchoolIdentityContextCache } from './bulletinIdentityContext';
-import { resoudreVerifyBaseUrl } from './bulletinEnrichmentHelpers';
+import { calculerMentionBulletin, resoudreVerifyBaseUrl } from './bulletinEnrichmentHelpers';
 import {
   PREVIEW_FOCUS_STUDENT_ID,
   buildFictitiousPreviewClass,
@@ -38,12 +39,13 @@ function buildPreviewInputsForFamily(spec: BulletinTemplateSpec, passThresholdOn
     EN: { className: 'Form 4 Science (Sample)', periodName: 'Term 1' },
     GENERAL: { className: '3ème (Spécimen)', periodName: 'Trimestre 1' },
   };
+  const snapshot = res.snapshotsByStudentId.get(PREVIEW_FOCUS_STUDENT_ID)!;
   return {
-    snapshot: res.snapshotsByStudentId.get(PREVIEW_FOCUS_STUDENT_ID)!,
+    snapshot,
     className: labels[kind].className,
     periodName: labels[kind].periodName,
     yearName: '2026-2027',
-    mention: isEn ? 'Fair' : 'Assez Bien',
+    mention: calculerMentionBulletin(snapshot.generalAverage, spec.targetTemplate ?? 'FR_SECONDARY', isEn ? 'en' : 'fr'),
   };
 }
 
@@ -55,6 +57,22 @@ export function buildFictitiousPreviewSnapshot(spec: BulletinTemplateSpec, passT
   mention: string;
 } {
   const base = buildPreviewInputsForFamily(spec, passThresholdOn20);
+  const councilBlock = spec.blocks.find((b): b is CouncilDecisionBlockSpec => b.type === 'councilDecision');
+  const isAnnual = spec.layoutVariant === 'ANNUAL_BILINGUAL' || spec.familyKey === 'D';
+  const councilDecision = councilBlock
+    ? resolveCouncilDistinctions({
+        generalAverage: base.snapshot.generalAverage,
+        rank: base.snapshot.rank,
+        totalStudents: base.snapshot.totalStudents,
+        passThresholdOn20,
+        thresholds: councilBlock.distinctionThresholds,
+        isAnnual,
+        promotedToClass: isAnnual ? 'Terminale A4' : null,
+        repeatClass: isAnnual ? '1ère A4' : null,
+        observations: spec.language === 'en' ? 'Commendable specimen term.' : 'Aperçu spécimen du modèle configuré.',
+      })
+    : undefined;
+
   const enriched: StudentBulletinSnapshot = {
     ...base.snapshot,
     mainTeacherName: spec.language === 'en' ? 'Mr CHE Emmanuel (Sample)' : 'Mme ESSOMBA Claire (Fictif)',
@@ -84,14 +102,7 @@ export function buildFictitiousPreviewSnapshot(spec: BulletinTemplateSpec, passT
       consignesCount: 0,
       sanctions: [],
     },
-    councilDecision: {
-      decision: 'PASS',
-      observations: spec.language === 'en' ? 'Commendable specimen term.' : 'Aperçu spécimen du modèle configuré.',
-      honorRoll: true,
-      encouragements: true,
-      congratulations: false,
-      promotedToClass: 'Terminale A4',
-    },
+    councilDecision,
   };
   return { ...base, snapshot: enriched };
 }

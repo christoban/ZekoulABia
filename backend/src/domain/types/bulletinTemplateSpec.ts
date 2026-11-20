@@ -139,9 +139,21 @@ export type CouncilDecisionSpecItem =
   | 'disciplinaryCouncil'
   | 'exclusion';
 
+export interface CouncilDistinctionThresholds {
+  honorRollMinAverage: number;
+  honorRollMaxRank?: number;
+  encouragementsMinAverage: number;
+  encouragementsMaxRank?: number;
+  congratulationsMinAverage: number;
+  congratulationsMaxRank?: number;
+  workWarningMaxAverage: number;
+  workBlameMaxAverage: number;
+}
+
 export interface CouncilDecisionBlockSpec {
   type: 'councilDecision';
   items: CouncilDecisionSpecItem[];
+  distinctionThresholds?: Partial<CouncilDistinctionThresholds>;
 }
 
 export interface ConductSummaryBlockSpec {

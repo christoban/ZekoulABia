@@ -101,7 +101,7 @@ function buildCouncilItemLabel(
     case 'honorRoll': return `${mark(dec?.honorRoll)} ${isEn ? 'Honor Roll' : "Tableau d'honneur"}`;
     case 'encouragements': return `${mark(dec?.encouragements)} Encouragements`;
     case 'congratulations': return `${mark(dec?.congratulations)} ${isEn ? 'Congratulations' : 'Félicitations'}`;
-    case 'workWarning': return `[ ] ${isEn ? 'Work Warning' : 'Avertissement travail'}`;
+    case 'workWarning': return `${mark(dec?.workWarning)} ${isEn ? 'Work Warning' : 'Avertissement travail'}`;
     case 'conductWarning': return `${mark((conduct?.warningsCount ?? 0) > 0)} ${isEn ? 'Conduct Warning' : 'Avertissement conduite'}`;
     case 'warning': return `${mark((conduct?.warningsCount ?? 0) > 0)} ${isEn ? 'Warning' : 'Avertissement'}`;
     case 'blame': return `${mark((conduct?.blamesCount ?? 0) > 0)} ${isEn ? 'Blame' : 'Blâme'}`;
