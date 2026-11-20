@@ -49,6 +49,39 @@ function buildPreviewInputsForFamily(spec: BulletinTemplateSpec, passThresholdOn
   };
 }
 
+const LEVEL_TYPICAL_AGE_RULES: ReadonlyArray<{ pattern: RegExp; age: number; month: string; day: string }> = [
+  { pattern: /\b(sil|cp|class\s*1|class\s*i)\b/i, age: 6, month: '02', day: '18' },
+  { pattern: /\b(ce1|class\s*2|class\s*ii)\b/i, age: 7, month: '04', day: '11' },
+  { pattern: /\b(ce2|class\s*3|class\s*iii)\b/i, age: 8, month: '06', day: '22' },
+  { pattern: /\b(cm1|class\s*4|class\s*iv)\b/i, age: 9, month: '09', day: '07' },
+  { pattern: /\b(cm2|class\s*5|class\s*v)\b/i, age: 11, month: '04', day: '19' },
+  { pattern: /\b(class\s*6|class\s*vi|6e|6eme|form\s*1)\b/i, age: 12, month: '03', day: '12' },
+  { pattern: /\b(5e|5eme|form\s*2)\b/i, age: 13, month: '07', day: '25' },
+  { pattern: /\b(4e|4eme|form\s*3)\b/i, age: 14, month: '10', day: '08' },
+  { pattern: /\b(3e|3eme|form\s*4)\b/i, age: 15, month: '05', day: '14' },
+  { pattern: /\b(2nde|2nd|seconde|form\s*5)\b/i, age: 16, month: '08', day: '21' },
+  { pattern: /\b(1ere|premiere|lower\s*sixth|lss|lsa)\b/i, age: 17, month: '02', day: '27' },
+  { pattern: /\b(tle|terminale|upper\s*sixth|uss|usa)\b/i, age: 18, month: '11', day: '09' },
+];
+
+/**
+ * Calcule une date de naissance fictive réaliste selon le niveau de la classe et l'année scolaire
+ * (ex. 2026-2027 : Class V / CM2 -> 2015, 3ème / Form 4 -> 2011, 2nde -> 2010, 1ère -> 2009).
+ */
+export function computeFictitiousBirthDateForClass(className: string, yearName: string): string {
+  const yearMatch = /\b(20\d{2})\b/.exec(yearName);
+  const startYear = yearMatch ? Number(yearMatch[1]) : new Date().getUTCFullYear();
+  const normalized = className
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  const matched = LEVEL_TYPICAL_AGE_RULES.find((r) => r.pattern.test(normalized));
+  const age = matched?.age ?? 14;
+  const month = matched?.month ?? '05';
+  const day = matched?.day ?? '15';
+  return `${startYear - age}-${month}-${day}T00:00:00.000Z`;
+}
+
 export function buildFictitiousPreviewSnapshot(spec: BulletinTemplateSpec, passThresholdOn20 = 10): {
   snapshot: StudentBulletinSnapshot;
   className: string;
@@ -82,7 +115,7 @@ export function buildFictitiousPreviewSnapshot(spec: BulletinTemplateSpec, passT
       firstName: spec.language === 'en' ? 'Grace' : 'Élodie',
       lastName: spec.language === 'en' ? 'NDAMUKONG' : 'KAMGA',
       matricule: '26-PREVIEW-001',
-      dateOfBirth: '2010-05-14T00:00:00.000Z',
+      dateOfBirth: computeFictitiousBirthDateForClass(base.className, base.yearName),
       placeOfBirth: 'Garoua',
       gender: 'F',
       isRepeater: false,
