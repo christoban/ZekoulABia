@@ -353,7 +353,10 @@ describe('Étape 6 — Jeux de vérité calculés à la main (Familles F, D, B, 
 
     const outC = await renderAndCapture(resB.snapshotsByStudentId.get('sb')!, BILINGUAL_APC_V1, 'fr');
     expect(outC.pageCount).toBe(1);
-    expect(outC.joined).toContain('MOY Eval a');
+    expect(outC.joined).toContain('MOY Éval 1');
+    expect(outC.joined).toContain('MOY Éval 2');
+    expect(outC.joined).not.toContain('Eval a');
+    expect(outC.joined).not.toContain('Eval b');
 
     const outE = await renderAndCapture(resB.snapshotsByStudentId.get('sb')!, EN_SECONDARY_V1, 'en');
     expect(outE.pageCount).toBe(1);

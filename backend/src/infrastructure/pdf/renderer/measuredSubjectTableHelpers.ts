@@ -25,6 +25,7 @@ import {
   buildDynamicFormulaHint,
   formatCoteLegend,
   formatLocalizedNumber,
+  resolvePeriodEvaluationLabels,
 } from './measuredFormatHelpers';
 
 export { resolveApcCote };
@@ -106,6 +107,23 @@ function isBoldSubjectColumn(key: SubjectTableColumnKey): boolean {
   );
 }
 
+function resolveColumnHeaderLabel(
+  col: SubjectTableColumnSpec,
+  isEn: boolean,
+  evalLabels: [string, string],
+  layoutVariant?: BulletinLayoutVariant,
+): string {
+  const usesPeriodEvalNumbers =
+    layoutVariant === 'BILINGUAL_APC' ||
+    layoutVariant === 'TECHNICAL_GROUPED' ||
+    layoutVariant === 'EN_SECONDARY';
+  if (usesPeriodEvalNumbers) {
+    if (col.key === 'seq1Score') return evalLabels[0];
+    if (col.key === 'seq2Score') return evalLabels[1];
+  }
+  return isEn ? col.labelEn : col.labelFr;
+}
+
 function drawTableHeaderRow(
   doc: MeasuredPdfDoc,
   fonts: FontSet,
@@ -114,12 +132,14 @@ function drawTableHeaderRow(
   left: number,
   isEn: boolean,
   fontSize: number,
+  evalLabels: [string, string],
+  layoutVariant?: BulletinLayoutVariant,
 ): void {
   const hdrFontSize = Math.max(5.5, fontSize - 0.5);
   doc.font(fonts.bold).fontSize(hdrFontSize);
   let headerH = cols.length >= 12 ? 15 : 17;
   cols.forEach((col, i) => {
-    const label = isEn ? col.labelEn : col.labelFr;
+    const label = resolveColumnHeaderLabel(col, isEn, evalLabels, layoutVariant);
     const h = doc.heightOfString(label, { width: Math.max(6, colWidths[i]! - 3) });
     if (h + 6 > headerH) headerH = Math.ceil(h + 6);
   });
@@ -130,8 +150,9 @@ function drawTableHeaderRow(
   cols.forEach((col, i) => {
     const w = colWidths[i]!;
     if (i > 0) doc.moveTo(x, y).lineTo(x, y + headerH).strokeColor('#475569').lineWidth(0.4).stroke();
+    const label = resolveColumnHeaderLabel(col, isEn, evalLabels, layoutVariant);
     doc.font(fonts.bold).fontSize(hdrFontSize).fillColor('#ffffff')
-      .text(isEn ? col.labelEn : col.labelFr, x + 1.5, y + 3, { width: Math.max(6, w - 3), align: col.align ?? 'center' });
+      .text(label, x + 1.5, y + 3, { width: Math.max(6, w - 3), align: col.align ?? 'center' });
     x += w;
   });
   doc.y = y + headerH;
@@ -167,24 +188,26 @@ function drawGroupSubtotalRow(
   left: number,
   totalW: number,
   isEn: boolean,
+  evalLabels: [string, string],
   layoutVariant?: BulletinLayoutVariant,
 ): void {
   const num = (v: number | undefined) => formatLocalizedNumber(v, isEn, 2);
   const bd = snapshot.groupBreakdowns?.[grp.groupKey];
+  const pureGroupLabel = grp.groupLabel.trim();
   let text: string;
 
   if (layoutVariant === 'TECHNICAL_GROUPED') {
     const rk = `${formatRankLabel(grp.groupRank, isEn)}/${grp.groupTotalStudents}`;
     const comp = bd?.groupCompetenceLabel ?? '—';
-    text = `RÉCAP. ${grp.groupLabel.toUpperCase()} — Moy. : ${num(grp.groupAverage)}/20  |  Coef : ${grp.totalCoefficient}  |  N × C : ${num(grp.totalWeightedScore)}  |  Rang : ${rk}  |  ${comp}`;
+    text = `RÉCAP. ${pureGroupLabel.toUpperCase()} — Moy. : ${num(grp.groupAverage)}/20  |  Coef : ${grp.totalCoefficient}  |  N × C : ${num(grp.totalWeightedScore)}  |  Rang : ${rk}  |  ${comp}`;
   } else if (layoutVariant === 'ANNUAL_BILINGUAL') {
-    text = `Moy. groupe (${grp.groupLabel}) — Tri.1 : ${num(bd?.trim1Average)} | Ev1 : ${num(bd?.seq1Average)} | Ev2 : ${num(bd?.seq2Average)} | Tri.2 : ${num(bd?.trim2Average)} | Ev3 : ${num(bd?.seq3Average)} | Ev4 : ${num(bd?.seq4Average)} | Tri.3 : ${num(bd?.trim3Average)} | Ev5 : ${num(bd?.seq5Average)} | Ev6 : ${num(bd?.seq6Average)} | Coef : ${grp.totalCoefficient} | Moy.AN : ${num(grp.groupAverage)}/20`;
+    text = `Moy. ${pureGroupLabel} — Tri 1 : ${num(bd?.trim1Average)} | Éval 1 : ${num(bd?.seq1Average)} | Éval 2 : ${num(bd?.seq2Average)} | Tri 2 : ${num(bd?.trim2Average)} | Éval 3 : ${num(bd?.seq3Average)} | Éval 4 : ${num(bd?.seq4Average)} | Tri 3 : ${num(bd?.trim3Average)} | Éval 5 : ${num(bd?.seq5Average)} | Éval 6 : ${num(bd?.seq6Average)} | Coef : ${grp.totalCoefficient} | Moy.AN : ${num(grp.groupAverage)}/20`;
   } else if (layoutVariant === 'BILINGUAL_APC') {
-    text = `Moyenne groupe (${grp.groupLabel}) : ${num(grp.groupAverage)}/20  |  Eval a : ${num(bd?.seq1Average)}  |  Eval b : ${num(bd?.seq2Average)}  |  Coef : ${grp.totalCoefficient}  |  Total groupe : ${num(grp.totalWeightedScore)}`;
+    text = `Moyenne ${pureGroupLabel} : ${num(grp.groupAverage)}/20  |  ${evalLabels[0]} : ${num(bd?.seq1Average)}  |  ${evalLabels[1]} : ${num(bd?.seq2Average)}  |  Coef : ${grp.totalCoefficient}  |  Total groupe : ${num(grp.totalWeightedScore)}`;
   } else {
     text = isEn
-      ? `Subtotal ${grp.groupLabel} — Coef: ${grp.totalCoefficient}  |  Total: ${num(grp.totalWeightedScore)}  |  Group Avg: ${num(grp.groupAverage)}/20`
-      : `Sous-total ${grp.groupLabel} — Coef : ${grp.totalCoefficient}  |  Total : ${num(grp.totalWeightedScore)}  |  Moyenne du groupe : ${num(grp.groupAverage)}/20`;
+      ? `Subtotal ${pureGroupLabel} — Coef: ${grp.totalCoefficient}  |  Total: ${num(grp.totalWeightedScore)}  |  Group Avg: ${num(grp.groupAverage)}/20`
+      : `Sous-total ${pureGroupLabel} — Coef : ${grp.totalCoefficient}  |  Total : ${num(grp.totalWeightedScore)}  |  Moyenne du groupe : ${num(grp.groupAverage)}/20`;
   }
 
   const subFontSize = layoutVariant === 'ANNUAL_BILINGUAL' ? 5.8 : 6.7;
@@ -240,6 +263,7 @@ export function drawMeasuredSubjectTable(
   const bottomLimit = doc.page.height - doc.page.margins.bottom - 16;
   const isEn = language === 'en';
   const layoutVariant = templateSpec?.layoutVariant;
+  const evalLabels = resolvePeriodEvaluationLabels(snapshot, options, isEn);
 
   const effectiveScaleConfig: BulletinAppreciationScaleConfig = {
     cote: resolveEffectiveCoteScale(options?.gradingPolicy?.scaleConfig, spec.scaleConfig),
@@ -267,11 +291,11 @@ export function drawMeasuredSubjectTable(
   const ensureSpace = (needed: number) => {
     if (doc.y + needed > bottomLimit) {
       doc.addPage();
-      drawTableHeaderRow(doc, fonts, spec.columns, colWidths, left, isEn, fontSize);
+      drawTableHeaderRow(doc, fonts, spec.columns, colWidths, left, isEn, fontSize, evalLabels, layoutVariant);
     }
   };
 
-  drawTableHeaderRow(doc, fonts, spec.columns, colWidths, left, isEn, fontSize);
+  drawTableHeaderRow(doc, fonts, spec.columns, colWidths, left, isEn, fontSize, evalLabels, layoutVariant);
 
   const groupedKeys: Array<{ key: string; label: string; lines: BulletinSubjectSnapshotLine[]; summary?: BulletinGroupSummary }> = [];
   if (spec.grouping === 'byGroup') {
@@ -338,7 +362,7 @@ export function drawMeasuredSubjectTable(
 
     if (spec.grouping === 'byGroup' && spec.showGroupSubtotals && grp.summary) {
       ensureSpace(14);
-      drawGroupSubtotalRow(doc, fonts, grp.summary, snapshot, left, totalW, isEn, layoutVariant);
+      drawGroupSubtotalRow(doc, fonts, grp.summary, snapshot, left, totalW, isEn, evalLabels, layoutVariant);
     }
   }
 

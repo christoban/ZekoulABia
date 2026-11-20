@@ -1,4 +1,5 @@
-import type { BulletinGradingPolicy } from '@domain/ports/services/BulletinRendererPort';
+import type { BulletinGradingPolicy, BulletinRenderOptions } from '@domain/ports/services/BulletinRendererPort';
+import type { StudentBulletinSnapshot } from '@domain/types/bulletinSnapshot';
 import type {
   BulletinAppreciationScaleConfig,
   CoteScaleThresholds,
@@ -137,5 +138,53 @@ export function formatPeriodBannerTitle(
 
   const prefix = isEn ? 'REPORT CARD' : 'BULLETIN SCOLAIRE';
   return `${prefix} — ${displayPeriod} (${yearName})`;
+}
+
+function normalizeEvalLabel(raw: string | undefined, isEn: boolean): string | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const numMatch = /(\d+)/.exec(trimmed);
+  if (numMatch && /eval|éval|seq|séqu|test/i.test(trimmed)) {
+    return isEn ? `Eval ${numMatch[1]}` : `Éval ${numMatch[1]}`;
+  }
+  return trimmed;
+}
+
+/**
+ * Résout les vrais libellés numérotés des 2 évaluations de la période :
+ * - priorité 1 : options.seq1Label / options.seq2Label explicites ;
+ * - priorité 2 : noms des séquences présentes dans snapshot.sequenceAverages ;
+ * - priorité 3 : numéro de trimestre/term extrait de options.periodName
+ *   (T1 → Éval 1 & Éval 2, T2 → Éval 3 & Éval 4, T3 → Éval 5 & Éval 6).
+ */
+export function resolvePeriodEvaluationLabels(
+  snapshot: StudentBulletinSnapshot,
+  options: Pick<BulletinRenderOptions, 'periodName' | 'seq1Label' | 'seq2Label'> | undefined,
+  isEn: boolean,
+): [string, string] {
+  const prefix = isEn ? 'Eval' : 'Éval';
+  const opt1 = normalizeEvalLabel(options?.seq1Label, isEn);
+  const opt2 = normalizeEvalLabel(options?.seq2Label, isEn);
+  if (opt1 && opt2) return [opt1, opt2];
+
+  const seqs = snapshot.sequenceAverages ?? [];
+  const snap1 = normalizeEvalLabel(seqs[0]?.name, isEn);
+  const snap2 = normalizeEvalLabel(seqs[1]?.name, isEn);
+  if (snap1 && snap2) return [opt1 ?? snap1, opt2 ?? snap2];
+  if (snap1) {
+    const nMatch = /(\d+)/.exec(snap1);
+    const nextLabel = nMatch ? `${prefix} ${Number(nMatch[1]) + 1}` : `${prefix} 2`;
+    return [opt1 ?? snap1, opt2 ?? nextLabel];
+  }
+
+  const period = options?.periodName ?? '';
+  const termMatch = /(?:trim(?:estre)?|term|t)\s*\.?\s*([123])\b|\b([123])(?:er|e|ème|st|nd|rd)\s*(?:trim|term)/i.exec(period);
+  const termNum = termMatch ? Number(termMatch[1] ?? termMatch[2]) : 1;
+  const firstNum = termNum === 2 ? 3 : termNum === 3 ? 5 : 1;
+  return [
+    opt1 ?? `${prefix} ${firstNum}`,
+    opt2 ?? `${prefix} ${firstNum + 1}`,
+  ];
 }
 

@@ -9,7 +9,11 @@ import {
 import { formatAbsenceHoursDisplay } from '@application/reportCard/bulletinEnrichmentHelpers';
 import type { FontSet, MeasuredPdfDoc } from './measuredHeaderHelpers';
 import { formatRankLabel, resolveApcCote } from './measuredSubjectTableHelpers';
-import { formatLocalizedNumber, formatLocalizedPercent } from './measuredFormatHelpers';
+import {
+  formatLocalizedNumber,
+  formatLocalizedPercent,
+  resolvePeriodEvaluationLabels,
+} from './measuredFormatHelpers';
 
 function mark(flag: boolean | undefined): string {
   return flag ? '[X]' : '[ ]';
@@ -224,7 +228,8 @@ export function drawBilingualApcSummary(
   drawBoxTitle(doc, fonts, left, gy, usableW, 'RÉCAPITULATIF & PROFIL DE LA CLASSE');
   const s0 = seqs[0];
   const s1 = seqs[1];
-  const recap = `MOY TRIM : ${num(snapshot.generalAverage)}/20   |   RANG TRIM : ${formatRankLabel(snapshot.rank, false)}/${snapshot.totalStudents}   |   MOY Eval a : ${num(s0?.average)} (Rang ${s0?.rank ? `${s0.rank}/${snapshot.totalStudents}` : '—'})   |   MOY Eval b : ${num(s1?.average)} (Rang ${s1?.rank ? `${s1.rank}/${snapshot.totalStudents}` : '—'})`;
+  const [eval1Label, eval2Label] = resolvePeriodEvaluationLabels(snapshot, options, false);
+  const recap = `MOY TRIM : ${num(snapshot.generalAverage)}/20   |   RANG TRIM : ${formatRankLabel(snapshot.rank, false)}/${snapshot.totalStudents}   |   MOY ${eval1Label} : ${num(s0?.average)} (Rang ${s0?.rank ? `${s0.rank}/${snapshot.totalStudents}` : '—'})   |   MOY ${eval2Label} : ${num(s1?.average)} (Rang ${s1?.rank ? `${s1.rank}/${snapshot.totalStudents}` : '—'})`;
   const profile = `APPRÉCIATION DU TRAVAIL : ${options.mention}   |   MOY DU PREMIER : ${cp ? num(cp.topAverage) : '—'}   |   MOY DU DERNIER : ${cp ? num(cp.lowAverage) : '—'}   |   MOY. GÉN. CLASSE : ${cp ? num(cp.classAverage) : '—'}/20`;
   doc.rect(left, gy + 12, usableW, 24).fillAndStroke('#f8fafc', '#334155');
   doc.font(fonts.bold).fontSize(6.2).fillColor('#0f172a').text(recap, left + 4, gy + 14.5, { width: usableW - 8 });
