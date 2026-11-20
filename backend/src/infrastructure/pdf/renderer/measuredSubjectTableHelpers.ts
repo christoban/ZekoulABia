@@ -83,8 +83,13 @@ export function formatSubjectCell(
     case 'teacherComment': {
       if (layoutVariant === 'BILINGUAL_APC' || layoutVariant === 'ANNUAL_BILINGUAL') {
         const computedComp = resolveApcCompetenceLevel(line.subjectAverage, compScale, 'bilingual');
-        const base = line.teacherComment ?? (scaleConfig?.competence ? computedComp : (line.competenceLevelLabel ?? computedComp));
+        const base = line.teacherComment?.trim() || (scaleConfig?.competence ? computedComp : (line.competenceLevelLabel ?? computedComp));
         return line.teacherName ? `${base} — ${line.teacherName}` : base;
+      }
+      if (layoutVariant === 'TECHNICAL_GROUPED') {
+        const custom = line.teacherComment?.trim();
+        if (custom) return custom;
+        return resolveApcCompetenceLevel(line.subjectAverage, compScale, isEn ? 'en' : 'fr');
       }
       return line.teacherComment ?? '—';
     }

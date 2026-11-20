@@ -83,7 +83,7 @@ export const TECH_GROUPED_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec<Bu
       grouping: 'byGroup',
       showGroupSubtotals: true,
       showTotalBar: true,
-      appreciationScale: 'FREE_TEXT',
+      appreciationScale: 'APC_TEXT',
       scaleConfig: {
         competence: { ongoingMin: 11, acquiredMin: 14, expertMin: 18 },
       },
