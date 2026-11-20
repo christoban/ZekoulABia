@@ -34,6 +34,10 @@ import {
   drawPrimaryPointsRatioSummary,
   drawTechnicalGroupedSummary,
 } from './measuredFamilySummaryHelpers';
+import {
+  QR_QUIET_ZONE_MODULES,
+  drawVerificationFooterStrip,
+} from './measuredVerificationFooter';
 
 function collectPdfBuffer(
   doc: InstanceType<typeof PDFDocument>,
@@ -62,12 +66,12 @@ function resolveTableFontSize(snapshot: StudentBulletinSnapshot, templateSpec: B
   return count >= 14 ? 7.2 : 7.6;
 }
 
-async function generateQrPng(verifyUrl?: string): Promise<Buffer | null> {
+export async function generateBulletinQrPng(verifyUrl?: string): Promise<Buffer | null> {
   if (!verifyUrl) return null;
   return QRCode.toBuffer(verifyUrl, {
     type: 'png',
     errorCorrectionLevel: 'M',
-    margin: 2,
+    margin: QR_QUIET_ZONE_MODULES,
     scale: 6,
   }).catch(() => null);
 }
@@ -119,16 +123,19 @@ function drawBulletinPageOnDoc(
   }
 
   if (variant === 'ANNUAL_BILINGUAL') {
-    drawAnnualBilingualSummary(doc, fonts, snapshot, options, qrBuffer);
+    drawAnnualBilingualSummary(doc, fonts, snapshot, options);
   } else if (variant === 'TECHNICAL_GROUPED') {
-    drawTechnicalGroupedSummary(doc, fonts, snapshot, options, qrBuffer);
+    drawTechnicalGroupedSummary(doc, fonts, snapshot, options);
   } else if (variant === 'BILINGUAL_APC') {
-    drawBilingualApcSummary(doc, fonts, snapshot, options, qrBuffer);
+    drawBilingualApcSummary(doc, fonts, snapshot, options);
   } else if (variant === 'PRIMARY_POINTS_RATIO') {
-    drawPrimaryPointsRatioSummary(doc, fonts, snapshot, options, qrBuffer, specScaleConfig);
-  } else if (sigBlock || qrBlock) {
-    drawSignaturesAndQrBlock(doc, fonts, sigBlock, qrBlock, options, qrBuffer);
+    drawPrimaryPointsRatioSummary(doc, fonts, snapshot, options, specScaleConfig);
+  } else if (sigBlock) {
+    drawSignaturesAndQrBlock(doc, fonts, sigBlock, options);
   }
+
+  // Emplacement unique pour TOUTES les familles : bande « Vérification d'authenticité » en pied de page
+  drawVerificationFooterStrip(doc, fonts, qrBlock, options, qrBuffer);
 
   const noticeText =
     templateSpec.validationNotice ||
@@ -136,7 +143,7 @@ function drawBulletinPageOnDoc(
   if (options.isPreview === true && noticeText) {
     const left = doc.page.margins.left;
     const usableW = doc.page.width - left - doc.page.margins.right;
-    const yNotice = Math.min(doc.y + 1, doc.page.height - doc.page.margins.bottom - 10);
+    const yNotice = Math.min(doc.y + 1, doc.page.height - 14);
     doc.font(fonts.italic).fontSize(MIN_BULLETIN_FONT_SIZE).fillColor('#64748b')
       .text(`[${noticeText}]`, left, yNotice, { width: usableW, align: 'right' });
   }
@@ -151,7 +158,7 @@ export class MeasuredPdfKitBulletinRenderer implements BulletinRendererPort {
     options: BulletinRenderOptions,
   ): Promise<Buffer> {
     const qrBlock = templateSpec.blocks.find((b): b is VerifyQrBlockSpec => b.type === 'verifyQr');
-    const qrBuffer = qrBlock ? await generateQrPng(options.verifyUrl) : null;
+    const qrBuffer = qrBlock ? await generateBulletinQrPng(options.verifyUrl) : null;
 
     const doc = new PDFDocument({
       size: templateSpec.page.size,
@@ -191,7 +198,7 @@ export class MeasuredPdfKitBulletinRenderer implements BulletinRendererPort {
     const qrBuffers = await Promise.all(
       items.map((item) => {
         const qrBlock = item.templateSpec.blocks.find((b): b is VerifyQrBlockSpec => b.type === 'verifyQr');
-        return qrBlock ? generateQrPng(item.options.verifyUrl) : Promise.resolve(null);
+        return qrBlock ? generateBulletinQrPng(item.options.verifyUrl) : Promise.resolve(null);
       }),
     );
 

@@ -134,6 +134,7 @@ export async function renderAtelierPreviewPdf(params: {
     verifyToken: PREVIEW_VERIFY_TOKEN,
     shortVerifyCode: deriveShortVerifyCode(PREVIEW_VERIFY_TOKEN),
     verifyUrl: buildLongTokenVerifyUrl(verifyBaseUrl, PREVIEW_VERIFY_TOKEN),
+    verifyBaseUrl,
     school: schoolIdentity,
     issuedAt: params.issuedAt,
   });

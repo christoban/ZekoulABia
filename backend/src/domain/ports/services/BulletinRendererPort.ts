@@ -53,6 +53,7 @@ export interface BulletinRenderOptions {
   /** true uniquement en aperçu (Atelier Master / Admin / spécimens) ; jamais sur un bulletin scellé */
   isPreview?: boolean;
   verifyUrl?: string;
+  verifyBaseUrl?: string;
   verifyToken?: string;
   shortVerifyCode?: string;
   isDuplicate?: boolean;

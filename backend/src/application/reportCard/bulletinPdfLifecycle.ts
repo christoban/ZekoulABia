@@ -217,6 +217,7 @@ export function buildRenderOptionsForExport(
     isOfficial: params.role !== 'PARENT',
     isAnnual: reportCard.template === 'ANNUAL',
     verifyUrl,
+    verifyBaseUrl: params.verifyBaseUrl,
     verifyToken,
     shortVerifyCode,
     isDuplicate: reprintCount > 0,

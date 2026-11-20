@@ -1,7 +1,6 @@
 import type { StudentBulletinSnapshot } from '@domain/types/bulletinSnapshot';
 import type { BulletinAppreciationScaleConfig } from '@domain/types/bulletinTemplateSpec';
 import type { BulletinRenderOptions } from '@domain/ports/services/BulletinRendererPort';
-import { deriveShortVerifyCode } from '@domain/policies/BulletinVerifyCrypto';
 import {
   buildCoteLegendLines,
   resolveEffectiveCoteScale,
@@ -22,24 +21,6 @@ function mark(flag: boolean | undefined): string {
 function ensureFooterSpace(doc: MeasuredPdfDoc, neededHeight: number): void {
   if (doc.y + neededHeight > doc.page.height - doc.page.margins.bottom) {
     doc.addPage();
-  }
-}
-
-function drawQrBlockAt(
-  doc: MeasuredPdfDoc,
-  fonts: FontSet,
-  qx: number,
-  qy: number,
-  options: BulletinRenderOptions,
-  qrBuffer: Buffer | null,
-  size = 60,
-): void {
-  if (!qrBuffer) return;
-  doc.image(qrBuffer, qx, qy, { fit: [size, size] });
-  const displayCode = options.shortVerifyCode || (options.verifyToken ? deriveShortVerifyCode(options.verifyToken) : undefined);
-  if (displayCode) {
-    doc.font(fonts.regular).fontSize(7).fillColor('#334155')
-      .text(displayCode, qx - 6, qy + size + 1.5, { width: size + 12, align: 'center' });
   }
 }
 
@@ -68,7 +49,6 @@ export function drawAnnualBilingualSummary(
   fonts: FontSet,
   snapshot: StudentBulletinSnapshot,
   options: BulletinRenderOptions,
-  qrBuffer: Buffer | null,
 ): void {
   const left = doc.page.margins.left;
   const usableW = doc.page.width - left - doc.page.margins.right;
@@ -81,10 +61,10 @@ export function drawAnnualBilingualSummary(
   const tRk = (r: number | undefined) => (r ? `${r}/${snapshot.totalStudents}` : '—');
 
   // Petit tableau structuré : lignes Moyenne et Rang, colonnes Tri 1, Éval 1..6, Tri 2, Tri 3, Annuel + Profil classe
-  const tableHeaderH = 13;
-  const tableRowH = 13;
+  const tableHeaderH = 12;
+  const tableRowH = 12;
   const tableTotalH = 13 + tableHeaderH + tableRowH * 2;
-  const botH = 122;
+  const botH = 98;
   ensureFooterSpace(doc, tableTotalH + 5 + botH);
   const gy = doc.y;
   drawBoxTitle(doc, fonts, left, gy, usableW, 'RÉCAPITULATIF ANNUEL & PROFIL DE LA CLASSE');
@@ -155,7 +135,7 @@ export function drawAnnualBilingualSummary(
   const rx = left + colW + 6;
   doc.rect(rx, botY, rightW, botH).strokeColor('#334155').lineWidth(0.7).stroke();
   drawBoxTitle(doc, fonts, rx, botY, rightW, "OBSERVATIONS DU CHEF D'ÉTABLISSEMENT");
-  const textAreaW = qrBuffer ? rightW - 70 : rightW - 8;
+  const textAreaW = rightW - 8;
   const obsLines = [
     `Appréciation : ${options.mention !== '—' ? options.mention : '—'}`,
     `Conseil : ${dec?.observations ?? '—'}`,
@@ -164,13 +144,12 @@ export function drawAnnualBilingualSummary(
   ];
   doc.font(fonts.regular).fontSize(7).fillColor('#0f172a').text(obsLines.join('\n'), rx + 4, botY + 16, { width: textAreaW, lineGap: 1.8 });
   if (options.school.stampBuffer) {
-    try { doc.image(options.school.stampBuffer, rx + 6, botY + 70, { fit: [50, 40] }); } catch { /* ignore */ }
+    try { doc.image(options.school.stampBuffer, rx + 6, botY + 56, { fit: [50, 38] }); } catch { /* ignore */ }
   }
   if (options.school.principalSignatureBuffer) {
-    try { doc.image(options.school.principalSignatureBuffer, rx + 60, botY + 72, { fit: [62, 36] }); } catch { /* ignore */ }
+    try { doc.image(options.school.principalSignatureBuffer, rx + 62, botY + 58, { fit: [64, 34] }); } catch { /* ignore */ }
   }
-  drawQrBlockAt(doc, fonts, rx + rightW - 64, botY + 28, options, qrBuffer, 60);
-  doc.y = botY + botH + 4;
+  doc.y = botY + botH + 3;
 }
 
 export function drawTechnicalGroupedSummary(
@@ -178,7 +157,6 @@ export function drawTechnicalGroupedSummary(
   fonts: FontSet,
   snapshot: StudentBulletinSnapshot,
   options: BulletinRenderOptions,
-  qrBuffer: Buffer | null,
 ): void {
   const left = doc.page.margins.left;
   const usableW = doc.page.width - left - doc.page.margins.right;
@@ -186,13 +164,13 @@ export function drawTechnicalGroupedSummary(
   const cp = snapshot.classProfile;
   const c = snapshot.conduct;
   const dec = snapshot.councilDecision;
-  ensureFooterSpace(doc, 122);
+  const h = 104;
+  ensureFooterSpace(doc, h + 4);
   const y = doc.y;
   const gap = 5;
   const w1 = usableW * 0.34;
   const w2 = usableW * 0.34;
   const w3 = usableW - w1 - w2 - gap * 2;
-  const h = 128;
 
   // Colonne 1 : Conduite & Visa PP
   doc.rect(left, y, w1, h).strokeColor('#334155').lineWidth(0.7).stroke();
@@ -224,7 +202,7 @@ export function drawTechnicalGroupedSummary(
   ];
   doc.font(fonts.bold).fontSize(7).fillColor('#0f172a').text(mLines.join('\n'), x2 + 4, y + 16, { width: w2 - 8, lineGap: 1.4 });
 
-  // Colonne 3 : Stats Classe + Appréciations + Proviseur + QR
+  // Colonne 3 : Stats Classe + Appréciations + Proviseur (libre pour texte manuscrit, cachet et signature)
   const x3 = x2 + w2 + gap;
   doc.rect(x3, y, w3, h).strokeColor('#334155').lineWidth(0.7).stroke();
   drawBoxTitle(doc, fonts, x3, y, w3, 'CLASSE & PROVISEUR');
@@ -235,13 +213,14 @@ export function drawTechnicalGroupedSummary(
     formatPlaceDateLine(options, false),
     'Le Proviseur',
   ];
-  const rwText = qrBuffer ? w3 - 68 : w3 - 8;
-  doc.font(fonts.regular).fontSize(7).fillColor('#0f172a').text(rLines.join('\n'), x3 + 4, y + 16, { width: rwText, lineGap: 1.5 });
+  doc.font(fonts.regular).fontSize(7).fillColor('#0f172a').text(rLines.join('\n'), x3 + 4, y + 16, { width: w3 - 8, lineGap: 1.5 });
   if (options.school.stampBuffer) {
-    try { doc.image(options.school.stampBuffer, x3 + 6, y + 82, { fit: [48, 36] }); } catch { /* ignore */ }
+    try { doc.image(options.school.stampBuffer, x3 + 6, y + 66, { fit: [48, 34] }); } catch { /* ignore */ }
   }
-  drawQrBlockAt(doc, fonts, x3 + w3 - 64, y + 32, options, qrBuffer, 60);
-  doc.y = y + h + 4;
+  if (options.school.principalSignatureBuffer) {
+    try { doc.image(options.school.principalSignatureBuffer, x3 + 60, y + 68, { fit: [64, 30] }); } catch { /* ignore */ }
+  }
+  doc.y = y + h + 3;
 }
 
 export function drawBilingualApcSummary(
@@ -249,14 +228,13 @@ export function drawBilingualApcSummary(
   fonts: FontSet,
   snapshot: StudentBulletinSnapshot,
   options: BulletinRenderOptions,
-  qrBuffer: Buffer | null,
 ): void {
   const left = doc.page.margins.left;
   const usableW = doc.page.width - left - doc.page.margins.right;
   const num = (v: number | undefined | null) => formatLocalizedNumber(v, false, 2);
   const cp = snapshot.classProfile;
   const seqs = snapshot.sequenceAverages ?? [];
-  ensureFooterSpace(doc, 168);
+  ensureFooterSpace(doc, 150);
   const gy = doc.y;
 
   drawBoxTitle(doc, fonts, left, gy, usableW, 'RÉCAPITULATIF & PROFIL DE LA CLASSE');
@@ -274,7 +252,7 @@ export function drawBilingualApcSummary(
   const w1 = usableW * 0.45;
   const w2 = usableW * 0.24;
   const w3 = usableW - w1 - w2 - gap * 2;
-  const h = 122;
+  const h = 102;
   const c = snapshot.conduct;
   const dec = snapshot.councilDecision;
   const apc = dec?.apcObservations;
@@ -298,16 +276,20 @@ export function drawBilingualApcSummary(
   const x3 = x2 + w2 + gap;
   doc.rect(x3, botY, w3, h).strokeColor('#334155').lineWidth(0.7).stroke();
   drawBoxTitle(doc, fonts, x3, botY, w3, "OBSERVATIONS DU CHEF D'ÉTABLISSEMENT");
-  const rwText = qrBuffer ? w3 - 68 : w3 - 8;
   const principalObsLines: string[] = [];
   if (dec?.observations && dec.observations.trim().length > 0) {
     principalObsLines.push(dec.observations.trim());
   }
   principalObsLines.push(formatPlaceDateLine(options, false), 'LE PROVISEUR');
   doc.font(fonts.regular).fontSize(7).fillColor('#0f172a')
-    .text(principalObsLines.join('\n'), x3 + 4, botY + 16, { width: rwText, lineGap: 2 });
-  drawQrBlockAt(doc, fonts, x3 + w3 - 64, botY + 26, options, qrBuffer, 60);
-  doc.y = botY + h + 4;
+    .text(principalObsLines.join('\n'), x3 + 4, botY + 16, { width: w3 - 8, lineGap: 2 });
+  if (options.school.stampBuffer) {
+    try { doc.image(options.school.stampBuffer, x3 + 6, botY + 60, { fit: [48, 36] }); } catch { /* ignore */ }
+  }
+  if (options.school.principalSignatureBuffer) {
+    try { doc.image(options.school.principalSignatureBuffer, x3 + 60, botY + 62, { fit: [64, 34] }); } catch { /* ignore */ }
+  }
+  doc.y = botY + h + 3;
 }
 
 export function drawPrimaryPointsRatioSummary(
@@ -315,7 +297,6 @@ export function drawPrimaryPointsRatioSummary(
   fonts: FontSet,
   snapshot: StudentBulletinSnapshot,
   options: BulletinRenderOptions,
-  qrBuffer: Buffer | null,
   specScaleConfig?: BulletinAppreciationScaleConfig,
 ): void {
   const isEn = options.language === 'en';
@@ -324,17 +305,18 @@ export function drawPrimaryPointsRatioSummary(
   const num = (v: number | undefined | null) => formatLocalizedNumber(v, isEn, 2);
   const cp = snapshot.classProfile;
   const coteScale = resolveEffectiveCoteScale(options.gradingPolicy?.scaleConfig, specScaleConfig);
-  ensureFooterSpace(doc, 162);
+  const boxH = 66;
+  const sigH = 48;
+  ensureFooterSpace(doc, boxH + 4 + sigH + 16);
   const y = doc.y;
   const gap = 5;
   const wBox = (usableW - gap * 2) / 3;
-  const boxH = 74;
 
   // Boîte 1 : Legend (générée dynamiquement depuis les seuils configurés)
   doc.rect(left, y, wBox, boxH).strokeColor('#334155').lineWidth(0.7).stroke();
   drawBoxTitle(doc, fonts, left, y, wBox, isEn ? 'LEGEND' : 'LÉGENDE DES COTES');
   const legend = buildCoteLegendLines(isEn, coteScale);
-  doc.font(fonts.regular).fontSize(7).fillColor('#0f172a').text(legend, left + 4, y + 15.5, { width: wBox - 8, lineGap: 1.4 });
+  doc.font(fonts.regular).fontSize(7).fillColor('#0f172a').text(legend, left + 4, y + 15.5, { width: wBox - 8, lineGap: 1.3 });
 
   // Boîte 2 : Monthly Result
   const x2 = left + wBox + gap;
@@ -344,7 +326,7 @@ export function drawPrimaryPointsRatioSummary(
   const mRes = isEn
     ? `Total Marks : ${num(snapshot.totalRawMarks)}  |  On : ${formatLocalizedNumber(snapshot.totalMaxMarks, true, 0)}\nAverage : ${num(snapshot.generalAverage)} / 20\nPosition : ${formatRankLabel(snapshot.rank, true)} / ${snapshot.totalStudents}\nRemarks : ${options.mention} // ${cote}`
     : `Total Notes : ${num(snapshot.totalRawMarks)}  |  Sur : ${formatLocalizedNumber(snapshot.totalMaxMarks, false, 0)}\nMoyenne : ${num(snapshot.generalAverage)} / 20\nRang : ${formatRankLabel(snapshot.rank, false)} / ${snapshot.totalStudents}\nAppréciation : ${options.mention} // ${cote}`;
-  doc.font(fonts.bold).fontSize(7).fillColor('#0f172a').text(mRes, x2 + 4, y + 15.5, { width: wBox - 8, lineGap: 1.4 });
+  doc.font(fonts.bold).fontSize(7).fillColor('#0f172a').text(mRes, x2 + 4, y + 15.5, { width: wBox - 8, lineGap: 1.3 });
 
   // Boîte 3 : Class performance
   const x3 = x2 + wBox + gap;
@@ -353,14 +335,11 @@ export function drawPrimaryPointsRatioSummary(
   const cPerf = isEn
     ? `Highest Av. : ${cp ? num(cp.topAverage) : '—'}\nLowest Av. : ${cp ? num(cp.lowAverage) : '—'}\nNb passed : ${cp ? `${cp.passCount}/${cp.classSize}` : '—'}\nRate : ${cp ? formatLocalizedPercent(cp.passRate, true, 2) : '—'} | Class : ${cp ? num(cp.classAverage) : '—'}`
     : `Moy. Premier : ${cp ? num(cp.topAverage) : '—'}\nMoy. Dernier : ${cp ? num(cp.lowAverage) : '—'}\nAdmis : ${cp ? `${cp.passCount}/${cp.classSize}` : '—'}\nTaux : ${cp ? formatLocalizedPercent(cp.passRate, false, 2) : '—'} | Moy. : ${cp ? num(cp.classAverage) : '—'}`;
-  doc.font(fonts.regular).fontSize(7).fillColor('#0f172a').text(cPerf, x3 + 4, y + 15.5, { width: wBox - 8, lineGap: 1.4 });
+  doc.font(fonts.regular).fontSize(7).fillColor('#0f172a').text(cPerf, x3 + 4, y + 15.5, { width: wBox - 8, lineGap: 1.3 });
 
-  // Bandeau Signatures + QR >= 20 mm
+  // Bandeau Signatures pleine largeur (le QR est dans la bande unifiée de vérification dessous)
   const sy = y + boxH + 4;
-  const sigH = 70;
-  const qrSize = qrBuffer ? 60 : 0;
-  const sigAreaW = qrBuffer ? usableW - qrSize - 8 : usableW;
-  const sW = (sigAreaW - gap * 2) / 3;
+  const sW = (usableW - gap * 2) / 3;
   const titles = isEn
     ? ["Parent's name and visa", "Teacher's Signature", "Head Teacher's Signature"]
     : ['Nom et visa du parent', "Signature de l'enseignant", 'Signature du Directeur'];
@@ -369,7 +348,6 @@ export function drawPrimaryPointsRatioSummary(
     doc.rect(sx, sy, sW, sigH).strokeColor('#334155').lineWidth(0.7).stroke();
     drawBoxTitle(doc, fonts, sx, sy, sW, t);
   });
-  drawQrBlockAt(doc, fonts, left + usableW - qrSize, sy, options, qrBuffer, 60);
 
   const footY = sy + sigH + 3;
   const printedDate = (options.issuedAt ?? new Date()).toLocaleDateString(isEn ? 'en-GB' : 'fr-FR');
