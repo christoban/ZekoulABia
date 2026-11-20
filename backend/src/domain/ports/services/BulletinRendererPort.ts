@@ -50,6 +50,8 @@ export interface BulletinRenderOptions {
   classMasterComment?: string | null;
   isOfficial?: boolean;
   isAnnual?: boolean;
+  /** true uniquement en aperçu (Atelier Master / Admin / spécimens) ; jamais sur un bulletin scellé */
+  isPreview?: boolean;
   verifyUrl?: string;
   verifyToken?: string;
   shortVerifyCode?: string;

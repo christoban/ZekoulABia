@@ -130,12 +130,15 @@ function drawBulletinPageOnDoc(
     drawSignaturesAndQrBlock(doc, fonts, sigBlock, qrBlock, options, qrBuffer);
   }
 
-  if (templateSpec.validationNotice) {
+  const noticeText =
+    templateSpec.validationNotice ||
+    (templateSpec.validationStatus === 'TO_VALIDATE' ? 'À VALIDER SUR UN BULLETIN RÉEL' : undefined);
+  if (options.isPreview === true && noticeText) {
     const left = doc.page.margins.left;
     const usableW = doc.page.width - left - doc.page.margins.right;
     const yNotice = Math.min(doc.y + 1, doc.page.height - doc.page.margins.bottom - 10);
     doc.font(fonts.italic).fontSize(MIN_BULLETIN_FONT_SIZE).fillColor('#64748b')
-      .text(`[${templateSpec.validationNotice}]`, left, yNotice, { width: usableW, align: 'right' });
+      .text(`[${noticeText}]`, left, yNotice, { width: usableW, align: 'right' });
   }
 }
 

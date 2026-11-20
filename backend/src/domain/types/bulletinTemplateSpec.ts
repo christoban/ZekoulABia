@@ -171,6 +171,8 @@ export type BulletinTemplateBlock =
   | SignaturesBlockSpec
   | VerifyQrBlockSpec;
 
+export type BulletinSpecValidationStatus = 'VALIDATED' | 'TO_VALIDATE';
+
 export interface BulletinTemplateSpec {
   id: string;
   familyKey: BulletinFamilyKey;
@@ -178,6 +180,7 @@ export interface BulletinTemplateSpec {
   layoutVariant?: BulletinLayoutVariant;
   calculationMode?: BulletinCalculationMode;
   showGroupRankInSubtotal?: boolean;
+  validationStatus?: BulletinSpecValidationStatus;
   validationNotice?: string;
   name: string;
   version: number;

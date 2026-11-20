@@ -312,6 +312,14 @@ export class MasterBulletinAtelierController {
         res.status(400).json({ success: false, message: `La spec "${templateSpecId}" doit être publiée avant affectation.` });
         return;
       }
+      if (spec.validationStatus === 'TO_VALIDATE') {
+        res.status(400).json({
+          success: false,
+          code: 'SPEC_TO_VALIDATE',
+          message: `La spec "${spec.id}" est au statut TO_VALIDATE (à valider sur un bulletin réel) et ne peut pas être affectée en production. Utilisez-la uniquement en aperçu.`,
+        });
+        return;
+      }
 
       const classes = await this.classeRepository.findBySchool(schoolId);
       const classLevel = assertValidClassLevel(cleanStr(b.classLevel) ?? null, classes.map((c) => c.toObject().level ?? null));

@@ -130,6 +130,7 @@ export async function renderAtelierPreviewPdf(params: {
     mention: preview.mention,
     language,
     isOfficial: true,
+    isPreview: true,
     verifyToken: PREVIEW_VERIFY_TOKEN,
     shortVerifyCode: deriveShortVerifyCode(PREVIEW_VERIFY_TOKEN),
     verifyUrl: buildLongTokenVerifyUrl(verifyBaseUrl, PREVIEW_VERIFY_TOKEN),

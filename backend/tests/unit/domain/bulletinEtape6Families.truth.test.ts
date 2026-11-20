@@ -234,10 +234,12 @@ describe('Étape 6 — Jeux de vérité calculés à la main (Familles F, D, B, 
     }
     expect(findDefaultSpecForTemplate('ANNUAL')?.id).toBe('ANNUAL_BILINGUAL_V1');
     expect(findDefaultSpecForTemplate('TECHNICAL_FR')?.id).toBe('TECH_GROUPED_V1');
-    expect(findDefaultSpecForTemplate('EN_SECONDARY')?.id).toBe('EN_SECONDARY_V1');
+    expect(findDefaultSpecForTemplate('EN_SECONDARY')).toBeNull();
     expect(findDefaultSpecForTemplate('PRIMARY')?.id).toBe('PRIMARY_POINTS_RATIO_EN_V1');
     expect(findDefaultSpecForTemplate('FR_SECONDARY')?.id).toBe('GENERAL_GROUPED_V1');
+    expect(EN_SECONDARY_V1.validationStatus).toBe('TO_VALIDATE');
     expect(EN_SECONDARY_V1.validationNotice).toBe('À VALIDER SUR UN BULLETIN RÉEL');
+    expect(PRIMARY_POINTS_RATIO_FR_V1.validationStatus).toBe('TO_VALIDATE');
     expect(PRIMARY_POINTS_RATIO_FR_V1.validationNotice).toBe('À VALIDER SUR UN BULLETIN RÉEL');
   });
 
@@ -269,6 +271,7 @@ describe('Étape 6 — Jeux de vérité calculés à la main (Familles F, D, B, 
           isAnnual,
           mention: language === 'en' ? 'Fair' : 'Assez Bien',
           language,
+          isPreview: true,
           verifyUrl: 'https://verify.zekoulabia.cm/verify/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1234',
           shortVerifyCode: 'ZK-UNIT-SPEC',
           school: { schoolName: 'Établissement Modèle', city: 'Garoua' },

@@ -35,6 +35,7 @@ import {
   findDefaultSpecForTemplate,
   getPublishedTemplateSpec,
   hydrateTemplateSpecsFromStore,
+  isSpecValidatedForProduction,
 } from '@domain/templates/bulletinCatalog';
 import { resolveLanguage } from '@domain/policies/LanguagePolicy';
 import { decodeBase64PhotoUrl, resoudreVerifyBaseUrl } from './bulletinEnrichmentHelpers';
@@ -152,7 +153,7 @@ export function resolveActiveSpecForBulletin(params: {
   if (!params.useMeasuredBulletinRenderer) return null;
   if (params.templateSpecId) {
     const exact = getPublishedTemplateSpec(params.templateSpecId, params.templateVersion);
-    if (exact) return exact;
+    if (exact && isSpecValidatedForProduction(exact)) return exact;
   }
   return findDefaultSpecForTemplate(params.template);
 }

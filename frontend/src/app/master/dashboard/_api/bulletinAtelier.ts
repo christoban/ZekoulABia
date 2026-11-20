@@ -47,6 +47,7 @@ export interface AtelierCatalogSpecDto {
   layoutVariant?: string
   calculationMode?: string
   showGroupRankInSubtotal?: boolean
+  validationStatus?: 'VALIDATED' | 'TO_VALIDATE'
   validationNotice?: string
   name: string
   version: number
