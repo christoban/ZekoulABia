@@ -132,3 +132,15 @@ export const publicVerifyLimiter = rateLimit({
   },
 });
 
+export const heavyPdfExportLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    code: 'RATE_LIMITED_PDF_EXPORT',
+    message: 'Trop de générations ou d’aperçus PDF rapprochés. Veuillez patienter quelques instants avant de relancer.',
+  },
+});
+
