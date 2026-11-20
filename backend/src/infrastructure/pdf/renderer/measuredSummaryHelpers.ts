@@ -234,22 +234,27 @@ export function drawSignaturesAndQrBlock(
   const gap = 6;
   const boxW = (sigAreaW - gap * (slots.length - 1)) / slots.length;
   const boxTop = y + 12;
+  doc.font(fonts.bold).fontSize(7);
+  const titleBarH = Math.max(
+    14,
+    ...slots.map((slot) => Math.ceil(doc.heightOfString(labelsMap[slot] ?? slot, { width: boxW - 6 }) + 6)),
+  );
 
   slots.forEach((slot, idx) => {
     const sx = left + idx * (boxW + gap);
     doc.rect(sx, boxTop, boxW, boxH).strokeColor('#334155').lineWidth(0.7).stroke();
-    doc.rect(sx, boxTop, boxW, 13.5).fillAndStroke('#e2e8f0', '#334155');
+    doc.rect(sx, boxTop, boxW, titleBarH).fillAndStroke('#e2e8f0', '#334155');
     doc.font(fonts.bold).fontSize(7).fillColor('#0f172a')
-      .text(labelsMap[slot] ?? slot, sx + 3, boxTop + 3.2, { width: boxW - 6, align: 'center' });
+      .text(labelsMap[slot] ?? slot, sx + 3, boxTop + 3, { width: boxW - 6, align: 'center' });
 
     if (slot === 'mainTeacher' && options.classMasterComment && options.classMasterComment.trim().length > 0) {
       doc.font(fonts.regular).fontSize(7).fillColor('#0f172a')
-        .text(options.classMasterComment.trim(), sx + 4, boxTop + 16, { width: boxW - 8, height: boxH - 20 });
+        .text(options.classMasterComment.trim(), sx + 4, boxTop + titleBarH + 3, { width: boxW - 8, height: boxH - titleBarH - 6 });
     } else if (slot === 'vicePrincipal' && options.school.censorSignatureBuffer) {
-      try { doc.image(options.school.censorSignatureBuffer, sx + 8, boxTop + 15, { fit: [boxW - 16, boxH - 18] }); } catch { /* ignore */ }
+      try { doc.image(options.school.censorSignatureBuffer, sx + 8, boxTop + titleBarH + 2, { fit: [boxW - 16, boxH - titleBarH - 5] }); } catch { /* ignore */ }
     } else if (slot === 'principal') {
-      const innerY = boxTop + 15;
-      const innerH = boxH - 18;
+      const innerY = boxTop + titleBarH + 2;
+      const innerH = boxH - titleBarH - 5;
       if (options.school.stampBuffer) {
         try { doc.image(options.school.stampBuffer, sx + 6, innerY, { fit: [boxW * 0.45, innerH] }); } catch { /* ignore */ }
       }
@@ -258,7 +263,7 @@ export function drawSignaturesAndQrBlock(
       }
       if (!options.school.stampBuffer && !options.school.principalSignatureBuffer && sigSpec?.showStamp && sigSpec?.showPlaceholder) {
         doc.font(fonts.italic).fontSize(7).fillColor('#64748b')
-          .text(isEn ? 'Stamp & Signature' : 'Cachet & Signature', sx + 6, boxTop + 34, { width: boxW - 12, align: 'center' });
+          .text(isEn ? 'Stamp & Signature' : 'Cachet & Signature', sx + 6, boxTop + titleBarH + 18, { width: boxW - 12, align: 'center' });
       }
     }
   });

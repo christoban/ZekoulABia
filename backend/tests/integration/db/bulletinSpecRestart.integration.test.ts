@@ -91,14 +91,18 @@ describe('Étape 8.1 PostgreSQL — Persistance DB des specs DRAFT/PUBLISHED & s
     // 1. Créer et persister en DB une spec v2 PUBLISHED (et v3 DRAFT)
     const specId = `SPEC_RESTART_${suffix}`;
     createdSpecIds.push(specId);
+    const v2Base = structuredClone(GENERAL_GROUPED_V1);
     const v2Spec = {
-      ...structuredClone(GENERAL_GROUPED_V1),
+      ...v2Base,
       id: specId,
       version: 2,
       status: 'PUBLISHED' as const,
+      validationStatus: 'VALIDATED' as const,
       name: 'Spec Restart V2 Publiée',
       language: 'en' as const,
-      validationNotice: `CALIBRATION V2 ${suffix}`,
+      blocks: v2Base.blocks.map((b) =>
+        b.type === 'subjectTable' ? { ...b, formulaHint: `CALIBRATION V2 ${suffix}` } : b,
+      ),
     };
     await specRepo.saveVersion(v2Spec, admin.id);
 
