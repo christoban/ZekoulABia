@@ -53,11 +53,13 @@ function collectPdfBuffer(
   });
 }
 
+export const MIN_BULLETIN_FONT_SIZE = 7;
+
 function resolveTableFontSize(snapshot: StudentBulletinSnapshot, templateSpec: BulletinTemplateSpec): number {
   const count = snapshot.subjectLines.length;
-  if (templateSpec.layoutVariant === 'ANNUAL_BILINGUAL') return count >= 14 ? 5.9 : 6.2;
-  if (templateSpec.layoutVariant === 'PRIMARY_POINTS_RATIO') return count >= 20 ? 5.9 : 6.4;
-  return count >= 18 ? 6.7 : count >= 14 ? 7.1 : 7.6;
+  if (templateSpec.layoutVariant === 'ANNUAL_BILINGUAL') return MIN_BULLETIN_FONT_SIZE;
+  if (templateSpec.layoutVariant === 'PRIMARY_POINTS_RATIO') return MIN_BULLETIN_FONT_SIZE;
+  return count >= 14 ? 7.2 : 7.6;
 }
 
 async function generateQrPng(verifyUrl?: string): Promise<Buffer | null> {
@@ -131,8 +133,8 @@ function drawBulletinPageOnDoc(
   if (templateSpec.validationNotice) {
     const left = doc.page.margins.left;
     const usableW = doc.page.width - left - doc.page.margins.right;
-    const yNotice = Math.min(doc.y + 1, doc.page.height - doc.page.margins.bottom - 9);
-    doc.font(fonts.italic).fontSize(5.8).fillColor('#64748b')
+    const yNotice = Math.min(doc.y + 1, doc.page.height - doc.page.margins.bottom - 10);
+    doc.font(fonts.italic).fontSize(MIN_BULLETIN_FONT_SIZE).fillColor('#64748b')
       .text(`[${templateSpec.validationNotice}]`, left, yNotice, { width: usableW, align: 'right' });
   }
 }

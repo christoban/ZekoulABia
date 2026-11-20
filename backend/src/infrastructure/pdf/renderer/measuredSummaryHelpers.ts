@@ -238,12 +238,12 @@ export function drawSignaturesAndQrBlock(
   slots.forEach((slot, idx) => {
     const sx = left + idx * (boxW + gap);
     doc.rect(sx, boxTop, boxW, boxH).strokeColor('#334155').lineWidth(0.7).stroke();
-    doc.rect(sx, boxTop, boxW, 13).fillAndStroke('#e2e8f0', '#334155');
-    doc.font(fonts.bold).fontSize(6.6).fillColor('#0f172a')
-      .text(labelsMap[slot] ?? slot, sx + 3, boxTop + 3.5, { width: boxW - 6, align: 'center' });
+    doc.rect(sx, boxTop, boxW, 13.5).fillAndStroke('#e2e8f0', '#334155');
+    doc.font(fonts.bold).fontSize(7).fillColor('#0f172a')
+      .text(labelsMap[slot] ?? slot, sx + 3, boxTop + 3.2, { width: boxW - 6, align: 'center' });
 
     if (slot === 'mainTeacher' && options.classMasterComment && options.classMasterComment.trim().length > 0) {
-      doc.font(fonts.regular).fontSize(6.8).fillColor('#0f172a')
+      doc.font(fonts.regular).fontSize(7).fillColor('#0f172a')
         .text(options.classMasterComment.trim(), sx + 4, boxTop + 16, { width: boxW - 8, height: boxH - 20 });
     } else if (slot === 'vicePrincipal' && options.school.censorSignatureBuffer) {
       try { doc.image(options.school.censorSignatureBuffer, sx + 8, boxTop + 15, { fit: [boxW - 16, boxH - 18] }); } catch { /* ignore */ }
@@ -257,7 +257,7 @@ export function drawSignaturesAndQrBlock(
         try { doc.image(options.school.principalSignatureBuffer, sx + boxW * 0.48, innerY, { fit: [boxW * 0.46, innerH] }); } catch { /* ignore */ }
       }
       if (!options.school.stampBuffer && !options.school.principalSignatureBuffer && sigSpec?.showStamp && sigSpec?.showPlaceholder) {
-        doc.font(fonts.italic).fontSize(6.2).fillColor('#64748b')
+        doc.font(fonts.italic).fontSize(7).fillColor('#64748b')
           .text(isEn ? 'Stamp & Signature' : 'Cachet & Signature', sx + 6, boxTop + 34, { width: boxW - 12, align: 'center' });
       }
     }
@@ -268,8 +268,8 @@ export function drawSignaturesAndQrBlock(
     doc.image(qrBuffer, qx, boxTop, { fit: [qrSize, qrSize] });
     const displayCode = options.shortVerifyCode || (options.verifyToken ? deriveShortVerifyCode(options.verifyToken) : undefined);
     if (qrSpec.showVerificationCode && displayCode) {
-      doc.font(fonts.regular).fontSize(5.5).fillColor('#334155')
-        .text(displayCode, qx - 2, boxTop + qrSize + 2, { width: qrSize + 4, align: 'center' });
+      doc.font(fonts.regular).fontSize(7).fillColor('#334155')
+        .text(displayCode, qx - 6, boxTop + qrSize + 2, { width: qrSize + 12, align: 'center' });
     }
   }
   doc.y = y + neededH;

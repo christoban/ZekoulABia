@@ -60,6 +60,15 @@ function formatBirthDate(isoOrRaw: string | null | undefined): string {
   return ymd;
 }
 
+export const HEADER_EMBLEM_GAP = 4;
+
+/** Boîte réservée au logo / aux armoiries en haut d'en-tête (hauteur 0 si aucun emblème). */
+export function resolveHeaderEmblemBox(hasLogo: boolean, hasCoat: boolean): { width: number; height: number } {
+  if (hasLogo && hasCoat) return { width: 26, height: 26 };
+  if (hasLogo || hasCoat) return { width: 40, height: 34 };
+  return { width: 0, height: 0 };
+}
+
 export function drawOfficialHeaderBlock(
   doc: MeasuredPdfDoc,
   fonts: FontSet,
@@ -73,41 +82,44 @@ export function drawOfficialHeaderBlock(
 
   if (spec.bilingual) {
     const colW = (usableW - 64) / 2;
-    doc.font(fonts.bold).fontSize(6.8).fillColor('#0f172a')
+    doc.font(fonts.bold).fontSize(7.2).fillColor('#0f172a')
       .text('RÉPUBLIQUE DU CAMEROUN', left, y0, { width: colW, align: 'center' })
-      .font(fonts.italic).fontSize(6.2)
-      .text('Paix — Travail — Patrie', left, y0 + 8.5, { width: colW, align: 'center' })
-      .font(fonts.regular).fontSize(6)
-      .text('MINISTÈRE DES ENSEIGNEMENTS SECONDAIRES', left, y0 + 16.5, { width: colW, align: 'center' });
+      .font(fonts.italic).fontSize(7)
+      .text('Paix — Travail — Patrie', left, y0 + 9, { width: colW, align: 'center' })
+      .font(fonts.regular).fontSize(7)
+      .text('MINISTÈRE DES ENSEIGNEMENTS SECONDAIRES', left, y0 + 18, { width: colW, align: 'center' });
 
     const rightX = left + usableW - colW;
-    doc.font(fonts.bold).fontSize(6.8)
+    doc.font(fonts.bold).fontSize(7.2)
       .text('REPUBLIC OF CAMEROON', rightX, y0, { width: colW, align: 'center' })
-      .font(fonts.italic).fontSize(6.2)
-      .text('Peace — Work — Fatherland', rightX, y0 + 8.5, { width: colW, align: 'center' })
-      .font(fonts.regular).fontSize(6)
-      .text('MINISTRY OF SECONDARY EDUCATION', rightX, y0 + 16.5, { width: colW, align: 'center' });
+      .font(fonts.italic).fontSize(7)
+      .text('Peace — Work — Fatherland', rightX, y0 + 9, { width: colW, align: 'center' })
+      .font(fonts.regular).fontSize(7)
+      .text('MINISTRY OF SECONDARY EDUCATION', rightX, y0 + 18, { width: colW, align: 'center' });
   }
 
   const hasLogo = spec.showLogo && Boolean(options.school.logoBuffer);
   const hasCoat = spec.showCoatOfArms && Boolean(options.school.coatOfArmsEnabled) && Boolean(options.school.coatOfArmsBuffer);
+  const emblemBox = resolveHeaderEmblemBox(hasLogo, hasCoat);
 
   if (hasLogo && hasCoat) {
-    try { doc.image(options.school.logoBuffer!, left + usableW / 2 - 28, y0, { fit: [26, 26] }); } catch { /* ignore invalid image */ }
-    try { doc.image(options.school.coatOfArmsBuffer!, left + usableW / 2 + 2, y0, { fit: [26, 26] }); } catch { /* ignore invalid image */ }
+    try { doc.image(options.school.logoBuffer!, left + usableW / 2 - 28, y0, { fit: [emblemBox.width, emblemBox.height] }); } catch { /* ignore invalid image */ }
+    try { doc.image(options.school.coatOfArmsBuffer!, left + usableW / 2 + 2, y0, { fit: [emblemBox.width, emblemBox.height] }); } catch { /* ignore invalid image */ }
   } else if (hasLogo) {
-    try { doc.image(options.school.logoBuffer!, left + usableW / 2 - 20, y0, { fit: [40, 34] }); } catch { /* ignore invalid image */ }
+    try { doc.image(options.school.logoBuffer!, left + usableW / 2 - 20, y0, { fit: [emblemBox.width, emblemBox.height] }); } catch { /* ignore invalid image */ }
   } else if (hasCoat) {
-    try { doc.image(options.school.coatOfArmsBuffer!, left + usableW / 2 - 20, y0, { fit: [40, 34] }); } catch { /* ignore invalid image */ }
+    try { doc.image(options.school.coatOfArmsBuffer!, left + usableW / 2 - 20, y0, { fit: [emblemBox.width, emblemBox.height] }); } catch { /* ignore invalid image */ }
   }
 
-  let cursorY = y0 + 29;
+  // Le texte (délégations, nom de l'école) démarre SOUS le bloc logo/armoiries : jamais de chevauchement.
+  const ministryTextBottom = spec.bilingual ? y0 + 29 : y0;
+  let cursorY = Math.max(ministryTextBottom, y0 + emblemBox.height + HEADER_EMBLEM_GAP);
   const delParts = [
     options.school.regionalDelegation?.trim(),
     options.school.departmentalDelegation?.trim(),
   ].filter((v): v is string => Boolean(v && v.length > 0));
   if (spec.showDelegations && delParts.length > 0) {
-    doc.font(fonts.regular).fontSize(6.5).fillColor('#334155').text(delParts.join(' • '), left, cursorY, { width: usableW, align: 'center' });
+    doc.font(fonts.regular).fontSize(7).fillColor('#334155').text(delParts.join(' • '), left, cursorY, { width: usableW, align: 'center' });
     cursorY = doc.y + 1;
   }
 
@@ -201,10 +213,10 @@ export function drawStudentCardBlock(
       try {
         doc.image(options.studentPhotoBuffer, px + 2, startY + 2, { fit: [46, boxH - 4], align: 'center', valign: 'center' });
       } catch {
-        doc.font(fonts.regular).fontSize(6).fillColor('#64748b').text('PHOTO', px + 4, startY + boxH / 2 - 4, { width: 42, align: 'center' });
+        doc.font(fonts.regular).fontSize(7).fillColor('#64748b').text('PHOTO', px + 4, startY + boxH / 2 - 4, { width: 42, align: 'center' });
       }
     } else {
-      doc.font(fonts.regular).fontSize(6.5).fillColor('#64748b').text('PHOTO', px + 4, startY + boxH / 2 - 4, { width: 42, align: 'center' });
+      doc.font(fonts.regular).fontSize(7).fillColor('#64748b').text('PHOTO', px + 4, startY + boxH / 2 - 4, { width: 42, align: 'center' });
     }
   }
   doc.y = startY + boxH + 5;

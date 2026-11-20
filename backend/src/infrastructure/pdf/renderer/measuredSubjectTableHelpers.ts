@@ -135,9 +135,9 @@ function drawTableHeaderRow(
   evalLabels: [string, string],
   layoutVariant?: BulletinLayoutVariant,
 ): void {
-  const hdrFontSize = Math.max(5.5, fontSize - 0.5);
+  const hdrFontSize = Math.max(7, fontSize - 0.2);
   doc.font(fonts.bold).fontSize(hdrFontSize);
-  let headerH = cols.length >= 12 ? 15 : 17;
+  let headerH = cols.length >= 12 ? 16 : 18;
   cols.forEach((col, i) => {
     const label = resolveColumnHeaderLabel(col, isEn, evalLabels, layoutVariant);
     const h = doc.heightOfString(label, { width: Math.max(6, colWidths[i]! - 3) });
@@ -169,15 +169,92 @@ function measureRowHeight(
   layoutVariant?: BulletinLayoutVariant,
   scaleConfig?: BulletinAppreciationScaleConfig,
 ): number {
-  const pad = layoutVariant === 'PRIMARY_POINTS_RATIO' || layoutVariant === 'ANNUAL_BILINGUAL' ? 3 : 4.5;
+  const pad = layoutVariant === 'PRIMARY_POINTS_RATIO' || layoutVariant === 'ANNUAL_BILINGUAL' ? 2.2 : 4;
   let maxH = fontSize + pad;
   cols.forEach((col, idx) => {
     doc.font(isBoldSubjectColumn(col.key) ? fonts.bold : fonts.regular).fontSize(fontSize);
     const val = formatSubjectCell(line, col.key, isEn, layoutVariant, scaleConfig);
-    const h = doc.heightOfString(val, { width: Math.max(6, colWidths[idx]! - 4), lineGap: 0.35 });
+    const h = doc.heightOfString(val, { width: Math.max(6, colWidths[idx]! - 3), lineGap: 0.25 });
     if (h + pad > maxH) maxH = h + pad;
   });
   return Math.ceil(maxH);
+}
+
+function getAlignedGroupCellValue(
+  key: SubjectTableColumnKey,
+  grp: BulletinGroupSummary,
+  snapshot: StudentBulletinSnapshot,
+  isEn: boolean,
+): string {
+  const num = (v: number | undefined) => formatLocalizedNumber(v, isEn, 2);
+  const bd = snapshot.groupBreakdowns?.[grp.groupKey];
+  switch (key) {
+    case 'trim1Average': return num(bd?.trim1Average);
+    case 'trim2Average': return num(bd?.trim2Average);
+    case 'trim3Average': return num(bd?.trim3Average);
+    case 'seq1Score': return num(bd?.seq1Average);
+    case 'seq2Score': return num(bd?.seq2Average);
+    case 'seq3Score': return num(bd?.seq3Average);
+    case 'seq4Score': return num(bd?.seq4Average);
+    case 'seq5Score': return num(bd?.seq5Average);
+    case 'seq6Score': return num(bd?.seq6Average);
+    case 'coefficient': return String(grp.totalCoefficient);
+    case 'subjectAverage': return num(grp.groupAverage);
+    case 'weightedScore': return num(grp.totalWeightedScore);
+    case 'teacherComment': return bd?.groupCompetenceLabel ?? '';
+    default: return '';
+  }
+}
+
+function drawAlignedGroupSubtotalRow(
+  doc: MeasuredPdfDoc,
+  fonts: FontSet,
+  grp: BulletinGroupSummary,
+  snapshot: StudentBulletinSnapshot,
+  cols: SubjectTableColumnSpec[],
+  colWidths: number[],
+  left: number,
+  totalW: number,
+  isEn: boolean,
+): void {
+  const subFontSize = 7;
+  const labelText = `Moy. ${grp.groupLabel.trim()}`;
+  const hasCompCol = cols[0]?.key === 'subjectName' && cols[1]?.key === 'competenceLabel';
+  const labelSpanW = hasCompCol ? (colWidths[0]! + colWidths[1]!) : (colWidths[0] ?? totalW);
+  const firstDataIdx = hasCompCol ? 2 : 1;
+
+  doc.font(fonts.bold).fontSize(subFontSize);
+  let rowH = 13;
+  const lblH = doc.heightOfString(labelText, { width: Math.max(8, labelSpanW - 4) }) + 4;
+  if (lblH > rowH) rowH = Math.ceil(lblH);
+  for (let i = firstDataIdx; i < cols.length; i++) {
+    const val = getAlignedGroupCellValue(cols[i]!.key, grp, snapshot, isEn);
+    if (!val) continue;
+    const ch = doc.heightOfString(val, { width: Math.max(6, colWidths[i]! - 3) }) + 4;
+    if (ch > rowH) rowH = Math.ceil(ch);
+  }
+
+  const y = doc.y;
+  doc.rect(left, y, totalW, rowH).fillAndStroke('#e2e8f0', '#334155');
+  doc.font(fonts.bold).fontSize(subFontSize).fillColor('#0f172a')
+    .text(labelText, left + 2, y + 2.5, { width: Math.max(8, labelSpanW - 4), align: 'left' });
+
+  let cx = left + labelSpanW;
+  for (let i = firstDataIdx; i < cols.length; i++) {
+    const w = colWidths[i]!;
+    doc.moveTo(cx, y).lineTo(cx, y + rowH).strokeColor('#64748b').lineWidth(0.4).stroke();
+    const col = cols[i]!;
+    const val = getAlignedGroupCellValue(col.key, grp, snapshot, isEn);
+    if (val) {
+      doc.font(fonts.bold).fontSize(subFontSize).fillColor('#0f172a')
+        .text(val, cx + 1.5, y + 2.5, {
+          width: Math.max(6, w - 3),
+          align: col.key === 'teacherComment' ? 'left' : 'center',
+        });
+    }
+    cx += w;
+  }
+  doc.y = y + rowH;
 }
 
 function drawGroupSubtotalRow(
@@ -185,32 +262,28 @@ function drawGroupSubtotalRow(
   fonts: FontSet,
   grp: BulletinGroupSummary,
   snapshot: StudentBulletinSnapshot,
+  cols: SubjectTableColumnSpec[],
+  colWidths: number[],
   left: number,
   totalW: number,
   isEn: boolean,
-  evalLabels: [string, string],
   layoutVariant?: BulletinLayoutVariant,
 ): void {
+  if (layoutVariant === 'BILINGUAL_APC' || layoutVariant === 'ANNUAL_BILINGUAL') {
+    drawAlignedGroupSubtotalRow(doc, fonts, grp, snapshot, cols, colWidths, left, totalW, isEn);
+    return;
+  }
   const num = (v: number | undefined) => formatLocalizedNumber(v, isEn, 2);
   const bd = snapshot.groupBreakdowns?.[grp.groupKey];
   const pureGroupLabel = grp.groupLabel.trim();
-  let text: string;
+  const text =
+    layoutVariant === 'TECHNICAL_GROUPED'
+      ? `RÉCAP. ${pureGroupLabel.toUpperCase()} — Moy. : ${num(grp.groupAverage)}/20  |  Coef : ${grp.totalCoefficient}  |  N × C : ${num(grp.totalWeightedScore)}  |  Rang : ${formatRankLabel(grp.groupRank, isEn)}/${grp.groupTotalStudents}  |  ${bd?.groupCompetenceLabel ?? '—'}`
+      : isEn
+        ? `Subtotal ${pureGroupLabel} — Coef: ${grp.totalCoefficient}  |  Total: ${num(grp.totalWeightedScore)}  |  Group Avg: ${num(grp.groupAverage)}/20`
+        : `Sous-total ${pureGroupLabel} — Coef : ${grp.totalCoefficient}  |  Total : ${num(grp.totalWeightedScore)}  |  Moyenne du groupe : ${num(grp.groupAverage)}/20`;
 
-  if (layoutVariant === 'TECHNICAL_GROUPED') {
-    const rk = `${formatRankLabel(grp.groupRank, isEn)}/${grp.groupTotalStudents}`;
-    const comp = bd?.groupCompetenceLabel ?? '—';
-    text = `RÉCAP. ${pureGroupLabel.toUpperCase()} — Moy. : ${num(grp.groupAverage)}/20  |  Coef : ${grp.totalCoefficient}  |  N × C : ${num(grp.totalWeightedScore)}  |  Rang : ${rk}  |  ${comp}`;
-  } else if (layoutVariant === 'ANNUAL_BILINGUAL') {
-    text = `Moy. ${pureGroupLabel} — Tri 1 : ${num(bd?.trim1Average)} | Éval 1 : ${num(bd?.seq1Average)} | Éval 2 : ${num(bd?.seq2Average)} | Tri 2 : ${num(bd?.trim2Average)} | Éval 3 : ${num(bd?.seq3Average)} | Éval 4 : ${num(bd?.seq4Average)} | Tri 3 : ${num(bd?.trim3Average)} | Éval 5 : ${num(bd?.seq5Average)} | Éval 6 : ${num(bd?.seq6Average)} | Coef : ${grp.totalCoefficient} | Moy.AN : ${num(grp.groupAverage)}/20`;
-  } else if (layoutVariant === 'BILINGUAL_APC') {
-    text = `Moyenne ${pureGroupLabel} : ${num(grp.groupAverage)}/20  |  ${evalLabels[0]} : ${num(bd?.seq1Average)}  |  ${evalLabels[1]} : ${num(bd?.seq2Average)}  |  Coef : ${grp.totalCoefficient}  |  Total groupe : ${num(grp.totalWeightedScore)}`;
-  } else {
-    text = isEn
-      ? `Subtotal ${pureGroupLabel} — Coef: ${grp.totalCoefficient}  |  Total: ${num(grp.totalWeightedScore)}  |  Group Avg: ${num(grp.groupAverage)}/20`
-      : `Sous-total ${pureGroupLabel} — Coef : ${grp.totalCoefficient}  |  Total : ${num(grp.totalWeightedScore)}  |  Moyenne du groupe : ${num(grp.groupAverage)}/20`;
-  }
-
-  const subFontSize = layoutVariant === 'ANNUAL_BILINGUAL' ? 5.8 : 6.7;
+  const subFontSize = 7;
   doc.font(fonts.bold).fontSize(subFontSize);
   const h = Math.max(13, Math.ceil(doc.heightOfString(text, { width: totalW - 8 }) + 5));
   const y = doc.y;
@@ -239,7 +312,7 @@ function drawSubjectTableTotalBar(
       : layoutVariant === 'TECHNICAL_GROUPED'
         ? `TOTAL TRIMESTRE — Coef : ${snapshot.totalCoefficient}   |   Total N × C : ${num(snapshot.totalWeightedScore)}   |   Moyenne Premier : ${cp ? num(cp.topAverage) : '—'}/20   |   Moyenne Dernier : ${cp ? num(cp.lowAverage) : '—'}/20`
         : `TOTAL — Coef : ${snapshot.totalCoefficient}   |   Total Points (N × C) : ${num(snapshot.totalWeightedScore)}   |   Moyenne Trim. : ${num(snapshot.generalAverage)}/20`;
-  doc.font(fonts.bold).fontSize(6.7).fillColor('#0f172a').text(text, left + 5, y + 3.2, { width: totalW - 10 });
+  doc.font(fonts.bold).fontSize(7).fillColor('#0f172a').text(text, left + 5, y + 3, { width: totalW - 10 });
   doc.y = y + h;
 }
 
@@ -281,10 +354,10 @@ export function drawMeasuredSubjectTable(
 
   if (resolvedFormulaHint.length > 0) {
     const hy = doc.y;
-    doc.font(fonts.italic).fontSize(6.2);
+    doc.font(fonts.italic).fontSize(7);
     const hintH = Math.max(12, Math.ceil(doc.heightOfString(resolvedFormulaHint, { width: totalW - 8 }) + 4));
     doc.rect(left, hy, totalW, hintH).fillAndStroke('#f8fafc', '#94a3b8');
-    doc.fillColor('#334155').text(resolvedFormulaHint, left + 4, hy + 2.5, { width: totalW - 8, align: 'center' });
+    doc.fillColor('#334155').text(resolvedFormulaHint, left + 4, hy + 2.2, { width: totalW - 8, align: 'center' });
     doc.y = hy + hintH + 1;
   }
 
@@ -327,11 +400,11 @@ export function drawMeasuredSubjectTable(
   let rowIdx = 0;
   for (const grp of groupedKeys) {
     if ((spec.grouping === 'byGroup' || spec.groupByDomain) && grp.label) {
-      const bannerH = spec.groupByDomain ? 9.5 : 11.5;
+      const bannerH = spec.groupByDomain ? 10.5 : 12;
       ensureSpace(bannerH + 12);
       const gy = doc.y;
       doc.rect(left, gy, totalW, bannerH).fillAndStroke('#cbd5e1', '#334155');
-      doc.font(fonts.bold).fontSize(spec.groupByDomain ? 6.0 : 6.8).fillColor('#0f172a')
+      doc.font(fonts.bold).fontSize(7).fillColor('#0f172a')
         .text(grp.label.toUpperCase(), left + 4, gy + 1.8, { width: totalW - 8 });
       doc.y = gy + bannerH;
     }
@@ -349,10 +422,10 @@ export function drawMeasuredSubjectTable(
         if (i > 0) doc.moveTo(cx, ry).lineTo(cx, ry + rowH).strokeColor('#cbd5e1').lineWidth(0.4).stroke();
         const isBoldCol = isBoldSubjectColumn(col.key);
         doc.font(isBoldCol ? fonts.bold : fonts.regular).fontSize(fontSize).fillColor('#0f172a')
-          .text(formatSubjectCell(line, col.key, isEn, layoutVariant, effectiveScaleConfig), cx + 2, ry + 1.5, {
-            width: Math.max(6, w - 4),
+          .text(formatSubjectCell(line, col.key, isEn, layoutVariant, effectiveScaleConfig), cx + 1.5, ry + 1.2, {
+            width: Math.max(6, w - 3),
             align: col.align ?? (col.key === 'subjectName' || col.key === 'teacherComment' || col.key === 'teacherName' || col.key === 'competenceLabel' ? 'left' : 'center'),
-            lineGap: 0.35,
+            lineGap: 0.25,
           });
         cx += w;
       });
@@ -362,7 +435,7 @@ export function drawMeasuredSubjectTable(
 
     if (spec.grouping === 'byGroup' && spec.showGroupSubtotals && grp.summary) {
       ensureSpace(14);
-      drawGroupSubtotalRow(doc, fonts, grp.summary, snapshot, left, totalW, isEn, evalLabels, layoutVariant);
+      drawGroupSubtotalRow(doc, fonts, grp.summary, snapshot, spec.columns, colWidths, left, totalW, isEn, layoutVariant);
     }
   }
 
