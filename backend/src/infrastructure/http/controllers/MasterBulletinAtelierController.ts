@@ -4,6 +4,7 @@ import { renderAtelierPreviewPdf } from '@application/reportCard/bulletinAtelier
 import { SchoolAssetValidationError } from '@domain/errors/SchoolAssetValidationError';
 import { KNOWN_CLASS_LEVELS, assertValidClassLevel } from '@domain/policies/BulletinTemplatePolicy';
 import type { BulletinTemplateAssignmentRepository } from '@domain/ports/repositories/BulletinTemplateAssignmentRepository';
+import type { BulletinTemplateSpecRepository } from '@domain/ports/repositories/BulletinTemplateSpecRepository';
 import type { ClasseRepository } from '@domain/ports/repositories/ClasseRepository';
 import type { MasterAdminQueryRepository } from '@domain/ports/repositories/MasterAdminQueryRepository';
 import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolConfigRepository';
@@ -16,6 +17,7 @@ import {
   createNewTemplateSpecVersion,
   getPublishedTemplateSpec,
   getTemplateSpecAnyStatus,
+  hydrateTemplateSpecsFromStore,
   listAllTemplateSpecs,
   registerTemplateSpecVersion,
 } from '@domain/templates/bulletinCatalog';
@@ -92,7 +94,13 @@ export class MasterBulletinAtelierController {
     private readonly classeRepository: ClasseRepository,
     private readonly bulletinRenderer: BulletinRendererPort,
     private readonly schoolAssetStorage: SchoolAssetStoragePort,
+    private readonly templateSpecRepository?: BulletinTemplateSpecRepository,
   ) {}
+
+  private async hydratePersistedSpecs(): Promise<void> {
+    if (!this.templateSpecRepository) return;
+    hydrateTemplateSpecsFromStore(await this.templateSpecRepository.findAll());
+  }
 
   private async ensureViewAccess(req: Request, res: Response, schoolId: string): Promise<boolean> {
     const basic = await this.masterAdminQueryRepo.findSchoolBasic(schoolId);
@@ -132,6 +140,7 @@ export class MasterBulletinAtelierController {
         this.schoolIdentityKitRepository.findBySchoolId(schoolId),
         this.assignmentRepository.findBySchool(schoolId),
         this.classeRepository.findBySchool(schoolId),
+        this.hydratePersistedSpecs(),
       ]);
       if (!school) {
         res.status(404).json({ success: false, message: 'Établissement introuvable.' });
@@ -258,6 +267,7 @@ export class MasterBulletinAtelierController {
     try {
       const schoolId = req.params.schoolId as string;
       if (!(await this.ensureManageAccess(req, res, schoolId))) return;
+      await this.hydratePersistedSpecs();
 
       const b = (req.body ?? {}) as Record<string, unknown>;
       const baseSpecId = typeof b.baseSpecId === 'string' ? b.baseSpecId : GENERAL_GROUPED_V1.id;
@@ -277,7 +287,11 @@ export class MasterBulletinAtelierController {
         blocks: structuredClone(overridden.blocks),
         publish: b.publish !== false,
       });
-      registerTemplateSpecVersion(nextSpec);
+      if (this.templateSpecRepository) {
+        await this.templateSpecRepository.saveVersion(nextSpec, req.masterUser?.id ?? null);
+      } else {
+        registerTemplateSpecVersion(nextSpec);
+      }
 
       res.status(201).json({ success: true, data: { spec: nextSpec, catalogSpecs: listAllTemplateSpecs({ includeDrafts: true }) } });
     } catch (error) { next(error); }
@@ -288,6 +302,7 @@ export class MasterBulletinAtelierController {
     try {
       const schoolId = req.params.schoolId as string;
       if (!(await this.ensureManageAccess(req, res, schoolId))) return;
+      await this.hydratePersistedSpecs();
 
       const b = (req.body ?? {}) as Record<string, unknown>;
       const periodKind = (b.periodKind as BulletinPeriodKind) || 'TRIMESTER';
@@ -344,6 +359,7 @@ export class MasterBulletinAtelierController {
       const [school, storedKit] = await Promise.all([
         this.schoolRepository.findById(schoolId),
         this.schoolIdentityKitRepository.findBySchoolId(schoolId),
+        this.hydratePersistedSpecs(),
       ]);
       if (!school) {
         res.status(404).json({ success: false, message: 'Établissement introuvable.' });

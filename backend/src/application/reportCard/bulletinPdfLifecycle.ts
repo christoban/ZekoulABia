@@ -10,6 +10,7 @@
  */
 import type { BulletinExportData, BulletinRepository } from '@domain/ports/repositories/BulletinRepository';
 import type { BulletinTemplateAssignmentRepository } from '@domain/ports/repositories/BulletinTemplateAssignmentRepository';
+import type { BulletinTemplateSpecRepository } from '@domain/ports/repositories/BulletinTemplateSpecRepository';
 import type { SchoolConfigData, SchoolConfigRepository } from '@domain/ports/repositories/SchoolConfigRepository';
 import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
 import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
@@ -33,6 +34,7 @@ import {
 import {
   findDefaultSpecForTemplate,
   getPublishedTemplateSpec,
+  hydrateTemplateSpecsFromStore,
 } from '@domain/templates/bulletinCatalog';
 import { resolveLanguage } from '@domain/policies/LanguagePolicy';
 import { decodeBase64PhotoUrl, resoudreVerifyBaseUrl } from './bulletinEnrichmentHelpers';
@@ -79,6 +81,7 @@ export async function resolveClassGenerationPlan(params: {
   requestedTemplate: BulletinTemplate;
   schoolConfigRepository?: SchoolConfigRepository;
   assignmentRepository?: BulletinTemplateAssignmentRepository;
+  templateSpecRepository?: BulletinTemplateSpecRepository;
 }): Promise<ResolvedGenerationRenderPlan> {
   const schoolConfig = params.schoolConfigRepository
     ? await params.schoolConfigRepository.findBySchoolId(params.schoolId)
@@ -96,6 +99,13 @@ export async function resolveClassGenerationPlan(params: {
     defaultGroupingScheme: schoolConfig?.bulletinGroupingScheme ?? 'FLAT',
   });
   const useMeasured = schoolConfig?.useMeasuredBulletinRenderer ?? false;
+  if (useMeasured && resolved.templateSpecId && params.templateSpecRepository) {
+    await ensureSpecHydratedFromRepository(
+      resolved.templateSpecId,
+      resolved.templateVersion,
+      params.templateSpecRepository,
+    );
+  }
   const spec = resolveActiveSpecForBulletin({
     useMeasuredBulletinRenderer: useMeasured,
     template: resolved.template,
@@ -119,6 +129,18 @@ export function isStudentBulletinSnapshot(raw: unknown): raw is StudentBulletinS
   if (!raw || typeof raw !== 'object') return false;
   const obj = raw as Record<string, unknown>;
   return Array.isArray(obj.subjectLines) && typeof obj.generalAverage === 'number' && typeof obj.studentId === 'string';
+}
+
+export async function ensureSpecHydratedFromRepository(
+  templateSpecId?: string | null,
+  templateVersion?: number,
+  templateSpecRepository?: BulletinTemplateSpecRepository,
+): Promise<void> {
+  if (!templateSpecId || !templateSpecRepository) return;
+  const version = templateVersion ?? 1;
+  if (getPublishedTemplateSpec(templateSpecId, version)) return;
+  const stored = await templateSpecRepository.findBySpecAndVersion(templateSpecId, version);
+  if (stored) hydrateTemplateSpecsFromStore([stored]);
 }
 
 export function resolveActiveSpecForBulletin(params: {
@@ -214,6 +236,7 @@ export async function sealAndStoreBulletinsForClass(params: {
   bulletinPdfStorage?: BulletinPdfStoragePort;
   schoolConfigRepository?: SchoolConfigRepository;
   schoolAssetStorage?: SchoolAssetStoragePort;
+  templateSpecRepository?: BulletinTemplateSpecRepository;
   verifyBaseUrl?: string;
 }): Promise<{ sealedCount: number }> {
   if (!params.bulletinRenderer || !params.bulletinPdfStorage) {
@@ -247,6 +270,9 @@ export async function sealAndStoreBulletinsForClass(params: {
   for (const row of rows) {
     const useMeasured =
       schoolConfig?.useMeasuredBulletinRenderer ?? row.school?.schoolConfig?.useMeasuredBulletinRenderer ?? false;
+    if (useMeasured && row.templateSpecId) {
+      await ensureSpecHydratedFromRepository(row.templateSpecId, row.templateVersion ?? 1, params.templateSpecRepository);
+    }
     const spec = resolveActiveSpecForBulletin({
       useMeasuredBulletinRenderer: useMeasured,
       template: (row.template ?? 'FR_SECONDARY') as BulletinTemplate,
@@ -296,8 +322,16 @@ export async function getOrRegenerateSealedBulletinPdf(params: {
   bulletinRenderer?: BulletinRendererPort;
   bulletinPdfStorage?: BulletinPdfStoragePort;
   schoolAssetStorage?: SchoolAssetStoragePort;
+  templateSpecRepository?: BulletinTemplateSpecRepository;
 }): Promise<Buffer | null> {
   const useMeasured = params.reportCard.school?.schoolConfig?.useMeasuredBulletinRenderer === true;
+  if (useMeasured && params.reportCard.templateSpecId) {
+    await ensureSpecHydratedFromRepository(
+      params.reportCard.templateSpecId,
+      params.reportCard.templateVersion ?? 1,
+      params.templateSpecRepository,
+    );
+  }
   const spec = resolveActiveSpecForBulletin({
     useMeasuredBulletinRenderer: useMeasured,
     template: (params.reportCard.template ?? 'FR_SECONDARY') as BulletinTemplate,

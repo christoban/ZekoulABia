@@ -17,10 +17,12 @@ import type { BulletinRendererPort } from '@domain/ports/services/BulletinRender
 import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
 import type { BulletinTemplateAssignmentRepository } from '@domain/ports/repositories/BulletinTemplateAssignmentRepository';
 import type { SchoolIdentityKitRepository } from '@domain/ports/repositories/SchoolIdentityKitRepository';
+import type { BulletinTemplateSpecRepository } from '@domain/ports/repositories/BulletinTemplateSpecRepository';
 import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
 import type { BulletinTemplate } from '@domain/types/enums';
 import { GENERAL_GROUPED_V1, findDefaultSpecForTemplate, getPublishedTemplateSpec } from '@domain/templates/bulletinCatalog';
 import { renderAtelierPreviewPdf } from '@application/reportCard/bulletinAtelierPreview';
+import { ensureSpecHydratedFromRepository } from '@application/reportCard/bulletinPdfLifecycle';
 import {
   addClassMasterCommentOp,
   filterParentReportCardsByUnpaidFees,
@@ -58,6 +60,7 @@ export class ReportCardController {
     private readonly assignmentRepository?: BulletinTemplateAssignmentRepository,
     private readonly schoolIdentityKitRepository?: SchoolIdentityKitRepository,
     private readonly schoolAssetStorage?: SchoolAssetStoragePort,
+    private readonly templateSpecRepository?: BulletinTemplateSpecRepository,
   ) {}
 
   // POST /api/v2/report-cards/generate
@@ -157,6 +160,7 @@ export class ReportCardController {
         requestedPeriodId: req.body?.academicPeriodId as string | undefined,
         anneeRepository: this.anneeRepository, bulletinRepository: this.bulletinRepository,
         bulletinRenderer: this.bulletinRenderer, schoolAssetStorage: this.schoolAssetStorage,
+        templateSpecRepository: this.templateSpecRepository,
       });
     } catch (error) {
       if (!res.headersSent) {
@@ -185,6 +189,11 @@ export class ReportCardController {
       const requestedVer = req.query.templateVersion ? Number(req.query.templateVersion) : undefined;
       const defaultTpl = (schoolConfig?.bulletinTemplate ?? 'FR_SECONDARY') as BulletinTemplate;
       const firstActive = assignments.find((a) => a.isActive);
+      if (requestedSpecId) {
+        await ensureSpecHydratedFromRepository(requestedSpecId, requestedVer ?? 1, this.templateSpecRepository);
+      } else if (firstActive) {
+        await ensureSpecHydratedFromRepository(firstActive.templateSpecId, firstActive.templateVersion, this.templateSpecRepository);
+      }
       const activeSpec =
         (requestedSpecId ? getPublishedTemplateSpec(requestedSpecId, requestedVer) : null) ??
         (firstActive ? getPublishedTemplateSpec(firstActive.templateSpecId, firstActive.templateVersion) : null) ??
@@ -246,6 +255,7 @@ export class ReportCardController {
         requestedPeriodId: req.body?.academicPeriodId as string | undefined,
         anneeRepository: this.anneeRepository, bulletinRepository: this.bulletinRepository,
         bulletinRenderer: this.bulletinRenderer, bulletinPdfStorage: this.bulletinPdfStorage,
+        templateSpecRepository: this.templateSpecRepository,
       });
     } catch (error) {
       if (!res.headersSent) {
@@ -349,6 +359,7 @@ export class ReportCardController {
       const { pdfBuffer, filename } = await renderReportCardPdfBuffer(reportCard, user.schoolId, role, undefined, {
         bulletinRenderer: this.bulletinRenderer,
         bulletinPdfStorage: this.bulletinPdfStorage,
+        templateSpecRepository: this.templateSpecRepository,
       });
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
@@ -394,6 +405,7 @@ export class ReportCardController {
       const { pdfBuffer, filename } = await renderReportCardPdfBuffer(reportCard, user.schoolId, role, undefined, {
         bulletinRenderer: this.bulletinRenderer,
         bulletinPdfStorage: this.bulletinPdfStorage,
+        templateSpecRepository: this.templateSpecRepository,
         forceRegenerateFromSnapshot: true,
         persistRegeneratedPdf: true,
       });

@@ -5,6 +5,7 @@
 import type { BulletinRepository } from '@domain/ports/repositories/BulletinRepository';
 import type { BulletinValidationRepository } from '@domain/ports/repositories/BulletinValidationRepository';
 import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolConfigRepository';
+import type { BulletinTemplateSpecRepository } from '@domain/ports/repositories/BulletinTemplateSpecRepository';
 import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
 import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
 import type { EnvoyerBulletinsUseCase } from './EnvoyerBulletinsUseCase';
@@ -29,6 +30,7 @@ export class PublierBulletinsClasseUseCase {
     private readonly bulletinRenderer?: BulletinRendererPort,
     private readonly bulletinPdfStorage?: BulletinPdfStoragePort,
     private readonly schoolConfigRepository?: SchoolConfigRepository,
+    private readonly templateSpecRepository?: BulletinTemplateSpecRepository,
   ) {}
 
   async execute(commande: PublierBulletinsCommande) {
@@ -73,6 +75,7 @@ export class PublierBulletinsClasseUseCase {
       bulletinRenderer: this.bulletinRenderer,
       bulletinPdfStorage: this.bulletinPdfStorage,
       schoolConfigRepository: this.schoolConfigRepository,
+      templateSpecRepository: this.templateSpecRepository,
     });
 
     // 6. Envoyer les emails aux parents

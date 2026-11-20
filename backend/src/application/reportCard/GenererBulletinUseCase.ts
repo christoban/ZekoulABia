@@ -25,6 +25,7 @@ import type { TeachingAssignmentRepository } from '@domain/ports/repositories/Te
 import type { DisciplineRepository } from '@domain/ports/repositories/DisciplineRepository';
 import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolConfigRepository';
 import type { BulletinTemplateAssignmentRepository } from '@domain/ports/repositories/BulletinTemplateAssignmentRepository';
+import type { BulletinTemplateSpecRepository } from '@domain/ports/repositories/BulletinTemplateSpecRepository';
 import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
 import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
 import type { SequenceAbsenceSummaryRepository } from '@domain/ports/repositories/SequenceAbsenceSummaryRepository';
@@ -92,6 +93,7 @@ export class GenererBulletinUseCase {
     private readonly sequenceAbsenceRepository?: SequenceAbsenceSummaryRepository,
     private readonly schoolIdentityKitRepository?: SchoolIdentityKitRepository,
     private readonly schoolAssetStorage?: SchoolAssetStoragePort,
+    private readonly templateSpecRepository?: BulletinTemplateSpecRepository,
   ) {}
 
   async execute(commande: GenererBulletinCommande): Promise<GenererBulletinResultat> {
@@ -121,6 +123,7 @@ export class GenererBulletinUseCase {
       requestedTemplate: commande.template,
       schoolConfigRepository: this.schoolConfigRepository,
       assignmentRepository: this.assignmentRepository,
+      templateSpecRepository: this.templateSpecRepository,
     });
     const effectiveTemplate = plan.template;
 

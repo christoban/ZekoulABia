@@ -146,6 +146,25 @@ const PUBLISHED_CATALOG: readonly Readonly<BulletinTemplateSpec>[] = [
 
 const customSpecsRegistry: Array<Readonly<BulletinTemplateSpec>> = [];
 
+export function clearCustomTemplateSpecsForRestartSimulation(): void {
+  customSpecsRegistry.length = 0;
+}
+
+export function hydrateTemplateSpecsFromStore(specs: readonly BulletinTemplateSpec[]): number {
+  let added = 0;
+  for (const spec of specs) {
+    const exists = [...PUBLISHED_CATALOG, ...customSpecsRegistry].some(
+      (s) => s.id === spec.id && s.version === spec.version,
+    );
+    if (!exists) {
+      const frozen = Object.isFrozen(spec) ? spec : deepFreezeSpec(structuredClone(spec));
+      customSpecsRegistry.push(frozen);
+      added += 1;
+    }
+  }
+  return added;
+}
+
 export function registerTemplateSpecVersion(spec: BulletinTemplateSpec): Readonly<BulletinTemplateSpec> {
   const frozen = Object.isFrozen(spec) ? spec : deepFreezeSpec(structuredClone(spec));
   const exists = [...PUBLISHED_CATALOG, ...customSpecsRegistry].some(
