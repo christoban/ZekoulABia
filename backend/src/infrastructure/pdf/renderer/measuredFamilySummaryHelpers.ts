@@ -293,14 +293,19 @@ export function drawBilingualApcSummary(
   const x2 = left + w1 + gap;
   doc.rect(x2, botY, w2, h).strokeColor('#334155').lineWidth(0.7).stroke();
   drawBoxTitle(doc, fonts, x2, botY, w2, 'OBSERVATION & VISA DES PARENTS');
-  doc.font(fonts.regular).fontSize(7).fillColor('#475569').text(dec?.observations ?? '', x2 + 4, botY + 16, { width: w2 - 8 });
+  // Cadre volontairement laissé vide pour la mention manuscrite et la signature des parents
 
   const x3 = x2 + w2 + gap;
   doc.rect(x3, botY, w3, h).strokeColor('#334155').lineWidth(0.7).stroke();
   drawBoxTitle(doc, fonts, x3, botY, w3, "OBSERVATIONS DU CHEF D'ÉTABLISSEMENT");
   const rwText = qrBuffer ? w3 - 68 : w3 - 8;
+  const principalObsLines: string[] = [];
+  if (dec?.observations && dec.observations.trim().length > 0) {
+    principalObsLines.push(dec.observations.trim());
+  }
+  principalObsLines.push(formatPlaceDateLine(options, false), 'LE PROVISEUR');
   doc.font(fonts.regular).fontSize(7).fillColor('#0f172a')
-    .text(`${formatPlaceDateLine(options, false)}\nLE PROVISEUR`, x3 + 4, botY + 16, { width: rwText, lineGap: 2 });
+    .text(principalObsLines.join('\n'), x3 + 4, botY + 16, { width: rwText, lineGap: 2 });
   drawQrBlockAt(doc, fonts, x3 + w3 - 64, botY + 26, options, qrBuffer, 60);
   doc.y = botY + h + 4;
 }
