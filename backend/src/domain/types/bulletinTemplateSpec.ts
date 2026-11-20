@@ -212,6 +212,8 @@ export interface BulletinTemplateSpec {
   defaultGroupingScheme?: BulletinGroupingScheme;
   language: 'fr' | 'en' | 'bilingual';
   grayscaleFirst: boolean;
+  /** Mode économie d'encre : bandeaux et en-têtes en gris très clair avec contour au lieu d'aplats sombres ou colorés */
+  inkSaverMode?: boolean;
   page: {
     size: 'A4';
     orientation: 'portrait' | 'landscape';

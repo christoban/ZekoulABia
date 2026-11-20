@@ -84,6 +84,7 @@ export function drawOfficialHeaderBlock(
   fonts: FontSet,
   spec: OfficialHeaderBlockSpec,
   options: BulletinRenderOptions,
+  inkSaverMode = false,
 ): void {
   const left = doc.page.margins.left;
   const usableW = doc.page.width - left - doc.page.margins.right;
@@ -201,8 +202,8 @@ export function drawOfficialHeaderBlock(
     spec.periodLabelMode,
     options.isAnnual,
   );
-  const bannerColor = options.school.accentColor?.trim() || '#e2e8f0';
-  const bannerTextColor = pickBannerTextColor(bannerColor);
+  const bannerColor = inkSaverMode ? '#f1f5f9' : (options.school.accentColor?.trim() || '#e2e8f0');
+  const bannerTextColor = inkSaverMode ? '#0f172a' : pickBannerTextColor(bannerColor);
   doc.rect(left, cursorY + 3, usableW, 17).fillAndStroke(bannerColor, '#0f172a');
   doc.font(fonts.bold).fontSize(9).fillColor(bannerTextColor).text(titleLabel, left + 4, cursorY + 6.5, { width: usableW - (options.isDuplicate ? 105 : 8), align: 'center' });
 

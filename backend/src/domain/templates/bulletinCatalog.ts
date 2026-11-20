@@ -241,6 +241,7 @@ export interface TemplateSpecUpdateDraft {
   name?: string;
   language?: 'fr' | 'en' | 'bilingual';
   grayscaleFirst?: boolean;
+  inkSaverMode?: boolean;
   defaultGroupingScheme?: BulletinTemplateSpec['defaultGroupingScheme'];
   showGroupRankInSubtotal?: boolean;
   validationStatus?: BulletinSpecValidationStatus;
@@ -270,6 +271,7 @@ export function createNewTemplateSpecVersion(
     name: changes.name ?? base.name,
     language: changes.language ?? base.language,
     grayscaleFirst: changes.grayscaleFirst ?? base.grayscaleFirst,
+    inkSaverMode: changes.inkSaverMode ?? base.inkSaverMode,
     defaultGroupingScheme: changes.defaultGroupingScheme ?? base.defaultGroupingScheme,
     showGroupRankInSubtotal: changes.showGroupRankInSubtotal ?? base.showGroupRankInSubtotal,
     validationStatus: changes.validationStatus ?? base.validationStatus,

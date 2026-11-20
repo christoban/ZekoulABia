@@ -68,6 +68,9 @@ function applySpecOverrides(
   if (typeof overrides.showGroupRankInSubtotal === 'boolean') {
     clone.showGroupRankInSubtotal = overrides.showGroupRankInSubtotal;
   }
+  if (typeof overrides.inkSaverMode === 'boolean') {
+    clone.inkSaverMode = overrides.inkSaverMode;
+  }
   const blocks: BulletinTemplateBlock[] = clone.blocks.map((block) => {
     if (block.type === 'officialHeader' && typeof overrides.periodLabelMode === 'string') {
       return { ...block, periodLabelMode: overrides.periodLabelMode as PeriodLabelMode };
@@ -284,6 +287,7 @@ export class MasterBulletinAtelierController {
         language: overridden.language,
         defaultGroupingScheme: overridden.defaultGroupingScheme,
         showGroupRankInSubtotal: overridden.showGroupRankInSubtotal,
+        inkSaverMode: overridden.inkSaverMode,
         blocks: structuredClone(overridden.blocks),
         publish: b.publish !== false,
       });

@@ -140,6 +140,7 @@ function drawTableHeaderRow(
   fontSize: number,
   evalLabels: [string, string],
   layoutVariant?: BulletinLayoutVariant,
+  inkSaverMode = false,
 ): void {
   const hdrFontSize = Math.max(7, fontSize - 0.2);
   doc.font(fonts.bold).fontSize(hdrFontSize);
@@ -151,13 +152,16 @@ function drawTableHeaderRow(
   });
   const y = doc.y;
   const totalW = colWidths.reduce((s, w) => s + w, 0);
-  doc.rect(left, y, totalW, headerH).fillAndStroke('#1e293b', '#0f172a');
+  const bgFill = inkSaverMode ? '#f1f5f9' : '#1e293b';
+  const dividerColor = inkSaverMode ? '#64748b' : '#475569';
+  const textColor = inkSaverMode ? '#0f172a' : '#ffffff';
+  doc.rect(left, y, totalW, headerH).fillAndStroke(bgFill, '#0f172a');
   let x = left;
   cols.forEach((col, i) => {
     const w = colWidths[i]!;
-    if (i > 0) doc.moveTo(x, y).lineTo(x, y + headerH).strokeColor('#475569').lineWidth(0.4).stroke();
+    if (i > 0) doc.moveTo(x, y).lineTo(x, y + headerH).strokeColor(dividerColor).lineWidth(0.4).stroke();
     const label = resolveColumnHeaderLabel(col, isEn, evalLabels, layoutVariant);
-    doc.font(fonts.bold).fontSize(hdrFontSize).fillColor('#ffffff')
+    doc.font(fonts.bold).fontSize(hdrFontSize).fillColor(textColor)
       .text(label, x + 1.5, y + 3, { width: Math.max(6, w - 3), align: col.align ?? 'center' });
     x += w;
   });
@@ -222,6 +226,7 @@ function drawAlignedGroupSubtotalRow(
   left: number,
   totalW: number,
   isEn: boolean,
+  inkSaverMode = false,
 ): void {
   const subFontSize = 7;
   const labelText = `Moy. ${grp.groupLabel.trim()}`;
@@ -241,7 +246,7 @@ function drawAlignedGroupSubtotalRow(
   }
 
   const y = doc.y;
-  doc.rect(left, y, totalW, rowH).fillAndStroke('#e2e8f0', '#334155');
+  doc.rect(left, y, totalW, rowH).fillAndStroke(inkSaverMode ? '#f8fafc' : '#e2e8f0', '#334155');
   doc.font(fonts.bold).fontSize(subFontSize).fillColor('#0f172a')
     .text(labelText, left + 2, y + 2.5, { width: Math.max(8, labelSpanW - 4), align: 'left' });
 
@@ -274,9 +279,10 @@ function drawGroupSubtotalRow(
   totalW: number,
   isEn: boolean,
   layoutVariant?: BulletinLayoutVariant,
+  inkSaverMode = false,
 ): void {
   if (layoutVariant === 'BILINGUAL_APC' || layoutVariant === 'ANNUAL_BILINGUAL') {
-    drawAlignedGroupSubtotalRow(doc, fonts, grp, snapshot, cols, colWidths, left, totalW, isEn);
+    drawAlignedGroupSubtotalRow(doc, fonts, grp, snapshot, cols, colWidths, left, totalW, isEn, inkSaverMode);
     return;
   }
   const num = (v: number | undefined) => formatLocalizedNumber(v, isEn, 2);
@@ -293,7 +299,7 @@ function drawGroupSubtotalRow(
   doc.font(fonts.bold).fontSize(subFontSize);
   const h = Math.max(13, Math.ceil(doc.heightOfString(text, { width: totalW - 8 }) + 5));
   const y = doc.y;
-  doc.rect(left, y, totalW, h).fillAndStroke('#e2e8f0', '#334155');
+  doc.rect(left, y, totalW, h).fillAndStroke(inkSaverMode ? '#f8fafc' : '#e2e8f0', '#334155');
   doc.fillColor('#0f172a').text(text, left + 4, y + 2.8, { width: totalW - 8 });
   doc.y = y + h;
 }
@@ -306,10 +312,11 @@ function drawSubjectTableTotalBar(
   totalW: number,
   isEn: boolean,
   layoutVariant?: BulletinLayoutVariant,
+  inkSaverMode = false,
 ): void {
   const h = 13.5;
   const y = doc.y;
-  doc.rect(left, y, totalW, h).fillAndStroke('#cbd5e1', '#0f172a');
+  doc.rect(left, y, totalW, h).fillAndStroke(inkSaverMode ? '#f1f5f9' : '#cbd5e1', '#0f172a');
   const num = (v: number | undefined) => formatLocalizedNumber(v, isEn, 2);
   const cp = snapshot.classProfile;
   const text =
@@ -342,6 +349,7 @@ export function drawMeasuredSubjectTable(
   const bottomLimit = doc.page.height - doc.page.margins.bottom - 16;
   const isEn = language === 'en';
   const layoutVariant = templateSpec?.layoutVariant;
+  const inkSaverMode = Boolean(templateSpec?.inkSaverMode);
   const evalLabels = resolvePeriodEvaluationLabels(snapshot, options, isEn);
 
   const effectiveScaleConfig: BulletinAppreciationScaleConfig = {
@@ -370,11 +378,11 @@ export function drawMeasuredSubjectTable(
   const ensureSpace = (needed: number) => {
     if (doc.y + needed > bottomLimit) {
       doc.addPage();
-      drawTableHeaderRow(doc, fonts, spec.columns, colWidths, left, isEn, fontSize, evalLabels, layoutVariant);
+      drawTableHeaderRow(doc, fonts, spec.columns, colWidths, left, isEn, fontSize, evalLabels, layoutVariant, inkSaverMode);
     }
   };
 
-  drawTableHeaderRow(doc, fonts, spec.columns, colWidths, left, isEn, fontSize, evalLabels, layoutVariant);
+  drawTableHeaderRow(doc, fonts, spec.columns, colWidths, left, isEn, fontSize, evalLabels, layoutVariant, inkSaverMode);
 
   const groupedKeys: Array<{ key: string; label: string; lines: BulletinSubjectSnapshotLine[]; summary?: BulletinGroupSummary }> = [];
   if (spec.grouping === 'byGroup') {
@@ -409,7 +417,7 @@ export function drawMeasuredSubjectTable(
       const bannerH = spec.groupByDomain ? 10.5 : 12;
       ensureSpace(bannerH + 12);
       const gy = doc.y;
-      doc.rect(left, gy, totalW, bannerH).fillAndStroke('#cbd5e1', '#334155');
+      doc.rect(left, gy, totalW, bannerH).fillAndStroke(inkSaverMode ? '#f1f5f9' : '#cbd5e1', '#334155');
       doc.font(fonts.bold).fontSize(7).fillColor('#0f172a')
         .text(grp.label.toUpperCase(), left + 4, gy + 1.8, { width: totalW - 8 });
       doc.y = gy + bannerH;
@@ -419,7 +427,7 @@ export function drawMeasuredSubjectTable(
       const rowH = measureRowHeight(doc, fonts, line, spec.columns, colWidths, fontSize, isEn, layoutVariant, effectiveScaleConfig);
       ensureSpace(rowH);
       const ry = doc.y;
-      const bg = rowIdx % 2 === 0 ? '#ffffff' : '#f8fafc';
+      const bg = inkSaverMode ? '#ffffff' : (rowIdx % 2 === 0 ? '#ffffff' : '#f8fafc');
       doc.rect(left, ry, totalW, rowH).fillAndStroke(bg, '#94a3b8');
 
       let cx = left;
@@ -441,13 +449,13 @@ export function drawMeasuredSubjectTable(
 
     if (spec.grouping === 'byGroup' && spec.showGroupSubtotals && grp.summary) {
       ensureSpace(14);
-      drawGroupSubtotalRow(doc, fonts, grp.summary, snapshot, spec.columns, colWidths, left, totalW, isEn, layoutVariant);
+      drawGroupSubtotalRow(doc, fonts, grp.summary, snapshot, spec.columns, colWidths, left, totalW, isEn, layoutVariant, inkSaverMode);
     }
   }
 
   if (spec.showTotalBar) {
     ensureSpace(14);
-    drawSubjectTableTotalBar(doc, fonts, snapshot, left, totalW, isEn, layoutVariant);
+    drawSubjectTableTotalBar(doc, fonts, snapshot, left, totalW, isEn, layoutVariant, inkSaverMode);
   }
   doc.y += 3;
 }

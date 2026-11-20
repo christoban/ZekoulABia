@@ -96,10 +96,12 @@ function drawBulletinPageOnDoc(
     variant === 'BILINGUAL_APC' ||
     variant === 'PRIMARY_POINTS_RATIO';
 
+  const inkSaver = Boolean(templateSpec.inkSaverMode);
+
   for (const block of templateSpec.blocks) {
     switch (block.type) {
       case 'officialHeader':
-        drawOfficialHeaderBlock(doc, fonts, block, options);
+        drawOfficialHeaderBlock(doc, fonts, block, options, inkSaver);
         break;
       case 'studentCard':
         drawStudentCardBlock(doc, fonts, block, snapshot, options);
@@ -108,7 +110,7 @@ function drawBulletinPageOnDoc(
         drawMeasuredSubjectTable(doc, fonts, block, snapshot, options.language, baseFontSize, options, templateSpec);
         break;
       case 'classProfile':
-        if (!usesFamilyFooter) drawClassProfileBlock(doc, fonts, block, snapshot, options.language, options, specScaleConfig);
+        if (!usesFamilyFooter) drawClassProfileBlock(doc, fonts, block, snapshot, options.language, options, specScaleConfig, inkSaver);
         break;
       case 'councilDecision':
         if (!usesFamilyFooter) drawCouncilDecisionBlock(doc, fonts, block, snapshot, options);
@@ -131,7 +133,7 @@ function drawBulletinPageOnDoc(
   } else if (variant === 'PRIMARY_POINTS_RATIO') {
     drawPrimaryPointsRatioSummary(doc, fonts, snapshot, options, specScaleConfig);
   } else if (sigBlock) {
-    drawSignaturesAndQrBlock(doc, fonts, sigBlock, options);
+    drawSignaturesAndQrBlock(doc, fonts, sigBlock, options, inkSaver);
   }
 
   // Emplacement unique pour TOUTES les familles : bande « Vérification d'authenticité » en pied de page

@@ -38,6 +38,7 @@ export function drawClassProfileBlock(
   language: 'fr' | 'en',
   options?: BulletinRenderOptions,
   specScaleConfig?: BulletinAppreciationScaleConfig,
+  inkSaverMode = false,
 ): void {
   const cp = snapshot.classProfile;
   const isEn = language === 'en';
@@ -82,7 +83,7 @@ export function drawClassProfileBlock(
   ensureBlockSpace(doc, h + 4);
 
   const y = doc.y;
-  doc.rect(left, y, usableW, h).fillAndStroke('#f1f5f9', '#334155');
+  doc.rect(left, y, usableW, h).fillAndStroke(inkSaverMode ? '#ffffff' : '#f1f5f9', '#334155');
   doc.font(fonts.bold).fontSize(7.6).fillColor('#0f172a').text(studentLine, left + 6, y + 4, { width: usableW - 12 });
   doc.font(fonts.regular).fontSize(7.4).fillColor('#1e293b').text(detail, left + 6, y + 6 + hStudent, { width: usableW - 12 });
   doc.y = y + h + 5;
@@ -198,6 +199,7 @@ export function drawSignaturesAndQrBlock(
   fonts: FontSet,
   sigSpec: SignaturesBlockSpec | undefined,
   options: BulletinRenderOptions,
+  inkSaverMode = false,
 ): void {
   const isEn = options.language === 'en';
   const left = doc.page.margins.left;
@@ -237,7 +239,7 @@ export function drawSignaturesAndQrBlock(
   slots.forEach((slot, idx) => {
     const sx = left + idx * (boxW + gap);
     doc.rect(sx, boxTop, boxW, boxH).strokeColor('#334155').lineWidth(0.7).stroke();
-    doc.rect(sx, boxTop, boxW, titleBarH).fillAndStroke('#e2e8f0', '#334155');
+    doc.rect(sx, boxTop, boxW, titleBarH).fillAndStroke(inkSaverMode ? '#f8fafc' : '#e2e8f0', '#334155');
     doc.font(fonts.bold).fontSize(7).fillColor('#0f172a')
       .text(labelsMap[slot] ?? slot, sx + 3, boxTop + 3, { width: boxW - 6, align: 'center' });
 
