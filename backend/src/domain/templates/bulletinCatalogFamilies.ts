@@ -35,7 +35,7 @@ export const ANNUAL_BILINGUAL_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpe
       showTotalBar: true,
       appreciationScale: 'APC_TEXT',
       scaleConfig: {
-        competence: { ongoingMin: 11, acquiredMin: 14, expertMin: 18 },
+        competence: { ongoingMin: 11, ongoingInclusive: true, acquiredMin: 14, acquiredInclusive: true, expertMin: 18, expertInclusive: true },
       },
       columns: [
         { key: 'subjectName', labelFr: 'DISCIPLINES', labelEn: 'SUBJECTS', ratio: 13.5, align: 'left' },
@@ -87,7 +87,7 @@ export const TECH_GROUPED_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec<Bu
       showTotalBar: true,
       appreciationScale: 'APC_TEXT',
       scaleConfig: {
-        competence: { ongoingMin: 11, acquiredMin: 14, expertMin: 18 },
+        competence: { ongoingMin: 11, ongoingInclusive: true, acquiredMin: 14, acquiredInclusive: true, expertMin: 18, expertInclusive: true },
       },
       columns: [
         { key: 'subjectName', labelFr: 'Matières', labelEn: 'Subjects', ratio: 17, align: 'left' },
@@ -135,7 +135,7 @@ export const BILINGUAL_APC_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec<B
       showTotalBar: true,
       appreciationScale: 'APC_TEXT',
       scaleConfig: {
-        competence: { ongoingMin: 11, acquiredMin: 14, expertMin: 18 },
+        competence: { ongoingMin: 11, ongoingInclusive: true, acquiredMin: 14, acquiredInclusive: true, expertMin: 18, expertInclusive: true },
       },
       columns: [
         { key: 'subjectName', labelFr: 'DISCIPLINES', labelEn: 'SUBJECTS', ratio: 17, align: 'left' },
@@ -229,7 +229,8 @@ export const PRIMARY_POINTS_RATIO_EN_V1: Readonly<BulletinTemplateSpec> = deepFr
       showGroupSubtotals: false,
       appreciationScale: 'A+/A/ECA/NA',
       scaleConfig: {
-        cote: { ongoingMin: 10, acquiredMin: 15, expertMin: 18 },
+        // Primaire réel GSB Le Québécois : NA = [0 ; 10] inclus (35/70 et 5/10 = 10,00 notés NA), ECA > 10 jusqu'à < 15.
+        cote: { ongoingMin: 10, ongoingInclusive: false, acquiredMin: 15, acquiredInclusive: true, expertMin: 18, expertInclusive: true },
       },
       columns: [
         { key: 'subjectName', labelFr: 'SOUS-COMPÉTENCES', labelEn: 'SUB-SKILLS', ratio: 32, align: 'left' },
@@ -272,7 +273,8 @@ export const PRIMARY_POINTS_RATIO_FR_LABELS_V1: Readonly<BulletinTemplateSpec> =
       showGroupSubtotals: false,
       appreciationScale: 'A+/A/ECA/NA',
       scaleConfig: {
-        cote: { ongoingMin: 10, acquiredMin: 15, expertMin: 18 },
+        // Primaire réel GSB Le Québécois : NA = [0 ; 10] inclus (35/70 et 5/10 = 10,00 notés NA), ECA > 10 jusqu'à < 15.
+        cote: { ongoingMin: 10, ongoingInclusive: false, acquiredMin: 15, acquiredInclusive: true, expertMin: 18, expertInclusive: true },
       },
       columns: [
         { key: 'subjectName', labelFr: 'SOUS-COMPÉTENCES', labelEn: 'SUB-SKILLS', ratio: 32, align: 'left' },

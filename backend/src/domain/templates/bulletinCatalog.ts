@@ -85,7 +85,8 @@ export const GENERAL_GROUPED_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec
       showGroupSubtotals: true,
       appreciationScale: 'A+/A/ECA/NA',
       scaleConfig: {
-        cote: { ongoingMin: 10, acquiredMin: 15, expertMin: 18 },
+        // À CONFIRMER SUR LE TERRAIN : Famille A garde NA < 10 (ongoingInclusive: true) jusqu'à validation terrain.
+        cote: { ongoingMin: 10, ongoingInclusive: true, acquiredMin: 15, acquiredInclusive: true, expertMin: 18, expertInclusive: true },
       },
       columns: [
         { key: 'subjectName', labelFr: 'MATIÈRES', labelEn: 'SUBJECTS', ratio: 19, align: 'left' },

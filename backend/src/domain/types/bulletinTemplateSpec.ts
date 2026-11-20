@@ -89,19 +89,28 @@ export interface StudentCardBlockSpec {
 export interface CoteScaleThresholds {
   /** Minimum pour A+ (ex. 18 => [18-20]) */
   expertMin: number;
+  /** true (défaut) : >= expertMin ; false : > expertMin */
+  expertInclusive?: boolean;
   /** Minimum pour A (ex. 15 => [15-17,99]) */
   acquiredMin: number;
-  /** Minimum pour ECA (ex. 10 sur Famille A Le Québécois, 11 sur Garoua/Djamboutou) */
+  /** true (défaut) : >= acquiredMin ; false : > acquiredMin */
+  acquiredInclusive?: boolean;
+  /** Minimum pour ECA (ex. 10 sur Famille A, > 10 sur Primaire F où NA = [0;10] inclus) */
   ongoingMin: number;
+  /** true (défaut) : >= ongoingMin (NA < ongoingMin) ; false : > ongoingMin (NA <= ongoingMin) */
+  ongoingInclusive?: boolean;
 }
 
 export interface CompetenceScaleThresholds {
   /** Minimum pour Niveau Expert (ex. 18 => >= 18) */
   expertMin: number;
+  expertInclusive?: boolean;
   /** Minimum pour Compétence acquise (ex. 14 sur Garoua/Djamboutou) */
   acquiredMin: number;
+  acquiredInclusive?: boolean;
   /** Minimum pour En cours d'acquisition (ex. 11 sur Garoua/Djamboutou) */
   ongoingMin: number;
+  ongoingInclusive?: boolean;
 }
 
 export interface BulletinAppreciationScaleConfig {
