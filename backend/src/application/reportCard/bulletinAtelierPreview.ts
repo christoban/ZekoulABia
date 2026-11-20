@@ -32,7 +32,7 @@ function buildPreviewInputsForFamily(spec: BulletinTemplateSpec, passThresholdOn
   const isEn = spec.language === 'en';
   const res = buildFictitiousPreviewClass({ spec, kind, passThresholdOn20 });
   const labels: Record<PreviewFamilyKind, { className: string; periodName: string }> = {
-    PRIMARY: { className: isEn ? 'Class V (Sample)' : 'Class V (Spécimen)', periodName: isEn ? 'Month 2 — Term 1' : 'Mois 2 — Trimestre 1' },
+    PRIMARY: { className: isEn ? 'Class V (Sample)' : 'CM2 (Spécimen)', periodName: isEn ? 'Month 2 — Term 1' : 'Mois 2 — Trimestre 1' },
     ANNUAL: { className: '1ère A4 (Spécimen)', periodName: 'Annuel' },
     TECH: { className: '2nde F3 (Spécimen)', periodName: 'Trimestre 1' },
     APC: { className: '2nde C (Spécimen)', periodName: 'Trimestre 2' },

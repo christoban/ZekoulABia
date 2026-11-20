@@ -33,7 +33,8 @@ interface PreviewSubjectSeed {
   maxMark?: number;
   learningDomainFr?: string;
   learningDomainEn?: string;
-  learningUnit?: string;
+  learningUnitFr?: string;
+  learningUnitEn?: string;
 }
 
 const SECONDARY_SUBJECTS: readonly PreviewSubjectSeed[] = [
@@ -61,16 +62,16 @@ const TECH_SUBJECTS: readonly PreviewSubjectSeed[] = [
 ];
 
 const PRIMARY_SUBJECTS: readonly PreviewSubjectSeed[] = [
-  { id: 'p1', code: 'P1', nameFr: 'Grammaire et orthographe', nameEn: 'Grammar & Usage', coefficient: 1, bias: 0.2, teacherName: '', maxMark: 40, learningDomainFr: 'LANGUE ANGLAISE', learningDomainEn: 'ENGLISH LANGUAGE', learningUnit: 'Unit 2' },
-  { id: 'p2', code: 'P2', nameFr: 'Lecture compréhension', nameEn: 'Reading Comprehension', coefficient: 1, bias: 0.6, teacherName: '', maxMark: 20, learningDomainFr: 'LANGUE ANGLAISE', learningDomainEn: 'ENGLISH LANGUAGE', learningUnit: 'Unit 2' },
-  { id: 'p3', code: 'P3', nameFr: 'Expression écrite', nameEn: 'Composition Writing', coefficient: 1, bias: -0.4, teacherName: '', maxMark: 20, learningDomainFr: 'LANGUE ANGLAISE', learningDomainEn: 'ENGLISH LANGUAGE', learningUnit: 'Unit 2' },
-  { id: 'p4', code: 'P4', nameFr: 'Nombres et opérations', nameEn: 'Number & Operations', coefficient: 1, bias: -0.8, teacherName: '', maxMark: 40, learningDomainFr: 'MATHÉMATIQUES', learningDomainEn: 'MATHEMATICS', learningUnit: 'Unit 3' },
-  { id: 'p5', code: 'P5', nameFr: 'Résolution de problèmes', nameEn: 'Problem Solving', coefficient: 1, bias: -1.2, teacherName: '', maxMark: 20, learningDomainFr: 'MATHÉMATIQUES', learningDomainEn: 'MATHEMATICS', learningUnit: 'Unit 3' },
-  { id: 'p6', code: 'P6', nameFr: 'Mesures et grandeurs', nameEn: 'Measurement', coefficient: 1, bias: 0, teacherName: '', maxMark: 20, learningDomainFr: 'MATHÉMATIQUES', learningDomainEn: 'MATHEMATICS', learningUnit: 'Unit 3' },
-  { id: 'p7', code: 'P7', nameFr: 'Corps humain et santé', nameEn: 'Human Body & Health', coefficient: 1, bias: 0.5, teacherName: '', maxMark: 20, learningDomainFr: 'SCIENCES ET TECHNOLOGIE', learningDomainEn: 'SCIENCES AND TECHNOLOGY', learningUnit: 'Unit 1' },
-  { id: 'p8', code: 'P8', nameFr: 'Initiation numérique', nameEn: 'Digital Literacy', coefficient: 1, bias: 0.3, teacherName: '', maxMark: 20, learningDomainFr: 'TIC', learningDomainEn: 'ICT', learningUnit: 'Unit 1' },
-  { id: 'p9', code: 'P9', nameFr: 'Dessin et coloriage', nameEn: 'Drawing & Colouring', coefficient: 1, bias: 1.2, teacherName: '', maxMark: 10, learningDomainFr: 'ÉDUCATION ARTISTIQUE', learningDomainEn: 'ARTISTIC EDUCATION', learningUnit: 'Unit 4' },
-  { id: 'p10', code: 'P10', nameFr: 'Endurance physique', nameEn: 'Physical Endurance', coefficient: 1, bias: 1.4, teacherName: '', maxMark: 10, learningDomainFr: 'SPORT ET ÉDUCATION PHYSIQUE', learningDomainEn: 'SPORT AND PHYSICAL EDUCATION', learningUnit: 'Unit 4' },
+  { id: 'p1', code: 'P1', nameFr: 'Grammaire et orthographe', nameEn: 'Grammar & Usage', coefficient: 1, bias: 0.2, teacherName: '', maxMark: 40, learningDomainFr: 'LANGUE ANGLAISE', learningDomainEn: 'ENGLISH LANGUAGE', learningUnitFr: 'Unité 2', learningUnitEn: 'Unit 2' },
+  { id: 'p2', code: 'P2', nameFr: 'Lecture compréhension', nameEn: 'Reading Comprehension', coefficient: 1, bias: 0.6, teacherName: '', maxMark: 20, learningDomainFr: 'LANGUE ANGLAISE', learningDomainEn: 'ENGLISH LANGUAGE', learningUnitFr: 'Unité 2', learningUnitEn: 'Unit 2' },
+  { id: 'p3', code: 'P3', nameFr: 'Expression écrite', nameEn: 'Composition Writing', coefficient: 1, bias: -0.4, teacherName: '', maxMark: 20, learningDomainFr: 'LANGUE ANGLAISE', learningDomainEn: 'ENGLISH LANGUAGE', learningUnitFr: 'Unité 2', learningUnitEn: 'Unit 2' },
+  { id: 'p4', code: 'P4', nameFr: 'Nombres et opérations', nameEn: 'Number & Operations', coefficient: 1, bias: -0.8, teacherName: '', maxMark: 40, learningDomainFr: 'MATHÉMATIQUES', learningDomainEn: 'MATHEMATICS', learningUnitFr: 'Unité 3', learningUnitEn: 'Unit 3' },
+  { id: 'p5', code: 'P5', nameFr: 'Résolution de problèmes', nameEn: 'Problem Solving', coefficient: 1, bias: -1.2, teacherName: '', maxMark: 20, learningDomainFr: 'MATHÉMATIQUES', learningDomainEn: 'MATHEMATICS', learningUnitFr: 'Unité 3', learningUnitEn: 'Unit 3' },
+  { id: 'p6', code: 'P6', nameFr: 'Mesures et grandeurs', nameEn: 'Measurement', coefficient: 1, bias: 0, teacherName: '', maxMark: 20, learningDomainFr: 'MATHÉMATIQUES', learningDomainEn: 'MATHEMATICS', learningUnitFr: 'Unité 3', learningUnitEn: 'Unit 3' },
+  { id: 'p7', code: 'P7', nameFr: 'Corps humain et santé', nameEn: 'Human Body & Health', coefficient: 1, bias: 0.5, teacherName: '', maxMark: 20, learningDomainFr: 'SCIENCES ET TECHNOLOGIE', learningDomainEn: 'SCIENCES AND TECHNOLOGY', learningUnitFr: 'Unité 1', learningUnitEn: 'Unit 1' },
+  { id: 'p8', code: 'P8', nameFr: 'Initiation numérique', nameEn: 'Digital Literacy', coefficient: 1, bias: 0.3, teacherName: '', maxMark: 20, learningDomainFr: 'TIC', learningDomainEn: 'ICT', learningUnitFr: 'Unité 1', learningUnitEn: 'Unit 1' },
+  { id: 'p9', code: 'P9', nameFr: 'Dessin et coloriage', nameEn: 'Drawing & Colouring', coefficient: 1, bias: 1.2, teacherName: '', maxMark: 10, learningDomainFr: 'ÉDUCATION ARTISTIQUE', learningDomainEn: 'ARTISTIC EDUCATION', learningUnitFr: 'Unité 4', learningUnitEn: 'Unit 4' },
+  { id: 'p10', code: 'P10', nameFr: 'Endurance physique', nameEn: 'Physical Endurance', coefficient: 1, bias: 1.4, teacherName: '', maxMark: 10, learningDomainFr: 'SPORT ET ÉDUCATION PHYSIQUE', learningDomainEn: 'SPORT AND PHYSICAL EDUCATION', learningUnitFr: 'Unité 4', learningUnitEn: 'Unit 4' },
 ];
 
 const COMMENT_POOL_FR: Readonly<Record<'high' | 'good' | 'fair' | 'low', readonly string[]>> = {
@@ -140,7 +141,7 @@ function buildSubjects(spec: BulletinTemplateSpec, kind: PreviewFamilyKind, isEn
       coefficient: s.coefficient,
       maxMark: s.maxMark,
       learningDomain: isEn ? s.learningDomainEn : s.learningDomainFr,
-      learningUnit: s.learningUnit,
+      learningUnit: isEn ? s.learningUnitEn : s.learningUnitFr,
       groupKey: group?.groupKey,
       groupLabel: group?.groupLabel,
       groupOrder: group?.groupOrder,

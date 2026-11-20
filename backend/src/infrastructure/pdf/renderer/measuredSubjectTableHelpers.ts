@@ -54,7 +54,13 @@ export function formatSubjectCell(
     case 'coefficient': return String(line.coefficient);
     case 'rawMark': return num(line.rawMark ?? line.subjectAverage);
     case 'maxMark': return num(line.maxMark ?? 20);
-    case 'learningUnit': return line.learningUnit ?? '—';
+    case 'learningUnit': {
+      const raw = line.learningUnit?.trim();
+      if (!raw) return '—';
+      if (!isEn && /^Unit\s+(.+)$/i.test(raw)) return raw.replace(/^Unit\s+/i, 'Unité ');
+      if (isEn && /^Unit[ée]\s+(.+)$/i.test(raw)) return raw.replace(/^Unit[ée]\s+/i, 'Unit ');
+      return raw;
+    }
     case 'seq1Score': return num(line.seq1Score);
     case 'seq2Score': return num(line.seq2Score);
     case 'seq3Score': return num(line.seq3Score);
