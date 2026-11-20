@@ -72,7 +72,6 @@ export interface BulletinSnapshotBuildInput {
   hasCoefficientBySubject: boolean;
   excludeAbsentGrades?: boolean;
   passThresholdOn20?: number;
-  classSizeOverride?: number;
   isAnnual?: boolean;
   calculationMode?: BulletinCalculationMode;
   annualPolicy?: AnnualAveragePolicyMode;

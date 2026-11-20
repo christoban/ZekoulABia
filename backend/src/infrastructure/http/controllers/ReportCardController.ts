@@ -217,6 +217,7 @@ export class ReportCardController {
           spec: activeSpec,
           renderer: this.bulletinRenderer,
           schoolAssetStorage: this.schoolAssetStorage,
+          passThresholdOn20: schoolConfig?.passMark,
         });
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `inline; filename="modele-officiel-${activeSpec.id}.pdf"`);

@@ -427,9 +427,9 @@ export function resolveAnnualGeneralAverage(params: {
 export function computeClassProfile(
   generalAverages: number[],
   passThresholdOn20: number,
-  classSizeOverride?: number,
 ): BulletinClassProfile {
-  const effectiveSize = Math.max(generalAverages.length, classSizeOverride ?? generalAverages.length);
+  // Effectif = nombre réel d'élèves classés : aucune surcharge manuelle (cohérence admis/effectif/taux)
+  const effectiveSize = generalAverages.length;
   const passCount = generalAverages.filter((a) => a >= passThresholdOn20).length;
   return {
     classSize: effectiveSize,

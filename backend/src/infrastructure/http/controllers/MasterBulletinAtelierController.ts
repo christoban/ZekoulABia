@@ -356,9 +356,10 @@ export class MasterBulletinAtelierController {
       const schoolId = req.params.schoolId as string;
       if (!(await this.ensureViewAccess(req, res, schoolId))) return;
 
-      const [school, storedKit] = await Promise.all([
+      const [school, storedKit, schoolConfig] = await Promise.all([
         this.schoolRepository.findById(schoolId),
         this.schoolIdentityKitRepository.findBySchoolId(schoolId),
+        this.schoolConfigRepository.findBySchoolId(schoolId),
         this.hydratePersistedSpecs(),
       ]);
       if (!school) {
@@ -413,6 +414,7 @@ export class MasterBulletinAtelierController {
         spec: effectiveSpec,
         renderer: this.bulletinRenderer,
         schoolAssetStorage: this.schoolAssetStorage,
+        passThresholdOn20: schoolConfig?.passMark,
       });
 
       res.setHeader('Content-Type', 'application/pdf');
