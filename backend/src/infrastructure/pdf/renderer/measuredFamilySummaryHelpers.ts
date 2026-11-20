@@ -175,6 +175,7 @@ export function drawTechnicalGroupedSummary(
   // Colonne 1 : Conduite & Visa PP
   doc.rect(left, y, w1, h).strokeColor('#334155').lineWidth(0.7).stroke();
   drawBoxTitle(doc, fonts, left, y, w1, 'ASSIDUITÉ & CONDUITE');
+  const visaPp = options.classMasterComment?.trim();
   const cLines = [
     `Abs. Justifiées : ${formatAbsenceHoursDisplay(c?.justifiedAbsenceHours, 'fr')}`,
     `Abs. Non Justifiées : ${formatAbsenceHoursDisplay(c?.unjustifiedAbsenceHours, 'fr')}`,
@@ -183,7 +184,7 @@ export function drawTechnicalGroupedSummary(
     `Corvée (en jrs) : ${c?.workDayPenaltyDays ?? '—'}`,
     '',
     'VISA DU PROFESSEUR PRINCIPAL :',
-    options.classMasterComment?.trim() || '—',
+    ...(visaPp ? [visaPp] : []),
   ];
   doc.font(fonts.regular).fontSize(7).fillColor('#0f172a').text(cLines.join('\n'), left + 4, y + 16, { width: w1 - 8, lineGap: 1.2 });
 
