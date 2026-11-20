@@ -29,7 +29,7 @@ Ce document rassemble le guide opérationnel complet du module **Bulletins & Ate
 | **D** | `ANNUAL_BILINGUAL_V1` | Bulletin annuel 6 séquences + moyennes trimestrielles T1/T2/T3 | Validée sur jeu de vérité + PDF |
 | **E** | `EN_SECONDARY_V1` | Secondaire anglophone périodique (`EN_SECONDARY`) | **À VALIDER SUR UN BULLETIN RÉEL** (`validationNotice`) |
 | **F (EN)** | `PRIMARY_POINTS_RATIO_EN_V1` | Primaire anglophone mensuel par ratio de points (`POINTS_RATIO`) | Validée sur jeu de vérité + PDF |
-| **F (FR)** | `PRIMARY_POINTS_RATIO_FR_V1` | Primaire francophone mensuel par ratio de points (`POINTS_RATIO`) | **À VALIDER SUR UN BULLETIN RÉEL** (`validationNotice`) |
+| **F (calque libellés FR)** | `PRIMARY_POINTS_RATIO_FR_LABELS_V1` | Modèle primaire anglophone à ratio de points (`POINTS_RATIO`) avec libellés français | **TO_VALIDATE** — aperçu seul (`À VALIDER SUR UN BULLETIN RÉEL`) |
 
 #### Immuabilité & persistance des versions de spec
 
@@ -128,7 +128,7 @@ Résolution déterministe par ordre de priorité (`resolveEffectiveTemplateAssig
 - **Plafond d'export synchrone par classe (`MAX_SYNC_CLASS_EXPORT_STUDENTS = 80`)** : `POST /api/v2/report-cards/export-pdf/:classId` et `POST /api/v2/report-cards/export/:classId` retournent **`422 CLASS_EXPORT_LIMIT_EXCEEDED`** au-delà de 80 bulletins dans une même classe afin de préserver la mémoire et le timeout HTTP.
   - *Evolution proposée si des classes dépassent 80 élèves* : déclencher un job asynchrone Inngest `reportcard/export-batch` écrivant l'archive ZIP ou le PDF fusionné sur `BulletinPdfStoragePort` (`S3`), avec table/suivi de progression (`BackgroundTask` / polling) et lien de téléchargement temporaire.
 - **Rate limit sur calculs PDF lourds (`heavyPdfExportLimiter`)** : limité à **15 requêtes par fenêtre de 5 minutes** par IP sur `GET /template-preview`, `POST /export-pdf/:classId`, `POST /export/:classId` et `POST /master/bulletin-atelier/schools/:schoolId/preview-pdf` (`429 RATE_LIMITED_PDF_EXPORT`).
-- **Specs à valider sur bulletins papier réels** : `EN_SECONDARY_V1` et `PRIMARY_POINTS_RATIO_FR_V1` portent `validationNotice: "À VALIDER SUR UN BULLETIN RÉEL"` en pied de spécimen.
+- **Specs à valider sur bulletins papier réels** : `EN_SECONDARY_V1` et `PRIMARY_POINTS_RATIO_FR_LABELS_V1` portent `validationStatus: "TO_VALIDATE"` : l'Atelier refuse leur affectation en production et la mention `À VALIDER SUR UN BULLETIN RÉEL` n'apparaît qu'en aperçu (jamais sur un bulletin scellé).
 - **Seed local de démonstration** : `cd backend && bun scripts/seed-bulletin-atelier-demo.ts` crée une école complète (`3ème A Démo`, 3 élèves fictifs, notes `LOCKED`, conseil `LOCKED`, kit d'identité) pour démonstrations et tests manuels.
 
 ---
@@ -198,3 +198,4 @@ Résolution déterministe par ordre de priorité (`resolveEffectiveTemplateAssig
      ```
    - Redémarrer le backend et vérifier le log de démarrage (`bootstrap/academic.ts` hydrate `BulletinTemplateSpecRecord` sans erreur).
    - Conserver le drapeau `SchoolConfig.useMeasuredBulletinRenderer = false` par défaut tant que chaque école cible n'a pas été calibrée et prévisualisée dans l'Atelier Master.
+

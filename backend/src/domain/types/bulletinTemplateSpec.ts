@@ -68,9 +68,12 @@ export type PeriodLabelMode =
   | 'ANNUAL'
   | 'MONTHLY';
 
+export type OfficialMinistryHeader = 'MINESEC' | 'MINEDUB';
+
 export interface OfficialHeaderBlockSpec {
   type: 'officialHeader';
   bilingual: boolean;
+  ministry?: OfficialMinistryHeader;
   showDelegations: boolean;
   showLogo: boolean;
   showCoatOfArms: boolean;

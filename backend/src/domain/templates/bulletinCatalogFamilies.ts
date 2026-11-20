@@ -8,7 +8,7 @@ export const TECH_GROUPED_SPEC_ID = 'TECH_GROUPED_V1' as const;
 export const BILINGUAL_APC_SPEC_ID = 'BILINGUAL_APC_V1' as const;
 export const EN_SECONDARY_SPEC_ID = 'EN_SECONDARY_V1' as const;
 export const PRIMARY_POINTS_RATIO_EN_SPEC_ID = 'PRIMARY_POINTS_RATIO_EN_V1' as const;
-export const PRIMARY_POINTS_RATIO_FR_SPEC_ID = 'PRIMARY_POINTS_RATIO_FR_V1' as const;
+export const PRIMARY_POINTS_RATIO_FR_LABELS_SPEC_ID = 'PRIMARY_POINTS_RATIO_FR_LABELS_V1' as const;
 
 export const ANNUAL_BILINGUAL_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec<BulletinTemplateSpec>({
   id: ANNUAL_BILINGUAL_SPEC_ID,
@@ -220,7 +220,7 @@ export const PRIMARY_POINTS_RATIO_EN_V1: Readonly<BulletinTemplateSpec> = deepFr
   grayscaleFirst: true,
   page: { size: 'A4', orientation: 'portrait', margin: 18 },
   blocks: [
-    { type: 'officialHeader', bilingual: false, showDelegations: false, showLogo: true, showCoatOfArms: false, showMotto: false, periodLabelMode: 'MONTHLY' },
+    { type: 'officialHeader', bilingual: true, ministry: 'MINEDUB', showDelegations: true, showLogo: true, showCoatOfArms: false, showMotto: true, periodLabelMode: 'MONTHLY' },
     { type: 'studentCard', fields: ['photo', 'matricule', 'birth', 'sex', 'repeater', 'classSize', 'mainTeacher'] },
     {
       type: 'subjectTable',
@@ -246,8 +246,8 @@ export const PRIMARY_POINTS_RATIO_EN_V1: Readonly<BulletinTemplateSpec> = deepFr
   ],
 });
 
-export const PRIMARY_POINTS_RATIO_FR_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec<BulletinTemplateSpec>({
-  id: PRIMARY_POINTS_RATIO_FR_SPEC_ID,
+export const PRIMARY_POINTS_RATIO_FR_LABELS_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec<BulletinTemplateSpec>({
+  id: PRIMARY_POINTS_RATIO_FR_LABELS_SPEC_ID,
   familyKey: 'F',
   targetTemplate: 'PRIMARY',
   layoutVariant: 'PRIMARY_POINTS_RATIO',
@@ -255,7 +255,7 @@ export const PRIMARY_POINTS_RATIO_FR_V1: Readonly<BulletinTemplateSpec> = deepFr
   showGroupRankInSubtotal: false,
   validationStatus: 'TO_VALIDATE',
   validationNotice: 'À VALIDER SUR UN BULLETIN RÉEL',
-  name: 'Famille F (FR) — Bulletin Primaire Mensuel Ratio de Points (À VALIDER SUR UN BULLETIN RÉEL)',
+  name: 'Famille F (modèle anglophone à libellés français) — Primaire Ratio de Points (À VALIDER SUR UN BULLETIN RÉEL)',
   version: 1,
   status: 'PUBLISHED',
   defaultGroupingScheme: 'FLAT',
@@ -263,7 +263,7 @@ export const PRIMARY_POINTS_RATIO_FR_V1: Readonly<BulletinTemplateSpec> = deepFr
   grayscaleFirst: true,
   page: { size: 'A4', orientation: 'portrait', margin: 18 },
   blocks: [
-    { type: 'officialHeader', bilingual: false, showDelegations: false, showLogo: true, showCoatOfArms: false, showMotto: false, periodLabelMode: 'MONTHLY' },
+    { type: 'officialHeader', bilingual: true, ministry: 'MINEDUB', showDelegations: true, showLogo: true, showCoatOfArms: false, showMotto: true, periodLabelMode: 'MONTHLY' },
     { type: 'studentCard', fields: ['photo', 'matricule', 'birth', 'sex', 'repeater', 'classSize', 'mainTeacher'] },
     {
       type: 'subjectTable',

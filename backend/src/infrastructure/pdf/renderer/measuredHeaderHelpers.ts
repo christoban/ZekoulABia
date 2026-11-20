@@ -60,13 +60,23 @@ function formatBirthDate(isoOrRaw: string | null | undefined): string {
   return ymd;
 }
 
-export const HEADER_EMBLEM_GAP = 4;
+export const HEADER_EMBLEM_GAP = 5;
 
 /** Boîte réservée au logo / aux armoiries en haut d'en-tête (hauteur 0 si aucun emblème). */
 export function resolveHeaderEmblemBox(hasLogo: boolean, hasCoat: boolean): { width: number; height: number } {
-  if (hasLogo && hasCoat) return { width: 26, height: 26 };
-  if (hasLogo || hasCoat) return { width: 40, height: 34 };
+  if (hasLogo && hasCoat) return { width: 28, height: 28 };
+  if (hasLogo || hasCoat) return { width: 38, height: 34 };
   return { width: 0, height: 0 };
+}
+
+function pickBannerTextColor(bgHex: string): string {
+  const clean = bgHex.trim().replace(/^#/, '');
+  if (!/^[0-9a-fA-F]{6}$/.test(clean)) return '#0f172a';
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance < 0.52 ? '#ffffff' : '#0f172a';
 }
 
 export function drawOfficialHeaderBlock(
@@ -79,15 +89,20 @@ export function drawOfficialHeaderBlock(
   const usableW = doc.page.width - left - doc.page.margins.right;
   const y0 = doc.y;
   const isEn = options.language === 'en';
+  const isMinedub = spec.ministry === 'MINEDUB';
+  const ministryFr = isMinedub ? "MINISTÈRE DE L'ÉDUCATION DE BASE" : 'MINISTÈRE DES ENSEIGNEMENTS SECONDAIRES';
+  const ministryEn = isMinedub ? 'MINISTRY OF BASIC EDUCATION' : 'MINISTRY OF SECONDARY EDUCATION';
 
+  let ministryTextBottom = y0;
   if (spec.bilingual) {
-    const colW = (usableW - 64) / 2;
+    const colW = (usableW - 72) / 2;
     doc.font(fonts.bold).fontSize(7.2).fillColor('#0f172a')
       .text('RÉPUBLIQUE DU CAMEROUN', left, y0, { width: colW, align: 'center' })
       .font(fonts.italic).fontSize(7)
       .text('Paix — Travail — Patrie', left, y0 + 9, { width: colW, align: 'center' })
       .font(fonts.regular).fontSize(7)
-      .text('MINISTÈRE DES ENSEIGNEMENTS SECONDAIRES', left, y0 + 18, { width: colW, align: 'center' });
+      .text(ministryFr, left, y0 + 18, { width: colW, align: 'center' });
+    const leftBottom = doc.y;
 
     const rightX = left + usableW - colW;
     doc.font(fonts.bold).fontSize(7.2)
@@ -95,32 +110,67 @@ export function drawOfficialHeaderBlock(
       .font(fonts.italic).fontSize(7)
       .text('Peace — Work — Fatherland', rightX, y0 + 9, { width: colW, align: 'center' })
       .font(fonts.regular).fontSize(7)
-      .text('MINISTRY OF SECONDARY EDUCATION', rightX, y0 + 18, { width: colW, align: 'center' });
+      .text(ministryEn, rightX, y0 + 18, { width: colW, align: 'center' });
+    const rightBottom = doc.y;
+    ministryTextBottom = Math.max(leftBottom, rightBottom);
+  } else if (spec.ministry) {
+    doc.font(fonts.bold).fontSize(7.2).fillColor('#0f172a')
+      .text(isEn ? 'REPUBLIC OF CAMEROON' : 'RÉPUBLIQUE DU CAMEROUN', left, y0, { width: usableW, align: 'center' })
+      .font(fonts.italic).fontSize(7)
+      .text(isEn ? 'Peace — Work — Fatherland' : 'Paix — Travail — Patrie', left, y0 + 9, { width: usableW, align: 'center' })
+      .font(fonts.regular).fontSize(7)
+      .text(isEn ? ministryEn : ministryFr, left, y0 + 18, { width: usableW, align: 'center' });
+    ministryTextBottom = doc.y;
   }
 
   const hasLogo = spec.showLogo && Boolean(options.school.logoBuffer);
   const hasCoat = spec.showCoatOfArms && Boolean(options.school.coatOfArmsEnabled) && Boolean(options.school.coatOfArmsBuffer);
   const emblemBox = resolveHeaderEmblemBox(hasLogo, hasCoat);
+  const emblemTopY = !spec.bilingual && spec.ministry ? ministryTextBottom + 2 : y0;
 
   if (hasLogo && hasCoat) {
-    try { doc.image(options.school.logoBuffer!, left + usableW / 2 - 28, y0, { fit: [emblemBox.width, emblemBox.height] }); } catch { /* ignore invalid image */ }
-    try { doc.image(options.school.coatOfArmsBuffer!, left + usableW / 2 + 2, y0, { fit: [emblemBox.width, emblemBox.height] }); } catch { /* ignore invalid image */ }
+    try {
+      doc.image(options.school.logoBuffer!, left + usableW / 2 - emblemBox.width - 2, emblemTopY, {
+        fit: [emblemBox.width, emblemBox.height],
+        align: 'center',
+        valign: 'center',
+      });
+    } catch { /* ignore invalid image */ }
+    try {
+      doc.image(options.school.coatOfArmsBuffer!, left + usableW / 2 + 2, emblemTopY, {
+        fit: [emblemBox.width, emblemBox.height],
+        align: 'center',
+        valign: 'center',
+      });
+    } catch { /* ignore invalid image */ }
   } else if (hasLogo) {
-    try { doc.image(options.school.logoBuffer!, left + usableW / 2 - 20, y0, { fit: [emblemBox.width, emblemBox.height] }); } catch { /* ignore invalid image */ }
+    try {
+      doc.image(options.school.logoBuffer!, left + usableW / 2 - emblemBox.width / 2, emblemTopY, {
+        fit: [emblemBox.width, emblemBox.height],
+        align: 'center',
+        valign: 'center',
+      });
+    } catch { /* ignore invalid image */ }
   } else if (hasCoat) {
-    try { doc.image(options.school.coatOfArmsBuffer!, left + usableW / 2 - 20, y0, { fit: [emblemBox.width, emblemBox.height] }); } catch { /* ignore invalid image */ }
+    try {
+      doc.image(options.school.coatOfArmsBuffer!, left + usableW / 2 - emblemBox.width / 2, emblemTopY, {
+        fit: [emblemBox.width, emblemBox.height],
+        align: 'center',
+        valign: 'center',
+      });
+    } catch { /* ignore invalid image */ }
   }
 
-  // Le texte (délégations, nom de l'école) démarre SOUS le bloc logo/armoiries : jamais de chevauchement.
-  const ministryTextBottom = spec.bilingual ? y0 + 29 : y0;
-  let cursorY = Math.max(ministryTextBottom, y0 + emblemBox.height + HEADER_EMBLEM_GAP);
+  // Le texte (délégations, nom de l'établissement) démarre STRICTEMENT SOUS le bas réel des colonnes ministérielles et du logo/armoiries.
+  const emblemBottom = emblemBox.height > 0 ? emblemTopY + emblemBox.height : y0;
+  let cursorY = Math.max(ministryTextBottom, emblemBottom) + HEADER_EMBLEM_GAP;
   const delParts = [
     options.school.regionalDelegation?.trim(),
     options.school.departmentalDelegation?.trim(),
   ].filter((v): v is string => Boolean(v && v.length > 0));
   if (spec.showDelegations && delParts.length > 0) {
     doc.font(fonts.regular).fontSize(7).fillColor('#334155').text(delParts.join(' • '), left, cursorY, { width: usableW, align: 'center' });
-    cursorY = doc.y + 1;
+    cursorY = doc.y + 1.5;
   }
 
   doc.font(fonts.bold).fontSize(11.5).fillColor('#0f172a').text(options.school.schoolName.toUpperCase(), left, cursorY, { width: usableW, align: 'center' });
@@ -152,13 +202,14 @@ export function drawOfficialHeaderBlock(
     options.isAnnual,
   );
   const bannerColor = options.school.accentColor?.trim() || '#e2e8f0';
+  const bannerTextColor = pickBannerTextColor(bannerColor);
   doc.rect(left, cursorY + 3, usableW, 17).fillAndStroke(bannerColor, '#0f172a');
-  doc.font(fonts.bold).fontSize(9).fillColor('#0f172a').text(titleLabel, left + 4, cursorY + 6.5, { width: usableW - (options.isDuplicate ? 105 : 8), align: 'center' });
+  doc.font(fonts.bold).fontSize(9).fillColor(bannerTextColor).text(titleLabel, left + 4, cursorY + 6.5, { width: usableW - (options.isDuplicate ? 105 : 8), align: 'center' });
 
   if (options.isDuplicate) {
     const dupNum = options.reprintCount && options.reprintCount > 0 ? options.reprintCount : 1;
     const dupLabel = isEn ? `DUPLICATE #${dupNum}` : `DUPLICATA n° ${dupNum}`;
-    doc.font(fonts.bold).fontSize(7.5).fillColor('#0f172a').text(dupLabel, left, cursorY + 7, { width: usableW - 6, align: 'right' });
+    doc.font(fonts.bold).fontSize(7.5).fillColor(bannerTextColor).text(dupLabel, left, cursorY + 7, { width: usableW - 6, align: 'right' });
   }
   doc.y = cursorY + 23;
 }

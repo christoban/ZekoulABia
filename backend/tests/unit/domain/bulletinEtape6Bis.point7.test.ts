@@ -7,7 +7,7 @@ import {
   EN_SECONDARY_V1,
   GENERAL_GROUPED_V1,
   PRIMARY_POINTS_RATIO_EN_V1,
-  PRIMARY_POINTS_RATIO_FR_V1,
+  PRIMARY_POINTS_RATIO_FR_LABELS_V1,
   TECH_GROUPED_V1,
   findDefaultSpecForTemplate,
   isSpecValidatedForProduction,
@@ -51,7 +51,7 @@ describe('Étape 6 bis — Point 7 : états VALIDATED / TO_VALIDATE, refus d’a
       expect(s.validationStatus).toBe('VALIDATED');
       expect(isSpecValidatedForProduction(s)).toBe(true);
     }
-    for (const s of [EN_SECONDARY_V1, PRIMARY_POINTS_RATIO_FR_V1]) {
+    for (const s of [EN_SECONDARY_V1, PRIMARY_POINTS_RATIO_FR_LABELS_V1]) {
       expect(s.validationStatus).toBe('TO_VALIDATE');
       expect(isSpecValidatedForProduction(s)).toBe(false);
     }
@@ -98,7 +98,7 @@ describe('Étape 6 bis — Point 7 : états VALIDATED / TO_VALIDATE, refus d’a
     const masterUser = { id: 'sa-1', role: 'super_admin', email: 'sa@zekoul.cm', isOwner: true, assignedSchoolIds: [] };
 
     // Refus d'affectation pour Famille E (TO_VALIDATE) et Famille F variante FR (TO_VALIDATE)
-    for (const badSpec of [EN_SECONDARY_V1, PRIMARY_POINTS_RATIO_FR_V1]) {
+    for (const badSpec of [EN_SECONDARY_V1, PRIMARY_POINTS_RATIO_FR_LABELS_V1]) {
       const { state, res } = createMockRes();
       await controller.saveAssignment(
         { params: { schoolId: school.id }, body: { templateSpecId: badSpec.id, templateVersion: 1, periodKind: 'TRIMESTER' }, masterUser } as unknown as Request,

@@ -372,8 +372,10 @@ export function drawPrimaryPointsRatioSummary(
   drawQrBlockAt(doc, fonts, left + usableW - qrSize, sy, options, qrBuffer, 60);
 
   const footY = sy + sigH + 3;
+  const printedDate = (options.issuedAt ?? new Date()).toLocaleDateString(isEn ? 'en-GB' : 'fr-FR');
+  const printedLine = isEn ? `Printed on ${printedDate}` : `Imprimé le ${printedDate}`;
   doc.font(fonts.italic).fontSize(7).fillColor('#475569')
-    .text(isEn ? 'NB: You can keep this document as long as possible' : 'NB : Conservez précieusement ce bulletin officiel', left, footY, { width: usableW / 2 });
-  doc.text(formatPlaceDateLine(options, isEn), left + usableW / 2, footY, { width: usableW / 2, align: 'right' });
+    .text(isEn ? 'NB: You can keep this document as long as possible' : 'NB : Conservez précieusement ce bulletin officiel', left, footY, { width: usableW * 0.55 });
+  doc.text(printedLine, left + usableW * 0.55, footY, { width: usableW * 0.45, align: 'right' });
   doc.y = footY + 10;
 }

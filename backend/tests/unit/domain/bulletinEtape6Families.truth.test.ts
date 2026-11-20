@@ -8,7 +8,7 @@ import {
   BILINGUAL_APC_V1,
   EN_SECONDARY_V1,
   PRIMARY_POINTS_RATIO_EN_V1,
-  PRIMARY_POINTS_RATIO_FR_V1,
+  PRIMARY_POINTS_RATIO_FR_LABELS_V1,
   TECH_GROUPED_V1,
   findDefaultSpecForTemplate,
   getPublishedTemplateSpec,
@@ -225,7 +225,7 @@ describe('Étape 6 — Jeux de vérité calculés à la main (Familles F, D, B, 
       BILINGUAL_APC_V1,
       EN_SECONDARY_V1,
       PRIMARY_POINTS_RATIO_EN_V1,
-      PRIMARY_POINTS_RATIO_FR_V1,
+      PRIMARY_POINTS_RATIO_FR_LABELS_V1,
     ];
     for (const s of specs) {
       expect(Object.isFrozen(s)).toBe(true);
@@ -239,8 +239,8 @@ describe('Étape 6 — Jeux de vérité calculés à la main (Familles F, D, B, 
     expect(findDefaultSpecForTemplate('FR_SECONDARY')?.id).toBe('GENERAL_GROUPED_V1');
     expect(EN_SECONDARY_V1.validationStatus).toBe('TO_VALIDATE');
     expect(EN_SECONDARY_V1.validationNotice).toBe('À VALIDER SUR UN BULLETIN RÉEL');
-    expect(PRIMARY_POINTS_RATIO_FR_V1.validationStatus).toBe('TO_VALIDATE');
-    expect(PRIMARY_POINTS_RATIO_FR_V1.validationNotice).toBe('À VALIDER SUR UN BULLETIN RÉEL');
+    expect(PRIMARY_POINTS_RATIO_FR_LABELS_V1.validationStatus).toBe('TO_VALIDATE');
+    expect(PRIMARY_POINTS_RATIO_FR_LABELS_V1.validationNotice).toBe('À VALIDER SUR UN BULLETIN RÉEL');
   });
 
   it('Rendu PDFKit mesuré des familles D, B, C, E, F (EN & FR) : 1 page, séparateur décimal localisé, groupRank B, points ratio F et zéro invention', async () => {
@@ -314,7 +314,7 @@ describe('Étape 6 — Jeux de vérité calculés à la main (Familles F, D, B, 
     expect(outFEn.joined).toContain('Average : 11.14 / 20');
     expect(outFEn.joined).toContain('ENGLISH LANGUAGE');
 
-    const outFFr = await renderAndCapture(snapF, PRIMARY_POINTS_RATIO_FR_V1, 'fr');
+    const outFFr = await renderAndCapture(snapF, PRIMARY_POINTS_RATIO_FR_LABELS_V1, 'fr');
     expect(outFFr.pageCount).toBe(1);
     expect(outFFr.joined).toContain('Total Notes : 245,00');
     expect(outFFr.joined).toContain('Moyenne : 11,14 / 20');
