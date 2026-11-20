@@ -14,7 +14,20 @@ import type {
   SnapshotSubjectInput,
 } from '@domain/types/bulletinSnapshot';
 import type { SubjectType } from '@domain/types/enums';
+import type {
+  BulletinAppreciationScaleConfig,
+  CompetenceScaleThresholds,
+  CoteScaleThresholds,
+} from '@domain/types/bulletinTemplateSpec';
 import { MatiereSansGroupeError } from '@domain/errors/MatiereSansGroupeError';
+import {
+  DEFAULT_GAROUA_COMPETENCE_SCALE,
+  DEFAULT_QUEBECOIS_COTE_SCALE,
+  evaluateCoteFromScale,
+  formatCompetenceLevelLabel,
+  resolveEffectiveCompetenceScale,
+  resolveEffectiveCoteScale,
+} from './bulletinAppreciationScales';
 import {
   resolveGroupBySubjectCode,
   type BulletinGroupingScheme,
@@ -100,24 +113,26 @@ export function assignCompetitionRanks(items: Array<{ id: string; value: number 
   return ranks;
 }
 
-export function resolveApcCote(average: number): 'A+' | 'A' | 'ECA' | 'NA' {
-  if (average >= 18) return 'A+';
-  if (average >= 15) return 'A';
-  if (average >= 11) return 'ECA';
-  return 'NA';
+export function resolveApcCote(
+  average: number,
+  thresholds: CoteScaleThresholds = DEFAULT_QUEBECOIS_COTE_SCALE,
+): 'A+' | 'A' | 'ECA' | 'NA' {
+  return evaluateCoteFromScale(average, thresholds);
 }
 
-export function resolveApcCompetenceLevel(average: number): string {
-  if (average >= 18) return 'Niveau Expert / High Profile';
-  if (average >= 15) return 'Compétence Acquise / Acquired';
-  if (average >= 11) return "En cours d'acquisition / Ongoing";
-  return 'Non acquis / Not Acquired';
+export function resolveApcCompetenceLevel(
+  average: number,
+  thresholds: CompetenceScaleThresholds = DEFAULT_GAROUA_COMPETENCE_SCALE,
+  mode: 'fr' | 'en' | 'bilingual' = 'bilingual',
+): string {
+  return formatCompetenceLevelLabel(average, thresholds, mode);
 }
 
-export function resolveGroupCompetenceLabel(average: number): string {
-  if (average >= 10) return 'Compétence acquise';
-  if (average >= 8) return "Compétence en cours d'acquisition";
-  return 'Compétence non acquise';
+export function resolveGroupCompetenceLabel(
+  average: number,
+  thresholds: CompetenceScaleThresholds = DEFAULT_GAROUA_COMPETENCE_SCALE,
+): string {
+  return formatCompetenceLevelLabel(average, thresholds, 'fr');
 }
 
 function meanOfDefined(values: Array<number | undefined>): number | undefined {
@@ -187,6 +202,7 @@ export function buildStudentSubjectLines(params: {
   hasCoefficientBySubject: boolean;
   excludeAbsent: boolean;
   seqMode: 'single' | 'triple' | 'weighted';
+  scaleConfig?: BulletinAppreciationScaleConfig;
 }): BulletinSubjectSnapshotLine[] {
   const notesBySubject = new Map<string, SnapshotNoteInput[]>();
   for (const n of params.studentNotes) {
@@ -266,8 +282,8 @@ export function buildStudentSubjectLines(params: {
       teacherComment: observation,
       teacherName: subject.teacherName,
       competenceLabel: subject.competenceLabel,
-      competenceCote: resolveApcCote(subjectAvg),
-      competenceLevelLabel: resolveApcCompetenceLevel(subjectAvg),
+      competenceCote: resolveApcCote(subjectAvg, resolveEffectiveCoteScale(params.scaleConfig)),
+      competenceLevelLabel: resolveApcCompetenceLevel(subjectAvg, resolveEffectiveCompetenceScale(params.scaleConfig)),
     });
   }
 
@@ -385,8 +401,10 @@ export function buildGroupBreakdownsForStudent(
   lines: BulletinSubjectSnapshotLine[],
   groups: BulletinGroupSummary[],
   hasCoefficientBySubject: boolean,
+  scaleConfig?: BulletinAppreciationScaleConfig,
 ): Record<string, BulletinGroupPeriodBreakdown> {
   const out: Record<string, BulletinGroupPeriodBreakdown> = {};
+  const competenceThresholds = resolveEffectiveCompetenceScale(scaleConfig);
   for (const grp of groups) {
     const groupLines = lines.filter((l) => l.groupKey === grp.groupKey);
     out[grp.groupKey] = {
@@ -399,7 +417,7 @@ export function buildGroupBreakdownsForStudent(
       trim1Average: computeGroupFieldAverage(groupLines, (l) => l.trim1Average, hasCoefficientBySubject),
       trim2Average: computeGroupFieldAverage(groupLines, (l) => l.trim2Average, hasCoefficientBySubject),
       trim3Average: computeGroupFieldAverage(groupLines, (l) => l.trim3Average, hasCoefficientBySubject),
-      groupCompetenceLabel: resolveGroupCompetenceLabel(grp.groupAverage),
+      groupCompetenceLabel: resolveGroupCompetenceLabel(grp.groupAverage, competenceThresholds),
     };
   }
   return out;

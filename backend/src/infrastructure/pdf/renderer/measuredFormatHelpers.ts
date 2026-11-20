@@ -1,5 +1,16 @@
 import type { BulletinGradingPolicy } from '@domain/ports/services/BulletinRendererPort';
-import type { PeriodLabelMode, SubjectTableBlockSpec } from '@domain/types/bulletinTemplateSpec';
+import type {
+  BulletinAppreciationScaleConfig,
+  CoteScaleThresholds,
+  PeriodLabelMode,
+  SubjectTableBlockSpec,
+} from '@domain/types/bulletinTemplateSpec';
+import {
+  buildCompetenceLegendText,
+  buildCoteLegendText,
+  resolveEffectiveCompetenceScale,
+  resolveEffectiveCoteScale,
+} from '@domain/services/bulletin/bulletinAppreciationScales';
 
 export function formatLocalizedNumber(
   value: number | null | undefined,
@@ -21,11 +32,8 @@ export function formatLocalizedPercent(
   return isEn ? `${formatted}%` : `${formatted} %`;
 }
 
-export function formatCoteLegend(isEn: boolean): string {
-  if (isEn) {
-    return 'A+ [18-20] • A [15-17.99] • ECA [11-14.99] • NA [<11]';
-  }
-  return 'A+ [18-20] • A [15-17,99] • ECA [11-14,99] • NA [<11]';
+export function formatCoteLegend(isEn: boolean, thresholds?: CoteScaleThresholds): string {
+  return buildCoteLegendText(isEn, thresholds);
 }
 
 function formatWeight(value: number, isEn: boolean): string {
@@ -37,6 +45,7 @@ export function buildDynamicFormulaHint(
   policy: BulletinGradingPolicy | undefined,
   isEn: boolean,
   appreciationScale: SubjectTableBlockSpec['appreciationScale'],
+  specScaleConfig?: BulletinAppreciationScaleConfig,
 ): string {
   const mode = (policy?.mode ?? 'single').toLowerCase();
   let rule: string;
@@ -66,12 +75,19 @@ export function buildDynamicFormulaHint(
       : 'Règle de calcul : EVA/20 = moyenne simple des évaluations (CC/DS)';
   }
 
-  if (appreciationScale !== 'A+/A/ECA/NA') {
-    return rule;
+  if (appreciationScale === 'A+/A/ECA/NA') {
+    const coteScale = resolveEffectiveCoteScale(policy?.scaleConfig, specScaleConfig);
+    return isEn
+      ? `${rule}   |   Grades: ${formatCoteLegend(true, coteScale)}`
+      : `${rule}   |   Cotes : ${formatCoteLegend(false, coteScale)}`;
   }
-  return isEn
-    ? `${rule}   |   Grades: ${formatCoteLegend(true)}`
-    : `${rule}   |   Cotes : ${formatCoteLegend(false)}`;
+  if (appreciationScale === 'APC_TEXT' || specScaleConfig?.competence || policy?.scaleConfig?.competence) {
+    const compScale = resolveEffectiveCompetenceScale(policy?.scaleConfig, specScaleConfig);
+    return isEn
+      ? `${rule}   |   Skills: ${buildCompetenceLegendText(true, compScale)}`
+      : `${rule}   |   Compétences : ${buildCompetenceLegendText(false, compScale)}`;
+  }
+  return rule;
 }
 
 export function formatPeriodBannerTitle(

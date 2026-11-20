@@ -83,6 +83,29 @@ export interface StudentCardBlockSpec {
   fields: Array<'photo' | 'matricule' | 'birth' | 'sex' | 'repeater' | 'classSize' | 'mainTeacher'>;
 }
 
+export interface CoteScaleThresholds {
+  /** Minimum pour A+ (ex. 18 => [18-20]) */
+  expertMin: number;
+  /** Minimum pour A (ex. 15 => [15-17,99]) */
+  acquiredMin: number;
+  /** Minimum pour ECA (ex. 10 sur Famille A Le Québécois, 11 sur Garoua/Djamboutou) */
+  ongoingMin: number;
+}
+
+export interface CompetenceScaleThresholds {
+  /** Minimum pour Niveau Expert (ex. 18 => >= 18) */
+  expertMin: number;
+  /** Minimum pour Compétence acquise (ex. 14 sur Garoua/Djamboutou) */
+  acquiredMin: number;
+  /** Minimum pour En cours d'acquisition (ex. 11 sur Garoua/Djamboutou) */
+  ongoingMin: number;
+}
+
+export interface BulletinAppreciationScaleConfig {
+  cote?: CoteScaleThresholds;
+  competence?: CompetenceScaleThresholds;
+}
+
 export interface SubjectTableBlockSpec {
   type: 'subjectTable';
   grouping: 'byGroup' | 'flat';
@@ -90,6 +113,7 @@ export interface SubjectTableBlockSpec {
   showGroupSubtotals: boolean;
   showTotalBar?: boolean;
   appreciationScale: 'A+/A/ECA/NA' | 'APC_TEXT' | 'FREE_TEXT';
+  scaleConfig?: BulletinAppreciationScaleConfig;
   formulaHint?: string;
   columns: SubjectTableColumnSpec[];
 }

@@ -1,6 +1,11 @@
 import type { StudentBulletinSnapshot } from '@domain/types/bulletinSnapshot';
+import type { BulletinAppreciationScaleConfig } from '@domain/types/bulletinTemplateSpec';
 import type { BulletinRenderOptions } from '@domain/ports/services/BulletinRendererPort';
 import { deriveShortVerifyCode } from '@domain/policies/BulletinVerifyCrypto';
+import {
+  buildCoteLegendLines,
+  resolveEffectiveCoteScale,
+} from '@domain/services/bulletin/bulletinAppreciationScales';
 import { formatAbsenceHoursDisplay } from '@application/reportCard/bulletinEnrichmentHelpers';
 import type { FontSet, MeasuredPdfDoc } from './measuredHeaderHelpers';
 import { formatRankLabel, resolveApcCote } from './measuredSubjectTableHelpers';
@@ -267,31 +272,31 @@ export function drawPrimaryPointsRatioSummary(
   snapshot: StudentBulletinSnapshot,
   options: BulletinRenderOptions,
   qrBuffer: Buffer | null,
+  specScaleConfig?: BulletinAppreciationScaleConfig,
 ): void {
   const isEn = options.language === 'en';
   const left = doc.page.margins.left;
   const usableW = doc.page.width - left - doc.page.margins.right;
   const num = (v: number | undefined | null) => formatLocalizedNumber(v, isEn, 2);
   const cp = snapshot.classProfile;
+  const coteScale = resolveEffectiveCoteScale(options.gradingPolicy?.scaleConfig, specScaleConfig);
   ensureFooterSpace(doc, 145);
   const y = doc.y;
   const gap = 5;
   const wBox = (usableW - gap * 2) / 3;
   const boxH = 66;
 
-  // Boîte 1 : Legend
+  // Boîte 1 : Legend (générée dynamiquement depuis les seuils configurés)
   doc.rect(left, y, wBox, boxH).strokeColor('#334155').lineWidth(0.7).stroke();
   drawBoxTitle(doc, fonts, left, y, wBox, isEn ? 'LEGEND' : 'LÉGENDE DES COTES');
-  const legend = isEn
-    ? 'A+ : Expert [18-20]\nA : Acquired [15-17.99]\nECA : In course of acquisition [11-14.99]\nNA : Not Acquired [0-10.99]'
-    : "A+ : Expert [18-20]\nA : Acquis [15-17,99]\nECA : En cours d'acquisition [11-14,99]\nNA : Non acquis [0-10,99]";
+  const legend = buildCoteLegendLines(isEn, coteScale);
   doc.font(fonts.regular).fontSize(6).fillColor('#0f172a').text(legend, left + 4, y + 14.5, { width: wBox - 8, lineGap: 1.5 });
 
   // Boîte 2 : Monthly Result
   const x2 = left + wBox + gap;
   doc.rect(x2, y, wBox, boxH).strokeColor('#334155').lineWidth(0.7).stroke();
   drawBoxTitle(doc, fonts, x2, y, wBox, isEn ? 'MONTHLY RESULT' : 'RÉSULTAT MENSUEL');
-  const cote = resolveApcCote(snapshot.generalAverage);
+  const cote = resolveApcCote(snapshot.generalAverage, coteScale);
   const mRes = isEn
     ? `Total Marks : ${num(snapshot.totalRawMarks)}   |   On : ${formatLocalizedNumber(snapshot.totalMaxMarks, true, 0)}\nAverage : ${num(snapshot.generalAverage)} / 20\nPosition : ${formatRankLabel(snapshot.rank, true)} / ${snapshot.totalStudents}\nGeneral Remarks : ${options.mention} // ${cote}`
     : `Total Notes : ${num(snapshot.totalRawMarks)}   |   Sur : ${formatLocalizedNumber(snapshot.totalMaxMarks, false, 0)}\nMoyenne : ${num(snapshot.generalAverage)} / 20\nRang : ${formatRankLabel(snapshot.rank, false)} / ${snapshot.totalStudents}\nAppréciation : ${options.mention} // ${cote}`;

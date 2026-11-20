@@ -33,6 +33,9 @@ export const ANNUAL_BILINGUAL_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpe
       showGroupSubtotals: true,
       showTotalBar: true,
       appreciationScale: 'APC_TEXT',
+      scaleConfig: {
+        competence: { ongoingMin: 11, acquiredMin: 14, expertMin: 18 },
+      },
       columns: [
         { key: 'subjectName', labelFr: 'DISCIPLINES', labelEn: 'SUBJECTS', ratio: 15, align: 'left' },
         { key: 'competenceLabel', labelFr: 'Compétences visées', labelEn: 'Target Skills', ratio: 11, align: 'left' },
@@ -81,6 +84,9 @@ export const TECH_GROUPED_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec<Bu
       showGroupSubtotals: true,
       showTotalBar: true,
       appreciationScale: 'FREE_TEXT',
+      scaleConfig: {
+        competence: { ongoingMin: 11, acquiredMin: 14, expertMin: 18 },
+      },
       columns: [
         { key: 'subjectName', labelFr: 'Matières', labelEn: 'Subjects', ratio: 17, align: 'left' },
         { key: 'teacherName', labelFr: 'Professeurs', labelEn: 'Teachers', ratio: 11, align: 'left' },
@@ -125,6 +131,9 @@ export const BILINGUAL_APC_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec<B
       showGroupSubtotals: true,
       showTotalBar: true,
       appreciationScale: 'APC_TEXT',
+      scaleConfig: {
+        competence: { ongoingMin: 11, acquiredMin: 14, expertMin: 18 },
+      },
       columns: [
         { key: 'subjectName', labelFr: 'DISCIPLINES', labelEn: 'SUBJECTS', ratio: 17, align: 'left' },
         { key: 'competenceLabel', labelFr: 'Compétence visée (libellé court)', labelEn: 'Target Competence', ratio: 18, align: 'left' },
@@ -167,6 +176,9 @@ export const EN_SECONDARY_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec<Bu
       grouping: 'flat',
       showGroupSubtotals: false,
       appreciationScale: 'A+/A/ECA/NA',
+      scaleConfig: {
+        cote: { ongoingMin: 10, acquiredMin: 15, expertMin: 18 },
+      },
       columns: [
         { key: 'subjectName', labelFr: 'SUBJECTS', labelEn: 'SUBJECTS', ratio: 18, align: 'left' },
         { key: 'seq1Score', labelFr: 'SEQ 1 /20', labelEn: 'TEST 1 /20', ratio: 6.5, align: 'center' },
@@ -211,6 +223,9 @@ export const PRIMARY_POINTS_RATIO_EN_V1: Readonly<BulletinTemplateSpec> = deepFr
       groupByDomain: true,
       showGroupSubtotals: false,
       appreciationScale: 'A+/A/ECA/NA',
+      scaleConfig: {
+        cote: { ongoingMin: 10, acquiredMin: 15, expertMin: 18 },
+      },
       columns: [
         { key: 'subjectName', labelFr: 'SOUS-COMPÉTENCES', labelEn: 'SUB-SKILLS', ratio: 32, align: 'left' },
         { key: 'learningUnit', labelFr: 'Unité', labelEn: 'Learning Unit', ratio: 14, align: 'center' },
@@ -250,6 +265,9 @@ export const PRIMARY_POINTS_RATIO_FR_V1: Readonly<BulletinTemplateSpec> = deepFr
       groupByDomain: true,
       showGroupSubtotals: false,
       appreciationScale: 'A+/A/ECA/NA',
+      scaleConfig: {
+        cote: { ongoingMin: 10, acquiredMin: 15, expertMin: 18 },
+      },
       columns: [
         { key: 'subjectName', labelFr: 'SOUS-COMPÉTENCES', labelEn: 'SUB-SKILLS', ratio: 32, align: 'left' },
         { key: 'learningUnit', labelFr: "Unité d'appr.", labelEn: 'Learning Unit', ratio: 14, align: 'center' },

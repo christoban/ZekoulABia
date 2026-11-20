@@ -200,6 +200,7 @@ export function buildFictitiousPreviewClass(params: {
     });
   });
 
+  const tableBlock = params.spec.blocks.find((b) => b.type === 'subjectTable');
   return BulletinSnapshotBuilder.buildClassSnapshots({
     students: studentIds.map((id) => ({ id })),
     subjects,
@@ -209,6 +210,7 @@ export function buildFictitiousPreviewClass(params: {
     isAnnual: params.kind === 'ANNUAL',
     calculationMode: isPrimary ? 'POINTS_RATIO' : undefined,
     passThresholdOn20: params.passThresholdOn20,
+    scaleConfig: tableBlock?.type === 'subjectTable' ? tableBlock.scaleConfig : undefined,
   });
 }
 

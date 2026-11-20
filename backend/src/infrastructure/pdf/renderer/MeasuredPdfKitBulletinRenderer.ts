@@ -80,6 +80,8 @@ function drawBulletinPageOnDoc(
 ): void {
   const sigBlock = templateSpec.blocks.find((b): b is SignaturesBlockSpec => b.type === 'signatures');
   const qrBlock = templateSpec.blocks.find((b): b is VerifyQrBlockSpec => b.type === 'verifyQr');
+  const tableBlock = templateSpec.blocks.find((b) => b.type === 'subjectTable');
+  const specScaleConfig = tableBlock?.type === 'subjectTable' ? tableBlock.scaleConfig : undefined;
   const baseFontSize = resolveTableFontSize(snapshot, templateSpec);
   const variant = templateSpec.layoutVariant;
   const usesFamilyFooter =
@@ -100,7 +102,7 @@ function drawBulletinPageOnDoc(
         drawMeasuredSubjectTable(doc, fonts, block, snapshot, options.language, baseFontSize, options, templateSpec);
         break;
       case 'classProfile':
-        if (!usesFamilyFooter) drawClassProfileBlock(doc, fonts, block, snapshot, options.language, options);
+        if (!usesFamilyFooter) drawClassProfileBlock(doc, fonts, block, snapshot, options.language, options, specScaleConfig);
         break;
       case 'councilDecision':
         if (!usesFamilyFooter) drawCouncilDecisionBlock(doc, fonts, block, snapshot, options);
@@ -121,7 +123,7 @@ function drawBulletinPageOnDoc(
   } else if (variant === 'BILINGUAL_APC') {
     drawBilingualApcSummary(doc, fonts, snapshot, options, qrBuffer);
   } else if (variant === 'PRIMARY_POINTS_RATIO') {
-    drawPrimaryPointsRatioSummary(doc, fonts, snapshot, options, qrBuffer);
+    drawPrimaryPointsRatioSummary(doc, fonts, snapshot, options, qrBuffer, specScaleConfig);
   } else if (sigBlock || qrBlock) {
     drawSignaturesAndQrBlock(doc, fonts, sigBlock, qrBlock, options, qrBuffer);
   }

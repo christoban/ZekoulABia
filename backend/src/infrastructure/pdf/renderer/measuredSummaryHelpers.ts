@@ -1,5 +1,6 @@
 import type { StudentBulletinSnapshot } from '@domain/types/bulletinSnapshot';
 import type {
+  BulletinAppreciationScaleConfig,
   ClassProfileBlockSpec,
   ConductSummaryBlockSpec,
   CouncilDecisionBlockSpec,
@@ -9,6 +10,7 @@ import type {
 } from '@domain/types/bulletinTemplateSpec';
 import type { BulletinRenderOptions } from '@domain/ports/services/BulletinRendererPort';
 import { deriveShortVerifyCode } from '@domain/policies/BulletinVerifyCrypto';
+import { resolveEffectiveCoteScale } from '@domain/services/bulletin/bulletinAppreciationScales';
 import { formatAbsenceHoursDisplay } from '@application/reportCard/bulletinEnrichmentHelpers';
 import type { FontSet, MeasuredPdfDoc } from './measuredHeaderHelpers';
 import { formatRankLabel, resolveApcCote } from './measuredSubjectTableHelpers';
@@ -37,6 +39,7 @@ export function drawClassProfileBlock(
   snapshot: StudentBulletinSnapshot,
   language: 'fr' | 'en',
   options?: BulletinRenderOptions,
+  specScaleConfig?: BulletinAppreciationScaleConfig,
 ): void {
   const cp = snapshot.classProfile;
   const isEn = language === 'en';
@@ -64,7 +67,8 @@ export function drawClassProfileBlock(
     ? (isEn ? 'ANNUAL RESULT & CLASS PROFILE' : 'RÉSULTAT ANNUEL & PROFIL DE LA CLASSE')
     : (isEn ? 'PERIOD RESULT & CLASS PROFILE' : 'RÉSULTAT PÉRIODIQUE & PROFIL DE LA CLASSE');
   const rk = formatRankLabel(snapshot.rank, isEn);
-  const cote = resolveApcCote(snapshot.generalAverage);
+  const coteScale = resolveEffectiveCoteScale(options?.gradingPolicy?.scaleConfig, specScaleConfig);
+  const cote = resolveApcCote(snapshot.generalAverage, coteScale);
   const mentionPart = options?.mention && options.mention !== '—' ? `  |  Mention : ${options.mention}` : '';
 
   const studentLine = isEn

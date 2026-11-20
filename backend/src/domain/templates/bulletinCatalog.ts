@@ -82,6 +82,9 @@ export const GENERAL_GROUPED_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec
       grouping: 'byGroup',
       showGroupSubtotals: true,
       appreciationScale: 'A+/A/ECA/NA',
+      scaleConfig: {
+        cote: { ongoingMin: 10, acquiredMin: 15, expertMin: 18 },
+      },
       columns: [
         { key: 'subjectName', labelFr: 'MATIÈRES', labelEn: 'SUBJECTS', ratio: 19, align: 'left' },
         { key: 'seq1Score', labelFr: 'CC /20', labelEn: 'CA /20', ratio: 6.5, align: 'center' },

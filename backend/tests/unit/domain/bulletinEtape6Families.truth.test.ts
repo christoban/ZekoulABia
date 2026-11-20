@@ -142,11 +142,11 @@ describe('Étape 6 — Jeux de vérité calculés à la main (Familles F, D, B, 
       { id: 'd1', name: 'EPS', coefficient: 1, groupKey: 'DIVERS', groupLabel: 'Enseignements Divers', groupOrder: 3 },
     ];
     const notes = [
-      // Élève 1 : Gen=14, Pro=9 (en cours d'acquisition), Div=12
+      // Élève 1 : Gen=14 (acquise >= 14), Pro=12 (en cours 11..13,99), Div=14
       { studentId: 'a1', subjectId: 'g1', sequenceId: 's1', coefficient: 2, sequenceScore: 14, validationStatus: 'LOCKED' as const },
-      { studentId: 'a1', subjectId: 'p1', sequenceId: 's1', coefficient: 5, sequenceScore: 9, validationStatus: 'LOCKED' as const },
-      { studentId: 'a1', subjectId: 'd1', sequenceId: 's1', coefficient: 1, sequenceScore: 12, validationStatus: 'LOCKED' as const },
-      // Élève 2 : Gen=10, Pro=16 (acquise), Div=7 (non acquise)
+      { studentId: 'a1', subjectId: 'p1', sequenceId: 's1', coefficient: 5, sequenceScore: 12, validationStatus: 'LOCKED' as const },
+      { studentId: 'a1', subjectId: 'd1', sequenceId: 's1', coefficient: 1, sequenceScore: 14, validationStatus: 'LOCKED' as const },
+      // Élève 2 : Gen=10, Pro=16 (acquise), Div=7 (non acquise < 11)
       { studentId: 'a2', subjectId: 'g1', sequenceId: 's1', coefficient: 2, sequenceScore: 10, validationStatus: 'LOCKED' as const },
       { studentId: 'a2', subjectId: 'p1', sequenceId: 's1', coefficient: 5, sequenceScore: 16, validationStatus: 'LOCKED' as const },
       { studentId: 'a2', subjectId: 'd1', sequenceId: 's1', coefficient: 1, sequenceScore: 7, validationStatus: 'LOCKED' as const },
@@ -168,8 +168,8 @@ describe('Étape 6 — Jeux de vérité calculés à la main (Familles F, D, B, 
     expect(gen1.groupRank).toBe(1);
     expect(s1.groupBreakdowns?.['GENERAL']?.groupCompetenceLabel).toBe('Compétence acquise');
     expect(pro1.groupRank).toBe(2);
-    expect(pro1.totalWeightedScore).toBe(45);
-    expect(s1.groupBreakdowns?.['PROFESSIONNEL']?.groupCompetenceLabel).toBe("Compétence en cours d'acquisition");
+    expect(pro1.totalWeightedScore).toBe(60);
+    expect(s1.groupBreakdowns?.['PROFESSIONNEL']?.groupCompetenceLabel).toBe("En cours d'acquisition");
     expect(div1.groupRank).toBe(1);
 
     const s2 = res.snapshotsByStudentId.get('a2')!;

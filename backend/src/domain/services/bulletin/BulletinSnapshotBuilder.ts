@@ -74,6 +74,7 @@ export class BulletinSnapshotBuilder {
         hasCoefficientBySubject: input.hasCoefficientBySubject,
         excludeAbsent,
         seqMode,
+        scaleConfig: input.scaleConfig,
       });
       linesByStudent.set(student.id, lines);
 
@@ -218,7 +219,7 @@ export class BulletinSnapshotBuilder {
         classProfile,
         subjectLines: lines,
         groupSummaries: groups,
-        groupBreakdowns: buildGroupBreakdownsForStudent(lines, groups, input.hasCoefficientBySubject),
+        groupBreakdowns: buildGroupBreakdownsForStudent(lines, groups, input.hasCoefficientBySubject, input.scaleConfig),
       });
     }
 

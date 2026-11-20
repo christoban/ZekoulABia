@@ -4,6 +4,7 @@ import type {
   StudentBulletinSnapshot,
 } from '@domain/types/bulletinSnapshot';
 import type {
+  BulletinAppreciationScaleConfig,
   BulletinLayoutVariant,
   BulletinTemplateSpec,
   SubjectTableBlockSpec,
@@ -11,7 +12,14 @@ import type {
   SubjectTableColumnSpec,
 } from '@domain/types/bulletinTemplateSpec';
 import type { BulletinRenderOptions } from '@domain/ports/services/BulletinRendererPort';
-import { resolveApcCote } from '@domain/services/bulletin/bulletinSnapshotMath';
+import {
+  resolveApcCompetenceLevel,
+  resolveApcCote,
+} from '@domain/services/bulletin/bulletinSnapshotMath';
+import {
+  resolveEffectiveCompetenceScale,
+  resolveEffectiveCoteScale,
+} from '@domain/services/bulletin/bulletinAppreciationScales';
 import type { FontSet, MeasuredPdfDoc } from './measuredHeaderHelpers';
 import {
   buildDynamicFormulaHint,
@@ -35,8 +43,11 @@ export function formatSubjectCell(
   key: SubjectTableColumnKey,
   isEn = false,
   layoutVariant?: BulletinLayoutVariant,
+  scaleConfig?: BulletinAppreciationScaleConfig,
 ): string {
   const num = (v: number | undefined): string => formatLocalizedNumber(v, isEn, 2);
+  const coteScale = resolveEffectiveCoteScale(scaleConfig);
+  const compScale = resolveEffectiveCompetenceScale(scaleConfig);
   switch (key) {
     case 'subjectName': return line.subjectName;
     case 'coefficient': return String(line.coefficient);
@@ -61,15 +72,18 @@ export function formatSubjectCell(
     case 'subjectAverage': return num(line.subjectAverage);
     case 'weightedScore': return num(line.weightedScore);
     case 'subjectRank': return formatRankLabel(line.subjectRank, isEn);
-    case 'cote': return line.competenceCote ?? resolveApcCote(line.subjectAverage);
+    case 'cote': return scaleConfig?.cote ? resolveApcCote(line.subjectAverage, coteScale) : (line.competenceCote ?? resolveApcCote(line.subjectAverage, coteScale));
     case 'classSubjectAverage': return num(line.classSubjectAverage);
     case 'teacherVisa': return '';
     case 'competenceLabel': return line.competenceLabel ?? '—';
-    case 'competenceLevel': return line.competenceLevelLabel ?? '—';
+    case 'competenceLevel': return scaleConfig?.competence
+      ? resolveApcCompetenceLevel(line.subjectAverage, compScale, isEn ? 'en' : 'fr')
+      : (line.competenceLevelLabel ?? resolveApcCompetenceLevel(line.subjectAverage, compScale, isEn ? 'en' : 'fr'));
     case 'teacherName': return line.teacherName ?? '—';
     case 'teacherComment': {
       if (layoutVariant === 'BILINGUAL_APC' || layoutVariant === 'ANNUAL_BILINGUAL') {
-        const base = line.teacherComment ?? line.competenceLevelLabel ?? '—';
+        const computedComp = resolveApcCompetenceLevel(line.subjectAverage, compScale, 'bilingual');
+        const base = line.teacherComment ?? (scaleConfig?.competence ? computedComp : (line.competenceLevelLabel ?? computedComp));
         return line.teacherName ? `${base} — ${line.teacherName}` : base;
       }
       return line.teacherComment ?? '—';
@@ -127,12 +141,13 @@ function measureRowHeight(
   fontSize: number,
   isEn: boolean,
   layoutVariant?: BulletinLayoutVariant,
+  scaleConfig?: BulletinAppreciationScaleConfig,
 ): number {
   const pad = layoutVariant === 'PRIMARY_POINTS_RATIO' || layoutVariant === 'ANNUAL_BILINGUAL' ? 3 : 4.5;
   let maxH = fontSize + pad;
   cols.forEach((col, idx) => {
     doc.font(isBoldSubjectColumn(col.key) ? fonts.bold : fonts.regular).fontSize(fontSize);
-    const val = formatSubjectCell(line, col.key, isEn, layoutVariant);
+    const val = formatSubjectCell(line, col.key, isEn, layoutVariant, scaleConfig);
     const h = doc.heightOfString(val, { width: Math.max(6, colWidths[idx]! - 4), lineGap: 0.35 });
     if (h + pad > maxH) maxH = h + pad;
   });
@@ -221,14 +236,19 @@ export function drawMeasuredSubjectTable(
   const isEn = language === 'en';
   const layoutVariant = templateSpec?.layoutVariant;
 
+  const effectiveScaleConfig: BulletinAppreciationScaleConfig = {
+    cote: resolveEffectiveCoteScale(options?.gradingPolicy?.scaleConfig, spec.scaleConfig),
+    competence: resolveEffectiveCompetenceScale(options?.gradingPolicy?.scaleConfig, spec.scaleConfig),
+  };
+
   const resolvedFormulaHint =
     spec.formulaHint && spec.formulaHint.trim().length > 0
       ? spec.formulaHint.trim()
       : templateSpec?.calculationMode === 'POINTS_RATIO'
         ? (isEn
-            ? `Formula: Average/20 = (Total Marks / Total On) × 20   |   Grades: ${formatCoteLegend(true)}`
-            : `Règle de calcul : Moyenne/20 = (Total Notes / Total Sur) × 20   |   Cotes : ${formatCoteLegend(false)}`)
-        : buildDynamicFormulaHint(options?.gradingPolicy, isEn, spec.appreciationScale);
+            ? `Formula: Average/20 = (Total Marks / Total On) × 20   |   Grades: ${formatCoteLegend(true, effectiveScaleConfig.cote)}`
+            : `Règle de calcul : Moyenne/20 = (Total Notes / Total Sur) × 20   |   Cotes : ${formatCoteLegend(false, effectiveScaleConfig.cote)}`)
+        : buildDynamicFormulaHint(options?.gradingPolicy, isEn, spec.appreciationScale, spec.scaleConfig);
 
   if (resolvedFormulaHint.length > 0) {
     const hy = doc.y;
@@ -288,7 +308,7 @@ export function drawMeasuredSubjectTable(
     }
 
     for (const line of grp.lines) {
-      const rowH = measureRowHeight(doc, fonts, line, spec.columns, colWidths, fontSize, isEn, layoutVariant);
+      const rowH = measureRowHeight(doc, fonts, line, spec.columns, colWidths, fontSize, isEn, layoutVariant, effectiveScaleConfig);
       ensureSpace(rowH);
       const ry = doc.y;
       const bg = rowIdx % 2 === 0 ? '#ffffff' : '#f8fafc';
@@ -300,7 +320,7 @@ export function drawMeasuredSubjectTable(
         if (i > 0) doc.moveTo(cx, ry).lineTo(cx, ry + rowH).strokeColor('#cbd5e1').lineWidth(0.4).stroke();
         const isBoldCol = isBoldSubjectColumn(col.key);
         doc.font(isBoldCol ? fonts.bold : fonts.regular).fontSize(fontSize).fillColor('#0f172a')
-          .text(formatSubjectCell(line, col.key, isEn, layoutVariant), cx + 2, ry + 1.5, {
+          .text(formatSubjectCell(line, col.key, isEn, layoutVariant, effectiveScaleConfig), cx + 2, ry + 1.5, {
             width: Math.max(6, w - 4),
             align: col.align ?? (col.key === 'subjectName' || col.key === 'teacherComment' || col.key === 'teacherName' || col.key === 'competenceLabel' ? 'left' : 'center'),
             lineGap: 0.35,
