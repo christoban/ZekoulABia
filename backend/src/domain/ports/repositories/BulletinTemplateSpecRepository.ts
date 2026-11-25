@@ -11,3 +11,4 @@ export interface BulletinTemplateSpecRepository {
   findBySpecAndVersion(specId: string, version: number): Promise<BulletinTemplateSpec | null>;
   saveVersion(spec: BulletinTemplateSpec, createdById?: string | null): Promise<BulletinTemplateSpec>;
 }
+

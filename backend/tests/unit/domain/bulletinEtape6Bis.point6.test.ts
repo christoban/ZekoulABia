@@ -81,3 +81,4 @@ describe('Étape 6 bis — Point 6 : Famille C cadre parents vide & observation 
     expect(obsDrawn!.x!).toBeGreaterThanOrEqual(principalHdr!.x! - 4);
   });
 });
+

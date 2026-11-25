@@ -79,3 +79,4 @@ describe('Étape 6 bis — Point 1 : classe fictive cohérente (30 à 40 élève
     }
   });
 });
+

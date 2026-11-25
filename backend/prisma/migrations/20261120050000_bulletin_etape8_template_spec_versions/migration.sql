@@ -19,3 +19,4 @@ ON "BulletinTemplateSpecRecord"("specId", "version");
 
 CREATE INDEX "BulletinTemplateSpecRecord_specId_status_idx"
 ON "BulletinTemplateSpecRecord"("specId", "status");
+

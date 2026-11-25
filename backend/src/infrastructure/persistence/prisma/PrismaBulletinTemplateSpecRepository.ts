@@ -46,3 +46,4 @@ export class PrismaBulletinTemplateSpecRepository implements BulletinTemplateSpe
     return hydrated;
   }
 }
+

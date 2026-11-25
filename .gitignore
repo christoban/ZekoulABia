@@ -51,3 +51,6 @@ skills-lock.json
 
 # Photos réelles de référence (données élèves protégées)
 /bulletin/
+
+# Données extraites MINESEC (hors code source)
+donnees-extraites/
