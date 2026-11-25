@@ -112,6 +112,7 @@ export function createAcademicContainer(core: CoreContainerContext) {
       schoolIdentityKitRepository,
       schoolAssetStorage,
       templateSpecRepository,
+      core.fileStorage,
     ),
     envoyer: envoyerBulletinsUseCase,
     verifierDisponibilite: new VerifierDisponibiliteBulletinUseCase(
@@ -132,6 +133,7 @@ export function createAcademicContainer(core: CoreContainerContext) {
       bulletinPdfStorage,
       core.schoolConfigRepository,
       templateSpecRepository,
+      core.fileStorage,
     ),
     publierBulletins: new PublierBulletinsClasseUseCase(
       bulletinValidationRepository,
@@ -141,6 +143,7 @@ export function createAcademicContainer(core: CoreContainerContext) {
       bulletinPdfStorage,
       core.schoolConfigRepository,
       templateSpecRepository,
+      core.fileStorage,
     ),
     bulletinValidationRepository,
     bulletinRepository: core.bulletinRepository,

@@ -26,6 +26,7 @@ export class ValiderBulletinsClasseUseCase {
     private readonly bulletinPdfStorage?: BulletinPdfStoragePort,
     private readonly schoolConfigRepository?: SchoolConfigRepository,
     private readonly templateSpecRepository?: BulletinTemplateSpecRepository,
+    private readonly fileStorage?: import('@domain/ports/services/FileStoragePort').FileStoragePort,
   ) {}
 
   async execute(commande: ValiderBulletinsCommande) {
@@ -70,6 +71,7 @@ export class ValiderBulletinsClasseUseCase {
       bulletinPdfStorage: this.bulletinPdfStorage,
       schoolConfigRepository: this.schoolConfigRepository,
       templateSpecRepository: this.templateSpecRepository,
+      fileStorage: this.fileStorage,
     });
 
     return { session: updated };

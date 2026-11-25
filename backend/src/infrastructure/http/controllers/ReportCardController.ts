@@ -61,6 +61,7 @@ export class ReportCardController {
     private readonly schoolIdentityKitRepository?: SchoolIdentityKitRepository,
     private readonly schoolAssetStorage?: SchoolAssetStoragePort,
     private readonly templateSpecRepository?: BulletinTemplateSpecRepository,
+    private readonly fileStorage?: import('@domain/ports/services/FileStoragePort').FileStoragePort,
   ) {}
 
   // POST /api/v2/report-cards/generate
@@ -160,7 +161,7 @@ export class ReportCardController {
         requestedPeriodId: req.body?.academicPeriodId as string | undefined,
         anneeRepository: this.anneeRepository, bulletinRepository: this.bulletinRepository,
         bulletinRenderer: this.bulletinRenderer, schoolAssetStorage: this.schoolAssetStorage,
-        templateSpecRepository: this.templateSpecRepository,
+        templateSpecRepository: this.templateSpecRepository, fileStorage: this.fileStorage,
       });
     } catch (error) {
       if (!res.headersSent) {
@@ -256,7 +257,7 @@ export class ReportCardController {
         requestedPeriodId: req.body?.academicPeriodId as string | undefined,
         anneeRepository: this.anneeRepository, bulletinRepository: this.bulletinRepository,
         bulletinRenderer: this.bulletinRenderer, bulletinPdfStorage: this.bulletinPdfStorage,
-        templateSpecRepository: this.templateSpecRepository,
+        templateSpecRepository: this.templateSpecRepository, fileStorage: this.fileStorage,
       });
     } catch (error) {
       if (!res.headersSent) {
@@ -361,6 +362,7 @@ export class ReportCardController {
         bulletinRenderer: this.bulletinRenderer,
         bulletinPdfStorage: this.bulletinPdfStorage,
         templateSpecRepository: this.templateSpecRepository,
+        fileStorage: this.fileStorage,
       });
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
@@ -407,6 +409,7 @@ export class ReportCardController {
         bulletinRenderer: this.bulletinRenderer,
         bulletinPdfStorage: this.bulletinPdfStorage,
         templateSpecRepository: this.templateSpecRepository,
+        fileStorage: this.fileStorage,
         forceRegenerateFromSnapshot: true,
         persistRegeneratedPdf: true,
       });

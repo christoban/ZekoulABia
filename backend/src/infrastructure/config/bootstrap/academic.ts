@@ -76,6 +76,7 @@ export function registerAcademicRoutes(app: Application, prismaParam: typeof pri
     c.reportCard.schoolIdentityKitRepository,
     c.reportCard.schoolAssetStorage,
     c.reportCard.templateSpecRepository,
+    c.fileStorage,
   );
 
   const masterBulletinAtelierController = new MasterBulletinAtelierController(
@@ -144,6 +145,7 @@ export function registerAcademicRoutes(app: Application, prismaParam: typeof pri
     c.studentDocument.bulletinRepository,
     c.studentDocument.documentRepository,
     c.parent.parentRepository,
+    c.fileStorage,
   );
   app.use('/api/v2', creerStudentDocumentRoutes(studentDocumentController));
 

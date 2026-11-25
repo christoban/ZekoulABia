@@ -94,6 +94,7 @@ export class GenererBulletinUseCase {
     private readonly schoolIdentityKitRepository?: SchoolIdentityKitRepository,
     private readonly schoolAssetStorage?: SchoolAssetStoragePort,
     private readonly templateSpecRepository?: BulletinTemplateSpecRepository,
+    private readonly fileStorage?: import('@domain/ports/services/FileStoragePort').FileStoragePort,
   ) {}
 
   async execute(commande: GenererBulletinCommande): Promise<GenererBulletinResultat> {
@@ -285,6 +286,7 @@ export class GenererBulletinUseCase {
         studentPhotoUrl: rawPhotoByStudent.get(eleve.id),
         bulletinRenderer: this.bulletinRenderer,
         bulletinPdfStorage: this.bulletinPdfStorage,
+        fileStorage: this.fileStorage,
       });
 
       if (!storedKey) {

@@ -14,6 +14,8 @@ import { BulletinBloqueError } from '@domain/errors/BulletinBloqueError';
 import { MatiereSansGroupeError } from '@domain/errors/MatiereSansGroupeError';
 import { GENERAL_GROUPED_V1, findDefaultSpecForTemplate, getPublishedTemplateSpec } from '@domain/templates/bulletinCatalog';
 import { resolveLanguage } from '../../../../domain/policies/LanguagePolicy';
+import { resolveStudentPhotoBuffer } from '@application/student/studentPhotoService';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
 import {
   buildRenderOptionsForExport,
   createBatchSchoolIdentityContextCache,
@@ -284,6 +286,7 @@ export async function streamClassReportCardsZip(params: {
   bulletinRenderer?: BulletinRendererPort;
   bulletinPdfStorage?: BulletinPdfStoragePort;
   templateSpecRepository?: BulletinTemplateSpecRepository;
+  fileStorage?: FileStoragePort;
 }): Promise<void> {
   const { res, schoolId, classId } = params;
   const ctx = await resolveExportPeriodAndBulletins(params);
@@ -300,6 +303,7 @@ export async function streamClassReportCardsZip(params: {
       bulletinRenderer: params.bulletinRenderer,
       bulletinPdfStorage: params.bulletinPdfStorage,
       templateSpecRepository: params.templateSpecRepository,
+      fileStorage: params.fileStorage,
     });
     archive.append(pdfBuffer, { name: `bulletin-${studentName.replace(/\s+/g, '-')}.pdf` });
   }
@@ -317,6 +321,7 @@ export async function streamClassReportCardsMergedPdf(params: {
   bulletinRenderer?: BulletinRendererPort;
   schoolAssetStorage?: SchoolAssetStoragePort;
   templateSpecRepository?: BulletinTemplateSpecRepository;
+  fileStorage?: FileStoragePort;
 }): Promise<void> {
   const { res, schoolId, classId, bulletinRenderer } = params;
   if (!bulletinRenderer?.renderMergedClassPdf) {
@@ -353,6 +358,11 @@ export async function streamClassReportCardsMergedPdf(params: {
       rc.section?.code ?? rc.student?.studentProfile?.enrollmentsYearScoped?.[0]?.class?.section?.code ?? null;
     const language = resolveLanguage(rc.school?.subsystem, sectionCode);
     const schoolIdentity = await identityCache.getForLanguage(language);
+    const resolvedPhoto = await resolveStudentPhotoBuffer({
+      photoUrl: rc.student?.studentProfile?.photoUrl,
+      schoolId: params.schoolId,
+      fileStorage: params.fileStorage,
+    });
     items.push({
       snapshot: rc.snapshotData,
       templateSpec: spec,
@@ -362,6 +372,7 @@ export async function streamClassReportCardsMergedPdf(params: {
         verifyBaseUrl,
         schoolMotto: rc.school?.schoolSettings?.schoolMotto,
         schoolIdentity,
+        studentPhotoBuffer: resolvedPhoto?.buffer ?? null,
       }),
     });
   }

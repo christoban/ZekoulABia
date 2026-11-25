@@ -72,6 +72,7 @@ export async function renderReportCardPdfBuffer(
     bulletinPdfStorage?: BulletinPdfStoragePort;
     schoolAssetStorage?: SchoolAssetStoragePort;
     templateSpecRepository?: BulletinTemplateSpecRepository;
+    fileStorage?: import('@domain/ports/services/FileStoragePort').FileStoragePort;
     forceRegenerateFromSnapshot?: boolean;
     persistRegeneratedPdf?: boolean;
   },
@@ -108,6 +109,7 @@ export async function renderReportCardPdfBuffer(
     bulletinPdfStorage: measuredDeps?.bulletinPdfStorage,
     schoolAssetStorage: measuredDeps?.schoolAssetStorage ?? DEFAULT_SCHOOL_ASSET_STORAGE,
     templateSpecRepository: measuredDeps?.templateSpecRepository,
+    fileStorage: measuredDeps?.fileStorage,
   });
   if (sealedBuffer) {
     return { pdfBuffer: sealedBuffer, filename, studentName };

@@ -27,6 +27,7 @@ import { PrismaSchoolIdentityKitRepository } from "../../persistence/prisma/Pris
 import { MeasuredPdfKitBulletinRenderer } from "../../pdf/renderer/MeasuredPdfKitBulletinRenderer";
 import { createBulletinPdfStorageAdapter } from "../../services/storage/S3CompatibleBulletinPdfStorageAdapter";
 import { LocalAndDataUriSchoolAssetStorageAdapter } from "../../services/storage/LocalAndDataUriSchoolAssetStorageAdapter";
+import { createFileStorageAdapter } from "../../services/storage/createFileStorageAdapter";
 import { BulletinBloqueError } from "@domain/errors/BulletinBloqueError";
 import { MatiereSansGroupeError } from "@domain/errors/MatiereSansGroupeError";
 import { DetecterChuteMoyenneUseCase, trouverSequencePrecedente } from "@application/grade/DetecterChuteMoyenneUseCase";
@@ -93,6 +94,7 @@ export const generateReportCards = inngest.createFunction(
       new PrismaSchoolIdentityKitRepository(prisma),
       new LocalAndDataUriSchoolAssetStorageAdapter(),
       new PrismaBulletinTemplateSpecRepository(prisma),
+      createFileStorageAdapter(),
     );
 
     const { academicYear, academicPeriod, generatedStudents } = await step.run("generate-report-cards", async () => {

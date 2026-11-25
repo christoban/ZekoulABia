@@ -31,6 +31,7 @@ export class PublierBulletinsClasseUseCase {
     private readonly bulletinPdfStorage?: BulletinPdfStoragePort,
     private readonly schoolConfigRepository?: SchoolConfigRepository,
     private readonly templateSpecRepository?: BulletinTemplateSpecRepository,
+    private readonly fileStorage?: import('@domain/ports/services/FileStoragePort').FileStoragePort,
   ) {}
 
   async execute(commande: PublierBulletinsCommande) {
@@ -76,6 +77,7 @@ export class PublierBulletinsClasseUseCase {
       bulletinPdfStorage: this.bulletinPdfStorage,
       schoolConfigRepository: this.schoolConfigRepository,
       templateSpecRepository: this.templateSpecRepository,
+      fileStorage: this.fileStorage,
     });
 
     // 6. Envoyer les emails aux parents

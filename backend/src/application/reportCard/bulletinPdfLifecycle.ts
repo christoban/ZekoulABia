@@ -13,7 +13,9 @@ import type { BulletinTemplateAssignmentRepository } from '@domain/ports/reposit
 import type { BulletinTemplateSpecRepository } from '@domain/ports/repositories/BulletinTemplateSpecRepository';
 import type { SchoolConfigData, SchoolConfigRepository } from '@domain/ports/repositories/SchoolConfigRepository';
 import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
 import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
+import { resolveStudentPhotoBuffer } from '@application/student/studentPhotoService';
 import type {
   BulletinGradingPolicy,
   BulletinRendererPort,
@@ -168,10 +170,14 @@ export function buildRenderOptionsForExport(
     verifyBaseUrl: string;
     schoolMotto?: string | null;
     schoolIdentity?: SchoolIdentityRenderContext;
+    studentPhotoBuffer?: Buffer | null;
   },
 ): BulletinRenderOptions {
   const cls = reportCard.student?.studentProfile?.enrollmentsYearScoped?.[0]?.class;
-  const studentPhotoBuffer = decodeBase64PhotoUrl(reportCard.student?.studentProfile?.photoUrl);
+  const studentPhotoBuffer =
+    params.studentPhotoBuffer !== undefined
+      ? params.studentPhotoBuffer
+      : decodeBase64PhotoUrl(reportCard.student?.studentProfile?.photoUrl);
   const verifyToken = reportCard.verifyToken ?? undefined;
   const shortVerifyCode =
     reportCard.shortVerifyCode ?? (verifyToken ? deriveShortVerifyCode(verifyToken) : undefined);
@@ -241,6 +247,7 @@ export async function sealAndStoreBulletinsForClass(params: {
   schoolConfigRepository?: SchoolConfigRepository;
   schoolAssetStorage?: SchoolAssetStoragePort;
   templateSpecRepository?: BulletinTemplateSpecRepository;
+  fileStorage?: FileStoragePort;
   verifyBaseUrl?: string;
 }): Promise<{ sealedCount: number }> {
   if (!params.bulletinRenderer || !params.bulletinPdfStorage) {
@@ -289,11 +296,17 @@ export async function sealAndStoreBulletinsForClass(params: {
       row.section?.code ?? row.student?.studentProfile?.enrollmentsYearScoped?.[0]?.class?.section?.code ?? null;
     const language = resolveLanguage(row.school?.subsystem, sectionCode);
     const schoolIdentity = await batchIdentityCache.getForLanguage(language);
+    const resolvedPhoto = await resolveStudentPhotoBuffer({
+      photoUrl: row.student?.studentProfile?.photoUrl,
+      schoolId: params.schoolId,
+      fileStorage: params.fileStorage,
+    });
     const options = buildRenderOptionsForExport(row, {
       role: 'ADMIN',
       language,
       verifyBaseUrl,
       schoolIdentity,
+      studentPhotoBuffer: resolvedPhoto?.buffer ?? null,
     });
 
     const pdfBuffer = await params.bulletinRenderer.render(row.snapshotData, spec, options);
@@ -327,6 +340,7 @@ export async function getOrRegenerateSealedBulletinPdf(params: {
   bulletinPdfStorage?: BulletinPdfStoragePort;
   schoolAssetStorage?: SchoolAssetStoragePort;
   templateSpecRepository?: BulletinTemplateSpecRepository;
+  fileStorage?: FileStoragePort;
 }): Promise<Buffer | null> {
   const useMeasured = params.reportCard.school?.schoolConfig?.useMeasuredBulletinRenderer === true;
   if (useMeasured && params.reportCard.templateSpecId) {
@@ -364,12 +378,18 @@ export async function getOrRegenerateSealedBulletinPdf(params: {
     kit: params.reportCard.school?.identityKit,
     schoolAssetStorage: params.schoolAssetStorage,
   });
+  const resolvedPhoto = await resolveStudentPhotoBuffer({
+    photoUrl: params.reportCard.student?.studentProfile?.photoUrl,
+    schoolId: params.reportCard.schoolId,
+    fileStorage: params.fileStorage,
+  });
   const options = buildRenderOptionsForExport(params.reportCard, {
     role: params.role,
     language: params.language,
     verifyBaseUrl: params.verifyBaseUrl,
     schoolMotto: params.schoolMotto,
     schoolIdentity,
+    studentPhotoBuffer: resolvedPhoto?.buffer ?? null,
   });
   const pdfBuffer = await params.bulletinRenderer.render(params.reportCard.snapshotData, spec, options);
 
@@ -411,9 +431,15 @@ export async function renderAndStoreBulletinIfSpecActive(params: {
   studentPhotoUrl?: string | null;
   bulletinRenderer?: BulletinRendererPort;
   bulletinPdfStorage?: BulletinPdfStoragePort;
+  fileStorage?: FileStoragePort;
 }): Promise<string | null> {
   if (!params.spec || !params.bulletinRenderer) return null;
-  const studentPhotoBuffer = decodeBase64PhotoUrl(params.studentPhotoUrl);
+  const resolvedPhoto = await resolveStudentPhotoBuffer({
+    photoUrl: params.studentPhotoUrl,
+    schoolId: params.schoolId,
+    fileStorage: params.fileStorage,
+  });
+  const studentPhotoBuffer = resolvedPhoto?.buffer ?? null;
   const options: BulletinRenderOptions = {
     className: params.className,
     periodName: params.periodName,

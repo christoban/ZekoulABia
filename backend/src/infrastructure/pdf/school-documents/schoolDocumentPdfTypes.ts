@@ -32,6 +32,7 @@ export type CarteData = {
   className: string;
   yearName: string;
   photoUrl?: string;
+  photoBuffer?: Buffer | null;
   emergencyContact?: string;
   emergencyPhone?: string;
   generatedAt: Date;

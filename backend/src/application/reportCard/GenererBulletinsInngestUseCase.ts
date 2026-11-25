@@ -92,6 +92,7 @@ export class GenererBulletinsInngestUseCase {
     private readonly schoolIdentityKitRepository?: SchoolIdentityKitRepository,
     private readonly schoolAssetStorage?: SchoolAssetStoragePort,
     private readonly templateSpecRepository?: BulletinTemplateSpecRepository,
+    private readonly fileStorage?: import('@domain/ports/services/FileStoragePort').FileStoragePort,
   ) {}
 
   async generer(
@@ -274,6 +275,7 @@ export class GenererBulletinsInngestUseCase {
           studentPhotoUrl: rawPhotoByStudent.get(eleve.id),
           bulletinRenderer: this.bulletinRenderer,
           bulletinPdfStorage: this.bulletinPdfStorage,
+          fileStorage: this.fileStorage,
         });
 
         bulletin.marquerGenere(storedKey ?? `bulletins/${academicYear.schoolId}/${bulletin.id}.pdf`);

@@ -31,13 +31,24 @@ export async function generateCarteScolairepdf(data: CarteData): Promise<Buffer>
     const photoW = 75;
     const photoH = 90;
 
-    if (data.photoUrl && data.photoUrl.startsWith("data:")) {
+    let imgBuf: Buffer | null = data.photoBuffer ?? null;
+    if (!imgBuf && data.photoUrl && data.photoUrl.startsWith("data:")) {
       const base64 = data.photoUrl.split(",")[1];
       if (base64) {
-        const imgBuf = Buffer.from(base64, "base64");
-        d.image(imgBuf, photoX, photoY, { width: photoW, height: photoH });
+        imgBuf = Buffer.from(base64, "base64");
       }
-    } else {
+    }
+
+    let photoDrawn = false;
+    if (imgBuf && imgBuf.length > 0) {
+      try {
+        d.image(imgBuf, photoX, photoY, { width: photoW, height: photoH });
+        photoDrawn = true;
+      } catch {
+        photoDrawn = false;
+      }
+    }
+    if (!photoDrawn) {
       d.rect(photoX, photoY, photoW, photoH).fillAndStroke("#e2e8f0", "#94a3b8");
       d
         .fontSize(6)
