@@ -4,10 +4,8 @@ import type { FactureRepository } from '@domain/ports/repositories/FactureReposi
 import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolConfigRepository';
 import type { BulletinExportData, BulletinRepository } from '@domain/ports/repositories/BulletinRepository';
 import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
-import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
-import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
 import type { BulletinTemplateSpecRepository } from '@domain/ports/repositories/BulletinTemplateSpecRepository';
-import { LocalAndDataUriSchoolAssetStorageAdapter } from '@infrastructure/services/storage/LocalAndDataUriSchoolAssetStorageAdapter';
 import { getOrRegenerateSealedBulletinPdf } from '@application/reportCard/bulletinPdfLifecycle';
 import { resolveLanguage } from '@domain/policies/LanguagePolicy';
 import { buildLongTokenVerifyUrl } from '@domain/policies/BulletinVerifyCrypto';
@@ -15,8 +13,6 @@ import { generateBulletinPdf } from '@infrastructure/pdf/report-card/index';
 import { getMention } from '@infrastructure/pdf/report-card/BulletinPdfHelpers';
 import { getEffectiveSchoolSettings } from '@infrastructure/services/school-settings/SchoolSettingsService';
 import { resolvePublicVerifyBaseUrl } from '@infrastructure/config/EnvAppConfig';
-
-const DEFAULT_SCHOOL_ASSET_STORAGE = new LocalAndDataUriSchoolAssetStorageAdapter();
 
 export async function isBulletinBlockedByUnpaidFees(params: {
   schoolConfigRepository?: SchoolConfigRepository;
@@ -69,9 +65,8 @@ export async function renderReportCardPdfBuffer(
   cachedSettings?: Awaited<ReturnType<typeof getEffectiveSchoolSettings>>,
   measuredDeps?: {
     bulletinRenderer?: BulletinRendererPort;
-    bulletinPdfStorage?: BulletinPdfStoragePort;
-    schoolAssetStorage?: SchoolAssetStoragePort;
     templateSpecRepository?: BulletinTemplateSpecRepository;
+    fileStorage?: FileStoragePort;
     forceRegenerateFromSnapshot?: boolean;
     persistRegeneratedPdf?: boolean;
   },
@@ -105,9 +100,8 @@ export async function renderReportCardPdfBuffer(
     forceRegenerateFromSnapshot: measuredDeps?.forceRegenerateFromSnapshot,
     persistRegeneratedPdf: measuredDeps?.persistRegeneratedPdf,
     bulletinRenderer: measuredDeps?.bulletinRenderer,
-    bulletinPdfStorage: measuredDeps?.bulletinPdfStorage,
-    schoolAssetStorage: measuredDeps?.schoolAssetStorage ?? DEFAULT_SCHOOL_ASSET_STORAGE,
     templateSpecRepository: measuredDeps?.templateSpecRepository,
+    fileStorage: measuredDeps?.fileStorage,
   });
   if (sealedBuffer) {
     return { pdfBuffer: sealedBuffer, filename, studentName };

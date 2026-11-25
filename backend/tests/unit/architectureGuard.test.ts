@@ -361,3 +361,44 @@ describe('Garde-fou hexagonal — cohérence de placement des ports', () => {
     ).toEqual([]);
   });
 });
+
+describe('Garde-fou stockage de fichiers — port unique FileStoragePort et zéro écriture disque hors adaptateur', () => {
+  it('aucune écriture disque (writeFile/writeFileSync/createWriteStream) dans le runtime hors LocalDiskFileStorage.ts', () => {
+    const violations: string[] = [];
+    // Seul LocalDiskFileStorage est autorisé à persister des fichiers sur le disque applicatif.
+    // Exceptions strictement bornées :
+    // - application/statisticalCampaign/xlsEngine.ts : scratch éphémère dans os.tmpdir() supprimé dans finally ;
+    // - scripts/ : outils CLI hors runtime HTTP.
+    const ALLOWED_FILES = new Set([
+      'infrastructure/services/storage/LocalDiskFileStorage.ts',
+      'application/statisticalCampaign/xlsEngine.ts',
+    ]);
+    const writeCallRe = /\b(?:writeFile|writeFileSync|createWriteStream)\s*\(/;
+
+    for (const fichier of listerFichiersTs(ROOT)) {
+      const rel = relative(ROOT, fichier).replace(/\\/g, '/');
+      if (ALLOWED_FILES.has(rel) || rel.startsWith('scripts/')) continue;
+      const lignes = readFileSync(fichier, 'utf8').split('\n');
+      lignes.forEach((ligne, idx) => {
+        if (/^\s*(?:\/\/|\*)/.test(ligne)) return;
+        if (writeCallRe.test(ligne)) {
+          violations.push(`${rel}:${idx + 1} → ${ligne.trim()}`);
+        }
+      });
+    }
+
+    expect(
+      violations,
+      `Toute écriture de fichier doit passer par FileStoragePort (aucun fs.writeFile* hors LocalDiskFileStorage) :\n${violations.join('\n')}`,
+    ).toEqual([]);
+  });
+
+  it('un seul port de stockage de fichiers (FileStoragePort) subsiste dans domain/ports/services/', () => {
+    const servicesPortsDir = join(DOMAIN, 'ports', 'services');
+    const storagePorts = listerFichiersTs(servicesPortsDir)
+      .map((f) => relative(servicesPortsDir, f).replace(/\\/g, '/'))
+      .filter((name) => /StoragePort\.ts$/i.test(name));
+
+    expect(storagePorts).toEqual(['FileStoragePort.ts']);
+  });
+});

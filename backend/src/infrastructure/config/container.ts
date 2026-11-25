@@ -83,6 +83,7 @@ export function creerContainer() {
       publisher: core.eventPublisher,
     },
     activityLog: core.activityLog,
+    fileStorage: core.fileStorage,
   };
 }
 

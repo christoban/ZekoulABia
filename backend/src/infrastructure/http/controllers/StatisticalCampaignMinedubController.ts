@@ -1,8 +1,11 @@
 import type { Request, Response, NextFunction } from 'express';
-import fs from 'fs';
-import path from 'path';
 import type { MinedubReportRepository } from '@domain/ports/repositories/MinedubReportRepository';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
 import { GenererRapportSyntheseMinedubUseCase } from '@application/statisticalCampaignMinedub/GenererRapportSyntheseMinedubUseCase';
+import {
+  resolveScopedStorageKeyOrRespond,
+  sendStoredFileResponse,
+} from '../helpers/fileStorageHttpHelper';
 
 /**
  * Préfixe /api/v2/statistical-campaign-minedub. Rapport PDF de synthèse MINEDUB (préscolaire/
@@ -12,6 +15,7 @@ export class StatisticalCampaignMinedubController {
   constructor(
     private readonly _genererRapport: GenererRapportSyntheseMinedubUseCase,
     private readonly minedubReportRepository: MinedubReportRepository,
+    private readonly fileStorage: FileStoragePort,
   ) {}
 
   // GET /api/v2/statistical-campaign-minedub/supplement
@@ -63,17 +67,32 @@ export class StatisticalCampaignMinedubController {
       const schoolId = req.user!.schoolId;
       const id = String(req.params['id']);
       const report = await this.minedubReportRepository.trouverRapportParId(id);
-      if (!report || report.schoolId !== schoolId) {
+      if (!report || report.schoolId !== schoolId || !report.filePath) {
         res.status(404).json({ success: false, message: 'Rapport introuvable' });
         return;
       }
-      if (!fs.existsSync(report.filePath)) {
+
+      const validKey = resolveScopedStorageKeyOrRespond(
+        res,
+        report.filePath,
+        schoolId,
+        'Fichier introuvable — régénérez le rapport',
+      );
+      if (!validKey) return;
+
+      const stored = await this.fileStorage.get(validKey);
+      if (!stored) {
         res.status(404).json({ success: false, message: 'Fichier introuvable — régénérez le rapport' });
         return;
       }
-      res.setHeader('Content-Disposition', `attachment; filename="${path.basename(report.filePath)}"`);
-      res.setHeader('Content-Type', 'application/pdf');
-      fs.createReadStream(report.filePath).pipe(res);
+
+      const filename = stored.metadata?.originalName ?? `rapport-minedub-${report.id}.pdf`;
+      sendStoredFileResponse(res, {
+        buffer: stored.buffer,
+        contentType: stored.contentType ?? 'application/pdf',
+        filename,
+        disposition: 'attachment',
+      });
     } catch (err) { next(err); }
   };
 }

@@ -13,7 +13,9 @@ import fs from 'fs';
 import path from 'path';
 import type { StatisticalQueryPort, EcoleIdentification } from '@domain/ports/repositories/StatisticalQueryPort';
 import type { StatisticalCampaignRepository, SupplementData, TemplateData } from '@domain/ports/repositories/StatisticalCampaignRepository';
-import { decryptTemplate, setCellValue, writeWorkbookToFile, cleanupSession, type WorkbookSession } from './xlsEngine';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
+import { buildScopedStorageKey } from '@domain/services/storage/fileStorageValidation';
+import { decryptTemplate, setCellValue, writeWorkbookToBuffer, cleanupSession, type WorkbookSession } from './xlsEngine';
 import { resolveEsgFields, resolveIdentificationAutoFields, resolveFeeAutoFields, type ResolvedCell } from './resolveAutoFields';
 import { resolveEsgEngFields } from './resolveEsgEngFields';
 import { resolvePersonnelFields } from './resolvePersonnelFields';
@@ -64,13 +66,12 @@ export function pickManuelsDetail(supplement: unknown): ManuelDetailEntry[] {
   return [];
 }
 
-const STORAGE_DIR = path.resolve(process.cwd(), 'storage', 'statistical-submissions');
-
 export class GenererDeclarationStatistiqueMinesecUseCase {
   constructor(
     private readonly query: StatisticalQueryPort,
     private readonly campaignRepository: StatisticalCampaignRepository,
     private readonly verifierCompletude: VerifierCompletudeSupplementUseCase,
+    private readonly fileStorage: FileStoragePort,
   ) {}
 
   async execute(cmd: GenererDeclarationStatistiqueCommande): Promise<GenererDeclarationStatistiqueResultat> {
@@ -346,25 +347,31 @@ export class GenererDeclarationStatistiqueMinesecUseCase {
     applyCells(atelierResolved.cells);
     champsNonResolus.push(...atelierResolved.nonCouverts);
 
-    const outDir = path.join(STORAGE_DIR, cmd.schoolId);
-    fs.mkdirSync(outDir, { recursive: true });
-    const fileName = `declaration-minesec-${school?.subdomain ?? cmd.schoolId}-${Date.now()}.xls`;
-    const outputPath = path.join(outDir, fileName);
-    await writeWorkbookToFile(session, outputPath);
+    const { buffer, extension, mimeType } = await writeWorkbookToBuffer(session);
+    const storageKey = buildScopedStorageKey({
+      schoolId: cmd.schoolId,
+      domain: 'statistical-submissions',
+      extension,
+    });
+    const originalName = `declaration-minesec-${school?.subdomain ?? cmd.schoolId}-${Date.now()}${extension}`;
+    await this.fileStorage.put(storageKey, buffer, mimeType, {
+      originalName,
+      generatedBy: cmd.generatedByUserId,
+    });
 
     const submission = await this.campaignRepository.creerSubmission({
       schoolId: cmd.schoolId,
       templateId: template.id,
       generatedBy: cmd.generatedByUserId,
       status: 'DRAFT',
-      filePath: outputPath,
+      filePath: storageKey,
       unresolvedFieldsReport: champsNonResolus,
     });
 
     return {
       status: 'DRAFT',
       submissionId: submission.id,
-      filePath: outputPath,
+      filePath: storageKey,
       champsManquants: [],
       champsNonResolus,
     };

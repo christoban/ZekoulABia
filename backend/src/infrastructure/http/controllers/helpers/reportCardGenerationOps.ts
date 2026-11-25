@@ -6,14 +6,14 @@ import type { ClasseRepository } from '@domain/ports/repositories/ClasseReposito
 import type { SchoolRepository } from '@domain/ports/repositories/SchoolRepository';
 import type { SectionRepository } from '@domain/ports/repositories/SectionRepository';
 import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
-import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
-import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
 import type { BulletinTemplateSpecRepository } from '@domain/ports/repositories/BulletinTemplateSpecRepository';
 import type { BulletinTemplate } from '@domain/types/enums';
 import { BulletinBloqueError } from '@domain/errors/BulletinBloqueError';
 import { MatiereSansGroupeError } from '@domain/errors/MatiereSansGroupeError';
 import { GENERAL_GROUPED_V1, findDefaultSpecForTemplate, getPublishedTemplateSpec } from '@domain/templates/bulletinCatalog';
 import { resolveLanguage } from '../../../../domain/policies/LanguagePolicy';
+import { resolveStudentPhotoBuffer } from '@application/student/studentPhotoService';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
 import {
   buildRenderOptionsForExport,
   createBatchSchoolIdentityContextCache,
@@ -22,7 +22,6 @@ import {
 } from '@application/reportCard/bulletinPdfLifecycle';
 import { resolvePublicVerifyBaseUrl } from '@infrastructure/config/EnvAppConfig';
 import { getEffectiveSchoolSettings } from '../../../services/school-settings/SchoolSettingsService';
-import { LocalAndDataUriSchoolAssetStorageAdapter } from '../../../services/storage/LocalAndDataUriSchoolAssetStorageAdapter';
 import { notifyBulletinSms } from '@infrastructure/services/sms/SmsNotificationService';
 import { renderReportCardPdfBuffer } from './reportCardControllerHelpers';
 
@@ -282,8 +281,8 @@ export async function streamClassReportCardsZip(params: {
   anneeRepository: AnneeAcademiqueRepository;
   bulletinRepository: BulletinRepository;
   bulletinRenderer?: BulletinRendererPort;
-  bulletinPdfStorage?: BulletinPdfStoragePort;
   templateSpecRepository?: BulletinTemplateSpecRepository;
+  fileStorage?: FileStoragePort;
 }): Promise<void> {
   const { res, schoolId, classId } = params;
   const ctx = await resolveExportPeriodAndBulletins(params);
@@ -298,8 +297,8 @@ export async function streamClassReportCardsZip(params: {
   for (const reportCard of ctx.reportCards) {
     const { pdfBuffer, studentName } = await renderReportCardPdfBuffer(reportCard, schoolId, 'ADMIN', settings, {
       bulletinRenderer: params.bulletinRenderer,
-      bulletinPdfStorage: params.bulletinPdfStorage,
       templateSpecRepository: params.templateSpecRepository,
+      fileStorage: params.fileStorage,
     });
     archive.append(pdfBuffer, { name: `bulletin-${studentName.replace(/\s+/g, '-')}.pdf` });
   }
@@ -315,8 +314,8 @@ export async function streamClassReportCardsMergedPdf(params: {
   anneeRepository: AnneeAcademiqueRepository;
   bulletinRepository: BulletinRepository;
   bulletinRenderer?: BulletinRendererPort;
-  schoolAssetStorage?: SchoolAssetStoragePort;
   templateSpecRepository?: BulletinTemplateSpecRepository;
+  fileStorage?: FileStoragePort;
 }): Promise<void> {
   const { res, schoolId, classId, bulletinRenderer } = params;
   if (!bulletinRenderer?.renderMergedClassPdf) {
@@ -328,13 +327,14 @@ export async function streamClassReportCardsMergedPdf(params: {
 
   const firstSchool = ctx.reportCards[0]?.school;
   const identityCache = createBatchSchoolIdentityContextCache({
+    schoolId,
     schoolName: firstSchool?.name ?? 'Établissement',
     fallbackMotto: firstSchool?.schoolSettings?.schoolMotto,
     fallbackCity: firstSchool?.city,
     fallbackPhone: firstSchool?.phone,
     fallbackLogoUrl: firstSchool?.logoUrl,
     kit: firstSchool?.identityKit,
-    schoolAssetStorage: params.schoolAssetStorage ?? new LocalAndDataUriSchoolAssetStorageAdapter(),
+    fileStorage: params.fileStorage,
   });
   const verifyBaseUrl = resolvePublicVerifyBaseUrl();
 
@@ -353,6 +353,11 @@ export async function streamClassReportCardsMergedPdf(params: {
       rc.section?.code ?? rc.student?.studentProfile?.enrollmentsYearScoped?.[0]?.class?.section?.code ?? null;
     const language = resolveLanguage(rc.school?.subsystem, sectionCode);
     const schoolIdentity = await identityCache.getForLanguage(language);
+    const resolvedPhoto = await resolveStudentPhotoBuffer({
+      photoUrl: rc.student?.studentProfile?.photoUrl,
+      schoolId: params.schoolId,
+      fileStorage: params.fileStorage,
+    });
     items.push({
       snapshot: rc.snapshotData,
       templateSpec: spec,
@@ -362,6 +367,7 @@ export async function streamClassReportCardsMergedPdf(params: {
         verifyBaseUrl,
         schoolMotto: rc.school?.schoolSettings?.schoolMotto,
         schoolIdentity,
+        studentPhotoBuffer: resolvedPhoto?.buffer ?? null,
       }),
     });
   }

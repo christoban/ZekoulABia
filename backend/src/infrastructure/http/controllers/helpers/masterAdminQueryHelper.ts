@@ -181,13 +181,28 @@ export async function listerEmailLogsAction(
 }
 
 export async function listerSauvegardesAction(
+  queryRepo: MasterAdminQueryRepository,
+  fileStorage: import('@domain/ports/services/FileStoragePort').FileStoragePort | undefined,
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
+    if (!fileStorage) {
+      res.json({ success: true, data: [] });
+      return;
+    }
     const schoolId = typeof req.query.schoolId === 'string' && req.query.schoolId.trim() ? req.query.schoolId.trim() : undefined;
-    const backups = await listSchoolBackups(schoolId);
+    if (schoolId) {
+      const backups = await listSchoolBackups(fileStorage, { schoolId });
+      res.json({ success: true, data: backups });
+      return;
+    }
+    const schools = await queryRepo.listSchools({}, 0, 500);
+    const schoolIds = schools
+      .map((s) => (s && typeof s === 'object' && 'id' in s ? String((s as { id: unknown }).id) : ''))
+      .filter((id) => id.length > 0);
+    const backups = await listSchoolBackups(fileStorage, { schoolIds });
     res.json({ success: true, data: backups });
   } catch (error) {
     gererErreurMasterAdmin(error, res, next);

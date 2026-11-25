@@ -1,14 +1,18 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { SchoolAdminQueriesRepository } from '@domain/ports/repositories/SchoolAdminQueriesRepository';
 import type { ObtenirAnomaliesEtablissementUseCase } from '@application/school/ObtenirAnomaliesEtablissementUseCase';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
+import { assertKeyBelongsToSchool } from '@domain/services/storage/fileStorageValidation';
 import { getTemplateMeta } from '@application/school/schoolTemplateConfig';
 import { getStaffTitlesForTemplate } from '@domain/rules/StaffPermissionRules';
 import { getLatestSchoolBackup } from '@infrastructure/backup/SchoolBackupService';
+import { isLegacyDiskPath } from '../helpers/fileStorageHttpHelper';
 
 export class SchoolAdminQueriesController {
   constructor(
     private readonly repo: SchoolAdminQueriesRepository,
     private readonly obtenirAnomaliesUseCase: ObtenirAnomaliesEtablissementUseCase,
+    private readonly fileStorage: FileStoragePort,
   ) {}
 
   // GET /api/v2/school/me
@@ -54,13 +58,24 @@ export class SchoolAdminQueriesController {
     try {
       const schoolId = req.user!.schoolId;
       const settings = await this.repo.findLastBackupSettings(schoolId);
-      const latest = await getLatestSchoolBackup(schoolId);
+      const latest = await getLatestSchoolBackup(schoolId, this.fileStorage);
+
+      let settingsFileExists = false;
+      if (settings?.lastBackupFile && !isLegacyDiskPath(settings.lastBackupFile, schoolId)) {
+        try {
+          const validKey = assertKeyBelongsToSchool(settings.lastBackupFile, schoolId);
+          settingsFileExists = await this.fileStorage.exists(validKey);
+        } catch {
+          settingsFileExists = false;
+        }
+      }
+
       res.json({
         success: true,
         data: {
           lastBackupAt: settings?.lastBackupAt ?? latest?.createdAt ?? null,
           lastBackupFile: settings?.lastBackupFile ?? latest?.filePath ?? null,
-          latestFileExists: Boolean(settings?.lastBackupFile || latest),
+          latestFileExists: Boolean(settingsFileExists || latest),
         },
       });
     } catch (err) {

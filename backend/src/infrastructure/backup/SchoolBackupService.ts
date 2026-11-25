@@ -1,6 +1,6 @@
-import { mkdir, readdir, readFile, rm, stat, writeFile } from 'fs/promises';
-import { join } from 'path';
 import type { PrismaClient } from '@prisma/client';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
+import { buildScopedStorageKey } from '@domain/services/storage/fileStorageValidation';
 
 type BackupSource = 'cron' | 'manual';
 
@@ -18,25 +18,43 @@ export interface SchoolBackupEntry {
   size: number;
 }
 
-const BACKUP_ROOT = join(process.cwd(), 'backups', 'schools');
 const BACKUP_RETENTION_DAYS = 30;
 
-const getSchoolDir = (schoolId: string) => join(BACKUP_ROOT, schoolId);
+const toStamp = (date: Date) => date.toISOString().replace(/[:.]/g, '-');
 
-const ensureDir = async (path: string) => {
-  await mkdir(path, { recursive: true });
-};
+const manifestKeyForSchool = (schoolId: string) =>
+  buildScopedStorageKey({
+    schoolId,
+    domain: 'school-backups',
+    extension: '.json',
+    fileId: 'manifest',
+  });
 
-const exists = async (path: string) => {
+const readSchoolManifest = async (
+  schoolId: string,
+  fileStorage: FileStoragePort,
+): Promise<SchoolBackupEntry[]> => {
+  const stored = await fileStorage.get(manifestKeyForSchool(schoolId));
+  if (!stored) return [];
   try {
-    await stat(path);
-    return true;
+    const parsed = JSON.parse(stored.buffer.toString('utf8')) as unknown;
+    return Array.isArray(parsed) ? (parsed as SchoolBackupEntry[]) : [];
   } catch {
-    return false;
+    return [];
   }
 };
 
-const toStamp = (date: Date) => date.toISOString().replace(/[:.]/g, '-');
+const writeSchoolManifest = async (
+  schoolId: string,
+  entries: SchoolBackupEntry[],
+  fileStorage: FileStoragePort,
+): Promise<void> => {
+  const buffer = Buffer.from(JSON.stringify(entries, null, 2), 'utf8');
+  await fileStorage.put(manifestKeyForSchool(schoolId), buffer, 'application/json', {
+    schoolId,
+    kind: 'backup-manifest',
+  });
+};
 
 export const buildPayload = async (prisma: PrismaClient, schoolId: string) => {
   const db = prisma;
@@ -135,47 +153,43 @@ export const buildPayload = async (prisma: PrismaClient, schoolId: string) => {
   };
 };
 
-const cleanupExpiredBackups = async (schoolId: string) => {
-  const dir = getSchoolDir(schoolId);
-  if (!(await exists(dir))) return;
-
+const cleanupAndPersistManifest = async (
+  schoolId: string,
+  newEntry: SchoolBackupEntry,
+  fileStorage: FileStoragePort,
+): Promise<void> => {
   const cutoff = Date.now() - BACKUP_RETENTION_DAYS * 24 * 60 * 60 * 1000;
-  const files = await readdir(dir, { withFileTypes: true });
+  const existing = await readSchoolManifest(schoolId, fileStorage);
+  const combined = [newEntry, ...existing.filter((e) => e.filePath !== newEntry.filePath)];
 
-  await Promise.all(files.map(async (file) => {
-    if (!file.isFile() || !file.name.endsWith('.json')) return;
-    const filePath = join(dir, file.name);
-    const stats = await stat(filePath);
-    if (stats.mtime.getTime() < cutoff) {
-      await rm(filePath, { force: true });
+  const kept: SchoolBackupEntry[] = [];
+  const expired: SchoolBackupEntry[] = [];
+  for (const entry of combined) {
+    const ts = Date.parse(entry.createdAt);
+    if (!Number.isNaN(ts) && ts < cutoff) {
+      expired.push(entry);
+    } else {
+      kept.push(entry);
     }
-  }));
-};
-
-interface BackupMeta {
-  schoolId: string;
-  requestedByMasterId?: string | null;
-  source?: BackupSource;
-  createdAt: string;
-}
-
-const readBackupMeta = async (filePath: string): Promise<BackupMeta | null> => {
-  try {
-    const raw = await readFile(filePath, 'utf-8');
-    const parsed = JSON.parse(raw) as { meta?: BackupMeta };
-    return parsed?.meta ?? null;
-  } catch {
-    return null;
   }
+
+  await Promise.all(expired.map((entry) => fileStorage.delete(entry.filePath)));
+  kept.sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  await writeSchoolManifest(schoolId, kept, fileStorage);
 };
 
-export const createSchoolBackup = async (prisma: PrismaClient, request: SchoolBackupRequest) => {
-  const schoolDir = getSchoolDir(request.schoolId);
-  await ensureDir(schoolDir);
-
+export const createSchoolBackup = async (
+  prisma: PrismaClient,
+  request: SchoolBackupRequest,
+  fileStorage: FileStoragePort,
+) => {
   const createdAt = new Date();
   const fileName = `${request.schoolId}_${toStamp(createdAt)}.json`;
-  const filePath = join(schoolDir, fileName);
+  const storageKey = buildScopedStorageKey({
+    schoolId: request.schoolId,
+    domain: 'school-backups',
+    extension: '.json',
+  });
 
   const document = {
     meta: {
@@ -187,57 +201,61 @@ export const createSchoolBackup = async (prisma: PrismaClient, request: SchoolBa
     data: await buildPayload(prisma, request.schoolId),
   };
 
-  await writeFile(filePath, JSON.stringify(document, null, 2), 'utf-8');
+  const payloadBuffer = Buffer.from(JSON.stringify(document, null, 2), 'utf8');
+  await fileStorage.put(storageKey, payloadBuffer, 'application/json', {
+    originalName: fileName,
+    schoolId: request.schoolId,
+    source: request.source ?? 'manual',
+    createdAt: createdAt.toISOString(),
+  });
 
   await prisma.schoolSettings.upsert({
     where: { schoolId: request.schoolId },
-    update: { lastBackupAt: createdAt, lastBackupFile: filePath },
-    create: { schoolId: request.schoolId, lastBackupAt: createdAt, lastBackupFile: filePath },
+    update: { lastBackupAt: createdAt, lastBackupFile: storageKey },
+    create: { schoolId: request.schoolId, lastBackupAt: createdAt, lastBackupFile: storageKey },
   });
 
-  await cleanupExpiredBackups(request.schoolId);
+  await cleanupAndPersistManifest(
+    request.schoolId,
+    {
+      schoolId: request.schoolId,
+      fileName,
+      filePath: storageKey,
+      createdAt: createdAt.toISOString(),
+      size: payloadBuffer.length,
+    },
+    fileStorage,
+  );
 
-  return { schoolId: request.schoolId, fileName, filePath, createdAt: createdAt.toISOString() };
+  return { schoolId: request.schoolId, fileName, filePath: storageKey, createdAt: createdAt.toISOString() };
 };
 
-export const listSchoolBackups = async (schoolId?: string): Promise<SchoolBackupEntry[]> => {
-  const dirs = schoolId ? [getSchoolDir(schoolId)] : [];
-
-  if (!schoolId) {
-    if (!(await exists(BACKUP_ROOT))) return [];
-    const rootEntries = await readdir(BACKUP_ROOT, { withFileTypes: true });
-    for (const entry of rootEntries) {
-      if (entry.isDirectory()) {
-        dirs.push(join(BACKUP_ROOT, entry.name));
-      }
-    }
-  }
+export const listSchoolBackups = async (
+  fileStorage: FileStoragePort,
+  options?: { schoolId?: string; schoolIds?: readonly string[] },
+): Promise<SchoolBackupEntry[]> => {
+  const targets = options?.schoolId
+    ? [options.schoolId]
+    : Array.from(new Set(options?.schoolIds ?? []));
 
   const backups: SchoolBackupEntry[] = [];
-  for (const dir of dirs) {
-    if (!(await exists(dir))) continue;
-    const files = await readdir(dir, { withFileTypes: true });
-    for (const file of files) {
-      if (!file.isFile() || !file.name.endsWith('.json')) continue;
-      const filePath = join(dir, file.name);
-      const stats = await stat(filePath);
-      const meta = await readBackupMeta(filePath);
-      backups.push({
-        schoolId: meta?.schoolId ?? file.name.split('_')[0] ?? 'unknown',
-        fileName: file.name,
-        filePath,
-        createdAt: meta?.createdAt ?? stats.mtime.toISOString(),
-        size: stats.size,
-      });
-    }
+  for (const sid of targets) {
+    const entries = await readSchoolManifest(sid, fileStorage);
+    backups.push(...entries);
   }
 
   return backups.sort((left, right) => right.createdAt.localeCompare(left.createdAt));
 };
 
-export const getLatestSchoolBackup = async (schoolId: string) => {
-  const backups = await listSchoolBackups(schoolId);
-  return backups[0] ?? null;
+export const getLatestSchoolBackup = async (
+  schoolId: string,
+  fileStorage: FileStoragePort,
+): Promise<SchoolBackupEntry | null> => {
+  const backups = await listSchoolBackups(fileStorage, { schoolId });
+  const latest = backups[0] ?? null;
+  if (!latest) return null;
+  const stillExists = await fileStorage.exists(latest.filePath);
+  return stillExists ? latest : null;
 };
 
 // ActivitiesLog (audit trail) est délibérément exclu de cette purge : avec seulement

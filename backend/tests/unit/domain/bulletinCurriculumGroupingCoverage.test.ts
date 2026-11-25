@@ -18,7 +18,7 @@ import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolCo
 import type { SchoolIdentityKitRepository } from '@domain/ports/repositories/SchoolIdentityKitRepository';
 import type { BulletinTemplateAssignmentRepository } from '@domain/ports/repositories/BulletinTemplateAssignmentRepository';
 import type { ClasseRepository } from '@domain/ports/repositories/ClasseRepository';
-import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
 
 function createStub<T extends object>(overrides: Partial<T>): T {
   return new Proxy(overrides as Record<string, unknown>, {
@@ -134,7 +134,7 @@ describe('Couverture des schémas de regroupement curricula & mode économique A
       createStub<BulletinTemplateAssignmentRepository>({}),
       createStub<ClasseRepository>({ async findBySchool() { return []; } }),
       new MeasuredPdfKitBulletinRenderer(),
-      createStub<SchoolAssetStoragePort>({ async readAssetBuffer() { return null; } }),
+      createStub<FileStoragePort>({ async get() { return null; } }),
     );
     const noopNext: NextFunction = (err?: unknown) => { if (err) throw err; };
     const masterUser = { id: 'sa-1', role: 'super_admin', email: 'sa@zekoul.cm', isOwner: true, assignedSchoolIds: [] };

@@ -1,9 +1,17 @@
 import type { Request, Response, NextFunction } from 'express';
-import fs from 'fs';
-import path from 'path';
 import { AnalyserDiplomeUseCase } from '@application/hr/AnalyserDiplomeUseCase';
 import { DocumentAiAdapter } from '@infrastructure/services/ai/DocumentAiAdapter';
 import type { EmployeeFileRepository, EmployeeFileData } from '@domain/ports/repositories/EmployeeFileRepository';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
+import {
+  buildScopedStorageKey,
+  validateUploadedFileForDomain,
+} from '@domain/services/storage/fileStorageValidation';
+import {
+  resolveScopedStorageKeyOrRespond,
+  respondFileStorageValidationError,
+  sendStoredFileResponse,
+} from '../helpers/fileStorageHttpHelper';
 
 interface EmployeeDocumentEntry {
   type: string;
@@ -23,13 +31,15 @@ interface EmployeeDocumentEntry {
  * diplômes en texte libre non vérifiable) que seul l'employé concerné peut renseigner
  * fiablement — voir conversation du 13/07/2026.
  */
-const DOCUMENTS_DIR = path.resolve(process.cwd(), 'storage', 'hr-documents');
 const ALLOWED_DOCUMENT_TYPES = ['DIPLOME_ACADEMIQUE', 'DIPLOME_PROFESSIONNEL', 'PIECE_IDENTITE', 'AUTRE'] as const;
 
 export class HRSelfServiceController {
   private readonly analyserDiplome = new AnalyserDiplomeUseCase(new DocumentAiAdapter());
 
-  constructor(private readonly employeeFileRepository: EmployeeFileRepository) {}
+  constructor(
+    private readonly employeeFileRepository: EmployeeFileRepository,
+    private readonly fileStorage: FileStoragePort,
+  ) {}
 
   // GET /api/v2/hr-self-service/me
   getMyFile = async (req: Request, res: Response, next: NextFunction) => {
@@ -74,22 +84,45 @@ export class HRSelfServiceController {
         res.status(400).json({ success: false, message: 'Type de document invalide' }); return;
       }
 
-      const userDir = path.join(DOCUMENTS_DIR, userId);
-      fs.mkdirSync(userDir, { recursive: true });
-      const safeExt = path.extname(file.originalname).toLowerCase();
-      const fileName = `${type}-${Date.now()}${safeExt}`;
-      const filePath = path.join(userDir, fileName);
-      fs.writeFileSync(filePath, file.buffer);
+      const validated = validateUploadedFileForDomain({
+        domain: 'hr-documents',
+        buffer: file.buffer,
+        originalName: file.originalname,
+        declaredMime: file.mimetype,
+      });
+
+      const storageKey = buildScopedStorageKey({
+        schoolId,
+        domain: 'hr-documents',
+        extension: validated.extension,
+      });
+
+      await this.fileStorage.put(storageKey, file.buffer, validated.mimeType, {
+        originalName: validated.originalName,
+        userId,
+        documentType: type,
+        label: label || type,
+      });
 
       const existing = await this.employeeFileRepository.findByUser(userId);
       const documents: EmployeeDocumentEntry[] = Array.isArray(existing?.documentsUrls)
         ? (existing.documentsUrls as unknown as EmployeeDocumentEntry[])
         : [];
-      documents.push({ type, label: label || type, url: filePath, uploadedAt: new Date().toISOString() });
+      documents.push({ type, label: label || type, url: storageKey, uploadedAt: new Date().toISOString() });
 
       const updated = await this.employeeFileRepository.upsertByUser(userId, schoolId, { documentsUrls: documents });
       res.json({ success: true, data: updated });
-    } catch (err) { next(err); }
+    } catch (err) {
+      if (
+        respondFileStorageValidationError(res, err, {
+          invalidFormatMessage: 'Format de fichier non supporté (PDF, JPG, PNG uniquement)',
+          tooLargeMessage: 'Fichier trop volumineux (maximum 8 Mo)',
+        })
+      ) {
+        return;
+      }
+      next(err);
+    }
   };
 
   // POST /api/v2/hr-self-service/me/analyser-diplome (multipart, champ "file")
@@ -114,17 +147,49 @@ export class HRSelfServiceController {
   downloadMyDocument = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = req.user!.userId;
+      const schoolId = req.user!.schoolId;
       const index = Number(req.params['index']);
+      if (!Number.isInteger(index) || index < 0) {
+        res.status(404).json({ success: false, message: 'Document introuvable' });
+        return;
+      }
+
       const file = await this.employeeFileRepository.findByUser(userId);
+      if (file && file.schoolId !== schoolId) {
+        res.status(403).json({ success: false, message: 'Accès refusé' });
+        return;
+      }
+
       const documents: EmployeeDocumentEntry[] = Array.isArray(file?.documentsUrls)
         ? (file.documentsUrls as unknown as EmployeeDocumentEntry[])
         : [];
       const doc = documents[index];
-      if (!doc || !fs.existsSync(doc.url)) {
-        res.status(404).json({ success: false, message: 'Document introuvable' }); return;
+      if (!doc || !doc.url) {
+        res.status(404).json({ success: false, message: 'Document introuvable' });
+        return;
       }
-      res.setHeader('Content-Disposition', `attachment; filename="${path.basename(doc.url)}"`);
-      fs.createReadStream(doc.url).pipe(res);
+
+      const validKey = resolveScopedStorageKeyOrRespond(
+        res,
+        doc.url,
+        schoolId,
+        'Document indisponible (fichier antérieur expiré ou non conservé).',
+      );
+      if (!validKey) return;
+
+      const stored = await this.fileStorage.get(validKey);
+      if (!stored) {
+        res.status(404).json({ success: false, message: 'Document introuvable sur le stockage' });
+        return;
+      }
+
+      const ext = validKey.slice(validKey.lastIndexOf('.')).toLowerCase();
+      const contentType =
+        stored.contentType ??
+        (ext === '.pdf' ? 'application/pdf' : ext === '.png' ? 'image/png' : 'image/jpeg');
+      const filename = stored.metadata?.originalName ?? `${doc.type}${ext}`;
+
+      sendStoredFileResponse(res, { buffer: stored.buffer, contentType, filename, disposition: 'attachment' });
     } catch (err) { next(err); }
   };
 }

@@ -144,7 +144,18 @@ function evaluateProfileCompleteness(
   };
 }
 
-function buildStudentProfilePatchData(body: ProfileBodyPayload): StudentProfilePatchData {
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
+import {
+  parseImageDataUri,
+  storeStudentPhoto,
+  toStudentPhotoApiUrl,
+} from '@application/student/studentPhotoService';
+import { respondFileStorageValidationError } from '../helpers/fileStorageHttpHelper';
+
+async function buildStudentProfilePatchData(
+  body: ProfileBodyPayload,
+  ctx?: { schoolId: string; studentUserId: string; uploadedBy: string; fileStorage?: FileStoragePort },
+): Promise<StudentProfilePatchData> {
   const profileData: StudentProfilePatchData = {};
   if (body.dateOfBirth !== undefined) {
     profileData.dateOfBirth = body.dateOfBirth ? new Date(body.dateOfBirth) : null;
@@ -153,13 +164,37 @@ function buildStudentProfilePatchData(body: ProfileBodyPayload): StudentProfileP
     profileData.gender = body.gender.toUpperCase().startsWith('F') ? 'F' : 'M';
   }
   if (body.photoUrl !== undefined) {
-    profileData.photoUrl = body.photoUrl || null;
+    const raw = typeof body.photoUrl === 'string' ? body.photoUrl.trim() : '';
+    if (!raw) {
+      profileData.photoUrl = null;
+    } else if (raw.startsWith('/api/v2/students/')) {
+      // L'URL d'affichage renvoyée par l'API ne doit pas écraser la clé stockée en base.
+    } else if (raw.startsWith('data:image/') && ctx?.fileStorage) {
+      const parsed = parseImageDataUri(raw);
+      if (parsed) {
+        const stored = await storeStudentPhoto({
+          schoolId: ctx.schoolId,
+          studentUserId: ctx.studentUserId,
+          uploadedBy: ctx.uploadedBy,
+          fileStorage: ctx.fileStorage,
+          buffer: parsed.buffer,
+          originalName: 'profile-photo',
+          declaredMime: parsed.declaredMime,
+        });
+        profileData.photoUrl = stored.storageKey;
+      }
+    } else {
+      profileData.photoUrl = raw;
+    }
   }
   return profileData;
 }
 
 export class StudentPortalQueriesController {
-  constructor(private readonly repo: StudentPortalQueryRepository) {}
+  constructor(
+    private readonly repo: StudentPortalQueryRepository,
+    private readonly fileStorage?: FileStoragePort,
+  ) {}
 
   // GET /api/v2/users/me — infos de l'utilisateur connecté
   getMe = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -212,7 +247,7 @@ export class StudentPortalQueriesController {
               numeroInterne: rawUser.studentProfile.numeroInterne ?? null,
               dateOfBirth: rawUser.studentProfile.dateOfBirth ?? null,
               gender: rawUser.studentProfile.gender ?? null,
-              photoUrl: rawUser.studentProfile.photoUrl ?? null,
+              photoUrl: toStudentPhotoApiUrl(rawUser.studentProfile.photoUrl, rawUser.id),
               healthScore: rawUser.studentProfile.healthScore ?? null,
               pebsFiliere: rawUser.studentProfile.pebsFiliere ?? null,
               lv2Subject: rawUser.studentProfile.lv2Subject ?? null,
@@ -303,7 +338,7 @@ export class StudentPortalQueriesController {
             phone: student.user.phone,
             dateOfBirth: student.dateOfBirth,
             gender: student.gender,
-            photoUrl: student.photoUrl,
+            photoUrl: toStudentPhotoApiUrl(student.photoUrl, req.user!.userId),
             matricule: student.matricule,
             className: activeClass?.name ?? '—',
             classLevel: activeClass?.level ?? null,
@@ -343,15 +378,22 @@ export class StudentPortalQueriesController {
       }
 
       const body = req.body as ProfileBodyPayload;
+      const profileData = await buildStudentProfilePatchData(body, {
+        schoolId: req.user!.schoolId,
+        studentUserId: userId,
+        uploadedBy: userId,
+        fileStorage: this.fileStorage,
+      });
       await this.repo.updateStudentContactAndProfile({
         userId,
         studentProfileId: student.id,
         phone: body.phone,
-        profileData: buildStudentProfilePatchData(body),
+        profileData,
       });
 
       res.json({ success: true, message: 'Profil mis à jour avec succès' });
     } catch (err) {
+      if (respondFileStorageValidationError(res, err)) return;
       next(err);
     }
   };
@@ -375,15 +417,22 @@ export class StudentPortalQueriesController {
       }
 
       const body = req.body as ProfileBodyPayload;
+      const profileData = await buildStudentProfilePatchData(body, {
+        schoolId: req.user!.schoolId,
+        studentUserId: link.studentUserId,
+        uploadedBy: parentUserId,
+        fileStorage: this.fileStorage,
+      });
       await this.repo.updateStudentContactAndProfile({
         userId: link.studentUserId,
         studentProfileId: link.studentProfileId,
         phone: body.phone,
-        profileData: buildStudentProfilePatchData(body),
+        profileData,
       });
 
       res.json({ success: true, message: 'Profil de votre enfant mis à jour avec succès' });
     } catch (err) {
+      if (respondFileStorageValidationError(res, err)) return;
       next(err);
     }
   };

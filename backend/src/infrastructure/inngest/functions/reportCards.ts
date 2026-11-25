@@ -25,8 +25,7 @@ import { PrismaBulletinTemplateSpecRepository } from "../../persistence/prisma/P
 import { PrismaSequenceAbsenceSummaryRepository } from "../../persistence/prisma/PrismaSequenceAbsenceSummaryRepository";
 import { PrismaSchoolIdentityKitRepository } from "../../persistence/prisma/PrismaSchoolIdentityKitRepository";
 import { MeasuredPdfKitBulletinRenderer } from "../../pdf/renderer/MeasuredPdfKitBulletinRenderer";
-import { createBulletinPdfStorageAdapter } from "../../services/storage/S3CompatibleBulletinPdfStorageAdapter";
-import { LocalAndDataUriSchoolAssetStorageAdapter } from "../../services/storage/LocalAndDataUriSchoolAssetStorageAdapter";
+import { createFileStorageAdapter } from "../../services/storage/createFileStorageAdapter";
 import { BulletinBloqueError } from "@domain/errors/BulletinBloqueError";
 import { MatiereSansGroupeError } from "@domain/errors/MatiereSansGroupeError";
 import { DetecterChuteMoyenneUseCase, trouverSequencePrecedente } from "@application/grade/DetecterChuteMoyenneUseCase";
@@ -88,10 +87,9 @@ export const generateReportCards = inngest.createFunction(
       new PrismaSchoolConfigRepository(prisma),
       new PrismaBulletinTemplateAssignmentRepository(prisma),
       new MeasuredPdfKitBulletinRenderer(),
-      createBulletinPdfStorageAdapter(),
+      createFileStorageAdapter(),
       new PrismaSequenceAbsenceSummaryRepository(prisma),
       new PrismaSchoolIdentityKitRepository(prisma),
-      new LocalAndDataUriSchoolAssetStorageAdapter(),
       new PrismaBulletinTemplateSpecRepository(prisma),
     );
 

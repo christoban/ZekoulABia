@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import type { ParentRepository, EnfantAvecStats } from '@domain/ports/repositories/ParentRepository';
+import { toStudentPhotoApiUrl } from '@application/student/studentPhotoService';
 
 export class PrismaParentRepository implements ParentRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -130,7 +131,7 @@ export class PrismaParentRepository implements ParentRepository {
           phone: profil.user.phone ?? undefined,
           dateOfBirth: profil.dateOfBirth ? profil.dateOfBirth.toISOString() : undefined,
           gender: profil.gender ?? undefined,
-          photoUrl: profil.photoUrl ?? undefined,
+          photoUrl: toStudentPhotoApiUrl(profil.photoUrl, studentId) ?? undefined,
         } satisfies EnfantAvecStats;
       })
     );

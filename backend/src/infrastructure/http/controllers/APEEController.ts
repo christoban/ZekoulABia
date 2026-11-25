@@ -1,14 +1,20 @@
 import type { Request, Response, NextFunction } from 'express';
-import fs from 'fs';
-import path from 'path';
 import type { AIActionAuditPort } from '@domain/ports/services/AIActionAuditPort';
 import type { ApeeRepository } from '@domain/ports/repositories/ApeeRepository';
 import type { SchoolRepository } from '@domain/ports/repositories/SchoolRepository';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
+import {
+  buildScopedStorageKey,
+  validateUploadedFileForDomain,
+} from '@domain/services/storage/fileStorageValidation';
 import { CreerTransactionAPEEUseCase } from '@application/apee/CreerTransactionAPEEUseCase';
 import { ValiderDepenseAPEEUseCase } from '@application/apee/ValiderDepenseAPEEUseCase';
 import { generateRapportAPEEPdf } from '../../pdf/apee/ApeeReportPdfRenderer';
-
-const JUSTIFICATIFS_DIR = path.resolve(process.cwd(), 'storage', 'apee-justificatifs');
+import {
+  resolveScopedStorageKeyOrRespond,
+  respondFileStorageValidationError,
+  sendStoredFileResponse,
+} from '../helpers/fileStorageHttpHelper';
 
 /**
  * Préfixe /api/v2/apee (MODULE 7/11, chantier Transparence APEE — Juillet 2026).
@@ -21,6 +27,7 @@ export class APEEController {
     private readonly apeeRepository: ApeeRepository,
     private readonly schoolRepository: SchoolRepository,
     private readonly audit: AIActionAuditPort,
+    private readonly fileStorage: FileStoragePort,
   ) {
     this.creerTransaction = new CreerTransactionAPEEUseCase(apeeRepository);
     this.validerDepense = new ValiderDepenseAPEEUseCase(apeeRepository);
@@ -105,16 +112,79 @@ export class APEEController {
         return;
       }
 
-      const schoolDir = path.join(JUSTIFICATIFS_DIR, schoolId);
-      fs.mkdirSync(schoolDir, { recursive: true });
-      const safeExt = path.extname(file.originalname).toLowerCase();
-      const fileName = `${transactionId}-${Date.now()}${safeExt}`;
-      const filePath = path.join(schoolDir, fileName);
-      fs.writeFileSync(filePath, file.buffer);
+      const validated = validateUploadedFileForDomain({
+        domain: 'apee-justificatifs',
+        buffer: file.buffer,
+        originalName: file.originalname,
+        declaredMime: file.mimetype,
+      });
 
-      const updated = await this.apeeRepository.attacherJustificatif(transactionId, filePath);
+      const storageKey = buildScopedStorageKey({
+        schoolId,
+        domain: 'apee-justificatifs',
+        extension: validated.extension,
+      });
+
+      await this.fileStorage.put(storageKey, file.buffer, validated.mimeType, {
+        originalName: validated.originalName,
+        transactionId,
+        uploadedBy: req.user!.userId,
+      });
+
+      const updated = await this.apeeRepository.attacherJustificatif(transactionId, storageKey);
 
       res.json({ success: true, data: updated });
+    } catch (error) {
+      if (
+        respondFileStorageValidationError(res, error, {
+          invalidFormatMessage: 'Format de fichier non supporté (PDF, JPG, PNG uniquement)',
+          tooLargeMessage: 'Fichier trop volumineux (maximum 8 Mo)',
+        })
+      ) {
+        return;
+      }
+      next(error);
+    }
+  };
+
+  // GET /api/v2/apee/transactions/:id/justificatif
+  downloadJustificatif = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const schoolId = req.user!.schoolId;
+      const isParent = req.user!.role === 'PARENT';
+      const transactionId = String(req.params['id']);
+
+      const transaction = await this.apeeRepository.trouverParId(transactionId, schoolId);
+      if (!transaction || !transaction.justificatifUrl) {
+        res.status(404).json({ success: false, message: 'Justificatif introuvable' });
+        return;
+      }
+      if (isParent && !transaction.valide) {
+        res.status(403).json({ success: false, message: 'Accès refusé : dépense non encore validée' });
+        return;
+      }
+
+      const validKey = resolveScopedStorageKeyOrRespond(
+        res,
+        transaction.justificatifUrl,
+        schoolId,
+        'Justificatif indisponible (fichier antérieur expiré ou non conservé).',
+      );
+      if (!validKey) return;
+
+      const stored = await this.fileStorage.get(validKey);
+      if (!stored) {
+        res.status(404).json({ success: false, message: 'Justificatif introuvable sur le stockage' });
+        return;
+      }
+
+      const ext = validKey.slice(validKey.lastIndexOf('.')).toLowerCase();
+      const contentType =
+        stored.contentType ??
+        (ext === '.pdf' ? 'application/pdf' : ext === '.png' ? 'image/png' : 'image/jpeg');
+      const filename = stored.metadata?.originalName ?? `justificatif-${transactionId}${ext}`;
+
+      sendStoredFileResponse(res, { buffer: stored.buffer, contentType, filename, disposition: 'inline' });
     } catch (error) {
       next(error);
     }

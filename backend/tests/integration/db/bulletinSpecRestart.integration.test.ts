@@ -13,7 +13,8 @@ import { PrismaBulletinRepository } from '@infrastructure/persistence/prisma/Pri
 import { PrismaBulletinTemplateSpecRepository } from '@infrastructure/persistence/prisma/PrismaBulletinTemplateSpecRepository';
 import { PrismaEnrollmentRepository } from '@infrastructure/persistence/prisma/PrismaEnrollmentRepository';
 import { MeasuredPdfKitBulletinRenderer } from '@infrastructure/pdf/renderer/MeasuredPdfKitBulletinRenderer';
-import { LocalDiskBulletinPdfStorageAdapter } from '@infrastructure/services/storage/LocalDiskBulletinPdfStorageAdapter';
+import { LocalDiskFileStorage } from '@infrastructure/services/storage/LocalDiskFileStorage';
+import { buildBulletinPdfStorageKey } from '@application/reportCard/bulletinStorageHelpers';
 import { creerEleveAvecClasse } from '@application/shared/studentEnrollment';
 import { prismaTest } from '../../helpers/prismaTestClient.ts';
 import { creerEcoleTest, creerUtilisateurTest, nettoyerEcole } from '../../helpers/dbFixtures.ts';
@@ -159,8 +160,8 @@ describe('Étape 8.1 PostgreSQL — Persistance DB des specs DRAFT/PUBLISHED & s
 
     const storageDir = await mkdtemp(path.join(os.tmpdir(), 'zk-spec-restart-'));
     tempDirs.push(storageDir);
-    const pdfStorage = new LocalDiskBulletinPdfStorageAdapter(storageDir);
-    const storageKey = pdfStorage.buildStorageKey({
+    const pdfStorage = new LocalDiskFileStorage(storageDir);
+    const storageKey = buildBulletinPdfStorageKey({
       schoolId: school.id,
       academicPeriodId: period.id,
       bulletinId: bulletin.id,
@@ -180,7 +181,7 @@ describe('Étape 8.1 PostgreSQL — Persistance DB des specs DRAFT/PUBLISHED & s
         language: 'en',
         verifyBaseUrl: 'https://verify.zekoulabia.cm',
         bulletinRenderer: renderer,
-        bulletinPdfStorage: pdfStorage,
+        fileStorage: pdfStorage,
         templateSpecRepository: specRepo,
         forceRegenerateFromSnapshot: true,
         persistRegeneratedPdf: true,
@@ -197,7 +198,7 @@ describe('Étape 8.1 PostgreSQL — Persistance DB des specs DRAFT/PUBLISHED & s
 
     // 4. Régénération à la demande : rechargement automatique depuis PostgreSQL (BulletinTemplateSpecRecord)
     const freshSpecRepo = new PrismaBulletinTemplateSpecRepository(prismaTest);
-    const freshPdfStorage = new LocalDiskBulletinPdfStorageAdapter(storageDir);
+    const freshPdfStorage = new LocalDiskFileStorage(storageDir);
     const loadedAfter = await bulletinRepo.findForPdf(bulletin.id, school.id);
     expect(loadedAfter).not.toBeNull();
 
@@ -208,7 +209,7 @@ describe('Étape 8.1 PostgreSQL — Persistance DB des specs DRAFT/PUBLISHED & s
         language: 'en',
         verifyBaseUrl: 'https://verify.zekoulabia.cm',
         bulletinRenderer: renderer,
-        bulletinPdfStorage: freshPdfStorage,
+        fileStorage: freshPdfStorage,
         templateSpecRepository: freshSpecRepo,
       }),
     );

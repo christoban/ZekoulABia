@@ -252,6 +252,7 @@ export function registerCoreRoutes(app: Application, prismaParam: typeof prisma 
     c.eleveOnboarding.suggererClasses,
     c.eleveOnboarding.genererFichePdf,
     c.eleveOnboarding.validerLot,
+    c.fileStorage,
   );
   app.use('/api/v2/eleve-onboarding', creerEleveOnboardingRoutes(eleveOnboardingController, eleveOnboardingDossierController));
 

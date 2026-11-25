@@ -16,15 +16,19 @@ type Container = ReturnType<typeof creerContainer>;
 export function registerListsRoutes(
   app: Application,
   prismaParam: typeof prisma = prisma,
-  _container?: Container,
+  container?: Container,
 ): void {
   const db = prismaParam ?? prisma;
+  const c = container ?? (creerContainer() as Container);
 
   const staffDirectoryQueriesController = new StaffDirectoryQueriesController(
     new PrismaStaffDirectoryQueryRepository(db),
+    c.fileStorage,
+    c.parent.parentRepository,
   );
   const studentPortalQueriesController = new StudentPortalQueriesController(
     new PrismaStudentPortalQueryRepository(db),
+    c.fileStorage,
   );
   const timetableReadQueriesController = new TimetableReadQueriesController(
     new PrismaTimetableReadQueryRepository(db),

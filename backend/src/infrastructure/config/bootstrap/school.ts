@@ -43,6 +43,7 @@ export function registerSchoolRoutes(
   const schoolAdminQueriesController = new SchoolAdminQueriesController(
     schoolAdminQueriesRepository,
     obtenirAnomaliesEtablissementUseCase,
+    c.fileStorage,
   );
   const schoolAuditConfigController = new SchoolAuditConfigController(schoolAdminQueriesRepository);
   const schoolStructureSyncController = new SchoolStructureSyncController(

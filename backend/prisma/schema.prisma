@@ -1634,6 +1634,7 @@ model ReportCard {
   rankTrimestre3      Int? // Rang au 3ème trimestre (bulletin annuel)
   mention             String?
   isGenerated         Boolean                   @default(false)
+  // Clé réelle FileStoragePort ({schoolId}/bulletins/{periodId}/{bulletinId}_v{v}.pdf) ou null si non stocké.
   pdfUrl              String?
   createdAt           DateTime                  @default(now())
   absenceCount        Int                       @default(0)

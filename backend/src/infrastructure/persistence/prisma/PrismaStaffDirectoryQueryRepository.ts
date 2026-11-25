@@ -177,7 +177,7 @@ export class PrismaStaffDirectoryQueryRepository implements StaffDirectoryQueryR
   ): Promise<StudentForOfficialPhotoRecord | null> {
     return this.prisma.user.findFirst({
       where: { id: studentUserId, schoolId, role: 'STUDENT' },
-      include: { studentProfile: { select: { id: true } } },
+      include: { studentProfile: { select: { id: true, photoUrl: true } } },
     });
   }
 

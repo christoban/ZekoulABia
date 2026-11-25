@@ -38,6 +38,7 @@ import { notifierEvenementAcademique } from '@infrastructure/services/notificati
 import { MetricCache } from '@infrastructure/cache/MetricCache';
 import { MetricRegistry } from '@domain/reporting/MetricRegistryImpl';
 import { GetMetricUseCase } from '@application/reporting/GetMetricUseCase';
+import { createFileStorageAdapter } from '@infrastructure/services/storage/createFileStorageAdapter';
 
 export function createCoreContainerContext() {
   const userRepository = new PrismaUserRepository(prisma);
@@ -88,6 +89,7 @@ export function createCoreContainerContext() {
   const smsNotificationAdapter = new SmsNotificationAdapter();
   const documentAiAdapter = new DocumentAiAdapter();
   const emailTemplateAdapter = new EmailTemplateAdapter();
+  const fileStorage = createFileStorageAdapter();
   const notifierEvenement = (schoolId: string, targetRoles: string[], titre: string, corps: string) =>
     notifierEvenementAcademique(prisma, schoolId, targetRoles, titre, corps);
 
@@ -130,6 +132,7 @@ export function createCoreContainerContext() {
     smsNotificationAdapter,
     documentAiAdapter,
     emailTemplateAdapter,
+    fileStorage,
     notifierEvenement,
   };
 }

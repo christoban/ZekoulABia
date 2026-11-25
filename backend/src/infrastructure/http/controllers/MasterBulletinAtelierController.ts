@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { peutVoirEcoleMaster, verifierAccesGestionEcoleMaster, type MasterOperatorContext } from '@application/masterAdmin/masterSchoolAccess';
 import { renderAtelierPreviewPdf } from '@application/reportCard/bulletinAtelierPreview';
+import { validateAndStoreSchoolAsset } from '@application/reportCard/bulletinStorageHelpers';
 import { SchoolAssetValidationError } from '@domain/errors/SchoolAssetValidationError';
 import { KNOWN_CLASS_LEVELS, assertValidClassLevel } from '@domain/policies/BulletinTemplatePolicy';
 import type { BulletinTemplateAssignmentRepository } from '@domain/ports/repositories/BulletinTemplateAssignmentRepository';
@@ -11,7 +12,8 @@ import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolCo
 import type { SchoolIdentityKitRecord, SchoolIdentityKitRepository } from '@domain/ports/repositories/SchoolIdentityKitRepository';
 import type { SchoolRepository } from '@domain/ports/repositories/SchoolRepository';
 import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
-import type { SchoolAssetKind, SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
+import type { SchoolAssetKind } from '@domain/types/schoolAssets';
 import {
   GENERAL_GROUPED_V1,
   createNewTemplateSpecVersion,
@@ -96,7 +98,7 @@ export class MasterBulletinAtelierController {
     private readonly assignmentRepository: BulletinTemplateAssignmentRepository,
     private readonly classeRepository: ClasseRepository,
     private readonly bulletinRenderer: BulletinRendererPort,
-    private readonly schoolAssetStorage: SchoolAssetStoragePort,
+    private readonly fileStorage: FileStoragePort,
     private readonly templateSpecRepository?: BulletinTemplateSpecRepository,
   ) {}
 
@@ -243,7 +245,8 @@ export class MasterBulletinAtelierController {
         return;
       }
 
-      const stored = await this.schoolAssetStorage.validateAndStoreAsset({
+      const stored = await validateAndStoreSchoolAsset({
+        fileStorage: this.fileStorage,
         schoolId,
         kind: assetType,
         data: dataUri,
@@ -418,6 +421,7 @@ export class MasterBulletinAtelierController {
 
       const sObj = school.toObject();
       const pdfBuffer = await renderAtelierPreviewPdf({
+        schoolId,
         schoolName: sObj.name,
         fallbackCity: sObj.city,
         fallbackPhone: sObj.phone,
@@ -425,7 +429,7 @@ export class MasterBulletinAtelierController {
         kit: mergedKit,
         spec: effectiveSpec,
         renderer: this.bulletinRenderer,
-        schoolAssetStorage: this.schoolAssetStorage,
+        fileStorage: this.fileStorage,
         passThresholdOn20: schoolConfig?.passMark,
       });
 

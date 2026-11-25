@@ -49,6 +49,7 @@ export class MasterAdminHexController {
     private readonly synchroniserMatieresUC: SynchroniserMatieresEcoleUseCase,
     private readonly reinitialiserMfaUC: ReinitialiserMfaUtilisateurUseCase,
     private readonly eventPublisher?: EventPublisher,
+    private readonly fileStorage?: import('@domain/ports/services/FileStoragePort').FileStoragePort,
   ) {}
 
   private get schoolDeps(): MasterAdminSchoolDeps {
@@ -178,7 +179,7 @@ export class MasterAdminHexController {
 
   // GET /api/v2/master/backup/list
   listerSauvegardes = (req: Request, res: Response, next: NextFunction): Promise<void> =>
-    listerSauvegardesAction(req, res, next);
+    listerSauvegardesAction(this.queryRepo, this.fileStorage, req, res, next);
 
   // GET /api/v2/master/security-audit-log — vue "Sécurité plateforme" (assistant IA)
   listerJournalSecuriteIA = (req: Request, res: Response, next: NextFunction): Promise<void> =>

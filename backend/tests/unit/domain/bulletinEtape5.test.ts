@@ -19,8 +19,11 @@ import {
   buildSchoolIdentityRenderContext,
   getOrRegenerateSealedBulletinPdf,
 } from '@application/reportCard/bulletinPdfLifecycle';
-import { LocalAndDataUriSchoolAssetStorageAdapter } from '@infrastructure/services/storage/LocalAndDataUriSchoolAssetStorageAdapter';
-import { LocalDiskBulletinPdfStorageAdapter } from '@infrastructure/services/storage/LocalDiskBulletinPdfStorageAdapter';
+import { LocalDiskFileStorage } from '@infrastructure/services/storage/LocalDiskFileStorage';
+import {
+  readSchoolAssetBuffer,
+  validateAndStoreSchoolAsset,
+} from '@application/reportCard/bulletinStorageHelpers';
 import { MeasuredPdfKitBulletinRenderer } from '@infrastructure/pdf/renderer/MeasuredPdfKitBulletinRenderer';
 import { setVerifyNoIndexHeaders, verifyPublicDocumentOp } from '@infrastructure/http/controllers/helpers/verifyPublicDocumentOp';
 import { InMemoryBulletinRepository } from '../../helpers/repositories/InMemoryBulletinRepository';
@@ -155,36 +158,36 @@ describe('Étape 5 — Identité école, Assets validés, QR >= 20 mm, /verify p
   it('Point A : valide PNG/JPEG réels par magic bytes et rejette > 300 Ko, > 1200x1200 px et faux formats', async () => {
     const dir = mkdtempSync(path.join(tmpdir(), 'zekoul-assets-'));
     tempDirs.push(dir);
-    const storage = new LocalAndDataUriSchoolAssetStorageAdapter(dir);
+    const storage = new LocalDiskFileStorage(dir);
 
     const validQrPng = await QRCode.toBuffer('VALID-PNG', { type: 'png', width: 120, margin: 1 });
-    const storedPng = await storage.validateAndStoreAsset({ schoolId: 'sch-1', kind: 'logo', data: validQrPng });
+    const storedPng = await validateAndStoreSchoolAsset({ fileStorage: storage, schoolId: 'sch-1', kind: 'logo', data: validQrPng });
     expect(storedPng.mimeType).toBe('image/png');
     expect(storedPng.width).toBe(120);
     expect(storedPng.height).toBe(120);
-    const loadedBack = await storage.readAssetBuffer(storedPng.assetKey);
+    const loadedBack = await readSchoolAssetBuffer({ fileStorage: storage, schoolId: 'sch-1', assetKey: storedPng.assetKey });
     expect(loadedBack?.equals(validQrPng)).toBe(true);
 
     const validJpeg = buildMinimalJpeg(400, 300);
-    const storedJpeg = await storage.validateAndStoreAsset({ schoolId: 'sch-1', kind: 'stamp', data: validJpeg });
+    const storedJpeg = await validateAndStoreSchoolAsset({ fileStorage: storage, schoolId: 'sch-1', kind: 'stamp', data: validJpeg });
     expect(storedJpeg.mimeType).toBe('image/jpeg');
     expect(storedJpeg.width).toBe(400);
 
     // Faux PNG / texte brut déguisé
     await expect(
-      storage.validateAndStoreAsset({ schoolId: 'sch-1', kind: 'logo', data: Buffer.from('<svg>hack</svg>') }),
+      validateAndStoreSchoolAsset({ fileStorage: storage, schoolId: 'sch-1', kind: 'logo', data: Buffer.from('<svg>hack</svg>') }),
     ).rejects.toThrow(SchoolAssetValidationError);
 
     // Dépassement taille > 300 Ko
     const tooBig = Buffer.concat([validQrPng, Buffer.alloc(310 * 1024)]);
     await expect(
-      storage.validateAndStoreAsset({ schoolId: 'sch-1', kind: 'logo', data: tooBig }),
+      validateAndStoreSchoolAsset({ fileStorage: storage, schoolId: 'sch-1', kind: 'logo', data: tooBig }),
     ).rejects.toThrow(SchoolAssetValidationError);
 
     // Dépassement dimensions > 1200x1200 px
     const oversizedPng = buildTinyPngWithDimensions(1400, 800);
     await expect(
-      storage.validateAndStoreAsset({ schoolId: 'sch-1', kind: 'coatOfArms', data: oversizedPng }),
+      validateAndStoreSchoolAsset({ fileStorage: storage, schoolId: 'sch-1', kind: 'coatOfArms', data: oversizedPng }),
     ).rejects.toThrow(SchoolAssetValidationError);
   });
 
@@ -442,7 +445,7 @@ describe('Étape 5 — Identité école, Assets validés, QR >= 20 mm, /verify p
   it('Point F : premier PDF sans DUPLICATA, puis reprintCount atomique + régénération depuis snapshotData avec DUPLICATA n° X', async () => {
     const dir = mkdtempSync(path.join(tmpdir(), 'zekoul-reprint-'));
     tempDirs.push(dir);
-    const pdfStorage = new LocalDiskBulletinPdfStorageAdapter(dir);
+    const pdfStorage = new LocalDiskFileStorage(dir);
     const renderer = new MeasuredPdfKitBulletinRenderer();
     const repo = new InMemoryBulletinRepository();
 
@@ -532,7 +535,7 @@ describe('Étape 5 — Identité école, Assets validés, QR >= 20 mm, /verify p
           verifyBaseUrl: 'https://zekoulabia.app',
           forceRegenerateFromSnapshot: forceReprint,
           bulletinRenderer: renderer,
-          bulletinPdfStorage: pdfStorage,
+          fileStorage: pdfStorage,
         });
       } finally {
         PDFDocument.prototype.text = orig;

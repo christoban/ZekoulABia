@@ -4,6 +4,7 @@ import { PrismaAnnouncementRepository } from "../../persistence/prisma/PrismaAnn
 import { PrismaJournalMaintenanceRepository } from "../../persistence/prisma/PrismaJournalMaintenanceRepository";
 import { PrismaCorbeilleRepository } from "../../persistence/prisma/PrismaCorbeilleRepository";
 import { PrismaSauvegardeRepository } from "../../persistence/prisma/PrismaSauvegardeRepository";
+import { createFileStorageAdapter } from "../../services/storage/createFileStorageAdapter";
 import { PurgerLogsEcoleUseCase } from "@application/maintenance/PurgerLogsEcoleUseCase";
 import { PurgerAnnoncesExpireesUseCase } from "@application/maintenance/PurgerAnnoncesExpireesUseCase";
 import { PurgerCorbeilleUseCase } from "@application/maintenance/PurgerCorbeilleUseCase";
@@ -70,7 +71,8 @@ export const BackupSchoolDataJob = inngest.createFunction(
     };
 
     const result = await step.run("create-school-backups", async () => {
-      const useCase = new SauvegarderEcoleUseCase(new PrismaSauvegardeRepository(prisma));
+      const fileStorage = createFileStorageAdapter();
+      const useCase = new SauvegarderEcoleUseCase(new PrismaSauvegardeRepository(prisma, fileStorage));
       return await useCase.execute({
         schoolId: payload.schoolId,
         requestedByMasterId: payload.requestedByMasterId ?? null,

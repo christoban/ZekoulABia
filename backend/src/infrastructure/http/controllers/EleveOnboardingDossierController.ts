@@ -5,15 +5,21 @@
  * Scindé pour respecter le principe Single Responsibility et le plafond de 500 lignes.
  */
 import type { Request, Response, NextFunction } from 'express';
-import path from 'path';
-import fs from 'fs';
 import type { GererPiecesDossierUseCase } from '@application/eleveOnboarding/GererPiecesDossierUseCase';
 import type { SuggererClassesDossierUseCase } from '@application/eleveOnboarding/SuggererClassesDossierUseCase';
 import type { GenererFicheInscriptionPdfUseCase } from '@application/eleveOnboarding/GenererFicheInscriptionPdfUseCase';
 import type { ValiderLotOnboardingUseCase } from '@application/eleveOnboarding/ValiderLotOnboardingUseCase';
-
-const ENROLLMENT_PIECES_DIR = path.resolve(process.cwd(), 'storage', 'enrollment-pieces');
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'] as const;
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
+import {
+  FILE_DOMAIN_POLICIES,
+  buildScopedStorageKey,
+  validateUploadedFileForDomain,
+} from '@domain/services/storage/fileStorageValidation';
+import {
+  resolveScopedStorageKeyOrRespond,
+  respondFileStorageValidationError,
+  sendStoredFileResponse,
+} from '../helpers/fileStorageHttpHelper';
 
 export class EleveOnboardingDossierController {
   constructor(
@@ -21,6 +27,7 @@ export class EleveOnboardingDossierController {
     private readonly suggererClassesUseCase: SuggererClassesDossierUseCase,
     private readonly genererFichePdfUseCase: GenererFicheInscriptionPdfUseCase,
     private readonly validerLotUseCase: ValiderLotOnboardingUseCase,
+    private readonly fileStorage: FileStoragePort,
   ) {}
 
   // GET /api/v2/eleve-onboarding/classes-suggestions?level=...&academicYearId=...
@@ -115,26 +122,30 @@ export class EleveOnboardingDossierController {
         return;
       }
 
-      if (!ALLOWED_MIME_TYPES.includes(file.mimetype as typeof ALLOWED_MIME_TYPES[number])) {
-        res.status(400).json({
-          success: false,
-          message: 'Format non supporté. Formats acceptés : JPG, PNG, WEBP ou PDF',
-        });
-        return;
-      }
-
-      if (file.size > 5 * 1024 * 1024) {
+      if (file.size > FILE_DOMAIN_POLICIES['enrollment-pieces'].maxBytes) {
         res.status(400).json({ success: false, message: 'Fichier trop volumineux (maximum 5 Mo)' });
         return;
       }
 
-      const uploadDir = path.join(ENROLLMENT_PIECES_DIR, schoolId, onboardingId);
-      fs.mkdirSync(uploadDir, { recursive: true });
+      const validated = validateUploadedFileForDomain({
+        domain: 'enrollment-pieces',
+        buffer: file.buffer,
+        originalName: file.originalname,
+        declaredMime: file.mimetype,
+      });
 
-      const safeExt = path.extname(file.originalname).toLowerCase() || '.jpg';
-      const fileName = `${code}-${Date.now()}${safeExt}`;
-      const filePath = path.join(uploadDir, fileName);
-      fs.writeFileSync(filePath, file.buffer);
+      const fileKey = buildScopedStorageKey({
+        schoolId,
+        domain: 'enrollment-pieces',
+        extension: validated.extension,
+      });
+
+      await this.fileStorage.put(fileKey, file.buffer, validated.mimeType, {
+        originalName: validated.originalName,
+        onboardingId,
+        pieceCode: code,
+        uploadedBy: req.user!.userId,
+      });
 
       const resultat = await this.gererPiecesUseCase.marquerPiece({
         schoolId,
@@ -142,11 +153,19 @@ export class EleveOnboardingDossierController {
         code,
         received: true,
         receivedById: req.user!.userId,
-        fileKey: filePath,
+        fileKey,
       });
 
-      res.json({ success: true, data: { ...resultat, fileKey: filePath, fileName } });
+      res.json({ success: true, data: { ...resultat, fileKey, fileName: validated.originalName } });
     } catch (err) {
+      if (
+        respondFileStorageValidationError(res, err, {
+          invalidFormatMessage: 'Format non supporté. Formats acceptés : JPG, PNG, WEBP ou PDF',
+          tooLargeMessage: 'Fichier trop volumineux (maximum 5 Mo)',
+        })
+      ) {
+        return;
+      }
       next(err);
     }
   };
@@ -161,21 +180,36 @@ export class EleveOnboardingDossierController {
       const completude = await this.gererPiecesUseCase.consulterCompletude(schoolId, onboardingId);
       const doc = completude.documents.find((d) => d.code === code);
 
-      if (!doc || !doc.fileKey || !fs.existsSync(doc.fileKey)) {
+      if (!doc || !doc.fileKey) {
         res.status(404).json({ success: false, message: 'Document introuvable ou non téléversé' });
         return;
       }
 
-      const ext = path.extname(doc.fileKey).toLowerCase();
-      let contentType = 'application/octet-stream';
-      if (ext === '.pdf') contentType = 'application/pdf';
-      else if (ext === '.png') contentType = 'image/png';
-      else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
-      else if (ext === '.webp') contentType = 'image/webp';
+      const validKey = resolveScopedStorageKeyOrRespond(
+        res,
+        doc.fileKey,
+        schoolId,
+        'Document introuvable ou expiré (fichier antérieur non conservé).',
+      );
+      if (!validKey) return;
 
-      res.setHeader('Content-Type', contentType);
-      res.setHeader('Content-Disposition', `inline; filename="${code}_${path.basename(doc.fileKey)}"`);
-      fs.createReadStream(doc.fileKey).pipe(res);
+      const stored = await this.fileStorage.get(validKey);
+      if (!stored) {
+        res.status(404).json({ success: false, message: 'Document introuvable ou expiré' });
+        return;
+      }
+
+      const ext = validKey.slice(validKey.lastIndexOf('.')).toLowerCase();
+      let contentType = stored.contentType ?? 'application/octet-stream';
+      if (contentType === 'application/octet-stream') {
+        if (ext === '.pdf') contentType = 'application/pdf';
+        else if (ext === '.png') contentType = 'image/png';
+        else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
+        else if (ext === '.webp') contentType = 'image/webp';
+      }
+
+      const filename = stored.metadata?.originalName ?? `${code}${ext}`;
+      sendStoredFileResponse(res, { buffer: stored.buffer, contentType, filename, disposition: 'inline' });
     } catch (err) {
       next(err);
     }

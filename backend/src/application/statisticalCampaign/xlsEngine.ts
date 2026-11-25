@@ -214,18 +214,22 @@ export function setCellValue(
   return true;
 }
 
+export interface GeneratedWorkbookBuffer {
+  buffer: Buffer;
+  extension: '.xls' | '.xlsx';
+  mimeType: string;
+}
+
 /**
  * Étape 3 (optionnelle, selon DELIVER_XLS) + nettoyage. Sauvegarde les mutations exceljs dans
- * le .xlsx de travail, reconvertit en .xls strict si demandé, déplace le résultat vers
- * `outputPath`, puis supprime systématiquement le dossier temporaire (déchiffré + xlsx
- * intermédiaire) — qu'il y ait eu succès ou échec, aucune donnée d'élève ne doit traîner sur
- * le disque au-delà de la génération.
+ * le .xlsx de travail (dans os.tmpdir), reconvertit en .xls strict si demandé, lit le buffer
+ * final en mémoire pour stockage via FileStoragePort, puis supprime systématiquement le dossier
+ * temporaire — qu'il y ait eu succès ou échec, aucune donnée d'élève ne doit traîner sur le disque.
  */
-export async function writeWorkbookToFile(
+export async function writeWorkbookToBuffer(
   session: WorkbookSession,
-  outputPath: string,
   options: { deliverXls?: boolean } = {},
-): Promise<void> {
+): Promise<GeneratedWorkbookBuffer> {
   const deliverXls = options.deliverXls ?? DELIVER_XLS_BY_DEFAULT;
   try {
     // Écrit les mutations exceljs sous un NOUVEAU nom ("filled.xlsx"), distinct du .xlsx
@@ -234,12 +238,12 @@ export async function writeWorkbookToFile(
     const filledXlsxPath = path.join(session.tempDir, 'filled.xlsx');
     await session.workbook.xlsx.writeFile(filledXlsxPath);
 
-    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-
     if (!deliverXls) {
-      const finalXlsxPath = outputPath.endsWith('.xlsx') ? outputPath : outputPath.replace(/\.xls$/, '.xlsx');
-      fs.copyFileSync(filledXlsxPath, finalXlsxPath);
-      return;
+      return {
+        buffer: fs.readFileSync(filledXlsxPath),
+        extension: '.xlsx',
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      };
     }
 
     const profileDir = path.join(session.tempDir, 'lo_profile_out');
@@ -259,15 +263,18 @@ export async function writeWorkbookToFile(
     if (!fs.existsSync(convertedXlsPath)) {
       throw new LibreOfficeConversionError('La reconversion xlsx → xls a réussi mais le fichier attendu est introuvable.');
     }
-    const finalXlsPath = outputPath.endsWith('.xls') ? outputPath : outputPath.replace(/\.xlsx$/, '.xls');
-    fs.copyFileSync(convertedXlsPath, finalXlsPath);
+    return {
+      buffer: fs.readFileSync(convertedXlsPath),
+      extension: '.xls',
+      mimeType: 'application/vnd.ms-excel',
+    };
   } finally {
     fs.rmSync(session.tempDir, { recursive: true, force: true });
   }
 }
 
 /** À appeler explicitement si `decryptTemplate` a réussi mais qu'une étape ultérieure du use
- * case échoue avant d'atteindre `writeWorkbookToFile` (ex. erreur métier imprévue) — garantit
+ * case échoue avant d'atteindre `writeWorkbookToBuffer` (ex. erreur métier imprévue) — garantit
  * qu'aucun fichier temporaire ne survit à un chemin d'erreur non prévu. */
 export function cleanupSession(session: WorkbookSession): void {
   fs.rmSync(session.tempDir, { recursive: true, force: true });

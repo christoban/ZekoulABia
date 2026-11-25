@@ -1,7 +1,7 @@
 /**
  * APPLICATION LAYER — Génération d'aperçu PDF sur élève fictif pour l'Atelier Master & l'aperçu Admin.
  */
-import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
 import type { SchoolIdentityKitRecord } from '@domain/ports/repositories/SchoolIdentityKitRepository';
 import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
 import type { BulletinTemplateSpec, CouncilDecisionBlockSpec } from '@domain/types/bulletinTemplateSpec';
@@ -141,6 +141,7 @@ export function buildFictitiousPreviewSnapshot(spec: BulletinTemplateSpec, passT
 }
 
 export async function renderAtelierPreviewPdf(params: {
+  schoolId?: string;
   schoolName: string;
   fallbackMotto?: string | null;
   fallbackCity?: string | null;
@@ -149,20 +150,21 @@ export async function renderAtelierPreviewPdf(params: {
   kit: SchoolIdentityKitRecord | null;
   spec: BulletinTemplateSpec;
   renderer: BulletinRendererPort;
-  schoolAssetStorage?: SchoolAssetStoragePort;
+  fileStorage?: FileStoragePort;
   passThresholdOn20?: number | null;
   issuedAt?: Date;
 }): Promise<Buffer> {
   const language: 'fr' | 'en' = params.spec.language === 'en' ? 'en' : 'fr';
   const preview = buildFictitiousPreviewSnapshot(params.spec, params.passThresholdOn20 ?? 10);
   const schoolIdentity = await createBatchSchoolIdentityContextCache({
+    schoolId: params.schoolId,
     schoolName: params.schoolName,
     fallbackMotto: params.fallbackMotto,
     fallbackCity: params.fallbackCity,
     fallbackPhone: params.fallbackPhone,
     fallbackLogoUrl: params.fallbackLogoUrl,
     kit: params.kit,
-    schoolAssetStorage: params.schoolAssetStorage,
+    fileStorage: params.fileStorage,
   }).getForLanguage(language);
 
   const verifyBaseUrl = resoudreVerifyBaseUrl();

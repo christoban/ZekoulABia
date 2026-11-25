@@ -267,6 +267,7 @@ describe('Appel numérique, Babillard & Carnet de liaison', () => {
       {} as never,
       {} as never,
       {} as never,
+      {} as never,
       notifService,
       smsStub,
     );

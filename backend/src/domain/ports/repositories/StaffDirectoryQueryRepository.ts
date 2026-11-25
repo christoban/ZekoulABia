@@ -101,6 +101,7 @@ export interface StudentForOfficialPhotoRecord {
   lastName: string;
   studentProfile: {
     id: string;
+    photoUrl: string | null;
   } | null;
 }
 

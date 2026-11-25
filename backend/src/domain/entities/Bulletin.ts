@@ -214,10 +214,11 @@ export class Bulletin {
   }
 
   /**
-   * Marque le bulletin comme généré avec l'URL du PDF.
+   * Marque le bulletin comme généré avec la clé réelle FileStoragePort du PDF scellé
+   * (ou `null` lorsqu'aucun PDF n'est encore stocké — jamais de chemin fictif).
    * DRAFT → GENERATED
    */
-  marquerGenere(pdfUrl: string): void {
+  marquerGenere(pdfUrl: string | null = null): void {
     if (this.props.isGenerated) {
       throw new Error('Ce bulletin est déjà généré');
     }
@@ -228,7 +229,7 @@ export class Bulletin {
       throw new Error('Impossible de générer un bulletin sans moyenne générale calculée');
     }
     this.props.isGenerated = true;
-    this.props.pdfUrl = pdfUrl;
+    this.props.pdfUrl = pdfUrl ?? undefined;
     this.props.validationStatus = 'GENERATED';
   }
 

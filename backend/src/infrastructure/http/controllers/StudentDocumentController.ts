@@ -5,6 +5,8 @@ import type { AnneeAcademiqueRepository } from '@domain/ports/repositories/Annee
 import type { BulletinRepository } from '@domain/ports/repositories/BulletinRepository';
 import type { StudentDocumentRepository } from '@domain/ports/repositories/StudentDocumentRepository';
 import type { ParentRepository } from '@domain/ports/repositories/ParentRepository';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
+import { resolveStudentPhotoBuffer } from '@application/student/studentPhotoService';
 import {
   generateCertificatPdf,
   generateCarteScolairepdf,
@@ -26,6 +28,7 @@ export class StudentDocumentController {
     private readonly bulletinRepository: BulletinRepository,
     private readonly documentRepository: StudentDocumentRepository,
     private readonly parentRepository?: ParentRepository,
+    private readonly fileStorage?: FileStoragePort,
   ) {}
 
   private async fetchStudent(userId: string, schoolId: string) {
@@ -169,6 +172,11 @@ export class StudentDocumentController {
       });
 
       const lang = resolveLanguage(school?.subsystem, classeActuelle(student)?.section?.code ?? null)
+      const resolvedPhoto = await resolveStudentPhotoBuffer({
+        photoUrl: student.photoUrl,
+        schoolId: user.schoolId,
+        fileStorage: this.fileStorage,
+      });
       const pdf = await generateCarteScolairepdf({
         documentId: doc.id,
         school: {
@@ -180,6 +188,7 @@ export class StudentDocumentController {
         className: classeActuelle(student)?.name ?? '—',
         yearName: year?.name ?? '—',
         photoUrl: student.photoUrl ?? undefined,
+        photoBuffer: resolvedPhoto?.buffer ?? null,
         emergencyContact: parent ? `${parent.lastName} ${parent.firstName}` : undefined,
         emergencyPhone: parent?.phone ?? student.user.phone ?? undefined,
         generatedAt: new Date(),

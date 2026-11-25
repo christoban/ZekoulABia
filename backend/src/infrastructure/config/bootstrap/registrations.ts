@@ -144,6 +144,7 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
     c.statisticalCampaign.verifierCompletude,
     c.statisticalCampaign.genererDeclaration,
     c.statisticalCampaign.repository,
+    c.fileStorage,
   );
   app.use('/api/v2/statistical-campaign', creerStatisticalCampaignRoutes(statisticalCampaignController));
 
@@ -151,6 +152,7 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
   const statisticalCampaignMinedubController = new StatisticalCampaignMinedubController(
     c.statisticalCampaignMinedub.genererRapport,
     c.statisticalCampaignMinedub.repository,
+    c.fileStorage,
   );
   app.use('/api/v2/statistical-campaign-minedub', creerStatisticalCampaignMinedubRoutes(statisticalCampaignMinedubController));
 
@@ -257,7 +259,7 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
   const marquerLueUseCase = new MarquerPublicationLueUseCase(publicationRepository);
   const epinglerPublicationUseCase = new EpinglerPublicationUseCase(publicationRepository);
   const calculerStatsUseCase = new CalculerStatistiquesLectureUseCase(publicationRepository);
-  const uploaderPjUseCase = new UploaderPieceJointeUseCase();
+  const uploaderPjUseCase = new UploaderPieceJointeUseCase(c.fileStorage);
 
   const babillardController = new BabillardController(
     publicationRepository,
@@ -270,6 +272,7 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
     epinglerPublicationUseCase,
     calculerStatsUseCase,
     uploaderPjUseCase,
+    c.fileStorage,
     c.notification.service,
     c.notification.sms,
   );
@@ -319,7 +322,12 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
   app.use('/api/v2/messagerie', creerMessagerieRoutes(messagerieController));
 
   // ── Transparence financière APEE ─────────────────────────────────────────────
-  const apeeController = new APEEController(new PrismaApeeRepository(p), c.school.schoolRepository, new AIActionAuditAdapter(p));
+  const apeeController = new APEEController(
+    new PrismaApeeRepository(p),
+    c.school.schoolRepository,
+    new AIActionAuditAdapter(p),
+    c.fileStorage,
+  );
   app.use('/api/v2/apee', creerApeeRoutes(apeeController));
 
   // ── Rapports & Statistiques Scolarité (Secrétariat & Direction) ───────────
