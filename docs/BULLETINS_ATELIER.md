@@ -27,9 +27,9 @@ Ce document rassemble le guide opérationnel complet du module **Bulletins & Ate
 | **B** | `TECH_GROUPED_V1` | Enseignement technique par blocs (`TECH_GEN_PRO_DIV` : Général / Professionnel / Divers, `groupRank`) | Validée sur jeu de vérité + PDF |
 | **C** | `BILINGUAL_APC_V1` | Secondaire bilingue APC (compétences visées, `Eval a / Eval b`, moyenne trimestrielle) | Validée sur jeu de vérité + PDF |
 | **D** | `ANNUAL_BILINGUAL_V1` | Bulletin annuel 6 séquences + moyennes trimestrielles T1/T2/T3 | Validée sur jeu de vérité + PDF |
-| **E** | `EN_SECONDARY_V1` | Secondaire anglophone périodique (`EN_SECONDARY`) | **À VALIDER SUR UN BULLETIN RÉEL** (`validationNotice`) |
-| **F (EN)** | `PRIMARY_POINTS_RATIO_EN_V1` | Primaire anglophone mensuel par ratio de points (`POINTS_RATIO`) | Validée sur jeu de vérité + PDF |
-| **F (calque libellés FR)** | `PRIMARY_POINTS_RATIO_FR_LABELS_V1` | Modèle primaire anglophone à ratio de points (`POINTS_RATIO`) avec libellés français | **TO_VALIDATE** — aperçu seul (`À VALIDER SUR UN BULLETIN RÉEL`) |
+| **E** | `EN_SECONDARY_V1` | Secondaire anglophone périodique (`EN_SECONDARY`, colonnes `MARK 1/2`, `AV /20`, `CLASS AV`, `APPRECIATIONS`) | Validée sur bulletin réel G.B.H.S. Kollere-Garoua |
+| **F (EN)** | `PRIMARY_POINTS_RATIO_EN_V1` | Primaire anglophone mensuel par ratio de points (`POINTS_RATIO`, `NA=[0;10]` inclus) | Validée sur jeu de vérité + GSB Le Québécois Class V |
+| **F (libellés FR)** | `PRIMARY_POINTS_RATIO_FR_LABELS_V1` | Primaire mensuel par Unité d'Apprentissage à ratio de points (`POINTS_RATIO`) avec libellés français (`NA=[0;10]` inclus) | Validée sur barèmes & cotes du carnet CM2 MINEDUB réel *(format 1 page/UA, distinct du livret annuel papier 4 pages UA1–UA8)* |
 
 #### Immuabilité & persistance des versions de spec
 
@@ -128,7 +128,7 @@ Résolution déterministe par ordre de priorité (`resolveEffectiveTemplateAssig
 - **Plafond d'export synchrone par classe (`MAX_SYNC_CLASS_EXPORT_STUDENTS = 80`)** : `POST /api/v2/report-cards/export-pdf/:classId` et `POST /api/v2/report-cards/export/:classId` retournent **`422 CLASS_EXPORT_LIMIT_EXCEEDED`** au-delà de 80 bulletins dans une même classe afin de préserver la mémoire et le timeout HTTP.
   - *Evolution proposée si des classes dépassent 80 élèves* : déclencher un job asynchrone Inngest `reportcard/export-batch` écrivant l'archive ZIP ou le PDF fusionné sur `BulletinPdfStoragePort` (`S3`), avec table/suivi de progression (`BackgroundTask` / polling) et lien de téléchargement temporaire.
 - **Rate limit sur calculs PDF lourds (`heavyPdfExportLimiter`)** : limité à **15 requêtes par fenêtre de 5 minutes** par IP sur `GET /template-preview`, `POST /export-pdf/:classId`, `POST /export/:classId` et `POST /master/bulletin-atelier/schools/:schoolId/preview-pdf` (`429 RATE_LIMITED_PDF_EXPORT`).
-- **Specs à valider sur bulletins papier réels** : `EN_SECONDARY_V1` et `PRIMARY_POINTS_RATIO_FR_LABELS_V1` portent `validationStatus: "TO_VALIDATE"` : l'Atelier refuse leur affectation en production et la mention `À VALIDER SUR UN BULLETIN RÉEL` n'apparaît qu'en aperçu (jamais sur un bulletin scellé).
+- **Statut `TO_VALIDATE` (garde-fou production)** : toutes les 7 specs intégrées v1 (`A` à `F`) sont désormais `VALIDATED`. Toute nouvelle variante marquée `validationStatus: "TO_VALIDATE"` reste refusée en affectation production (`400 SPEC_TO_VALIDATE`) et la mention `À VALIDER SUR UN BULLETIN RÉEL` n'apparaît qu'en aperçu (jamais sur un bulletin scellé).
 - **Seed local de démonstration** : `cd backend && bun scripts/seed-bulletin-atelier-demo.ts` crée une école complète (`3ème A Démo`, 3 élèves fictifs, notes `LOCKED`, conseil `LOCKED`, kit d'identité) pour démonstrations et tests manuels.
 
 ---

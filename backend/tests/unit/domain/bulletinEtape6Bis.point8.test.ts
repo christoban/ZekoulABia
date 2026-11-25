@@ -117,12 +117,12 @@ describe('Étape 6 bis — Point 8 : Famille F en-tête MINEDUB, renommage varia
     expect(joinedFr).toContain("MINISTÈRE DE L'ÉDUCATION DE BASE");
     expect(joinedFr).toContain('Tél : +237 699 00 11 22');
     expect(joinedFr).toContain('Imprimé le 20/11/2026');
-    expect(joinedFr).toContain('À VALIDER SUR UN BULLETIN RÉEL');
+    expect(joinedFr).not.toContain('À VALIDER SUR UN BULLETIN RÉEL');
   });
 
-  it('renomme la variante libellés FR sans jamais l’appeler francophone et la marque TO_VALIDATE', () => {
+  it('nomme la variante libellés FR avec précision (modèle ratio de points validé sur barèmes CM2 MINEDUB, distinct du livret annuel)', () => {
     expect(PRIMARY_POINTS_RATIO_FR_LABELS_V1.id).toBe('PRIMARY_POINTS_RATIO_FR_LABELS_V1');
-    expect(PRIMARY_POINTS_RATIO_FR_LABELS_V1.validationStatus).toBe('TO_VALIDATE');
+    expect(PRIMARY_POINTS_RATIO_FR_LABELS_V1.validationStatus).toBe('VALIDATED');
     expect(PRIMARY_POINTS_RATIO_FR_LABELS_V1.name.toLowerCase()).toContain('anglophone');
     expect(PRIMARY_POINTS_RATIO_FR_LABELS_V1.name.toLowerCase()).toContain('libellés français');
     expect(PRIMARY_POINTS_RATIO_FR_LABELS_V1.name.toLowerCase()).not.toContain('francophone');

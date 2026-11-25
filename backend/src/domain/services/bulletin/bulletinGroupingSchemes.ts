@@ -35,6 +35,7 @@ const GROUP_1_2_3_ENTRIES: readonly SchemeEntry[] = [
       'LIT', 'LITT', 'LITTRATU', 'LETTRESC', 'LATIN', 'GREC',
       'PHI', 'PHILO', 'PHILOSOP',
       'LV2', 'LV3', 'ESP', 'ESPAGNOL', 'ALL', 'ALLEMAND', 'CHI', 'CHINOIS', 'ARA', 'ARABE', 'ITA', 'ITALIEN',
+      'ANALYSEF', 'CONOMIED', 'GENRESCI', 'LMENTSLA', 'OUTILSET', 'PROCESSU', 'PROJETFI', 'SOCIOLOG',
     ],
   },
   {
@@ -44,7 +45,8 @@ const GROUP_1_2_3_ENTRIES: readonly SchemeEntry[] = [
       'MATH', 'MATHS', 'MATHMATI',
       'SVT', 'SVTEEHB', 'SCI', 'SCIENCES',
       'PC', 'PCT', 'PHY', 'CHIM', 'PHYSIQUE', 'CHIMIE',
-      'INFO', 'INF', 'TIC', 'CSC', 'INFORMAT', 'ALGORITH', 'PROGRAMM', 'SYSTMESD', 'RSEAUINT',
+      'INFO', 'INF', 'TIC', 'CSC', 'INFORMAT', 'ALGORITH', 'PROGRAMM', 'SYSTMESD', 'RSEAUINT', 'MAINTENA',
+      'DESSINET', 'FABRICAT',
       'EC', 'ECM', 'CITIZENS',
     ],
   },
@@ -53,7 +55,7 @@ const GROUP_1_2_3_ENTRIES: readonly SchemeEntry[] = [
     codes: [
       'EPS', 'SPORT', 'SPORTAND',
       'TM', 'TRAVAILM', 'MANUALLA',
-      'ESF', 'CN', 'CULTURES', 'LN', 'LANGUESN', 'ART', 'MUS',
+      'ESF', 'CN', 'CULTURES', 'LN', 'LANGUESN', 'ART', 'EAC', 'MUS',
     ],
   },
 ];
@@ -66,7 +68,8 @@ const SCI_LIT_OTHER_ENTRIES: readonly SchemeEntry[] = [
       'MATH', 'MATHS', 'MATHMATI',
       'PC', 'PCT', 'PHY', 'CHIM', 'PHYSIQUE', 'CHIMIE',
       'SVT', 'SVTEEHB', 'SCI', 'SCIENCES',
-      'INFO', 'INF', 'TIC', 'CSC', 'INFORMAT', 'ALGORITH', 'PROGRAMM', 'SYSTMESD', 'RSEAUINT',
+      'INFO', 'INF', 'TIC', 'CSC', 'INFORMAT', 'ALGORITH', 'PROGRAMM', 'SYSTMESD', 'RSEAUINT', 'MAINTENA',
+      'DESSINET', 'FABRICAT',
     ],
   },
   {
@@ -79,6 +82,7 @@ const SCI_LIT_OTHER_ENTRIES: readonly SchemeEntry[] = [
       'HG', 'HIST', 'GEO', 'HISTGEO', 'HISTOIRE', 'GOGRAPHI',
       'EC', 'ECM', 'CITIZENS',
       'LV2', 'LV3', 'ESP', 'ESPAGNOL', 'ALL', 'ALLEMAND', 'CHI', 'CHINOIS', 'ARA', 'ARABE', 'ITA', 'ITALIEN',
+      'ANALYSEF', 'CONOMIED', 'GENRESCI', 'LMENTSLA', 'OUTILSET', 'PROCESSU', 'PROJETFI', 'SOCIOLOG',
     ],
   },
   {
@@ -86,7 +90,7 @@ const SCI_LIT_OTHER_ENTRIES: readonly SchemeEntry[] = [
     codes: [
       'EPS', 'SPORT', 'SPORTAND',
       'TM', 'TRAVAILM', 'MANUALLA',
-      'ESF', 'CN', 'CULTURES', 'LN', 'LANGUESN', 'ART', 'MUS',
+      'ESF', 'CN', 'CULTURES', 'LN', 'LANGUESN', 'ART', 'EAC', 'MUS',
     ],
   },
 ];
@@ -101,7 +105,7 @@ const TECH_GEN_PRO_DIV_ENTRIES: readonly SchemeEntry[] = [
       'MATH', 'MATHS', 'MATHMATI',
       'HG', 'HIST', 'GEO', 'HISTGEO', 'HISTOIRE', 'GOGRAPHI',
       'EC', 'ECM', 'CITIZENS',
-      'PC', 'PCT', 'PHY', 'CHIM', 'PHYSIQUE', 'CHIMIE',
+      'PC', 'PCT', 'PHY', 'CHIM', 'PHYSIQUE', 'CHIMIE', 'SCIENCES',
       'INFO', 'INF', 'TIC', 'INFORMAT',
     ],
   },
@@ -118,7 +122,7 @@ const TECH_GEN_PRO_DIV_ENTRIES: readonly SchemeEntry[] = [
     codes: [
       'EPS', 'SPORT', 'SPORTAND',
       'TM', 'TRAVAILM', 'MANUALLA',
-      'ESF', 'CN', 'CULTURES', 'LN', 'LANGUESN', 'HYGIENE',
+      'ESF', 'CN', 'CULTURES', 'LN', 'LANGUESN', 'EAC', 'HYGIENE',
     ],
   },
 ];
@@ -138,6 +142,23 @@ const SCHEME_INDEXES: Readonly<Record<'GROUP_1_2_3' | 'SCI_LIT_OTHER' | 'TECH_GE
   SCI_LIT_OTHER: buildCodeIndex(SCI_LIT_OTHER_ENTRIES),
   TECH_GEN_PRO_DIV: buildCodeIndex(TECH_GEN_PRO_DIV_ENTRIES),
 };
+
+/**
+ * Dérive le code matière canonique depuis son intitulé curriculum.
+ * Évite la collision sur "DUCATION" des matières accentuées commençant par "Éducation..."
+ * tout en préservant les codes historiques des autres disciplines.
+ */
+export function deriveSubjectCodeFromName(name: string): string {
+  const folded = name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toUpperCase();
+  if (folded.startsWith('EDUCATION A LA CITOYENNETE')) return 'ECM';
+  if (folded.startsWith('EDUCATION ARTISTIQUE')) return 'EAC';
+  if (folded.startsWith('EDUCATION PHYSIQUE')) return 'EPS';
+  return name.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8);
+}
 
 export function normalizeSubjectCodeForGrouping(rawCode: string | null | undefined): string | null {
   if (!rawCode) return null;

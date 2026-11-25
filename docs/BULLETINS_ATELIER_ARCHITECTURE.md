@@ -37,16 +37,17 @@ Implémenté dans `backend/src/domain/services/bulletin/bulletinSnapshotMath.ts`
 
 Le snapshot scellé (`snapshotData` + `ReportCardSubjectLine`) reçoit une **copie figée** de `{ groupKey, groupLabel, groupOrder }` au moment de la génération : une modification ultérieure du curriculum n'altère jamais les bulletins déjà émis.
 
-### 2.2 Templates dont les groupes curriculum sont encore vides
+### 2.2 Stratégie de regroupement des curricula statiques (post-Étape 4)
 
-Dans `backend/src/application/school/curriculum/`, les ensembles suivants ne définissent pas encore de groupes structurés (`groupKey / groupLabel / groupOrder`) propagés en base lors du seed :
+Pour respecter le défaut `SchoolConfig.bulletinGroupingScheme = 'FLAT'` (aucun regroupement deviné silencieusement) et permettre à l'Atelier Master de basculer librement un établissement entre `GROUP_1_2_3`, `SCI_LIT_OTHER`, `TECH_GEN_PRO_DIV` ou `FLAT`, le seed des curricula ne force **pas** `SubjectCoefficient.groupKey` (qui court-circuiterait le schéma en priorité 2).
 
-| Fichier curriculum | Templates concernés | État actuel des groupes |
+À la place, les codes matières dérivés par `deriveSubjectCodeFromName` (`backend/src/domain/services/bulletin/bulletinGroupingSchemes.ts`, sans collision d'accents sur `ECM` / `EAC` / `EPS`) sont résolus en priorité 4 par `resolveGroupBySubjectCode` :
+
+| Fichier curriculum | Templates concernés | État actuel du regroupement |
 |---|---|---|
-| `francophone/premier-cycle.ts` | `LYCEE_FR`, `CES_FR`, `PRIVE_FR`, `LYCEE_BILINGUE`, `COMPLEXE_SCOLAIRE` (6e → 3e) | **Vide** (aucun champ groupe ; repli sur `DEFAULT` « Matières ») |
-| `francophone/deuxieme-cycle-bac.ts` | `__ALL__` (2nde → Tle, séries `A1`–`A5`, `ABI`, `C`, `D`, `E`, `TI`, `SH`, `AC`) | Champ numérique `groupe: 1 \| 2` présent en TypeScript, **non encore mappé** vers `groupKey / groupLabel / groupOrder` dans `SubjectCoefficient` lors de l'activation école |
-| `francophone/technique.ts` | `LYCEE_TECHNIQUE_FR`, `CETIC`, `SAR_SM`, `CFM` | **Vide** dans le fichier statique (repli automatique à 2 blocs `GENERAL` / `PROFESSIONNEL` seulement ; le 3e groupe *« Divers »* n'est pas encore défini) |
-| `francophone/primaire.ts` & `primaire-apc.ts` | `PRIMAIRE_FR`, `MATERNELLE_FR`, `COMPLEXE_SCOLAIRE` | **Vide** (aucun `groupKey` sur les matières ou domaines APC) |
-| `anglophone/secondary.ts` | `GHS_EN`, `GSS_EN`, `PRIVE_EN`, `LYCEE_BILINGUE` (Form 1 → Upper Sixth) | **Vide** (aucun `groupKey`) |
-| `anglophone/primary.ts` | `PRIMARY_EN`, `NURSERY_EN`, `PRIMARY_BILINGUAL` (Nursery → Class 6) | **Vide** (aucun `groupKey`) |
+| `francophone/premier-cycle.ts` | `LYCEE_FR`, `CES_FR`, `PRIVE_FR`, `LYCEE_BILINGUE`, `COMPLEXE_SCOLAIRE` (6e → 3e) | **Couvert à 100 %** par `GROUP_1_2_3` et `SCI_LIT_OTHER` via `deriveSubjectCodeFromName` (testé dans `bulletinCurriculumGroupingCoverage.test.ts`) |
+| `francophone/deuxieme-cycle-bac.ts` | `__ALL__` (2nde → Tle, séries `A1`–`A5`, `ABI`, `C`, `D`, `E`, `TI`, `SH`, `AC`) | **Couvert à 100 %** par `GROUP_1_2_3` et `SCI_LIT_OTHER` (séries `E`, `TI`, `SH`, `AC` incluses) |
+| `francophone/technique.ts` | `LYCEE_TECHNIQUE_FR`, `CETIC`, `SAR_SM`, `CFM` | **Couvert à 100 %** par `TECH_GEN_PRO_DIV` sur les 3 blocs (`GENERAL`, `PROFESSIONNEL`, `DIVERS`) |
+| `francophone/primaire.ts` & `primaire-apc.ts` | `PRIMAIRE_FR`, `MATERNELLE_FR`, `COMPLEXE_SCOLAIRE` | Rendu **`FLAT`** / regroupement par domaine APC (Famille F `groupByDomain: true`) — aucun `groupKey` requis |
+| `anglophone/secondary.ts` & `primary.ts` | `GHS_EN`, `GSS_EN`, `PRIVE_EN`, `PRIMARY_EN`, `NURSERY_EN`, `PRIMARY_BILINGUAL` | Rendu **`FLAT`** par défaut (Familles E & F) — surcharges possibles par école si besoin |
 

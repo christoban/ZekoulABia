@@ -47,6 +47,7 @@ export interface AtelierCatalogSpecDto {
   layoutVariant?: string
   calculationMode?: string
   showGroupRankInSubtotal?: boolean
+  inkSaverMode?: boolean
   validationStatus?: 'VALIDATED' | 'TO_VALIDATE'
   validationNotice?: string
   name: string
@@ -120,6 +121,7 @@ export async function createAtelierSpecVersion(
     periodLabelMode?: string
     appreciationScale?: string
     showGroupRankInSubtotal?: boolean
+    inkSaverMode?: boolean
     councilItems?: string[]
     publish: boolean
   },

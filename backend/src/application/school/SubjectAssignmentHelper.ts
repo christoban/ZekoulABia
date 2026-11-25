@@ -5,6 +5,7 @@
  */
 import type { SubjectAssignmentRepository } from '@domain/ports/repositories/SubjectAssignmentRepository';
 import { CycleResolver } from '@domain/services/CycleResolver';
+import { deriveSubjectCodeFromName } from '@domain/services/bulletin/bulletinGroupingSchemes';
 
 export const CYCLE1_ORDER: ReadonlyArray<string> = ['6e', '5e', '4e', '3e'];
 export const CYCLE2_LEVELS: ReadonlyArray<string> = ['2nde', '1ere', '1ère', 'Tle'];
@@ -63,7 +64,7 @@ export async function getOrCreateSubject(
 ): Promise<string> {
   let id = subjectByName.get(name);
   if (!id) {
-    const code = name.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8);
+    const code = deriveSubjectCodeFromName(name);
     const created = await repo.createSubject(schoolId, { name, code, coefficient, hoursPerWeek });
     id = created.id;
     subjectByName.set(name, id);

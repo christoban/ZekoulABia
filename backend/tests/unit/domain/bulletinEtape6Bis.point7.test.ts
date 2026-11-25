@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'bun:test';
+import { describe, it, expect, afterEach } from 'bun:test';
 import PDFDocument from 'pdfkit';
 import type { Request, Response, NextFunction } from 'express';
 import {
@@ -9,8 +9,11 @@ import {
   PRIMARY_POINTS_RATIO_EN_V1,
   PRIMARY_POINTS_RATIO_FR_LABELS_V1,
   TECH_GROUPED_V1,
+  clearCustomTemplateSpecsForRestartSimulation,
+  createNewTemplateSpecVersion,
   findDefaultSpecForTemplate,
   isSpecValidatedForProduction,
+  registerTemplateSpecVersion,
 } from '@domain/templates/bulletinCatalog';
 import { resolveActiveSpecForBulletin } from '@application/reportCard/bulletinPdfLifecycle';
 import { buildFictitiousPreviewSnapshot } from '@application/reportCard/bulletinAtelierPreview';
@@ -46,28 +49,47 @@ function createMockRes() {
 }
 
 describe('Étape 6 bis — Point 7 : états VALIDATED / TO_VALIDATE, refus d’affectation en prod et mention réservée à l’aperçu', () => {
-  it('classe les specs du catalogue en VALIDATED vs TO_VALIDATE et empêche toute résolution production pour TO_VALIDATE', () => {
-    for (const s of [GENERAL_GROUPED_V1, TECH_GROUPED_V1, BILINGUAL_APC_V1, ANNUAL_BILINGUAL_V1, PRIMARY_POINTS_RATIO_EN_V1]) {
+  afterEach(() => {
+    clearCustomTemplateSpecsForRestartSimulation();
+  });
+
+  it('classe les 7 specs du catalogue officiel en VALIDATED et empêche toute résolution production pour une spec TO_VALIDATE', () => {
+    for (const s of [
+      GENERAL_GROUPED_V1,
+      TECH_GROUPED_V1,
+      BILINGUAL_APC_V1,
+      ANNUAL_BILINGUAL_V1,
+      EN_SECONDARY_V1,
+      PRIMARY_POINTS_RATIO_EN_V1,
+      PRIMARY_POINTS_RATIO_FR_LABELS_V1,
+    ]) {
       expect(s.validationStatus).toBe('VALIDATED');
       expect(isSpecValidatedForProduction(s)).toBe(true);
     }
-    for (const s of [EN_SECONDARY_V1, PRIMARY_POINTS_RATIO_FR_LABELS_V1]) {
-      expect(s.validationStatus).toBe('TO_VALIDATE');
-      expect(isSpecValidatedForProduction(s)).toBe(false);
-    }
 
-    expect(findDefaultSpecForTemplate('EN_SECONDARY')).toBeNull();
+    expect(findDefaultSpecForTemplate('EN_SECONDARY')?.id).toBe(EN_SECONDARY_V1.id);
+
+    const pendingSpec = registerTemplateSpecVersion(
+      createNewTemplateSpecVersion(EN_SECONDARY_V1, {
+        name: 'Famille E — Variante expérimentale',
+        validationStatus: 'TO_VALIDATE',
+        validationNotice: 'À VALIDER SUR UN BULLETIN RÉEL',
+        publish: true,
+      }),
+    );
+    expect(pendingSpec.validationStatus).toBe('TO_VALIDATE');
+    expect(isSpecValidatedForProduction(pendingSpec)).toBe(false);
     expect(
       resolveActiveSpecForBulletin({
         useMeasuredBulletinRenderer: true,
         template: 'EN_SECONDARY',
-        templateSpecId: EN_SECONDARY_V1.id,
-        templateVersion: 1,
+        templateSpecId: pendingSpec.id,
+        templateVersion: pendingSpec.version,
       }),
     ).toBeNull();
   });
 
-  it('l’Atelier refuse l’affectation en production d’une spec TO_VALIDATE (400 clair) mais autorise son aperçu PDF', async () => {
+  it('l’Atelier refuse l’affectation en production d’une spec TO_VALIDATE (400 clair) mais autorise son aperçu PDF et les specs VALIDATED', async () => {
     const school = School.reconstituer({
       id: 'sc-pt7', name: 'École Test Pt7', subdomain: 'pt7', status: 'ACTIVE', plan: 'PREMIUM',
       subsystem: 'BILINGUAL', educationType: 'GENERAL', ownership: 'PRIVATE_SECULAR',
@@ -97,25 +119,32 @@ describe('Étape 6 bis — Point 7 : états VALIDATED / TO_VALIDATE, refus d’a
     const noopNext: NextFunction = (err?: unknown) => { if (err) throw err; };
     const masterUser = { id: 'sa-1', role: 'super_admin', email: 'sa@zekoul.cm', isOwner: true, assignedSchoolIds: [] };
 
-    // Refus d'affectation pour Famille E (TO_VALIDATE) et Famille F variante FR (TO_VALIDATE)
-    for (const badSpec of [EN_SECONDARY_V1, PRIMARY_POINTS_RATIO_FR_LABELS_V1]) {
-      const { state, res } = createMockRes();
-      await controller.saveAssignment(
-        { params: { schoolId: school.id }, body: { templateSpecId: badSpec.id, templateVersion: 1, periodKind: 'TRIMESTER' }, masterUser } as unknown as Request,
-        res,
-        noopNext,
-      );
-      expect(state.statusCode).toBe(400);
-      const body = state.jsonBody as { code?: string; message?: string };
-      expect(body.code).toBe('SPEC_TO_VALIDATE');
-      expect(body.message).toContain('TO_VALIDATE');
-    }
+    const pendingSpec = registerTemplateSpecVersion(
+      createNewTemplateSpecVersion(EN_SECONDARY_V1, {
+        name: 'Famille E — À valider terrain',
+        validationStatus: 'TO_VALIDATE',
+        validationNotice: 'À VALIDER SUR UN BULLETIN RÉEL',
+        publish: true,
+      }),
+    );
+
+    // Refus d'affectation pour une spec TO_VALIDATE
+    const { state, res } = createMockRes();
+    await controller.saveAssignment(
+      { params: { schoolId: school.id }, body: { templateSpecId: pendingSpec.id, templateVersion: pendingSpec.version, periodKind: 'TRIMESTER' }, masterUser } as unknown as Request,
+      res,
+      noopNext,
+    );
+    expect(state.statusCode).toBe(400);
+    const body = state.jsonBody as { code?: string; message?: string };
+    expect(body.code).toBe('SPEC_TO_VALIDATE');
+    expect(body.message).toContain('TO_VALIDATE');
     expect(savedAssignments).toBe(0);
 
     // Aperçu PDF autorisé pour une spec TO_VALIDATE
     const prev = createMockRes();
     await controller.previewPdf(
-      { params: { schoolId: school.id }, body: { templateSpecId: EN_SECONDARY_V1.id, templateVersion: 1 }, masterUser } as unknown as Request,
+      { params: { schoolId: school.id }, body: { templateSpecId: pendingSpec.id, templateVersion: pendingSpec.version }, masterUser } as unknown as Request,
       prev.res,
       noopNext,
     );
@@ -123,20 +152,27 @@ describe('Étape 6 bis — Point 7 : états VALIDATED / TO_VALIDATE, refus d’a
     expect(prev.state.headers['content-type']).toBe('application/pdf');
     expect(prev.state.rawBody?.subarray(0, 5).toString('latin1')).toBe('%PDF-');
 
-    // Affectation autorisée pour une spec VALIDATED
-    const ok = createMockRes();
-    await controller.saveAssignment(
-      { params: { schoolId: school.id }, body: { templateSpecId: GENERAL_GROUPED_V1.id, templateVersion: 1, periodKind: 'TRIMESTER' }, masterUser } as unknown as Request,
-      ok.res,
-      noopNext,
-    );
-    expect(ok.state.statusCode).toBe(201);
-    expect(savedAssignments).toBe(1);
+    // Affectation autorisée pour les specs VALIDATED (y compris Famille E et Famille F libellés FR désormais validées)
+    for (const validSpec of [GENERAL_GROUPED_V1, EN_SECONDARY_V1, PRIMARY_POINTS_RATIO_FR_LABELS_V1]) {
+      const ok = createMockRes();
+      await controller.saveAssignment(
+        { params: { schoolId: school.id }, body: { templateSpecId: validSpec.id, templateVersion: 1, periodKind: 'TRIMESTER' }, masterUser } as unknown as Request,
+        ok.res,
+        noopNext,
+      );
+      expect(ok.state.statusCode).toBe(201);
+    }
+    expect(savedAssignments).toBe(3);
   });
 
-  it('affiche "À VALIDER SUR UN BULLETIN RÉEL" uniquement en mode aperçu (isPreview: true), jamais sur un bulletin scellé', async () => {
+  it('affiche "À VALIDER SUR UN BULLETIN RÉEL" uniquement en mode aperçu (isPreview: true) sur une spec TO_VALIDATE, jamais sur un bulletin scellé', async () => {
     const renderer = new MeasuredPdfKitBulletinRenderer();
-    const preview = buildFictitiousPreviewSnapshot(EN_SECONDARY_V1);
+    const pendingSpec = createNewTemplateSpecVersion(EN_SECONDARY_V1, {
+      validationStatus: 'TO_VALIDATE',
+      validationNotice: 'À VALIDER SUR UN BULLETIN RÉEL',
+      publish: true,
+    });
+    const preview = buildFictitiousPreviewSnapshot(pendingSpec);
 
     const captureTexts = async (isPreview?: boolean): Promise<string> => {
       const texts: string[] = [];
@@ -146,7 +182,7 @@ describe('Étape 6 bis — Point 7 : états VALIDATED / TO_VALIDATE, refus d’a
         return (origText as (...a: unknown[]) => PDFKit.PDFDocument).call(this, t, ...rest);
       } as typeof PDFDocument.prototype.text;
       try {
-        await renderer.render(preview.snapshot, EN_SECONDARY_V1, {
+        await renderer.render(preview.snapshot, pendingSpec, {
           className: 'Form 4',
           periodName: 'Term 1',
           yearName: '2026-2027',

@@ -34,6 +34,7 @@ interface Props {
   draftPeriodMode: string
   draftScale: string
   draftGroupRank: boolean
+  draftInkSaver: boolean
   draftCouncilItems: string[]
   useMeasured: boolean
   assignments: AtelierAssignmentDto[]
@@ -47,6 +48,7 @@ interface Props {
     periodMode?: string
     scale?: string
     groupRank?: boolean
+    inkSaverMode?: boolean
     councilItems?: string[]
   }) => void
   onSaveMeasuredConfig: () => Promise<void>
@@ -182,6 +184,16 @@ export default function AtelierSpecAndAssignmentsPanel(props: Props) {
               onChange={(e) => props.onChangeSpecField({ groupRank: e.target.checked })}
             />
             Afficher le rang du groupe dans les sous-totaux (Famille B Technique)
+          </label>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, color: 'var(--text2)', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={props.draftInkSaver}
+              disabled={!props.canEdit}
+              onChange={(e) => props.onChangeSpecField({ inkSaverMode: e.target.checked })}
+            />
+            Mode économique d&apos;impression (fond clair sans aplats sombres)
           </label>
 
           <div>

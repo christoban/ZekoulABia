@@ -2,9 +2,9 @@
  * DOMAIN LAYER — Échelles configurables de cotes (A+/A/ECA/NA) et de niveaux de compétence.
  *
  * Chaque borne supporte l'inclusif (`>=`, défaut) et l'exclusif (`>`, `*Inclusive: false`).
- * Valeurs par défaut documentées sur bulletins réels :
- * - Famille A (Collège Le Québécois 3ème) : NA < 10 (À CONFIRMER SUR LE TERRAIN), ECA [10–14,99], A [15–17,99], A+ >= 18
- * - Famille F (Primaire GSB Le Québécois) : NA [0 ; 10] inclus (`ongoingInclusive: false`, preuve : 35/70 et 5/10 = 10,00 notés NA),
+ * Valeurs par défaut documentées sur bulletins réels et textes officiels Cameroun :
+ * - Famille A (Secondaire MINESEC — Collège Le Québécois 3ème) : NA < 10 (`ongoingInclusive: true`, moyenne réglementaire 10/20 incluse dans ECA ; photo 3ème : 9,90 = NA, 10,30 = ECA), ECA [10–14,99], A [15–17,99], A+ >= 18
+ * - Famille F (Primaire MINEDUB — GSB Le Québécois EN & carnet CM2 FR) : NA [0 ; 10] inclus (`ongoingInclusive: false`, preuves : 35/70, 5/10, 10/20 et 20/40 = 10,00 notés NA),
  *   ECA ]10 ; 14,99], A [15 ; 17,99], A+ >= 18
  * - Garoua / Djamboutou (Familles B, C, D) : Non acquise < 11, En cours 11–13,99, Acquise 14–17,99, Expert >= 18
  */
@@ -14,7 +14,7 @@ import type {
   CoteScaleThresholds,
 } from '@domain/types/bulletinTemplateSpec';
 
-// À CONFIRMER SUR LE TERRAIN : borne NA < 10 (ongoingInclusive: true) conservée sur Famille A jusqu'à validation terrain.
+// Secondaire MINESEC APC : seuil minimal réglementaire à 10,00/20 -> NA < 10 (ongoingInclusive: true), configurable par école via scaleConfig.
 export const DEFAULT_QUEBECOIS_COTE_SCALE: Readonly<CoteScaleThresholds> = Object.freeze({
   ongoingMin: 10,
   ongoingInclusive: true,
