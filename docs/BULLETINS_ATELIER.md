@@ -89,11 +89,11 @@ Résolution déterministe par ordre de priorité (`resolveEffectiveTemplateAssig
 ### 7. Vérification publique `/verify`, Duplicata & Régénération
 
 #### Vérification publique à deux niveaux (`GET /api/v2/verify/:id`, rate-limité `publicVerifyLimiter` 30 req/min/IP, entêtes `X-Robots-Tag: noindex, nofollow, noarchive` et `Cache-Control: no-store`)
-1. **Scan QR (jeton long `>= 128 bits` hexadécimal encodé dans `<PUBLIC_VERIFY_BASE_URL>/verify/<verifyToken>`)** :
+1. **Scan QR (sceau QR seul en bas à droite sans texte superflu ; jeton long `>= 128 bits` hexadécimal encodé dans `<PUBLIC_VERIFY_BASE_URL>/verify/<verifyToken>`)** :
    - Statut `AUTHENTIC` (`lookupMode: 'LONG_TOKEN'`) : renvoie établissement, année, période, classe, **nom masqué** (`maskStudentPublicName`), **moyenne générale**, **rang** et date d'émission pour comparaison papier — **sans notes par matière, matricule ni conduite**.
    - Statut `TAMPERED` : si le hash canonique SHA-256 du snapshot (`canonicalHashSnapshot`) diverge de `contentHash`.
    - Statut `REVOKED` : si trouvé dans `BulletinRevocationArchive` ou marqué `REVOKED`.
-2. **Saisie manuelle du code court imprimé (`ZK-XXXX-XXXX`, dérivé unidirectionnellement via SHA-256)** :
+2. **Saisie manuelle du code court (`ZK-XXXX-XXXX`, dérivé unidirectionnellement via SHA-256 et conservé côté API/back-office)** :
    - Statut seul (`AUTHENTIC`, `REVOKED` ou `NOT_FOUND`, `lookupMode: 'SHORT_CODE'`), **sans aucun chiffre (ni moyenne ni rang)**.
 
 #### Duplicata officiel contrôlé

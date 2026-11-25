@@ -136,7 +136,7 @@ function drawBulletinPageOnDoc(
     drawSignaturesAndQrBlock(doc, fonts, sigBlock, options, inkSaver);
   }
 
-  // Emplacement unique pour TOUTES les familles : bande « Vérification d'authenticité » en pied de page
+  // Emplacement unique pour TOUTES les familles : sceau QR épuré en bas à droite (sans texte ni bandeau)
   drawVerificationFooterStrip(doc, fonts, qrBlock, options, qrBuffer);
 
   const noticeText =
