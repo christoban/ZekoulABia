@@ -91,9 +91,10 @@ describe('Numérisation et Streaming des Pièces Justificatives (Phase 5)', () =
     const useCase = new GererPiecesDossierUseCase(mockRepo as EleveOnboardingRepository);
     const controller = new EleveOnboardingDossierController(
       useCase,
-      {} as any,
-      {} as any,
-      {} as any
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
     );
 
     let statusCalled = 0;
@@ -134,9 +135,10 @@ describe('Numérisation et Streaming des Pièces Justificatives (Phase 5)', () =
     const useCase = new GererPiecesDossierUseCase(mockRepo as EleveOnboardingRepository);
     const controller = new EleveOnboardingDossierController(
       useCase,
-      {} as any,
-      {} as any,
-      {} as any
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
     );
 
     let statusCalled = 0;
