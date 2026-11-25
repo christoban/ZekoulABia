@@ -1,9 +1,10 @@
 /**
  * APPLICATION LAYER — Construction & cache par lot du contexte d'identité d'école pour le rendu PDF
  */
-import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
 import type { SchoolIdentityKitRecord } from '@domain/ports/repositories/SchoolIdentityKitRepository';
 import type { SchoolIdentityRenderContext } from '@domain/ports/services/BulletinRendererPort';
+import { readSchoolAssetBuffer } from './bulletinStorageHelpers';
 
 export function cleanOptionalText(val: string | null | undefined): string | null {
   const t = val?.trim();
@@ -11,6 +12,7 @@ export function cleanOptionalText(val: string | null | undefined): string | null
 }
 
 export async function buildSchoolIdentityRenderContext(params: {
+  schoolId?: string;
   schoolName: string;
   language: 'fr' | 'en';
   fallbackMotto?: string | null;
@@ -18,23 +20,26 @@ export async function buildSchoolIdentityRenderContext(params: {
   fallbackPhone?: string | null;
   fallbackLogoUrl?: string | null;
   kit?: SchoolIdentityKitRecord | null;
-  schoolAssetStorage?: SchoolAssetStoragePort;
+  fileStorage?: FileStoragePort;
 }): Promise<SchoolIdentityRenderContext> {
   const isEn = params.language === 'en';
   const k = params.kit;
-  const storage = params.schoolAssetStorage;
+  const storage = params.fileStorage;
+  const schoolId = params.schoolId ?? k?.schoolId;
   const pick = (fr?: string | null, en?: string | null) =>
     cleanOptionalText(isEn ? (en ?? fr) : (fr ?? en));
 
-  const [logoBuffer, coatOfArmsBuffer, stampBuffer, principalSignatureBuffer, censorSignatureBuffer] = storage
-    ? await Promise.all([
-        storage.readAssetBuffer(k?.logoAssetKey ?? params.fallbackLogoUrl),
-        k?.useCoatOfArms ? storage.readAssetBuffer(k.coatOfArmsAssetKey) : Promise.resolve(null),
-        storage.readAssetBuffer(k?.stampAssetKey),
-        storage.readAssetBuffer(k?.principalSignatureAssetKey),
-        storage.readAssetBuffer(k?.censorSignatureAssetKey),
-      ])
-    : [null, null, null, null, null];
+  const read = (assetKey: string | null | undefined) =>
+    readSchoolAssetBuffer({ fileStorage: storage, schoolId, assetKey });
+
+  const [logoBuffer, coatOfArmsBuffer, stampBuffer, principalSignatureBuffer, censorSignatureBuffer] =
+    await Promise.all([
+      read(k?.logoAssetKey ?? params.fallbackLogoUrl),
+      k?.useCoatOfArms ? read(k.coatOfArmsAssetKey) : Promise.resolve(null),
+      read(k?.stampAssetKey),
+      read(k?.principalSignatureAssetKey),
+      read(k?.censorSignatureAssetKey),
+    ]);
 
   return {
     schoolName: params.schoolName,
@@ -66,13 +71,14 @@ export interface BatchSchoolIdentityContextCache {
  * de génération ou scellement de classe afin de ne lire chaque média qu'une seule fois.
  */
 export function createBatchSchoolIdentityContextCache(params: {
+  schoolId?: string;
   schoolName: string;
   fallbackMotto?: string | null;
   fallbackCity?: string | null;
   fallbackPhone?: string | null;
   fallbackLogoUrl?: string | null;
   kit?: SchoolIdentityKitRecord | null;
-  schoolAssetStorage?: SchoolAssetStoragePort;
+  fileStorage?: FileStoragePort;
 }): BatchSchoolIdentityContextCache {
   let sharedBuffersPromise: Promise<{
     logoBuffer: Buffer | null;
@@ -85,29 +91,24 @@ export function createBatchSchoolIdentityContextCache(params: {
 
   const loadBuffersOnce = () => {
     if (!sharedBuffersPromise) {
-      const storage = params.schoolAssetStorage;
+      const storage = params.fileStorage;
       const k = params.kit;
-      sharedBuffersPromise = storage
-        ? Promise.all([
-            storage.readAssetBuffer(k?.logoAssetKey ?? params.fallbackLogoUrl),
-            k?.useCoatOfArms ? storage.readAssetBuffer(k.coatOfArmsAssetKey) : Promise.resolve(null),
-            storage.readAssetBuffer(k?.stampAssetKey),
-            storage.readAssetBuffer(k?.principalSignatureAssetKey),
-            storage.readAssetBuffer(k?.censorSignatureAssetKey),
-          ]).then(([logoBuffer, coatOfArmsBuffer, stampBuffer, principalSignatureBuffer, censorSignatureBuffer]) => ({
-            logoBuffer,
-            coatOfArmsBuffer,
-            stampBuffer,
-            principalSignatureBuffer,
-            censorSignatureBuffer,
-          }))
-        : Promise.resolve({
-            logoBuffer: null,
-            coatOfArmsBuffer: null,
-            stampBuffer: null,
-            principalSignatureBuffer: null,
-            censorSignatureBuffer: null,
-          });
+      const schoolId = params.schoolId ?? k?.schoolId;
+      const read = (assetKey: string | null | undefined) =>
+        readSchoolAssetBuffer({ fileStorage: storage, schoolId, assetKey });
+      sharedBuffersPromise = Promise.all([
+        read(k?.logoAssetKey ?? params.fallbackLogoUrl),
+        k?.useCoatOfArms ? read(k.coatOfArmsAssetKey) : Promise.resolve(null),
+        read(k?.stampAssetKey),
+        read(k?.principalSignatureAssetKey),
+        read(k?.censorSignatureAssetKey),
+      ]).then(([logoBuffer, coatOfArmsBuffer, stampBuffer, principalSignatureBuffer, censorSignatureBuffer]) => ({
+        logoBuffer,
+        coatOfArmsBuffer,
+        stampBuffer,
+        principalSignatureBuffer,
+        censorSignatureBuffer,
+      }));
     }
     return sharedBuffersPromise;
   };

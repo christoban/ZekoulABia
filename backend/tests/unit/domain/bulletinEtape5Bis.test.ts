@@ -24,8 +24,7 @@ import type { StudentDocumentRepository } from '@domain/ports/repositories/Stude
 import type { SchoolRepository } from '@domain/ports/repositories/SchoolRepository';
 import type { BulletinExportData } from '@domain/ports/repositories/BulletinRepository';
 import type { StudentBulletinSnapshot } from '@domain/types/bulletinSnapshot';
-import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
-import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
 import type { SchoolIdentityKitRecord } from '@domain/ports/repositories/SchoolIdentityKitRepository';
 
 function makeSnapshot(avg = 15.75, rank = 2): StudentBulletinSnapshot {
@@ -230,12 +229,12 @@ describe('Étape 5 bis — QR jeton long configurable, /verify deux niveaux, POS
     const renderer = new MeasuredPdfKitBulletinRenderer();
     const auditLogs: Array<Record<string, unknown>> = [];
     const memoryPdf = new Map<string, Buffer>();
-    const pdfStorage: BulletinPdfStoragePort = {
-      driverName: 'memory',
-      buildStorageKey: ({ bulletinId }) => `bulletins/${bulletinId}.pdf`,
-      storePdf: async (key, buf) => { memoryPdf.set(key, buf); return key; },
-      readPdf: async (key) => memoryPdf.get(key) ?? null,
+    const pdfStorage: FileStoragePort = {
+      driverName: 'local',
+      put: async (key, buf, contentType) => { memoryPdf.set(key, buf); return { key, size: buf.length, contentType }; },
+      get: async (key) => { const b = memoryPdf.get(key); return b ? { buffer: b, contentType: 'application/pdf' } : null; },
       exists: async (key) => memoryPdf.has(key),
+      delete: async (key) => { memoryPdf.delete(key); },
     };
 
     const repo = new InMemoryBulletinRepository();
@@ -258,7 +257,7 @@ describe('Étape 5 bis — QR jeton long configurable, /verify deux niveaux, POS
       templateSpecId: 'GENERAL_GROUPED_V1',
       templateVersion: 1,
     });
-    bulletin.marquerGenere(`bulletins/${bulletin.id}.pdf`);
+    bulletin.marquerGenere(`sch-1/bulletins/per-1/${bulletin.id}_v1.pdf`);
     await repo.save(bulletin);
 
     repo.findForPdf = async (bulletinId, schoolId): Promise<BulletinExportData | null> => {
@@ -421,22 +420,19 @@ describe('Étape 5 bis — QR jeton long configurable, /verify deux niveaux, POS
     let readCalls = 0;
     const assetReads = new Map<string, number>();
 
-    const assetStorage: SchoolAssetStoragePort = {
-      validateAndStoreAsset: async () => { throw new Error('unused'); },
-      readAssetBuffer: async (key) => {
-        if (!key) return null;
-        readCalls++;
-        assetReads.set(key, (assetReads.get(key) ?? 0) + 1);
-        return tinyPng;
+    const fileStorage: FileStoragePort = {
+      driverName: 'local',
+      put: async (key, buf, contentType) => ({ key, size: buf.length, contentType }),
+      get: async (key) => {
+        if (key.includes('/school-assets/')) {
+          readCalls++;
+          assetReads.set(key, (assetReads.get(key) ?? 0) + 1);
+          return { buffer: tinyPng, contentType: 'image/png' };
+        }
+        return null;
       },
-      deleteAsset: async () => {},
-    };
-    const pdfStorage: BulletinPdfStoragePort = {
-      driverName: 'memory',
-      buildStorageKey: ({ bulletinId }) => `bulletins/${bulletinId}.pdf`,
-      storePdf: async (key) => key,
-      readPdf: async () => null,
       exists: async () => false,
+      delete: async () => {},
     };
 
     const kit: SchoolIdentityKitRecord = {
@@ -446,11 +442,11 @@ describe('Étape 5 bis — QR jeton long configurable, /verify deux niveaux, POS
       mottoFr: 'Travail — Excellence', mottoEn: null,
       poBox: '101', city: 'Garoua', phone: null,
       foundingYear: 1995, authorizationNumber: null, accentColor: '#e2e8f0',
-      logoAssetKey: 'school-assets/sch-1/logo.png',
-      coatOfArmsAssetKey: 'school-assets/sch-1/coat.png',
-      stampAssetKey: 'school-assets/sch-1/stamp.png',
-      principalSignatureAssetKey: 'school-assets/sch-1/sigp.png',
-      censorSignatureAssetKey: 'school-assets/sch-1/sigc.png',
+      logoAssetKey: 'sch-1/school-assets/logo.png',
+      coatOfArmsAssetKey: 'sch-1/school-assets/coat.png',
+      stampAssetKey: 'sch-1/school-assets/stamp.png',
+      principalSignatureAssetKey: 'sch-1/school-assets/sigp.png',
+      censorSignatureAssetKey: 'sch-1/school-assets/sigc.png',
       useCoatOfArms: true,
       updatedById: null, createdAt: new Date(), updatedAt: new Date(),
     };
@@ -507,8 +503,7 @@ describe('Étape 5 bis — QR jeton long configurable, /verify deux niveaux, POS
       schoolId: 'sch-1',
       bulletinRepository: repo,
       bulletinRenderer: new MeasuredPdfKitBulletinRenderer(),
-      bulletinPdfStorage: pdfStorage,
-      schoolAssetStorage: assetStorage,
+      fileStorage,
       verifyBaseUrl: 'https://verify.zekoulabia.cm',
     });
 

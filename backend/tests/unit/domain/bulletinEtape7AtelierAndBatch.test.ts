@@ -24,7 +24,7 @@ import type { SchoolConfigData, SchoolConfigRepository } from '@domain/ports/rep
 import type { SchoolIdentityKitRecord, SchoolIdentityKitRepository } from '@domain/ports/repositories/SchoolIdentityKitRepository';
 import type { BulletinTemplateAssignmentRepository } from '@domain/ports/repositories/BulletinTemplateAssignmentRepository';
 import type { ClasseRepository } from '@domain/ports/repositories/ClasseRepository';
-import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
 import type { BulletinExportData, BulletinRepository } from '@domain/ports/repositories/BulletinRepository';
 import type { AnneeAcademiqueRepository } from '@domain/ports/repositories/AnneeAcademiqueRepository';
 import type { GenererBulletinUseCase } from '@application/reportCard/GenererBulletinUseCase';
@@ -181,7 +181,7 @@ function buildAtelierControllerFixture() {
     },
   });
   const classeRepo = createStub<ClasseRepository>({ async findBySchool() { return []; } });
-  const assetStorage = createStub<SchoolAssetStoragePort>({ async readAssetBuffer() { return null; } });
+  const assetStorage = createStub<FileStoragePort>({ async get() { return null; } });
 
   const controller = new MasterBulletinAtelierController(
     masterQueryRepo,
@@ -334,10 +334,9 @@ describe('Étape 7 — Atelier Master RBAC, versioning DRAFT/PUBLISHED, aperçu 
       undefined,
       fix.schoolConfigRepo,
       new MeasuredPdfKitBulletinRenderer(),
-      undefined,
+      fix.assetStorage,
       fix.assignmentRepo,
       fix.kitRepo,
-      fix.assetStorage,
     );
 
     const adminJsonReq = {
@@ -371,11 +370,10 @@ describe('Étape 7 — Atelier Master RBAC, versioning DRAFT/PUBLISHED, aperçu 
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
       'base64',
     );
-    const cachedAssetStorage = createStub<SchoolAssetStoragePort>({
-      async readAssetBuffer(key: string | null | undefined) {
-        if (!key) return null;
+    const cachedAssetStorage = createStub<FileStoragePort>({
+      async get(key: string) {
         readAssetCalls += 1;
-        return tinyPng;
+        return { buffer: tinyPng, contentType: 'image/png' };
       },
     });
 
@@ -401,7 +399,7 @@ describe('Étape 7 — Atelier Master RBAC, versioning DRAFT/PUBLISHED, aperçu 
           regionalDelegationFr: 'CENTRE', regionalDelegationEn: 'CENTRE',
           departmentalDelegationFr: 'MFOUNDI', departmentalDelegationEn: 'MFOUNDI',
           mottoFr: 'Travail', mottoEn: 'Work', poBox: 'BP 100', city: 'Yaoundé', phone: '600000000',
-          foundingYear: 2010, logoAssetKey: 'logo.png', stampAssetKey: 'stamp.png',
+          foundingYear: 2010, logoAssetKey: 'school-a/school-assets/logo.png', stampAssetKey: 'school-a/school-assets/stamp.png',
         }),
       },
       section: { code: 'FR' },
@@ -423,7 +421,7 @@ describe('Étape 7 — Atelier Master RBAC, versioning DRAFT/PUBLISHED, aperçu 
       anneeRepository: mockAnneeRepo,
       bulletinRepository: mockBulletinRepo,
       bulletinRenderer: new MeasuredPdfKitBulletinRenderer(),
-      schoolAssetStorage: cachedAssetStorage,
+      fileStorage: cachedAssetStorage,
     });
 
     expect(captured.statusCode).toBe(200);

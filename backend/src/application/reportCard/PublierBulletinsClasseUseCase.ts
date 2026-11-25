@@ -7,7 +7,7 @@ import type { BulletinValidationRepository } from '@domain/ports/repositories/Bu
 import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolConfigRepository';
 import type { BulletinTemplateSpecRepository } from '@domain/ports/repositories/BulletinTemplateSpecRepository';
 import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
-import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
 import type { EnvoyerBulletinsUseCase } from './EnvoyerBulletinsUseCase';
 import { sealAndStoreBulletinsForClass } from './bulletinPdfLifecycle';
 
@@ -28,10 +28,9 @@ export class PublierBulletinsClasseUseCase {
     private readonly bulletinRepository: BulletinRepository,
     private readonly envoyerBulletins: EnvoyerBulletinsUseCase,
     private readonly bulletinRenderer?: BulletinRendererPort,
-    private readonly bulletinPdfStorage?: BulletinPdfStoragePort,
+    private readonly fileStorage?: FileStoragePort,
     private readonly schoolConfigRepository?: SchoolConfigRepository,
     private readonly templateSpecRepository?: BulletinTemplateSpecRepository,
-    private readonly fileStorage?: import('@domain/ports/services/FileStoragePort').FileStoragePort,
   ) {}
 
   async execute(commande: PublierBulletinsCommande) {
@@ -74,10 +73,9 @@ export class PublierBulletinsClasseUseCase {
       schoolId,
       bulletinRepository: this.bulletinRepository,
       bulletinRenderer: this.bulletinRenderer,
-      bulletinPdfStorage: this.bulletinPdfStorage,
+      fileStorage: this.fileStorage,
       schoolConfigRepository: this.schoolConfigRepository,
       templateSpecRepository: this.templateSpecRepository,
-      fileStorage: this.fileStorage,
     });
 
     // 6. Envoyer les emails aux parents

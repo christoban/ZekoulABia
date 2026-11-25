@@ -27,10 +27,9 @@ import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolCo
 import type { BulletinTemplateAssignmentRepository } from '@domain/ports/repositories/BulletinTemplateAssignmentRepository';
 import type { BulletinTemplateSpecRepository } from '@domain/ports/repositories/BulletinTemplateSpecRepository';
 import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
-import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
 import type { SequenceAbsenceSummaryRepository } from '@domain/ports/repositories/SequenceAbsenceSummaryRepository';
 import type { SchoolIdentityKitRepository } from '@domain/ports/repositories/SchoolIdentityKitRepository';
-import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
 import type { BulletinTemplate } from '@domain/types/enums';
 import { resolveHasCoefficientForClass } from '@domain/subsystems/SubsystemDefaults';
 import { buildLongTokenVerifyUrl } from '@domain/policies/BulletinVerifyCrypto';
@@ -89,12 +88,10 @@ export class GenererBulletinUseCase {
     private readonly schoolConfigRepository?: SchoolConfigRepository,
     private readonly assignmentRepository?: BulletinTemplateAssignmentRepository,
     private readonly bulletinRenderer?: BulletinRendererPort,
-    private readonly bulletinPdfStorage?: BulletinPdfStoragePort,
+    private readonly fileStorage?: FileStoragePort,
     private readonly sequenceAbsenceRepository?: SequenceAbsenceSummaryRepository,
     private readonly schoolIdentityKitRepository?: SchoolIdentityKitRepository,
-    private readonly schoolAssetStorage?: SchoolAssetStoragePort,
     private readonly templateSpecRepository?: BulletinTemplateSpecRepository,
-    private readonly fileStorage?: import('@domain/ports/services/FileStoragePort').FileStoragePort,
   ) {}
 
   async execute(commande: GenererBulletinCommande): Promise<GenererBulletinResultat> {
@@ -207,13 +204,14 @@ export class GenererBulletinUseCase {
     const schoolObj = school.toObject();
     const cachedBatchSchoolIdentity = plan.useMeasuredRenderer
       ? await createBatchSchoolIdentityContextCache({
+          schoolId: commande.schoolId,
           schoolName: schoolObj.name,
           fallbackMotto: commande.schoolMotto,
           fallbackCity: schoolObj.city,
           fallbackPhone: schoolObj.phone,
           fallbackLogoUrl: schoolObj.logoUrl ?? commande.logoUrl,
           kit: identityKit,
-          schoolAssetStorage: this.schoolAssetStorage,
+          fileStorage: this.fileStorage,
         }).getForLanguage(langue)
       : undefined;
     let generes = 0;
@@ -285,7 +283,6 @@ export class GenererBulletinUseCase {
         shortVerifyCode: entry.shortVerifyCode,
         studentPhotoUrl: rawPhotoByStudent.get(eleve.id),
         bulletinRenderer: this.bulletinRenderer,
-        bulletinPdfStorage: this.bulletinPdfStorage,
         fileStorage: this.fileStorage,
       });
 
@@ -313,7 +310,7 @@ export class GenererBulletinUseCase {
         });
       }
 
-      bulletin.marquerGenere(storedKey ?? `bulletins/${commande.schoolId}/${bulletin.id}.pdf`);
+      bulletin.marquerGenere(storedKey);
 
       if (bulletinExistant?.estGenere()) {
         bulletinExistant.revoquer({

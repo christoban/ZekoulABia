@@ -23,7 +23,7 @@ import {
   getOrRegenerateSealedBulletinPdf,
   sealAndStoreBulletinsForClass,
 } from '@application/reportCard/bulletinPdfLifecycle';
-import { LocalDiskBulletinPdfStorageAdapter } from '@infrastructure/services/storage/LocalDiskBulletinPdfStorageAdapter';
+import { LocalDiskFileStorage } from '@infrastructure/services/storage/LocalDiskFileStorage';
 import { MeasuredPdfKitBulletinRenderer } from '@infrastructure/pdf/renderer/MeasuredPdfKitBulletinRenderer';
 import { renderReportCardPdfBuffer } from '@infrastructure/http/controllers/helpers/reportCardControllerHelpers';
 import { InMemoryBulletinRepository } from '../../helpers/repositories/InMemoryBulletinRepository';
@@ -275,7 +275,7 @@ describe('Étape 4 — Regroupements par code, Famille A immuable, Affectations 
   it('stocke le PDF à la validation, le sert sans régénérer, puis régénère depuis snapshotData si le fichier est supprimé', async () => {
     const tmpDir = mkdtempSync(path.join(tmpdir(), 'zekoulabia-pdf-storage-'));
     createdTempDirs.push(tmpDir);
-    const storage = new LocalDiskBulletinPdfStorageAdapter(tmpDir);
+    const storage = new LocalDiskFileStorage(tmpDir);
     const realRenderer = new MeasuredPdfKitBulletinRenderer();
     let renderCalls = 0;
 
@@ -323,7 +323,7 @@ describe('Étape 4 — Regroupements par code, Famille A immuable, Affectations 
       schoolId: 'school-1',
       bulletinRepository: repo,
       bulletinRenderer: spyRenderer,
-      bulletinPdfStorage: storage,
+      fileStorage: storage,
       schoolConfigRepository: {
         findBySchool: async () => ({ aiAlertsEnabled: true, subjectDropThreshold: 3, useMeasuredBulletinRenderer: true }),
         findBySchoolId: async () => ({ aiAlertsEnabled: true, subjectDropThreshold: 3, useMeasuredBulletinRenderer: true }),
@@ -345,7 +345,7 @@ describe('Étape 4 — Regroupements par code, Famille A immuable, Affectations 
       language: 'fr',
       verifyBaseUrl: 'https://zekoulabia.chri.app',
       bulletinRenderer: spyRenderer,
-      bulletinPdfStorage: storage,
+      fileStorage: storage,
     });
     expect(cachedBuf).not.toBeNull();
     expect(renderCalls).toBe(1);
@@ -376,7 +376,7 @@ describe('Étape 4 — Regroupements par code, Famille A immuable, Affectations 
         language: 'fr',
         verifyBaseUrl: 'https://zekoulabia.chri.app',
         bulletinRenderer: spyRenderer,
-        bulletinPdfStorage: storage,
+        fileStorage: storage,
       });
       expect(regeneratedBuf).not.toBeNull();
       expect(renderCalls).toBe(2);
@@ -412,7 +412,7 @@ describe('Étape 4 — Regroupements par code, Famille A immuable, Affectations 
       currency: 'XAF',
       maxAbsences: 10,
       bulletinTemplate: 'FR_SECONDARY',
-    }, { bulletinRenderer: spyRenderer, bulletinPdfStorage: storage });
+    }, { bulletinRenderer: spyRenderer, fileStorage: storage });
     expect(legacyResult.pdfBuffer.subarray(0, 5).toString('utf8')).toBe('%PDF-');
     expect(renderCalls).toBe(2);
   });

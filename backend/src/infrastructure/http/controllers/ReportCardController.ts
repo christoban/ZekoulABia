@@ -14,11 +14,10 @@ import type { FactureRepository } from '@domain/ports/repositories/FactureReposi
 import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolConfigRepository';
 import type { AIActionAuditPort } from '@domain/ports/services/AIActionAuditPort';
 import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
-import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
 import type { BulletinTemplateAssignmentRepository } from '@domain/ports/repositories/BulletinTemplateAssignmentRepository';
 import type { SchoolIdentityKitRepository } from '@domain/ports/repositories/SchoolIdentityKitRepository';
 import type { BulletinTemplateSpecRepository } from '@domain/ports/repositories/BulletinTemplateSpecRepository';
-import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
 import type { BulletinTemplate } from '@domain/types/enums';
 import { GENERAL_GROUPED_V1, findDefaultSpecForTemplate, getPublishedTemplateSpec } from '@domain/templates/bulletinCatalog';
 import { renderAtelierPreviewPdf } from '@application/reportCard/bulletinAtelierPreview';
@@ -56,12 +55,10 @@ export class ReportCardController {
     private readonly factureRepository?: FactureRepository,
     private readonly schoolConfigRepository?: SchoolConfigRepository,
     private readonly bulletinRenderer?: BulletinRendererPort,
-    private readonly bulletinPdfStorage?: BulletinPdfStoragePort,
+    private readonly fileStorage?: FileStoragePort,
     private readonly assignmentRepository?: BulletinTemplateAssignmentRepository,
     private readonly schoolIdentityKitRepository?: SchoolIdentityKitRepository,
-    private readonly schoolAssetStorage?: SchoolAssetStoragePort,
     private readonly templateSpecRepository?: BulletinTemplateSpecRepository,
-    private readonly fileStorage?: import('@domain/ports/services/FileStoragePort').FileStoragePort,
   ) {}
 
   // POST /api/v2/report-cards/generate
@@ -160,7 +157,7 @@ export class ReportCardController {
         res, schoolId: req.user.schoolId, classId: req.params.classId as string,
         requestedPeriodId: req.body?.academicPeriodId as string | undefined,
         anneeRepository: this.anneeRepository, bulletinRepository: this.bulletinRepository,
-        bulletinRenderer: this.bulletinRenderer, schoolAssetStorage: this.schoolAssetStorage,
+        bulletinRenderer: this.bulletinRenderer,
         templateSpecRepository: this.templateSpecRepository, fileStorage: this.fileStorage,
       });
     } catch (error) {
@@ -210,6 +207,7 @@ export class ReportCardController {
         }
         const sObj = school.toObject();
         const pdfBuffer = await renderAtelierPreviewPdf({
+          schoolId,
           schoolName: sObj.name,
           fallbackCity: sObj.city,
           fallbackPhone: sObj.phone,
@@ -217,7 +215,7 @@ export class ReportCardController {
           kit: identityKit,
           spec: activeSpec,
           renderer: this.bulletinRenderer,
-          schoolAssetStorage: this.schoolAssetStorage,
+          fileStorage: this.fileStorage,
           passThresholdOn20: schoolConfig?.passMark,
         });
         res.setHeader('Content-Type', 'application/pdf');
@@ -256,7 +254,7 @@ export class ReportCardController {
         res, schoolId: req.user.schoolId, classId: req.params.classId as string,
         requestedPeriodId: req.body?.academicPeriodId as string | undefined,
         anneeRepository: this.anneeRepository, bulletinRepository: this.bulletinRepository,
-        bulletinRenderer: this.bulletinRenderer, bulletinPdfStorage: this.bulletinPdfStorage,
+        bulletinRenderer: this.bulletinRenderer,
         templateSpecRepository: this.templateSpecRepository, fileStorage: this.fileStorage,
       });
     } catch (error) {
@@ -360,7 +358,6 @@ export class ReportCardController {
       }
       const { pdfBuffer, filename } = await renderReportCardPdfBuffer(reportCard, user.schoolId, role, undefined, {
         bulletinRenderer: this.bulletinRenderer,
-        bulletinPdfStorage: this.bulletinPdfStorage,
         templateSpecRepository: this.templateSpecRepository,
         fileStorage: this.fileStorage,
       });
@@ -407,7 +404,6 @@ export class ReportCardController {
 
       const { pdfBuffer, filename } = await renderReportCardPdfBuffer(reportCard, user.schoolId, role, undefined, {
         bulletinRenderer: this.bulletinRenderer,
-        bulletinPdfStorage: this.bulletinPdfStorage,
         templateSpecRepository: this.templateSpecRepository,
         fileStorage: this.fileStorage,
         forceRegenerateFromSnapshot: true,

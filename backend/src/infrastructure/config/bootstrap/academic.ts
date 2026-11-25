@@ -71,12 +71,10 @@ export function registerAcademicRoutes(app: Application, prismaParam: typeof pri
     c.finance.factureRepository,
     c.school.schoolConfigRepository,
     c.reportCard.bulletinRenderer,
-    c.reportCard.bulletinPdfStorage,
+    c.fileStorage,
     c.reportCard.bulletinAssignmentRepository,
     c.reportCard.schoolIdentityKitRepository,
-    c.reportCard.schoolAssetStorage,
     c.reportCard.templateSpecRepository,
-    c.fileStorage,
   );
 
   const masterBulletinAtelierController = new MasterBulletinAtelierController(
@@ -87,7 +85,7 @@ export function registerAcademicRoutes(app: Application, prismaParam: typeof pri
     c.reportCard.bulletinAssignmentRepository,
     c.school.classeRepository,
     c.reportCard.bulletinRenderer,
-    c.reportCard.schoolAssetStorage,
+    c.fileStorage,
     c.reportCard.templateSpecRepository,
   );
 

@@ -12,10 +12,9 @@ import type { BulletinExportData, BulletinRepository } from '@domain/ports/repos
 import type { BulletinTemplateAssignmentRepository } from '@domain/ports/repositories/BulletinTemplateAssignmentRepository';
 import type { BulletinTemplateSpecRepository } from '@domain/ports/repositories/BulletinTemplateSpecRepository';
 import type { SchoolConfigData, SchoolConfigRepository } from '@domain/ports/repositories/SchoolConfigRepository';
-import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
 import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
-import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
 import { resolveStudentPhotoBuffer } from '@application/student/studentPhotoService';
+import { readSealedBulletinPdf, storeSealedBulletinPdf } from './bulletinStorageHelpers';
 import type {
   BulletinGradingPolicy,
   BulletinRendererPort,
@@ -243,14 +242,12 @@ export async function sealAndStoreBulletinsForClass(params: {
   schoolId: string;
   bulletinRepository: BulletinRepository;
   bulletinRenderer?: BulletinRendererPort;
-  bulletinPdfStorage?: BulletinPdfStoragePort;
   schoolConfigRepository?: SchoolConfigRepository;
-  schoolAssetStorage?: SchoolAssetStoragePort;
   templateSpecRepository?: BulletinTemplateSpecRepository;
   fileStorage?: FileStoragePort;
   verifyBaseUrl?: string;
 }): Promise<{ sealedCount: number }> {
-  if (!params.bulletinRenderer || !params.bulletinPdfStorage) {
+  if (!params.bulletinRenderer || !params.fileStorage) {
     return { sealedCount: 0 };
   }
 
@@ -266,13 +263,14 @@ export async function sealAndStoreBulletinsForClass(params: {
 
   const firstSchool = rows[0]?.school;
   const batchIdentityCache = createBatchSchoolIdentityContextCache({
+    schoolId: params.schoolId,
     schoolName: firstSchool?.name ?? 'Établissement',
     fallbackMotto: firstSchool?.schoolSettings?.schoolMotto,
     fallbackCity: firstSchool?.city,
     fallbackPhone: firstSchool?.phone,
     fallbackLogoUrl: firstSchool?.logoUrl,
     kit: firstSchool?.identityKit,
-    schoolAssetStorage: params.schoolAssetStorage,
+    fileStorage: params.fileStorage,
   });
 
   const verifyBaseUrl = params.verifyBaseUrl ?? resoudreVerifyBaseUrl();
@@ -310,13 +308,14 @@ export async function sealAndStoreBulletinsForClass(params: {
     });
 
     const pdfBuffer = await params.bulletinRenderer.render(row.snapshotData, spec, options);
-    const storageKey = params.bulletinPdfStorage.buildStorageKey({
+    const storedKey = await storeSealedBulletinPdf({
+      fileStorage: params.fileStorage,
       schoolId: params.schoolId,
       academicPeriodId: params.academicPeriodId,
       bulletinId: row.id,
       templateVersion: spec.version,
+      pdfBuffer,
     });
-    const storedKey = await params.bulletinPdfStorage.storePdf(storageKey, pdfBuffer);
     await params.bulletinRepository.updatePdfMetadata(row.id, {
       pdfUrl: storedKey,
       templateSpecId: spec.id,
@@ -337,8 +336,6 @@ export async function getOrRegenerateSealedBulletinPdf(params: {
   forceRegenerateFromSnapshot?: boolean;
   persistRegeneratedPdf?: boolean;
   bulletinRenderer?: BulletinRendererPort;
-  bulletinPdfStorage?: BulletinPdfStoragePort;
-  schoolAssetStorage?: SchoolAssetStoragePort;
   templateSpecRepository?: BulletinTemplateSpecRepository;
   fileStorage?: FileStoragePort;
 }): Promise<Buffer | null> {
@@ -361,14 +358,19 @@ export async function getOrRegenerateSealedBulletinPdf(params: {
     return null;
   }
 
-  if (!params.forceRegenerateFromSnapshot && params.bulletinPdfStorage && params.reportCard.pdfUrl) {
-    const cached = await params.bulletinPdfStorage.readPdf(params.reportCard.pdfUrl);
+  if (!params.forceRegenerateFromSnapshot && params.fileStorage && params.reportCard.pdfUrl) {
+    const cached = await readSealedBulletinPdf({
+      fileStorage: params.fileStorage,
+      pdfUrl: params.reportCard.pdfUrl,
+      schoolId: params.reportCard.schoolId,
+    });
     if (cached && cached.length > 0) {
       return cached;
     }
   }
 
   const schoolIdentity = await buildSchoolIdentityRenderContext({
+    schoolId: params.reportCard.schoolId,
     schoolName: params.reportCard.school?.name ?? 'Établissement',
     language: params.language,
     fallbackMotto: params.schoolMotto ?? params.reportCard.school?.schoolSettings?.schoolMotto,
@@ -376,7 +378,7 @@ export async function getOrRegenerateSealedBulletinPdf(params: {
     fallbackPhone: params.reportCard.school?.phone,
     fallbackLogoUrl: params.reportCard.school?.logoUrl,
     kit: params.reportCard.school?.identityKit,
-    schoolAssetStorage: params.schoolAssetStorage,
+    fileStorage: params.fileStorage,
   });
   const resolvedPhoto = await resolveStudentPhotoBuffer({
     photoUrl: params.reportCard.student?.studentProfile?.photoUrl,
@@ -393,16 +395,16 @@ export async function getOrRegenerateSealedBulletinPdf(params: {
   });
   const pdfBuffer = await params.bulletinRenderer.render(params.reportCard.snapshotData, spec, options);
 
-  if (params.bulletinPdfStorage && (!params.forceRegenerateFromSnapshot || params.persistRegeneratedPdf)) {
-    const key =
-      params.reportCard.pdfUrl ||
-      params.bulletinPdfStorage.buildStorageKey({
-        schoolId: params.reportCard.schoolId,
-        academicPeriodId: params.reportCard.academicPeriodId,
-        bulletinId: params.reportCard.id,
-        templateVersion: spec.version,
-      });
-    await params.bulletinPdfStorage.storePdf(key, pdfBuffer);
+  if (params.fileStorage && (!params.forceRegenerateFromSnapshot || params.persistRegeneratedPdf)) {
+    await storeSealedBulletinPdf({
+      fileStorage: params.fileStorage,
+      schoolId: params.reportCard.schoolId,
+      academicPeriodId: params.reportCard.academicPeriodId,
+      bulletinId: params.reportCard.id,
+      templateVersion: spec.version,
+      existingKey: params.reportCard.pdfUrl,
+      pdfBuffer,
+    });
   }
 
   return pdfBuffer;
@@ -430,7 +432,6 @@ export async function renderAndStoreBulletinIfSpecActive(params: {
   shortVerifyCode?: string;
   studentPhotoUrl?: string | null;
   bulletinRenderer?: BulletinRendererPort;
-  bulletinPdfStorage?: BulletinPdfStoragePort;
   fileStorage?: FileStoragePort;
 }): Promise<string | null> {
   if (!params.spec || !params.bulletinRenderer) return null;
@@ -466,13 +467,13 @@ export async function renderAndStoreBulletinIfSpecActive(params: {
     },
   };
   const pdfBuffer = await params.bulletinRenderer.render(params.snapshot, params.spec, options);
-  const fallbackKey = `bulletins/${params.schoolId}/${params.bulletinId}.pdf`;
-  if (!params.bulletinPdfStorage) return fallbackKey;
-  const key = params.bulletinPdfStorage.buildStorageKey({
+  if (!params.fileStorage) return null;
+  return storeSealedBulletinPdf({
+    fileStorage: params.fileStorage,
     schoolId: params.schoolId,
     academicPeriodId: params.academicPeriodId,
     bulletinId: params.bulletinId,
     templateVersion: params.spec.version,
+    pdfBuffer,
   });
-  return params.bulletinPdfStorage.storePdf(key, pdfBuffer);
 }
