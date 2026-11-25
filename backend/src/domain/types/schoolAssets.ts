@@ -20,3 +20,4 @@ export interface ValidatedSchoolAsset {
 
 export const MAX_SCHOOL_ASSET_BYTES = 300 * 1024; // 300 Ko
 export const MAX_SCHOOL_ASSET_DIMENSION = 1200; // 1200×1200 px
+

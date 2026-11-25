@@ -93,3 +93,4 @@ void main().catch((err) => {
   console.error(`[migrateSchoolAssets] ERREUR FATALE : ${err instanceof Error ? err.message : String(err)}`);
   process.exit(1);
 });
+

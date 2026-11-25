@@ -386,3 +386,4 @@ describe('Validation fichiers, magic bytes, limites par domaine & factory de dé
     ).toThrow(/FILE_STORAGE_DRIVER invalide/);
   });
 });
+

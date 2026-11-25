@@ -277,3 +277,4 @@ describe('Phase S4 — Absorption de BulletinPdfStoragePort & SchoolAssetStorage
     expect(dbWrites).toBe(1);
   });
 });
+

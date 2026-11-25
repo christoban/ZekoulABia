@@ -45,3 +45,4 @@ export interface FileStoragePort {
 
   delete(key: string): Promise<void>;
 }
+

@@ -91,3 +91,4 @@ void main().catch((err) => {
   console.error(`[migrateStudentPhotos] ERREUR FATALE : ${err instanceof Error ? err.message : String(err)}`);
   process.exit(1);
 });
+

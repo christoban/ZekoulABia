@@ -147,3 +147,4 @@ export async function resolveStudentPhotoBuffer(params: {
 
   return { buffer: stored.buffer, mimeType };
 }
+

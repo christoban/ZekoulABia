@@ -190,3 +190,4 @@ Même si le stockage des PDF scellés (`{schoolId}/bulletins/...`) est intégral
 - Le driver `local` reste disponible et activable à tout moment par simple changement de `FILE_STORAGE_DRIVER=local`.
 - La lecture des photos élèves et médias du kit d'identité stockés en `data:image/...` reste 100 % rétrocompatible.
 - Aucune colonne SQL ni aucune donnée existante n'a été supprimée durant le chantier.
+

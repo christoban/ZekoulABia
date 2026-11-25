@@ -224,3 +224,4 @@ export async function readSchoolAssetBuffer(params: {
   if (!stored || stored.buffer.length === 0) return null;
   return stored.buffer;
 }
+
