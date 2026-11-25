@@ -1,12 +1,19 @@
-import { Router } from 'express';
+import express, { Router, type RequestHandler } from 'express';
 import type { MasterReferentielsController } from '../controllers/MasterReferentielsController.ts';
+import type { MasterProgressionsImportController } from '../controllers/MasterProgressionsImportController.ts';
 import { protectMaster, authorizeMaster } from '../middlewares/authMultiTenant.ts';
 
-export function creerMasterReferentielsRoutes(controller: MasterReferentielsController): Router {
+const IMPORT_JSON_LIMIT = express.json({ limit: '5mb' });
+
+export function creerMasterReferentielsRoutes(
+  controller: MasterReferentielsController,
+  progressionsImportController: MasterProgressionsImportController,
+  authMiddlewares?: { protect?: RequestHandler; authorize?: RequestHandler },
+): Router {
   const router = Router();
 
-  router.use(protectMaster);
-  router.use(authorizeMaster(['super_admin', 'platform_admin']));
+  router.use(authMiddlewares?.protect ?? protectMaster);
+  router.use(authMiddlewares?.authorize ?? authorizeMaster(['super_admin', 'platform_admin']));
 
   // 1. Synthèse globale & Alerte Proactive
   router.get('/summary', controller.getSummary);
@@ -27,9 +34,11 @@ export function creerMasterReferentielsRoutes(controller: MasterReferentielsCont
   router.delete('/template-subjects/:id', controller.deleteTemplateSubject);
 
   // 5. Programmes Officiels & Progressions Types
-  router.get('/progressions',         controller.getProgressions);
-  router.post('/progressions',        controller.saveProgression);
-  router.delete('/progressions/:id',   controller.deleteProgression);
+  router.get('/progressions',                 controller.getProgressions);
+  router.post('/progressions',                controller.saveProgression);
+  router.delete('/progressions/:id',          controller.deleteProgression);
+  router.post('/progressions/import/propose', IMPORT_JSON_LIMIT, progressionsImportController.proposeImport);
+  router.post('/progressions/import/apply',   IMPORT_JSON_LIMIT, progressionsImportController.applyImport);
 
   // 6. Tarifs MINESEC Réglementaires
   router.get('/tarifs-minesec',        controller.getTarifsMinesec);

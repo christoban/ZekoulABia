@@ -7,7 +7,7 @@ import { bootstrapHexagonal } from './hexagonal.bootstrap';
 
 export function creerApp(): Application {
   const app = express();
-  app.use(express.json());
+  app.use(express.json({ limit: '5mb' }));
   bootstrapHexagonal(app);
   return app;
 }

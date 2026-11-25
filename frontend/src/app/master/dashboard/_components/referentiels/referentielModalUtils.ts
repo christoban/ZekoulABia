@@ -179,9 +179,9 @@ export async function saveReferentielFormData(
     }
     const progData: Partial<OfficialProgressionDto> = {
       id: formData.id as string | undefined,
-      templateCode: String(formData.templateCode || ''),
+      templateCode: String(formData.templateCode || '__ALL__'),
       level: String(formData.level || ''),
-      filiere: formData.filiere ? String(formData.filiere) : null,
+      filiere: formData.filiere ? String(formData.filiere) : '',
       subjectName: String(formData.subjectName || ''),
       titre: String(formData.titre || `Programme ${formData.subjectName} ${formData.level}`),
       chapitres: chapitres || [],
