@@ -22,7 +22,9 @@ if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET non défini — requis dans .env.test pour ce test.');
 }
 
-const DOCUMENTS_DIR = path.resolve(process.cwd(), 'storage', 'hr-documents');
+const STORAGE_ROOT = process.env.FILE_STORAGE_LOCAL_DIR
+  ? path.resolve(process.env.FILE_STORAGE_LOCAL_DIR)
+  : path.resolve(process.cwd(), 'storage', 'files');
 
 let server: Server;
 let baseUrl: string;
@@ -56,8 +58,8 @@ afterAll(async () => {
   await prismaTest.user.deleteMany({ where: { schoolId } });
   await nettoyerEcole(prismaTest, schoolId);
   await prismaTest.$disconnect();
-  const userDir = path.join(DOCUMENTS_DIR, staffUserId);
-  if (fs.existsSync(userDir)) fs.rmSync(userDir, { recursive: true, force: true });
+  const schoolDir = path.join(STORAGE_ROOT, schoolId);
+  if (fs.existsSync(schoolDir)) fs.rmSync(schoolDir, { recursive: true, force: true });
 });
 
 describe('HRSelfServiceController — upload puis download d\'un document (EmployeeFile.documentsUrls)', () => {
@@ -81,7 +83,7 @@ describe('HRSelfServiceController — upload puis download d\'un document (Emplo
     expect(documents).toHaveLength(1);
     expect(documents[0].type).toBe('PIECE_IDENTITE');
     expect(documents[0].label).toBe('CNI recto-verso');
-    expect(fs.existsSync(documents[0].url)).toBe(true);
+    expect(documents[0].url).toMatch(new RegExp(`^${schoolId}/hr-documents/[0-9a-f-]+\\.jpg$`));
 
     const resDownload = await fetch(`${baseUrl}/hr-self-service/me/document/0/download`, {
       method: 'GET',
