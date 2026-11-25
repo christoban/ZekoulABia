@@ -2,9 +2,10 @@ import { describe, it, expect, afterAll } from 'bun:test';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 import PDFDocument from 'pdfkit';
 import QRCode from 'qrcode';
+import jsQR from 'jsqr';
+import { PNG } from 'pngjs';
 import { Bulletin } from '@domain/entities/Bulletin';
 import { SchoolAssetValidationError } from '@domain/errors/SchoolAssetValidationError';
 import {
@@ -293,15 +294,12 @@ describe('Étape 5 — Identité école, Assets validés, QR >= 20 mm, /verify p
       const mmWidth = (drawnQrFit![0]! * 25.4) / 72;
       expect(mmWidth).toBeGreaterThanOrEqual(20); // >= 20 mm obligatoires
 
-      // Scan réel via OpenCV si cv2 disponible
-      const pyRes = spawnSync(
-        'python3',
-        ['-c', 'import sys,cv2,numpy as np; buf=np.frombuffer(sys.stdin.buffer.read(),np.uint8); img=cv2.imdecode(buf,1); v,_,_=cv2.QRCodeDetector().detectAndDecode(img); print(v)'],
-        { input: capturedQrPng },
-      );
-      if (pyRes.status === 0) {
-        expect(pyRes.stdout.toString('utf8').trim()).toBe(verifyUrl);
-      }
+      // Décodage 100 % JavaScript du PNG QR (pngjs + jsQR) sans OpenCV ni binaire externe
+      expect(capturedQrPng).toBeDefined();
+      const decodedPng = PNG.sync.read(capturedQrPng!);
+      const qrResult = jsQR(new Uint8ClampedArray(decodedPng.data), decodedPng.width, decodedPng.height);
+      expect(qrResult).not.toBeNull();
+      expect(qrResult!.data).toBe(verifyUrl);
     } finally {
       PDFDocument.prototype.image = origImage;
     }

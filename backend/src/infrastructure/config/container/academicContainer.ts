@@ -9,6 +9,7 @@ import { PrismaSousGroupeRepository } from '@infrastructure/persistence/prisma/P
 import { PrismaClasseCoefficientRepository } from '@infrastructure/persistence/prisma/PrismaClasseCoefficientRepository';
 import { PrismaDisciplineRepository } from '@infrastructure/persistence/prisma/PrismaDisciplineRepository';
 import { PrismaBulletinTemplateAssignmentRepository } from '@infrastructure/persistence/prisma/PrismaBulletinTemplateAssignmentRepository';
+import { PrismaBulletinTemplateSpecRepository } from '@infrastructure/persistence/prisma/PrismaBulletinTemplateSpecRepository';
 import { PrismaSchoolIdentityKitRepository } from '@infrastructure/persistence/prisma/PrismaSchoolIdentityKitRepository';
 import { PrismaPromotionRepository } from '@infrastructure/persistence/prisma/PrismaPromotionRepository';
 import { MeasuredPdfKitBulletinRenderer } from '@infrastructure/pdf/renderer/MeasuredPdfKitBulletinRenderer';
@@ -72,6 +73,7 @@ export function createAcademicContainer(core: CoreContainerContext) {
   const classeCoefficientRepository = new PrismaClasseCoefficientRepository(prisma);
   const disciplineRepository = new PrismaDisciplineRepository(prisma);
   const bulletinAssignmentRepository = new PrismaBulletinTemplateAssignmentRepository(prisma);
+  const templateSpecRepository = new PrismaBulletinTemplateSpecRepository(prisma);
   const schoolIdentityKitRepository = new PrismaSchoolIdentityKitRepository(prisma);
   const schoolAssetStorage = new LocalAndDataUriSchoolAssetStorageAdapter();
   const promotionRepository = new PrismaPromotionRepository(prisma, core.enrollmentRepository);
@@ -109,6 +111,7 @@ export function createAcademicContainer(core: CoreContainerContext) {
       core.sequenceAbsenceRepository,
       schoolIdentityKitRepository,
       schoolAssetStorage,
+      templateSpecRepository,
     ),
     envoyer: envoyerBulletinsUseCase,
     verifierDisponibilite: new VerifierDisponibiliteBulletinUseCase(
@@ -128,6 +131,7 @@ export function createAcademicContainer(core: CoreContainerContext) {
       bulletinRenderer,
       bulletinPdfStorage,
       core.schoolConfigRepository,
+      templateSpecRepository,
     ),
     publierBulletins: new PublierBulletinsClasseUseCase(
       bulletinValidationRepository,
@@ -136,11 +140,13 @@ export function createAcademicContainer(core: CoreContainerContext) {
       bulletinRenderer,
       bulletinPdfStorage,
       core.schoolConfigRepository,
+      templateSpecRepository,
     ),
     bulletinValidationRepository,
     bulletinRepository: core.bulletinRepository,
     parentRepository: core.parentRepository,
     bulletinAssignmentRepository,
+    templateSpecRepository,
     bulletinRenderer,
     bulletinPdfStorage,
     schoolIdentityKitRepository,

@@ -34,6 +34,10 @@ import {
   drawPrimaryPointsRatioSummary,
   drawTechnicalGroupedSummary,
 } from './measuredFamilySummaryHelpers';
+import {
+  QR_QUIET_ZONE_MODULES,
+  drawVerificationFooterStrip,
+} from './measuredVerificationFooter';
 
 function collectPdfBuffer(
   doc: InstanceType<typeof PDFDocument>,
@@ -53,19 +57,21 @@ function collectPdfBuffer(
   });
 }
 
+export const MIN_BULLETIN_FONT_SIZE = 7;
+
 function resolveTableFontSize(snapshot: StudentBulletinSnapshot, templateSpec: BulletinTemplateSpec): number {
   const count = snapshot.subjectLines.length;
-  if (templateSpec.layoutVariant === 'ANNUAL_BILINGUAL') return count >= 14 ? 5.9 : 6.2;
-  if (templateSpec.layoutVariant === 'PRIMARY_POINTS_RATIO') return count >= 20 ? 5.9 : 6.4;
-  return count >= 18 ? 6.7 : count >= 14 ? 7.1 : 7.6;
+  if (templateSpec.layoutVariant === 'ANNUAL_BILINGUAL') return MIN_BULLETIN_FONT_SIZE;
+  if (templateSpec.layoutVariant === 'PRIMARY_POINTS_RATIO') return MIN_BULLETIN_FONT_SIZE;
+  return count >= 14 ? 7.2 : 7.6;
 }
 
-async function generateQrPng(verifyUrl?: string): Promise<Buffer | null> {
+export async function generateBulletinQrPng(verifyUrl?: string): Promise<Buffer | null> {
   if (!verifyUrl) return null;
   return QRCode.toBuffer(verifyUrl, {
     type: 'png',
     errorCorrectionLevel: 'M',
-    margin: 2,
+    margin: QR_QUIET_ZONE_MODULES,
     scale: 6,
   }).catch(() => null);
 }
@@ -80,6 +86,8 @@ function drawBulletinPageOnDoc(
 ): void {
   const sigBlock = templateSpec.blocks.find((b): b is SignaturesBlockSpec => b.type === 'signatures');
   const qrBlock = templateSpec.blocks.find((b): b is VerifyQrBlockSpec => b.type === 'verifyQr');
+  const tableBlock = templateSpec.blocks.find((b) => b.type === 'subjectTable');
+  const specScaleConfig = tableBlock?.type === 'subjectTable' ? tableBlock.scaleConfig : undefined;
   const baseFontSize = resolveTableFontSize(snapshot, templateSpec);
   const variant = templateSpec.layoutVariant;
   const usesFamilyFooter =
@@ -88,10 +96,12 @@ function drawBulletinPageOnDoc(
     variant === 'BILINGUAL_APC' ||
     variant === 'PRIMARY_POINTS_RATIO';
 
+  const inkSaver = Boolean(templateSpec.inkSaverMode);
+
   for (const block of templateSpec.blocks) {
     switch (block.type) {
       case 'officialHeader':
-        drawOfficialHeaderBlock(doc, fonts, block, options);
+        drawOfficialHeaderBlock(doc, fonts, block, options, inkSaver);
         break;
       case 'studentCard':
         drawStudentCardBlock(doc, fonts, block, snapshot, options);
@@ -100,7 +110,7 @@ function drawBulletinPageOnDoc(
         drawMeasuredSubjectTable(doc, fonts, block, snapshot, options.language, baseFontSize, options, templateSpec);
         break;
       case 'classProfile':
-        if (!usesFamilyFooter) drawClassProfileBlock(doc, fonts, block, snapshot, options.language, options);
+        if (!usesFamilyFooter) drawClassProfileBlock(doc, fonts, block, snapshot, options.language, options, specScaleConfig, inkSaver);
         break;
       case 'councilDecision':
         if (!usesFamilyFooter) drawCouncilDecisionBlock(doc, fonts, block, snapshot, options);
@@ -115,23 +125,29 @@ function drawBulletinPageOnDoc(
   }
 
   if (variant === 'ANNUAL_BILINGUAL') {
-    drawAnnualBilingualSummary(doc, fonts, snapshot, options, qrBuffer);
+    drawAnnualBilingualSummary(doc, fonts, snapshot, options);
   } else if (variant === 'TECHNICAL_GROUPED') {
-    drawTechnicalGroupedSummary(doc, fonts, snapshot, options, qrBuffer);
+    drawTechnicalGroupedSummary(doc, fonts, snapshot, options);
   } else if (variant === 'BILINGUAL_APC') {
-    drawBilingualApcSummary(doc, fonts, snapshot, options, qrBuffer);
+    drawBilingualApcSummary(doc, fonts, snapshot, options);
   } else if (variant === 'PRIMARY_POINTS_RATIO') {
-    drawPrimaryPointsRatioSummary(doc, fonts, snapshot, options, qrBuffer);
-  } else if (sigBlock || qrBlock) {
-    drawSignaturesAndQrBlock(doc, fonts, sigBlock, qrBlock, options, qrBuffer);
+    drawPrimaryPointsRatioSummary(doc, fonts, snapshot, options, specScaleConfig);
+  } else if (sigBlock) {
+    drawSignaturesAndQrBlock(doc, fonts, sigBlock, options, inkSaver);
   }
 
-  if (templateSpec.validationNotice) {
+  // Emplacement unique pour TOUTES les familles : bande « Vérification d'authenticité » en pied de page
+  drawVerificationFooterStrip(doc, fonts, qrBlock, options, qrBuffer);
+
+  const noticeText =
+    templateSpec.validationNotice ||
+    (templateSpec.validationStatus === 'TO_VALIDATE' ? 'À VALIDER SUR UN BULLETIN RÉEL' : undefined);
+  if (options.isPreview === true && noticeText) {
     const left = doc.page.margins.left;
     const usableW = doc.page.width - left - doc.page.margins.right;
-    const yNotice = Math.min(doc.y + 1, doc.page.height - doc.page.margins.bottom - 9);
-    doc.font(fonts.italic).fontSize(5.8).fillColor('#64748b')
-      .text(`[${templateSpec.validationNotice}]`, left, yNotice, { width: usableW, align: 'right' });
+    const yNotice = Math.min(doc.y + 1, doc.page.height - 14);
+    doc.font(fonts.italic).fontSize(MIN_BULLETIN_FONT_SIZE).fillColor('#64748b')
+      .text(`[${noticeText}]`, left, yNotice, { width: usableW, align: 'right' });
   }
 }
 
@@ -144,7 +160,7 @@ export class MeasuredPdfKitBulletinRenderer implements BulletinRendererPort {
     options: BulletinRenderOptions,
   ): Promise<Buffer> {
     const qrBlock = templateSpec.blocks.find((b): b is VerifyQrBlockSpec => b.type === 'verifyQr');
-    const qrBuffer = qrBlock ? await generateQrPng(options.verifyUrl) : null;
+    const qrBuffer = qrBlock ? await generateBulletinQrPng(options.verifyUrl) : null;
 
     const doc = new PDFDocument({
       size: templateSpec.page.size,
@@ -184,7 +200,7 @@ export class MeasuredPdfKitBulletinRenderer implements BulletinRendererPort {
     const qrBuffers = await Promise.all(
       items.map((item) => {
         const qrBlock = item.templateSpec.blocks.find((b): b is VerifyQrBlockSpec => b.type === 'verifyQr');
-        return qrBlock ? generateQrPng(item.options.verifyUrl) : Promise.resolve(null);
+        return qrBlock ? generateBulletinQrPng(item.options.verifyUrl) : Promise.resolve(null);
       }),
     );
 

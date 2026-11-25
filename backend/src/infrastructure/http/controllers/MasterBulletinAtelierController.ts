@@ -4,6 +4,7 @@ import { renderAtelierPreviewPdf } from '@application/reportCard/bulletinAtelier
 import { SchoolAssetValidationError } from '@domain/errors/SchoolAssetValidationError';
 import { KNOWN_CLASS_LEVELS, assertValidClassLevel } from '@domain/policies/BulletinTemplatePolicy';
 import type { BulletinTemplateAssignmentRepository } from '@domain/ports/repositories/BulletinTemplateAssignmentRepository';
+import type { BulletinTemplateSpecRepository } from '@domain/ports/repositories/BulletinTemplateSpecRepository';
 import type { ClasseRepository } from '@domain/ports/repositories/ClasseRepository';
 import type { MasterAdminQueryRepository } from '@domain/ports/repositories/MasterAdminQueryRepository';
 import type { SchoolConfigRepository } from '@domain/ports/repositories/SchoolConfigRepository';
@@ -16,6 +17,7 @@ import {
   createNewTemplateSpecVersion,
   getPublishedTemplateSpec,
   getTemplateSpecAnyStatus,
+  hydrateTemplateSpecsFromStore,
   listAllTemplateSpecs,
   registerTemplateSpecVersion,
 } from '@domain/templates/bulletinCatalog';
@@ -66,6 +68,9 @@ function applySpecOverrides(
   if (typeof overrides.showGroupRankInSubtotal === 'boolean') {
     clone.showGroupRankInSubtotal = overrides.showGroupRankInSubtotal;
   }
+  if (typeof overrides.inkSaverMode === 'boolean') {
+    clone.inkSaverMode = overrides.inkSaverMode;
+  }
   const blocks: BulletinTemplateBlock[] = clone.blocks.map((block) => {
     if (block.type === 'officialHeader' && typeof overrides.periodLabelMode === 'string') {
       return { ...block, periodLabelMode: overrides.periodLabelMode as PeriodLabelMode };
@@ -92,7 +97,13 @@ export class MasterBulletinAtelierController {
     private readonly classeRepository: ClasseRepository,
     private readonly bulletinRenderer: BulletinRendererPort,
     private readonly schoolAssetStorage: SchoolAssetStoragePort,
+    private readonly templateSpecRepository?: BulletinTemplateSpecRepository,
   ) {}
+
+  private async hydratePersistedSpecs(): Promise<void> {
+    if (!this.templateSpecRepository) return;
+    hydrateTemplateSpecsFromStore(await this.templateSpecRepository.findAll());
+  }
 
   private async ensureViewAccess(req: Request, res: Response, schoolId: string): Promise<boolean> {
     const basic = await this.masterAdminQueryRepo.findSchoolBasic(schoolId);
@@ -132,6 +143,7 @@ export class MasterBulletinAtelierController {
         this.schoolIdentityKitRepository.findBySchoolId(schoolId),
         this.assignmentRepository.findBySchool(schoolId),
         this.classeRepository.findBySchool(schoolId),
+        this.hydratePersistedSpecs(),
       ]);
       if (!school) {
         res.status(404).json({ success: false, message: 'Établissement introuvable.' });
@@ -258,6 +270,7 @@ export class MasterBulletinAtelierController {
     try {
       const schoolId = req.params.schoolId as string;
       if (!(await this.ensureManageAccess(req, res, schoolId))) return;
+      await this.hydratePersistedSpecs();
 
       const b = (req.body ?? {}) as Record<string, unknown>;
       const baseSpecId = typeof b.baseSpecId === 'string' ? b.baseSpecId : GENERAL_GROUPED_V1.id;
@@ -274,10 +287,15 @@ export class MasterBulletinAtelierController {
         language: overridden.language,
         defaultGroupingScheme: overridden.defaultGroupingScheme,
         showGroupRankInSubtotal: overridden.showGroupRankInSubtotal,
+        inkSaverMode: overridden.inkSaverMode,
         blocks: structuredClone(overridden.blocks),
         publish: b.publish !== false,
       });
-      registerTemplateSpecVersion(nextSpec);
+      if (this.templateSpecRepository) {
+        await this.templateSpecRepository.saveVersion(nextSpec, req.masterUser?.id ?? null);
+      } else {
+        registerTemplateSpecVersion(nextSpec);
+      }
 
       res.status(201).json({ success: true, data: { spec: nextSpec, catalogSpecs: listAllTemplateSpecs({ includeDrafts: true }) } });
     } catch (error) { next(error); }
@@ -288,6 +306,7 @@ export class MasterBulletinAtelierController {
     try {
       const schoolId = req.params.schoolId as string;
       if (!(await this.ensureManageAccess(req, res, schoolId))) return;
+      await this.hydratePersistedSpecs();
 
       const b = (req.body ?? {}) as Record<string, unknown>;
       const periodKind = (b.periodKind as BulletinPeriodKind) || 'TRIMESTER';
@@ -295,6 +314,14 @@ export class MasterBulletinAtelierController {
       const spec = getPublishedTemplateSpec(templateSpecId, typeof b.templateVersion === 'number' ? b.templateVersion : undefined);
       if (!spec) {
         res.status(400).json({ success: false, message: `La spec "${templateSpecId}" doit être publiée avant affectation.` });
+        return;
+      }
+      if (spec.validationStatus === 'TO_VALIDATE') {
+        res.status(400).json({
+          success: false,
+          code: 'SPEC_TO_VALIDATE',
+          message: `La spec "${spec.id}" est au statut TO_VALIDATE (à valider sur un bulletin réel) et ne peut pas être affectée en production. Utilisez-la uniquement en aperçu.`,
+        });
         return;
       }
 
@@ -341,9 +368,11 @@ export class MasterBulletinAtelierController {
       const schoolId = req.params.schoolId as string;
       if (!(await this.ensureViewAccess(req, res, schoolId))) return;
 
-      const [school, storedKit] = await Promise.all([
+      const [school, storedKit, schoolConfig] = await Promise.all([
         this.schoolRepository.findById(schoolId),
         this.schoolIdentityKitRepository.findBySchoolId(schoolId),
+        this.schoolConfigRepository.findBySchoolId(schoolId),
+        this.hydratePersistedSpecs(),
       ]);
       if (!school) {
         res.status(404).json({ success: false, message: 'Établissement introuvable.' });
@@ -397,6 +426,7 @@ export class MasterBulletinAtelierController {
         spec: effectiveSpec,
         renderer: this.bulletinRenderer,
         schoolAssetStorage: this.schoolAssetStorage,
+        passThresholdOn20: schoolConfig?.passMark,
       });
 
       res.setHeader('Content-Type', 'application/pdf');

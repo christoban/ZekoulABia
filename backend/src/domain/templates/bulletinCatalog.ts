@@ -8,6 +8,7 @@
 import type { BulletinTemplate } from '@domain/types/enums';
 import {
   deepFreezeSpec,
+  type BulletinSpecValidationStatus,
   type BulletinTemplateBlock,
   type BulletinTemplateSpec,
 } from '@domain/types/bulletinTemplateSpec';
@@ -20,8 +21,8 @@ import {
   EN_SECONDARY_V1,
   PRIMARY_POINTS_RATIO_EN_SPEC_ID,
   PRIMARY_POINTS_RATIO_EN_V1,
-  PRIMARY_POINTS_RATIO_FR_SPEC_ID,
-  PRIMARY_POINTS_RATIO_FR_V1,
+  PRIMARY_POINTS_RATIO_FR_LABELS_SPEC_ID,
+  PRIMARY_POINTS_RATIO_FR_LABELS_V1,
   TECH_GROUPED_SPEC_ID,
   TECH_GROUPED_V1,
 } from './bulletinCatalogFamilies';
@@ -36,8 +37,8 @@ export {
   EN_SECONDARY_V1,
   PRIMARY_POINTS_RATIO_EN_SPEC_ID,
   PRIMARY_POINTS_RATIO_EN_V1,
-  PRIMARY_POINTS_RATIO_FR_SPEC_ID,
-  PRIMARY_POINTS_RATIO_FR_V1,
+  PRIMARY_POINTS_RATIO_FR_LABELS_SPEC_ID,
+  PRIMARY_POINTS_RATIO_FR_LABELS_V1,
   TECH_GROUPED_SPEC_ID,
   TECH_GROUPED_V1,
 };
@@ -55,6 +56,7 @@ export const GENERAL_GROUPED_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec
   name: 'Famille A — Secondaire Général par Groupes (Collège Le Québécois 3ème)',
   version: 1,
   status: 'PUBLISHED',
+  validationStatus: 'VALIDATED',
   defaultGroupingScheme: 'SCI_LIT_OTHER',
   language: 'bilingual',
   grayscaleFirst: true,
@@ -82,6 +84,10 @@ export const GENERAL_GROUPED_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec
       grouping: 'byGroup',
       showGroupSubtotals: true,
       appreciationScale: 'A+/A/ECA/NA',
+      scaleConfig: {
+        // À CONFIRMER SUR LE TERRAIN : Famille A garde NA < 10 (ongoingInclusive: true) jusqu'à validation terrain.
+        cote: { ongoingMin: 10, ongoingInclusive: true, acquiredMin: 15, acquiredInclusive: true, expertMin: 18, expertInclusive: true },
+      },
       columns: [
         { key: 'subjectName', labelFr: 'MATIÈRES', labelEn: 'SUBJECTS', ratio: 19, align: 'left' },
         { key: 'seq1Score', labelFr: 'CC /20', labelEn: 'CA /20', ratio: 6.5, align: 'center' },
@@ -141,10 +147,29 @@ const PUBLISHED_CATALOG: readonly Readonly<BulletinTemplateSpec>[] = [
   ANNUAL_BILINGUAL_V1,
   EN_SECONDARY_V1,
   PRIMARY_POINTS_RATIO_EN_V1,
-  PRIMARY_POINTS_RATIO_FR_V1,
+  PRIMARY_POINTS_RATIO_FR_LABELS_V1,
 ];
 
 const customSpecsRegistry: Array<Readonly<BulletinTemplateSpec>> = [];
+
+export function clearCustomTemplateSpecsForRestartSimulation(): void {
+  customSpecsRegistry.length = 0;
+}
+
+export function hydrateTemplateSpecsFromStore(specs: readonly BulletinTemplateSpec[]): number {
+  let added = 0;
+  for (const spec of specs) {
+    const exists = [...PUBLISHED_CATALOG, ...customSpecsRegistry].some(
+      (s) => s.id === spec.id && s.version === spec.version,
+    );
+    if (!exists) {
+      const frozen = Object.isFrozen(spec) ? spec : deepFreezeSpec(structuredClone(spec));
+      customSpecsRegistry.push(frozen);
+      added += 1;
+    }
+  }
+  return added;
+}
 
 export function registerTemplateSpecVersion(spec: BulletinTemplateSpec): Readonly<BulletinTemplateSpec> {
   const frozen = Object.isFrozen(spec) ? spec : deepFreezeSpec(structuredClone(spec));
@@ -192,10 +217,20 @@ export function getPublishedTemplateSpec(
   return matches.slice().sort((a, b) => b.version - a.version)[0] ?? null;
 }
 
+export function isSpecValidatedForProduction(
+  spec: Pick<BulletinTemplateSpec, 'status' | 'validationStatus'>,
+): boolean {
+  return spec.status !== 'DRAFT' && spec.validationStatus !== 'TO_VALIDATE';
+}
+
 export function findDefaultSpecForTemplate(
   template: BulletinTemplate,
 ): Readonly<BulletinTemplateSpec> | null {
-  return listPublishedTemplateSpecs().find((s) => s.targetTemplate === template && s.status === 'PUBLISHED') ?? null;
+  return (
+    listPublishedTemplateSpecs().find(
+      (s) => s.targetTemplate === template && isSpecValidatedForProduction(s),
+    ) ?? null
+  );
 }
 
 export function hasPublishedTemplateSpecForTemplate(template: BulletinTemplate): boolean {
@@ -206,8 +241,10 @@ export interface TemplateSpecUpdateDraft {
   name?: string;
   language?: 'fr' | 'en' | 'bilingual';
   grayscaleFirst?: boolean;
+  inkSaverMode?: boolean;
   defaultGroupingScheme?: BulletinTemplateSpec['defaultGroupingScheme'];
   showGroupRankInSubtotal?: boolean;
+  validationStatus?: BulletinSpecValidationStatus;
   validationNotice?: string;
   page?: Partial<BulletinTemplateSpec['page']>;
   blocks?: BulletinTemplateBlock[];
@@ -234,8 +271,10 @@ export function createNewTemplateSpecVersion(
     name: changes.name ?? base.name,
     language: changes.language ?? base.language,
     grayscaleFirst: changes.grayscaleFirst ?? base.grayscaleFirst,
+    inkSaverMode: changes.inkSaverMode ?? base.inkSaverMode,
     defaultGroupingScheme: changes.defaultGroupingScheme ?? base.defaultGroupingScheme,
     showGroupRankInSubtotal: changes.showGroupRankInSubtotal ?? base.showGroupRankInSubtotal,
+    validationStatus: changes.validationStatus ?? base.validationStatus,
     validationNotice: changes.validationNotice !== undefined ? changes.validationNotice : base.validationNotice,
     page: {
       ...base.page,

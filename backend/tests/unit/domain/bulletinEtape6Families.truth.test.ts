@@ -8,7 +8,7 @@ import {
   BILINGUAL_APC_V1,
   EN_SECONDARY_V1,
   PRIMARY_POINTS_RATIO_EN_V1,
-  PRIMARY_POINTS_RATIO_FR_V1,
+  PRIMARY_POINTS_RATIO_FR_LABELS_V1,
   TECH_GROUPED_V1,
   findDefaultSpecForTemplate,
   getPublishedTemplateSpec,
@@ -142,11 +142,11 @@ describe('Étape 6 — Jeux de vérité calculés à la main (Familles F, D, B, 
       { id: 'd1', name: 'EPS', coefficient: 1, groupKey: 'DIVERS', groupLabel: 'Enseignements Divers', groupOrder: 3 },
     ];
     const notes = [
-      // Élève 1 : Gen=14, Pro=9 (en cours d'acquisition), Div=12
+      // Élève 1 : Gen=14 (acquise >= 14), Pro=12 (en cours 11..13,99), Div=14
       { studentId: 'a1', subjectId: 'g1', sequenceId: 's1', coefficient: 2, sequenceScore: 14, validationStatus: 'LOCKED' as const },
-      { studentId: 'a1', subjectId: 'p1', sequenceId: 's1', coefficient: 5, sequenceScore: 9, validationStatus: 'LOCKED' as const },
-      { studentId: 'a1', subjectId: 'd1', sequenceId: 's1', coefficient: 1, sequenceScore: 12, validationStatus: 'LOCKED' as const },
-      // Élève 2 : Gen=10, Pro=16 (acquise), Div=7 (non acquise)
+      { studentId: 'a1', subjectId: 'p1', sequenceId: 's1', coefficient: 5, sequenceScore: 12, validationStatus: 'LOCKED' as const },
+      { studentId: 'a1', subjectId: 'd1', sequenceId: 's1', coefficient: 1, sequenceScore: 14, validationStatus: 'LOCKED' as const },
+      // Élève 2 : Gen=10, Pro=16 (acquise), Div=7 (non acquise < 11)
       { studentId: 'a2', subjectId: 'g1', sequenceId: 's1', coefficient: 2, sequenceScore: 10, validationStatus: 'LOCKED' as const },
       { studentId: 'a2', subjectId: 'p1', sequenceId: 's1', coefficient: 5, sequenceScore: 16, validationStatus: 'LOCKED' as const },
       { studentId: 'a2', subjectId: 'd1', sequenceId: 's1', coefficient: 1, sequenceScore: 7, validationStatus: 'LOCKED' as const },
@@ -168,8 +168,8 @@ describe('Étape 6 — Jeux de vérité calculés à la main (Familles F, D, B, 
     expect(gen1.groupRank).toBe(1);
     expect(s1.groupBreakdowns?.['GENERAL']?.groupCompetenceLabel).toBe('Compétence acquise');
     expect(pro1.groupRank).toBe(2);
-    expect(pro1.totalWeightedScore).toBe(45);
-    expect(s1.groupBreakdowns?.['PROFESSIONNEL']?.groupCompetenceLabel).toBe("Compétence en cours d'acquisition");
+    expect(pro1.totalWeightedScore).toBe(60);
+    expect(s1.groupBreakdowns?.['PROFESSIONNEL']?.groupCompetenceLabel).toBe("En cours d'acquisition");
     expect(div1.groupRank).toBe(1);
 
     const s2 = res.snapshotsByStudentId.get('a2')!;
@@ -225,7 +225,7 @@ describe('Étape 6 — Jeux de vérité calculés à la main (Familles F, D, B, 
       BILINGUAL_APC_V1,
       EN_SECONDARY_V1,
       PRIMARY_POINTS_RATIO_EN_V1,
-      PRIMARY_POINTS_RATIO_FR_V1,
+      PRIMARY_POINTS_RATIO_FR_LABELS_V1,
     ];
     for (const s of specs) {
       expect(Object.isFrozen(s)).toBe(true);
@@ -234,11 +234,13 @@ describe('Étape 6 — Jeux de vérité calculés à la main (Familles F, D, B, 
     }
     expect(findDefaultSpecForTemplate('ANNUAL')?.id).toBe('ANNUAL_BILINGUAL_V1');
     expect(findDefaultSpecForTemplate('TECHNICAL_FR')?.id).toBe('TECH_GROUPED_V1');
-    expect(findDefaultSpecForTemplate('EN_SECONDARY')?.id).toBe('EN_SECONDARY_V1');
+    expect(findDefaultSpecForTemplate('EN_SECONDARY')).toBeNull();
     expect(findDefaultSpecForTemplate('PRIMARY')?.id).toBe('PRIMARY_POINTS_RATIO_EN_V1');
     expect(findDefaultSpecForTemplate('FR_SECONDARY')?.id).toBe('GENERAL_GROUPED_V1');
+    expect(EN_SECONDARY_V1.validationStatus).toBe('TO_VALIDATE');
     expect(EN_SECONDARY_V1.validationNotice).toBe('À VALIDER SUR UN BULLETIN RÉEL');
-    expect(PRIMARY_POINTS_RATIO_FR_V1.validationNotice).toBe('À VALIDER SUR UN BULLETIN RÉEL');
+    expect(PRIMARY_POINTS_RATIO_FR_LABELS_V1.validationStatus).toBe('TO_VALIDATE');
+    expect(PRIMARY_POINTS_RATIO_FR_LABELS_V1.validationNotice).toBe('À VALIDER SUR UN BULLETIN RÉEL');
   });
 
   it('Rendu PDFKit mesuré des familles D, B, C, E, F (EN & FR) : 1 page, séparateur décimal localisé, groupRank B, points ratio F et zéro invention', async () => {
@@ -269,6 +271,7 @@ describe('Étape 6 — Jeux de vérité calculés à la main (Familles F, D, B, 
           isAnnual,
           mention: language === 'en' ? 'Fair' : 'Assez Bien',
           language,
+          isPreview: true,
           verifyUrl: 'https://verify.zekoulabia.cm/verify/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1234',
           shortVerifyCode: 'ZK-UNIT-SPEC',
           school: { schoolName: 'Établissement Modèle', city: 'Garoua' },
@@ -311,7 +314,7 @@ describe('Étape 6 — Jeux de vérité calculés à la main (Familles F, D, B, 
     expect(outFEn.joined).toContain('Average : 11.14 / 20');
     expect(outFEn.joined).toContain('ENGLISH LANGUAGE');
 
-    const outFFr = await renderAndCapture(snapF, PRIMARY_POINTS_RATIO_FR_V1, 'fr');
+    const outFFr = await renderAndCapture(snapF, PRIMARY_POINTS_RATIO_FR_LABELS_V1, 'fr');
     expect(outFFr.pageCount).toBe(1);
     expect(outFFr.joined).toContain('Total Notes : 245,00');
     expect(outFFr.joined).toContain('Moyenne : 11,14 / 20');
@@ -353,7 +356,10 @@ describe('Étape 6 — Jeux de vérité calculés à la main (Familles F, D, B, 
 
     const outC = await renderAndCapture(resB.snapshotsByStudentId.get('sb')!, BILINGUAL_APC_V1, 'fr');
     expect(outC.pageCount).toBe(1);
-    expect(outC.joined).toContain('MOY Eval a');
+    expect(outC.joined).toContain('MOY Éval 1');
+    expect(outC.joined).toContain('MOY Éval 2');
+    expect(outC.joined).not.toContain('Eval a');
+    expect(outC.joined).not.toContain('Eval b');
 
     const outE = await renderAndCapture(resB.snapshotsByStudentId.get('sb')!, EN_SECONDARY_V1, 'en');
     expect(outE.pageCount).toBe(1);

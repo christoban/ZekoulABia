@@ -1,13 +1,13 @@
 import { Router } from 'express';
 import type { ReportCardController } from '@infrastructure/http/controllers/ReportCardController';
 import { requireAuth, requireRole } from '../middlewares/auth.ts';
-import { sensitiveWriteLimiter } from '../middlewares/rateLimit.ts';
+import { sensitiveWriteLimiter, heavyPdfExportLimiter } from '../middlewares/rateLimit.ts';
 
 export function creerReportCardRoutes(controller: ReportCardController): Router {
   const router = Router();
 
   // Prévisualisation lecture seule du modèle officiel configuré pour l'école (élève fictif)
-  router.get('/template-preview', requireAuth, requireRole('ADMIN', 'STAFF'), controller.previsualiserModeleOfficiel);
+  router.get('/template-preview', heavyPdfExportLimiter, requireAuth, requireRole('ADMIN', 'STAFF'), controller.previsualiserModeleOfficiel);
 
   // Vérification pré-génération
   router.get('/check/:classId', requireAuth, controller.verifierDisponibilite);
@@ -16,10 +16,10 @@ export function creerReportCardRoutes(controller: ReportCardController): Router 
   router.post('/generate', sensitiveWriteLimiter, requireAuth, requireRole('ADMIN', 'STAFF'), controller.genererBulletins);
 
   // Export PDF unique fusionné de toute la classe
-  router.post('/export-pdf/:classId', sensitiveWriteLimiter, requireAuth, requireRole('ADMIN', 'STAFF'), controller.exporterPdfClasse);
+  router.post('/export-pdf/:classId', heavyPdfExportLimiter, requireAuth, requireRole('ADMIN', 'STAFF'), controller.exporterPdfClasse);
 
   // Export ZIP en masse
-  router.post('/export/:classId', sensitiveWriteLimiter, requireAuth, requireRole('ADMIN', 'STAFF'), controller.exporterZip);
+  router.post('/export/:classId', heavyPdfExportLimiter, requireAuth, requireRole('ADMIN', 'STAFF'), controller.exporterZip);
 
   // Envoi aux parents via use case hexagonal
   router.post('/send', sensitiveWriteLimiter, requireAuth, requireRole('ADMIN', 'STAFF'), controller.envoyerBulletins);

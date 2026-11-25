@@ -33,6 +33,7 @@ import { creerAcademicProfileRoutes } from '@infrastructure/http/routes/academic
 import { PrismaEnrollmentRepository } from '@infrastructure/persistence/prisma/PrismaEnrollmentRepository';
 import { PrismaAnneeAcademiqueRepository } from '@infrastructure/persistence/prisma/PrismaAnneeAcademiqueRepository';
 import { PrismaOnboardingStreamRepository } from '@infrastructure/persistence/prisma/PrismaOnboardingStreamRepository';
+import { hydrateTemplateSpecsFromStore } from '@domain/templates/bulletinCatalog';
 import { requireAuth } from '../../http/middlewares/auth';
 
 type Container = ReturnType<typeof creerContainer>;
@@ -49,6 +50,10 @@ export function registerAcademicRoutes(app: Application, prismaParam: typeof pri
     c.school.onboarder,
     c.school.approuver,
   );
+
+  if (c.reportCard.templateSpecRepository) {
+    void c.reportCard.templateSpecRepository.findAll().then(hydrateTemplateSpecsFromStore).catch(() => {});
+  }
 
   const reportCardController = new ReportCardController(
     c.reportCard.generer,
@@ -70,6 +75,7 @@ export function registerAcademicRoutes(app: Application, prismaParam: typeof pri
     c.reportCard.bulletinAssignmentRepository,
     c.reportCard.schoolIdentityKitRepository,
     c.reportCard.schoolAssetStorage,
+    c.reportCard.templateSpecRepository,
   );
 
   const masterBulletinAtelierController = new MasterBulletinAtelierController(
@@ -81,6 +87,7 @@ export function registerAcademicRoutes(app: Application, prismaParam: typeof pri
     c.school.classeRepository,
     c.reportCard.bulletinRenderer,
     c.reportCard.schoolAssetStorage,
+    c.reportCard.templateSpecRepository,
   );
 
   const classCouncilController = new ClassCouncilController(

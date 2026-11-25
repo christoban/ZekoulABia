@@ -4,118 +4,118 @@
 import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
 import type { SchoolIdentityKitRecord } from '@domain/ports/repositories/SchoolIdentityKitRepository';
 import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
-import type { BulletinTemplateSpec } from '@domain/types/bulletinTemplateSpec';
+import type { BulletinTemplateSpec, CouncilDecisionBlockSpec } from '@domain/types/bulletinTemplateSpec';
 import type { StudentBulletinSnapshot } from '@domain/types/bulletinSnapshot';
-import { BulletinSnapshotBuilder } from '@domain/services/bulletin/BulletinSnapshotBuilder';
 import { buildLongTokenVerifyUrl, deriveShortVerifyCode } from '@domain/policies/BulletinVerifyCrypto';
+import { resolveCouncilDistinctions } from '@domain/services/bulletin/bulletinCouncilPolicy';
 import { createBatchSchoolIdentityContextCache } from './bulletinIdentityContext';
-import { resoudreVerifyBaseUrl } from './bulletinEnrichmentHelpers';
+import { calculerMentionBulletin, resoudreVerifyBaseUrl } from './bulletinEnrichmentHelpers';
+import {
+  PREVIEW_FOCUS_STUDENT_ID,
+  buildFictitiousPreviewClass,
+  type PreviewFamilyKind,
+} from './bulletinPreviewFictitiousClass';
 
 const PREVIEW_VERIFY_TOKEN = 'aabbccddeeff00112233445566778899aabbccddeeff0011';
 
-function buildPreviewInputsForFamily(spec: BulletinTemplateSpec) {
-  const isAnnual = spec.layoutVariant === 'ANNUAL_BILINGUAL' || spec.familyKey === 'D';
-  const isTech = spec.layoutVariant === 'TECHNICAL_GROUPED' || spec.familyKey === 'B';
-  const isPrimaryRatio = spec.layoutVariant === 'PRIMARY_POINTS_RATIO' || spec.familyKey === 'F';
+function resolvePreviewKind(spec: BulletinTemplateSpec): PreviewFamilyKind {
+  if (spec.layoutVariant === 'PRIMARY_POINTS_RATIO' || spec.familyKey === 'F') return 'PRIMARY';
+  if (spec.layoutVariant === 'ANNUAL_BILINGUAL' || spec.familyKey === 'D') return 'ANNUAL';
+  if (spec.layoutVariant === 'TECHNICAL_GROUPED' || spec.familyKey === 'B') return 'TECH';
+  if (spec.layoutVariant === 'BILINGUAL_APC' || spec.familyKey === 'C') return 'APC';
+  if (spec.language === 'en') return 'EN';
+  return 'GENERAL';
+}
+
+function buildPreviewInputsForFamily(spec: BulletinTemplateSpec, passThresholdOn20: number) {
+  const kind = resolvePreviewKind(spec);
   const isEn = spec.language === 'en';
-
-  if (isPrimaryRatio) {
-    const subs = [
-      { id: 'f1', name: isEn ? 'Grammar & Usage' : 'Grammaire & Orthographe', coefficient: 1, maxMark: 40, learningDomain: isEn ? 'ENGLISH LANGUAGE' : 'FRANÇAIS', learningUnit: 'Unit 1' },
-      { id: 'f2', name: isEn ? 'Reading Comprehension' : 'Lecture Compréhension', coefficient: 1, maxMark: 20, learningDomain: isEn ? 'ENGLISH LANGUAGE' : 'FRANÇAIS', learningUnit: 'Unit 1' },
-      { id: 'f3', name: isEn ? 'Number & Operations' : 'Nombres & Calculs', coefficient: 1, maxMark: 40, learningDomain: isEn ? 'MATHEMATICS' : 'MATHÉMATIQUES', learningUnit: 'Unit 2' },
-      { id: 'f4', name: isEn ? 'Problem Solving' : 'Résolution de problèmes', coefficient: 1, maxMark: 20, learningDomain: isEn ? 'MATHEMATICS' : 'MATHÉMATIQUES', learningUnit: 'Unit 2' },
-      { id: 'f5', name: isEn ? 'Human Body & Health' : 'Sciences de la vie', coefficient: 1, maxMark: 20, learningDomain: isEn ? 'SCIENCES AND TECHNOLOGY' : 'SCIENCES', learningUnit: 'Unit 1' },
-      { id: 'f6', name: isEn ? 'Digital Literacy' : 'TIC & Outils', coefficient: 1, maxMark: 20, learningDomain: 'ICT', learningUnit: 'Unit 1' },
-    ];
-    const res = BulletinSnapshotBuilder.buildClassSnapshots({
-      students: [{ id: 'stu-prev' }, { id: 'stu-prev-2' }],
-      subjects: subs,
-      sequences: [{ id: 's1', name: 'M1', orderIndex: 1 }],
-      notes: [
-        ...[28, 15, 30, 14, 15, 16].map((sc, i) => ({
-          studentId: 'stu-prev', subjectId: `f${i + 1}`, sequenceId: 's1', coefficient: 1, maxValue: subs[i]!.maxMark, sequenceScore: sc, observation: isEn ? 'Good progress' : 'Bon travail', validationStatus: 'LOCKED' as const,
-        })),
-        ...[20, 12, 22, 11, 12, 13].map((sc, i) => ({
-          studentId: 'stu-prev-2', subjectId: `f${i + 1}`, sequenceId: 's1', coefficient: 1, maxValue: subs[i]!.maxMark, sequenceScore: sc, validationStatus: 'LOCKED' as const,
-        })),
-      ],
-      hasCoefficientBySubject: false,
-      calculationMode: 'POINTS_RATIO',
-    });
-    return {
-      snapshot: res.snapshotsByStudentId.get('stu-prev')!,
-      className: isEn ? 'Class V (Preview)' : 'CM2 (Aperçu)',
-      periodName: isEn ? 'Month 1 — Term 1' : 'Mois 1 — Trimestre 1',
-      yearName: '2026-2027',
-      mention: isEn ? 'Very Good' : 'Bien',
-    };
-  }
-
-  const subjects = isTech
-    ? [
-        { id: 't1', name: 'Français Technique', coefficient: 2, groupKey: 'GENERAL', groupLabel: 'Enseignement Général', groupOrder: 1, teacherName: 'M. ALIOU' },
-        { id: 't2', name: 'Mathématiques Appliquées', coefficient: 3, groupKey: 'GENERAL', groupLabel: 'Enseignement Général', groupOrder: 1, teacherName: 'M. HAMADOU' },
-        { id: 't3', name: 'Dessin Industriel', coefficient: 4, groupKey: 'PROFESSIONNEL', groupLabel: 'Enseignement Professionnel', groupOrder: 2, teacherName: 'M. BOUBA' },
-        { id: 't4', name: 'Atelier Pratique', coefficient: 5, groupKey: 'PROFESSIONNEL', groupLabel: 'Enseignement Professionnel', groupOrder: 2, teacherName: 'M. OUMAROU' },
-        { id: 't5', name: 'EPS', coefficient: 1, groupKey: 'DIVERS', groupLabel: 'Enseignements Divers', groupOrder: 3, teacherName: 'Mme SALI' },
-      ]
-    : [
-        { id: 's1', name: isEn ? 'English Language' : 'Français', coefficient: 4, groupKey: 'G1', groupLabel: isEn ? 'Arts & Languages' : '1er Groupe (Littéraire)', groupOrder: 1, competenceLabel: spec.layoutVariant === 'BILINGUAL_APC' || isAnnual ? 'Expression écrite et orale' : undefined, teacherName: 'Mme ESSOMBA' },
-        { id: 's2', name: isEn ? 'French' : 'Anglais', coefficient: 3, groupKey: 'G1', groupLabel: isEn ? 'Arts & Languages' : '1er Groupe (Littéraire)', groupOrder: 1, teacherName: 'Mr CHE' },
-        { id: 's3', name: isEn ? 'Mathematics' : 'Mathématiques', coefficient: 4, groupKey: 'G2', groupLabel: isEn ? 'Sciences' : '2ème Groupe (Scientifique)', groupOrder: 2, competenceLabel: spec.layoutVariant === 'BILINGUAL_APC' || isAnnual ? 'Résolution algébrique' : undefined, teacherName: 'M. FOKOU' },
-        { id: 's4', name: isEn ? 'Physics & Chemistry' : 'Physique-Chimie', coefficient: 3, groupKey: 'G2', groupLabel: isEn ? 'Sciences' : '2ème Groupe (Scientifique)', groupOrder: 2, teacherName: 'Dr NANA' },
-        { id: 's5', name: isEn ? 'Physical Education' : 'EPS', coefficient: 2, groupKey: 'G3', groupLabel: isEn ? 'Other' : '3ème Groupe', groupOrder: 3, teacherName: 'M. EBOA' },
-      ];
-
-  const seqs = isAnnual
-    ? Array.from({ length: 6 }, (_, i) => ({ id: `q${i + 1}`, name: `Eval ${i + 1}`, orderIndex: i + 1, termIndex: (Math.floor(i / 2) + 1) as 1 | 2 | 3 }))
-    : [{ id: 'q1', name: 'Eval 1', orderIndex: 1 }, { id: 'q2', name: 'Eval 2', orderIndex: 2 }];
-
-  const notes = subjects.flatMap((sub, si) =>
-    seqs.flatMap((seq, qi) => [
-      { studentId: 'stu-prev', subjectId: sub.id, sequenceId: seq.id, coefficient: sub.coefficient, sequenceScore: 13 + ((si + qi) % 5), observation: isEn ? 'Steady work' : 'Travail sérieux', validationStatus: 'LOCKED' as const },
-      { studentId: 'stu-prev-2', subjectId: sub.id, sequenceId: seq.id, coefficient: sub.coefficient, sequenceScore: 10 + ((si + qi) % 4), validationStatus: 'LOCKED' as const },
-    ]),
-  );
-
-  const res = BulletinSnapshotBuilder.buildClassSnapshots({
-    students: [{ id: 'stu-prev' }, { id: 'stu-prev-2' }],
-    subjects,
-    sequences: seqs,
-    notes,
-    hasCoefficientBySubject: true,
-    isAnnual,
-    classSizeOverride: 42,
-  });
-
+  const res = buildFictitiousPreviewClass({ spec, kind, passThresholdOn20 });
+  const labels: Record<PreviewFamilyKind, { className: string; periodName: string }> = {
+    PRIMARY: { className: isEn ? 'Class V (Sample)' : 'CM2 (Spécimen)', periodName: isEn ? 'Month 2 — Term 1' : 'Mois 2 — Trimestre 1' },
+    ANNUAL: { className: '1ère A4 (Spécimen)', periodName: 'Annuel' },
+    TECH: { className: '2nde F3 (Spécimen)', periodName: 'Trimestre 1' },
+    APC: { className: '2nde C (Spécimen)', periodName: 'Trimestre 2' },
+    EN: { className: 'Form 4 Science (Sample)', periodName: 'Term 1' },
+    GENERAL: { className: '3ème (Spécimen)', periodName: 'Trimestre 1' },
+  };
+  const snapshot = res.snapshotsByStudentId.get(PREVIEW_FOCUS_STUDENT_ID)!;
   return {
-    snapshot: res.snapshotsByStudentId.get('stu-prev')!,
-    className: isEn ? 'Form 4 Science (Preview)' : isTech ? '2nde F3 (Aperçu)' : isAnnual ? '1ère A4 (Aperçu)' : '3ème Bilingue (Aperçu)',
-    periodName: isAnnual ? 'Annuel' : isEn ? 'Term 1' : 'Trimestre 1',
+    snapshot,
+    className: labels[kind].className,
+    periodName: labels[kind].periodName,
     yearName: '2026-2027',
-    mention: isEn ? 'Very Good' : 'Bien',
+    mention: calculerMentionBulletin(snapshot.generalAverage, spec.targetTemplate ?? 'FR_SECONDARY', isEn ? 'en' : 'fr'),
   };
 }
 
-export function buildFictitiousPreviewSnapshot(spec: BulletinTemplateSpec): {
+const LEVEL_TYPICAL_AGE_RULES: ReadonlyArray<{ pattern: RegExp; age: number; month: string; day: string }> = [
+  { pattern: /\b(sil|cp|class\s*1|class\s*i)\b/i, age: 6, month: '02', day: '18' },
+  { pattern: /\b(ce1|class\s*2|class\s*ii)\b/i, age: 7, month: '04', day: '11' },
+  { pattern: /\b(ce2|class\s*3|class\s*iii)\b/i, age: 8, month: '06', day: '22' },
+  { pattern: /\b(cm1|class\s*4|class\s*iv)\b/i, age: 9, month: '09', day: '07' },
+  { pattern: /\b(cm2|class\s*5|class\s*v)\b/i, age: 11, month: '04', day: '19' },
+  { pattern: /\b(class\s*6|class\s*vi|6e|6eme|form\s*1)\b/i, age: 12, month: '03', day: '12' },
+  { pattern: /\b(5e|5eme|form\s*2)\b/i, age: 13, month: '07', day: '25' },
+  { pattern: /\b(4e|4eme|form\s*3)\b/i, age: 14, month: '10', day: '08' },
+  { pattern: /\b(3e|3eme|form\s*4)\b/i, age: 15, month: '05', day: '14' },
+  { pattern: /\b(2nde|2nd|seconde|form\s*5)\b/i, age: 16, month: '08', day: '21' },
+  { pattern: /\b(1ere|premiere|lower\s*sixth|lss|lsa)\b/i, age: 17, month: '02', day: '27' },
+  { pattern: /\b(tle|terminale|upper\s*sixth|uss|usa)\b/i, age: 18, month: '11', day: '09' },
+];
+
+/**
+ * Calcule une date de naissance fictive réaliste selon le niveau de la classe et l'année scolaire
+ * (ex. 2026-2027 : Class V / CM2 -> 2015, 3ème / Form 4 -> 2011, 2nde -> 2010, 1ère -> 2009).
+ */
+export function computeFictitiousBirthDateForClass(className: string, yearName: string): string {
+  const yearMatch = /\b(20\d{2})\b/.exec(yearName);
+  const startYear = yearMatch ? Number(yearMatch[1]) : new Date().getUTCFullYear();
+  const normalized = className
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  const matched = LEVEL_TYPICAL_AGE_RULES.find((r) => r.pattern.test(normalized));
+  const age = matched?.age ?? 14;
+  const month = matched?.month ?? '05';
+  const day = matched?.day ?? '15';
+  return `${startYear - age}-${month}-${day}T00:00:00.000Z`;
+}
+
+export function buildFictitiousPreviewSnapshot(spec: BulletinTemplateSpec, passThresholdOn20 = 10): {
   snapshot: StudentBulletinSnapshot;
   className: string;
   periodName: string;
   yearName: string;
   mention: string;
 } {
-  const base = buildPreviewInputsForFamily(spec);
+  const base = buildPreviewInputsForFamily(spec, passThresholdOn20);
+  const councilBlock = spec.blocks.find((b): b is CouncilDecisionBlockSpec => b.type === 'councilDecision');
+  const isAnnual = spec.layoutVariant === 'ANNUAL_BILINGUAL' || spec.familyKey === 'D';
+  const councilDecision = councilBlock
+    ? resolveCouncilDistinctions({
+        generalAverage: base.snapshot.generalAverage,
+        rank: base.snapshot.rank,
+        totalStudents: base.snapshot.totalStudents,
+        passThresholdOn20,
+        thresholds: councilBlock.distinctionThresholds,
+        isAnnual,
+        promotedToClass: isAnnual ? 'Terminale A4' : null,
+        repeatClass: isAnnual ? '1ère A4' : null,
+        observations: spec.language === 'en' ? 'Commendable specimen term.' : 'Aperçu spécimen du modèle configuré.',
+      })
+    : undefined;
+
   const enriched: StudentBulletinSnapshot = {
     ...base.snapshot,
     mainTeacherName: spec.language === 'en' ? 'Mr CHE Emmanuel (Sample)' : 'Mme ESSOMBA Claire (Fictif)',
     studentIdentity: {
-      studentId: 'stu-prev',
+      studentId: PREVIEW_FOCUS_STUDENT_ID,
       fullName: spec.language === 'en' ? 'NDAMUKONG Grace (Sample)' : 'KAMGA Élodie (Élève Fictif)',
       firstName: spec.language === 'en' ? 'Grace' : 'Élodie',
       lastName: spec.language === 'en' ? 'NDAMUKONG' : 'KAMGA',
       matricule: '26-PREVIEW-001',
-      dateOfBirth: '2010-05-14T00:00:00.000Z',
+      dateOfBirth: computeFictitiousBirthDateForClass(base.className, base.yearName),
       placeOfBirth: 'Garoua',
       gender: 'F',
       isRepeater: false,
@@ -135,14 +135,7 @@ export function buildFictitiousPreviewSnapshot(spec: BulletinTemplateSpec): {
       consignesCount: 0,
       sanctions: [],
     },
-    councilDecision: {
-      decision: 'PASS',
-      observations: spec.language === 'en' ? 'Commendable specimen term.' : 'Aperçu spécimen du modèle configuré.',
-      honorRoll: true,
-      encouragements: true,
-      congratulations: false,
-      promotedToClass: 'Terminale A4',
-    },
+    councilDecision,
   };
   return { ...base, snapshot: enriched };
 }
@@ -157,9 +150,11 @@ export async function renderAtelierPreviewPdf(params: {
   spec: BulletinTemplateSpec;
   renderer: BulletinRendererPort;
   schoolAssetStorage?: SchoolAssetStoragePort;
+  passThresholdOn20?: number | null;
+  issuedAt?: Date;
 }): Promise<Buffer> {
   const language: 'fr' | 'en' = params.spec.language === 'en' ? 'en' : 'fr';
-  const preview = buildFictitiousPreviewSnapshot(params.spec);
+  const preview = buildFictitiousPreviewSnapshot(params.spec, params.passThresholdOn20 ?? 10);
   const schoolIdentity = await createBatchSchoolIdentityContextCache({
     schoolName: params.schoolName,
     fallbackMotto: params.fallbackMotto,
@@ -179,10 +174,13 @@ export async function renderAtelierPreviewPdf(params: {
     mention: preview.mention,
     language,
     isOfficial: true,
+    isPreview: true,
     verifyToken: PREVIEW_VERIFY_TOKEN,
     shortVerifyCode: deriveShortVerifyCode(PREVIEW_VERIFY_TOKEN),
     verifyUrl: buildLongTokenVerifyUrl(verifyBaseUrl, PREVIEW_VERIFY_TOKEN),
+    verifyBaseUrl,
     school: schoolIdentity,
+    issuedAt: params.issuedAt,
   });
 }
 

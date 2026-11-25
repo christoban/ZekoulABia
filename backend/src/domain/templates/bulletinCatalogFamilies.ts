@@ -8,7 +8,7 @@ export const TECH_GROUPED_SPEC_ID = 'TECH_GROUPED_V1' as const;
 export const BILINGUAL_APC_SPEC_ID = 'BILINGUAL_APC_V1' as const;
 export const EN_SECONDARY_SPEC_ID = 'EN_SECONDARY_V1' as const;
 export const PRIMARY_POINTS_RATIO_EN_SPEC_ID = 'PRIMARY_POINTS_RATIO_EN_V1' as const;
-export const PRIMARY_POINTS_RATIO_FR_SPEC_ID = 'PRIMARY_POINTS_RATIO_FR_V1' as const;
+export const PRIMARY_POINTS_RATIO_FR_LABELS_SPEC_ID = 'PRIMARY_POINTS_RATIO_FR_LABELS_V1' as const;
 
 export const ANNUAL_BILINGUAL_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec<BulletinTemplateSpec>({
   id: ANNUAL_BILINGUAL_SPEC_ID,
@@ -20,10 +20,11 @@ export const ANNUAL_BILINGUAL_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpe
   name: 'Famille D — Bulletin Annuel Secondaire (Lycée Bilingue 1ère A)',
   version: 1,
   status: 'PUBLISHED',
+  validationStatus: 'VALIDATED',
   defaultGroupingScheme: 'GROUP_1_2_3',
   language: 'bilingual',
   grayscaleFirst: true,
-  page: { size: 'A4', orientation: 'portrait', margin: 18 },
+  page: { size: 'A4', orientation: 'portrait', margin: 16 },
   blocks: [
     { type: 'officialHeader', bilingual: true, showDelegations: true, showLogo: true, showCoatOfArms: true, showMotto: true, periodLabelMode: 'ANNUAL' },
     { type: 'studentCard', fields: ['photo', 'birth', 'sex', 'repeater', 'classSize', 'mainTeacher'] },
@@ -33,21 +34,24 @@ export const ANNUAL_BILINGUAL_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpe
       showGroupSubtotals: true,
       showTotalBar: true,
       appreciationScale: 'APC_TEXT',
+      scaleConfig: {
+        competence: { ongoingMin: 11, ongoingInclusive: true, acquiredMin: 14, acquiredInclusive: true, expertMin: 18, expertInclusive: true },
+      },
       columns: [
-        { key: 'subjectName', labelFr: 'DISCIPLINES', labelEn: 'SUBJECTS', ratio: 15, align: 'left' },
-        { key: 'competenceLabel', labelFr: 'Compétences visées', labelEn: 'Target Skills', ratio: 11, align: 'left' },
-        { key: 'trim1Average', labelFr: 'Tri.1', labelEn: 'T1', ratio: 5.5, align: 'center' },
-        { key: 'seq1Score', labelFr: 'Ev1', labelEn: 'S1', ratio: 4.8, align: 'center' },
-        { key: 'seq2Score', labelFr: 'Ev2', labelEn: 'S2', ratio: 4.8, align: 'center' },
-        { key: 'trim2Average', labelFr: 'Tri.2', labelEn: 'T2', ratio: 5.5, align: 'center' },
-        { key: 'seq3Score', labelFr: 'Ev3', labelEn: 'S3', ratio: 4.8, align: 'center' },
-        { key: 'seq4Score', labelFr: 'Ev4', labelEn: 'S4', ratio: 4.8, align: 'center' },
-        { key: 'trim3Average', labelFr: 'Tri.3', labelEn: 'T3', ratio: 5.5, align: 'center' },
-        { key: 'seq5Score', labelFr: 'Ev5', labelEn: 'S5', ratio: 4.8, align: 'center' },
-        { key: 'seq6Score', labelFr: 'Ev6', labelEn: 'S6', ratio: 4.8, align: 'center' },
-        { key: 'coefficient', labelFr: 'COEF', labelEn: 'COEF', ratio: 4.5, align: 'center' },
-        { key: 'subjectAverage', labelFr: 'Moy.AN', labelEn: 'AN.AVG', ratio: 6.2, align: 'center' },
-        { key: 'teacherComment', labelFr: 'APPRÉCIATIONS & PROF.', labelEn: 'REMARKS & TEACHER', ratio: 17, align: 'left' },
+        { key: 'subjectName', labelFr: 'DISCIPLINES', labelEn: 'SUBJECTS', ratio: 13.5, align: 'left' },
+        { key: 'competenceLabel', labelFr: 'Compétences visées', labelEn: 'Target Skills', ratio: 10.5, align: 'left' },
+        { key: 'trim1Average', labelFr: 'Tri 1', labelEn: 'T1', ratio: 5.2, align: 'center' },
+        { key: 'seq1Score', labelFr: 'Éval 1', labelEn: 'Eval 1', ratio: 5.0, align: 'center' },
+        { key: 'seq2Score', labelFr: 'Éval 2', labelEn: 'Eval 2', ratio: 5.0, align: 'center' },
+        { key: 'trim2Average', labelFr: 'Tri 2', labelEn: 'T2', ratio: 5.2, align: 'center' },
+        { key: 'seq3Score', labelFr: 'Éval 3', labelEn: 'Eval 3', ratio: 5.0, align: 'center' },
+        { key: 'seq4Score', labelFr: 'Éval 4', labelEn: 'Eval 4', ratio: 5.0, align: 'center' },
+        { key: 'trim3Average', labelFr: 'Tri 3', labelEn: 'T3', ratio: 5.2, align: 'center' },
+        { key: 'seq5Score', labelFr: 'Éval 5', labelEn: 'Eval 5', ratio: 5.0, align: 'center' },
+        { key: 'seq6Score', labelFr: 'Éval 6', labelEn: 'Eval 6', ratio: 5.0, align: 'center' },
+        { key: 'coefficient', labelFr: 'COEF', labelEn: 'COEF', ratio: 4.6, align: 'center' },
+        { key: 'subjectAverage', labelFr: 'Moy.AN', labelEn: 'AN.AVG', ratio: 5.8, align: 'center' },
+        { key: 'teacherComment', labelFr: 'APPRÉCIATIONS & PROF.', labelEn: 'REMARKS & TEACHER', ratio: 20.0, align: 'left' },
       ],
     },
     { type: 'classProfile', fields: ['classAverage', 'topAverage', 'lowAverage', 'passCount', 'passRate'] },
@@ -68,6 +72,7 @@ export const TECH_GROUPED_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec<Bu
   name: 'Famille B — Enseignement Technique par Blocs (Lycée Technique Garoua-Djamboutou)',
   version: 1,
   status: 'PUBLISHED',
+  validationStatus: 'VALIDATED',
   defaultGroupingScheme: 'TECH_GEN_PRO_DIV',
   language: 'fr',
   grayscaleFirst: true,
@@ -80,12 +85,15 @@ export const TECH_GROUPED_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec<Bu
       grouping: 'byGroup',
       showGroupSubtotals: true,
       showTotalBar: true,
-      appreciationScale: 'FREE_TEXT',
+      appreciationScale: 'APC_TEXT',
+      scaleConfig: {
+        competence: { ongoingMin: 11, ongoingInclusive: true, acquiredMin: 14, acquiredInclusive: true, expertMin: 18, expertInclusive: true },
+      },
       columns: [
         { key: 'subjectName', labelFr: 'Matières', labelEn: 'Subjects', ratio: 17, align: 'left' },
         { key: 'teacherName', labelFr: 'Professeurs', labelEn: 'Teachers', ratio: 11, align: 'left' },
-        { key: 'seq1Score', labelFr: 'Eval. N°1', labelEn: 'Test 1', ratio: 6.5, align: 'center' },
-        { key: 'seq2Score', labelFr: 'Eval. N°2', labelEn: 'Test 2', ratio: 6.5, align: 'center' },
+        { key: 'seq1Score', labelFr: 'Éval 1', labelEn: 'Eval 1', ratio: 6.5, align: 'center' },
+        { key: 'seq2Score', labelFr: 'Éval 2', labelEn: 'Eval 2', ratio: 6.5, align: 'center' },
         { key: 'subjectAverage', labelFr: 'Note Trim.', labelEn: 'Term Avg', ratio: 7, align: 'center' },
         { key: 'coefficient', labelFr: 'Coef', labelEn: 'Coef', ratio: 5, align: 'center' },
         { key: 'weightedScore', labelFr: 'N × C Trim.', labelEn: 'N × C', ratio: 7.5, align: 'center' },
@@ -112,6 +120,7 @@ export const BILINGUAL_APC_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec<B
   name: 'Famille C — Secondaire Bilingue APC (Lycée Bilingue de Garoua 2nde)',
   version: 1,
   status: 'PUBLISHED',
+  validationStatus: 'VALIDATED',
   defaultGroupingScheme: 'GROUP_1_2_3',
   language: 'bilingual',
   grayscaleFirst: true,
@@ -125,12 +134,15 @@ export const BILINGUAL_APC_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec<B
       showGroupSubtotals: true,
       showTotalBar: true,
       appreciationScale: 'APC_TEXT',
+      scaleConfig: {
+        competence: { ongoingMin: 11, ongoingInclusive: true, acquiredMin: 14, acquiredInclusive: true, expertMin: 18, expertInclusive: true },
+      },
       columns: [
         { key: 'subjectName', labelFr: 'DISCIPLINES', labelEn: 'SUBJECTS', ratio: 17, align: 'left' },
         { key: 'competenceLabel', labelFr: 'Compétence visée (libellé court)', labelEn: 'Target Competence', ratio: 18, align: 'left' },
         { key: 'subjectAverage', labelFr: 'Trim /20', labelEn: 'Term /20', ratio: 7.5, align: 'center' },
-        { key: 'seq1Score', labelFr: 'Eval a', labelEn: 'Eval a', ratio: 6.5, align: 'center' },
-        { key: 'seq2Score', labelFr: 'Eval b', labelEn: 'Eval b', ratio: 6.5, align: 'center' },
+        { key: 'seq1Score', labelFr: 'Éval 1', labelEn: 'Eval 1', ratio: 6.5, align: 'center' },
+        { key: 'seq2Score', labelFr: 'Éval 2', labelEn: 'Eval 2', ratio: 6.5, align: 'center' },
         { key: 'coefficient', labelFr: 'COEF', labelEn: 'COEF', ratio: 5.5, align: 'center' },
         { key: 'weightedScore', labelFr: 'Total (N×C)', labelEn: 'Total', ratio: 8, align: 'center' },
         { key: 'teacherComment', labelFr: 'APPRÉCIATIONS ET NOMS DES PROFESSEURS', labelEn: 'REMARKS AND TEACHERS', ratio: 31, align: 'left' },
@@ -151,6 +163,7 @@ export const EN_SECONDARY_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec<Bu
   layoutVariant: 'EN_SECONDARY',
   calculationMode: 'WEIGHTED_AVERAGE',
   showGroupRankInSubtotal: false,
+  validationStatus: 'TO_VALIDATE',
   validationNotice: 'À VALIDER SUR UN BULLETIN RÉEL',
   name: 'Famille E — Anglophone Secondary Term Report Card (À VALIDER SUR UN BULLETIN RÉEL)',
   version: 1,
@@ -167,6 +180,9 @@ export const EN_SECONDARY_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec<Bu
       grouping: 'flat',
       showGroupSubtotals: false,
       appreciationScale: 'A+/A/ECA/NA',
+      scaleConfig: {
+        cote: { ongoingMin: 10, acquiredMin: 15, expertMin: 18 },
+      },
       columns: [
         { key: 'subjectName', labelFr: 'SUBJECTS', labelEn: 'SUBJECTS', ratio: 18, align: 'left' },
         { key: 'seq1Score', labelFr: 'SEQ 1 /20', labelEn: 'TEST 1 /20', ratio: 6.5, align: 'center' },
@@ -198,12 +214,13 @@ export const PRIMARY_POINTS_RATIO_EN_V1: Readonly<BulletinTemplateSpec> = deepFr
   name: 'Famille F (EN) — Primary Monthly Report Card Points Ratio (GSB Le Québécois Class V)',
   version: 1,
   status: 'PUBLISHED',
+  validationStatus: 'VALIDATED',
   defaultGroupingScheme: 'FLAT',
   language: 'en',
   grayscaleFirst: true,
   page: { size: 'A4', orientation: 'portrait', margin: 18 },
   blocks: [
-    { type: 'officialHeader', bilingual: false, showDelegations: false, showLogo: true, showCoatOfArms: false, showMotto: false, periodLabelMode: 'MONTHLY' },
+    { type: 'officialHeader', bilingual: true, ministry: 'MINEDUB', showDelegations: true, showLogo: true, showCoatOfArms: false, showMotto: true, periodLabelMode: 'MONTHLY' },
     { type: 'studentCard', fields: ['photo', 'matricule', 'birth', 'sex', 'repeater', 'classSize', 'mainTeacher'] },
     {
       type: 'subjectTable',
@@ -211,6 +228,10 @@ export const PRIMARY_POINTS_RATIO_EN_V1: Readonly<BulletinTemplateSpec> = deepFr
       groupByDomain: true,
       showGroupSubtotals: false,
       appreciationScale: 'A+/A/ECA/NA',
+      scaleConfig: {
+        // Primaire réel GSB Le Québécois : NA = [0 ; 10] inclus (35/70 et 5/10 = 10,00 notés NA), ECA > 10 jusqu'à < 15.
+        cote: { ongoingMin: 10, ongoingInclusive: false, acquiredMin: 15, acquiredInclusive: true, expertMin: 18, expertInclusive: true },
+      },
       columns: [
         { key: 'subjectName', labelFr: 'SOUS-COMPÉTENCES', labelEn: 'SUB-SKILLS', ratio: 32, align: 'left' },
         { key: 'learningUnit', labelFr: 'Unité', labelEn: 'Learning Unit', ratio: 14, align: 'center' },
@@ -226,15 +247,16 @@ export const PRIMARY_POINTS_RATIO_EN_V1: Readonly<BulletinTemplateSpec> = deepFr
   ],
 });
 
-export const PRIMARY_POINTS_RATIO_FR_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec<BulletinTemplateSpec>({
-  id: PRIMARY_POINTS_RATIO_FR_SPEC_ID,
+export const PRIMARY_POINTS_RATIO_FR_LABELS_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec<BulletinTemplateSpec>({
+  id: PRIMARY_POINTS_RATIO_FR_LABELS_SPEC_ID,
   familyKey: 'F',
   targetTemplate: 'PRIMARY',
   layoutVariant: 'PRIMARY_POINTS_RATIO',
   calculationMode: 'POINTS_RATIO',
   showGroupRankInSubtotal: false,
+  validationStatus: 'TO_VALIDATE',
   validationNotice: 'À VALIDER SUR UN BULLETIN RÉEL',
-  name: 'Famille F (FR) — Bulletin Primaire Mensuel Ratio de Points (À VALIDER SUR UN BULLETIN RÉEL)',
+  name: 'Famille F (modèle anglophone à libellés français) — Primaire Ratio de Points (À VALIDER SUR UN BULLETIN RÉEL)',
   version: 1,
   status: 'PUBLISHED',
   defaultGroupingScheme: 'FLAT',
@@ -242,7 +264,7 @@ export const PRIMARY_POINTS_RATIO_FR_V1: Readonly<BulletinTemplateSpec> = deepFr
   grayscaleFirst: true,
   page: { size: 'A4', orientation: 'portrait', margin: 18 },
   blocks: [
-    { type: 'officialHeader', bilingual: false, showDelegations: false, showLogo: true, showCoatOfArms: false, showMotto: false, periodLabelMode: 'MONTHLY' },
+    { type: 'officialHeader', bilingual: true, ministry: 'MINEDUB', showDelegations: true, showLogo: true, showCoatOfArms: false, showMotto: true, periodLabelMode: 'MONTHLY' },
     { type: 'studentCard', fields: ['photo', 'matricule', 'birth', 'sex', 'repeater', 'classSize', 'mainTeacher'] },
     {
       type: 'subjectTable',
@@ -250,6 +272,10 @@ export const PRIMARY_POINTS_RATIO_FR_V1: Readonly<BulletinTemplateSpec> = deepFr
       groupByDomain: true,
       showGroupSubtotals: false,
       appreciationScale: 'A+/A/ECA/NA',
+      scaleConfig: {
+        // Primaire réel GSB Le Québécois : NA = [0 ; 10] inclus (35/70 et 5/10 = 10,00 notés NA), ECA > 10 jusqu'à < 15.
+        cote: { ongoingMin: 10, ongoingInclusive: false, acquiredMin: 15, acquiredInclusive: true, expertMin: 18, expertInclusive: true },
+      },
       columns: [
         { key: 'subjectName', labelFr: 'SOUS-COMPÉTENCES', labelEn: 'SUB-SKILLS', ratio: 32, align: 'left' },
         { key: 'learningUnit', labelFr: "Unité d'appr.", labelEn: 'Learning Unit', ratio: 14, align: 'center' },

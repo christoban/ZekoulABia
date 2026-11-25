@@ -8,6 +8,7 @@ import type { SectionRepository } from '@domain/ports/repositories/SectionReposi
 import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
 import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
 import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
+import type { BulletinTemplateSpecRepository } from '@domain/ports/repositories/BulletinTemplateSpecRepository';
 import type { BulletinTemplate } from '@domain/types/enums';
 import { BulletinBloqueError } from '@domain/errors/BulletinBloqueError';
 import { MatiereSansGroupeError } from '@domain/errors/MatiereSansGroupeError';
@@ -16,6 +17,7 @@ import { resolveLanguage } from '../../../../domain/policies/LanguagePolicy';
 import {
   buildRenderOptionsForExport,
   createBatchSchoolIdentityContextCache,
+  ensureSpecHydratedFromRepository,
   isStudentBulletinSnapshot,
 } from '@application/reportCard/bulletinPdfLifecycle';
 import { resolvePublicVerifyBaseUrl } from '@infrastructure/config/EnvAppConfig';
@@ -222,11 +224,14 @@ export async function resolveSendBulletinsParams(params: {
   return { data: { classId, academicPeriodId, nomEtablissement, nomPeriode, langue } };
 }
 
+export const MAX_SYNC_CLASS_EXPORT_STUDENTS = 80;
+
 async function resolveExportPeriodAndBulletins(params: {
   res: Response;
   schoolId: string;
   classId: string;
   requestedPeriodId?: string;
+  maxSyncStudents?: number;
   anneeRepository: AnneeAcademiqueRepository;
   bulletinRepository: BulletinRepository;
 }) {
@@ -252,6 +257,19 @@ async function resolveExportPeriodAndBulletins(params: {
     });
     return null;
   }
+
+  const limit = params.maxSyncStudents ?? MAX_SYNC_CLASS_EXPORT_STUDENTS;
+  if (reportCards.length > limit) {
+    params.res.status(422).json({
+      success: false,
+      code: 'CLASS_EXPORT_LIMIT_EXCEEDED',
+      maxSyncStudents: limit,
+      actualStudents: reportCards.length,
+      message: `L'export synchrone est plafonné à ${limit} bulletins par classe (reçu : ${reportCards.length}). Veuillez utiliser la génération asynchrone par lot ou scinder la classe.`,
+    });
+    return null;
+  }
+
   return { academicPeriodId, reportCards };
 }
 
@@ -260,10 +278,12 @@ export async function streamClassReportCardsZip(params: {
   schoolId: string;
   classId: string;
   requestedPeriodId?: string;
+  maxSyncStudents?: number;
   anneeRepository: AnneeAcademiqueRepository;
   bulletinRepository: BulletinRepository;
   bulletinRenderer?: BulletinRendererPort;
   bulletinPdfStorage?: BulletinPdfStoragePort;
+  templateSpecRepository?: BulletinTemplateSpecRepository;
 }): Promise<void> {
   const { res, schoolId, classId } = params;
   const ctx = await resolveExportPeriodAndBulletins(params);
@@ -279,6 +299,7 @@ export async function streamClassReportCardsZip(params: {
     const { pdfBuffer, studentName } = await renderReportCardPdfBuffer(reportCard, schoolId, 'ADMIN', settings, {
       bulletinRenderer: params.bulletinRenderer,
       bulletinPdfStorage: params.bulletinPdfStorage,
+      templateSpecRepository: params.templateSpecRepository,
     });
     archive.append(pdfBuffer, { name: `bulletin-${studentName.replace(/\s+/g, '-')}.pdf` });
   }
@@ -290,10 +311,12 @@ export async function streamClassReportCardsMergedPdf(params: {
   schoolId: string;
   classId: string;
   requestedPeriodId?: string;
+  maxSyncStudents?: number;
   anneeRepository: AnneeAcademiqueRepository;
   bulletinRepository: BulletinRepository;
   bulletinRenderer?: BulletinRendererPort;
   schoolAssetStorage?: SchoolAssetStoragePort;
+  templateSpecRepository?: BulletinTemplateSpecRepository;
 }): Promise<void> {
   const { res, schoolId, classId, bulletinRenderer } = params;
   if (!bulletinRenderer?.renderMergedClassPdf) {
@@ -318,6 +341,9 @@ export async function streamClassReportCardsMergedPdf(params: {
   const items = [];
   for (const rc of ctx.reportCards) {
     if (!isStudentBulletinSnapshot(rc.snapshotData)) continue;
+    if (rc.templateSpecId) {
+      await ensureSpecHydratedFromRepository(rc.templateSpecId, rc.templateVersion, params.templateSpecRepository);
+    }
     const tpl = (rc.template ?? 'FR_SECONDARY') as BulletinTemplate;
     const spec =
       (rc.templateSpecId ? getPublishedTemplateSpec(rc.templateSpecId, rc.templateVersion) : null) ??

@@ -1,14 +1,14 @@
 import type { StudentBulletinSnapshot } from '@domain/types/bulletinSnapshot';
 import type {
+  BulletinAppreciationScaleConfig,
   ClassProfileBlockSpec,
   ConductSummaryBlockSpec,
   CouncilDecisionBlockSpec,
   CouncilDecisionSpecItem,
   SignaturesBlockSpec,
-  VerifyQrBlockSpec,
 } from '@domain/types/bulletinTemplateSpec';
 import type { BulletinRenderOptions } from '@domain/ports/services/BulletinRendererPort';
-import { deriveShortVerifyCode } from '@domain/policies/BulletinVerifyCrypto';
+import { resolveEffectiveCoteScale } from '@domain/services/bulletin/bulletinAppreciationScales';
 import { formatAbsenceHoursDisplay } from '@application/reportCard/bulletinEnrichmentHelpers';
 import type { FontSet, MeasuredPdfDoc } from './measuredHeaderHelpers';
 import { formatRankLabel, resolveApcCote } from './measuredSubjectTableHelpers';
@@ -37,6 +37,8 @@ export function drawClassProfileBlock(
   snapshot: StudentBulletinSnapshot,
   language: 'fr' | 'en',
   options?: BulletinRenderOptions,
+  specScaleConfig?: BulletinAppreciationScaleConfig,
+  inkSaverMode = false,
 ): void {
   const cp = snapshot.classProfile;
   const isEn = language === 'en';
@@ -64,7 +66,8 @@ export function drawClassProfileBlock(
     ? (isEn ? 'ANNUAL RESULT & CLASS PROFILE' : 'RÉSULTAT ANNUEL & PROFIL DE LA CLASSE')
     : (isEn ? 'PERIOD RESULT & CLASS PROFILE' : 'RÉSULTAT PÉRIODIQUE & PROFIL DE LA CLASSE');
   const rk = formatRankLabel(snapshot.rank, isEn);
-  const cote = resolveApcCote(snapshot.generalAverage);
+  const coteScale = resolveEffectiveCoteScale(options?.gradingPolicy?.scaleConfig, specScaleConfig);
+  const cote = resolveApcCote(snapshot.generalAverage, coteScale);
   const mentionPart = options?.mention && options.mention !== '—' ? `  |  Mention : ${options.mention}` : '';
 
   const studentLine = isEn
@@ -80,7 +83,7 @@ export function drawClassProfileBlock(
   ensureBlockSpace(doc, h + 4);
 
   const y = doc.y;
-  doc.rect(left, y, usableW, h).fillAndStroke('#f1f5f9', '#334155');
+  doc.rect(left, y, usableW, h).fillAndStroke(inkSaverMode ? '#ffffff' : '#f1f5f9', '#334155');
   doc.font(fonts.bold).fontSize(7.6).fillColor('#0f172a').text(studentLine, left + 6, y + 4, { width: usableW - 12 });
   doc.font(fonts.regular).fontSize(7.4).fillColor('#1e293b').text(detail, left + 6, y + 6 + hStudent, { width: usableW - 12 });
   doc.y = y + h + 5;
@@ -99,7 +102,7 @@ function buildCouncilItemLabel(
     case 'honorRoll': return `${mark(dec?.honorRoll)} ${isEn ? 'Honor Roll' : "Tableau d'honneur"}`;
     case 'encouragements': return `${mark(dec?.encouragements)} Encouragements`;
     case 'congratulations': return `${mark(dec?.congratulations)} ${isEn ? 'Congratulations' : 'Félicitations'}`;
-    case 'workWarning': return `[ ] ${isEn ? 'Work Warning' : 'Avertissement travail'}`;
+    case 'workWarning': return `${mark(dec?.workWarning)} ${isEn ? 'Work Warning' : 'Avertissement travail'}`;
     case 'conductWarning': return `${mark((conduct?.warningsCount ?? 0) > 0)} ${isEn ? 'Conduct Warning' : 'Avertissement conduite'}`;
     case 'warning': return `${mark((conduct?.warningsCount ?? 0) > 0)} ${isEn ? 'Warning' : 'Avertissement'}`;
     case 'blame': return `${mark((conduct?.blamesCount ?? 0) > 0)} ${isEn ? 'Blame' : 'Blâme'}`;
@@ -195,15 +198,14 @@ export function drawSignaturesAndQrBlock(
   doc: MeasuredPdfDoc,
   fonts: FontSet,
   sigSpec: SignaturesBlockSpec | undefined,
-  qrSpec: VerifyQrBlockSpec | undefined,
   options: BulletinRenderOptions,
-  qrBuffer: Buffer | null,
+  inkSaverMode = false,
 ): void {
   const isEn = options.language === 'en';
   const left = doc.page.margins.left;
   const usableW = doc.page.width - left - doc.page.margins.right;
-  const boxH = 66;
-  const neededH = boxH + 20;
+  const boxH = 58;
+  const neededH = boxH + 16;
   ensureBlockSpace(doc, neededH);
 
   const y = doc.y;
@@ -217,8 +219,6 @@ export function drawSignaturesAndQrBlock(
       .text(dateLine, left, y, { width: usableW, align: 'right' });
   }
 
-  const qrSize = qrSpec && qrBuffer ? 60 : 0;
-  const sigAreaW = qrSpec && qrBuffer ? usableW - qrSize - 10 : usableW;
   const slots = sigSpec?.slots ?? ['mainTeacher', 'parent', 'principal'];
   const labelsMap: Record<string, string> = {
     mainTeacher: isEn ? 'Class Master Remarks & Visa' : 'Appréciation du professeur titulaire',
@@ -228,24 +228,29 @@ export function drawSignaturesAndQrBlock(
   };
 
   const gap = 6;
-  const boxW = (sigAreaW - gap * (slots.length - 1)) / slots.length;
+  const boxW = (usableW - gap * (slots.length - 1)) / slots.length;
   const boxTop = y + 12;
+  doc.font(fonts.bold).fontSize(7);
+  const titleBarH = Math.max(
+    14,
+    ...slots.map((slot) => Math.ceil(doc.heightOfString(labelsMap[slot] ?? slot, { width: boxW - 6 }) + 6)),
+  );
 
   slots.forEach((slot, idx) => {
     const sx = left + idx * (boxW + gap);
     doc.rect(sx, boxTop, boxW, boxH).strokeColor('#334155').lineWidth(0.7).stroke();
-    doc.rect(sx, boxTop, boxW, 13).fillAndStroke('#e2e8f0', '#334155');
-    doc.font(fonts.bold).fontSize(6.6).fillColor('#0f172a')
-      .text(labelsMap[slot] ?? slot, sx + 3, boxTop + 3.5, { width: boxW - 6, align: 'center' });
+    doc.rect(sx, boxTop, boxW, titleBarH).fillAndStroke(inkSaverMode ? '#f8fafc' : '#e2e8f0', '#334155');
+    doc.font(fonts.bold).fontSize(7).fillColor('#0f172a')
+      .text(labelsMap[slot] ?? slot, sx + 3, boxTop + 3, { width: boxW - 6, align: 'center' });
 
     if (slot === 'mainTeacher' && options.classMasterComment && options.classMasterComment.trim().length > 0) {
-      doc.font(fonts.regular).fontSize(6.8).fillColor('#0f172a')
-        .text(options.classMasterComment.trim(), sx + 4, boxTop + 16, { width: boxW - 8, height: boxH - 20 });
+      doc.font(fonts.regular).fontSize(7).fillColor('#0f172a')
+        .text(options.classMasterComment.trim(), sx + 4, boxTop + titleBarH + 3, { width: boxW - 8, height: boxH - titleBarH - 6 });
     } else if (slot === 'vicePrincipal' && options.school.censorSignatureBuffer) {
-      try { doc.image(options.school.censorSignatureBuffer, sx + 8, boxTop + 15, { fit: [boxW - 16, boxH - 18] }); } catch { /* ignore */ }
+      try { doc.image(options.school.censorSignatureBuffer, sx + 8, boxTop + titleBarH + 2, { fit: [boxW - 16, boxH - titleBarH - 5] }); } catch { /* ignore */ }
     } else if (slot === 'principal') {
-      const innerY = boxTop + 15;
-      const innerH = boxH - 18;
+      const innerY = boxTop + titleBarH + 2;
+      const innerH = boxH - titleBarH - 5;
       if (options.school.stampBuffer) {
         try { doc.image(options.school.stampBuffer, sx + 6, innerY, { fit: [boxW * 0.45, innerH] }); } catch { /* ignore */ }
       }
@@ -253,20 +258,11 @@ export function drawSignaturesAndQrBlock(
         try { doc.image(options.school.principalSignatureBuffer, sx + boxW * 0.48, innerY, { fit: [boxW * 0.46, innerH] }); } catch { /* ignore */ }
       }
       if (!options.school.stampBuffer && !options.school.principalSignatureBuffer && sigSpec?.showStamp && sigSpec?.showPlaceholder) {
-        doc.font(fonts.italic).fontSize(6.2).fillColor('#64748b')
-          .text(isEn ? 'Stamp & Signature' : 'Cachet & Signature', sx + 6, boxTop + 34, { width: boxW - 12, align: 'center' });
+        doc.font(fonts.italic).fontSize(7).fillColor('#64748b')
+          .text(isEn ? 'Stamp & Signature' : 'Cachet & Signature', sx + 6, boxTop + titleBarH + 14, { width: boxW - 12, align: 'center' });
       }
     }
   });
 
-  if (qrSpec && qrBuffer) {
-    const qx = left + usableW - qrSize;
-    doc.image(qrBuffer, qx, boxTop, { fit: [qrSize, qrSize] });
-    const displayCode = options.shortVerifyCode || (options.verifyToken ? deriveShortVerifyCode(options.verifyToken) : undefined);
-    if (qrSpec.showVerificationCode && displayCode) {
-      doc.font(fonts.regular).fontSize(5.5).fillColor('#334155')
-        .text(displayCode, qx - 2, boxTop + qrSize + 2, { width: qrSize + 4, align: 'center' });
-    }
-  }
-  doc.y = y + neededH;
+  doc.y = boxTop + boxH + 2;
 }

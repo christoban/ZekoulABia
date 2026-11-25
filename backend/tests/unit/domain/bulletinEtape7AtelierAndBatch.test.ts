@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'bun:test';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { Request, Response, NextFunction } from 'express';
 import { MasterBulletinAtelierController } from '@infrastructure/http/controllers/MasterBulletinAtelierController';
 import { ReportCardController } from '@infrastructure/http/controllers/ReportCardController';
-import { streamClassReportCardsMergedPdf } from '@infrastructure/http/controllers/helpers/reportCardGenerationOps';
+import { MAX_SYNC_CLASS_EXPORT_STUDENTS, streamClassReportCardsMergedPdf } from '@infrastructure/http/controllers/helpers/reportCardGenerationOps';
 import { MeasuredPdfKitBulletinRenderer } from '@infrastructure/pdf/renderer/MeasuredPdfKitBulletinRenderer';
 import {
   GENERAL_GROUPED_V1,
@@ -433,5 +435,38 @@ describe('Étape 7 — Atelier Master RBAC, versioning DRAFT/PUBLISHED, aperçu 
     expect(pdfLatin).toMatch(/\/Count\s+2\b/);
     // Logo + Stamp read at most once each across the whole class batch (cache hit for student 2)
     expect(readAssetCalls).toBe(2);
+  });
+
+  it('enforces heavyPdfExportLimiter on heavy PDF routes and returns 422 CLASS_EXPORT_LIMIT_EXCEEDED beyond sync cap', async () => {
+    expect(MAX_SYNC_CLASS_EXPORT_STUDENTS).toBe(80);
+    const rcRoutes = readFileSync(join(import.meta.dir, '../../../src/infrastructure/http/routes/reportCard.routes.ts'), 'utf8');
+    const atelierRoutes = readFileSync(join(import.meta.dir, '../../../src/infrastructure/http/routes/masterBulletinAtelier.routes.ts'), 'utf8');
+    expect(rcRoutes).toContain("'/template-preview', heavyPdfExportLimiter");
+    expect(rcRoutes).toContain("'/export-pdf/:classId', heavyPdfExportLimiter");
+    expect(rcRoutes).toContain("'/export/:classId', heavyPdfExportLimiter");
+    expect(atelierRoutes).toContain("'/schools/:schoolId/preview-pdf', heavyPdfExportLimiter");
+
+    const preview = buildFictitiousPreviewSnapshot(GENERAL_GROUPED_V1);
+    const oversizedList = Array.from({ length: MAX_SYNC_CLASS_EXPORT_STUDENTS + 1 }, (_, i) => ({
+      id: `rc-cap-${i}`, schoolId: 'school-a', studentId: `stu-${i}`, academicYearId: 'yr-1', academicPeriodId: 'per-1',
+      template: 'FR_SECONDARY', templateSpecId: GENERAL_GROUPED_V1.id, templateVersion: 1,
+      snapshotData: preview.snapshot, verifyToken: genererVerifyToken(), shortVerifyCode: `ZK-CAP-${i}`,
+      reprintCount: 0, generalAverage: 12, rank: i + 1, totalStudents: 81, absenceCount: 0, mention: 'Assez Bien',
+      classMasterComment: null, academicYear: null, academicPeriod: null,
+      student: { id: `stu-${i}`, firstName: 'E', lastName: `${i}`, studentProfile: null },
+      subjectLines: [], school: null, section: null,
+    })) as BulletinExportData[];
+
+    const mockBulletinRepo = createStub<BulletinRepository>({ async findForExport() { return oversizedList; } });
+    const captured = createMockRes();
+    await streamClassReportCardsMergedPdf({
+      res: captured.res, schoolId: 'school-a', classId: 'cls-cap', requestedPeriodId: 'per-1',
+      anneeRepository: createStub<AnneeAcademiqueRepository>({}),
+      bulletinRepository: mockBulletinRepo,
+      bulletinRenderer: new MeasuredPdfKitBulletinRenderer(),
+    });
+    expect(captured.statusCode).toBe(422);
+    expect((captured.jsonBody as { code: string; maxSyncStudents: number; actualStudents: number }).code).toBe('CLASS_EXPORT_LIMIT_EXCEEDED');
+    expect((captured.jsonBody as { maxSyncStudents: number; actualStudents: number }).actualStudents).toBe(81);
   });
 });

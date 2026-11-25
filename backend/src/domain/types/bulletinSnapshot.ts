@@ -5,6 +5,7 @@
  * Le moteur de rendu (PDFKit / Chromium) ne calcule jamais : il lit ce snapshot.
  */
 import type { CouncilDecision, GradeValidationStatus, SubjectType } from '@domain/types/enums';
+import type { BulletinAppreciationScaleConfig } from '@domain/types/bulletinTemplateSpec';
 
 export type BulletinCalculationMode = 'WEIGHTED_AVERAGE' | 'POINTS_RATIO';
 
@@ -72,11 +73,12 @@ export interface BulletinSnapshotBuildInput {
   hasCoefficientBySubject: boolean;
   excludeAbsentGrades?: boolean;
   passThresholdOn20?: number;
-  classSizeOverride?: number;
   isAnnual?: boolean;
   calculationMode?: BulletinCalculationMode;
   annualPolicy?: AnnualAveragePolicyMode;
   sequenceCalculationMode?: 'single' | 'triple' | 'weighted';
+  /** Seuils configurables de cotes et niveaux de compétence (spec ou politique établissement) */
+  scaleConfig?: BulletinAppreciationScaleConfig;
   /** Par défaut true (Loi 4) : ne retient que les notes LOCKED */
   requireLockedGrades?: boolean;
 }

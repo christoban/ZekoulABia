@@ -1781,6 +1781,22 @@ model BulletinTemplateAssignment {
   @@index([schoolId, periodKind, isActive])
 }
 
+model BulletinTemplateSpecRecord {
+  id          String   @id @default(cuid())
+  specId      String
+  version     Int
+  status      String   @default("PUBLISHED")
+  familyKey   String
+  name        String
+  language    String
+  specJson    Json
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  @@unique([specId, version])
+  @@index([specId, status])
+}
+
 model Exam {
   id             String       @id @default(cuid())
   schoolId       String

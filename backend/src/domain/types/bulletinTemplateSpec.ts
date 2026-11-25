@@ -68,9 +68,12 @@ export type PeriodLabelMode =
   | 'ANNUAL'
   | 'MONTHLY';
 
+export type OfficialMinistryHeader = 'MINESEC' | 'MINEDUB';
+
 export interface OfficialHeaderBlockSpec {
   type: 'officialHeader';
   bilingual: boolean;
+  ministry?: OfficialMinistryHeader;
   showDelegations: boolean;
   showLogo: boolean;
   showCoatOfArms: boolean;
@@ -83,6 +86,38 @@ export interface StudentCardBlockSpec {
   fields: Array<'photo' | 'matricule' | 'birth' | 'sex' | 'repeater' | 'classSize' | 'mainTeacher'>;
 }
 
+export interface CoteScaleThresholds {
+  /** Minimum pour A+ (ex. 18 => [18-20]) */
+  expertMin: number;
+  /** true (défaut) : >= expertMin ; false : > expertMin */
+  expertInclusive?: boolean;
+  /** Minimum pour A (ex. 15 => [15-17,99]) */
+  acquiredMin: number;
+  /** true (défaut) : >= acquiredMin ; false : > acquiredMin */
+  acquiredInclusive?: boolean;
+  /** Minimum pour ECA (ex. 10 sur Famille A, > 10 sur Primaire F où NA = [0;10] inclus) */
+  ongoingMin: number;
+  /** true (défaut) : >= ongoingMin (NA < ongoingMin) ; false : > ongoingMin (NA <= ongoingMin) */
+  ongoingInclusive?: boolean;
+}
+
+export interface CompetenceScaleThresholds {
+  /** Minimum pour Niveau Expert (ex. 18 => >= 18) */
+  expertMin: number;
+  expertInclusive?: boolean;
+  /** Minimum pour Compétence acquise (ex. 14 sur Garoua/Djamboutou) */
+  acquiredMin: number;
+  acquiredInclusive?: boolean;
+  /** Minimum pour En cours d'acquisition (ex. 11 sur Garoua/Djamboutou) */
+  ongoingMin: number;
+  ongoingInclusive?: boolean;
+}
+
+export interface BulletinAppreciationScaleConfig {
+  cote?: CoteScaleThresholds;
+  competence?: CompetenceScaleThresholds;
+}
+
 export interface SubjectTableBlockSpec {
   type: 'subjectTable';
   grouping: 'byGroup' | 'flat';
@@ -90,6 +125,7 @@ export interface SubjectTableBlockSpec {
   showGroupSubtotals: boolean;
   showTotalBar?: boolean;
   appreciationScale: 'A+/A/ECA/NA' | 'APC_TEXT' | 'FREE_TEXT';
+  scaleConfig?: BulletinAppreciationScaleConfig;
   formulaHint?: string;
   columns: SubjectTableColumnSpec[];
 }
@@ -112,9 +148,21 @@ export type CouncilDecisionSpecItem =
   | 'disciplinaryCouncil'
   | 'exclusion';
 
+export interface CouncilDistinctionThresholds {
+  honorRollMinAverage: number;
+  honorRollMaxRank?: number;
+  encouragementsMinAverage: number;
+  encouragementsMaxRank?: number;
+  congratulationsMinAverage: number;
+  congratulationsMaxRank?: number;
+  workWarningMaxAverage: number;
+  workBlameMaxAverage: number;
+}
+
 export interface CouncilDecisionBlockSpec {
   type: 'councilDecision';
   items: CouncilDecisionSpecItem[];
+  distinctionThresholds?: Partial<CouncilDistinctionThresholds>;
 }
 
 export interface ConductSummaryBlockSpec {
@@ -147,6 +195,8 @@ export type BulletinTemplateBlock =
   | SignaturesBlockSpec
   | VerifyQrBlockSpec;
 
+export type BulletinSpecValidationStatus = 'VALIDATED' | 'TO_VALIDATE';
+
 export interface BulletinTemplateSpec {
   id: string;
   familyKey: BulletinFamilyKey;
@@ -154,6 +204,7 @@ export interface BulletinTemplateSpec {
   layoutVariant?: BulletinLayoutVariant;
   calculationMode?: BulletinCalculationMode;
   showGroupRankInSubtotal?: boolean;
+  validationStatus?: BulletinSpecValidationStatus;
   validationNotice?: string;
   name: string;
   version: number;
@@ -161,6 +212,8 @@ export interface BulletinTemplateSpec {
   defaultGroupingScheme?: BulletinGroupingScheme;
   language: 'fr' | 'en' | 'bilingual';
   grayscaleFirst: boolean;
+  /** Mode économie d'encre : bandeaux et en-têtes en gris très clair avec contour au lieu d'aplats sombres ou colorés */
+  inkSaverMode?: boolean;
   page: {
     size: 'A4';
     orientation: 'portrait' | 'landscape';

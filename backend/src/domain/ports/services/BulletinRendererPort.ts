@@ -6,7 +6,10 @@
  * Ne réalise aucun calcul de moyenne ou de rang.
  */
 import type { StudentBulletinSnapshot } from '@domain/types/bulletinSnapshot';
-import type { BulletinTemplateSpec } from '@domain/types/bulletinTemplateSpec';
+import type {
+  BulletinAppreciationScaleConfig,
+  BulletinTemplateSpec,
+} from '@domain/types/bulletinTemplateSpec';
 
 export interface SchoolIdentityRenderContext {
   schoolName: string;
@@ -36,6 +39,7 @@ export interface BulletinGradingPolicy {
   ds1Weight?: number;
   ds2Weight?: number;
   compositionWeight?: number;
+  scaleConfig?: BulletinAppreciationScaleConfig;
 }
 
 export interface BulletinRenderOptions {
@@ -46,7 +50,10 @@ export interface BulletinRenderOptions {
   classMasterComment?: string | null;
   isOfficial?: boolean;
   isAnnual?: boolean;
+  /** true uniquement en aperçu (Atelier Master / Admin / spécimens) ; jamais sur un bulletin scellé */
+  isPreview?: boolean;
   verifyUrl?: string;
+  verifyBaseUrl?: string;
   verifyToken?: string;
   shortVerifyCode?: string;
   isDuplicate?: boolean;

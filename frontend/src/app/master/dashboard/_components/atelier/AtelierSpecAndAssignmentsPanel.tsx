@@ -86,7 +86,7 @@ export default function AtelierSpecAndAssignmentsPanel(props: Props) {
           >
             {props.catalogSpecs.map((s) => (
               <option key={`${s.id}-${s.version}`} value={`${s.id}::${s.version}`}>
-                [Famille {s.familyKey}] {s.name} — v{s.version} ({s.status === 'DRAFT' ? 'Brouillon' : 'Publié'})
+                [Famille {s.familyKey}] {s.name} — v{s.version} ({s.status === 'DRAFT' ? 'Brouillon' : s.validationStatus === 'TO_VALIDATE' ? 'À valider — aperçu seul' : 'Validé'})
               </option>
             ))}
           </select>
@@ -249,6 +249,7 @@ export default function AtelierSpecAndAssignmentsPanel(props: Props) {
         <div style={{ fontSize: 11, color: 'var(--text3)' }}>
           Spec sélectionnée : <strong>{props.selectedSpecId} v{props.selectedSpecVersion}</strong>
           {selectedSpec?.status === 'DRAFT' ? ' (publier cette version avant affectation)' : ''}
+          {selectedSpec?.validationStatus === 'TO_VALIDATE' ? ' — Statut TO_VALIDATE : aperçu uniquement, non affectable en production' : ''}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           <div>
@@ -292,7 +293,7 @@ export default function AtelierSpecAndAssignmentsPanel(props: Props) {
         {props.canEdit && (
           <button
             type="button"
-            disabled={props.busy || selectedSpec?.status === 'DRAFT'}
+            disabled={props.busy || selectedSpec?.status === 'DRAFT' || selectedSpec?.validationStatus === 'TO_VALIDATE'}
             onClick={() => props.onCreateAssignment({
               classLevel: assignLevel || null,
               classId: assignClassId || null,

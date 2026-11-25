@@ -123,7 +123,8 @@ function capturePdfTexts(fn: () => Promise<Buffer>): Promise<string[]> {
 
 describe('Étape 4 bis — Corrections visuelles, cohérence données & heures consolidées', () => {
   it('Point 1 : calcule passRate = admis / effectif sans jamais afficher 100% pour 3/54', () => {
-    const profilePartial = computeClassProfile([12.5, 14.0, 11.2], 10, 54);
+    // Étape 6 bis : effectif = élèves réellement classés (plus de surcharge) → 3 admis + 51 sous le seuil
+    const profilePartial = computeClassProfile([12.5, 14.0, 11.2, ...Array.from({ length: 51 }, (_, i) => 4 + (i % 50) / 10)], 10);
     expect(profilePartial.passCount).toBe(3);
     expect(profilePartial.classSize).toBe(54);
     expect(profilePartial.passRate).toBe(5.56);

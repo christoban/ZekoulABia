@@ -6,6 +6,7 @@ import type { BulletinExportData, BulletinRepository } from '@domain/ports/repos
 import type { BulletinRendererPort } from '@domain/ports/services/BulletinRendererPort';
 import type { BulletinPdfStoragePort } from '@domain/ports/services/BulletinPdfStoragePort';
 import type { SchoolAssetStoragePort } from '@domain/ports/services/SchoolAssetStoragePort';
+import type { BulletinTemplateSpecRepository } from '@domain/ports/repositories/BulletinTemplateSpecRepository';
 import { LocalAndDataUriSchoolAssetStorageAdapter } from '@infrastructure/services/storage/LocalAndDataUriSchoolAssetStorageAdapter';
 import { getOrRegenerateSealedBulletinPdf } from '@application/reportCard/bulletinPdfLifecycle';
 import { resolveLanguage } from '@domain/policies/LanguagePolicy';
@@ -70,6 +71,7 @@ export async function renderReportCardPdfBuffer(
     bulletinRenderer?: BulletinRendererPort;
     bulletinPdfStorage?: BulletinPdfStoragePort;
     schoolAssetStorage?: SchoolAssetStoragePort;
+    templateSpecRepository?: BulletinTemplateSpecRepository;
     forceRegenerateFromSnapshot?: boolean;
     persistRegeneratedPdf?: boolean;
   },
@@ -105,6 +107,7 @@ export async function renderReportCardPdfBuffer(
     bulletinRenderer: measuredDeps?.bulletinRenderer,
     bulletinPdfStorage: measuredDeps?.bulletinPdfStorage,
     schoolAssetStorage: measuredDeps?.schoolAssetStorage ?? DEFAULT_SCHOOL_ASSET_STORAGE,
+    templateSpecRepository: measuredDeps?.templateSpecRepository,
   });
   if (sealedBuffer) {
     return { pdfBuffer: sealedBuffer, filename, studentName };

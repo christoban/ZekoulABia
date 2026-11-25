@@ -4,6 +4,7 @@ import type {
   StudentBulletinSnapshot,
 } from '@domain/types/bulletinSnapshot';
 import type {
+  BulletinAppreciationScaleConfig,
   BulletinLayoutVariant,
   BulletinTemplateSpec,
   SubjectTableBlockSpec,
@@ -11,12 +12,20 @@ import type {
   SubjectTableColumnSpec,
 } from '@domain/types/bulletinTemplateSpec';
 import type { BulletinRenderOptions } from '@domain/ports/services/BulletinRendererPort';
-import { resolveApcCote } from '@domain/services/bulletin/bulletinSnapshotMath';
+import {
+  resolveApcCompetenceLevel,
+  resolveApcCote,
+} from '@domain/services/bulletin/bulletinSnapshotMath';
+import {
+  resolveEffectiveCompetenceScale,
+  resolveEffectiveCoteScale,
+} from '@domain/services/bulletin/bulletinAppreciationScales';
 import type { FontSet, MeasuredPdfDoc } from './measuredHeaderHelpers';
 import {
   buildDynamicFormulaHint,
   formatCoteLegend,
   formatLocalizedNumber,
+  resolvePeriodEvaluationLabels,
 } from './measuredFormatHelpers';
 
 export { resolveApcCote };
@@ -35,14 +44,23 @@ export function formatSubjectCell(
   key: SubjectTableColumnKey,
   isEn = false,
   layoutVariant?: BulletinLayoutVariant,
+  scaleConfig?: BulletinAppreciationScaleConfig,
 ): string {
   const num = (v: number | undefined): string => formatLocalizedNumber(v, isEn, 2);
+  const coteScale = resolveEffectiveCoteScale(scaleConfig);
+  const compScale = resolveEffectiveCompetenceScale(scaleConfig);
   switch (key) {
     case 'subjectName': return line.subjectName;
     case 'coefficient': return String(line.coefficient);
     case 'rawMark': return num(line.rawMark ?? line.subjectAverage);
     case 'maxMark': return num(line.maxMark ?? 20);
-    case 'learningUnit': return line.learningUnit ?? '—';
+    case 'learningUnit': {
+      const raw = line.learningUnit?.trim();
+      if (!raw) return '—';
+      if (!isEn && /^Unit\s+(.+)$/i.test(raw)) return raw.replace(/^Unit\s+/i, 'Unité ');
+      if (isEn && /^Unit[ée]\s+(.+)$/i.test(raw)) return raw.replace(/^Unit[ée]\s+/i, 'Unit ');
+      return raw;
+    }
     case 'seq1Score': return num(line.seq1Score);
     case 'seq2Score': return num(line.seq2Score);
     case 'seq3Score': return num(line.seq3Score);
@@ -61,16 +79,24 @@ export function formatSubjectCell(
     case 'subjectAverage': return num(line.subjectAverage);
     case 'weightedScore': return num(line.weightedScore);
     case 'subjectRank': return formatRankLabel(line.subjectRank, isEn);
-    case 'cote': return line.competenceCote ?? resolveApcCote(line.subjectAverage);
+    case 'cote': return scaleConfig?.cote ? resolveApcCote(line.subjectAverage, coteScale) : (line.competenceCote ?? resolveApcCote(line.subjectAverage, coteScale));
     case 'classSubjectAverage': return num(line.classSubjectAverage);
     case 'teacherVisa': return '';
     case 'competenceLabel': return line.competenceLabel ?? '—';
-    case 'competenceLevel': return line.competenceLevelLabel ?? '—';
+    case 'competenceLevel': return scaleConfig?.competence
+      ? resolveApcCompetenceLevel(line.subjectAverage, compScale, isEn ? 'en' : 'fr')
+      : (line.competenceLevelLabel ?? resolveApcCompetenceLevel(line.subjectAverage, compScale, isEn ? 'en' : 'fr'));
     case 'teacherName': return line.teacherName ?? '—';
     case 'teacherComment': {
       if (layoutVariant === 'BILINGUAL_APC' || layoutVariant === 'ANNUAL_BILINGUAL') {
-        const base = line.teacherComment ?? line.competenceLevelLabel ?? '—';
+        const computedComp = resolveApcCompetenceLevel(line.subjectAverage, compScale, 'bilingual');
+        const base = line.teacherComment?.trim() || (scaleConfig?.competence ? computedComp : (line.competenceLevelLabel ?? computedComp));
         return line.teacherName ? `${base} — ${line.teacherName}` : base;
+      }
+      if (layoutVariant === 'TECHNICAL_GROUPED') {
+        const custom = line.teacherComment?.trim();
+        if (custom) return custom;
+        return resolveApcCompetenceLevel(line.subjectAverage, compScale, isEn ? 'en' : 'fr');
       }
       return line.teacherComment ?? '—';
     }
@@ -87,6 +113,23 @@ function isBoldSubjectColumn(key: SubjectTableColumnKey): boolean {
   );
 }
 
+function resolveColumnHeaderLabel(
+  col: SubjectTableColumnSpec,
+  isEn: boolean,
+  evalLabels: [string, string],
+  layoutVariant?: BulletinLayoutVariant,
+): string {
+  const usesPeriodEvalNumbers =
+    layoutVariant === 'BILINGUAL_APC' ||
+    layoutVariant === 'TECHNICAL_GROUPED' ||
+    layoutVariant === 'EN_SECONDARY';
+  if (usesPeriodEvalNumbers) {
+    if (col.key === 'seq1Score') return evalLabels[0];
+    if (col.key === 'seq2Score') return evalLabels[1];
+  }
+  return isEn ? col.labelEn : col.labelFr;
+}
+
 function drawTableHeaderRow(
   doc: MeasuredPdfDoc,
   fonts: FontSet,
@@ -95,24 +138,31 @@ function drawTableHeaderRow(
   left: number,
   isEn: boolean,
   fontSize: number,
+  evalLabels: [string, string],
+  layoutVariant?: BulletinLayoutVariant,
+  inkSaverMode = false,
 ): void {
-  const hdrFontSize = Math.max(5.5, fontSize - 0.5);
+  const hdrFontSize = Math.max(7, fontSize - 0.2);
   doc.font(fonts.bold).fontSize(hdrFontSize);
-  let headerH = cols.length >= 12 ? 15 : 17;
+  let headerH = cols.length >= 12 ? 16 : 18;
   cols.forEach((col, i) => {
-    const label = isEn ? col.labelEn : col.labelFr;
+    const label = resolveColumnHeaderLabel(col, isEn, evalLabels, layoutVariant);
     const h = doc.heightOfString(label, { width: Math.max(6, colWidths[i]! - 3) });
     if (h + 6 > headerH) headerH = Math.ceil(h + 6);
   });
   const y = doc.y;
   const totalW = colWidths.reduce((s, w) => s + w, 0);
-  doc.rect(left, y, totalW, headerH).fillAndStroke('#1e293b', '#0f172a');
+  const bgFill = inkSaverMode ? '#f1f5f9' : '#1e293b';
+  const dividerColor = inkSaverMode ? '#64748b' : '#475569';
+  const textColor = inkSaverMode ? '#0f172a' : '#ffffff';
+  doc.rect(left, y, totalW, headerH).fillAndStroke(bgFill, '#0f172a');
   let x = left;
   cols.forEach((col, i) => {
     const w = colWidths[i]!;
-    if (i > 0) doc.moveTo(x, y).lineTo(x, y + headerH).strokeColor('#475569').lineWidth(0.4).stroke();
-    doc.font(fonts.bold).fontSize(hdrFontSize).fillColor('#ffffff')
-      .text(isEn ? col.labelEn : col.labelFr, x + 1.5, y + 3, { width: Math.max(6, w - 3), align: col.align ?? 'center' });
+    if (i > 0) doc.moveTo(x, y).lineTo(x, y + headerH).strokeColor(dividerColor).lineWidth(0.4).stroke();
+    const label = resolveColumnHeaderLabel(col, isEn, evalLabels, layoutVariant);
+    doc.font(fonts.bold).fontSize(hdrFontSize).fillColor(textColor)
+      .text(label, x + 1.5, y + 3, { width: Math.max(6, w - 3), align: col.align ?? 'center' });
     x += w;
   });
   doc.y = y + headerH;
@@ -127,16 +177,95 @@ function measureRowHeight(
   fontSize: number,
   isEn: boolean,
   layoutVariant?: BulletinLayoutVariant,
+  scaleConfig?: BulletinAppreciationScaleConfig,
 ): number {
-  const pad = layoutVariant === 'PRIMARY_POINTS_RATIO' || layoutVariant === 'ANNUAL_BILINGUAL' ? 3 : 4.5;
+  const pad = layoutVariant === 'PRIMARY_POINTS_RATIO' || layoutVariant === 'ANNUAL_BILINGUAL' ? 2.2 : 4;
   let maxH = fontSize + pad;
   cols.forEach((col, idx) => {
     doc.font(isBoldSubjectColumn(col.key) ? fonts.bold : fonts.regular).fontSize(fontSize);
-    const val = formatSubjectCell(line, col.key, isEn, layoutVariant);
-    const h = doc.heightOfString(val, { width: Math.max(6, colWidths[idx]! - 4), lineGap: 0.35 });
+    const val = formatSubjectCell(line, col.key, isEn, layoutVariant, scaleConfig);
+    const h = doc.heightOfString(val, { width: Math.max(6, colWidths[idx]! - 3), lineGap: 0.25 });
     if (h + pad > maxH) maxH = h + pad;
   });
   return Math.ceil(maxH);
+}
+
+function getAlignedGroupCellValue(
+  key: SubjectTableColumnKey,
+  grp: BulletinGroupSummary,
+  snapshot: StudentBulletinSnapshot,
+  isEn: boolean,
+): string {
+  const num = (v: number | undefined) => formatLocalizedNumber(v, isEn, 2);
+  const bd = snapshot.groupBreakdowns?.[grp.groupKey];
+  switch (key) {
+    case 'trim1Average': return num(bd?.trim1Average);
+    case 'trim2Average': return num(bd?.trim2Average);
+    case 'trim3Average': return num(bd?.trim3Average);
+    case 'seq1Score': return num(bd?.seq1Average);
+    case 'seq2Score': return num(bd?.seq2Average);
+    case 'seq3Score': return num(bd?.seq3Average);
+    case 'seq4Score': return num(bd?.seq4Average);
+    case 'seq5Score': return num(bd?.seq5Average);
+    case 'seq6Score': return num(bd?.seq6Average);
+    case 'coefficient': return String(grp.totalCoefficient);
+    case 'subjectAverage': return num(grp.groupAverage);
+    case 'weightedScore': return num(grp.totalWeightedScore);
+    case 'teacherComment': return bd?.groupCompetenceLabel ?? '';
+    default: return '';
+  }
+}
+
+function drawAlignedGroupSubtotalRow(
+  doc: MeasuredPdfDoc,
+  fonts: FontSet,
+  grp: BulletinGroupSummary,
+  snapshot: StudentBulletinSnapshot,
+  cols: SubjectTableColumnSpec[],
+  colWidths: number[],
+  left: number,
+  totalW: number,
+  isEn: boolean,
+  inkSaverMode = false,
+): void {
+  const subFontSize = 7;
+  const labelText = `Moy. ${grp.groupLabel.trim()}`;
+  const hasCompCol = cols[0]?.key === 'subjectName' && cols[1]?.key === 'competenceLabel';
+  const labelSpanW = hasCompCol ? (colWidths[0]! + colWidths[1]!) : (colWidths[0] ?? totalW);
+  const firstDataIdx = hasCompCol ? 2 : 1;
+
+  doc.font(fonts.bold).fontSize(subFontSize);
+  let rowH = 13;
+  const lblH = doc.heightOfString(labelText, { width: Math.max(8, labelSpanW - 4) }) + 4;
+  if (lblH > rowH) rowH = Math.ceil(lblH);
+  for (let i = firstDataIdx; i < cols.length; i++) {
+    const val = getAlignedGroupCellValue(cols[i]!.key, grp, snapshot, isEn);
+    if (!val) continue;
+    const ch = doc.heightOfString(val, { width: Math.max(6, colWidths[i]! - 3) }) + 4;
+    if (ch > rowH) rowH = Math.ceil(ch);
+  }
+
+  const y = doc.y;
+  doc.rect(left, y, totalW, rowH).fillAndStroke(inkSaverMode ? '#f8fafc' : '#e2e8f0', '#334155');
+  doc.font(fonts.bold).fontSize(subFontSize).fillColor('#0f172a')
+    .text(labelText, left + 2, y + 2.5, { width: Math.max(8, labelSpanW - 4), align: 'left' });
+
+  let cx = left + labelSpanW;
+  for (let i = firstDataIdx; i < cols.length; i++) {
+    const w = colWidths[i]!;
+    doc.moveTo(cx, y).lineTo(cx, y + rowH).strokeColor('#64748b').lineWidth(0.4).stroke();
+    const col = cols[i]!;
+    const val = getAlignedGroupCellValue(col.key, grp, snapshot, isEn);
+    if (val) {
+      doc.font(fonts.bold).fontSize(subFontSize).fillColor('#0f172a')
+        .text(val, cx + 1.5, y + 2.5, {
+          width: Math.max(6, w - 3),
+          align: col.key === 'teacherComment' ? 'left' : 'center',
+        });
+    }
+    cx += w;
+  }
+  doc.y = y + rowH;
 }
 
 function drawGroupSubtotalRow(
@@ -144,34 +273,33 @@ function drawGroupSubtotalRow(
   fonts: FontSet,
   grp: BulletinGroupSummary,
   snapshot: StudentBulletinSnapshot,
+  cols: SubjectTableColumnSpec[],
+  colWidths: number[],
   left: number,
   totalW: number,
   isEn: boolean,
   layoutVariant?: BulletinLayoutVariant,
+  inkSaverMode = false,
 ): void {
+  if (layoutVariant === 'BILINGUAL_APC' || layoutVariant === 'ANNUAL_BILINGUAL') {
+    drawAlignedGroupSubtotalRow(doc, fonts, grp, snapshot, cols, colWidths, left, totalW, isEn, inkSaverMode);
+    return;
+  }
   const num = (v: number | undefined) => formatLocalizedNumber(v, isEn, 2);
   const bd = snapshot.groupBreakdowns?.[grp.groupKey];
-  let text: string;
+  const pureGroupLabel = grp.groupLabel.trim();
+  const text =
+    layoutVariant === 'TECHNICAL_GROUPED'
+      ? `RÉCAP. ${pureGroupLabel.toUpperCase()} — Moy. : ${num(grp.groupAverage)}/20  |  Coef : ${grp.totalCoefficient}  |  N × C : ${num(grp.totalWeightedScore)}  |  Rang : ${formatRankLabel(grp.groupRank, isEn)}/${grp.groupTotalStudents}  |  ${bd?.groupCompetenceLabel ?? '—'}`
+      : isEn
+        ? `Subtotal ${pureGroupLabel} — Coef: ${grp.totalCoefficient}  |  Total: ${num(grp.totalWeightedScore)}  |  Group Avg: ${num(grp.groupAverage)}/20`
+        : `Sous-total ${pureGroupLabel} — Coef : ${grp.totalCoefficient}  |  Total : ${num(grp.totalWeightedScore)}  |  Moyenne du groupe : ${num(grp.groupAverage)}/20`;
 
-  if (layoutVariant === 'TECHNICAL_GROUPED') {
-    const rk = `${formatRankLabel(grp.groupRank, isEn)}/${grp.groupTotalStudents}`;
-    const comp = bd?.groupCompetenceLabel ?? '—';
-    text = `RÉCAP. ${grp.groupLabel.toUpperCase()} — Moy. : ${num(grp.groupAverage)}/20  |  Coef : ${grp.totalCoefficient}  |  N × C : ${num(grp.totalWeightedScore)}  |  Rang : ${rk}  |  ${comp}`;
-  } else if (layoutVariant === 'ANNUAL_BILINGUAL') {
-    text = `Moy. groupe (${grp.groupLabel}) — Tri.1 : ${num(bd?.trim1Average)} | Ev1 : ${num(bd?.seq1Average)} | Ev2 : ${num(bd?.seq2Average)} | Tri.2 : ${num(bd?.trim2Average)} | Ev3 : ${num(bd?.seq3Average)} | Ev4 : ${num(bd?.seq4Average)} | Tri.3 : ${num(bd?.trim3Average)} | Ev5 : ${num(bd?.seq5Average)} | Ev6 : ${num(bd?.seq6Average)} | Coef : ${grp.totalCoefficient} | Moy.AN : ${num(grp.groupAverage)}/20`;
-  } else if (layoutVariant === 'BILINGUAL_APC') {
-    text = `Moyenne groupe (${grp.groupLabel}) : ${num(grp.groupAverage)}/20  |  Eval a : ${num(bd?.seq1Average)}  |  Eval b : ${num(bd?.seq2Average)}  |  Coef : ${grp.totalCoefficient}  |  Total groupe : ${num(grp.totalWeightedScore)}`;
-  } else {
-    text = isEn
-      ? `Subtotal ${grp.groupLabel} — Coef: ${grp.totalCoefficient}  |  Total: ${num(grp.totalWeightedScore)}  |  Group Avg: ${num(grp.groupAverage)}/20`
-      : `Sous-total ${grp.groupLabel} — Coef : ${grp.totalCoefficient}  |  Total : ${num(grp.totalWeightedScore)}  |  Moyenne du groupe : ${num(grp.groupAverage)}/20`;
-  }
-
-  const subFontSize = layoutVariant === 'ANNUAL_BILINGUAL' ? 5.8 : 6.7;
+  const subFontSize = 7;
   doc.font(fonts.bold).fontSize(subFontSize);
   const h = Math.max(13, Math.ceil(doc.heightOfString(text, { width: totalW - 8 }) + 5));
   const y = doc.y;
-  doc.rect(left, y, totalW, h).fillAndStroke('#e2e8f0', '#334155');
+  doc.rect(left, y, totalW, h).fillAndStroke(inkSaverMode ? '#f8fafc' : '#e2e8f0', '#334155');
   doc.fillColor('#0f172a').text(text, left + 4, y + 2.8, { width: totalW - 8 });
   doc.y = y + h;
 }
@@ -184,10 +312,11 @@ function drawSubjectTableTotalBar(
   totalW: number,
   isEn: boolean,
   layoutVariant?: BulletinLayoutVariant,
+  inkSaverMode = false,
 ): void {
   const h = 13.5;
   const y = doc.y;
-  doc.rect(left, y, totalW, h).fillAndStroke('#cbd5e1', '#0f172a');
+  doc.rect(left, y, totalW, h).fillAndStroke(inkSaverMode ? '#f1f5f9' : '#cbd5e1', '#0f172a');
   const num = (v: number | undefined) => formatLocalizedNumber(v, isEn, 2);
   const cp = snapshot.classProfile;
   const text =
@@ -196,7 +325,7 @@ function drawSubjectTableTotalBar(
       : layoutVariant === 'TECHNICAL_GROUPED'
         ? `TOTAL TRIMESTRE — Coef : ${snapshot.totalCoefficient}   |   Total N × C : ${num(snapshot.totalWeightedScore)}   |   Moyenne Premier : ${cp ? num(cp.topAverage) : '—'}/20   |   Moyenne Dernier : ${cp ? num(cp.lowAverage) : '—'}/20`
         : `TOTAL — Coef : ${snapshot.totalCoefficient}   |   Total Points (N × C) : ${num(snapshot.totalWeightedScore)}   |   Moyenne Trim. : ${num(snapshot.generalAverage)}/20`;
-  doc.font(fonts.bold).fontSize(6.7).fillColor('#0f172a').text(text, left + 5, y + 3.2, { width: totalW - 10 });
+  doc.font(fonts.bold).fontSize(7).fillColor('#0f172a').text(text, left + 5, y + 3, { width: totalW - 10 });
   doc.y = y + h;
 }
 
@@ -220,33 +349,40 @@ export function drawMeasuredSubjectTable(
   const bottomLimit = doc.page.height - doc.page.margins.bottom - 16;
   const isEn = language === 'en';
   const layoutVariant = templateSpec?.layoutVariant;
+  const inkSaverMode = Boolean(templateSpec?.inkSaverMode);
+  const evalLabels = resolvePeriodEvaluationLabels(snapshot, options, isEn);
+
+  const effectiveScaleConfig: BulletinAppreciationScaleConfig = {
+    cote: resolveEffectiveCoteScale(options?.gradingPolicy?.scaleConfig, spec.scaleConfig),
+    competence: resolveEffectiveCompetenceScale(options?.gradingPolicy?.scaleConfig, spec.scaleConfig),
+  };
 
   const resolvedFormulaHint =
     spec.formulaHint && spec.formulaHint.trim().length > 0
       ? spec.formulaHint.trim()
       : templateSpec?.calculationMode === 'POINTS_RATIO'
         ? (isEn
-            ? `Formula: Average/20 = (Total Marks / Total On) × 20   |   Grades: ${formatCoteLegend(true)}`
-            : `Règle de calcul : Moyenne/20 = (Total Notes / Total Sur) × 20   |   Cotes : ${formatCoteLegend(false)}`)
-        : buildDynamicFormulaHint(options?.gradingPolicy, isEn, spec.appreciationScale);
+            ? `Formula: Average/20 = (Total Marks / Total On) × 20   |   Grades: ${formatCoteLegend(true, effectiveScaleConfig.cote)}`
+            : `Règle de calcul : Moyenne/20 = (Total Notes / Total Sur) × 20   |   Cotes : ${formatCoteLegend(false, effectiveScaleConfig.cote)}`)
+        : buildDynamicFormulaHint(options?.gradingPolicy, isEn, spec.appreciationScale, spec.scaleConfig);
 
   if (resolvedFormulaHint.length > 0) {
     const hy = doc.y;
-    doc.font(fonts.italic).fontSize(6.2);
+    doc.font(fonts.italic).fontSize(7);
     const hintH = Math.max(12, Math.ceil(doc.heightOfString(resolvedFormulaHint, { width: totalW - 8 }) + 4));
     doc.rect(left, hy, totalW, hintH).fillAndStroke('#f8fafc', '#94a3b8');
-    doc.fillColor('#334155').text(resolvedFormulaHint, left + 4, hy + 2.5, { width: totalW - 8, align: 'center' });
+    doc.fillColor('#334155').text(resolvedFormulaHint, left + 4, hy + 2.2, { width: totalW - 8, align: 'center' });
     doc.y = hy + hintH + 1;
   }
 
   const ensureSpace = (needed: number) => {
     if (doc.y + needed > bottomLimit) {
       doc.addPage();
-      drawTableHeaderRow(doc, fonts, spec.columns, colWidths, left, isEn, fontSize);
+      drawTableHeaderRow(doc, fonts, spec.columns, colWidths, left, isEn, fontSize, evalLabels, layoutVariant, inkSaverMode);
     }
   };
 
-  drawTableHeaderRow(doc, fonts, spec.columns, colWidths, left, isEn, fontSize);
+  drawTableHeaderRow(doc, fonts, spec.columns, colWidths, left, isEn, fontSize, evalLabels, layoutVariant, inkSaverMode);
 
   const groupedKeys: Array<{ key: string; label: string; lines: BulletinSubjectSnapshotLine[]; summary?: BulletinGroupSummary }> = [];
   if (spec.grouping === 'byGroup') {
@@ -278,20 +414,20 @@ export function drawMeasuredSubjectTable(
   let rowIdx = 0;
   for (const grp of groupedKeys) {
     if ((spec.grouping === 'byGroup' || spec.groupByDomain) && grp.label) {
-      const bannerH = spec.groupByDomain ? 9.5 : 11.5;
+      const bannerH = spec.groupByDomain ? 10.5 : 12;
       ensureSpace(bannerH + 12);
       const gy = doc.y;
-      doc.rect(left, gy, totalW, bannerH).fillAndStroke('#cbd5e1', '#334155');
-      doc.font(fonts.bold).fontSize(spec.groupByDomain ? 6.0 : 6.8).fillColor('#0f172a')
+      doc.rect(left, gy, totalW, bannerH).fillAndStroke(inkSaverMode ? '#f1f5f9' : '#cbd5e1', '#334155');
+      doc.font(fonts.bold).fontSize(7).fillColor('#0f172a')
         .text(grp.label.toUpperCase(), left + 4, gy + 1.8, { width: totalW - 8 });
       doc.y = gy + bannerH;
     }
 
     for (const line of grp.lines) {
-      const rowH = measureRowHeight(doc, fonts, line, spec.columns, colWidths, fontSize, isEn, layoutVariant);
+      const rowH = measureRowHeight(doc, fonts, line, spec.columns, colWidths, fontSize, isEn, layoutVariant, effectiveScaleConfig);
       ensureSpace(rowH);
       const ry = doc.y;
-      const bg = rowIdx % 2 === 0 ? '#ffffff' : '#f8fafc';
+      const bg = inkSaverMode ? '#ffffff' : (rowIdx % 2 === 0 ? '#ffffff' : '#f8fafc');
       doc.rect(left, ry, totalW, rowH).fillAndStroke(bg, '#94a3b8');
 
       let cx = left;
@@ -300,10 +436,10 @@ export function drawMeasuredSubjectTable(
         if (i > 0) doc.moveTo(cx, ry).lineTo(cx, ry + rowH).strokeColor('#cbd5e1').lineWidth(0.4).stroke();
         const isBoldCol = isBoldSubjectColumn(col.key);
         doc.font(isBoldCol ? fonts.bold : fonts.regular).fontSize(fontSize).fillColor('#0f172a')
-          .text(formatSubjectCell(line, col.key, isEn, layoutVariant), cx + 2, ry + 1.5, {
-            width: Math.max(6, w - 4),
+          .text(formatSubjectCell(line, col.key, isEn, layoutVariant, effectiveScaleConfig), cx + 1.5, ry + 1.2, {
+            width: Math.max(6, w - 3),
             align: col.align ?? (col.key === 'subjectName' || col.key === 'teacherComment' || col.key === 'teacherName' || col.key === 'competenceLabel' ? 'left' : 'center'),
-            lineGap: 0.35,
+            lineGap: 0.25,
           });
         cx += w;
       });
@@ -313,13 +449,13 @@ export function drawMeasuredSubjectTable(
 
     if (spec.grouping === 'byGroup' && spec.showGroupSubtotals && grp.summary) {
       ensureSpace(14);
-      drawGroupSubtotalRow(doc, fonts, grp.summary, snapshot, left, totalW, isEn, layoutVariant);
+      drawGroupSubtotalRow(doc, fonts, grp.summary, snapshot, spec.columns, colWidths, left, totalW, isEn, layoutVariant, inkSaverMode);
     }
   }
 
   if (spec.showTotalBar) {
     ensureSpace(14);
-    drawSubjectTableTotalBar(doc, fonts, snapshot, left, totalW, isEn, layoutVariant);
+    drawSubjectTableTotalBar(doc, fonts, snapshot, left, totalW, isEn, layoutVariant, inkSaverMode);
   }
   doc.y += 3;
 }

@@ -74,6 +74,7 @@ export class BulletinSnapshotBuilder {
         hasCoefficientBySubject: input.hasCoefficientBySubject,
         excludeAbsent,
         seqMode,
+        scaleConfig: input.scaleConfig,
       });
       linesByStudent.set(student.id, lines);
 
@@ -182,7 +183,7 @@ export class BulletinSnapshotBuilder {
 
     const snapshotsByStudentId = new Map<string, StudentBulletinSnapshot>();
     const allAvgs = input.students.map((s) => generalAvgByStudent.get(s.id) ?? 0);
-    const classProfile = computeClassProfile(allAvgs, passThreshold, input.classSizeOverride);
+    const classProfile = computeClassProfile(allAvgs, passThreshold);
 
     for (const student of input.students) {
       const lines = linesByStudent.get(student.id) ?? [];
@@ -218,7 +219,7 @@ export class BulletinSnapshotBuilder {
         classProfile,
         subjectLines: lines,
         groupSummaries: groups,
-        groupBreakdowns: buildGroupBreakdownsForStudent(lines, groups, input.hasCoefficientBySubject),
+        groupBreakdowns: buildGroupBreakdownsForStudent(lines, groups, input.hasCoefficientBySubject, input.scaleConfig),
       });
     }
 
