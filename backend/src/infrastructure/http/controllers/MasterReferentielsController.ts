@@ -328,11 +328,12 @@ export class MasterReferentielsController {
         id,
         templateCode,
         level,
-        filiere: filiere ?? null,
+        filiere: typeof filiere === 'string' ? filiere.trim() : '',
         subjectName: String(subjectName).trim(),
         titre: String(titre).trim(),
         chapitres,
         active,
+        manuallyEdited: true,
       });
 
       void logMasterAction({

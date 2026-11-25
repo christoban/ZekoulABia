@@ -364,44 +364,40 @@ export class PrismaMasterReferentielsRepository implements MasterReferentielsRep
     id?: string;
     templateCode: string;
     level: string;
-    filiere: string | null;
+    filiere: string;
     subjectName: string;
     titre: string;
     chapitres: unknown;
     active: boolean;
+    manuallyEdited?: boolean;
+    source?: string | null;
   }): Promise<OfficialProgressionRecord> {
     const chapitresJson = input.chapitres as Prisma.InputJsonValue;
+    const manuallyEdited = input.manuallyEdited ?? true;
+    const sourcePatch = input.source !== undefined ? { source: input.source } : {};
+    const checksumPatch = manuallyEdited ? { importChecksum: null } : {};
     if (input.id) {
       return this.prisma.officialProgrammeProgression.update({
         where: { id: input.id },
         data: {
-          templateCode: input.templateCode,
-          level: input.level,
-          filiere: input.filiere,
-          subjectName: input.subjectName,
-          titre: input.titre,
-          chapitres: chapitresJson,
-          active: input.active,
+          templateCode: input.templateCode, level: input.level, filiere: input.filiere,
+          subjectName: input.subjectName, titre: input.titre, chapitres: chapitresJson,
+          active: input.active, manuallyEdited, ...sourcePatch, ...checksumPatch,
         },
       });
     }
     return this.prisma.officialProgrammeProgression.upsert({
       where: {
-        templateCode_level_subjectName: {
-          templateCode: input.templateCode,
-          level: input.level,
-          subjectName: input.subjectName,
+        templateCode_level_filiere_subjectName: {
+          templateCode: input.templateCode, level: input.level,
+          filiere: input.filiere, subjectName: input.subjectName,
         },
       },
-      update: { filiere: input.filiere, titre: input.titre, chapitres: chapitresJson, active: input.active },
+      update: { titre: input.titre, chapitres: chapitresJson, active: input.active, manuallyEdited, ...sourcePatch, ...checksumPatch },
       create: {
-        templateCode: input.templateCode,
-        level: input.level,
-        filiere: input.filiere,
-        subjectName: input.subjectName,
-        titre: input.titre,
-        chapitres: chapitresJson,
-        active: input.active,
+        templateCode: input.templateCode, level: input.level, filiere: input.filiere,
+        subjectName: input.subjectName, titre: input.titre, chapitres: chapitresJson,
+        active: input.active, manuallyEdited, source: input.source ?? 'manuel', ...checksumPatch,
       },
     });
   }

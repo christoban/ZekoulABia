@@ -1149,19 +1149,22 @@ model AnglophoneSubjectLoad {
 }
 
 model OfficialProgrammeProgression {
-  id           String         @id @default(cuid())
-  templateCode String
-  level        String // ex. "6e", "2nde", "Form1"
-  filiere      String? // ex. "FR_GENERAL", "A4", "C"
-  subjectName  String
-  titre        String // ex. "Programme Officiel Mathématiques 6e"
-  chapitres    Json // [{ ordre: 1, titre: "...", volumeHeuresPrevu: 6, sequenceCibleFin: 1 }]
-  active       Boolean        @default(true)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  template     SchoolTemplate @relation(fields: [templateCode], references: [code])
+  id             String         @id @default(cuid())
+  templateCode   String
+  level          String // ex. "6e", "2nde", "Form1"
+  filiere        String         @default("") // ex. "FR_GENERAL", "A4", "C", "" si non précisée
+  subjectName    String
+  titre          String // ex. "Programme Officiel Mathématiques 6e"
+  chapitres      Json // [{ ordre: 1, titre: "...", volumeHeuresPrevu?: 6, sequenceCibleFin?: 1, moduleOrdre?, moduleTitre?, leconNumero?, numeroAffiche?, positionDansModule?, positionSource?, sourceUrl? }]
+  source         String? // ex. "minesec-distance-learning"
+  manuallyEdited Boolean        @default(false)
+  importChecksum String?
+  active         Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  template       SchoolTemplate @relation(fields: [templateCode], references: [code])
 
-  @@unique([templateCode, level, subjectName])
+  @@unique([templateCode, level, filiere, subjectName])
   @@index([templateCode, level])
 }
 

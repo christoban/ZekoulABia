@@ -10,7 +10,11 @@ export interface ApiResponse<T> {
 }
 
 export class ApiError extends Error {
-  constructor(message: string, public status: number) {
+  constructor(
+    message: string,
+    public status: number,
+    public payload?: Record<string, unknown>,
+  ) {
     super(message)
     this.name = 'ApiError'
   }
@@ -22,7 +26,7 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
     headers: { 'Content-Type': 'application/json' },
     ...options,
   })
-  const data: ApiResponse<T> = await res.json()
-  if (!data.success) throw new ApiError(data.message || 'Erreur serveur', res.status)
+  const data = (await res.json()) as ApiResponse<T> & Record<string, unknown>
+  if (!data.success) throw new ApiError(data.message || 'Erreur serveur', res.status, data)
   return data
 }

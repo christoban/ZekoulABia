@@ -29,6 +29,7 @@ import ReferentielCalendarView from './referentiels/ReferentielCalendarView'
 import ReferentielBacView from './referentiels/ReferentielBacView'
 import ReferentielTemplatesView from './referentiels/ReferentielTemplatesView'
 import ReferentielProgressionsView from './referentiels/ReferentielProgressionsView'
+import ReferentielProgressionImportModal from './referentiels/ReferentielProgressionImportModal'
 import ReferentielTarifsView from './referentiels/ReferentielTarifsView'
 
 interface Props {
@@ -55,9 +56,10 @@ export default function SectionReferentielsHub({ onToast }: Props) {
   const [filterSubsystem, setFilterSubsystem] = useState<'FRANCOPHONE' | 'ANGLOPHONE'>('FRANCOPHONE')
   const [filterAnnee, setFilterAnnee] = useState('')
 
-  // Modale
+  // Modales
   const [modalOpen, setModalOpen] = useState(false)
   const [editItem, setEditItem] = useState<Record<string, unknown> | null>(null)
+  const [importModalOpen, setImportModalOpen] = useState(false)
 
   const loadSummary = useCallback(async () => {
     try {
@@ -223,6 +225,7 @@ export default function SectionReferentielsHub({ onToast }: Props) {
         onFilterSubsystemChange={setFilterSubsystem}
         filterAnnee={filterAnnee}
         onFilterAnneeChange={setFilterAnnee}
+        onOpenImportProgressions={() => setImportModalOpen(true)}
       />
 
       {/* ── Données : Cartes Mobiles Natives (< md) & Tableaux Desktop (>= md) ── */}
@@ -285,6 +288,12 @@ export default function SectionReferentielsHub({ onToast }: Props) {
           setEditItem(null)
         }}
         onSaved={handleSaved}
+      />
+
+      <ReferentielProgressionImportModal
+        open={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        onImported={handleSaved}
       />
     </div>
   )

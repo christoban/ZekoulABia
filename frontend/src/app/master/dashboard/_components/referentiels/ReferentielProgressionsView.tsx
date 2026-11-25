@@ -1,6 +1,7 @@
 'use client'
 
 import type { OfficialProgressionDto } from '../../_api'
+import { isImportedProgressionItem } from './ReferentielProgressionReadOnlyView'
 import {
   ActiveStatusPill,
   DesktopEmptyRow,
@@ -74,15 +75,30 @@ export default function ReferentielProgressionsView({ progressions, onEdit, onDe
                 </td>
                 <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text)' }}>
                   {p.level}
+                  {p.filiere ? (
+                    <span style={{ display: 'block', fontSize: 11, color: 'var(--text3)', fontWeight: 600 }}>
+                      {p.filiere}
+                    </span>
+                  ) : null}
                 </td>
                 <td style={{ padding: '12px 16px', fontWeight: 700, color: 'var(--text)' }}>
                   {p.subjectName}
                 </td>
                 <td style={{ padding: '12px 16px', color: 'var(--text2)' }}>
                   {p.titre}
+                  {isImportedProgressionItem(p as unknown as Record<string, unknown>) && (
+                    <span style={{
+                      marginLeft: 6, fontSize: 10.5, fontWeight: 700, padding: '2px 6px',
+                      borderRadius: 6, background: 'var(--bg2)', border: '1px solid var(--border)',
+                      color: 'var(--text3)',
+                    }}>
+                      {p.manuallyEdited ? 'Importé · modifié' : 'Importé'}
+                    </span>
+                  )}
                 </td>
                 <td style={{ padding: '12px 16px', color: 'var(--text3)' }}>
-                  {p.chapitres?.length || 0} chapitres configurés
+                  {p.chapitres?.length || 0}{' '}
+                  {isImportedProgressionItem(p as unknown as Record<string, unknown>) ? 'leçons' : 'chapitres'}
                 </td>
                 <td style={{ padding: '12px 16px' }}>
                   <ActiveStatusPill active={p.active} pillRadius={10} />

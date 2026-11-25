@@ -44,10 +44,13 @@ export interface OfficialProgressionRecord {
   id: string;
   templateCode: string;
   level: string;
-  filiere: string | null;
+  filiere: string;
   subjectName: string;
   titre: string;
   chapitres: unknown;
+  source: string | null;
+  manuallyEdited: boolean;
+  importChecksum: string | null;
   active: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -162,11 +165,13 @@ export interface MasterReferentielsRepository {
     id?: string;
     templateCode: string;
     level: string;
-    filiere: string | null;
+    filiere: string;
     subjectName: string;
     titre: string;
     chapitres: unknown;
     active: boolean;
+    manuallyEdited?: boolean;
+    source?: string | null;
   }): Promise<OfficialProgressionRecord>;
   deleteProgression(id: string): Promise<void>;
 

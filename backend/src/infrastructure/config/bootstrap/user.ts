@@ -17,7 +17,10 @@ import { creerGroupTransferRoutes } from '@infrastructure/http/routes/groupTrans
 import { creerAdminGroupTransferRoutes } from '@infrastructure/http/routes/adminGroupTransfer.routes';
 import { SchoolTemplateAdminController } from '@infrastructure/http/controllers/SchoolTemplateAdminController';
 import { MasterReferentielsController } from '@infrastructure/http/controllers/MasterReferentielsController';
+import { MasterProgressionsImportController } from '@infrastructure/http/controllers/MasterProgressionsImportController';
 import { PrismaMasterReferentielsRepository } from '@infrastructure/persistence/prisma/PrismaMasterReferentielsRepository';
+import { PrismaOfficialProgressionImportRepository } from '@infrastructure/persistence/prisma/PrismaOfficialProgressionImportRepository';
+import { ImporterProgressionsOfficiellesUseCase } from '@application/masterAdmin/progressions';
 import { creerSchoolTemplateAdminRoutes } from '@infrastructure/http/routes/schoolTemplateAdmin.routes';
 import { creerMasterReferentielsRoutes } from '@infrastructure/http/routes/masterReferentiels.routes';
 import { PublierVersionTemplateUseCase } from '@application/schoolSettings/PublierVersionTemplateUseCase';
@@ -259,7 +262,13 @@ export function registerUserRoutes(app: Application, prismaParam: typeof prisma 
   app.use('/api/v2/platform-settings/public', creerPublicPlatformSettingsRoutes(platformSettingsController));
 
   const masterReferentielsController = new MasterReferentielsController(new PrismaMasterReferentielsRepository(p));
-  app.use('/api/v2/master/referentiels', creerMasterReferentielsRoutes(masterReferentielsController));
+  const officialProgressionImportRepo = new PrismaOfficialProgressionImportRepository(p);
+  const importerProgressionsUseCase = new ImporterProgressionsOfficiellesUseCase(officialProgressionImportRepo);
+  const masterProgressionsImportController = new MasterProgressionsImportController(importerProgressionsUseCase);
+  app.use(
+    '/api/v2/master/referentiels',
+    creerMasterReferentielsRoutes(masterReferentielsController, masterProgressionsImportController),
+  );
 
   // V0.4 — Publication de versions + ré-application en masse (master-admin)
   const templateVersionRepo = new PrismaSchoolTemplateVersionRepository(prisma);

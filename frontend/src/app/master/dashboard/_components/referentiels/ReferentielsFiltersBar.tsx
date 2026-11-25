@@ -1,6 +1,6 @@
 'use client'
 
-import { Calendar, GraduationCap, BookOpen, Layers, Coins, Search, type LucideIcon } from 'lucide-react'
+import { Calendar, GraduationCap, BookOpen, Layers, Coins, Search, Upload, type LucideIcon } from 'lucide-react'
 import type { ReferentielModule } from '../../_types'
 
 const MODULE_TABS: { id: ReferentielModule; label: string; icon: LucideIcon }[] = [
@@ -28,6 +28,7 @@ interface Props {
   onFilterSubsystemChange: (value: 'FRANCOPHONE' | 'ANGLOPHONE') => void
   filterAnnee: string
   onFilterAnneeChange: (value: string) => void
+  onOpenImportProgressions?: () => void
 }
 
 /** Barre de sélection des 5 piliers et zone de recherche / filtres contextuels */
@@ -46,6 +47,7 @@ export default function ReferentielsFiltersBar({
   onFilterSubsystemChange,
   filterAnnee,
   onFilterAnneeChange,
+  onOpenImportProgressions,
 }: Props) {
   const selectStyle = {
     padding: '8px 10px',
@@ -152,14 +154,40 @@ export default function ReferentielsFiltersBar({
           )}
 
           {activeModule === 'progressions' && (
-            <input
-              type="text"
-              placeholder="Template (ex. LYCEE_FR)"
-              value={filterTemplate}
-              onChange={e => onFilterTemplateChange(e.target.value.toUpperCase())}
-              className="flex-1 sm:flex-initial"
-              style={{ minWidth: 140, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text)', fontSize: 12, fontFamily: 'inherit' }}
-            />
+            <>
+              <input
+                type="text"
+                placeholder="Template (ex. __ALL__, LYCEE_FR)"
+                value={filterTemplate}
+                onChange={e => onFilterTemplateChange(e.target.value.toUpperCase())}
+                className="flex-1 sm:flex-initial"
+                style={{ minWidth: 150, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text)', fontSize: 12, fontFamily: 'inherit' }}
+              />
+              {onOpenImportProgressions && (
+                <button
+                  type="button"
+                  onClick={onOpenImportProgressions}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '8px 13px',
+                    borderRadius: 8,
+                    border: '1px solid var(--primary)',
+                    background: 'var(--primary)',
+                    color: '#ffffff',
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <Upload size={14} />
+                  <span>Importer un fichier</span>
+                </button>
+              )}
+            </>
           )}
 
           {activeModule === 'tarifs' && (

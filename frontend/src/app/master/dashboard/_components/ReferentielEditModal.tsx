@@ -10,6 +10,9 @@ import {
 } from './referentiels/referentielModalUtils'
 import ReferentielCalendarAndTarifFields from './referentiels/ReferentielCalendarAndTarifFields'
 import ReferentielCurriculumFields from './referentiels/ReferentielCurriculumFields'
+import ReferentielProgressionReadOnlyView, {
+  isImportedProgressionItem,
+} from './referentiels/ReferentielProgressionReadOnlyView'
 
 interface Props {
   open: boolean
@@ -36,12 +39,16 @@ export default function ReferentielEditModal({ open, module, item, onClose, onSa
 
   if (!open) return null
 
+  const isImportedProgressionReadOnly =
+    module === 'progressions' && isImportedProgressionItem(item)
+
   const handleChange = (key: string, value: unknown) => {
     setFormData(prev => ({ ...prev, [key]: value }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isImportedProgressionReadOnly) return
     setLoading(true)
     setError(null)
     try {
@@ -75,7 +82,9 @@ export default function ReferentielEditModal({ open, module, item, onClose, onSa
         }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 800, color: '#111827' }}>
-              {getReferentielModalTitle(module, Boolean(item))}
+              {isImportedProgressionReadOnly
+                ? 'Consulter Programme Officiel (Importé)'
+                : getReferentielModalTitle(module, Boolean(item))}
             </div>
             <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
               Donnée de référence nationale • Garde-fou d&apos;isolation locale garanti
@@ -114,12 +123,16 @@ export default function ReferentielEditModal({ open, module, item, onClose, onSa
             />
           )}
 
-          {(module === 'bac' || module === 'templates' || module === 'progressions') && (
+          {(module === 'bac' || module === 'templates' || (module === 'progressions' && !isImportedProgressionReadOnly)) && (
             <ReferentielCurriculumFields
               module={module}
               formData={formData}
               onChange={handleChange}
             />
+          )}
+
+          {isImportedProgressionReadOnly && item && (
+            <ReferentielProgressionReadOnlyView item={item} />
           )}
 
           {/* Footer Buttons */}
@@ -137,20 +150,22 @@ export default function ReferentielEditModal({ open, module, item, onClose, onSa
                 cursor: 'pointer',
               }}
             >
-              Annuler
+              {isImportedProgressionReadOnly ? 'Fermer' : 'Annuler'}
             </button>
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                padding: '8px 18px', borderRadius: 8, border: 'none',
-                background: 'var(--sidebar-bg)', color: 'white', fontSize: 13, fontWeight: 700,
-                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
-              }}
-            >
-              <Save size={15} />
-              {loading ? 'Enregistrement...' : 'Enregistrer le Référentiel'}
-            </button>
+            {!isImportedProgressionReadOnly && (
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  padding: '8px 18px', borderRadius: 8, border: 'none',
+                  background: 'var(--sidebar-bg)', color: 'white', fontSize: 13, fontWeight: 700,
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+                }}
+              >
+                <Save size={15} />
+                {loading ? 'Enregistrement...' : 'Enregistrer le Référentiel'}
+              </button>
+            )}
           </div>
         </form>
       </div>

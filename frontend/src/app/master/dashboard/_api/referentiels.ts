@@ -53,17 +53,144 @@ export interface TemplateSubjectDto {
   filiere: string
 }
 
+export interface OfficialProgressionChapterDto {
+  ordre: number
+  titre: string
+  volumeHeuresPrevu?: number | null
+  sequenceCibleFin?: number | null
+  moduleOrdre?: number | null
+  moduleTitre?: string | null
+  leconNumero?: number | string | null
+  numeroAffiche?: string | null
+  positionDansModule?: number | null
+  positionSource?: number | null
+  sourceUrl?: string | null
+}
+
 export interface OfficialProgressionDto {
   id: string
   templateCode: string
   level: string
-  filiere?: string | null
+  filiere: string
   subjectName: string
   titre: string
-  chapitres: { ordre: number; titre: string; volumeHeuresPrevu: number; sequenceCibleFin?: number }[]
+  chapitres: OfficialProgressionChapterDto[]
+  source?: string | null
+  manuallyEdited?: boolean
+  importChecksum?: string | null
   active: boolean
   createdAt: string
   updatedAt: string
+}
+
+export interface ImportProgressionActionDto {
+  index: number
+  action: 'CREATE' | 'UPDATE' | 'UNCHANGED' | 'CONFLICT_MANUAL'
+  cleProgression: string
+  existingId: string | null
+  existingUpdatedAt: string | null
+  templateCode: string
+  level: string
+  filiere: string
+  subjectName: string
+  subjectNameSource: string | null
+  titre: string
+  source: string
+  active: boolean
+  manuallyEdited: boolean
+  nbChapitresRetenus: number
+  nbChapitresExclus: number
+  importChecksum: string
+}
+
+export interface ImportProgressionRejectionDto {
+  index: number
+  templateCode: string
+  level: string
+  filiere: string
+  subjectName: string
+  subjectNameSource: string | null
+  code: string
+  message: string
+}
+
+export interface ImportProgressionDiagnosticsDto {
+  leconsSansNumero: Array<{
+    cleProgression: string
+    subjectName: string
+    moduleOrdre: number | null
+    moduleTitre: string | null
+    positionDansModule: number
+    positionSource: number
+    titre: string
+    numeroAffiche: string | null
+  }>
+  numerosDupliques: Array<{
+    cleProgression: string
+    subjectName: string
+    leconNumero: string
+    portee: 'MEME_MODULE' | 'INTER_MODULES' | 'MIXTE'
+    occurrences: Array<{
+      moduleOrdre: number | null
+      moduleTitre: string | null
+      positionDansModule: number
+      positionSource: number
+      titre: string
+      numeroAffiche: string | null
+    }>
+  }>
+  modulesParasites: Array<{
+    cleProgression: string
+    subjectName: string
+    moduleOrdre: number | null
+    moduleTitre: string | null
+    nbLecons: number
+  }>
+  elementsExclus: Array<{
+    cleProgression: string
+    subjectName: string
+    moduleOrdre: number | null
+    moduleTitre: string | null
+    positionDansModule: number
+    positionSource: number
+    titre: string
+    leconNumero: number | string | null
+    numeroAffiche: string | null
+  }>
+}
+
+export interface ImportProgressionDryRunDto {
+  dryRun: true
+  level: string | null
+  source: string
+  peutAppliquer: boolean
+  resume: {
+    totalItems: number
+    valides: number
+    aCreer: number
+    aMettreAJour: number
+    inchanges: number
+    conflitsManuels: number
+    rejetes: number
+    leconsRetenues: number
+    leconsExclues: number
+  }
+  actions: ImportProgressionActionDto[]
+  conflitsManuels: ImportProgressionActionDto[]
+  rejets: ImportProgressionRejectionDto[]
+  diagnostics: ImportProgressionDiagnosticsDto
+}
+
+export interface ImportProgressionApplyResultDto {
+  applied: true
+  level: string
+  source: string
+  createdCount: number
+  updatedCount: number
+  overwrittenManualCount: number
+  unchangedCount: number
+  skippedManualCount: number
+  totalAffected: number
 }
 
 export interface TarifMinesecDto {
@@ -169,6 +296,32 @@ export async function saveOfficialProgression(data: Partial<OfficialProgressionD
 
 export async function deleteOfficialProgression(id: string): Promise<void> {
   await apiFetch(`/api/v2/master/referentiels/progressions/${id}`, { method: 'DELETE' })
+}
+
+export async function proposeOfficialProgressionsImport(
+  payload: Record<string, unknown>,
+): Promise<ImportProgressionDryRunDto> {
+  const res = await apiFetch<ImportProgressionDryRunDto>(
+    '/api/v2/master/referentiels/progressions/import/propose',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+  )
+  return res.data!
+}
+
+export async function applyOfficialProgressionsImport(
+  payload: Record<string, unknown>,
+): Promise<ImportProgressionApplyResultDto> {
+  const res = await apiFetch<ImportProgressionApplyResultDto>(
+    '/api/v2/master/referentiels/progressions/import/apply',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+  )
+  return res.data!
 }
 
 export async function fetchTarifsMinesec(params?: { anneeScolaire?: string; typeFrais?: string }): Promise<TarifMinesecDto[]> {
