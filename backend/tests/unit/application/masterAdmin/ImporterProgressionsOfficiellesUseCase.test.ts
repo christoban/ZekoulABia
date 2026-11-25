@@ -48,6 +48,36 @@ describe('ImporterProgressionsOfficiellesUseCase & Validation Zod (Phase 2A)', (
       { templateCode: '__ALL__', level: '6e', filiere: '' },
       ['Mathématiques', 'Français', 'Anglais'],
     );
+    // Scopes 4e / 3e (LV2 + Lettres classiques)
+    repo.seedSubjects(
+      { templateCode: 'LYCEE_FR', level: '4e', filiere: 'FR_GENERAL' },
+      ['Mathématiques', 'Français', 'Anglais', 'LV2', 'Lettres classiques (Latin/Grec)'],
+    );
+    repo.seedSubjects(
+      { templateCode: 'LYCEE_FR', level: '4ème', filiere: 'FR_GENERAL' },
+      ['Mathématiques', 'LV2', 'Lettres classiques (Latin/Grec)'],
+    );
+    repo.seedSubjects(
+      { templateCode: 'LYCEE_FR', level: '4e', filiere: 'FR_PEBS' },
+      ['Mathématiques', 'Intensive English', 'LV2', 'Lettres classiques (Latin/Grec)'],
+    );
+    // Scopes 2nd cycle (BacCoefficient)
+    repo.seedSubjects(
+      { templateCode: '__ALL__', level: '1ère', filiere: 'A4' },
+      ['Littérature', 'Anglais', 'LV2', 'Philosophie'],
+    );
+    repo.seedSubjects(
+      { templateCode: '__ALL__', level: 'Tle', filiere: 'ABI' },
+      ['Intensive English', 'Littérature', 'LV2', 'Philosophie'],
+    );
+    repo.seedSubjects(
+      { templateCode: '__ALL__', level: '1ère', filiere: 'A1' },
+      ['Latin', 'Grec', 'Littérature', 'Mathématiques'],
+    );
+    repo.seedSubjects(
+      { templateCode: '__ALL__', level: '1ère', filiere: 'C' },
+      ['Mathématiques', 'Physique', 'Chimie', 'SVTEEHB'],
+    );
     useCase = new ImporterProgressionsOfficiellesUseCase(repo);
   });
 
@@ -318,20 +348,30 @@ describe('ImporterProgressionsOfficiellesUseCase & Validation Zod (Phase 2A)', (
     expect(repo.rows.size).toBe(0);
   });
 
-  it('Point 2 : normalise casse/accents/espaces, rejette strictement en SUBJECT_NOT_FOUND et retourne matieresConnues pour ce scope', async () => {
+  it('Point 2 + A1/B1 : normalise casse/accents/espaces, accepte Latin en 6e, rejette Grec/composite/hors catalogue avec matieresConnues sans doublons', async () => {
     const res = await useCase.proposer({
       source: 'autre-source-ignoree',
       level: '6e',
       items: [
-        // Présent dans BacCoefficient (2nde-Tle A1/A2) mais absent en 6e FR_GENERAL
+        // A1 : Grec interdit en 6e (autorisé uniquement en 4e et 3e)
         {
           templateCode: '__ALL__',
           level: '6e',
           filiere: 'FR_GENERAL',
-          subjectName: 'Latin',
-          subjectNameSource: 'Latin 6e',
-          titre: 'Programme Latin 6e',
-          chapitres: [{ titre: 'Déclinaisons', moduleOrdre: 1, positionDansModule: 1 }],
+          subjectName: 'Grec',
+          subjectNameSource: 'Grec 6e',
+          titre: 'Programme Grec 6e',
+          chapitres: [{ titre: 'Alphabet grec', moduleOrdre: 1, positionDansModule: 1 }],
+        },
+        // B1 : le libellé composite n'est plus accepté directement
+        {
+          templateCode: '__ALL__',
+          level: '6e',
+          filiere: 'FR_GENERAL',
+          subjectName: 'Lettres classiques (Latin/Grec)',
+          subjectNameSource: 'Lettres classiques 6e',
+          titre: 'Programme composite 6e',
+          chapitres: [{ titre: 'Intro', moduleOrdre: 1, positionDansModule: 1 }],
         },
         // Présent dans SchoolTemplate.config.defaultSubjects mais absent de CycleCoefficient 6e
         {
@@ -352,6 +392,16 @@ describe('ImporterProgressionsOfficiellesUseCase & Validation Zod (Phase 2A)', (
           subjectNameSource: 'Travail Manuel 6e PEBS',
           titre: 'Programme Travail Manuel 6e PEBS',
           chapitres: [{ titre: 'Atelier 1', moduleOrdre: 1, positionDansModule: 1 }],
+        },
+        // A1 : Latin accepté en 6e FR_GENERAL via remplacement de "Lettres classiques (Latin/Grec)"
+        {
+          templateCode: '__ALL__',
+          level: '6e',
+          filiere: 'FR_GENERAL',
+          subjectName: 'Latin',
+          subjectNameSource: 'Latin 6e',
+          titre: 'Programme Latin 6e',
+          chapitres: [{ titre: 'Déclinaisons', moduleOrdre: 1, positionDansModule: 1 }],
         },
         // Correspondance valide par normalisation casse + accents + espaces multiples
         {
@@ -377,28 +427,211 @@ describe('ImporterProgressionsOfficiellesUseCase & Validation Zod (Phase 2A)', (
     });
 
     expect(res.peutAppliquer).toBe(false);
-    // Point 3 : source toujours fixée à 'minesec-distance-learning'
     expect(res.source).toBe('minesec-distance-learning');
-    expect(res.resume.valides).toBe(2);
-    expect(res.resume.rejetes).toBe(3);
+    expect(res.resume.valides).toBe(3);
+    expect(res.resume.rejetes).toBe(4);
 
-    // Résolution vers les noms canoniques officiels
     expect(res.actions.map((a) => a.subjectName)).toEqual([
+      'Latin',
       'Éducation à la Citoyenneté et à la Morale',
       'Mathématiques',
     ]);
     expect(res.actions.every((a) => a.source === 'minesec-distance-learning')).toBe(true);
 
-    // Rejets stricts accompagnés de matieresConnues pour construire la table de correspondance
     expect(res.rejets.map((r) => ({ subject: r.subjectName, code: r.code }))).toEqual([
-      { subject: 'Latin', code: 'SUBJECT_NOT_FOUND' },
+      { subject: 'Grec', code: 'SUBJECT_NOT_FOUND' },
+      { subject: 'Lettres classiques (Latin/Grec)', code: 'SUBJECT_NOT_FOUND' },
       { subject: 'Histoire-Géographie', code: 'SUBJECT_NOT_FOUND' },
       { subject: 'Travail Manuel', code: 'SUBJECT_NOT_FOUND' },
     ]);
-    expect(res.rejets[0]!.matieresConnues).toContain('Lettres classiques (Latin/Grec)');
-    expect(res.rejets[0]!.matieresConnues).toContain('Mathématiques');
-    expect(res.rejets[2]!.matieresConnues).toContain('Manual Labour');
-    expect(res.rejets[2]!.matieresConnues).not.toContain('Travail Manuel');
+    // Message explicite B1 sur le libellé composite en 6e
+    expect(res.rejets[1]!.message).toContain('Latin');
+    expect(res.rejets[1]!.matieresConnues).toContain('Latin');
+    expect(res.rejets[1]!.matieresConnues).not.toContain('Grec');
+    expect(res.rejets[1]!.matieresConnues).not.toContain('Lettres classiques (Latin/Grec)');
+    // Aucun doublon dans matieresConnues
+    expect(new Set(res.rejets[0]!.matieresConnues).size).toBe(res.rejets[0]!.matieresConnues!.length);
+    expect(res.rejets[3]!.matieresConnues).toContain('Manual Labour');
+    expect(res.rejets[3]!.matieresConnues).not.toContain('Travail Manuel');
+  });
+
+  it('LV2 + Latin/Grec en 4e : accepte les 5 LV2 + Latin + Grec simultanément sans collision et reste idempotent (200)', async () => {
+    const languesEtClassiques = [
+      'Allemand',
+      'Arabe',
+      'Chinois',
+      'Espagnol',
+      'Italien',
+      'Latin',
+      'Grec',
+    ];
+    const batch = {
+      source: 'minesec-distance-learning',
+      level: '4e',
+      items: languesEtClassiques.map((subjectName) => ({
+        templateCode: '__ALL__',
+        level: '4e',
+        filiere: 'FR_GENERAL',
+        subjectName,
+        titre: `Programme Officiel ${subjectName} 4e`,
+        chapitres: [{ titre: `Leçon 1 de ${subjectName}`, moduleOrdre: 1, positionDansModule: 1 }],
+      })),
+    };
+
+    const dry = await useCase.proposer(batch);
+    expect(dry.rejets).toEqual([]);
+    expect(dry.peutAppliquer).toBe(true);
+    expect(dry.resume.aCreer).toBe(7);
+
+    const applied = await useCase.appliquer(batch);
+    expect(applied.createdCount).toBe(7);
+    expect(repo.rows.size).toBe(7);
+
+    // Idempotence 200
+    const reimported = await useCase.appliquer(batch);
+    expect(reimported.createdCount).toBe(0);
+    expect(reimported.updatedCount).toBe(0);
+    expect(reimported.unchangedCount).toBe(7);
+  });
+
+  it('LV2 & Classiques (2nd cycle + variantes de niveau + rejets stricts B1) : accepte 4ème/1ère A4/Tle ABI/1ère A1, rejette LV2 générique, Russe, Allemand en 6e ou 1ère C', async () => {
+    // 1. Variante "4ème" : Grec et Espagnol acceptés ; "LV2" et "Russe" rejetés
+    const res4eme = await useCase.proposer({
+      source: 'minesec-distance-learning',
+      level: '4ème',
+      items: [
+        {
+          templateCode: '__ALL__',
+          level: '4ème',
+          filiere: 'FR_GENERAL',
+          subjectName: 'Grec',
+          titre: 'Grec 4ème',
+          chapitres: [{ titre: 'L1', moduleOrdre: 1, positionDansModule: 1 }],
+        },
+        {
+          templateCode: '__ALL__',
+          level: '4ème',
+          filiere: 'FR_GENERAL',
+          subjectName: 'LV2',
+          titre: 'LV2 abstrait',
+          chapitres: [{ titre: 'L1', moduleOrdre: 1, positionDansModule: 1 }],
+        },
+        {
+          templateCode: '__ALL__',
+          level: '4ème',
+          filiere: 'FR_GENERAL',
+          subjectName: 'Russe',
+          titre: 'Russe hors catalogue',
+          chapitres: [{ titre: 'L1', moduleOrdre: 1, positionDansModule: 1 }],
+        },
+      ],
+    });
+    expect(res4eme.resume.valides).toBe(1);
+    expect(res4eme.rejets.map((r) => r.subjectName)).toEqual(['LV2', 'Russe']);
+    expect(res4eme.rejets[0]!.message).toContain('Allemand, Arabe, Chinois, Espagnol, Italien');
+    expect(res4eme.rejets[1]!.matieresConnues).toContain('Allemand');
+    expect(res4eme.rejets[1]!.matieresConnues).toContain('Grec');
+    expect(res4eme.rejets[1]!.matieresConnues).not.toContain('LV2');
+    expect(new Set(res4eme.rejets[1]!.matieresConnues).size).toBe(
+      res4eme.rejets[1]!.matieresConnues!.length,
+    );
+
+    // 2. 1ère : A4 accepte Allemand, A1 accepte Latin+Grec (noms déjà concrets, sans LV2), C rejette Allemand et Latin
+    const res1ere = await useCase.proposer({
+      source: 'minesec-distance-learning',
+      level: '1ère',
+      items: [
+        {
+          templateCode: '__ALL__',
+          level: '1ère',
+          filiere: 'A4',
+          subjectName: 'Allemand',
+          titre: 'Allemand 1ère A4',
+          chapitres: [{ titre: 'L1', moduleOrdre: 1, positionDansModule: 1 }],
+        },
+        {
+          templateCode: '__ALL__',
+          level: '1ère',
+          filiere: 'A1',
+          subjectName: 'Latin',
+          titre: 'Latin 1ère A1',
+          chapitres: [{ titre: 'L1', moduleOrdre: 1, positionDansModule: 1 }],
+        },
+        {
+          templateCode: '__ALL__',
+          level: '1ère',
+          filiere: 'A1',
+          subjectName: 'Grec',
+          titre: 'Grec 1ère A1',
+          chapitres: [{ titre: 'L1', moduleOrdre: 1, positionDansModule: 1 }],
+        },
+        {
+          templateCode: '__ALL__',
+          level: '1ère',
+          filiere: 'A1',
+          subjectName: 'Allemand',
+          titre: 'Allemand interdit en A1',
+          chapitres: [{ titre: 'L1', moduleOrdre: 1, positionDansModule: 1 }],
+        },
+        {
+          templateCode: '__ALL__',
+          level: '1ère',
+          filiere: 'C',
+          subjectName: 'Allemand',
+          titre: 'Allemand interdit en C',
+          chapitres: [{ titre: 'L1', moduleOrdre: 1, positionDansModule: 1 }],
+        },
+        {
+          templateCode: '__ALL__',
+          level: '1ère',
+          filiere: 'C',
+          subjectName: 'Latin',
+          titre: 'Latin interdit en C',
+          chapitres: [{ titre: 'L1', moduleOrdre: 1, positionDansModule: 1 }],
+        },
+      ],
+    });
+    expect(res1ere.resume.valides).toBe(3);
+    expect(res1ere.rejets.map((r) => `${r.filiere}:${r.subjectName}`)).toEqual([
+      'A1:Allemand',
+      'C:Allemand',
+      'C:Latin',
+    ]);
+
+    // 3. Tle ABI accepte Espagnol ; 6e FR_GENERAL rejette Allemand
+    const resTleAbi = await useCase.proposer({
+      source: 'minesec-distance-learning',
+      level: 'Tle',
+      items: [
+        {
+          templateCode: '__ALL__',
+          level: 'Tle',
+          filiere: 'ABI',
+          subjectName: 'Espagnol',
+          titre: 'Espagnol Tle ABI',
+          chapitres: [{ titre: 'L1', moduleOrdre: 1, positionDansModule: 1 }],
+        },
+      ],
+    });
+    expect(resTleAbi.rejets).toEqual([]);
+    expect(resTleAbi.resume.aCreer).toBe(1);
+
+    const res6eLv2 = await useCase.proposer({
+      source: 'minesec-distance-learning',
+      level: '6e',
+      items: [
+        {
+          templateCode: '__ALL__',
+          level: '6e',
+          filiere: 'FR_GENERAL',
+          subjectName: 'Allemand',
+          titre: 'Allemand interdit en 6e',
+          chapitres: [{ titre: 'L1', moduleOrdre: 1, positionDansModule: 1 }],
+        },
+      ],
+    });
+    expect(res6eLv2.rejets).toHaveLength(1);
+    expect(res6eLv2.rejets[0]!.code).toBe('SUBJECT_NOT_FOUND');
   });
 
   it('Point 3 : écrit toujours source = minesec-distance-learning lors de l\'import', async () => {

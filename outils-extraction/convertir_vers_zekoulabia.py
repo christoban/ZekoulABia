@@ -33,23 +33,24 @@ DEFAULT_SOURCE = "minesec-distance-learning"
 ACCEPTED_CONFIDENCES = {"certain", "probable"}
 FR_TO_EN_PEBS_CLASS = {"6e": "Form1", "5e": "Form2", "4e": "Form3", "3e": "Form4"}
 
-# Catalogue exact CycleCoefficient (lecture seule de premier-cycle.ts)
+# Catalogue exact CycleCoefficient après expansion officielle (officialProgressionSubjects.ts)
+CONCRETE_LV2 = {"Allemand", "Arabe", "Chinois", "Espagnol", "Italien"}
 GEN_65_CATALOG = {
-    "Anglais", "Français", "Lettres classiques (Latin/Grec)",
+    "Anglais", "Français", "Latin",
     "Éducation à la Citoyenneté et à la Morale", "Histoire", "Géographie",
     "Informatique", "Mathématiques", "Sciences",
     "Éducation Artistique et Culturelle", "Cultures Nationales",
     "Langues Nationales", "EPS", "Travail Manuel",
 }
-GEN_43_CATALOG = (GEN_65_CATALOG - {"Sciences"}) | {"LV2", "Physique-Chimie-Technologie", "SVTEEHB"}
+GEN_43_CATALOG = (GEN_65_CATALOG - {"Sciences"}) | CONCRETE_LV2 | {"Grec", "Physique-Chimie-Technologie", "SVTEEHB"}
 PEBS_65_CATALOG = {
-    "Intensive English", "Français", "Lettres classiques (Latin/Grec)",
+    "Intensive English", "Français", "Latin",
     "Citizenship Education", "Géographie", "Histoire",
     "Informatique", "Mathématiques", "Sciences",
     "Éducation Artistique et Culturelle", "Cultures Nationales",
     "Langues Nationales", "Sport and Physical Education", "Manual Labour",
 }
-PEBS_43_CATALOG = (PEBS_65_CATALOG - {"Sciences"}) | {"LV2", "Physique-Chimie-Technologie", "SVTEEHB"}
+PEBS_43_CATALOG = (PEBS_65_CATALOG - {"Sciences"}) | CONCRETE_LV2 | {"Grec", "Physique-Chimie-Technologie", "SVTEEHB"}
 
 CYCLE1_FR_CATALOG: dict[tuple[str, str], set[str]] = {
     ("6e", "FR_GENERAL"): GEN_65_CATALOG, ("5e", "FR_GENERAL"): GEN_65_CATALOG,

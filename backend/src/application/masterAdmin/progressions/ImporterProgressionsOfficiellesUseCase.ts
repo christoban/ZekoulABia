@@ -8,8 +8,8 @@ import {
   calculerChecksumProgression,
   construireCleProgression,
   normaliserChapitresEtCollecterDiagnostics,
-  normaliserCleMatiere,
 } from './chapitresNormalisation';
+import { ResolveurMatieresScope } from './resolutionMatieresScope';
 import {
   ImportProgressionsConflictError,
   ImportProgressionsValidationError,
@@ -108,7 +108,7 @@ export class ImporterProgressionsOfficiellesUseCase {
     }
 
     const templatesConnus = new Set(await this.repo.listExistingTemplateCodes());
-    const cacheMatieres = new Map<string, { map: Map<string, string>; liste: string[] }>();
+    const resolveurMatieres = new ResolveurMatieresScope(this.repo);
     const clesVuesDansLot = new Set<string>();
 
     interface ItemValideIntermediaire {
@@ -151,39 +151,19 @@ export class ImporterProgressionsOfficiellesUseCase {
         continue;
       }
 
-      // Résolution stricte de la matière officielle (normalisation casse + accents + espaces)
-      const cleScope = `${templateCode}::${level}::${filiere}`;
-      let entreeScope = cacheMatieres.get(cleScope);
-      if (!entreeScope) {
-        const connues = await this.repo.listKnownSubjectsForScope({ templateCode, level, filiere });
-        const map = new Map<string, string>();
-        const unifiees = new Set<string>();
-        for (const nom of connues) {
-          const canon = nom.trim();
-          if (!canon) continue;
-          unifiees.add(canon);
-          map.set(normaliserCleMatiere(canon), canon);
-        }
-        const liste = Array.from(unifiees).sort((a, b) => a.localeCompare(b, 'fr'));
-        entreeScope = { map, liste };
-        cacheMatieres.set(cleScope, entreeScope);
-      }
-
-      const subjectNameCanonique = entreeScope.map.get(normaliserCleMatiere(subjectNameBrut));
-      if (!subjectNameCanonique) {
-        rejets.push({
-          index,
-          templateCode,
-          level,
-          filiere,
-          subjectName: subjectNameBrut,
-          subjectNameSource,
-          code: 'SUBJECT_NOT_FOUND',
-          message: `Matière « ${subjectNameBrut} » sans correspondance dans le référentiel (${templateCode} / ${level}${filiere ? ` / ${filiere}` : ''}).`,
-          matieresConnues: entreeScope.liste,
-        });
+      const resolutionMatiere = await resolveurMatieres.resoudre({
+        index,
+        templateCode,
+        level,
+        filiere,
+        subjectNameBrut,
+        subjectNameSource,
+      });
+      if (resolutionMatiere.rejet || !resolutionMatiere.subjectNameCanonique) {
+        if (resolutionMatiere.rejet) rejets.push(resolutionMatiere.rejet);
         continue;
       }
+      const { subjectNameCanonique } = resolutionMatiere;
 
       const key: OfficialProgressionNaturalKey = {
         templateCode,
