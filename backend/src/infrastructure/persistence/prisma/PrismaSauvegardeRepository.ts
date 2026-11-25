@@ -1,9 +1,13 @@
 import type { PrismaClient } from '@prisma/client';
 import type { SauvegardeRepository } from '@domain/ports/repositories/SauvegardeRepository';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
 import { createSchoolBackup } from '../../backup/SchoolBackupService';
 
 export class PrismaSauvegardeRepository implements SauvegardeRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly fileStorage: FileStoragePort,
+  ) {}
 
   async listerEcoles(params: { schoolId?: string }): Promise<Array<{ id: string; name: string }>> {
     if (params.schoolId) {
@@ -17,10 +21,14 @@ export class PrismaSauvegardeRepository implements SauvegardeRepository {
     requestedByMasterId?: string | null;
     source?: 'cron' | 'manual';
   }): Promise<{ schoolId: string; fileName: string; filePath: string; createdAt: string }> {
-    return createSchoolBackup(this.prisma, {
-      schoolId: params.schoolId,
-      requestedByMasterId: params.requestedByMasterId ?? null,
-      source: params.source ?? 'manual',
-    });
+    return createSchoolBackup(
+      this.prisma,
+      {
+        schoolId: params.schoolId,
+        requestedByMasterId: params.requestedByMasterId ?? null,
+        source: params.source ?? 'manual',
+      },
+      this.fileStorage,
+    );
   }
 }

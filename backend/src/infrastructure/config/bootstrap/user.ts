@@ -160,6 +160,7 @@ export function registerUserRoutes(app: Application, prismaParam: typeof prisma 
     c.masterAdmin.synchroniserMatieres,
     c.masterAdmin.reinitialiserMfa,
     c.events.publisher,
+    c.fileStorage,
   );
 
   app.use('/api/v2/users', creerUserRoutes(userController));
