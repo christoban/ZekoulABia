@@ -144,6 +144,7 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
     c.statisticalCampaign.verifierCompletude,
     c.statisticalCampaign.genererDeclaration,
     c.statisticalCampaign.repository,
+    c.fileStorage,
   );
   app.use('/api/v2/statistical-campaign', creerStatisticalCampaignRoutes(statisticalCampaignController));
 
@@ -151,6 +152,7 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
   const statisticalCampaignMinedubController = new StatisticalCampaignMinedubController(
     c.statisticalCampaignMinedub.genererRapport,
     c.statisticalCampaignMinedub.repository,
+    c.fileStorage,
   );
   app.use('/api/v2/statistical-campaign-minedub', creerStatisticalCampaignMinedubRoutes(statisticalCampaignMinedubController));
 

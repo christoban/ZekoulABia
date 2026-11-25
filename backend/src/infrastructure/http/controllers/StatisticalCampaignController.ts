@@ -1,14 +1,17 @@
 import type { Request, Response, NextFunction } from 'express';
 import { messageErreur } from '@application/shared/messageErreur';
-import fs from 'fs';
-import path from 'path';
 import type { StatisticalCampaignRepository } from '@domain/ports/repositories/StatisticalCampaignRepository';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
 import { VerifierCompletudeSupplementUseCase } from '@application/statisticalCampaign/VerifierCompletudeSupplementUseCase';
 import { GenererDeclarationStatistiqueMinesecUseCase } from '@application/statisticalCampaign/GenererDeclarationStatistiqueMinesecUseCase';
 import { LibreOfficeUnavailableError, LibreOfficeConversionError } from '@application/statisticalCampaign/xlsEngine';
 import { SPECIALITES_TECHNIQUES_MINESEC } from '@application/statisticalCampaign/minesecTechnicalCatalog';
 import { getEstpAnneesEtude } from '@application/statisticalCampaign/minesecEstpGridMap';
 import { INFRA_ROWS, COMMODITES_ROWS, SUBSYSTEM_LABELS, getRelevantSubsystems, INFRA_BREAKDOWN_KEYS } from '@application/statisticalCampaign/minesecFixedFieldMap';
+import {
+  resolveScopedStorageKeyOrRespond,
+  sendStoredFileResponse,
+} from '../helpers/fileStorageHttpHelper';
 
 /**
  * Préfixe /api/v2/statistical-campaign. Génération du questionnaire statistique officiel
@@ -19,6 +22,7 @@ export class StatisticalCampaignController {
     private readonly _verifierCompletude: VerifierCompletudeSupplementUseCase,
     private readonly _genererDeclaration: GenererDeclarationStatistiqueMinesecUseCase,
     private readonly _repo: StatisticalCampaignRepository,
+    private readonly fileStorage: FileStoragePort,
   ) {}
 
   // GET /api/v2/statistical-campaign/supplement
@@ -120,13 +124,28 @@ export class StatisticalCampaignController {
         res.status(404).json({ success: false, message: 'Déclaration introuvable' });
         return;
       }
-      if (!fs.existsSync(submission.filePath)) {
+
+      const validKey = resolveScopedStorageKeyOrRespond(
+        res,
+        submission.filePath,
+        schoolId,
+        'Fichier généré introuvable — régénérez la déclaration',
+      );
+      if (!validKey) return;
+
+      const stored = await this.fileStorage.get(validKey);
+      if (!stored) {
         res.status(404).json({ success: false, message: 'Fichier généré introuvable — régénérez la déclaration' });
         return;
       }
-      res.setHeader('Content-Disposition', `attachment; filename="${path.basename(submission.filePath)}"`);
-      res.setHeader('Content-Type', 'application/vnd.ms-excel');
-      fs.createReadStream(submission.filePath).pipe(res);
+
+      const isXlsx = validKey.endsWith('.xlsx');
+      const contentType =
+        stored.contentType ??
+        (isXlsx ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'application/vnd.ms-excel');
+      const filename = stored.metadata?.originalName ?? `declaration-minesec-${submission.id}${isXlsx ? '.xlsx' : '.xls'}`;
+
+      sendStoredFileResponse(res, { buffer: stored.buffer, contentType, filename, disposition: 'attachment' });
     } catch (err) { next(err); }
   };
 

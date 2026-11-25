@@ -4,15 +4,13 @@
  * directement dans le PDF, qui reste un support de préparation avant la vraie collecte
  * IAEB — jamais présenté comme un document officiel (bandeau explicite en en-tête).
  */
-import fs from 'fs';
-import path from 'path';
 import PDFDocument from 'pdfkit';
 import type { StatisticalQueryPort } from '@domain/ports/repositories/StatisticalQueryPort';
 import type { MinedubReportRepository } from '@domain/ports/repositories/MinedubReportRepository';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
+import { buildScopedStorageKey } from '@domain/services/storage/fileStorageValidation';
 import { resolveEffectifsParNiveau, resolveEffectifsParAge, resolvePersonnelPrimaire } from './resolvePrimaryAutoFields';
 import type { ChampNonResoluMinedub, GenererRapportMinedubCommande, GenererRapportMinedubResultat } from './types';
-
-const STORAGE_DIR = path.resolve(process.cwd(), 'storage', 'minedub-reports');
 
 const ZONE_LABELS: Record<string, string> = { URBAINE: 'Urbaine', RURALE: 'Rurale' };
 const ORDRE_LABELS: Record<string, string> = {
@@ -38,6 +36,7 @@ export class GenererRapportSyntheseMinedubUseCase {
   constructor(
     private readonly query: StatisticalQueryPort,
     private readonly minedubReportRepository: MinedubReportRepository,
+    private readonly fileStorage: FileStoragePort,
   ) {}
 
   async execute(cmd: GenererRapportMinedubCommande): Promise<GenererRapportMinedubResultat> {
@@ -64,20 +63,25 @@ export class GenererRapportSyntheseMinedubUseCase {
 
     const buffer = await this.buildPdf(school, supplement, effectifsNiveau, effectifsAge, personnel, champsNonResolus);
 
-    const outDir = path.join(STORAGE_DIR, cmd.schoolId);
-    fs.mkdirSync(outDir, { recursive: true });
-    const fileName = `rapport-minedub-${school.subdomain}-${Date.now()}.pdf`;
-    const outputPath = path.join(outDir, fileName);
-    fs.writeFileSync(outputPath, buffer);
+    const storageKey = buildScopedStorageKey({
+      schoolId: cmd.schoolId,
+      domain: 'minedub-reports',
+      extension: '.pdf',
+    });
+    const originalName = `rapport-minedub-${school.subdomain}-${Date.now()}.pdf`;
+    await this.fileStorage.put(storageKey, buffer, 'application/pdf', {
+      originalName,
+      generatedBy: cmd.generatedByUserId,
+    });
 
     const report = await this.minedubReportRepository.creerRapport({
       schoolId: cmd.schoolId,
       generatedBy: cmd.generatedByUserId,
-      filePath: outputPath,
+      filePath: storageKey,
       champsNonResolus,
     });
 
-    return { reportId: report.id, filePath: outputPath, champsNonResolus };
+    return { reportId: report.id, filePath: storageKey, champsNonResolus };
   }
 
   private buildPdf(

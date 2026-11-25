@@ -74,12 +74,17 @@ export function createExamsCampaignContainer(
         statisticalQueryAdapter,
         statisticalCampaignRepository,
         verifierCompletudeSupplement,
+        core.fileStorage,
       ),
       repository: statisticalCampaignRepository,
     },
     statisticalCampaignMinedub: {
       repository: minedubReportRepository,
-      genererRapport: new GenererRapportSyntheseMinedubUseCase(statisticalQueryAdapter, minedubReportRepository),
+      genererRapport: new GenererRapportSyntheseMinedubUseCase(
+        statisticalQueryAdapter,
+        minedubReportRepository,
+        core.fileStorage,
+      ),
     },
     paiementMinesec: {
       genererPaiements: genererPaiementsMinesec,
