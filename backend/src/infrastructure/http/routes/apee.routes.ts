@@ -22,6 +22,7 @@ export function creerApeeRoutes(controller: APEEController): Router {
   router.post('/transactions', requireAuth, requireRole(...gestionnaires), controller.create);
   router.get('/transactions', requireAuth, requireRole(...lecteurs), controller.list);
   router.post('/transactions/:id/justificatif', requireAuth, requireRole(...gestionnaires), upload.single('file'), controller.uploadJustificatif);
+  router.get('/transactions/:id/justificatif', requireAuth, requireRole(...lecteurs), controller.downloadJustificatif);
   router.post('/transactions/:id/valider', requireAuth, requireRole(...gestionnaires), controller.valider);
   router.get('/solde', requireAuth, requireRole(...lecteurs), controller.solde);
   router.get('/rapport.pdf', requireAuth, requireRole(...lecteurs), controller.rapportPdf);
