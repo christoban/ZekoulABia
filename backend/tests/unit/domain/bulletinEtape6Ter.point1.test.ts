@@ -33,16 +33,7 @@ function rectsAlmostEqual(a: RectBox, b: RectBox): boolean {
   return Math.abs(a.x - b.x) < 1 && Math.abs(a.y - b.y) < 1 && Math.abs(a.w - b.w) < 1 && Math.abs(a.h - b.h) < 1;
 }
 
-function containsRect(outer: RectBox, inner: RectBox): boolean {
-  return (
-    outer.x <= inner.x + 0.5 &&
-    outer.y <= inner.y + 0.5 &&
-    outer.x + outer.w >= inner.x + inner.w - 0.5 &&
-    outer.y + outer.h >= inner.y + inner.h - 0.5
-  );
-}
-
-describe('Étape 6 ter — Point 1 : bande unique de vérification d’authenticité, QR >= 21 mm, zone blanche >= 4 modules, marge >= 8 mm, 0 chevauchement & décodage JS', () => {
+describe('Étape 6 ter — Point 1 : sceau QR épuré en bas à droite (zéro texte, zéro bandeau), QR >= 21 mm, zone blanche >= 4 modules, marge >= 8 mm, 0 chevauchement & décodage JS', () => {
   it('génère un PNG QR avec une zone blanche >= 4 modules sur les 4 côtés et décodable en JavaScript (jsQR)', async () => {
     const verifyUrl = 'https://verify.zekoulabia.cm/verify/0123456789abcdef0123456789abcdef0123456789abcdef';
     const pngBuf = await generateBulletinQrPng(verifyUrl);
@@ -174,23 +165,22 @@ describe('Étape 6 ter — Point 1 : bande unique de vérification d’authentic
       expect(pageW - (qr.x + qr.w)).toBeGreaterThanOrEqual(QR_MIN_EDGE_MARGIN_PT);
       expect(pageH - (qr.y + qr.h)).toBeGreaterThanOrEqual(QR_MIN_EDGE_MARGIN_PT);
 
-      // 3. Zéro chevauchement du rectangle QR avec tout autre cadre (hors sa propre bande englobante et son fond blanc)
+      // 3. Zéro chevauchement du rectangle QR avec tout autre cadre (et aucun cadre de bandeau pleine largeur)
       const overlappingOtherRects = rects.filter((r) => {
         if (rectsAlmostEqual(r, qr)) return false; // fond blanc exact du QR
-        if (containsRect(r, qr) && Math.abs(r.h - 70) < 2) return false; // bande de vérification englobante
         return rectsOverlap(r, qr);
       });
       expect(overlappingOtherRects).toEqual([]);
 
-      // 4. Texte localisé dans la bande avec le code court et l'adresse publique issue de la config
+      // 4. Sceau QR épuré : zéro bavardage / aucun texte explicatif ni code court imprimé dans la zone QR
       const joined = texts.join('\n');
-      if (lang === 'en') {
-        expect(joined).toContain('AUTHENTICITY VERIFICATION');
-        expect(joined).toContain(`enter the code ${shortVerifyCode} at ${verifyBaseUrl}/verify`);
-      } else {
-        expect(joined).toContain("VÉRIFICATION D'AUTHENTICITÉ");
-        expect(joined).toContain(`saisissez le code ${shortVerifyCode} sur ${verifyBaseUrl}/verify`);
-      }
+      expect(joined).not.toContain('AUTHENTICITY VERIFICATION');
+      expect(joined).not.toContain("VÉRIFICATION D'AUTHENTICITÉ");
+      expect(joined).not.toContain('scannez le QR code');
+      expect(joined).not.toContain('scan the QR code');
+      expect(joined).not.toContain('Code de vérification');
+      expect(joined).not.toContain('Verification code');
+      expect(joined).not.toContain(shortVerifyCode);
 
       // 5. Le buffer QR intégré dans le PDF est décodable par jsQR vers l'URL exacte
       const parsedQr = PNG.sync.read(qr.src);
