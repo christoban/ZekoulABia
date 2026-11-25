@@ -1,4 +1,5 @@
 import type { SchoolActivationTx, SchoolActivationData } from '@domain/ports/repositories/SchoolActivationRepository';
+import { deriveSubjectCodeFromName } from '@domain/services/bulletin/bulletinGroupingSchemes';
 import { assignerMatieresPourClasse, parseSerie } from '../SubjectAssignmentHelper';
 import type { ClasseDefinition } from './activationClasses';
 
@@ -143,7 +144,7 @@ export async function creerMatieresEtCoefficientsSecondaire(
           if (!subjectId) {
             const created = await tx.creerMatiere({
               name,
-              code: name.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8),
+              code: deriveSubjectCodeFromName(name),
               coefficient: coeff,
               hoursPerWeek: hours,
             });

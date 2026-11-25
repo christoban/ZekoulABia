@@ -9,6 +9,7 @@ import type {
   EcoleDetail,
   EcoleInvitePending,
 } from '@domain/ports/repositories/MasterAdminQueryRepository';
+import { deriveSubjectCodeFromName } from '@domain/services/bulletin/bulletinGroupingSchemes';
 
 export class PrismaMasterAdminQueryRepository implements MasterAdminQueryRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -249,7 +250,7 @@ export class PrismaMasterAdminQueryRepository implements MasterAdminQueryReposit
             }
             let subjectId = subjectByName.get(subjectName);
             if (!subjectId) {
-              const code = subjectName.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8);
+              const code = deriveSubjectCodeFromName(subjectName);
               const newS = await tx.subject.create({
                 data: { schoolId, name: subjectName, code, coefficient: bc.coefficient, hoursPerWeek: 2, subjectType: 'THEORETICAL' as SubjectType },
               });

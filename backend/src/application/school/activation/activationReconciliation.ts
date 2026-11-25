@@ -1,4 +1,5 @@
 import type { SchoolActivationTx, SchoolActivationData } from '@domain/ports/repositories/SchoolActivationRepository';
+import { deriveSubjectCodeFromName } from '@domain/services/bulletin/bulletinGroupingSchemes';
 import { NIVEAU_MAP } from '../SubjectAssignmentHelper';
 
 export interface ReconciliationParams {
@@ -98,7 +99,7 @@ export async function appliquerReconciliationEtFinalisation(params: Reconciliati
             existing ??
             (await tx.creerMatiere({
               name: langue,
-              code: langue.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8),
+              code: deriveSubjectCodeFromName(langue),
               coefficient: lv2Coeff,
               hoursPerWeek: lv2Hours,
               departmentId: langDept?.id ?? null,
@@ -226,7 +227,7 @@ export async function appliquerReconciliationEtFinalisation(params: Reconciliati
           if (!subjId) {
             const created = await tx.creerMatiere({
               name: ps.subjectName,
-              code: ps.subjectName.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8),
+              code: deriveSubjectCodeFromName(ps.subjectName),
               coefficient: ps.coefficient,
               hoursPerWeek: ps.weeklyPeriods ?? 2,
             });

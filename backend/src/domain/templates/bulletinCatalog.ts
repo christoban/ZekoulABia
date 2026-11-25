@@ -85,7 +85,7 @@ export const GENERAL_GROUPED_V1: Readonly<BulletinTemplateSpec> = deepFreezeSpec
       showGroupSubtotals: true,
       appreciationScale: 'A+/A/ECA/NA',
       scaleConfig: {
-        // À CONFIRMER SUR LE TERRAIN : Famille A garde NA < 10 (ongoingInclusive: true) jusqu'à validation terrain.
+        // Secondaire MINESEC APC : seuil minimal réglementaire à 10,00/20 -> NA < 10 (ongoingInclusive: true) ; photo 3ème : 9,90 = NA, 10,30 = ECA.
         cote: { ongoingMin: 10, ongoingInclusive: true, acquiredMin: 15, acquiredInclusive: true, expertMin: 18, expertInclusive: true },
       },
       columns: [

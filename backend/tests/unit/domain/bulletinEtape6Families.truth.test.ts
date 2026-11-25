@@ -218,7 +218,7 @@ describe('Étape 6 — Jeux de vérité calculés à la main (Familles F, D, B, 
     expect(snap1.sequenceAverages![1]!.rank).toBe(2);
   });
 
-  it('Catalogue Étape 6 : toutes les specs D, B, C, E, F_EN, F_FR sont gelées, résolues et marquées À VALIDER SUR UN BULLETIN RÉEL pour E & F_FR', () => {
+  it('Catalogue Étape 6 : toutes les specs D, B, C, E, F_EN, F_FR sont gelées, résolues et validées sur bulletins témoins', () => {
     const specs = [
       ANNUAL_BILINGUAL_V1,
       TECH_GROUPED_V1,
@@ -231,16 +231,13 @@ describe('Étape 6 — Jeux de vérité calculés à la main (Familles F, D, B, 
       expect(Object.isFrozen(s)).toBe(true);
       expect(Object.isFrozen(s.blocks)).toBe(true);
       expect(getPublishedTemplateSpec(s.id, 1)?.id).toBe(s.id);
+      expect(s.validationStatus).toBe('VALIDATED');
     }
     expect(findDefaultSpecForTemplate('ANNUAL')?.id).toBe('ANNUAL_BILINGUAL_V1');
     expect(findDefaultSpecForTemplate('TECHNICAL_FR')?.id).toBe('TECH_GROUPED_V1');
-    expect(findDefaultSpecForTemplate('EN_SECONDARY')).toBeNull();
+    expect(findDefaultSpecForTemplate('EN_SECONDARY')?.id).toBe('EN_SECONDARY_V1');
     expect(findDefaultSpecForTemplate('PRIMARY')?.id).toBe('PRIMARY_POINTS_RATIO_EN_V1');
     expect(findDefaultSpecForTemplate('FR_SECONDARY')?.id).toBe('GENERAL_GROUPED_V1');
-    expect(EN_SECONDARY_V1.validationStatus).toBe('TO_VALIDATE');
-    expect(EN_SECONDARY_V1.validationNotice).toBe('À VALIDER SUR UN BULLETIN RÉEL');
-    expect(PRIMARY_POINTS_RATIO_FR_LABELS_V1.validationStatus).toBe('TO_VALIDATE');
-    expect(PRIMARY_POINTS_RATIO_FR_LABELS_V1.validationNotice).toBe('À VALIDER SUR UN BULLETIN RÉEL');
   });
 
   it('Rendu PDFKit mesuré des familles D, B, C, E, F (EN & FR) : 1 page, séparateur décimal localisé, groupRank B, points ratio F et zéro invention', async () => {
@@ -318,7 +315,7 @@ describe('Étape 6 — Jeux de vérité calculés à la main (Familles F, D, B, 
     expect(outFFr.pageCount).toBe(1);
     expect(outFFr.joined).toContain('Total Notes : 245,00');
     expect(outFFr.joined).toContain('Moyenne : 11,14 / 20');
-    expect(outFFr.joined).toContain('À VALIDER SUR UN BULLETIN RÉEL');
+    expect(outFFr.joined).not.toContain('À VALIDER SUR UN BULLETIN RÉEL');
 
     // Famille B (Technique) : groupRank affiché sur RÉCAP + Corvée
     const resB = BulletinSnapshotBuilder.buildClassSnapshots({
@@ -363,6 +360,8 @@ describe('Étape 6 — Jeux de vérité calculés à la main (Familles F, D, B, 
 
     const outE = await renderAndCapture(resB.snapshotsByStudentId.get('sb')!, EN_SECONDARY_V1, 'en');
     expect(outE.pageCount).toBe(1);
-    expect(outE.joined).toContain('À VALIDER SUR UN BULLETIN RÉEL');
+    expect(outE.joined).toContain('CLASS AV');
+    expect(outE.joined).toContain('APPRECIATIONS');
+    expect(outE.joined).not.toContain('À VALIDER SUR UN BULLETIN RÉEL');
   });
 });

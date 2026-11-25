@@ -1,6 +1,4 @@
 import { describe, it, expect } from 'bun:test';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import {
   DEFAULT_PRIMARY_COTE_SCALE,
   DEFAULT_QUEBECOIS_COTE_SCALE,
@@ -20,8 +18,8 @@ function getCoteScale(spec: typeof GENERAL_GROUPED_V1) {
   return spec.blocks.find((b): b is SubjectTableBlockSpec => b.type === 'subjectTable')?.scaleConfig?.cote;
 }
 
-describe('Étape 6 ter — Point 6 : bornes inclusives et exclusives (Famille F NA = [0;10] inclus, Famille A NA < 10 à confirmer)', () => {
-  it('Famille F (Primaire EN & libellés FR) : NA = [0 ; 10] inclus (10,00 -> NA comme 35/70 et 5/10), ECA ]10 ; 14,99], A [15 ; 17,99], A+ >= 18', () => {
+describe('Étape 6 ter — Point 6 : bornes inclusives et exclusives (Primaire MINEDUB NA = [0;10] inclus, Secondaire MINESEC Famille A NA < 10)', () => {
+  it('Famille F (Primaire EN & libellés FR) : NA = [0 ; 10] inclus (35/70, 5/10, 10/20 et 20/40 -> NA), ECA ]10 ; 14,99], A [15 ; 17,99], A+ >= 18', () => {
     for (const spec of [PRIMARY_POINTS_RATIO_EN_V1, PRIMARY_POINTS_RATIO_FR_LABELS_V1]) {
       const scale = getCoteScale(spec);
       expect(scale).toEqual(DEFAULT_PRIMARY_COTE_SCALE);
@@ -29,14 +27,16 @@ describe('Étape 6 ter — Point 6 : bornes inclusives et exclusives (Famille F 
 
       expect(evaluateCoteFromScale(10.00, scale)).toBe('NA');
       expect(evaluateCoteFromScale(10.01, scale)).toBe('ECA');
+      expect(evaluateCoteFromScale(10.66, scale)).toBe('ECA');
       expect(evaluateCoteFromScale(14.99, scale)).toBe('ECA');
       expect(evaluateCoteFromScale(15.00, scale)).toBe('A');
       expect(evaluateCoteFromScale(17.99, scale)).toBe('A');
       expect(evaluateCoteFromScale(18.00, scale)).toBe('A+');
 
-      // Vérification explicite des fractions du bulletin primaire réel : 35/70 et 5/10 = 10,00
+      // Preuves bulletins primaires réels : GSB Le Québécois EN (35/70, 5/10) + CM2 MINEDUB FR (10/20, 20/40) = 10,00 -> NA
       expect(evaluateCoteFromScale((35 / 70) * 20, scale)).toBe('NA');
       expect(evaluateCoteFromScale((5 / 10) * 20, scale)).toBe('NA');
+      expect(evaluateCoteFromScale((20 / 40) * 20, scale)).toBe('NA');
     }
 
     expect(buildCoteLegendText(true, DEFAULT_PRIMARY_COTE_SCALE))
@@ -49,20 +49,18 @@ describe('Étape 6 ter — Point 6 : bornes inclusives et exclusives (Famille F 
       .toContain('NA : Non acquis [0-10]');
   });
 
-  it('Famille A : garde NA < 10 (10,00 -> ECA) jusqu’à validation terrain et est marquée "À CONFIRMER" dans le code', () => {
+  it('Famille A (Secondaire MINESEC APC) : NA < 10 (9,90 -> NA, 10,00 et 10,30 -> ECA), A [15 ; 17,99], A+ >= 18', () => {
     const scaleA = getCoteScale(GENERAL_GROUPED_V1);
     expect(scaleA).toEqual(DEFAULT_QUEBECOIS_COTE_SCALE);
     expect(scaleA?.ongoingInclusive).toBe(true);
 
+    expect(evaluateCoteFromScale(9.90, scaleA)).toBe('NA');
     expect(evaluateCoteFromScale(10.00, scaleA)).toBe('ECA');
-    expect(evaluateCoteFromScale(10.01, scaleA)).toBe('ECA');
+    expect(evaluateCoteFromScale(10.30, scaleA)).toBe('ECA');
     expect(evaluateCoteFromScale(14.99, scaleA)).toBe('ECA');
     expect(evaluateCoteFromScale(15.00, scaleA)).toBe('A');
     expect(evaluateCoteFromScale(17.99, scaleA)).toBe('A');
     expect(evaluateCoteFromScale(18.00, scaleA)).toBe('A+');
-
-    const catalogSrc = readFileSync(join(import.meta.dir, '../../../src/domain/templates/bulletinCatalog.ts'), 'utf8');
-    expect(catalogSrc).toContain('À CONFIRMER');
   });
 
   it('supporte aussi les bornes exclusives sur les niveaux intermédiaires et supérieurs (cotes et compétences)', () => {

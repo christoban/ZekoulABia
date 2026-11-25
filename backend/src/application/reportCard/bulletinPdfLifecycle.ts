@@ -153,7 +153,9 @@ export function resolveActiveSpecForBulletin(params: {
   if (!params.useMeasuredBulletinRenderer) return null;
   if (params.templateSpecId) {
     const exact = getPublishedTemplateSpec(params.templateSpecId, params.templateVersion);
-    if (exact && isSpecValidatedForProduction(exact)) return exact;
+    if (exact) {
+      return isSpecValidatedForProduction(exact) ? exact : null;
+    }
   }
   return findDefaultSpecForTemplate(params.template);
 }

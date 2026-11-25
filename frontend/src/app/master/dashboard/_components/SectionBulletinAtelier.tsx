@@ -46,6 +46,7 @@ export default function SectionBulletinAtelier({ schools, initialSchoolId, onToa
   const [draftPeriodMode, setDraftPeriodMode] = useState('AUTO')
   const [draftScale, setDraftScale] = useState('A+/A/ECA/NA')
   const [draftGroupRank, setDraftGroupRank] = useState(false)
+  const [draftInkSaver, setDraftInkSaver] = useState(false)
   const [draftCouncilItems, setDraftCouncilItems] = useState<string[]>([])
 
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null)
@@ -74,6 +75,7 @@ export default function SectionBulletinAtelier({ schools, initialSchoolId, onToa
     setDraftLanguage(spec.language)
     setDraftScheme(spec.defaultGroupingScheme ?? 'FLAT')
     setDraftGroupRank(Boolean(spec.showGroupRankInSubtotal))
+    setDraftInkSaver(Boolean(spec.inkSaverMode))
     const hdr = spec.blocks.find((b) => b.type === 'officialHeader')
     const tbl = spec.blocks.find((b) => b.type === 'subjectTable')
     const ccl = spec.blocks.find((b) => b.type === 'councilDecision')
@@ -142,6 +144,7 @@ export default function SectionBulletinAtelier({ schools, initialSchoolId, onToa
     periodLabelMode: draftPeriodMode,
     appreciationScale: draftScale,
     showGroupRankInSubtotal: draftGroupRank,
+    inkSaverMode: draftInkSaver,
     councilItems: draftCouncilItems,
   }
 
@@ -387,6 +390,7 @@ export default function SectionBulletinAtelier({ schools, initialSchoolId, onToa
                 draftPeriodMode={draftPeriodMode}
                 draftScale={draftScale}
                 draftGroupRank={draftGroupRank}
+                draftInkSaver={draftInkSaver}
                 draftCouncilItems={draftCouncilItems}
                 useMeasured={useMeasured}
                 assignments={state.assignments}
@@ -406,6 +410,7 @@ export default function SectionBulletinAtelier({ schools, initialSchoolId, onToa
                   if (patch.periodMode !== undefined) setDraftPeriodMode(patch.periodMode)
                   if (patch.scale !== undefined) setDraftScale(patch.scale)
                   if (patch.groupRank !== undefined) setDraftGroupRank(patch.groupRank)
+                  if (patch.inkSaverMode !== undefined) setDraftInkSaver(patch.inkSaverMode)
                   if (patch.councilItems !== undefined) setDraftCouncilItems(patch.councilItems)
                 }}
                 onSaveMeasuredConfig={handleSaveIdentity}
