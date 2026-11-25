@@ -4,9 +4,14 @@
  */
 
 import { type Request, type Response, type NextFunction } from 'express';
-import path from 'path';
-import fs from 'fs';
 import sanitizeHtml from 'sanitize-html';
+import type { FileStoragePort } from '@domain/ports/services/FileStoragePort';
+import { buildScopedStorageKey } from '@domain/services/storage/fileStorageValidation';
+import {
+  resolveScopedStorageKeyOrRespond,
+  respondFileStorageValidationError,
+  sendStoredFileResponse,
+} from '../helpers/fileStorageHttpHelper';
 import type { CreerPublicationUseCase } from '../../../application/babillard/CreerPublicationUseCase';
 import type { ModifierPublicationUseCase } from '../../../application/babillard/ModifierPublicationUseCase';
 import type { SupprimerPublicationUseCase } from '../../../application/babillard/SupprimerPublicationUseCase';
@@ -54,6 +59,7 @@ export class BabillardController {
     private readonly epinglerPublication: EpinglerPublicationUseCase,
     private readonly calculerStats: CalculerStatistiquesLectureUseCase,
     private readonly uploaderPj: UploaderPieceJointeUseCase,
+    private readonly fileStorage: FileStoragePort,
     private readonly notificationService?: NotificationService,
     private readonly smsNotification?: SmsNotificationPort,
   ) {}
@@ -381,12 +387,12 @@ export class BabillardController {
 
       res.status(201).json({ success: true, data: pieceJointe });
     } catch (err) {
-      if (messageErreur(err) === 'INVALID_FILE_SIGNATURE') {
-        res.status(400).json({ success: false, message: 'Format de fichier non autorisé. Formats acceptés : PDF, PNG, JPG, WebP.' });
-        return;
-      }
-      if (messageErreur(err) === 'FILE_TOO_LARGE') {
-        res.status(400).json({ success: false, message: 'Le fichier dépasse la taille maximale autorisée (10 Mo).' });
+      if (
+        respondFileStorageValidationError(res, err, {
+          tooLargeMessage: 'Le fichier dépasse la taille maximale autorisée (10 Mo).',
+          invalidFormatMessage: 'Format de fichier non autorisé. Formats acceptés : PDF, PNG, JPG, WebP.',
+        })
+      ) {
         return;
       }
       if (messageErreur(err) === 'FORBIDDEN_UPLOAD_ATTACHMENT') {
@@ -409,63 +415,54 @@ export class BabillardController {
           res.status(403).json({ success: false, message: 'Accès refusé' });
           return;
         }
-
-        const tempDir = path.resolve(process.cwd(), 'uploads', 'schools', user.schoolId, 'babillard', 'temp');
-        if (!fs.existsSync(tempDir)) {
-          res.status(404).json({ success: false, message: 'Dossier temporaire introuvable' });
-          return;
-        }
-
-        // Sécurisation stricte multi-tenant : confinement dans tempDir de l'école
-        const safePjId = path.basename(pjId);
-        const files = fs.readdirSync(tempDir);
-        const matchingFile = files.find((f) => f.startsWith(safePjId));
-
-        if (!matchingFile) {
+        if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/.test(pjId)) {
           res.status(404).json({ success: false, message: 'Fichier temporaire introuvable' });
           return;
         }
-
-        const fullPath = path.join(tempDir, matchingFile);
-        const ext = path.extname(matchingFile).toLowerCase();
-        let mime = 'application/octet-stream';
-        if (ext === '.png') mime = 'image/png';
-        else if (ext === '.jpg' || ext === '.jpeg') mime = 'image/jpeg';
-        else if (ext === '.webp') mime = 'image/webp';
-        else if (ext === '.pdf') mime = 'application/pdf';
-
-        res.setHeader('Content-Type', mime);
-        res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(matchingFile)}"`);
-        fs.createReadStream(fullPath).pipe(res);
+        const exts = [
+          { ext: '.pdf', mime: 'application/pdf' },
+          { ext: '.png', mime: 'image/png' },
+          { ext: '.jpg', mime: 'image/jpeg' },
+          { ext: '.webp', mime: 'image/webp' },
+        ];
+        for (const c of exts) {
+          const key = buildScopedStorageKey({ schoolId: user.schoolId, domain: 'babillard', extension: c.ext, fileId: pjId });
+          const stored = await this.fileStorage.get(key);
+          if (stored) {
+            sendStoredFileResponse(res, {
+              buffer: stored.buffer,
+              contentType: stored.contentType ?? c.mime,
+              filename: stored.metadata?.originalName ?? `${pjId}${c.ext}`,
+            });
+            return;
+          }
+        }
+        res.status(404).json({ success: false, message: 'Fichier temporaire introuvable' });
         return;
       }
 
       const pub = await this.repo.trouverParId(publicationId, user.schoolId);
-      if (!pub) {
-        res.status(404).json({ success: false, message: 'Publication introuvable' });
-        return;
-      }
-
+      if (!pub) { res.status(404).json({ success: false, message: 'Publication introuvable' }); return; }
       if (!peutVoir(user, pub, { inclureArchives: true })) {
         res.status(403).json({ success: false, message: 'Accès refusé' });
         return;
       }
-
       const pj = pub.piecesJointes.find((p) => p.id === pjId);
-      if (!pj) {
-        res.status(404).json({ success: false, message: 'Pièce jointe introuvable' });
-        return;
-      }
+      if (!pj) { res.status(404).json({ success: false, message: 'Pièce jointe introuvable' }); return; }
 
-      const fullPath = path.resolve(process.cwd(), 'uploads', pj.cleStockage);
-      if (!fs.existsSync(fullPath)) {
+      const validKey = resolveScopedStorageKeyOrRespond(res, pj.cleStockage, user.schoolId);
+      if (!validKey) return;
+
+      const stored = await this.fileStorage.get(validKey);
+      if (!stored) {
         res.status(404).json({ success: false, message: 'Fichier physique introuvable' });
         return;
       }
-
-      res.setHeader('Content-Type', pj.mime);
-      res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(pj.nomOriginal)}"`);
-      fs.createReadStream(fullPath).pipe(res);
+      sendStoredFileResponse(res, {
+        buffer: stored.buffer,
+        contentType: pj.mime || stored.contentType || 'application/octet-stream',
+        filename: pj.nomOriginal,
+      });
     } catch (err) {
       next(err);
     }

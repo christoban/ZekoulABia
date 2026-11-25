@@ -257,7 +257,7 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
   const marquerLueUseCase = new MarquerPublicationLueUseCase(publicationRepository);
   const epinglerPublicationUseCase = new EpinglerPublicationUseCase(publicationRepository);
   const calculerStatsUseCase = new CalculerStatistiquesLectureUseCase(publicationRepository);
-  const uploaderPjUseCase = new UploaderPieceJointeUseCase();
+  const uploaderPjUseCase = new UploaderPieceJointeUseCase(c.fileStorage);
 
   const babillardController = new BabillardController(
     publicationRepository,
@@ -270,6 +270,7 @@ export function registerRegistrationsRoutes(app: Application, p: typeof prisma =
     epinglerPublicationUseCase,
     calculerStatsUseCase,
     uploaderPjUseCase,
+    c.fileStorage,
     c.notification.service,
     c.notification.sms,
   );
