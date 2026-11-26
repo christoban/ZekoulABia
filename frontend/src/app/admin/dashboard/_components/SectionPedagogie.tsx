@@ -13,6 +13,8 @@ import PedagogieAlertesTab from './pedagogie/PedagogieAlertesTab'
 import PedagogieProgressionTab from './pedagogie/PedagogieProgressionTab'
 import PedagogieProgrammesTab from './pedagogie/PedagogieProgrammesTab'
 import InitProgrammesClasseModal from './pedagogie/InitProgrammesClasseModal'
+import InitProgrammesEcoleModal from './pedagogie/InitProgrammesEcoleModal'
+import SyncProgrammesNationauxModal, { type DeriveProgrammeSummary } from './pedagogie/SyncProgrammesNationauxModal'
 import type { Alerte, Classe, OnToast, Programme, ProgressionData, Subject, Tab } from './pedagogie/types'
 
 interface Props {
@@ -53,6 +55,9 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
   const [loadingProg, setLoadingProg] = useState(false)
   const [materialisationEnabled, setMaterialisationEnabled] = useState(false)
   const [initModalOpen, setInitModalOpen] = useState(false)
+  const [initEcoleModalOpen, setInitEcoleModalOpen] = useState(false)
+  const [syncModalOpen, setSyncModalOpen] = useState(false)
+  const [derives, setDerives] = useState<DeriveProgrammeSummary[]>([])
 
   useEffect(() => {
     // 1. Lire d'abord le cache local Dexie
@@ -88,6 +93,14 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
       }
       if (matStatus?.success && matStatus.data?.enabled === true) {
         setMaterialisationEnabled(true)
+        fetchApi('/api/v2/pedagogie/programmes/derives', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => {
+            if (d.success && Array.isArray(d.data?.derives)) {
+              setDerives(d.data.derives as DeriveProgrammeSummary[])
+            }
+          })
+          .catch(() => {})
       }
     }).catch(() => {})
   }, [])
@@ -303,7 +316,10 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
           loading={loading}
           saving={saving}
           materialisationEnabled={materialisationEnabled}
+          derivesCount={derives.length}
           onOpenInitModal={() => setInitModalOpen(true)}
+          onOpenInitEcoleModal={() => setInitEcoleModalOpen(true)}
+          onOpenSyncModal={() => setSyncModalOpen(true)}
           formTitre={formTitre}
           formSubjectId={formSubjectId}
           formClassId={formClassId}
@@ -335,6 +351,33 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
         initialClassId={formClassId || progClassId || undefined}
         onClose={() => setInitModalOpen(false)}
         onApplied={loadProgrammes}
+        onToast={onToast}
+      />
+
+      <InitProgrammesEcoleModal
+        open={initEcoleModalOpen}
+        onClose={() => setInitEcoleModalOpen(false)}
+        onApplied={() => {
+          loadProgrammes()
+          fetchApi('/api/v2/pedagogie/programmes/derives', { credentials: 'include' })
+            .then(r => r.json())
+            .then(d => { if (d.success && Array.isArray(d.data?.derives)) setDerives(d.data.derives as DeriveProgrammeSummary[]) })
+            .catch(() => {})
+        }}
+        onToast={onToast}
+      />
+
+      <SyncProgrammesNationauxModal
+        open={syncModalOpen}
+        derives={derives}
+        onClose={() => setSyncModalOpen(false)}
+        onSynced={() => {
+          loadProgrammes()
+          fetchApi('/api/v2/pedagogie/programmes/derives', { credentials: 'include' })
+            .then(r => r.json())
+            .then(d => { if (d.success && Array.isArray(d.data?.derives)) setDerives(d.data.derives as DeriveProgrammeSummary[]) })
+            .catch(() => {})
+        }}
         onToast={onToast}
       />
     </div>

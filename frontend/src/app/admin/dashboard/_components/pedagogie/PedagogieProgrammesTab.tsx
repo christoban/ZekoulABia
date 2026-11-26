@@ -1,6 +1,6 @@
 'use client'
 
-import { Inbox, Sparkles } from 'lucide-react'
+import { Inbox, Sparkles, Building2, RefreshCw } from 'lucide-react'
 import { inputStyle, labelStyle, type Classe, type Programme, type Subject } from './types'
 
 interface PedagogieProgrammesTabProps {
@@ -10,7 +10,10 @@ interface PedagogieProgrammesTabProps {
   loading: boolean
   saving: boolean
   materialisationEnabled?: boolean
+  derivesCount?: number
   onOpenInitModal?: () => void
+  onOpenInitEcoleModal?: () => void
+  onOpenSyncModal?: () => void
   formTitre: string
   formSubjectId: string
   formClassId: string
@@ -42,7 +45,10 @@ export default function PedagogieProgrammesTab({
   loading,
   saving,
   materialisationEnabled,
+  derivesCount = 0,
   onOpenInitModal,
+  onOpenInitEcoleModal,
+  onOpenSyncModal,
   formTitre,
   formSubjectId,
   formClassId,
@@ -82,17 +88,60 @@ export default function PedagogieProgrammesTab({
               Pré-remplissez automatiquement les programmes et leçons d&apos;une classe depuis le référentiel national.
             </div>
           </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={onOpenInitModal}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '8px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 800,
+                background: 'var(--sidebar)', color: 'white', border: 'none', cursor: 'pointer',
+              }}
+            >
+              <Sparkles size={14} />
+              Initialiser les programmes de cette classe
+            </button>
+            {onOpenInitEcoleModal && (
+              <button
+                type="button"
+                onClick={onOpenInitEcoleModal}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '8px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 800,
+                  background: 'var(--bg2)', color: 'var(--sidebar)',
+                  border: '1px solid var(--sidebar)', cursor: 'pointer',
+                }}
+              >
+                <Building2 size={14} />
+                Initialiser toute l&apos;école
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Bandeau mises à jour nationales disponibles (Lot 2) */}
+      {materialisationEnabled && derivesCount > 0 && onOpenSyncModal && (
+        <div
+          className="p-3 md:p-3.5 mb-4 rounded-xl"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap',
+            background: 'var(--amber-light)', border: '1px solid var(--amber)',
+          }}
+        >
+          <div style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--amber)', display: 'flex', alignItems: 'center', gap: 7 }}>
+            <RefreshCw size={15} />
+            {derivesCount} mise{derivesCount > 1 ? 's' : ''} à jour du référentiel national disponible{derivesCount > 1 ? 's' : ''}
+          </div>
           <button
             type="button"
-            onClick={onOpenInitModal}
+            onClick={onOpenSyncModal}
             style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '8px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 800,
-              background: 'var(--sidebar)', color: 'white', border: 'none', cursor: 'pointer',
+              padding: '6px 12px', borderRadius: 7, fontSize: 12, fontWeight: 800,
+              background: 'var(--amber)', color: 'white', border: 'none', cursor: 'pointer',
             }}
           >
-            <Sparkles size={14} />
-            Initialiser les programmes de cette classe
+            Voir les mises à jour
           </button>
         </div>
       )}
