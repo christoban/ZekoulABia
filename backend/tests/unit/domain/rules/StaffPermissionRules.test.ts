@@ -6,7 +6,7 @@ import {
 } from '../../../../src/domain/rules/StaffPermissionRules.ts';
 import type { StaffPermissionType, TemplateMeta } from '../../../../src/domain/types/enums.ts';
 
-const secretaryPermissions: StaffPermissionType[] = ['MANAGE_ENROLLMENT', 'GENERATE_REPORTS'];
+const secretaryPermissions: StaffPermissionType[] = ['MANAGE_ENROLLMENT', 'GENERATE_REPORTS', 'TRANSFER_REQUEST'];
 
 const templates: Array<{ name: string; meta: TemplateMeta; expectedTitles: string[] }> = [
   {

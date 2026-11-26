@@ -123,7 +123,7 @@ describe('LoginMasterUseCase — forgot password (récupération Master)', () =>
 
     await expect(
       useCase.executeResetForgottenPassword(store.email, 'court', sent[0]),
-    ).rejects.toThrow('au moins 12 caractères');
+    ).rejects.toThrow('Au moins 12 caractères');
   });
 
   it('rejette un email inconnu ou un compte inactif', async () => {
