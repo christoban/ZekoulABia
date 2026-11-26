@@ -18,6 +18,7 @@ function makeEcole(overrides: Partial<ChapitreEcolePourDiff> & Pick<ChapitreEcol
     numeroAffiche: overrides.numeroAffiche ?? `Leçon ${overrides.ordre}`,
     sourceUrl: overrides.sourceUrl ?? null,
     sourceKey: overrides.sourceKey !== undefined ? overrides.sourceKey : `1:${overrides.ordre}`,
+    retireDuReferentielLe: overrides.retireDuReferentielLe ?? null,
     nbSeancesCahier: overrides.nbSeancesCahier ?? 0,
     nbCochesDirectes: overrides.nbCochesDirectes ?? 0,
   };
@@ -111,13 +112,20 @@ describe('officialProgressionDiff — calcul de diff non destructif par sourceKe
     expect(avantSync.aDerive).toBe(true);
     expect(avantSync.retiresDuNational).toHaveLength(1);
 
-    // Après synchro : ch_2 conservé en base, checksum aligné sur sha256:v2 → aDerive = false (idempotent)
+    // Après synchro : ch_2 conservé et marqué retireDuReferentielLe, checksum aligné sur sha256:v2 → aDerive = false (idempotent)
     const apresSync = calculerDiffSynchronisationProgramme({
       programmeTitre: 'Maths 6e',
       programmeChecksum: 'sha256:v2',
       chapitresEcole: [
         makeEcole({ id: 'ch_1', ordre: 1, titre: 'Entiers naturels', sourceKey: '1:1' }),
-        makeEcole({ id: 'ch_2', ordre: 2, titre: 'Leçon retirée en v2', sourceKey: '1:2', nbSeancesCahier: 1 }),
+        makeEcole({
+          id: 'ch_2',
+          ordre: 2,
+          titre: 'Leçon retirée en v2',
+          sourceKey: '1:2',
+          retireDuReferentielLe: new Date('2026-11-26T12:00:00Z'),
+          nbSeancesCahier: 1,
+        }),
       ],
       officialTitre: 'Maths 6e',
       officialChecksum: 'sha256:v2',
@@ -125,6 +133,31 @@ describe('officialProgressionDiff — calcul de diff non destructif par sourceKe
     });
     expect(apresSync.aDerive).toBe(false);
     expect(apresSync.retiresDuNational).toHaveLength(1);
+    expect(apresSync.retiresDuNational[0].dejaMarqueRetire).toBe(true);
+
+    // Si ch_2 réapparaît en v3, elle est détectée comme réintégrée
+    const reintegree = calculerDiffSynchronisationProgramme({
+      programmeTitre: 'Maths 6e',
+      programmeChecksum: 'sha256:v2',
+      chapitresEcole: [
+        makeEcole({ id: 'ch_1', ordre: 1, titre: 'Entiers naturels', sourceKey: '1:1' }),
+        makeEcole({
+          id: 'ch_2',
+          ordre: 2,
+          titre: 'Leçon retirée en v2',
+          sourceKey: '1:2',
+          retireDuReferentielLe: new Date('2026-11-26T12:00:00Z'),
+        }),
+      ],
+      officialTitre: 'Maths 6e',
+      officialChecksum: 'sha256:v3',
+      chapitresOfficiels: [
+        makeOff({ ordre: 1, titre: 'Entiers naturels', sourceKey: '1:1' }),
+        makeOff({ ordre: 2, titre: 'Leçon retirée en v2', sourceKey: '1:2' }),
+      ],
+    });
+    expect(reintegree.aDerive).toBe(true);
+    expect(reintegree.modifies.some((m) => m.chapitreId === 'ch_2' && m.champsModifies.includes('reintegree'))).toBe(true);
   });
 
   it('non-régression AP local : un chapitre ajouté manuellement (sourceKey=null) sur un programme national n est pas classé retiré du national', () => {

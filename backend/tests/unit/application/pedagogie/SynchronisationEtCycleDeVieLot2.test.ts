@@ -72,10 +72,20 @@ class InMemorySyncRepo implements SynchronisationProgrammeRepository {
       });
     }
 
+    let nbMarquesRetires = 0;
+    for (const id of input.retiresAMarquer) {
+      const ch = target.chapitresEcole.find((c) => c.id === id);
+      if (ch && !ch.retireDuReferentielLe) {
+        ch.retireDuReferentielLe = new Date();
+        nbMarquesRetires += 1;
+      }
+    }
+
     return {
       programmeId: input.programmeId,
       nbAjoutes: input.ajoutes.length,
       nbModifies: input.modifies.length,
+      nbMarquesRetires,
       nouveauChecksum: input.nouveauChecksum,
     };
   }

@@ -14,6 +14,7 @@ export interface ProgrammeChapitreProps {
   numeroAffiche?: string | null;
   sourceUrl?: string | null;
   sourceKey?: string | null;
+  retireDuReferentielLe?: Date | null;
   createdAt: Date;
 }
 

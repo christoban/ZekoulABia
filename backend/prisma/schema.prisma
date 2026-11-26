@@ -3797,6 +3797,9 @@ model Chapitre {
   numeroAffiche         String?
   sourceUrl             String?
   sourceKey             String?
+  // Renseigné par la synchronisation quand la leçon a disparu du référentiel national.
+  // La leçon n'est jamais supprimée : elle reste visible (grisée) et est exclue du taux de progression.
+  retireDuReferentielLe DateTime?
   createdAt             DateTime             @default(now())
   programme             Programme            @relation(fields: [programmeId], references: [id], onDelete: Cascade)
   cahierDeTexteEntries  CahierDeTexte[]

@@ -175,6 +175,7 @@ export default function ProgrammeModuleAccordion({
         >
           {lecons.map((lecon) => {
             const isBusy = busyChapitreId === lecon.id
+            const retiree = Boolean(lecon.retireDuReferentiel)
             const fromCahier =
               lecon.sourceRealisation === 'CAHIER' || lecon.sourceRealisation === 'LES_DEUX'
 
@@ -187,8 +188,9 @@ export default function ProgrammeModuleAccordion({
                   gap: 10,
                   padding: '7px 10px',
                   borderRadius: 8,
-                  background: lecon.realise ? 'var(--green-light)' : 'var(--bg)',
-                  border: `1px solid ${lecon.realise ? 'var(--green-light)' : 'var(--border)'}`,
+                  background: retiree ? 'var(--bg2)' : lecon.realise ? 'var(--green-light)' : 'var(--bg)',
+                  border: `1px solid ${retiree ? 'var(--border2)' : lecon.realise ? 'var(--green-light)' : 'var(--border)'}`,
+                  opacity: retiree ? 0.72 : 1,
                 }}
               >
                 <label
@@ -198,20 +200,20 @@ export default function ProgrammeModuleAccordion({
                     gap: 9,
                     flex: 1,
                     minWidth: 0,
-                    cursor: canEdit && !isBusy ? 'pointer' : 'default',
+                    cursor: canEdit && !isBusy && !retiree ? 'pointer' : 'default',
                   }}
                 >
                   <input
                     type="checkbox"
                     checked={lecon.cocheDirecte || lecon.realise}
-                    disabled={!canEdit || isBusy}
+                    disabled={!canEdit || isBusy || retiree}
                     onChange={() => onToggleLecon(lecon.id, !lecon.cocheDirecte)}
                     aria-label={lecon.titre}
                     style={{
                       width: 17,
                       height: 17,
-                      accentColor: 'var(--green)',
-                      cursor: canEdit && !isBusy ? 'pointer' : 'not-allowed',
+                      accentColor: retiree ? 'var(--text3)' : 'var(--green)',
+                      cursor: canEdit && !isBusy && !retiree ? 'pointer' : 'not-allowed',
                       flexShrink: 0,
                     }}
                   />
@@ -219,8 +221,8 @@ export default function ProgrammeModuleAccordion({
                     style={{
                       fontSize: 12.5,
                       fontWeight: 600,
-                      color: lecon.realise ? 'var(--green)' : 'var(--text)',
-                      textDecoration: lecon.realise ? 'none' : 'none',
+                      color: retiree ? 'var(--text3)' : lecon.realise ? 'var(--green)' : 'var(--text)',
+                      textDecoration: 'none',
                       wordBreak: 'break-word',
                     }}
                   >
@@ -232,6 +234,20 @@ export default function ProgrammeModuleAccordion({
                 </label>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, flexWrap: 'wrap' }}>
+                  {retiree && (
+                    <span
+                      style={{
+                        fontSize: 10.5,
+                        fontWeight: 700,
+                        padding: '2px 7px',
+                        borderRadius: 999,
+                        background: 'var(--border)',
+                        color: 'var(--text2)',
+                      }}
+                    >
+                      {t('cahier_de_texte.prog_lesson_withdrawn')}
+                    </span>
+                  )}
                   {fromCahier && (
                     <span
                       style={{
@@ -255,7 +271,7 @@ export default function ProgrammeModuleAccordion({
                       {lecon.volumeHeuresPrevu}h
                     </span>
                   )}
-                  {onLogLesson && module.actif && (
+                  {onLogLesson && module.actif && !retiree && (
                     <button
                       type="button"
                       onClick={() => onLogLesson(lecon.id)}

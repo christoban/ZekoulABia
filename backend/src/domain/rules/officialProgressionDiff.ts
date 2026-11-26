@@ -23,6 +23,7 @@ export interface ChapitreEcolePourDiff {
   numeroAffiche: string | null;
   sourceUrl: string | null;
   sourceKey: string | null;
+  retireDuReferentielLe?: Date | null;
   nbSeancesCahier: number;
   nbCochesDirectes: number;
 }
@@ -69,6 +70,8 @@ export interface DiffChapitreRetireDuNational {
   titre: string;
   moduleTitre: string | null;
   utilisee: boolean;
+  /** true si la leçon est déjà marquée « retirée du référentiel » (Chapitre.retireDuReferentielLe). */
+  dejaMarqueRetire: boolean;
   nbSeancesCahier: number;
   nbCochesDirectes: number;
 }
@@ -174,6 +177,10 @@ export function calculerDiffSynchronisationProgramme(params: {
     }
     if ((match.sourceUrl ?? null) !== (off.sourceUrl ?? null)) champsModifies.push('sourceUrl');
     if ((match.sourceKey ?? null) !== keyOff) champsModifies.push('sourceKey');
+    // Leçon précédemment retirée qui réapparaît dans le référentiel : elle est réintégrée
+    if (match.retireDuReferentielLe !== null && match.retireDuReferentielLe !== undefined) {
+      champsModifies.push('reintegree');
+    }
 
     if (champsModifies.length === 0) {
       inchangesCount += 1;
@@ -214,6 +221,7 @@ export function calculerDiffSynchronisationProgramme(params: {
       titre: ch.titre,
       moduleTitre: ch.moduleTitre,
       utilisee: ch.nbSeancesCahier > 0 || ch.nbCochesDirectes > 0,
+      dejaMarqueRetire: ch.retireDuReferentielLe !== null && ch.retireDuReferentielLe !== undefined,
       nbSeancesCahier: ch.nbSeancesCahier,
       nbCochesDirectes: ch.nbCochesDirectes,
     });
@@ -222,13 +230,14 @@ export function calculerDiffSynchronisationProgramme(params: {
   const titreModifie = params.programmeTitre !== params.officialTitre;
   const checksumDifferent =
     (params.programmeChecksum ?? null) !== (params.officialChecksum ?? null);
-  // Les leçons retirées du national sont conservées (non destructif) : une fois le programme aligné
-  // sur le checksum national (aucun ajout, modification ni changement de titre), il n'y a plus de dérive.
+  // Les leçons retirées du national sont conservées (non destructif) et marquées lors de la
+  // synchronisation : seule une leçon retirée pas encore marquée constitue encore une dérive.
   const aDerive =
     checksumDifferent ||
     titreModifie ||
     ajoutes.length > 0 ||
-    modifies.length > 0;
+    modifies.length > 0 ||
+    retiresDuNational.some((r) => !r.dejaMarqueRetire);
 
   return {
     aDerive,

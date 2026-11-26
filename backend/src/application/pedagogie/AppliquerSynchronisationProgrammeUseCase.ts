@@ -19,6 +19,8 @@ export interface AppliquerSynchronisationProgrammeResultat {
   nbAjoutes: number;
   nbModifies: number;
   nbConservesRetiresDuNational: number;
+  /** Leçons nouvellement marquées « retirées du référentiel » lors de cette synchronisation. */
+  nbMarquesRetires: number;
   nouveauChecksum: string | null;
 }
 
@@ -58,6 +60,7 @@ export class AppliquerSynchronisationProgrammeUseCase {
         nbAjoutes: 0,
         nbModifies: 0,
         nbConservesRetiresDuNational: 0,
+        nbMarquesRetires: 0,
         nouveauChecksum: prog.sourceChecksum,
       };
     }
@@ -70,6 +73,9 @@ export class AppliquerSynchronisationProgrammeUseCase {
       nouveauChecksum: diff.checksumNational,
       ajoutes: diff.ajoutes,
       modifies: diff.modifies,
+      retiresAMarquer: diff.retiresDuNational
+        .filter((r) => !r.dejaMarqueRetire)
+        .map((r) => r.chapitreId),
     });
 
     return {
@@ -78,6 +84,7 @@ export class AppliquerSynchronisationProgrammeUseCase {
       nbAjoutes: applied.nbAjoutes,
       nbModifies: applied.nbModifies,
       nbConservesRetiresDuNational: diff.retiresDuNational.length,
+      nbMarquesRetires: applied.nbMarquesRetires,
       nouveauChecksum: applied.nouveauChecksum,
     };
   }

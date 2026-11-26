@@ -26,6 +26,7 @@ interface RapportLigne {
   departmentName: string
   leconsTotal: number
   leconsRealisees: number
+  leconsRetireesCount?: number
   modulesDesactivesCount: number
   progressionPct: number | null
   attenduPct: number | null
@@ -40,6 +41,7 @@ interface RapportData {
     programmesNationaux: number
     leconsActivesTotal: number
     leconsRealiseesTotal: number
+    totalLeconsRetirees?: number
     progressionMoyennePct: number | null
     totalModulesDesactives: number
     programmesEnRetard: number
@@ -321,6 +323,11 @@ export default function PedagogieRapportAvancementTab({ onToast }: Props) {
                       {l.modulesDesactivesCount > 0 && (
                         <span style={{ marginLeft: 6, fontSize: 10.5, fontWeight: 800, padding: '1px 7px', borderRadius: 999, background: 'var(--amber-light)', color: 'var(--amber)' }}>
                           {l.modulesDesactivesCount} mod. désactivé{l.modulesDesactivesCount > 1 ? 's' : ''}
+                        </span>
+                      )}
+                      {(l.leconsRetireesCount ?? 0) > 0 && (
+                        <span style={{ marginLeft: 6, fontSize: 10.5, fontWeight: 700, padding: '1px 7px', borderRadius: 999, background: 'var(--bg2)', color: 'var(--text3)' }}>
+                          {l.leconsRetireesCount} retirée{(l.leconsRetireesCount ?? 0) > 1 ? 's' : ''} du réf.
                         </span>
                       )}
                     </div>

@@ -49,13 +49,14 @@ function recalculerVueLocale(vue: ProgrammeProgressionView): ProgrammeProgressio
     return { ...ch, moduleActif, realise, sourceRealisation }
   })
 
-  const actifs = chapitres.filter((c) => c.moduleActif)
+  const actifs = chapitres.filter((c) => c.moduleActif && !c.retireDuReferentiel)
+  const leconsRetireesCount = chapitres.filter((c) => c.retireDuReferentiel).length
   const leconsTotal = actifs.length
   const leconsRealisees = actifs.filter((c) => c.realise).length
   const progressionPct = leconsTotal > 0 ? Math.round((leconsRealisees / leconsTotal) * 100) : null
 
   const modules = vue.modules.map((m) => {
-    const list = chapitres.filter((c) => c.moduleOrdre === m.moduleOrdre)
+    const list = chapitres.filter((c) => c.moduleOrdre === m.moduleOrdre && !c.retireDuReferentiel)
     const done = list.filter((c) => c.realise).length
     return {
       ...m,
@@ -74,6 +75,7 @@ function recalculerVueLocale(vue: ProgrammeProgressionView): ProgrammeProgressio
     leconsTotal,
     leconsRealisees,
     modulesDesactivesCount: modules.filter((m) => !m.actif).length,
+    leconsRetireesCount,
     progressionPct,
   }
 }
@@ -389,6 +391,11 @@ export default function CahierProgrammeTab({
                     {t('cahier_de_texte.prog_disabled_modules').replace('{count}', String(progression.modulesDesactivesCount))}
                   </span>
                 )}
+                {(progression.leconsRetireesCount ?? 0) > 0 && (
+                  <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 9px', borderRadius: 999, background: 'var(--bg2)', color: 'var(--text3)' }}>
+                    {t('cahier_de_texte.prog_withdrawn_lessons').replace('{count}', String(progression.leconsRetireesCount))}
+                  </span>
+                )}
                 <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--green)' }}>
                   {progression.leconsRealisees}/{progression.leconsTotal} ({pct}%)
                 </span>
@@ -439,21 +446,27 @@ export default function CahierProgrammeTab({
             <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
               {chapitresSansModule.map((ch) => {
                 const isBusy = busyChapitreId === ch.id
+                const retiree = Boolean(ch.retireDuReferentiel)
                 const fromCahier = ch.sourceRealisation === 'CAHIER' || ch.sourceRealisation === 'LES_DEUX'
                 return (
-                  <div key={ch.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 8, background: ch.realise ? 'var(--green-light)' : 'var(--bg)' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 9, flex: 1, cursor: featureEnabled ? 'pointer' : 'default' }}>
+                  <div key={ch.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 8, background: retiree ? 'var(--bg2)' : ch.realise ? 'var(--green-light)' : 'var(--bg)', opacity: retiree ? 0.72 : 1 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 9, flex: 1, cursor: featureEnabled && !retiree ? 'pointer' : 'default' }}>
                       <input
                         type="checkbox"
                         checked={ch.cocheDirecte || ch.realise}
-                        disabled={!featureEnabled || isBusy}
+                        disabled={!featureEnabled || isBusy || retiree}
                         onChange={() => handleToggleLecon(ch.id, !ch.cocheDirecte)}
-                        style={{ width: 17, height: 17, accentColor: 'var(--green)' }}
+                        style={{ width: 17, height: 17, accentColor: retiree ? 'var(--text3)' : 'var(--green)' }}
                       />
-                      <span style={{ fontSize: 12.5, fontWeight: 600, color: ch.realise ? 'var(--green)' : 'var(--text)' }}>
+                      <span style={{ fontSize: 12.5, fontWeight: 600, color: retiree ? 'var(--text3)' : ch.realise ? 'var(--green)' : 'var(--text)' }}>
                         Ch.{ch.ordre} — {ch.titre}
                       </span>
                     </label>
+                    {retiree && (
+                      <span style={{ fontSize: 10.5, fontWeight: 700, padding: '2px 7px', borderRadius: 999, background: 'var(--border)', color: 'var(--text2)' }}>
+                        {t('cahier_de_texte.prog_lesson_withdrawn')}
+                      </span>
+                    )}
                     {fromCahier && (
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10.5, fontWeight: 700, padding: '2px 7px', borderRadius: 999, background: 'var(--blue-light)', color: 'var(--blue)' }}>
                         <BookOpenCheck size={11} /> {t('cahier_de_texte.prog_validated_via_cahier')}

@@ -106,7 +106,8 @@ export class PrismaSynchronisationProgrammeRepository
         },
       });
 
-      // Mise à jour en place par Chapitre.id — préserve strictement ChapitreAvancement et CahierDeTexte
+      // Mise à jour en place par Chapitre.id — préserve strictement ChapitreAvancement et CahierDeTexte.
+      // Une leçon appariée au référentiel courant n'est (plus) retirée : retireDuReferentielLe = null.
       for (const mod of input.modifies) {
         await tx.chapitre.update({
           where: { id: mod.chapitreId },
@@ -119,8 +120,23 @@ export class PrismaSynchronisationProgrammeRepository
             numeroAffiche: mod.apres.numeroAffiche,
             sourceUrl: mod.apres.sourceUrl,
             sourceKey: mod.apres.sourceKey,
+            retireDuReferentielLe: null,
           },
         });
+      }
+
+      // Leçons absentes du référentiel : marquées, jamais supprimées (coches et cahier conservés)
+      let nbMarquesRetires = 0;
+      if (input.retiresAMarquer.length > 0) {
+        const marques = await tx.chapitre.updateMany({
+          where: {
+            id: { in: input.retiresAMarquer },
+            programmeId: input.programmeId,
+            retireDuReferentielLe: null,
+          },
+          data: { retireDuReferentielLe: new Date() },
+        });
+        nbMarquesRetires = marques.count;
       }
 
       if (input.ajoutes.length > 0) {
@@ -146,6 +162,7 @@ export class PrismaSynchronisationProgrammeRepository
         programmeId: input.programmeId,
         nbAjoutes: input.ajoutes.length,
         nbModifies: input.modifies.length,
+        nbMarquesRetires,
         nouveauChecksum: input.nouveauChecksum,
       };
     });
@@ -184,6 +201,7 @@ export class PrismaSynchronisationProgrammeRepository
       numeroAffiche: string | null;
       sourceUrl: string | null;
       sourceKey: string | null;
+      retireDuReferentielLe: Date | null;
       _count: { cahierDeTexteEntries: number; avancements: number };
     }>;
   }): ProgrammeNationalPourSync {
@@ -217,6 +235,7 @@ export class PrismaSynchronisationProgrammeRepository
         numeroAffiche: c.numeroAffiche,
         sourceUrl: c.sourceUrl,
         sourceKey: c.sourceKey,
+        retireDuReferentielLe: c.retireDuReferentielLe,
         nbSeancesCahier: c._count.cahierDeTexteEntries,
         nbCochesDirectes: c._count.avancements,
       })),

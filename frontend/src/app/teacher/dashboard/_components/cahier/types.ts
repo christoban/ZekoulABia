@@ -46,6 +46,8 @@ export interface PendingCahierPayload {
 
 export interface ProgressionChapitreItem extends Chapitre {
   moduleActif: boolean
+  retireDuReferentiel?: boolean
+  retireDuReferentielLe?: string | null
   realise: boolean
   cocheDirecte: boolean
   nbSeancesCahier: number
@@ -74,6 +76,7 @@ export interface ProgrammeProgressionView {
   leconsTotal: number
   leconsRealisees: number
   modulesDesactivesCount: number
+  leconsRetireesCount?: number
   totalHeuresPrevu: number | null
   heuresRealisees: number | null
   hasHeuresPrevu: boolean

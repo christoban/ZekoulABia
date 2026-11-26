@@ -38,12 +38,15 @@ export interface AppliquerSyncAtomiqueInput {
   nouveauChecksum: string | null;
   ajoutes: DiffChapitreAjoute[];
   modifies: DiffChapitreModifie[];
+  /** Chapitre.id des leçons absentes du référentiel à marquer « retirées » (jamais supprimées). */
+  retiresAMarquer: string[];
 }
 
 export interface AppliquerSyncAtomiqueResultat {
   programmeId: string;
   nbAjoutes: number;
   nbModifies: number;
+  nbMarquesRetires: number;
   nouveauChecksum: string | null;
 }
 

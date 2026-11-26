@@ -223,6 +223,8 @@
     "prog_empty_title": "Aucun programme défini pour cette classe et cette matière",
     "prog_empty_hint": "Demandez à l'administration d'initialiser le programme officiel ou de créer un programme.",
     "prog_disabled_modules": "{count} module(s) désactivé(s)",
+    "prog_withdrawn_lessons": "{count} leçon(s) retirée(s) du référentiel",
+    "prog_lesson_withdrawn": "Retirée du référentiel",
     "prog_readonly_flag_off": "Consultation seule : la coche directe des leçons n'est pas encore activée sur cet établissement.",
     "prog_module_inactive": "Désactivé",
     "prog_module_deactivate": "Désactiver",

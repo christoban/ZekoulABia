@@ -16,6 +16,7 @@ import type { ChapitreAvancementRepository } from '@domain/ports/repositories/Ch
 import type { DepartmentRepository } from '@domain/ports/repositories/DepartmentRepository';
 import { PedagogieForbiddenError } from './errors';
 import { resoudreScopePedagogie } from './PedagogieAccessGuard';
+import { estLeconRetireeDuReferentiel } from '@domain/rules/programmeLeconsComptabilisees';
 
 export interface GenererRapportAvancementInput {
   schoolId: string;
@@ -53,6 +54,7 @@ export interface RapportAvancementLigne {
   departmentName: string;
   leconsTotal: number;
   leconsRealisees: number;
+  leconsRetireesCount: number;
   modulesActifsCount: number;
   modulesDesactivesCount: number;
   progressionPct: number | null;
@@ -83,6 +85,7 @@ export interface RapportAvancementProgrammesResultat {
     programmesManuels: number;
     leconsActivesTotal: number;
     leconsRealiseesTotal: number;
+    totalLeconsRetirees: number;
     progressionMoyennePct: number | null;
     totalModulesDesactives: number;
     programmesEnRetard: number;
@@ -119,6 +122,7 @@ export function formaterRapportAvancementCsv(
     'Source',
     'Leçons réalisées',
     'Leçons actives',
+    'Leçons retirées du référentiel',
     'Progression (%)',
     'Attendu (%)',
     'Retard (%)',
@@ -138,6 +142,7 @@ export function formaterRapportAvancementCsv(
       l.source,
       l.leconsRealisees,
       l.leconsTotal,
+      l.leconsRetireesCount,
       l.progressionPct ?? '',
       l.attenduPct ?? '',
       l.retardPct ?? '',
@@ -274,15 +279,29 @@ export class GenererRapportAvancementProgrammesUseCase {
           realisesSet.add(av.chapitreId);
         }
 
-        // Groupement par module
+        // Groupement par module (les leçons retirées du référentiel sont exclues du dénominateur)
         const modStats = new Map<number, { titre: string; total: number; realisees: number }>();
         let leconsTotal = 0;
         let leconsRealisees = 0;
+        let leconsRetireesCount = 0;
 
         for (const ch of chapitres) {
           const modOrdre = ch.moduleOrdre ?? null;
           const actif = modOrdre === null ? true : (progModulesEtat.get(modOrdre) ?? true);
+          const retiree = estLeconRetireeDuReferentiel(ch);
           const fait = realisesSet.has(ch.id);
+
+          if (retiree) {
+            leconsRetireesCount += 1;
+            if (modOrdre !== null && !modStats.has(modOrdre)) {
+              modStats.set(modOrdre, {
+                titre: ch.moduleTitre ?? `Module ${modOrdre}`,
+                total: 0,
+                realisees: 0,
+              });
+            }
+            continue;
+          }
 
           if (modOrdre !== null) {
             const st = modStats.get(modOrdre) ?? {
@@ -342,6 +361,7 @@ export class GenererRapportAvancementProgrammesUseCase {
           departmentName: dept?.name ?? 'Hors département',
           leconsTotal,
           leconsRealisees,
+          leconsRetireesCount,
           modulesActifsCount,
           modulesDesactivesCount,
           progressionPct,
@@ -376,6 +396,7 @@ export class GenererRapportAvancementProgrammesUseCase {
         programmesManuels: lignes.filter((l) => l.source !== 'national').length,
         leconsActivesTotal,
         leconsRealiseesTotal,
+        totalLeconsRetirees: lignes.reduce((s, l) => s + l.leconsRetireesCount, 0),
         progressionMoyennePct,
         totalModulesDesactives: lignes.reduce((s, l) => s + l.modulesDesactivesCount, 0),
         programmesEnRetard: lignes.filter((l) => l.statut !== 'A_JOUR').length,
@@ -431,6 +452,7 @@ export class GenererRapportAvancementProgrammesUseCase {
         programmesManuels: 0,
         leconsActivesTotal: 0,
         leconsRealiseesTotal: 0,
+        totalLeconsRetirees: 0,
         progressionMoyennePct: null,
         totalModulesDesactives: 0,
         programmesEnRetard: 0,

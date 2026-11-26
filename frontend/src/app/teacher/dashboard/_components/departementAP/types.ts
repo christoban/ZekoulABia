@@ -48,6 +48,7 @@ export interface Chapitre {
   moduleOrdre?: number | null
   moduleTitre?: string | null
   numeroAffiche?: string | null
+  retireDuReferentielLe?: string | null
   realise?: boolean
 }
 

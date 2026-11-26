@@ -528,6 +528,16 @@ describe('Intégration PostgreSQL locale (zekoulabia_test) — Matérialisation,
     expect(preview.diff.retiresDuNational.map((r) => r.chapitreId)).toEqual([ch2IdAvant]);
     expect(preview.diff.retiresDuNational[0].utilisee).toBe(true);
 
+    // Remet aussi une coche directe sur ch2IdAvant afin de prouver qu'elle reste consultable après retrait du référentiel
+    await basculerAvancement.execute({
+      schoolId,
+      userId: teacherId,
+      role: 'TEACHER',
+      chapitreId: ch2IdAvant,
+      classId: class6eId,
+      fait: true,
+    });
+
     // Preuve d'atomicité / rollback PostgreSQL : si une écriture échoue dans la transaction, RIEN ne persiste
     await expect(
       syncRepo.appliquerSynchronisationAtomique({
@@ -543,6 +553,7 @@ describe('Intégration PostgreSQL locale (zekoulabia_test) — Matérialisation,
             chapitreId: 'chapitre_inexistant_pour_forcer_rollback',
           },
         ],
+        retiresAMarquer: [ch2IdAvant],
       }),
     ).rejects.toThrow();
 
@@ -553,32 +564,56 @@ describe('Intégration PostgreSQL locale (zekoulabia_test) — Matérialisation,
     expect(apresRollback.titre).toBe('Programme Officiel Mathématiques 6e');
     expect(apresRollback.sourceChecksum).toBe('chk_maths_v1');
     expect(apresRollback.chapitres).toHaveLength(3);
+    expect(apresRollback.chapitres.find((c) => c.id === ch2IdAvant)?.retireDuReferentielLe).toBeNull();
 
     // Synchronisation réelle réussie
     const synced1 = await appliquerSync.execute({ schoolId, programmeId: mathsProgAvant.id });
     expect(synced1.dejaAJour).toBe(false);
     expect(synced1.nbAjoutes).toBe(1);
     expect(synced1.nbConservesRetiresDuNational).toBe(1);
+    expect(synced1.nbMarquesRetires).toBe(1);
 
     const apresSync = (await prismaTest.programme.findUnique({
       where: { id: mathsProgAvant.id },
       include: { chapitres: true },
     }))!;
     expect(apresSync.sourceChecksum).toBe('chk_maths_v2');
-    expect(apresSync.chapitres).toHaveLength(4); // 3 conservés + 1 ajouté (ch2 jamais supprimé !)
+    expect(apresSync.chapitres).toHaveLength(4); // 3 actifs + 1 retiré conservé (ch2 jamais supprimé !)
     expect(apresSync.chapitres.find((c) => c.id === ch1IdAvant)?.titre).toBe('Nombres entiers naturels (v2)');
+    expect(apresSync.chapitres.find((c) => c.id === ch2IdAvant)?.retireDuReferentielLe).not.toBeNull();
 
-    // La coche directe sur ch1IdAvant et le cahier sur ch2IdAvant sont toujours là en base !
+    // La coche directe sur ch1IdAvant, la coche directe sur ch2IdAvant et le cahier sur ch2IdAvant sont toujours là en base !
     const avCh1 = await prismaTest.chapitreAvancement.findUnique({
       where: { classId_chapitreId: { classId: class6eId, chapitreId: ch1IdAvant } },
     });
     expect(avCh1).not.toBeNull();
+    const avCh2 = await prismaTest.chapitreAvancement.findUnique({
+      where: { classId_chapitreId: { classId: class6eId, chapitreId: ch2IdAvant } },
+    });
+    expect(avCh2).not.toBeNull();
     const cahCh2 = await prismaTest.cahierDeTexte.count({ where: { chapitreId: ch2IdAvant } });
     expect(cahCh2).toBe(1);
+
+    // Progression Maths 6e : ch2 est visible, marquée retirée avec sa coche consultable, et EXCLUE du dénominateur (1/3 = 33%)
+    const progMaths = await calculerProgression.calculerProgression({
+      schoolId,
+      classId: class6eId,
+      subjectId: subMathsId,
+    });
+    expect(progMaths.leconsTotal).toBe(3);
+    expect(progMaths.leconsRealisees).toBe(1);
+    expect(progMaths.leconsRetireesCount).toBe(1);
+    expect(progMaths.progressionPct).toBe(33);
+    const ch2Detail = progMaths.chapitres.find((c) => c.id === ch2IdAvant)!;
+    expect(ch2Detail.retireDuReferentiel).toBe(true);
+    expect(ch2Detail.cocheDirecte).toBe(true);
+    expect(ch2Detail.nbSeancesCahier).toBe(1);
+    expect(ch2Detail.realise).toBe(true);
 
     // Idempotence : 2e synchro → dejaAJour = true et plus aucune dérive signalée
     const synced2 = await appliquerSync.execute({ schoolId, programmeId: mathsProgAvant.id });
     expect(synced2.dejaAJour).toBe(true);
+    expect(synced2.nbMarquesRetires).toBe(0);
     const derivesApres = await listerDerives.execute({ schoolId });
     expect(derivesApres.totalAvecDerive).toBe(0);
   });
@@ -603,9 +638,10 @@ describe('Intégration PostgreSQL locale (zekoulabia_test) — Matérialisation,
     });
     expect(rapportAdmin.resumeGlobal.totalProgrammes).toBe(7); // 5 en 6e + 2 en 4e
     expect(rapportAdmin.resumeGlobal.totalModulesDesactives).toBe(2);
+    expect(rapportAdmin.resumeGlobal.totalLeconsRetirees).toBe(1);
     expect(rapportAdmin.parNiveau.map((n) => n.libelle).sort()).toEqual(['4e', '6e']);
 
-    // Rapport AP Maths : voit UNIQUEMENT Mathématiques (0 Français, 0 Allemand, 0 Travail Manuel)
+    // Rapport AP Maths : voit UNIQUEMENT Mathématiques (3 leçons actives, 1 réalisée, 1 retirée exclue du dénominateur)
     const rapportAp = await genererRapport.execute({
       schoolId,
       userId: apMathsId,
@@ -614,9 +650,13 @@ describe('Intégration PostgreSQL locale (zekoulabia_test) — Matérialisation,
     });
     expect(rapportAp.lignes).toHaveLength(1);
     expect(rapportAp.lignes[0].subjectId).toBe(subMathsId);
+    expect(rapportAp.lignes[0].leconsTotal).toBe(3);
+    expect(rapportAp.lignes[0].leconsRealisees).toBe(1);
+    expect(rapportAp.lignes[0].leconsRetireesCount).toBe(1);
 
     const csv = formaterRapportAvancementCsv(rapportAdmin);
     expect(csv.startsWith('\uFEFF')).toBe(true);
+    expect(csv).toContain('Leçons retirées du référentiel');
     expect(csv).toContain('Mathématiques');
     expect(csv).toContain('Travail Manuel');
     expect(csv).toContain(';2;'); // 2 modules désactivés sur Travail Manuel

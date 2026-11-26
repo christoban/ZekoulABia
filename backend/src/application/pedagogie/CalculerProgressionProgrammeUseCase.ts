@@ -11,6 +11,10 @@ import type { DepartmentRepository } from '@domain/ports/repositories/Department
 import type { SourceRealisationLecon } from './BasculerAvancementChapitreUseCase';
 import { PedagogieForbiddenError } from './errors';
 import { resoudreScopePedagogie, type PedagogieActor } from './PedagogieAccessGuard';
+import {
+  estLeconComptabilisee,
+  estLeconRetireeDuReferentiel,
+} from '@domain/rules/programmeLeconsComptabilisees';
 
 export interface ProgressionChapitreDetail {
   id: string;
@@ -24,6 +28,9 @@ export interface ProgressionChapitreDetail {
   numeroAffiche: string | null;
   sourceUrl: string | null;
   moduleActif: boolean;
+  /** Leçon retirée du référentiel national : visible, exclue du taux, jamais supprimée. */
+  retireDuReferentiel: boolean;
+  retireDuReferentielLe: Date | null;
   realise: boolean;
   cocheDirecte: boolean;
   nbSeancesCahier: number;
@@ -55,6 +62,7 @@ export interface ProgressionAvecProgramme {
   leconsTotal: number;
   leconsRealisees: number;
   modulesDesactivesCount: number;
+  leconsRetireesCount: number;
   totalHeuresPrevu: number | null;
   heuresRealisees: number | null;
   hasHeuresPrevu: boolean;
@@ -181,6 +189,8 @@ export class CalculerProgressionProgrammeUseCase {
         numeroAffiche: c.numeroAffiche ?? null,
         sourceUrl: c.sourceUrl ?? null,
         moduleActif,
+        retireDuReferentiel: estLeconRetireeDuReferentiel(c),
+        retireDuReferentielLe: c.retireDuReferentielLe ?? null,
         realise,
         cocheDirecte,
         nbSeancesCahier,
@@ -189,7 +199,9 @@ export class CalculerProgressionProgrammeUseCase {
       };
     });
 
-    const chapitresActifs = chapitresDetails.filter((c) => c.moduleActif);
+    // Dénominateur : modules actifs, hors leçons retirées du référentiel national
+    const chapitresActifs = chapitresDetails.filter((c) => c.moduleActif && !c.retireDuReferentiel);
+    const leconsRetireesCount = chapitresDetails.filter((c) => c.retireDuReferentiel).length;
     const chapitresTotal = chapitresActifs.length;
     const chapitresRealises = chapitresActifs.filter((c) => c.realise).length;
 
@@ -215,8 +227,10 @@ export class CalculerProgressionProgrammeUseCase {
         total: 0,
         realisees: 0,
       };
-      current.total += 1;
-      if (ch.realise) current.realisees += 1;
+      if (!ch.retireDuReferentiel) {
+        current.total += 1;
+        if (ch.realise) current.realisees += 1;
+      }
       modulesMap.set(ch.moduleOrdre, current);
     }
 
@@ -255,6 +269,7 @@ export class CalculerProgressionProgrammeUseCase {
       leconsTotal: chapitresTotal,
       leconsRealisees: chapitresRealises,
       modulesDesactivesCount,
+      leconsRetireesCount,
       totalHeuresPrevu,
       heuresRealisees,
       hasHeuresPrevu,
@@ -319,9 +334,7 @@ export class CalculerProgressionProgrammeUseCase {
     for (const prog of programmes) {
       const tousChapitres = prog.chapitres ?? [];
       const modulesDesactives = etatsParProgramme.get(prog.id) ?? new Set<number>();
-      const chapitres = tousChapitres.filter(
-        (c) => c.moduleOrdre === null || c.moduleOrdre === undefined || !modulesDesactives.has(c.moduleOrdre),
-      );
+      const chapitres = tousChapitres.filter((c) => estLeconComptabilisee(c, modulesDesactives));
       const chapitresTotal = chapitres.length;
       if (chapitresTotal === 0) continue;
 
@@ -420,14 +433,15 @@ export class CalculerProgressionProgrammeUseCase {
     }
 
     if (!this.avancementRepository) {
-      return { hasProgramme: true, chapitres: allChapitres };
+      return {
+        hasProgramme: true,
+        chapitres: allChapitres.filter((c) => !estLeconRetireeDuReferentiel(c)),
+      };
     }
 
     const moduleEtats = await this.avancementRepository.findModuleEtatsByProgramme(schoolId, programme.id);
     const modulesDesactives = new Set(moduleEtats.filter((m) => !m.actif).map((m) => m.moduleOrdre));
-    const chapitresActifs = allChapitres.filter(
-      (c) => c.moduleOrdre === null || c.moduleOrdre === undefined || !modulesDesactives.has(c.moduleOrdre),
-    );
+    const chapitresActifs = allChapitres.filter((c) => estLeconComptabilisee(c, modulesDesactives));
     return { hasProgramme: true, chapitres: chapitresActifs };
   }
 
@@ -439,6 +453,7 @@ export class CalculerProgressionProgrammeUseCase {
       leconsTotal: 0,
       leconsRealisees: 0,
       modulesDesactivesCount: 0,
+      leconsRetireesCount: 0,
       totalHeuresPrevu: null,
       heuresRealisees: null,
       hasHeuresPrevu: false,

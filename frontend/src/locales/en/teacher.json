@@ -223,6 +223,8 @@
     "prog_empty_title": "No curriculum defined for this class and subject",
     "prog_empty_hint": "Ask the administration to initialize the official curriculum or create one.",
     "prog_disabled_modules": "{count} disabled module(s)",
+    "prog_withdrawn_lessons": "{count} lesson(s) removed from curriculum",
+    "prog_lesson_withdrawn": "Removed from curriculum",
     "prog_readonly_flag_off": "Read-only mode: direct lesson check-off is not enabled yet for this school.",
     "prog_module_inactive": "Disabled",
     "prog_module_deactivate": "Disable",

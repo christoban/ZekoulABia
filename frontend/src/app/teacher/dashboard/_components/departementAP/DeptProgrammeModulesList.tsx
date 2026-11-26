@@ -189,8 +189,9 @@ export default function DeptProgrammeModulesList({
               <div style={{ borderTop: '1px solid var(--border)', padding: '6px 10px 8px', display: 'flex', flexDirection: 'column', gap: 5 }}>
                 {grp.items.map((chap) => {
                   const isEditingThis = editingChap?.id === chap.id
+                  const retiree = Boolean(chap.retireDuReferentielLe)
                   return (
-                    <div key={chap.id} style={{ padding: '6px 8px', borderRadius: 7, background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, fontSize: 12 }}>
+                    <div key={chap.id} style={{ padding: '6px 8px', borderRadius: 7, background: retiree ? 'var(--bg2)' : 'var(--bg)', opacity: retiree ? 0.72 : 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, fontSize: 12 }}>
                       {isEditingThis ? (
                         <div className="flex-1 grid grid-cols-1 sm:grid-cols-4 gap-2">
                           <input
@@ -222,11 +223,16 @@ export default function DeptProgrammeModulesList({
                         </div>
                       ) : (
                         <>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0, flex: 1 }}>
-                            <span style={{ fontWeight: 600, color: 'var(--text)', wordBreak: 'break-word' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0, flex: 1, flexWrap: 'wrap' }}>
+                            <span style={{ fontWeight: 600, color: retiree ? 'var(--text3)' : 'var(--text)', wordBreak: 'break-word' }}>
                               {chap.numeroAffiche ? <strong style={{ marginRight: 5 }}>{chap.numeroAffiche}</strong> : null}
                               {chap.titre}
                             </span>
+                            {retiree && (
+                              <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 999, background: 'var(--border)', color: 'var(--text2)' }}>
+                                Retirée du référentiel
+                              </span>
+                            )}
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                             {chap.volumeHeuresPrevu !== null && chap.volumeHeuresPrevu !== undefined && (
