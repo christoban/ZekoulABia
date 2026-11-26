@@ -206,6 +206,8 @@ export function calculerDiffSynchronisationProgramme(params: {
   const retiresDuNational: DiffChapitreRetireDuNational[] = [];
   for (const ch of params.chapitresEcole) {
     if (appariements.has(ch.id)) continue;
+    // Une leçon ajoutée manuellement localement (sans sourceKey) n'est pas issue du référentiel national
+    if (!ch.sourceKey) continue;
     retiresDuNational.push({
       chapitreId: ch.id,
       sourceKey: ch.sourceKey,
@@ -220,12 +222,13 @@ export function calculerDiffSynchronisationProgramme(params: {
   const titreModifie = params.programmeTitre !== params.officialTitre;
   const checksumDifferent =
     (params.programmeChecksum ?? null) !== (params.officialChecksum ?? null);
+  // Les leçons retirées du national sont conservées (non destructif) : une fois le programme aligné
+  // sur le checksum national (aucun ajout, modification ni changement de titre), il n'y a plus de dérive.
   const aDerive =
     checksumDifferent ||
     titreModifie ||
     ajoutes.length > 0 ||
-    modifies.length > 0 ||
-    retiresDuNational.length > 0;
+    modifies.length > 0;
 
   return {
     aDerive,

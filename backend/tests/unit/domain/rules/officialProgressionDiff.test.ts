@@ -17,7 +17,7 @@ function makeEcole(overrides: Partial<ChapitreEcolePourDiff> & Pick<ChapitreEcol
     positionDansModule: overrides.positionDansModule ?? overrides.ordre,
     numeroAffiche: overrides.numeroAffiche ?? `Leçon ${overrides.ordre}`,
     sourceUrl: overrides.sourceUrl ?? null,
-    sourceKey: overrides.sourceKey ?? `1:${overrides.ordre}`,
+    sourceKey: overrides.sourceKey !== undefined ? overrides.sourceKey : `1:${overrides.ordre}`,
     nbSeancesCahier: overrides.nbSeancesCahier ?? 0,
     nbCochesDirectes: overrides.nbCochesDirectes ?? 0,
   };
@@ -34,7 +34,7 @@ function makeOff(overrides: Partial<OfficialChapterSource> & Pick<OfficialChapte
     positionDansModule: overrides.positionDansModule ?? overrides.ordre,
     numeroAffiche: overrides.numeroAffiche ?? `Leçon ${overrides.ordre}`,
     sourceUrl: overrides.sourceUrl ?? null,
-    sourceKey: overrides.sourceKey ?? `1:${overrides.ordre}`,
+    sourceKey: overrides.sourceKey !== undefined ? overrides.sourceKey : `1:${overrides.ordre}`,
   };
 }
 
@@ -93,5 +93,53 @@ describe('officialProgressionDiff — calcul de diff non destructif par sourceKe
     expect(ch2?.utilisee).toBe(true);
     expect(ch2?.nbSeancesCahier).toBe(2);
     expect(ch3?.utilisee).toBe(false);
+  });
+
+  it('non-régression idempotence : après synchronisation avec leçon retirée conservée, aDerive repasse à false dès que le checksum est aligné', () => {
+    // Avant synchro : seul changement = retrait de 1:2, checksum national changé → aDerive = true
+    const avantSync = calculerDiffSynchronisationProgramme({
+      programmeTitre: 'Maths 6e',
+      programmeChecksum: 'sha256:v1',
+      chapitresEcole: [
+        makeEcole({ id: 'ch_1', ordre: 1, titre: 'Entiers naturels', sourceKey: '1:1' }),
+        makeEcole({ id: 'ch_2', ordre: 2, titre: 'Leçon retirée en v2', sourceKey: '1:2', nbSeancesCahier: 1 }),
+      ],
+      officialTitre: 'Maths 6e',
+      officialChecksum: 'sha256:v2',
+      chapitresOfficiels: [makeOff({ ordre: 1, titre: 'Entiers naturels', sourceKey: '1:1' })],
+    });
+    expect(avantSync.aDerive).toBe(true);
+    expect(avantSync.retiresDuNational).toHaveLength(1);
+
+    // Après synchro : ch_2 conservé en base, checksum aligné sur sha256:v2 → aDerive = false (idempotent)
+    const apresSync = calculerDiffSynchronisationProgramme({
+      programmeTitre: 'Maths 6e',
+      programmeChecksum: 'sha256:v2',
+      chapitresEcole: [
+        makeEcole({ id: 'ch_1', ordre: 1, titre: 'Entiers naturels', sourceKey: '1:1' }),
+        makeEcole({ id: 'ch_2', ordre: 2, titre: 'Leçon retirée en v2', sourceKey: '1:2', nbSeancesCahier: 1 }),
+      ],
+      officialTitre: 'Maths 6e',
+      officialChecksum: 'sha256:v2',
+      chapitresOfficiels: [makeOff({ ordre: 1, titre: 'Entiers naturels', sourceKey: '1:1' })],
+    });
+    expect(apresSync.aDerive).toBe(false);
+    expect(apresSync.retiresDuNational).toHaveLength(1);
+  });
+
+  it('non-régression AP local : un chapitre ajouté manuellement (sourceKey=null) sur un programme national n est pas classé retiré du national', () => {
+    const diff = calculerDiffSynchronisationProgramme({
+      programmeTitre: 'Maths 6e',
+      programmeChecksum: 'sha256:v1',
+      chapitresEcole: [
+        makeEcole({ id: 'ch_1', ordre: 1, titre: 'Entiers naturels', sourceKey: '1:1' }),
+        makeEcole({ id: 'ch_local', ordre: 2, titre: 'TD complémentaire lycée', sourceKey: null }),
+      ],
+      officialTitre: 'Maths 6e',
+      officialChecksum: 'sha256:v1',
+      chapitresOfficiels: [makeOff({ ordre: 1, titre: 'Entiers naturels', sourceKey: '1:1' })],
+    });
+    expect(diff.aDerive).toBe(false);
+    expect(diff.retiresDuNational).toHaveLength(0);
   });
 });
