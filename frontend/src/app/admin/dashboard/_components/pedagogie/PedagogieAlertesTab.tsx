@@ -62,6 +62,11 @@ export default function PedagogieAlertesTab({
                     <span>Réalisé : {a.progressionPct}%</span>
                     <span>Attendu : {a.attenduPct}%</span>
                     <span>{a.chapitresRealises}/{a.chapitresTotal} chapitres</span>
+                    {(a.modulesDesactivesCount ?? 0) > 0 && (
+                      <span style={{ color: 'var(--amber)' }}>
+                        {a.modulesDesactivesCount} module{(a.modulesDesactivesCount ?? 0) > 1 ? 's' : ''} désactivé{(a.modulesDesactivesCount ?? 0) > 1 ? 's' : ''}
+                      </span>
+                    )}
                   </div>
                   {/* Barre de progression */}
                   <div style={{ marginTop: 10, position: 'relative' }}>

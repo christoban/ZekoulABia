@@ -12,6 +12,7 @@ import type { AdminSection } from '../_types'
 import PedagogieAlertesTab from './pedagogie/PedagogieAlertesTab'
 import PedagogieProgressionTab from './pedagogie/PedagogieProgressionTab'
 import PedagogieProgrammesTab from './pedagogie/PedagogieProgrammesTab'
+import InitProgrammesClasseModal from './pedagogie/InitProgrammesClasseModal'
 import type { Alerte, Classe, OnToast, Programme, ProgressionData, Subject, Tab } from './pedagogie/types'
 
 interface Props {
@@ -50,6 +51,8 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
   const [progSubjectId, setProgSubjectId] = useState('')
   const [progressionData, setProgressionData] = useState<ProgressionData | null>(null)
   const [loadingProg, setLoadingProg] = useState(false)
+  const [materialisationEnabled, setMaterialisationEnabled] = useState(false)
+  const [initModalOpen, setInitModalOpen] = useState(false)
 
   useEffect(() => {
     // 1. Lire d'abord le cache local Dexie
@@ -71,7 +74,10 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
     Promise.all([
       fetchApi('/api/v2/subjects', { credentials: 'include' }).then(r => r.json()),
       fetchApi('/api/v2/classes', { credentials: 'include' }).then(r => r.json()),
-    ]).then(([subs, cls]) => {
+      fetchApi('/api/v2/pedagogie/materialisation/status', { credentials: 'include' })
+        .then(r => r.json())
+        .catch(() => ({ success: false })),
+    ]).then(([subs, cls, matStatus]) => {
       if (subs.success && Array.isArray(subs.data)) {
         setSubjects(subs.data)
         putCachedData('admin:subjects', subs.data).catch(() => {})
@@ -79,6 +85,9 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
       if (cls.success && Array.isArray(cls.data)) {
         setClasses(cls.data)
         putCachedData('admin:classes', cls.data).catch(() => {})
+      }
+      if (matStatus?.success && matStatus.data?.enabled === true) {
+        setMaterialisationEnabled(true)
       }
     }).catch(() => {})
   }, [])
@@ -293,6 +302,8 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
           classes={classes}
           loading={loading}
           saving={saving}
+          materialisationEnabled={materialisationEnabled}
+          onOpenInitModal={() => setInitModalOpen(true)}
           formTitre={formTitre}
           formSubjectId={formSubjectId}
           formClassId={formClassId}
@@ -317,6 +328,15 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
           onDeleteChapitre={handleDeleteChapitre}
         />
       )}
+
+      <InitProgrammesClasseModal
+        open={initModalOpen}
+        classes={classes}
+        initialClassId={formClassId || progClassId || undefined}
+        onClose={() => setInitModalOpen(false)}
+        onApplied={loadProgrammes}
+        onToast={onToast}
+      />
     </div>
   )
 }

@@ -43,14 +43,16 @@ export interface Chapitre {
   id: string
   titre: string
   ordre: number
-  volumeHeuresPrevu: number
+  volumeHeuresPrevu: number | null
   sequenceCibleFin?: number | null
+  numeroAffiche?: string | null
   realise?: boolean
 }
 
 export interface Programme {
   id: string
   titre: string
+  source?: string
   subject: { id: string; name: string }
   class: { id: string; name: string } | null
   level: string | null
@@ -65,6 +67,7 @@ export interface ProgAlerte {
   className: string
   chapitresTotal: number
   chapitresRealises: number
+  modulesDesactivesCount?: number
   progressionPct: number
   attenduPct: number
   retardPct: number
@@ -74,7 +77,7 @@ export interface ProgAlerte {
 export interface EditingChapitreState {
   id: string
   titre: string
-  volumeHeuresPrevu: number
+  volumeHeuresPrevu: number | null
   sequenceCibleFin?: number | null
 }
 

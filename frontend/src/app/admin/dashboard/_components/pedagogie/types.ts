@@ -13,20 +13,34 @@ export interface Classe {
   id: string
   name: string
   level?: string | null
+  filiere?: string | null
+  serie?: string | null
 }
 
 export interface Chapitre {
   id: string
   titre: string
   ordre: number
-  volumeHeuresPrevu: number
+  volumeHeuresPrevu: number | null
   sequenceCibleFin?: number | null
+  moduleOrdre?: number | null
+  moduleTitre?: string | null
+  positionDansModule?: number | null
+  numeroAffiche?: string | null
+  sourceUrl?: string | null
+  moduleActif?: boolean
   realise?: boolean
+  cocheDirecte?: boolean
+  nbSeancesCahier?: number
+  sourceRealisation?: 'COCHE' | 'CAHIER' | 'LES_DEUX' | null
 }
 
 export interface Programme {
   id: string
   titre: string
+  source?: string
+  filiere?: string | null
+  officialProgressionId?: string | null
   subject: { id: string; name: string }
   class: { id: string; name: string } | null
   level: string | null
@@ -41,21 +55,36 @@ export interface Alerte {
   classId: string
   chapitresTotal: number
   chapitresRealises: number
+  modulesDesactivesCount?: number
   progressionPct: number
   attenduPct: number
   retardPct: number
   niveau: 'CRITIQUE' | 'MODERE'
 }
 
+export interface ProgressionModule {
+  moduleOrdre: number
+  moduleTitre: string
+  actif: boolean
+  leconsTotal: number
+  leconsRealisees: number
+  progressionPct: number | null
+}
+
 export interface ProgressionData {
-  programme: { id: string; titre: string } | null
+  programme: { id: string; titre: string; source?: string; filiere?: string | null } | null
   chapitresTotal: number
   chapitresRealises: number
-  totalHeuresPrevu: number
-  heuresRealisees: number
+  leconsTotal?: number
+  leconsRealisees?: number
+  modulesDesactivesCount?: number
+  totalHeuresPrevu: number | null
+  heuresRealisees: number | null
+  hasHeuresPrevu?: boolean
   progressionPct: number | null
   attenduPct: number | null
   retardPct: number | null
+  modules?: ProgressionModule[]
   chapitres: (Chapitre & { realise: boolean })[]
 }
 

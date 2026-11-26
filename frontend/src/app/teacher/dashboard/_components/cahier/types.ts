@@ -4,7 +4,17 @@ export type TranslateFn = (key: string, params?: Record<string, string | number>
 
 export interface Classe { id: string; name: string }
 export interface Subject { id: string; name: string }
-export interface Chapitre { id: string; titre: string; ordre: number; volumeHeuresPrevu: number }
+export interface Chapitre {
+  id: string
+  titre: string
+  ordre: number
+  volumeHeuresPrevu: number | null
+  moduleOrdre?: number | null
+  moduleTitre?: string | null
+  positionDansModule?: number | null
+  numeroAffiche?: string | null
+  sourceUrl?: string | null
+}
 export interface Programme { id: string; titre: string; chapitres: Chapitre[] }
 export interface CahierEntry {
   id: string
@@ -34,7 +44,47 @@ export interface PendingCahierPayload {
   date?: string
 }
 
-export type CahierTab = 'saisie' | 'historique'
+export interface ProgressionChapitreItem extends Chapitre {
+  moduleActif: boolean
+  realise: boolean
+  cocheDirecte: boolean
+  nbSeancesCahier: number
+  sourceRealisation: 'COCHE' | 'CAHIER' | 'LES_DEUX' | null
+  cocheLe: string | null
+}
+
+export interface ProgressionModuleItem {
+  moduleOrdre: number
+  moduleTitre: string
+  actif: boolean
+  leconsTotal: number
+  leconsRealisees: number
+  progressionPct: number | null
+}
+
+export interface ProgrammeProgressionView {
+  programme: {
+    id: string
+    titre: string
+    source?: string
+    filiere?: string | null
+  } | null
+  chapitresTotal: number
+  chapitresRealises: number
+  leconsTotal: number
+  leconsRealisees: number
+  modulesDesactivesCount: number
+  totalHeuresPrevu: number | null
+  heuresRealisees: number | null
+  hasHeuresPrevu: boolean
+  progressionPct: number | null
+  attenduPct: number | null
+  retardPct: number | null
+  modules: ProgressionModuleItem[]
+  chapitres: ProgressionChapitreItem[]
+}
+
+export type CahierTab = 'saisie' | 'programme' | 'historique'
 
 export const SEL: CSSProperties = {
   width: '100%', minHeight: 36, padding: '6px 26px 6px 10px', borderRadius: 8, border: '1px solid var(--border)',

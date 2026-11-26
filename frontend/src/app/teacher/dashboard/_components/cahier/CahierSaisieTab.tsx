@@ -126,9 +126,36 @@ export default function CahierSaisieTab({
               <label style={LBL}>{t('cahier_de_texte.chapter_label')}</label>
               <select value={selectedChapitre} onChange={e => onChapitreChange(e.target.value)} style={SEL}>
                 <option value="">{t('cahier_de_texte.chapter_placeholder')}</option>
-                {chapitres.map(c => (
-                  <option key={c.id} value={c.id}>Ch.{c.ordre} — {c.titre} ({c.volumeHeuresPrevu}h)</option>
-                ))}
+                {(() => {
+                  const hasModules = chapitres.some(c => c.moduleOrdre !== null && c.moduleOrdre !== undefined)
+                  const formatOption = (c: Chapitre) => {
+                    const prefix = c.numeroAffiche ? `${c.numeroAffiche} — ` : `Ch.${c.ordre} — `
+                    const heures = c.volumeHeuresPrevu !== null && c.volumeHeuresPrevu !== undefined ? ` (${c.volumeHeuresPrevu}h)` : ''
+                    return `${prefix}${c.titre}${heures}`
+                  }
+                  if (!hasModules) {
+                    return chapitres.map(c => (
+                      <option key={c.id} value={c.id}>{formatOption(c)}</option>
+                    ))
+                  }
+                  const groups = new Map<string, { label: string; items: Chapitre[] }>()
+                  for (const c of chapitres) {
+                    const key = c.moduleOrdre !== null && c.moduleOrdre !== undefined ? String(c.moduleOrdre) : '__other__'
+                    const label = c.moduleOrdre !== null && c.moduleOrdre !== undefined
+                      ? `M${c.moduleOrdre} — ${c.moduleTitre ?? `Module ${c.moduleOrdre}`}`
+                      : t('cahier_de_texte.chapter_other_group')
+                    const existing = groups.get(key) ?? { label, items: [] }
+                    existing.items.push(c)
+                    groups.set(key, existing)
+                  }
+                  return [...groups.entries()].map(([key, grp]) => (
+                    <optgroup key={key} label={grp.label}>
+                      {grp.items.map(c => (
+                        <option key={c.id} value={c.id}>{formatOption(c)}</option>
+                      ))}
+                    </optgroup>
+                  ))
+                })()}
               </select>
             </div>
           ) : (

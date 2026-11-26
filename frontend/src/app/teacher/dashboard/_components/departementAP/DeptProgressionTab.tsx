@@ -39,8 +39,18 @@ export default function DeptProgressionTab({ alertes, loading, t }: Props) {
                       <span style={{ background: 'var(--amber-light)', color: 'var(--amber)', padding: '1px 6px', borderRadius: 12, fontSize: 11, fontWeight: 700 }}>{a.subjectName}</span>
                     </div>
                     <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>{a.programmeTitre}</div>
-                    <div style={{ fontSize: 11.5, color: 'var(--text2)', marginTop: 2 }}>
-                      {t('department.progression_chapters').replace('{done}', String(a.chapitresRealises)).replace('{total}', String(a.chapitresTotal)).replace('{pct}', String(a.progressionPct)).replace('{expected}', String(a.attenduPct))}
+                    <div style={{ fontSize: 11.5, color: 'var(--text2)', marginTop: 2, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                      <span>
+                        {t('department.progression_chapters').replace('{done}', String(a.chapitresRealises)).replace('{total}', String(a.chapitresTotal)).replace('{pct}', String(a.progressionPct)).replace('{expected}', String(a.attenduPct))}
+                      </span>
+                      {(a.modulesDesactivesCount ?? 0) > 0 && (
+                        <span style={{
+                          fontSize: 10.5, fontWeight: 700, padding: '1px 7px', borderRadius: 999,
+                          background: 'var(--amber-light)', color: 'var(--amber)',
+                        }}>
+                          {t('department.progression_disabled_modules').replace('{count}', String(a.modulesDesactivesCount))}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -1,9 +1,10 @@
 'use client'
-import { WifiOff, Pencil, ClipboardList } from 'lucide-react'
+import { WifiOff, Pencil, ClipboardList, BookOpen } from 'lucide-react'
 import type { UserInfo } from '../_types'
 import { useT } from '@/lib/i18n'
 import { useCahierData } from './cahier/useCahierData'
 import CahierSaisieTab from './cahier/CahierSaisieTab'
+import CahierProgrammeTab from './cahier/CahierProgrammeTab'
 import CahierHistoriqueTab from './cahier/CahierHistoriqueTab'
 import type { CahierTab } from './cahier/types'
 
@@ -50,6 +51,7 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
 
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
         {tabBtn('saisie', t('cahier_de_texte.tab_new_entry'), Pencil)}
+        {tabBtn('programme', t('cahier_de_texte.tab_programme'), BookOpen)}
         {tabBtn('historique', t('cahier_de_texte.tab_history'), ClipboardList)}
       </div>
 
@@ -87,6 +89,24 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
           onScanClick={c.handleScanClick}
           onScan={c.handleScan}
           onSave={c.handleSave}
+          t={t}
+        />
+      )}
+
+      {c.tab === 'programme' && (
+        <CahierProgrammeTab
+          isOnline={c.isOnline}
+          classes={c.classes}
+          subjects={c.subjects}
+          selectedClass={c.selectedClass}
+          selectedSubject={c.selectedSubject}
+          onClassChange={c.setSelectedClass}
+          onSubjectChange={c.setSelectedSubject}
+          onLogLesson={(chapitreId) => {
+            c.setSelectedChapitre(chapitreId)
+            c.setTab('saisie')
+          }}
+          onToast={onToast}
           t={t}
         />
       )}

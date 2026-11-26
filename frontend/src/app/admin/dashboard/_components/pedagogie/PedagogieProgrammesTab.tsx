@@ -1,6 +1,6 @@
 'use client'
 
-import { Inbox } from 'lucide-react'
+import { Inbox, Sparkles } from 'lucide-react'
 import { inputStyle, labelStyle, type Classe, type Programme, type Subject } from './types'
 
 interface PedagogieProgrammesTabProps {
@@ -9,6 +9,8 @@ interface PedagogieProgrammesTabProps {
   classes: Classe[]
   loading: boolean
   saving: boolean
+  materialisationEnabled?: boolean
+  onOpenInitModal?: () => void
   formTitre: string
   formSubjectId: string
   formClassId: string
@@ -39,6 +41,8 @@ export default function PedagogieProgrammesTab({
   classes,
   loading,
   saving,
+  materialisationEnabled,
+  onOpenInitModal,
   formTitre,
   formSubjectId,
   formClassId,
@@ -64,6 +68,35 @@ export default function PedagogieProgrammesTab({
 }: PedagogieProgrammesTabProps) {
   return (
     <div>
+      {/* Bouton initialisation nationale (feature-flaggé) */}
+      {materialisationEnabled && onOpenInitModal && (
+        <div
+          className="p-3.5 md:p-4 mb-4 rounded-xl border border-[var(--border)] bg-[var(--surface)]"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}
+        >
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>
+              Référentiel national officiel (MINESEC)
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
+              Pré-remplissez automatiquement les programmes et leçons d&apos;une classe depuis le référentiel national.
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onOpenInitModal}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '8px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 800,
+              background: 'var(--sidebar)', color: 'white', border: 'none', cursor: 'pointer',
+            }}
+          >
+            <Sparkles size={14} />
+            Initialiser les programmes de cette classe
+          </button>
+        </div>
+      )}
+
       {/* Formulaire création */}
       <div className="p-4 md:p-5 mb-5 rounded-xl border border-[var(--border)] bg-[var(--surface)]">
         <div className="text-xs md:text-sm font-bold text-[var(--text)] mb-2.5">Nouveau programme</div>
@@ -123,7 +156,10 @@ export default function PedagogieProgrammesTab({
                     <span className="text-[11px] md:text-xs px-2 py-0.5 rounded-full font-extrabold" style={{ background: 'var(--amber-light)', color: 'var(--amber)' }}>{p.subject.name}</span>
                     {p.class && <span className="text-[11px] md:text-xs px-2 py-0.5 rounded-full font-extrabold" style={{ background: 'var(--blue-light)', color: 'var(--blue)' }}>{p.class.name}</span>}
                     {p.level && !p.class && <span className="text-[11px] md:text-xs px-2 py-0.5 rounded-full font-extrabold" style={{ background: 'var(--bg2)', color: 'var(--text3)' }}>{p.level}</span>}
-                    <span className="text-[11px] md:text-xs px-2 py-0.5 rounded-full font-bold" style={{ background: 'var(--bg2)', color: 'var(--text3)' }}>{p.chapitres.length} chapitre{p.chapitres.length !== 1 ? 's' : ''}</span>
+                    {p.source === 'national' && (
+                      <span className="text-[11px] md:text-xs px-2 py-0.5 rounded-full font-extrabold" style={{ background: 'var(--green-light)', color: 'var(--green)' }}>Officiel</span>
+                    )}
+                    <span className="text-[11px] md:text-xs px-2 py-0.5 rounded-full font-bold" style={{ background: 'var(--bg2)', color: 'var(--text3)' }}>{p.chapitres.length} {p.source === 'national' ? 'leçon' : 'chapitre'}{p.chapitres.length !== 1 ? 's' : ''}</span>
                   </div>
                 </div>
                 <button onClick={e => { e.stopPropagation(); onDeleteProgramme(p.id) }}
@@ -140,8 +176,12 @@ export default function PedagogieProgrammesTab({
                       {p.chapitres.map(c => (
                         <div key={c.id} className="gap-2 md:gap-3 px-2.5 py-1.5 md:px-3 md:py-2 flex items-center flex-wrap bg-[var(--bg)] rounded-lg">
                           <span className="w-5 h-5 md:w-5.5 md:h-5.5 text-xs rounded-full flex items-center justify-center font-extrabold flex-shrink-0 text-white" style={{ background: 'var(--sidebar)' }}>{c.ordre}</span>
-                          <span className="text-xs md:text-sm font-semibold flex-1 min-w-[120px] text-[var(--text)]">{c.titre}</span>
-                          <span className="text-xs font-semibold text-[var(--text3)]">{c.volumeHeuresPrevu}h</span>
+                          <span className="text-xs md:text-sm font-semibold flex-1 min-w-[120px] text-[var(--text)]">
+                            {c.numeroAffiche ? `${c.numeroAffiche} — ` : ''}{c.titre}
+                          </span>
+                          {c.volumeHeuresPrevu !== null && c.volumeHeuresPrevu !== undefined && (
+                            <span className="text-xs font-semibold text-[var(--text3)]">{c.volumeHeuresPrevu}h</span>
+                          )}
                           {c.sequenceCibleFin && <span className="text-[11px] px-2 py-0.5 rounded-full font-bold" style={{ background: 'var(--purple-light)', color: 'var(--purple)' }}>Seq {c.sequenceCibleFin}</span>}
                           <button onClick={() => onDeleteChapitre(c.id)}
                             className="text-xs px-2 py-0.5 rounded-md font-extrabold bg-[var(--red-light)] text-[var(--red)] border-none cursor-pointer">

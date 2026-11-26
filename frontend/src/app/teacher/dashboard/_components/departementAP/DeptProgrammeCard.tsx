@@ -51,7 +51,8 @@ export default function DeptProgrammeCard({
   onCancelEditChap,
   onDeleteChapitre,
 }: Props) {
-  const totalHours = p.chapitres.reduce((sum, c) => sum + (c.volumeHeuresPrevu || 0), 0)
+  const hasHours = p.chapitres.some(c => c.volumeHeuresPrevu !== null && c.volumeHeuresPrevu !== undefined)
+  const totalHours = hasHours ? p.chapitres.reduce((sum, c) => sum + (c.volumeHeuresPrevu ?? 0), 0) : null
   const sortedChapitres = [...p.chapitres].sort((a, b) => a.ordre - b.ordre)
 
   return (
@@ -82,7 +83,8 @@ export default function DeptProgrammeCard({
                 </span>
               )}
               <span className="text-[11px] px-2 py-0.5 rounded-full font-semibold text-[var(--text3)]">
-                {p.chapitres.length} chapitre{p.chapitres.length > 1 ? 's' : ''} ({totalHours}h prévues)
+                {p.chapitres.length} {p.source === 'national' ? 'leçon' : 'chapitre'}{p.chapitres.length > 1 ? 's' : ''}
+                {totalHours !== null ? ` (${totalHours}h prévues)` : ''}
               </span>
             </div>
           </div>
@@ -195,8 +197,9 @@ export default function DeptProgrammeCard({
                         <input
                           type="number"
                           min={1}
-                          value={editingChap.volumeHeuresPrevu}
-                          onChange={e => onChangeEditingChap(prev => prev ? { ...prev, volumeHeuresPrevu: parseInt(e.target.value, 10) || 1 } : null)}
+                          placeholder="Heures"
+                          value={editingChap.volumeHeuresPrevu ?? ''}
+                          onChange={e => onChangeEditingChap(prev => prev ? { ...prev, volumeHeuresPrevu: e.target.value === '' ? null : (parseInt(e.target.value, 10) || 1) } : null)}
                           style={deptInputStyle}
                         />
                         <div className="flex items-center gap-1">
@@ -224,7 +227,9 @@ export default function DeptProgrammeCard({
                           <span className="font-bold text-[var(--text)] truncate">{chap.titre}</span>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="font-semibold text-[var(--text3)]">{chap.volumeHeuresPrevu}h</span>
+                          {chap.volumeHeuresPrevu !== null && chap.volumeHeuresPrevu !== undefined && (
+                            <span className="font-semibold text-[var(--text3)]">{chap.volumeHeuresPrevu}h</span>
+                          )}
                           {chap.sequenceCibleFin && (
                             <span className="px-1.5 py-0.5 rounded font-bold text-[10px] bg-[var(--purple-light)] text-[var(--purple)]">
                               Fin S{chap.sequenceCibleFin}
