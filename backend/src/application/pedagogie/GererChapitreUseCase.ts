@@ -57,12 +57,21 @@ export class GererChapitreUseCase {
     }
 
     const nextOrdre = await this.chapitreRepository.findNextOrdre(input.programmeId);
+    const estProgrammeNational = programme.source === 'national';
+    const volumeNormalise =
+      typeof input.volumeHeuresPrevu === 'number' &&
+      Number.isFinite(input.volumeHeuresPrevu) &&
+      input.volumeHeuresPrevu > 0
+        ? Math.trunc(input.volumeHeuresPrevu)
+        : input.volumeHeuresPrevu === null && estProgrammeNational
+          ? null
+          : 2;
 
     return this.chapitreRepository.create({
       programmeId: input.programmeId,
       titre: input.titre.trim(),
       ordre: input.ordre ?? nextOrdre,
-      volumeHeuresPrevu: input.volumeHeuresPrevu ?? 2,
+      volumeHeuresPrevu: volumeNormalise,
       sequenceCibleFin: input.sequenceCibleFin ?? null,
     });
   }
@@ -82,11 +91,23 @@ export class GererChapitreUseCase {
       );
     }
 
+    // Sur un programme manuel, ne jamais passer volumeHeuresPrevu à null involontairement
+    const estProgrammeNational = chapitre.programme.source === 'national';
+    let volumeUpdate: number | null | undefined = input.volumeHeuresPrevu;
+    if (volumeUpdate === null && !estProgrammeNational) {
+      volumeUpdate = chapitre.volumeHeuresPrevu ?? 2;
+    } else if (
+      typeof volumeUpdate === 'number' &&
+      (!Number.isFinite(volumeUpdate) || volumeUpdate <= 0)
+    ) {
+      volumeUpdate = estProgrammeNational ? null : (chapitre.volumeHeuresPrevu ?? 2);
+    }
+
     return this.chapitreRepository.update({
       id: input.id,
       titre: input.titre?.trim() ? input.titre.trim() : undefined,
       ordre: input.ordre,
-      volumeHeuresPrevu: input.volumeHeuresPrevu,
+      volumeHeuresPrevu: volumeUpdate,
       sequenceCibleFin: input.sequenceCibleFin,
     });
   }
