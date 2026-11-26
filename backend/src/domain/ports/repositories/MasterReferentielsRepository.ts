@@ -78,6 +78,18 @@ export interface MasterReferentielsSummaryCounts {
   templatesCount: number;
 }
 
+export interface PaginatedOfficialProgressionsResult {
+  items: OfficialProgressionRecord[];
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+  facets: {
+    levels: string[];
+    filieres: string[];
+  };
+}
+
 export interface MasterReferentielsRepository {
   getSummaryCounts(): Promise<MasterReferentielsSummaryCounts>;
 
@@ -158,8 +170,11 @@ export interface MasterReferentielsRepository {
   listProgressions(filter: {
     templateCode?: string;
     level?: string;
+    filiere?: string;
     search?: string;
-  }): Promise<OfficialProgressionRecord[]>;
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedOfficialProgressionsResult>;
   findProgressionById(id: string): Promise<OfficialProgressionRecord | null>;
   saveProgression(input: {
     id?: string;

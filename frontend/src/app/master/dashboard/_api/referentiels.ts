@@ -276,14 +276,53 @@ export async function deleteTemplateSubject(id: string, subsystem: 'FRANCOPHONE'
   await apiFetch(`/api/v2/master/referentiels/template-subjects/${id}?subsystem=${subsystem}`, { method: 'DELETE' })
 }
 
-export async function fetchOfficialProgressions(params?: { templateCode?: string; level?: string; search?: string }): Promise<OfficialProgressionDto[]> {
+export interface PaginatedOfficialProgressionsDto {
+  items: OfficialProgressionDto[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    pages: number
+  }
+  facets: {
+    levels: string[]
+    filieres: string[]
+  }
+}
+
+export async function fetchOfficialProgressions(params?: {
+  templateCode?: string
+  level?: string
+  filiere?: string
+  search?: string
+  page?: number
+  limit?: number
+}): Promise<PaginatedOfficialProgressionsDto> {
   const query = new URLSearchParams()
   if (params?.templateCode) query.set('templateCode', params.templateCode)
   if (params?.level) query.set('level', params.level)
+  if (params?.filiere) query.set('filiere', params.filiere)
   if (params?.search) query.set('search', params.search)
+  if (params?.page !== undefined) query.set('page', String(params.page))
+  if (params?.limit !== undefined) query.set('limit', String(params.limit))
   const qs = query.toString()
   const res = await apiFetch<OfficialProgressionDto[]>(`/api/v2/master/referentiels/progressions${qs ? `?${qs}` : ''}`)
-  return res.data ?? []
+  const items = res.data ?? []
+  const pagination = res.pagination ?? {
+    page: params?.page ?? 1,
+    limit: params?.limit ?? (items.length || 50),
+    total: items.length,
+    pages: 1,
+  }
+  const rawFacets = (res as unknown as { facets?: { levels?: string[]; filieres?: string[] } }).facets
+  return {
+    items,
+    pagination,
+    facets: {
+      levels: rawFacets?.levels ?? [],
+      filieres: rawFacets?.filieres ?? [],
+    },
+  }
 }
 
 export async function saveOfficialProgression(data: Partial<OfficialProgressionDto>): Promise<OfficialProgressionDto> {

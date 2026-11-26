@@ -7,11 +7,18 @@ import type {
   BacCoefficientRecord,
   TemplateSubjectLoadRecord,
   OfficialProgressionRecord,
+  PaginatedOfficialProgressionsResult,
   TarifMinesecRecord,
 } from '@domain/ports/repositories/MasterReferentielsRepository';
 
+import { PrismaMasterProgressionsStore } from './PrismaMasterProgressionsStore';
+
 export class PrismaMasterReferentielsRepository implements MasterReferentielsRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  private readonly progressionsStore: PrismaMasterProgressionsStore;
+
+  constructor(private readonly prisma: PrismaClient) {
+    this.progressionsStore = new PrismaMasterProgressionsStore(prisma);
+  }
 
   async getSummaryCounts(): Promise<MasterReferentielsSummaryCounts> {
     const [
@@ -336,28 +343,13 @@ export class PrismaMasterReferentielsRepository implements MasterReferentielsRep
   }
 
   async listProgressions(filter: {
-    templateCode?: string;
-    level?: string;
-    search?: string;
-  }): Promise<OfficialProgressionRecord[]> {
-    const where: Prisma.OfficialProgrammeProgressionWhereInput = {};
-    if (filter.templateCode) where.templateCode = filter.templateCode;
-    if (filter.level) where.level = filter.level;
-    if (filter.search) {
-      where.OR = [
-        { subjectName: { contains: filter.search, mode: 'insensitive' } },
-        { titre: { contains: filter.search, mode: 'insensitive' } },
-      ];
-    }
-    return this.prisma.officialProgrammeProgression.findMany({
-      where,
-      orderBy: [{ templateCode: 'asc' }, { level: 'asc' }, { subjectName: 'asc' }],
-      take: 200,
-    });
+    templateCode?: string; level?: string; filiere?: string; search?: string; page?: number; limit?: number;
+  }): Promise<PaginatedOfficialProgressionsResult> {
+    return this.progressionsStore.list(filter);
   }
 
   async findProgressionById(id: string): Promise<OfficialProgressionRecord | null> {
-    return this.prisma.officialProgrammeProgression.findUnique({ where: { id } });
+    return this.progressionsStore.findById(id);
   }
 
   async saveProgression(input: {
@@ -372,38 +364,11 @@ export class PrismaMasterReferentielsRepository implements MasterReferentielsRep
     manuallyEdited?: boolean;
     source?: string | null;
   }): Promise<OfficialProgressionRecord> {
-    const chapitresJson = input.chapitres as Prisma.InputJsonValue;
-    const manuallyEdited = input.manuallyEdited ?? true;
-    const sourcePatch = input.source !== undefined ? { source: input.source } : {};
-    const checksumPatch = manuallyEdited ? { importChecksum: null } : {};
-    if (input.id) {
-      return this.prisma.officialProgrammeProgression.update({
-        where: { id: input.id },
-        data: {
-          templateCode: input.templateCode, level: input.level, filiere: input.filiere,
-          subjectName: input.subjectName, titre: input.titre, chapitres: chapitresJson,
-          active: input.active, manuallyEdited, ...sourcePatch, ...checksumPatch,
-        },
-      });
-    }
-    return this.prisma.officialProgrammeProgression.upsert({
-      where: {
-        templateCode_level_filiere_subjectName: {
-          templateCode: input.templateCode, level: input.level,
-          filiere: input.filiere, subjectName: input.subjectName,
-        },
-      },
-      update: { titre: input.titre, chapitres: chapitresJson, active: input.active, manuallyEdited, ...sourcePatch, ...checksumPatch },
-      create: {
-        templateCode: input.templateCode, level: input.level, filiere: input.filiere,
-        subjectName: input.subjectName, titre: input.titre, chapitres: chapitresJson,
-        active: input.active, manuallyEdited, source: input.source ?? 'manuel', ...checksumPatch,
-      },
-    });
+    return this.progressionsStore.save(input);
   }
 
   async deleteProgression(id: string): Promise<void> {
-    await this.prisma.officialProgrammeProgression.delete({ where: { id } });
+    return this.progressionsStore.delete(id);
   }
 
   async listTarifsMinesec(filter: {

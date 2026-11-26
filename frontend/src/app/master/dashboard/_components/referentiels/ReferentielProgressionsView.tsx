@@ -12,6 +12,13 @@ import {
 
 interface Props {
   progressions: OfficialProgressionDto[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    pages: number
+  }
+  onPageChange: (page: number) => void
   onEdit: (item: Record<string, unknown>) => void
   onDelete: (id: string) => void
 }
@@ -26,10 +33,88 @@ const HEADERS = [
   { label: 'Actions', alignRight: true },
 ]
 
-/** Vue Programmes & Progressions Types (cartes mobile + tableau desktop) */
-export default function ReferentielProgressionsView({ progressions, onEdit, onDelete }: Props) {
+/** Vue Programmes & Progressions Types (cartes mobile + tableau desktop + pagination) */
+export default function ReferentielProgressionsView({
+  progressions,
+  pagination,
+  onPageChange,
+  onEdit,
+  onDelete,
+}: Props) {
+  const startIdx = pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1
+  const endIdx = Math.min(pagination.page * pagination.limit, pagination.total)
+
+  const paginationBar = (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 10,
+        padding: '10px 16px',
+        borderBottom: '1px solid var(--border)',
+        background: 'var(--bg2)',
+        fontSize: 12.5,
+        color: 'var(--text2)',
+      }}
+    >
+      <div style={{ fontWeight: 700 }}>
+        {pagination.total === 0
+          ? '0 programme officiel'
+          : `Affichage ${startIdx}–${endIdx} sur ${pagination.total} programme${pagination.total > 1 ? 's' : ''}`}
+      </div>
+      {pagination.pages > 1 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            type="button"
+            disabled={pagination.page <= 1}
+            onClick={() => onPageChange(pagination.page - 1)}
+            style={{
+              padding: '5px 10px',
+              borderRadius: 7,
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
+              color: pagination.page <= 1 ? 'var(--text3)' : 'var(--text)',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: pagination.page <= 1 ? 'not-allowed' : 'pointer',
+              opacity: pagination.page <= 1 ? 0.55 : 1,
+              fontFamily: 'inherit',
+            }}
+          >
+            Précédent
+          </button>
+          <span style={{ fontWeight: 700, color: 'var(--text)' }}>
+            Page {pagination.page} / {pagination.pages}
+          </span>
+          <button
+            type="button"
+            disabled={pagination.page >= pagination.pages}
+            onClick={() => onPageChange(pagination.page + 1)}
+            style={{
+              padding: '5px 10px',
+              borderRadius: 7,
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
+              color: pagination.page >= pagination.pages ? 'var(--text3)' : 'var(--text)',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: pagination.page >= pagination.pages ? 'not-allowed' : 'pointer',
+              opacity: pagination.page >= pagination.pages ? 0.55 : 1,
+              fontFamily: 'inherit',
+            }}
+          >
+            Suivant
+          </button>
+        </div>
+      )}
+    </div>
+  )
+
   return (
     <>
+      {paginationBar}
       <div className="block md:hidden" style={{ padding: 10 }}>
         {progressions.length === 0 ? (
           <MobileEmptyState message="Aucun programme configuré. Cliquez sur « Ajouter une entrée »." />

@@ -28,6 +28,12 @@ interface Props {
   onFilterSubsystemChange: (value: 'FRANCOPHONE' | 'ANGLOPHONE') => void
   filterAnnee: string
   onFilterAnneeChange: (value: string) => void
+  filterProgLevel?: string
+  onFilterProgLevelChange?: (value: string) => void
+  filterProgFiliere?: string
+  onFilterProgFiliereChange?: (value: string) => void
+  progressionLevels?: string[]
+  progressionFilieres?: string[]
   onOpenImportProgressions?: () => void
 }
 
@@ -47,6 +53,12 @@ export default function ReferentielsFiltersBar({
   onFilterSubsystemChange,
   filterAnnee,
   onFilterAnneeChange,
+  filterProgLevel = '',
+  onFilterProgLevelChange,
+  filterProgFiliere = '',
+  onFilterProgFiliereChange,
+  progressionLevels = [],
+  progressionFilieres = [],
   onOpenImportProgressions,
 }: Props) {
   const selectStyle = {
@@ -155,13 +167,37 @@ export default function ReferentielsFiltersBar({
 
           {activeModule === 'progressions' && (
             <>
+              <select
+                aria-label="Filtrer par niveau"
+                value={filterProgLevel}
+                onChange={e => onFilterProgLevelChange?.(e.target.value)}
+                className="flex-1 sm:flex-initial"
+                style={selectStyle}
+              >
+                <option value="">Tous niveaux</option>
+                {progressionLevels.map(lvl => (
+                  <option key={lvl} value={lvl}>{lvl}</option>
+                ))}
+              </select>
+              <select
+                aria-label="Filtrer par filière"
+                value={filterProgFiliere}
+                onChange={e => onFilterProgFiliereChange?.(e.target.value)}
+                className="flex-1 sm:flex-initial"
+                style={selectStyle}
+              >
+                <option value="">Toutes filières</option>
+                {progressionFilieres.map(fil => (
+                  <option key={fil} value={fil}>{fil}</option>
+                ))}
+              </select>
               <input
                 type="text"
                 placeholder="Template (ex. __ALL__, LYCEE_FR)"
                 value={filterTemplate}
                 onChange={e => onFilterTemplateChange(e.target.value.toUpperCase())}
                 className="flex-1 sm:flex-initial"
-                style={{ minWidth: 150, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text)', fontSize: 12, fontFamily: 'inherit' }}
+                style={{ minWidth: 140, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text)', fontSize: 12, fontFamily: 'inherit' }}
               />
               {onOpenImportProgressions && (
                 <button

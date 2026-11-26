@@ -47,6 +47,11 @@ export default function SectionReferentielsHub({ onToast }: Props) {
   const [bacCoeffs, setBacCoeffs] = useState<BacCoefficientDto[]>([])
   const [templateSubjects, setTemplateSubjects] = useState<TemplateSubjectDto[]>([])
   const [progressions, setProgressions] = useState<OfficialProgressionDto[]>([])
+  const [progressionsPage, setProgressionsPage] = useState(1)
+  const [progressionsPagination, setProgressionsPagination] = useState({ page: 1, limit: 50, total: 0, pages: 1 })
+  const [progressionFacets, setProgressionFacets] = useState<{ levels: string[]; filieres: string[] }>({ levels: [], filieres: [] })
+  const [filterProgLevel, setFilterProgLevel] = useState('')
+  const [filterProgFiliere, setFilterProgFiliere] = useState('')
   const [tarifs, setTarifs] = useState<TarifMinesecDto[]>([])
 
   // Filtres
@@ -89,10 +94,17 @@ export default function SectionReferentielsHub({ onToast }: Props) {
         })
         setTemplateSubjects(res.data)
       } else if (activeModule === 'progressions') {
-        setProgressions(await fetchOfficialProgressions({
+        const res = await fetchOfficialProgressions({
           templateCode: filterTemplate || undefined,
+          level: filterProgLevel || undefined,
+          filiere: filterProgFiliere || undefined,
           search: searchTerm || undefined,
-        }))
+          page: progressionsPage,
+          limit: 50,
+        })
+        setProgressions(res.items)
+        setProgressionsPagination(res.pagination)
+        setProgressionFacets(res.facets)
       } else if (activeModule === 'tarifs') {
         setTarifs(await fetchTarifsMinesec({
           anneeScolaire: filterAnnee || undefined,
@@ -103,7 +115,7 @@ export default function SectionReferentielsHub({ onToast }: Props) {
     } finally {
       setLoading(false)
     }
-  }, [activeModule, filterSerie, filterNiveau, filterTemplate, filterSubsystem, filterAnnee, searchTerm, onToast])
+  }, [activeModule, filterSerie, filterNiveau, filterTemplate, filterSubsystem, filterAnnee, filterProgLevel, filterProgFiliere, searchTerm, progressionsPage, onToast])
 
   useEffect(() => {
     loadSummary()
@@ -162,8 +174,8 @@ export default function SectionReferentielsHub({ onToast }: Props) {
     if (!(await confirmAction('Supprimer ce programme officiel ?'))) return
     try {
       await deleteOfficialProgression(id)
-      setProgressions(prev => prev.filter(p => p.id !== id))
       onToast('Programme supprimé.', 'info')
+      loadCurrentModule()
       loadSummary()
     } catch {
       onToast('Erreur lors de la suppression', 'error')
@@ -212,19 +224,38 @@ export default function SectionReferentielsHub({ onToast }: Props) {
         onSelectModule={mod => {
           setActiveModule(mod)
           setSearchTerm('')
+          setProgressionsPage(1)
         }}
         searchTerm={searchTerm}
-        onSearchTermChange={setSearchTerm}
+        onSearchTermChange={val => {
+          setSearchTerm(val)
+          setProgressionsPage(1)
+        }}
         filterSerie={filterSerie}
         onFilterSerieChange={setFilterSerie}
         filterNiveau={filterNiveau}
         onFilterNiveauChange={setFilterNiveau}
         filterTemplate={filterTemplate}
-        onFilterTemplateChange={setFilterTemplate}
+        onFilterTemplateChange={val => {
+          setFilterTemplate(val)
+          setProgressionsPage(1)
+        }}
         filterSubsystem={filterSubsystem}
         onFilterSubsystemChange={setFilterSubsystem}
         filterAnnee={filterAnnee}
         onFilterAnneeChange={setFilterAnnee}
+        filterProgLevel={filterProgLevel}
+        onFilterProgLevelChange={val => {
+          setFilterProgLevel(val)
+          setProgressionsPage(1)
+        }}
+        filterProgFiliere={filterProgFiliere}
+        onFilterProgFiliereChange={val => {
+          setFilterProgFiliere(val)
+          setProgressionsPage(1)
+        }}
+        progressionLevels={progressionFacets.levels}
+        progressionFilieres={progressionFacets.filieres}
         onOpenImportProgressions={() => setImportModalOpen(true)}
       />
 
@@ -264,6 +295,8 @@ export default function SectionReferentielsHub({ onToast }: Props) {
             {activeModule === 'progressions' && (
               <ReferentielProgressionsView
                 progressions={progressions}
+                pagination={progressionsPagination}
+                onPageChange={setProgressionsPage}
                 onEdit={handleOpenEdit}
                 onDelete={handleDeleteProgression}
               />

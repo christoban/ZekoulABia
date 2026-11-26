@@ -4,7 +4,7 @@ import type { TypeFraisMinesec } from '@domain/types/enums';
 import { logMasterAction } from '../../services/audit/MasterAuthAuditService.ts';
 
 export class MasterReferentielsController {
-  constructor(private readonly repo: MasterReferentielsRepository) {}
+  constructor(private readonly repo: MasterReferentielsRepository) { }
 
   // ─── 1. Synthèse globale & Alerte Proactive ─────────────────────────────
   getSummary = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -304,13 +304,28 @@ export class MasterReferentielsController {
   // ─── 5. Programmes Officiels & Progressions Types ───────────────────────
   getProgressions = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { templateCode, level, search } = req.query;
-      const progressions = await this.repo.listProgressions({
-        templateCode: typeof templateCode === 'string' ? templateCode : undefined,
-        level: typeof level === 'string' ? level : undefined,
-        search: typeof search === 'string' ? search : undefined,
+      const { templateCode, level, filiere, search, page, limit } = req.query;
+      const parsedPage = typeof page === 'string' && /^\d+$/.test(page.trim()) ? Number(page.trim()) : undefined;
+      const parsedLimit = typeof limit === 'string' && /^\d+$/.test(limit.trim()) ? Number(limit.trim()) : undefined;
+      const result = await this.repo.listProgressions({
+        templateCode: typeof templateCode === 'string' && templateCode.trim() ? templateCode.trim() : undefined,
+        level: typeof level === 'string' && level.trim() ? level.trim() : undefined,
+        filiere: typeof filiere === 'string' && filiere.trim() ? filiere.trim() : undefined,
+        search: typeof search === 'string' && search.trim() ? search.trim() : undefined,
+        page: parsedPage,
+        limit: parsedLimit,
       });
-      res.json({ success: true, data: progressions });
+      res.json({
+        success: true,
+        data: result.items,
+        pagination: {
+          page: result.page,
+          limit: result.limit,
+          total: result.total,
+          pages: result.pages,
+        },
+        facets: result.facets,
+      });
     } catch (error) { next(error); }
   };
 
