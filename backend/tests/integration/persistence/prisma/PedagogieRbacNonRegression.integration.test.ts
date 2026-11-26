@@ -59,11 +59,11 @@ if (!/^postgresql:\/\/[^@]+@(localhost|127\.0\.0\.1):5432\/zekoulabia_test(\?|$)
   throw new Error(`Refus d'exécuter hors localhost/zekoulabia_test (${dbUrl})`);
 }
 
-const noopAudit: AIActionAuditPort = { journaliser: () => {} };
+const noopAudit: AIActionAuditPort = { journaliser: () => { } };
 const noopNotif: NotificationService = {
-  envoyer: async () => {},
-  envoyerAuRole: async () => {},
-  marquerLue: async () => {},
+  envoyer: async () => { },
+  envoyerAuRole: async () => { },
+  marquerLue: async () => { },
   marquerDelivree: async () => false,
   marquerConfirmee: async () => false,
 };
@@ -458,5 +458,4 @@ describe('Non-régression RBAC Pédagogie sur zekoulabia_test (commit fdbb8509 +
       expect((await reqJson(`/progression?classId=${class5eId}&subjectId=${subFrId}`, tok)).status).toBe(200);
     }
   });
-});
-
+})

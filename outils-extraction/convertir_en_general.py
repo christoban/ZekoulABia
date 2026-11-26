@@ -121,6 +121,7 @@ def process_en_class(
     unique_imported_src: dict[str, dict] = {}
     unique_apart_lecs = 0
     history_parts: list[tuple[str, dict, int]] = []
+    u6_maths_parts: dict[str, tuple[dict, int]] = {}
     fi_split_summary: dict | None = None
 
     for raw_prog in raw_progs:
@@ -159,6 +160,10 @@ def process_en_class(
 
         if conf == "fusion-history":
             history_parts.append((label, prog, merged_cnt))
+            continue
+
+        if conf == "fusion-u6-maths":
+            u6_maths_parts[label] = (prog, merged_cnt)
             continue
 
         if conf not in ACCEPTED_CONFIDENCES or target_name == "aucune" or not proposed_fils:
@@ -206,6 +211,78 @@ def process_en_class(
             "imp": h_stats["leconsImport"],
             "provenance": h_prov,
         }
+
+    # Décision D41 : Fusion UpperSixth Mathematics (Pure M1-M7 unique + [Option Mechanics] + [Option Statistics])
+    if u6_maths_parts and "Pure mathematics with statistics" in u6_maths_parts and "Pure mathematics with mechanics" in u6_maths_parts:
+        p_stat, m_stat = u6_maths_parts["Pure mathematics with statistics"]
+        p_mech, m_mech = u6_maths_parts["Pure mathematics with mechanics"]
+        core_mods = [dict(m) for m in p_stat["modules"][:7]]
+        mech_dup_lecs = sum(len(m["lecons"]) for m in p_mech["modules"][:7])
+        mech_opt_mods = [
+            dict(m, titre=f"[Option Mechanics] {m['titre']}")
+            for m in p_mech["modules"][7:]
+        ]
+        stat_opt_mods = [
+            dict(m, titre=f"[Option Statistics] {m['titre']}")
+            for m in p_stat["modules"][7:]
+        ]
+        p_core = dict(p_stat, matiere="Pure Mathematics (Core)", modules=core_mods)
+        p_mech_opt = dict(p_mech, matiere="Option Mechanics", modules=mech_opt_mods)
+        p_stat_opt = dict(p_stat, matiere="Option Statistics", modules=stat_opt_mods)
+        m_src_label = "Pure mathematics with statistics + Pure mathematics with mechanics"
+        m_item, m_stats, _ = build_item(
+            [p_core, p_mech_opt, p_stat_opt],
+            m_stat + m_mech,
+            "Mathematics",
+            m_src_label,
+            classe,
+            "EN_GENERAL",
+            titre=f"Programme officiel MINESEC — {classe} (EN_GENERAL) — Mathematics",
+        )
+        # Comptabiliser les 79 leçons du tronc commun M1-M7 de mechanics comme exclusions de dédoublonnage
+        m_stats_tot = dict(
+            m_stats,
+            leconsExtraites=m_stats["leconsExtraites"] + mech_dup_lecs,
+            exclusions=m_stats["exclusions"] + mech_dup_lecs,
+        )
+        per_fil_items["EN_GENERAL"].append(m_item)
+        per_fil_stats["EN_GENERAL"].append(m_stats_tot)
+        unique_imported_src[m_src_label] = m_stats_tot
+
+    # Décision D42 (miroir exact de D3) : apport croisé ECM FR -> EN_PEBS (Form1..Form5)
+    en_pebs_ecm_sources = {
+        "Form1": ("6e FR_GENERAL.json", "6e"),
+        "Form2": ("5e FR_GENERAL.json", "5e"),
+        "Form3": ("4e FR_GENERAL.json", "4e"),
+        "Form4": ("3e FR_GENERAL.json", "3e"),
+        "Form5": ("2nde FR_SECOND_CYCLE.json", "2nde"),
+    }
+    if "EN_PEBS" in filieres and classe in en_pebs_ecm_sources:
+        fr_fname, fr_lvl = en_pebs_ecm_sources[classe]
+        fr_path = import_dir / fr_fname
+        if fr_path.exists():
+            fr_data = json.loads(fr_path.read_text(encoding="utf-8"))
+            ecm_src = next((it for it in fr_data.get("items", []) if it.get("subjectName") == "Éducation à la Citoyenneté et à la Morale"), None)
+            if ecm_src is not None:
+                nb_ecm = len(ecm_src["chapitres"])
+                ecm_item = {
+                    "templateCode": "__ALL__",
+                    "level": classe,
+                    "filiere": "EN_PEBS",
+                    "subjectName": "Éducation à la Citoyenneté et à la Morale",
+                    "subjectNameSource": f"ECM ({fr_lvl} FR — apport croisé D42)",
+                    "titre": f"Programme officiel MINESEC — {classe} (EN_PEBS) — Éducation à la Citoyenneté et à la Morale",
+                    "source": DEFAULT_SOURCE,
+                    "active": True,
+                    "chapitres": ecm_src["chapitres"],
+                }
+                per_fil_items["EN_PEBS"].append(ecm_item)
+                per_fil_stats["EN_PEBS"].append({
+                    "leconsExtraites": nb_ecm,
+                    "exclusions": 0,
+                    "fusions": 0,
+                    "leconsImport": nb_ecm,
+                })
 
     filiere_totals: dict[str, dict] = {}
     apart_totals: dict[str, dict] = {}
