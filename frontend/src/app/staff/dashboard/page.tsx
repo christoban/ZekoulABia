@@ -20,6 +20,7 @@ import SectionDiscipline from './_components/SectionDiscipline'
 import SectionLibrary from './_components/SectionLibrary'
 import SectionOrientation from './_components/SectionOrientation'
 import SectionDepartementsStaff from './_components/SectionDepartementsStaff'
+import SectionPedagogieStaff from './_components/SectionPedagogieStaff'
 import SectionSuiviElevesStaff from './_components/SectionSuiviElevesStaff'
 import SectionAnonymatStaff from './_components/SectionAnonymatStaff'
 import APEEAlertBanner from './_components/APEEAlertBanner'
@@ -204,6 +205,12 @@ export default function StaffDashboard() {
           {visitedSections.has('departements') && can('departements') && (
             <div style={{ display: section === 'departements' ? 'contents' : 'none' }}>
               <SectionDepartementsStaff onToast={showToast} />
+            </div>
+          )}
+
+          {visitedSections.has('pedagogie') && can('pedagogie') && (
+            <div style={{ display: section === 'pedagogie' ? 'contents' : 'none' }}>
+              <SectionPedagogieStaff onToast={showToast} />
             </div>
           )}
 

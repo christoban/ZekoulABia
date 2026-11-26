@@ -2,7 +2,7 @@ export type StaffSection =
   | 'dashboard' | 'council' | 'timetable'
   | 'grille-horaire' | 'affectations'
   | 'attendance' | 'finance' | 'cautions' | 'discipline'
-  | 'library' | 'orientation' | 'departements' | 'suivi-eleves'
+  | 'library' | 'orientation' | 'departements' | 'pedagogie' | 'suivi-eleves'
   | 'anonymat'
   | 'sync-offline'
   | 'mon-profil-rh' | 'apee' | 'notifications' | 'babillard' | 'carnet-liaison' | 'messagerie' | 'moderation-messagerie'
@@ -33,7 +33,7 @@ export const ALL_STAFF_SECTIONS: StaffSection[] = [
   'dashboard', 'council', 'timetable',
   'grille-horaire', 'affectations',
   'attendance', 'finance', 'cautions', 'discipline',
-  'library', 'orientation', 'departements', 'suivi-eleves',
+  'library', 'orientation', 'departements', 'pedagogie', 'suivi-eleves',
   'anonymat',
   'sync-offline',
   'mon-profil-rh', 'apee', 'notifications', 'babillard', 'carnet-liaison', 'messagerie', 'moderation-messagerie',
@@ -51,6 +51,7 @@ export const PERM_TO_SECTION: { perm: string; section: StaffSection }[] = [
   { perm: 'MANAGE_ENROLLMENT',          section: 'eleves-familles'  },
   { perm: 'MANAGE_ENROLLMENT',          section: 'import-eleves'    },
   { perm: 'MANAGE_CLASSES',             section: 'classes'          },
+  { perm: 'MANAGE_CLASSES',             section: 'pedagogie'        },
   { perm: 'MANAGE_STUDENT_ASSIGNMENTS', section: 'eleves-affectations' },
   { perm: 'MANAGE_TEACHING_ASSIGNMENTS',section: 'affectations'     },
   { perm: 'MANAGE_CLASS_COUNCIL',       section: 'council'          },

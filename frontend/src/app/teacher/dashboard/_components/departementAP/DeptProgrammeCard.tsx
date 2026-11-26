@@ -1,5 +1,6 @@
 'use client'
 import { Plus, Trash2, ChevronDown, ChevronRight, Edit3, X, Check, Loader2 } from 'lucide-react'
+import DeptProgrammeModulesList from './DeptProgrammeModulesList'
 import { deptInputStyle, deptLabelStyle, type Programme, type EditingChapitreState } from './types'
 
 interface Props {
@@ -25,6 +26,7 @@ interface Props {
   onUpdateChapitre: () => void
   onCancelEditChap: () => void
   onDeleteChapitre: (chapitreId: string, titre: string) => void
+  onShowToast?: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void
 }
 
 export default function DeptProgrammeCard({
@@ -50,10 +52,12 @@ export default function DeptProgrammeCard({
   onUpdateChapitre,
   onCancelEditChap,
   onDeleteChapitre,
+  onShowToast,
 }: Props) {
   const hasHours = p.chapitres.some(c => c.volumeHeuresPrevu !== null && c.volumeHeuresPrevu !== undefined)
   const totalHours = hasHours ? p.chapitres.reduce((sum, c) => sum + (c.volumeHeuresPrevu ?? 0), 0) : null
   const sortedChapitres = [...p.chapitres].sort((a, b) => a.ordre - b.ordre)
+  const hasModules = sortedChapitres.some(c => c.moduleOrdre !== null && c.moduleOrdre !== undefined)
 
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden shadow-xs">
@@ -80,6 +84,11 @@ export default function DeptProgrammeCard({
               {p.class && (
                 <span className="text-[11px] px-2 py-0.5 rounded-full font-bold" style={{ background: 'var(--blue-light)', color: 'var(--blue)' }}>
                   {p.class.name}
+                </span>
+              )}
+              {p.source === 'national' && (
+                <span className="text-[11px] px-2 py-0.5 rounded-full font-extrabold" style={{ background: 'var(--green-light)', color: 'var(--green)' }}>
+                  Officiel
                 </span>
               )}
               <span className="text-[11px] px-2 py-0.5 rounded-full font-semibold text-[var(--text3)]">
@@ -177,6 +186,21 @@ export default function DeptProgrammeCard({
             <div className="p-4 text-center text-xs text-[var(--text3)] italic">
               Aucun chapitre défini pour ce programme. Cliquez sur « Ajouter chapitre » ci-dessus.
             </div>
+          ) : hasModules ? (
+            <DeptProgrammeModulesList
+              programmeId={p.id}
+              classId={p.class?.id ?? null}
+              subjectId={p.subject.id}
+              chapitres={sortedChapitres}
+              editingChap={editingChap}
+              savingEditChap={savingEditChap}
+              onStartEditChap={onStartEditChap}
+              onChangeEditingChap={onChangeEditingChap}
+              onUpdateChapitre={onUpdateChapitre}
+              onCancelEditChap={onCancelEditChap}
+              onDeleteChapitre={onDeleteChapitre}
+              onShowToast={onShowToast}
+            />
           ) : (
             <div className="space-y-1.5">
               {sortedChapitres.map(chap => {

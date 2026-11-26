@@ -123,6 +123,7 @@ export default function StaffSidebar({
 
   // Pédagogie & Structure
   const pedagItems: NavItem[] = []
+  if (can('pedagogie'))        pedagItems.push({ id: 'pedagogie', icon: BookOpen, label: 'Programmes & Pédagogie' })
   if (can('eleves-affectations')) pedagItems.push({ id: 'eleves-affectations', icon: Users, label: tnav('sidebar.studentAssignments') ?? 'Affectations élèves' })
   if (can('departements'))     pedagItems.push({ id: 'departements', icon: Landmark, label: tnav('sidebar.departments') })
   if (can('orientation'))      pedagItems.push({ id: 'orientation', icon: Compass, label: tnav('sidebar.orientation') })

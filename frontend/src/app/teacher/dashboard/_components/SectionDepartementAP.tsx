@@ -184,7 +184,13 @@ export default function SectionDepartementAP({
       )}
 
       {tab === 'progression' && (
-        <DeptProgressionTab alertes={alertes} loading={alertesLoading} t={t} />
+        <DeptProgressionTab
+          departementId={departementId}
+          alertes={alertes}
+          loading={alertesLoading}
+          onShowToast={showToast}
+          t={t}
+        />
       )}
 
       {tab === 'programmes' && (

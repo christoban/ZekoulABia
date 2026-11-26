@@ -308,6 +308,7 @@ export default function DeptProgrammesTab({
               onUpdateChapitre={handleUpdateChapitre}
               onCancelEditChap={() => setEditingChap(null)}
               onDeleteChapitre={handleDeleteChapitre}
+              onShowToast={showToast}
             />
           ))}
         </div>

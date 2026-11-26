@@ -43,6 +43,7 @@ describe('Staff Sidebar Roles & Permissions (Secretary, Censeur, Intendant)', ()
 
     expect(sections).toContain('configuration')
     expect(sections).toContain('classes')
+    expect(sections).toContain('pedagogie')
     expect(sections).toContain('timetable')
     expect(sections).toContain('council')
     expect(sections).toContain('eleves-affectations')

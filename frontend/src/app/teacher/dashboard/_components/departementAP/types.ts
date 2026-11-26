@@ -45,6 +45,8 @@ export interface Chapitre {
   ordre: number
   volumeHeuresPrevu: number | null
   sequenceCibleFin?: number | null
+  moduleOrdre?: number | null
+  moduleTitre?: string | null
   numeroAffiche?: string | null
   realise?: boolean
 }
