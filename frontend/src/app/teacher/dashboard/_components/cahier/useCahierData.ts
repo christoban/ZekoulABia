@@ -43,6 +43,34 @@ export function useCahierData({ user, onToast, t }: UseCahierDataParams) {
   const [loadingEntries, setLoadingEntries] = useState(false)
   const [filterClass, setFilterClass] = useState('')
   const [pendingEntries, setPendingEntries] = useState<PendingAction[]>([])
+  const [materialisationEnabled, setMaterialisationEnabled] = useState(false)
+
+  // ── Statut feature flag / école pilote pour l'onglet Programme ────────────
+  useEffect(() => {
+    const statusCacheKey = `pedagogie:materialisation:status:${user?.id ?? 'default'}`
+    getCachedData<{ enabled: boolean }>(statusCacheKey)
+      .then((c) => {
+        if (c?.data && typeof c.data.enabled === 'boolean') {
+          setMaterialisationEnabled(c.data.enabled)
+        }
+      })
+      .catch(() => {})
+
+    if (!isOnline) return
+    fetchApi('/api/v2/pedagogie/materialisation/status', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success) {
+          const enabled = d.data?.enabled === true
+          setMaterialisationEnabled(enabled)
+          putCachedData(statusCacheKey, { enabled }).catch(() => {})
+          if (!enabled) {
+            setTab((prev) => (prev === 'programme' ? 'saisie' : prev))
+          }
+        }
+      })
+      .catch(() => {})
+  }, [isOnline, user?.id])
 
   // ── Init : classes + slot du jour + pré-sélection rapide ─────────────────
   useEffect(() => {
@@ -331,7 +359,7 @@ export function useCahierData({ user, onToast, t }: UseCahierDataParams) {
     (hasProgramme === false ? !!contenuLibre.trim() : !!contenu.trim())
 
   return {
-    tab, setTab, isOnline,
+    tab, setTab, isOnline, materialisationEnabled,
     classes, subjects, chapitres, hasProgramme,
     selectedClass, setSelectedClass,
     selectedSubject, setSelectedSubject,

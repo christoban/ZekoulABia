@@ -51,7 +51,7 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
 
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
         {tabBtn('saisie', t('cahier_de_texte.tab_new_entry'), Pencil)}
-        {tabBtn('programme', t('cahier_de_texte.tab_programme'), BookOpen)}
+        {c.materialisationEnabled && tabBtn('programme', t('cahier_de_texte.tab_programme'), BookOpen)}
         {tabBtn('historique', t('cahier_de_texte.tab_history'), ClipboardList)}
       </div>
 
@@ -93,9 +93,10 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
         />
       )}
 
-      {c.tab === 'programme' && (
+      {c.tab === 'programme' && c.materialisationEnabled && (
         <CahierProgrammeTab
           isOnline={c.isOnline}
+          featureEnabled={c.materialisationEnabled}
           classes={c.classes}
           subjects={c.subjects}
           selectedClass={c.selectedClass}

@@ -37,11 +37,11 @@ export class PedagogieMaterialisationController {
     private readonly audit: AIActionAuditPort,
   ) {}
 
-  getStatus = (_req: Request, res: Response): void => {
+  getStatus = (req: Request, res: Response): void => {
     res.json({
       success: true,
       data: {
-        enabled: isOfficialProgrammesMaterialisationEnabled(),
+        enabled: isOfficialProgrammesMaterialisationEnabled(req.user?.schoolId),
       },
     });
   };
@@ -228,3 +228,4 @@ export class PedagogieMaterialisationController {
     next(e);
   }
 }
+

@@ -24,7 +24,7 @@ export class FeatureFlaggedAutoMaterialisationService
     classId: string;
     academicYearId?: string;
   }): Promise<void> {
-    if (!isOfficialProgrammesMaterialisationEnabled()) return;
+    if (!isOfficialProgrammesMaterialisationEnabled(params.schoolId)) return;
     try {
       await this.appliquerClasse.execute({
         schoolId: params.schoolId,
@@ -44,7 +44,7 @@ export class FeatureFlaggedAutoMaterialisationService
     schoolId: string;
     academicYearId?: string;
   }): Promise<void> {
-    if (!isOfficialProgrammesMaterialisationEnabled()) return;
+    if (!isOfficialProgrammesMaterialisationEnabled(params.schoolId)) return;
     try {
       await this.initialiserEcole.appliquer({
         schoolId: params.schoolId,

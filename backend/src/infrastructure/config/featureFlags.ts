@@ -8,21 +8,50 @@ import type { Request, Response, NextFunction } from 'express';
 export const OFFICIAL_PROGRAMMES_MATERIALISATION_FLAG =
   'ENABLE_OFFICIAL_PROGRAMMES_MATERIALISATION';
 
+export const OFFICIAL_PROGRAMMES_PILOT_SCHOOL_IDS_ENV =
+  'OFFICIAL_PROGRAMMES_PILOT_SCHOOL_IDS';
+
 /**
- * Active la matérialisation des programmes nationaux vers les écoles (Lot 1) :
- * initialisation de classe, coche directe de leçons et bascule de modules.
- * Désactivé par défaut tant que ENABLE_OFFICIAL_PROGRAMMES_MATERIALISATION !== 'true'.
+ * Retourne l'ensemble des schoolId pilotes si OFFICIAL_PROGRAMMES_PILOT_SCHOOL_IDS est renseignée,
+ * ou null si la variable est absente/vide (= toutes les écoles autorisées quand le flag global est ON).
  */
-export function isOfficialProgrammesMaterialisationEnabled(): boolean {
-  return process.env[OFFICIAL_PROGRAMMES_MATERIALISATION_FLAG] === 'true';
+export function getOfficialProgrammesPilotSchoolIds(): Set<string> | null {
+  const raw = process.env[OFFICIAL_PROGRAMMES_PILOT_SCHOOL_IDS_ENV];
+  if (!raw) return null;
+  const ids = raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  return ids.length > 0 ? new Set(ids) : null;
+}
+
+/**
+ * Active la matérialisation des programmes nationaux vers les écoles (Lots 1–3) :
+ * - Désactivé par défaut tant que ENABLE_OFFICIAL_PROGRAMMES_MATERIALISATION !== 'true'.
+ * - Si OFFICIAL_PROGRAMMES_PILOT_SCHOOL_IDS est renseignée (liste séparée par virgules),
+ *   seules ces écoles ont accès ; les autres se comportent comme flag éteint.
+ * - Si OFFICIAL_PROGRAMMES_PILOT_SCHOOL_IDS est vide/absente, toutes les écoles sont autorisées.
+ */
+export function isOfficialProgrammesMaterialisationEnabled(schoolId?: string): boolean {
+  if (process.env[OFFICIAL_PROGRAMMES_MATERIALISATION_FLAG] !== 'true') {
+    return false;
+  }
+  const pilotIds = getOfficialProgrammesPilotSchoolIds();
+  if (pilotIds === null) {
+    return true;
+  }
+  if (!schoolId || !schoolId.trim()) {
+    return false;
+  }
+  return pilotIds.has(schoolId.trim());
 }
 
 export function requireOfficialProgrammesMaterialisation(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction,
 ): void {
-  if (!isOfficialProgrammesMaterialisationEnabled()) {
+  if (!isOfficialProgrammesMaterialisationEnabled(req.user?.schoolId)) {
     res.status(403).json({
       success: false,
       code: 'FEATURE_DISABLED',

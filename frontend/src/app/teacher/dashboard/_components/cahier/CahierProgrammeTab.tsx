@@ -18,6 +18,7 @@ import {
 
 interface Props {
   isOnline: boolean
+  featureEnabled?: boolean
   classes: Classe[]
   subjects: Subject[]
   selectedClass: string
@@ -79,6 +80,7 @@ function recalculerVueLocale(vue: ProgrammeProgressionView): ProgrammeProgressio
 
 export default function CahierProgrammeTab({
   isOnline,
+  featureEnabled: featureEnabledProp,
   classes,
   subjects,
   selectedClass,
@@ -90,7 +92,7 @@ export default function CahierProgrammeTab({
   t,
 }: Props) {
   const { addToQueue } = useSyncQueue()
-  const [featureEnabled, setFeatureEnabled] = useState<boolean>(false)
+  const [featureEnabled, setFeatureEnabled] = useState<boolean>(featureEnabledProp ?? false)
   const [progression, setProgression] = useState<ProgrammeProgressionView | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -104,22 +106,10 @@ export default function CahierProgrammeTab({
     : null
 
   useEffect(() => {
-    getCachedData<{ enabled: boolean }>('pedagogie:materialisation:status')
-      .then((c) => { if (c?.data?.enabled === true) setFeatureEnabled(true) })
-      .catch(() => {})
-
-    if (!isOnline) return
-    fetchApi('/api/v2/pedagogie/materialisation/status', { credentials: 'include' })
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.success) {
-          const enabled = d.data?.enabled === true
-          setFeatureEnabled(enabled)
-          putCachedData('pedagogie:materialisation:status', { enabled }).catch(() => {})
-        }
-      })
-      .catch(() => {})
-  }, [isOnline])
+    if (typeof featureEnabledProp === 'boolean') {
+      setFeatureEnabled(featureEnabledProp)
+    }
+  }, [featureEnabledProp])
 
   const loadProgression = useCallback(async () => {
     if (!selectedClass || !selectedSubject || !cacheKey) {
