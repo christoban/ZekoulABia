@@ -4,8 +4,8 @@ import type { ChapitreRepository, ChapitreProps, ChapitreCreateData, ChapitreUpd
 export class PrismaChapitreRepository implements ChapitreRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async findByIdAndSchool(id: string, schoolId: string): Promise<(ChapitreProps & { programme: { schoolId: string } }) | null> {
-    return this.prisma.chapitre.findFirst({ where: { id, programme: { schoolId } }, include: { programme: { select: { schoolId: true } } } });
+  async findByIdAndSchool(id: string, schoolId: string): Promise<(ChapitreProps & { programme: { schoolId: string; subjectId?: string } }) | null> {
+    return this.prisma.chapitre.findFirst({ where: { id, programme: { schoolId } }, include: { programme: { select: { schoolId: true, subjectId: true } } } });
   }
 
   async findNextOrdre(programmeId: string): Promise<number> {

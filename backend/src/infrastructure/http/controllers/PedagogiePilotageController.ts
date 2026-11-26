@@ -10,6 +10,7 @@ import {
   type GenererRapportAvancementProgrammesUseCase,
 } from '@application/pedagogie/GenererRapportAvancementProgrammesUseCase';
 import type { RelancerRetardsProgrammesUseCase } from '@application/pedagogie/RelancerRetardsProgrammesUseCase';
+import { PedagogieForbiddenError } from '@application/pedagogie/errors';
 
 export class PedagogiePilotageController {
   constructor(
@@ -57,6 +58,10 @@ export class PedagogiePilotageController {
 
       res.json({ success: true, data: rapport });
     } catch (e) {
+      if (e instanceof PedagogieForbiddenError) {
+        res.status(403).json({ success: false, message: e.message });
+        return;
+      }
       next(e);
     }
   };
@@ -124,3 +129,4 @@ export class PedagogiePilotageController {
     }
   };
 }
+

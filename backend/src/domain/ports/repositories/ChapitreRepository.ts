@@ -29,7 +29,7 @@ export interface ChapitreUpdateData {
 }
 
 export interface ChapitreRepository {
-  findByIdAndSchool(id: string, schoolId: string): Promise<(ChapitreProps & { programme: { schoolId: string } }) | null>;
+  findByIdAndSchool(id: string, schoolId: string): Promise<(ChapitreProps & { programme: { schoolId: string; subjectId?: string } }) | null>;
   findNextOrdre(programmeId: string): Promise<number>;
   create(data: ChapitreCreateData): Promise<ChapitreProps>;
   update(data: ChapitreUpdateData): Promise<ChapitreProps>;

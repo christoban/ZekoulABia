@@ -115,7 +115,7 @@ export function creerPedagogieRoutes(
     router.get(
       '/rapports/avancement',
       requireOfficialProgrammesMaterialisation,
-      requirePermission('MANAGE_CLASSES', 'SUPERVISE_LESSON_PLANS'),
+      requireRole('ADMIN', 'STAFF', 'TEACHER'),
       pilotageCtrl.getRapportAvancement,
     );
     router.post(

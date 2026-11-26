@@ -7,7 +7,10 @@ import type {
   ChapitreAvancementRepository,
   ProgrammeModuleEtatProps,
 } from '@domain/ports/repositories/ChapitreAvancementRepository';
+import type { DepartmentRepository } from '@domain/ports/repositories/DepartmentRepository';
 import type { SourceRealisationLecon } from './BasculerAvancementChapitreUseCase';
+import { PedagogieForbiddenError } from './errors';
+import { resoudreScopePedagogie, type PedagogieActor } from './PedagogieAccessGuard';
 
 export interface ProgressionChapitreDetail {
   id: string;
@@ -93,6 +96,7 @@ export class CalculerProgressionProgrammeUseCase {
     private readonly classeRepository: ClasseRepository,
     private readonly anneeRepository: AnneeAcademiqueRepository,
     private readonly avancementRepository?: ChapitreAvancementRepository,
+    private readonly departmentRepository?: DepartmentRepository,
   ) {}
 
   async calculerProgression(input: CalculerProgressionInput): Promise<ProgressionAvecProgramme> {
@@ -267,7 +271,21 @@ export class CalculerProgressionProgrammeUseCase {
     schoolId: string,
     academicYearId?: string,
     seuilPct = 15,
+    actor?: PedagogieActor,
   ): Promise<AlerteRetardProgramme[]> {
+    let allowedSubjectIds: Set<string> | null = null;
+    if (actor && this.departmentRepository) {
+      const scope = await resoudreScopePedagogie(this.departmentRepository, schoolId, actor);
+      if (scope.kind === 'NONE') {
+        throw new PedagogieForbiddenError(
+          "Accès refusé : vous n'êtes pas autorisé à consulter les alertes de retard de l'établissement.",
+        );
+      }
+      if (scope.kind === 'DEPARTMENT_SCOPED') {
+        allowedSubjectIds = scope.subjectIds;
+      }
+    }
+
     const anneeId = academicYearId ?? (await this.anneeRepository.findCourante(schoolId))?.id;
     if (!anneeId) return [];
 
@@ -275,7 +293,11 @@ export class CalculerProgressionProgrammeUseCase {
     const attenduPct = this.datePourcentage(annee?.startDate, annee?.endDate);
     if (attenduPct === null) return [];
 
-    const programmes = await this.programmeRepository.findByFilters(schoolId, { academicYearId: anneeId });
+    const tousProgrammes = await this.programmeRepository.findByFilters(schoolId, { academicYearId: anneeId });
+    const programmes =
+      allowedSubjectIds !== null
+        ? tousProgrammes.filter((p) => allowedSubjectIds!.has(p.subjectId))
+        : tousProgrammes;
     const allModuleEtats =
       this.avancementRepository && programmes.length > 0
         ? await this.avancementRepository.findModuleEtatsByProgrammes(

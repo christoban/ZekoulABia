@@ -96,6 +96,7 @@ export function createTimetableContainer(core: CoreContainerContext) {
     core.classeRepository,
     core.anneeRepository,
     chapitreAvancementRepository,
+    core.departmentRepository,
   );
   const autoMaterialisationProgrammes = new FeatureFlaggedAutoMaterialisationService(
     appliquerInitialisationProgrammesClasse,
@@ -193,9 +194,17 @@ export function createTimetableContainer(core: CoreContainerContext) {
       staffAttendanceRepository: core.staffAttendanceRepository,
     },
     pedagogie: {
-      listerProgramme: new ListerProgrammeUseCase(programmeRepository),
-      gererProgramme: new GererProgrammeUseCase(programmeRepository, core.anneeRepository),
-      gererChapitre: new GererChapitreUseCase(chapitreRepository, programmeRepository),
+      listerProgramme: new ListerProgrammeUseCase(programmeRepository, core.departmentRepository),
+      gererProgramme: new GererProgrammeUseCase(
+        programmeRepository,
+        core.anneeRepository,
+        core.departmentRepository,
+      ),
+      gererChapitre: new GererChapitreUseCase(
+        chapitreRepository,
+        programmeRepository,
+        core.departmentRepository,
+      ),
       gererCahier: new GererCahierDeTexteUseCase(
         cahierDeTexteRepository,
         core.anneeRepository,

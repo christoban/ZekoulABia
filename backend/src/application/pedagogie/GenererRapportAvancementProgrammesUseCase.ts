@@ -14,6 +14,8 @@ import type { ClasseRepository } from '@domain/ports/repositories/ClasseReposito
 import type { AnneeAcademiqueRepository } from '@domain/ports/repositories/AnneeAcademiqueRepository';
 import type { ChapitreAvancementRepository } from '@domain/ports/repositories/ChapitreAvancementRepository';
 import type { DepartmentRepository } from '@domain/ports/repositories/DepartmentRepository';
+import { PedagogieForbiddenError } from './errors';
+import { resoudreScopePedagogie } from './PedagogieAccessGuard';
 
 export interface GenererRapportAvancementInput {
   schoolId: string;
@@ -192,14 +194,23 @@ export class GenererRapportAvancementProgrammesUseCase {
       }
     }
 
-    // RBAC périmètre : Admin ou titulaire de MANAGE_CLASSES voit tout ; un AP est scopé à ses départements
-    const isSchoolWide =
-      input.role.toUpperCase() === 'ADMIN' ||
-      input.permissions.includes('MANAGE_CLASSES');
-    let allowedDepartmentIds: Set<string> | null = null;
-    if (!isSchoolWide) {
-      const headed = departments.filter((d) => d.headId === input.userId).map((d) => d.id);
-      allowedDepartmentIds = new Set(headed);
+    // RBAC strict : Admin / Censeur (MANAGE_CLASSES) → toute l'école ; AP → ses départements ; autre → 403
+    const scope = await resoudreScopePedagogie(this.departmentRepository, input.schoolId, {
+      userId: input.userId,
+      role: input.role,
+      permissions: input.permissions,
+    });
+    if (scope.kind === 'NONE') {
+      throw new PedagogieForbiddenError(
+        "Accès refusé : seuls l'administration, le censeur ou l'Animateur Pédagogique d'un département peuvent consulter le rapport consolidé.",
+      );
+    }
+    const allowedDepartmentIds: Set<string> | null =
+      scope.kind === 'DEPARTMENT_SCOPED' ? scope.departmentIds : null;
+    if (allowedDepartmentIds !== null && input.departmentId && !allowedDepartmentIds.has(input.departmentId)) {
+      throw new PedagogieForbiddenError(
+        "Accès refusé : un Animateur Pédagogique ne peut consulter que les rapports de son propre département.",
+      );
     }
 
     const classesMap = new Map(classes.map((c) => [c.id, c]));
@@ -438,3 +449,4 @@ export class GenererRapportAvancementProgrammesUseCase {
     return totalJours > 0 ? Math.min(100, Math.round((ecoulees / totalJours) * 100)) : null;
   }
 }
+

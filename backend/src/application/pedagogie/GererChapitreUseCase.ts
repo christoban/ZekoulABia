@@ -1,6 +1,8 @@
 import type { ChapitreRepository, ChapitreProps } from '@domain/ports/repositories/ChapitreRepository';
 import type { ProgrammeRepository } from '@domain/ports/repositories/ProgrammeRepository';
+import type { DepartmentRepository } from '@domain/ports/repositories/DepartmentRepository';
 import { PedagogieNotFoundError, PedagogieValidationError } from './errors';
+import { exigerDroitGestionProgrammeMatiere, type PedagogieActor } from './PedagogieAccessGuard';
 
 export interface AjouterChapitreInput {
   schoolId: string;
@@ -9,6 +11,7 @@ export interface AjouterChapitreInput {
   ordre?: number;
   volumeHeuresPrevu?: number | null;
   sequenceCibleFin?: number | null;
+  actor?: PedagogieActor;
 }
 
 export interface MettreAJourChapitreInput {
@@ -18,17 +21,20 @@ export interface MettreAJourChapitreInput {
   ordre?: number;
   volumeHeuresPrevu?: number | null;
   sequenceCibleFin?: number | null;
+  actor?: PedagogieActor;
 }
 
 export interface SupprimerChapitreInput {
   schoolId: string;
   id: string;
+  actor?: PedagogieActor;
 }
 
 export class GererChapitreUseCase {
   constructor(
     private readonly chapitreRepository: ChapitreRepository,
     private readonly programmeRepository: ProgrammeRepository,
+    private readonly departmentRepository?: DepartmentRepository,
   ) {}
 
   async ajouter(input: AjouterChapitreInput): Promise<ChapitreProps> {
@@ -39,6 +45,15 @@ export class GererChapitreUseCase {
     const programme = await this.programmeRepository.findByIdAndSchool(input.programmeId, input.schoolId);
     if (!programme) {
       throw new PedagogieNotFoundError('Programme introuvable');
+    }
+
+    if (this.departmentRepository) {
+      await exigerDroitGestionProgrammeMatiere(
+        this.departmentRepository,
+        input.schoolId,
+        programme.subjectId,
+        input.actor,
+      );
     }
 
     const nextOrdre = await this.chapitreRepository.findNextOrdre(input.programmeId);
@@ -58,6 +73,15 @@ export class GererChapitreUseCase {
       throw new PedagogieNotFoundError('Chapitre introuvable');
     }
 
+    if (this.departmentRepository && chapitre.programme.subjectId) {
+      await exigerDroitGestionProgrammeMatiere(
+        this.departmentRepository,
+        input.schoolId,
+        chapitre.programme.subjectId,
+        input.actor,
+      );
+    }
+
     return this.chapitreRepository.update({
       id: input.id,
       titre: input.titre?.trim() ? input.titre.trim() : undefined,
@@ -72,6 +96,16 @@ export class GererChapitreUseCase {
     if (!chapitre) {
       throw new PedagogieNotFoundError('Chapitre introuvable');
     }
+
+    if (this.departmentRepository && chapitre.programme.subjectId) {
+      await exigerDroitGestionProgrammeMatiere(
+        this.departmentRepository,
+        input.schoolId,
+        chapitre.programme.subjectId,
+        input.actor,
+      );
+    }
+
     await this.chapitreRepository.delete(input.id);
   }
 }

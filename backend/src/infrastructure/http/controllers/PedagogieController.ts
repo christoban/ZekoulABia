@@ -29,9 +29,10 @@ export class PedagogieController {
     try {
       const user = req.user;
       const { subjectId, classId, level, academicYearId } = req.query as Record<string, string>;
-      const programmes = await this.listerProgramme.execute({ schoolId: user.schoolId, academicYearId, subjectId, classId, level });
+      const actor = { userId: user.userId, role: user.role, permissions: user.permissions };
+      const programmes = await this.listerProgramme.execute({ schoolId: user.schoolId, academicYearId, subjectId, classId, level, actor });
       res.json({ success: true, data: programmes });
-    } catch (e) { next(e); }
+    } catch (e) { this.gererErreur(e, res, next); }
   };
 
   createProgramme = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -40,7 +41,8 @@ export class PedagogieController {
       const { titre, subjectId, classId, level, academicYearId } = req.body as {
         titre?: string; subjectId?: string; classId?: string; level?: string; academicYearId?: string;
       };
-      const programme = await this.gererProgramme.creer({ schoolId: user.schoolId, titre: titre ?? '', subjectId: subjectId ?? '', classId, level, academicYearId });
+      const actor = { userId: user.userId, role: user.role, permissions: user.permissions };
+      const programme = await this.gererProgramme.creer({ schoolId: user.schoolId, titre: titre ?? '', subjectId: subjectId ?? '', classId, level, academicYearId, actor });
       res.status(201).json({ success: true, data: programme });
     } catch (e) { this.gererErreur(e, res, next); }
   };
@@ -50,7 +52,8 @@ export class PedagogieController {
       const user = req.user;
       const id = String(req.params.id);
       const { titre, classId, level } = req.body as { titre?: string; classId?: string | null; level?: string | null };
-      const updated = await this.gererProgramme.mettreAJour({ schoolId: user.schoolId, id, titre, classId, level });
+      const actor = { userId: user.userId, role: user.role, permissions: user.permissions };
+      const updated = await this.gererProgramme.mettreAJour({ schoolId: user.schoolId, id, titre, classId, level, actor });
       res.json({ success: true, data: updated });
     } catch (e) { this.gererErreur(e, res, next); }
   };
@@ -59,7 +62,8 @@ export class PedagogieController {
     try {
       const user = req.user;
       const id = String(req.params.id);
-      await this.gererProgramme.supprimer({ schoolId: user.schoolId, id });
+      const actor = { userId: user.userId, role: user.role, permissions: user.permissions };
+      await this.gererProgramme.supprimer({ schoolId: user.schoolId, id, actor });
       res.json({ success: true, message: 'Programme supprimé' });
     } catch (e) { this.gererErreur(e, res, next); }
   };
@@ -73,7 +77,8 @@ export class PedagogieController {
       const { titre, ordre, volumeHeuresPrevu, sequenceCibleFin } = req.body as {
         titre?: string; ordre?: number; volumeHeuresPrevu?: number | null; sequenceCibleFin?: number;
       };
-      const chapitre = await this.gererChapitre.ajouter({ schoolId: user.schoolId, programmeId, titre: titre ?? '', ordre, volumeHeuresPrevu, sequenceCibleFin });
+      const actor = { userId: user.userId, role: user.role, permissions: user.permissions };
+      const chapitre = await this.gererChapitre.ajouter({ schoolId: user.schoolId, programmeId, titre: titre ?? '', ordre, volumeHeuresPrevu, sequenceCibleFin, actor });
       res.status(201).json({ success: true, data: chapitre });
     } catch (e) { this.gererErreur(e, res, next); }
   };
@@ -85,7 +90,8 @@ export class PedagogieController {
       const { titre, ordre, volumeHeuresPrevu, sequenceCibleFin } = req.body as {
         titre?: string; ordre?: number; volumeHeuresPrevu?: number | null; sequenceCibleFin?: number | null;
       };
-      const updated = await this.gererChapitre.mettreAJour({ schoolId: user.schoolId, id, titre, ordre, volumeHeuresPrevu, sequenceCibleFin });
+      const actor = { userId: user.userId, role: user.role, permissions: user.permissions };
+      const updated = await this.gererChapitre.mettreAJour({ schoolId: user.schoolId, id, titre, ordre, volumeHeuresPrevu, sequenceCibleFin, actor });
       res.json({ success: true, data: updated });
     } catch (e) { this.gererErreur(e, res, next); }
   };
@@ -94,7 +100,8 @@ export class PedagogieController {
     try {
       const user = req.user;
       const id = String(req.params.id);
-      await this.gererChapitre.supprimer({ schoolId: user.schoolId, id });
+      const actor = { userId: user.userId, role: user.role, permissions: user.permissions };
+      await this.gererChapitre.supprimer({ schoolId: user.schoolId, id, actor });
       res.json({ success: true, message: 'Chapitre supprimé' });
     } catch (e) { this.gererErreur(e, res, next); }
   };
@@ -171,7 +178,8 @@ export class PedagogieController {
       const user = req.user;
       const { academicYearId, seuilPct } = req.query as Record<string, string>;
       const seuil = seuilPct ? parseInt(seuilPct, 10) : 15;
-      const alertes = await this.calculerProgression.calculerAlertesRetardProgramme(user.schoolId, academicYearId, seuil);
+      const actor = { userId: user.userId, role: user.role, permissions: user.permissions };
+      const alertes = await this.calculerProgression.calculerAlertesRetardProgramme(user.schoolId, academicYearId, seuil, actor);
       this.audit.journaliser({
         actorUserId: user.userId, actorRole: user.role, schoolId: user.schoolId,
         actionName: 'alertes_retard_programme', origin: 'UI_DIRECT', outcome: 'SUCCES',
@@ -185,7 +193,7 @@ export class PedagogieController {
         actionName: 'alertes_retard_programme', origin: 'UI_DIRECT', outcome: 'ERREUR',
         refusalReason: e instanceof Error ? e.message : undefined, parametersSummary: req.query,
       });
-      next(e);
+      this.gererErreur(e, res, next);
     }
   };
 
