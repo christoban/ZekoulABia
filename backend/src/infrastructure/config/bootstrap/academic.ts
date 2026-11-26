@@ -7,6 +7,7 @@ import { MasterBulletinAtelierController } from '@infrastructure/http/controller
 import { ClassCouncilController } from '@infrastructure/http/controllers/ClassCouncilController';
 import { AcademicYearController } from '@infrastructure/http/controllers/AcademicYearController';
 import { PedagogieController } from '@infrastructure/http/controllers/PedagogieController';
+import { PedagogieMaterialisationController } from '@infrastructure/http/controllers/PedagogieMaterialisationController';
 import { TemplateController } from '@infrastructure/http/controllers/TemplateController';
 import { StudentDocumentController } from '@infrastructure/http/controllers/StudentDocumentController';
 import { InviteOnboardingController } from '@infrastructure/http/controllers/InviteOnboardingController';
@@ -160,6 +161,7 @@ export function registerAcademicRoutes(app: Application, prismaParam: typeof pri
   );
   app.use('/api/v2/academic-years', creerAcademicYearRoutes(academicYearController));
 
+  const pedagogieAudit = new AIActionAuditAdapter(p);
   const pedagogieController = new PedagogieController(
     c.pedagogie.listerProgramme,
     c.pedagogie.gererProgramme,
@@ -168,9 +170,20 @@ export function registerAcademicRoutes(app: Application, prismaParam: typeof pri
     c.pedagogie.calculerProgression,
     c.pedagogie.obtenirSlot,
     c.pedagogie.genererRapport,
-    new AIActionAuditAdapter(p),
+    pedagogieAudit,
   );
-  app.use('/api/v2/pedagogie', requireAuth, creerPedagogieRoutes(pedagogieController));
+  const pedagogieMaterialisationController = new PedagogieMaterialisationController(
+    c.pedagogie.proposerInitialisationClasse,
+    c.pedagogie.appliquerInitialisationClasse,
+    c.pedagogie.basculerAvancementChapitre,
+    c.pedagogie.basculerModuleActif,
+    pedagogieAudit,
+  );
+  app.use(
+    '/api/v2/pedagogie',
+    requireAuth,
+    creerPedagogieRoutes(pedagogieController, pedagogieMaterialisationController),
+  );
 
   app.use('/api/v2/onboarding', creerOnboardingRoutes(onboardingController));
   app.use('/api/v2/master/bulletin-atelier', creerMasterBulletinAtelierRoutes(masterBulletinAtelierController));

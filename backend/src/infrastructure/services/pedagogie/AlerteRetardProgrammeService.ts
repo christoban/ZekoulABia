@@ -3,21 +3,13 @@ import { PrismaProgrammeRepository } from '../../persistence/prisma/PrismaProgra
 import { PrismaCahierDeTexteRepository } from '../../persistence/prisma/PrismaCahierDeTexteRepository';
 import { PrismaClasseRepository } from '../../persistence/prisma/PrismaClasseRepository';
 import { PrismaAnneeAcademiqueRepository } from '../../persistence/prisma/PrismaAnneeAcademiqueRepository';
-import { CalculerProgressionProgrammeUseCase } from '@application/pedagogie/CalculerProgressionProgrammeUseCase';
+import { PrismaChapitreAvancementRepository } from '../../persistence/prisma/PrismaChapitreAvancementRepository';
+import {
+  CalculerProgressionProgrammeUseCase,
+  type AlerteRetardProgramme,
+} from '@application/pedagogie/CalculerProgressionProgrammeUseCase';
 
-export interface AlerteRetardProgramme {
-  programmeId: string;
-  programmeTitre: string;
-  subjectName: string;
-  className: string;
-  classId: string;
-  chapitresTotal: number;
-  chapitresRealises: number;
-  progressionPct: number;
-  attenduPct: number;
-  retardPct: number;
-  niveau: 'CRITIQUE' | 'MODERE';
-}
+export type { AlerteRetardProgramme };
 
 export async function calculerAlertesRetardProgramme(
   prisma: PrismaClient,
@@ -30,6 +22,7 @@ export async function calculerAlertesRetardProgramme(
     new PrismaCahierDeTexteRepository(prisma),
     new PrismaClasseRepository(prisma),
     new PrismaAnneeAcademiqueRepository(prisma),
+    new PrismaChapitreAvancementRepository(prisma),
   );
   return useCase.calculerAlertesRetardProgramme(schoolId, academicYearId, seuilPct);
 }

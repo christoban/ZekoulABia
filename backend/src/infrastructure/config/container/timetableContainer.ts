@@ -6,6 +6,8 @@ import { PrismaTimetableRepository } from '@infrastructure/persistence/prisma/Pr
 import { PrismaProgrammeRepository } from '@infrastructure/persistence/prisma/PrismaProgrammeRepository';
 import { PrismaChapitreRepository } from '@infrastructure/persistence/prisma/PrismaChapitreRepository';
 import { PrismaCahierDeTexteRepository } from '@infrastructure/persistence/prisma/PrismaCahierDeTexteRepository';
+import { PrismaMaterialisationProgrammeRepository } from '@infrastructure/persistence/prisma/PrismaMaterialisationProgrammeRepository';
+import { PrismaChapitreAvancementRepository } from '@infrastructure/persistence/prisma/PrismaChapitreAvancementRepository';
 import { SchedulingGridAdapter } from '@infrastructure/scheduling/SchedulingGridAdapter';
 import { ORToolsWasmAdapter } from '@infrastructure/scheduling/ORToolsWasmAdapter';
 import { JwtQrTokenService } from '@infrastructure/services/qr/QrTokenService';
@@ -49,6 +51,10 @@ import { GererCahierDeTexteUseCase } from '@application/pedagogie/GererCahierDeT
 import { CalculerProgressionProgrammeUseCase } from '@application/pedagogie/CalculerProgressionProgrammeUseCase';
 import { ObtenirSlotDuJourUseCase } from '@application/pedagogie/ObtenirSlotDuJourUseCase';
 import { GenererRapportPedagogieUseCase } from '@application/pedagogie/GenererRapportPedagogieUseCase';
+import { ProposerInitialisationProgrammesClasseUseCase } from '@application/pedagogie/ProposerInitialisationProgrammesClasseUseCase';
+import { AppliquerInitialisationProgrammesClasseUseCase } from '@application/pedagogie/AppliquerInitialisationProgrammesClasseUseCase';
+import { BasculerAvancementChapitreUseCase } from '@application/pedagogie/BasculerAvancementChapitreUseCase';
+import { BasculerModuleActifUseCase } from '@application/pedagogie/BasculerModuleActifUseCase';
 import type { CoreContainerContext } from './coreContext';
 
 export function createTimetableContainer(core: CoreContainerContext) {
@@ -61,6 +67,11 @@ export function createTimetableContainer(core: CoreContainerContext) {
   const programmeRepository = new PrismaProgrammeRepository(prisma);
   const chapitreRepository = new PrismaChapitreRepository(prisma);
   const cahierDeTexteRepository = new PrismaCahierDeTexteRepository(prisma);
+  const materialisationProgrammeRepository = new PrismaMaterialisationProgrammeRepository(prisma);
+  const chapitreAvancementRepository = new PrismaChapitreAvancementRepository(prisma);
+  const proposerInitialisationProgrammesClasse = new ProposerInitialisationProgrammesClasseUseCase(
+    materialisationProgrammeRepository,
+  );
 
   const proposerEmploiDuTempsUseCase = new ProposerEmploiDuTempsUseCase(
     timetableRepository,
@@ -167,12 +178,27 @@ export function createTimetableContainer(core: CoreContainerContext) {
         cahierDeTexteRepository,
         core.classeRepository,
         core.anneeRepository,
+        chapitreAvancementRepository,
       ),
       obtenirSlot: new ObtenirSlotDuJourUseCase(timetableRepository, core.anneeRepository),
       genererRapport: new GenererRapportPedagogieUseCase(
         cahierDeTexteRepository,
         core.departmentRepository,
         core.anneeRepository,
+      ),
+      proposerInitialisationClasse: proposerInitialisationProgrammesClasse,
+      appliquerInitialisationClasse: new AppliquerInitialisationProgrammesClasseUseCase(
+        proposerInitialisationProgrammesClasse,
+        materialisationProgrammeRepository,
+      ),
+      basculerAvancementChapitre: new BasculerAvancementChapitreUseCase(
+        chapitreAvancementRepository,
+        cahierDeTexteRepository,
+        core.rattachementRepository,
+      ),
+      basculerModuleActif: new BasculerModuleActifUseCase(
+        chapitreAvancementRepository,
+        core.rattachementRepository,
       ),
     },
   };

@@ -1,10 +1,16 @@
 import { Router } from 'express';
 import multer from 'multer';
 import type { PedagogieController } from '@infrastructure/http/controllers/PedagogieController';
+import type { PedagogieMaterialisationController } from '@infrastructure/http/controllers/PedagogieMaterialisationController';
+import { requirePermission, requireRole } from '@infrastructure/http/middlewares/auth';
+import { requireOfficialProgrammesMaterialisation } from '@infrastructure/config/featureFlags';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
-export function creerPedagogieRoutes(ctrl: PedagogieController): Router {
+export function creerPedagogieRoutes(
+  ctrl: PedagogieController,
+  materialisationCtrl?: PedagogieMaterialisationController,
+): Router {
   const router = Router();
 
   // Programmes
@@ -35,6 +41,36 @@ export function creerPedagogieRoutes(ctrl: PedagogieController): Router {
   router.get('/progression', ctrl.getProgression);
   router.get('/alertes-retard', ctrl.getAlertesRetard);
   router.get('/rapports', ctrl.getRapport);
+
+  // Matérialisation programmes nationaux (Lot 1 — protégé par feature flag + RBAC)
+  if (materialisationCtrl) {
+    router.get('/materialisation/status', materialisationCtrl.getStatus);
+
+    router.post(
+      '/classes/:classId/initialiser-programmes/propose',
+      requireOfficialProgrammesMaterialisation,
+      requirePermission('MANAGE_CLASSES'),
+      materialisationCtrl.proposerInitialisationClasse,
+    );
+    router.post(
+      '/classes/:classId/initialiser-programmes/apply',
+      requireOfficialProgrammesMaterialisation,
+      requirePermission('MANAGE_CLASSES'),
+      materialisationCtrl.appliquerInitialisationClasse,
+    );
+    router.put(
+      '/chapitres/:chapitreId/avancement',
+      requireOfficialProgrammesMaterialisation,
+      requireRole('TEACHER', 'STAFF'),
+      materialisationCtrl.basculerAvancementChapitre,
+    );
+    router.put(
+      '/programmes/:programmeId/modules/:moduleOrdre/statut',
+      requireOfficialProgrammesMaterialisation,
+      requireRole('TEACHER', 'STAFF'),
+      materialisationCtrl.basculerModuleActif,
+    );
+  }
 
   return router;
 }
