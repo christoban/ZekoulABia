@@ -14,6 +14,7 @@ import PedagogieRapportAvancementTab from './PedagogieRapportAvancementTab'
 import InitProgrammesClasseModal from './InitProgrammesClasseModal'
 import InitProgrammesEcoleModal from './InitProgrammesEcoleModal'
 import SyncProgrammesNationauxModal, { type DeriveProgrammeSummary } from './SyncProgrammesNationauxModal'
+import { lireReponsePedagogie, lireStatutMaterialisation } from './pedagogieHttpHelpers'
 import type { Alerte, Classe, OnToast, Programme, ProgressionData, Subject, Tab } from './types'
 
 interface Props {
@@ -47,6 +48,7 @@ export default function PedagogieView({ onToast, headerExtra }: Props) {
   const [progClassId, setProgClassId] = useState('')
   const [progSubjectId, setProgSubjectId] = useState('')
   const [progressionData, setProgressionData] = useState<ProgressionData | null>(null)
+  const [progressionError, setProgressionError] = useState<string | null>(null)
   const [loadingProg, setLoadingProg] = useState(false)
   const [materialisationEnabled, setMaterialisationEnabled] = useState(false)
   const [initModalOpen, setInitModalOpen] = useState(false)
@@ -85,8 +87,8 @@ export default function PedagogieView({ onToast, headerExtra }: Props) {
       fetchApi('/api/v2/subjects', { credentials: 'include' }).then((r) => r.json()),
       fetchApi('/api/v2/classes', { credentials: 'include' }).then((r) => r.json()),
       fetchApi('/api/v2/pedagogie/materialisation/status', { credentials: 'include' })
-        .then((r) => r.json())
-        .catch(() => ({ success: false })),
+        .then((r) => lireStatutMaterialisation(r))
+        .catch(() => ({ enabled: false, unavailable: true })),
     ]).then(([subs, cls, matStatus]) => {
       if (subs.success && Array.isArray(subs.data)) {
         setSubjects(subs.data)
@@ -96,8 +98,8 @@ export default function PedagogieView({ onToast, headerExtra }: Props) {
         setClasses(cls.data)
         putCachedData('admin:classes', cls.data).catch(() => {})
       }
-      if (matStatus?.success && matStatus.data?.enabled === true) {
-        setMaterialisationEnabled(true)
+      setMaterialisationEnabled(matStatus.enabled)
+      if (matStatus.enabled) {
         refreshDerives()
       }
     }).catch(() => {})
@@ -214,8 +216,10 @@ export default function PedagogieView({ onToast, headerExtra }: Props) {
 
   const loadProgression = async () => {
     if (!progClassId || !progSubjectId) return
+    setProgressionError(null)
     const cacheKey = `admin:pedagogie:progression:${progClassId}:${progSubjectId}`
     const cached = await getCachedData<ProgressionData>(cacheKey).catch(() => null)
+    const hasCached = Boolean(cached?.data)
     if (cached?.data) {
       setProgressionData(cached.data)
       setLoadingProg(false)
@@ -225,16 +229,31 @@ export default function PedagogieView({ onToast, headerExtra }: Props) {
       return
     }
 
-    setLoadingProg(true)
+    setLoadingProg(!hasCached)
     fetchApi(`/api/v2/pedagogie/progression?classId=${progClassId}&subjectId=${progSubjectId}`, { credentials: 'include' })
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.success) {
-          setProgressionData(d.data)
-          putCachedData(cacheKey, d.data).catch(() => {})
+      .then((r) =>
+        lireReponsePedagogie<ProgressionData>(
+          r,
+          'Erreur lors du chargement de la progression',
+          "Accès refusé : vous n'êtes pas autorisé à consulter cette progression.",
+        ),
+      )
+      .then((parsed) => {
+        if (parsed.ok) {
+          setProgressionError(null)
+          setProgressionData(parsed.data)
+          putCachedData(cacheKey, parsed.data).catch(() => {})
+        } else if (parsed.forbidden || !hasCached) {
+          setProgressionData(null)
+          setProgressionError(parsed.message)
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        if (!hasCached) {
+          setProgressionData(null)
+          setProgressionError('Erreur réseau lors du chargement de la progression')
+        }
+      })
       .finally(() => setLoadingProg(false))
   }
 
@@ -296,9 +315,10 @@ export default function PedagogieView({ onToast, headerExtra }: Props) {
           progClassId={progClassId}
           progSubjectId={progSubjectId}
           progressionData={progressionData}
+          progressionError={progressionError}
           loadingProg={loadingProg}
-          onChangeClass={setProgClassId}
-          onChangeSubject={setProgSubjectId}
+          onChangeClass={(id) => { setProgClassId(id); setProgressionError(null) }}
+          onChangeSubject={(id) => { setProgSubjectId(id); setProgressionError(null) }}
           onLoadProgression={loadProgression}
         />
       )}

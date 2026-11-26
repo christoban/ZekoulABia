@@ -1,6 +1,6 @@
 'use client'
 
-import { Inbox, Check } from 'lucide-react'
+import { Inbox, Check, AlertCircle } from 'lucide-react'
 import { inputStyle, labelStyle, type Chapitre, type Classe, type ProgressionData, type Subject } from './types'
 
 interface PedagogieProgressionTabProps {
@@ -9,6 +9,7 @@ interface PedagogieProgressionTabProps {
   progClassId: string
   progSubjectId: string
   progressionData: ProgressionData | null
+  progressionError?: string | null
   loadingProg: boolean
   onChangeClass: (id: string) => void
   onChangeSubject: (id: string) => void
@@ -21,6 +22,7 @@ export default function PedagogieProgressionTab({
   progClassId,
   progSubjectId,
   progressionData,
+  progressionError,
   loadingProg,
   onChangeClass,
   onChangeSubject,
@@ -51,6 +53,13 @@ export default function PedagogieProgressionTab({
       </div>
 
       {loadingProg && <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>Calcul...</div>}
+
+      {!loadingProg && progressionError && (
+        <div style={{ padding: '12px 14px', borderRadius: 10, border: '1px solid var(--red)', background: 'var(--red-light)', color: 'var(--red)', display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, fontWeight: 700, marginBottom: 14 }}>
+          <AlertCircle size={15} style={{ flexShrink: 0 }} />
+          <span>{progressionError}</span>
+        </div>
+      )}
 
       {!loadingProg && progressionData && (
         <>

@@ -62,6 +62,7 @@ export default function SectionCahierDeTexte({ user, onToast }: Props) {
           subjects={c.subjects}
           chapitres={c.chapitres}
           hasProgramme={c.hasProgramme}
+          programmeError={c.programmeError}
           selectedClass={c.selectedClass}
           selectedSubject={c.selectedSubject}
           selectedChapitre={c.selectedChapitre}

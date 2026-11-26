@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { ChevronDown, ChevronRight, Edit3, Trash2, Check, X } from 'lucide-react'
+import { ChevronDown, ChevronRight, Edit3, Trash2, Check, X, AlertCircle } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
+import { lireReponsePedagogie, lireStatutMaterialisation } from '@/features/pedagogie/pedagogieHttpHelpers'
 import { deptInputStyle, type Chapitre, type EditingChapitreState } from './types'
 
 interface ModuleEtatInfo {
@@ -40,6 +41,7 @@ export default function DeptProgrammeModulesList({
 }: Props) {
   const [featureEnabled, setFeatureEnabled] = useState(false)
   const [moduleEtats, setModuleEtats] = useState<Record<number, boolean>>({})
+  const [progressionError, setProgressionError] = useState<string | null>(null)
   const [expandedModules, setExpandedModules] = useState<Record<number, boolean>>({})
   const [busyModule, setBusyModule] = useState<number | null>(null)
 
@@ -59,25 +61,35 @@ export default function DeptProgrammeModulesList({
   }, [chapitres])
 
   const loadModuleEtats = useCallback(async () => {
+    setProgressionError(null)
     try {
       const stRes = await fetchApi('/api/v2/pedagogie/materialisation/status', { credentials: 'include' })
-      const stJson = await stRes.json()
-      const enabled = Boolean(stJson?.success && stJson?.data?.enabled === true)
+      const { enabled } = await lireStatutMaterialisation(stRes)
       setFeatureEnabled(enabled)
+    } catch {
+      setFeatureEnabled(false)
+    }
 
-      if (classId) {
-        const prRes = await fetchApi(
-          `/api/v2/pedagogie/progression?classId=${classId}&subjectId=${subjectId}`,
-          { credentials: 'include' },
-        )
-        const prJson = await prRes.json()
-        if (prJson?.success && Array.isArray(prJson?.data?.modules)) {
-          const map: Record<number, boolean> = {}
-          for (const m of prJson.data.modules as ModuleEtatInfo[]) {
-            map[m.moduleOrdre] = m.actif
-          }
-          setModuleEtats(map)
+    if (!classId) return
+    try {
+      const prRes = await fetchApi(
+        `/api/v2/pedagogie/progression?classId=${classId}&subjectId=${subjectId}`,
+        { credentials: 'include' },
+      )
+      const parsed = await lireReponsePedagogie<{ modules?: ModuleEtatInfo[] }>(
+        prRes,
+        'Erreur lors du chargement de la progression des modules',
+        "Accès refusé : vous n'êtes pas autorisé à consulter l'avancement de cette matière.",
+      )
+      if (parsed.ok && Array.isArray(parsed.data?.modules)) {
+        const map: Record<number, boolean> = {}
+        for (const m of parsed.data.modules) {
+          map[m.moduleOrdre] = m.actif
         }
+        setModuleEtats(map)
+      } else if (!parsed.ok && parsed.forbidden) {
+        setModuleEtats({})
+        setProgressionError(parsed.message)
       }
     } catch { /* ignore */ }
   }, [classId, subjectId])
@@ -125,6 +137,12 @@ export default function DeptProgrammeModulesList({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {progressionError && (
+        <div style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--red)', background: 'var(--red-light)', color: 'var(--red)', fontSize: 11.5, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <AlertCircle size={13} style={{ flexShrink: 0 }} />
+          <span>{progressionError}</span>
+        </div>
+      )}
       {groupes.map((grp) => {
         const actif = moduleEtats[grp.ordre] !== false
         const isOpen = Boolean(expandedModules[grp.ordre])

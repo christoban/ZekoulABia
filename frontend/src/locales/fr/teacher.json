@@ -219,6 +219,7 @@
     "prog_select_hint": "Sélectionnez une classe et une matière pour consulter le programme.",
     "prog_offline_hint": "Consultation du programme indisponible hors connexion.",
     "prog_error": "Erreur lors du chargement du programme",
+    "prog_forbidden": "Accès refusé : vous n'êtes pas affecté à cette classe/matière ni autorisé à consulter ce programme.",
     "prog_retry": "Réessayer",
     "prog_empty_title": "Aucun programme défini pour cette classe et cette matière",
     "prog_empty_hint": "Demandez à l'administration d'initialiser le programme officiel ou de créer un programme.",

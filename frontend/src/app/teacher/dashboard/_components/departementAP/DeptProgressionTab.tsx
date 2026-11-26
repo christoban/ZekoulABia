@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { CheckCircle2, Download, Loader2 } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
+import { lireStatutMaterialisation } from '@/features/pedagogie/pedagogieHttpHelpers'
 import type { ProgAlerte, TranslateFn } from './types'
 
 interface DeptRapportLigne {
@@ -50,8 +51,8 @@ export default function DeptProgressionTab({
     setLoadingRapport(true)
     try {
       const stRes = await fetchApi('/api/v2/pedagogie/materialisation/status', { credentials: 'include' })
-      const stJson = await stRes.json()
-      if (!stJson?.success || stJson?.data?.enabled !== true) {
+      const { enabled } = await lireStatutMaterialisation(stRes)
+      if (!enabled) {
         setRapport(null)
         return
       }

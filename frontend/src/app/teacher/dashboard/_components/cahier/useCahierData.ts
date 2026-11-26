@@ -5,6 +5,7 @@ import { fetchApi } from '@/lib/fetchApi'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
 import { db, putCachedData, getCachedData } from '@/lib/offline/db'
 import type { PendingAction } from '@/lib/offline/db'
+import { lireReponsePedagogie, lireStatutMaterialisation } from '@/features/pedagogie/pedagogieHttpHelpers'
 import type { CahierEntry, CahierTab, Chapitre, Classe, ScanResult, Subject, TranslateFn } from './types'
 
 interface UseCahierDataParams {
@@ -21,6 +22,7 @@ export function useCahierData({ user, onToast, t }: UseCahierDataParams) {
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [chapitres, setChapitres] = useState<Chapitre[]>([])
   const [hasProgramme, setHasProgramme] = useState<boolean | null>(null)
+  const [programmeError, setProgrammeError] = useState<string | null>(null)
 
   const [selectedClass, setSelectedClass] = useState('')
   const [selectedSubject, setSelectedSubject] = useState('')
@@ -58,15 +60,12 @@ export function useCahierData({ user, onToast, t }: UseCahierDataParams) {
 
     if (!isOnline) return
     fetchApi('/api/v2/pedagogie/materialisation/status', { credentials: 'include' })
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.success) {
-          const enabled = d.data?.enabled === true
-          setMaterialisationEnabled(enabled)
-          putCachedData(statusCacheKey, { enabled }).catch(() => {})
-          if (!enabled) {
-            setTab((prev) => (prev === 'programme' ? 'saisie' : prev))
-          }
+      .then((r) => lireStatutMaterialisation(r))
+      .then(({ enabled }) => {
+        setMaterialisationEnabled(enabled)
+        putCachedData(statusCacheKey, { enabled }).catch(() => {})
+        if (!enabled) {
+          setTab((prev) => (prev === 'programme' ? 'saisie' : prev))
         }
       })
       .catch(() => {})
@@ -165,32 +164,52 @@ export function useCahierData({ user, onToast, t }: UseCahierDataParams) {
 
   // ── Vérification programme + chapitres selon matière ──────────────────────
   useEffect(() => {
-    if (!selectedSubject) { setChapitres([]); setSelectedChapitre(''); setHasProgramme(null); return }
+    setProgrammeError(null)
+    setSelectedChapitre('')
+    if (!selectedSubject) { setChapitres([]); setHasProgramme(null); return }
+    let cancelled = false
     const progKey = `teacher:has-programme:${selectedSubject}:${selectedClass || 'all'}`
     const url = `/api/v2/pedagogie/subjects/${selectedSubject}/has-programme${selectedClass ? `?classId=${selectedClass}` : ''}`
     if (navigator.onLine) {
       fetchApi(url, { credentials: 'include' })
-        .then(r => r.json())
-        .then(async d => {
-          if (d.success) {
-            setHasProgramme(d.data.hasProgramme)
-            setChapitres(d.data.chapitres ?? [])
-            await putCachedData(progKey, d.data).catch(() => {})
+        .then((r) =>
+          lireReponsePedagogie<{ hasProgramme: boolean; chapitres?: Chapitre[] }>(
+            r,
+            t('cahier_de_texte.prog_error'),
+            t('cahier_de_texte.prog_forbidden'),
+          ),
+        )
+        .then(async (parsed) => {
+          if (cancelled) return
+          if (parsed.ok) {
+            setProgrammeError(null)
+            setHasProgramme(parsed.data.hasProgramme)
+            setChapitres(parsed.data.chapitres ?? [])
+            await putCachedData(progKey, parsed.data).catch(() => {})
+          } else {
+            setHasProgramme(null)
+            setChapitres([])
+            setProgrammeError(parsed.message)
           }
         })
-        .catch(() => setHasProgramme(true))
+        .catch(() => {
+          if (!cancelled) setHasProgramme(true)
+        })
     } else {
       getCachedData<{ hasProgramme: boolean; chapitres?: Chapitre[] }>(progKey).then(cached => {
+        if (cancelled) return
         if (cached?.data) {
           setHasProgramme(cached.data.hasProgramme)
           setChapitres(cached.data.chapitres ?? [])
         } else {
           setHasProgramme(true)
         }
-      }).catch(() => setHasProgramme(true))
+      }).catch(() => {
+        if (!cancelled) setHasProgramme(true)
+      })
     }
-    setSelectedChapitre('')
-  }, [selectedSubject, selectedClass])
+    return () => { cancelled = true }
+  }, [selectedSubject, selectedClass, t])
 
   useEffect(() => { setContenuLibre('') }, [selectedSubject])
 
@@ -355,12 +374,12 @@ export function useCahierData({ user, onToast, t }: UseCahierDataParams) {
     return () => window.removeEventListener('zekoulabia:data-changed', onChanged)
   }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const isFormValid = !!selectedClass && !!selectedSubject &&
+  const isFormValid = !!selectedClass && !!selectedSubject && !programmeError &&
     (hasProgramme === false ? !!contenuLibre.trim() : !!contenu.trim())
 
   return {
     tab, setTab, isOnline, materialisationEnabled,
-    classes, subjects, chapitres, hasProgramme,
+    classes, subjects, chapitres, hasProgramme, programmeError,
     selectedClass, setSelectedClass,
     selectedSubject, setSelectedSubject,
     selectedChapitre, setSelectedChapitre,

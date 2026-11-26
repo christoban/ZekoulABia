@@ -9,6 +9,7 @@ interface Props {
   subjects: Subject[]
   chapitres: Chapitre[]
   hasProgramme: boolean | null
+  programmeError?: string | null
   selectedClass: string
   selectedSubject: string
   selectedChapitre: string
@@ -45,6 +46,7 @@ export default function CahierSaisieTab({
   subjects,
   chapitres,
   hasProgramme,
+  programmeError,
   selectedClass,
   selectedSubject,
   selectedChapitre,
@@ -119,6 +121,17 @@ export default function CahierSaisieTab({
             </select>
           </div>
         </div>
+
+        {programmeError && (
+          <div style={{
+            background: 'var(--red-light)', border: '1px solid var(--red)', borderRadius: 8,
+            padding: '8px 12px', fontSize: 12, color: 'var(--red)', fontWeight: 700,
+            display: 'flex', alignItems: 'center', gap: 7,
+          }}>
+            <AlertTriangle size={14} strokeWidth={2} style={{ flexShrink: 0 }} />
+            <span>{programmeError}</span>
+          </div>
+        )}
 
         {selectedSubject && hasProgramme !== null && (
           hasProgramme ? (

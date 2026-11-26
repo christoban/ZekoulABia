@@ -5,6 +5,7 @@ import { Inbox, RefreshCw, AlertCircle, BookOpenCheck, Loader2, CloudOff } from 
 import { fetchApi } from '@/lib/fetchApi'
 import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
+import { lireReponsePedagogie } from '@/features/pedagogie/pedagogieHttpHelpers'
 import ProgrammeModuleAccordion from './ProgrammeModuleAccordion'
 import {
   SEL,
@@ -98,6 +99,7 @@ export default function CahierProgrammeTab({
   const [progression, setProgression] = useState<ProgrammeProgressionView | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [errorForbidden, setErrorForbidden] = useState(false)
   const [expandedModules, setExpandedModules] = useState<Record<number, boolean>>({})
   const [busyChapitreId, setBusyChapitreId] = useState<string | null>(null)
   const [busyModuleOrdre, setBusyModuleOrdre] = useState<number | null>(null)
@@ -142,19 +144,25 @@ export default function CahierProgrammeTab({
 
     setLoading(!hasCached)
     setError(null)
+    setErrorForbidden(false)
     try {
       const res = await fetchApi(
         `/api/v2/pedagogie/progression?classId=${selectedClass}&subjectId=${selectedSubject}`,
         { credentials: 'include' },
       )
-      const json = await res.json()
-      if (!res.ok || !json.success) {
-        if (!hasCached) {
-          setError(json.message ?? t('cahier_de_texte.prog_error'))
+      const parsed = await lireReponsePedagogie<ProgrammeProgressionView>(
+        res,
+        t('cahier_de_texte.prog_error'),
+        t('cahier_de_texte.prog_forbidden'),
+      )
+      if (!parsed.ok) {
+        if (parsed.forbidden || !hasCached) {
+          setError(parsed.message)
+          setErrorForbidden(parsed.forbidden)
           setProgression(null)
         }
       } else {
-        const data = json.data as ProgrammeProgressionView
+        const data = parsed.data
         setProgression(data)
         putCachedData(cacheKey, data).catch(() => {})
         setExpandedModules((prev) => {
@@ -370,9 +378,11 @@ export default function CahierProgrammeTab({
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 700 }}>
             <AlertCircle size={15} /> {error}
           </span>
-          <button type="button" onClick={loadProgression} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)', fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}>
-            <RefreshCw size={12} /> {t('cahier_de_texte.prog_retry')}
-          </button>
+          {!errorForbidden && (
+            <button type="button" onClick={loadProgression} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)', fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}>
+              <RefreshCw size={12} /> {t('cahier_de_texte.prog_retry')}
+            </button>
+          )}
         </div>
       ) : !progression?.programme ? (
         <div style={{ padding: 32, textAlign: 'center', background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)' }}>

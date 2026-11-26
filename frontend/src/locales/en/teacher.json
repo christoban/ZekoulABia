@@ -219,6 +219,7 @@
     "prog_select_hint": "Select a class and a subject to view the curriculum.",
     "prog_offline_hint": "Curriculum view is unavailable offline.",
     "prog_error": "Error loading curriculum",
+    "prog_forbidden": "Access denied: you are not assigned to this class/subject or authorized to view this curriculum.",
     "prog_retry": "Retry",
     "prog_empty_title": "No curriculum defined for this class and subject",
     "prog_empty_hint": "Ask the administration to initialize the official curriculum or create one.",
