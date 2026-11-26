@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Inbox, RefreshCw, AlertCircle, BookOpenCheck, Loader2 } from 'lucide-react'
+import { Inbox, RefreshCw, AlertCircle, BookOpenCheck, Loader2, CloudOff } from 'lucide-react'
 import { fetchApi } from '@/lib/fetchApi'
+import { getCachedData, putCachedData } from '@/lib/offline/db'
+import { useSyncQueue } from '@/hooks/useSyncQueue'
 import ProgrammeModuleAccordion from './ProgrammeModuleAccordion'
 import {
   SEL,
@@ -27,6 +29,54 @@ interface Props {
   t: TranslateFn
 }
 
+function recalculerVueLocale(vue: ProgrammeProgressionView): ProgrammeProgressionView {
+  const actifParModule = new Map(vue.modules.map((m) => [m.moduleOrdre, m.actif]))
+  const chapitres = vue.chapitres.map((ch) => {
+    const moduleActif =
+      ch.moduleOrdre === null || ch.moduleOrdre === undefined
+        ? true
+        : (actifParModule.get(ch.moduleOrdre) ?? true)
+    const realise = ch.cocheDirecte || ch.nbSeancesCahier > 0
+    const sourceRealisation: ProgressionChapitreItem['sourceRealisation'] =
+      ch.cocheDirecte && ch.nbSeancesCahier > 0
+        ? 'LES_DEUX'
+        : ch.cocheDirecte
+          ? 'COCHE'
+          : ch.nbSeancesCahier > 0
+            ? 'CAHIER'
+            : null
+    return { ...ch, moduleActif, realise, sourceRealisation }
+  })
+
+  const actifs = chapitres.filter((c) => c.moduleActif)
+  const leconsTotal = actifs.length
+  const leconsRealisees = actifs.filter((c) => c.realise).length
+  const progressionPct = leconsTotal > 0 ? Math.round((leconsRealisees / leconsTotal) * 100) : null
+
+  const modules = vue.modules.map((m) => {
+    const list = chapitres.filter((c) => c.moduleOrdre === m.moduleOrdre)
+    const done = list.filter((c) => c.realise).length
+    return {
+      ...m,
+      leconsTotal: list.length,
+      leconsRealisees: done,
+      progressionPct: list.length > 0 ? Math.round((done / list.length) * 100) : null,
+    }
+  })
+
+  return {
+    ...vue,
+    chapitres,
+    modules,
+    chapitresTotal: leconsTotal,
+    chapitresRealises: leconsRealisees,
+    leconsTotal,
+    leconsRealisees,
+    modulesDesactivesCount: modules.filter((m) => !m.actif).length,
+    progressionPct,
+  }
+}
+
 export default function CahierProgrammeTab({
   isOnline,
   classes,
@@ -39,6 +89,7 @@ export default function CahierProgrammeTab({
   onToast,
   t,
 }: Props) {
+  const { addToQueue } = useSyncQueue()
   const [featureEnabled, setFeatureEnabled] = useState<boolean>(false)
   const [progression, setProgression] = useState<ProgrammeProgressionView | null>(null)
   const [loading, setLoading] = useState(false)
@@ -46,28 +97,58 @@ export default function CahierProgrammeTab({
   const [expandedModules, setExpandedModules] = useState<Record<number, boolean>>({})
   const [busyChapitreId, setBusyChapitreId] = useState<string | null>(null)
   const [busyModuleOrdre, setBusyModuleOrdre] = useState<number | null>(null)
+  const [pendingLocalCount, setPendingLocalCount] = useState<number>(0)
+
+  const cacheKey = selectedClass && selectedSubject
+    ? `teacher:programme-progression:${selectedClass}:${selectedSubject}`
+    : null
 
   useEffect(() => {
+    getCachedData<{ enabled: boolean }>('pedagogie:materialisation:status')
+      .then((c) => { if (c?.data?.enabled === true) setFeatureEnabled(true) })
+      .catch(() => {})
+
     if (!isOnline) return
     fetchApi('/api/v2/pedagogie/materialisation/status', { credentials: 'include' })
       .then((r) => r.json())
       .then((d) => {
-        if (d.success && d.data?.enabled === true) setFeatureEnabled(true)
+        if (d.success) {
+          const enabled = d.data?.enabled === true
+          setFeatureEnabled(enabled)
+          putCachedData('pedagogie:materialisation:status', { enabled }).catch(() => {})
+        }
       })
       .catch(() => {})
   }, [isOnline])
 
   const loadProgression = useCallback(async () => {
-    if (!selectedClass || !selectedSubject) {
+    if (!selectedClass || !selectedSubject || !cacheKey) {
       setProgression(null)
       setError(null)
       return
     }
+
+    // 1. Lecture instantanée depuis le cache Dexie (offline-first)
+    let hasCached = false
+    try {
+      const cached = await getCachedData<ProgrammeProgressionView>(cacheKey)
+      if (cached?.data) {
+        hasCached = true
+        setProgression(cached.data)
+        setExpandedModules((prev) => {
+          if (Object.keys(prev).length > 0 || !cached.data.modules?.length) return prev
+          const first = cached.data.modules.find((m) => m.actif) ?? cached.data.modules[0]
+          return first ? { [first.moduleOrdre]: true } : {}
+        })
+      }
+    } catch { /* ignore */ }
+
     if (!isOnline) {
-      setError(t('cahier_de_texte.prog_offline_hint'))
+      if (!hasCached) setError(t('cahier_de_texte.prog_offline_hint'))
       return
     }
-    setLoading(true)
+
+    setLoading(!hasCached)
     setError(null)
     try {
       const res = await fetchApi(
@@ -76,11 +157,14 @@ export default function CahierProgrammeTab({
       )
       const json = await res.json()
       if (!res.ok || !json.success) {
-        setError(json.message ?? t('cahier_de_texte.prog_error'))
-        setProgression(null)
+        if (!hasCached) {
+          setError(json.message ?? t('cahier_de_texte.prog_error'))
+          setProgression(null)
+        }
       } else {
         const data = json.data as ProgrammeProgressionView
         setProgression(data)
+        putCachedData(cacheKey, data).catch(() => {})
         setExpandedModules((prev) => {
           if (Object.keys(prev).length > 0 || !data.modules || data.modules.length === 0) return prev
           const firstActive = data.modules.find((m) => m.actif) ?? data.modules[0]
@@ -88,16 +172,27 @@ export default function CahierProgrammeTab({
         })
       }
     } catch {
-      setError(t('cahier_de_texte.prog_error'))
-      setProgression(null)
+      if (!hasCached) {
+        setError(t('cahier_de_texte.prog_error'))
+        setProgression(null)
+      }
     } finally {
       setLoading(false)
     }
-  }, [selectedClass, selectedSubject, isOnline, t])
+  }, [selectedClass, selectedSubject, cacheKey, isOnline, t])
 
   useEffect(() => {
     setExpandedModules({})
     loadProgression()
+  }, [loadProgression])
+
+  useEffect(() => {
+    const onSynced = () => {
+      setPendingLocalCount(0)
+      void loadProgression()
+    }
+    window.addEventListener('zekoulabia:pedagogie-synced', onSynced)
+    return () => window.removeEventListener('zekoulabia:pedagogie-synced', onSynced)
   }, [loadProgression])
 
   const leconsParModule = useMemo(() => {
@@ -116,8 +211,34 @@ export default function CahierProgrammeTab({
     [progression],
   )
 
+  const queueLeconOffline = async (chapitreId: string, fait: boolean) => {
+    await addToQueue({
+      type: 'CHAPITRE_AVANCEMENT_TOGGLE',
+      endpoint: `/api/v2/pedagogie/chapitres/${chapitreId}/avancement`,
+      method: 'PUT',
+      payload: { classId: selectedClass, fait },
+    })
+    setPendingLocalCount((n) => n + 1)
+    setProgression((prev) => {
+      if (!prev) return prev
+      const next = recalculerVueLocale({
+        ...prev,
+        chapitres: prev.chapitres.map((c) =>
+          c.id === chapitreId ? { ...c, cocheDirecte: fait } : c,
+        ),
+      })
+      if (cacheKey) putCachedData(cacheKey, next).catch(() => {})
+      return next
+    })
+    onToast(t('cahier_de_texte.prog_saved_offline'), 'info')
+  }
+
   const handleToggleLecon = async (chapitreId: string, fait: boolean) => {
     if (!selectedClass || !featureEnabled) return
+    if (!isOnline) {
+      await queueLeconOffline(chapitreId, fait)
+      return
+    }
     setBusyChapitreId(chapitreId)
     try {
       const res = await fetchApi(`/api/v2/pedagogie/chapitres/${chapitreId}/avancement`, {
@@ -136,14 +257,44 @@ export default function CahierProgrammeTab({
         await loadProgression()
       }
     } catch {
-      onToast(t('cahier_de_texte.toast_network_error'), 'error')
+      try {
+        await queueLeconOffline(chapitreId, fait)
+      } catch {
+        onToast(t('cahier_de_texte.toast_network_error'), 'error')
+      }
     } finally {
       setBusyChapitreId(null)
     }
   }
 
+  const queueModuleOffline = async (programmeId: string, moduleOrdre: number, actif: boolean) => {
+    await addToQueue({
+      type: 'PROGRAMME_MODULE_TOGGLE',
+      endpoint: `/api/v2/pedagogie/programmes/${programmeId}/modules/${moduleOrdre}/statut`,
+      method: 'PUT',
+      payload: { actif },
+    })
+    setPendingLocalCount((n) => n + 1)
+    setProgression((prev) => {
+      if (!prev) return prev
+      const next = recalculerVueLocale({
+        ...prev,
+        modules: prev.modules.map((m) =>
+          m.moduleOrdre === moduleOrdre ? { ...m, actif } : m,
+        ),
+      })
+      if (cacheKey) putCachedData(cacheKey, next).catch(() => {})
+      return next
+    })
+    onToast(t('cahier_de_texte.prog_module_saved_offline'), 'info')
+  }
+
   const handleToggleModuleActif = async (moduleOrdre: number, actif: boolean) => {
     if (!progression?.programme?.id || !featureEnabled) return
+    if (!isOnline) {
+      await queueModuleOffline(progression.programme.id, moduleOrdre, actif)
+      return
+    }
     setBusyModuleOrdre(moduleOrdre)
     try {
       const res = await fetchApi(
@@ -168,7 +319,11 @@ export default function CahierProgrammeTab({
         await loadProgression()
       }
     } catch {
-      onToast(t('cahier_de_texte.toast_network_error'), 'error')
+      try {
+        await queueModuleOffline(progression.programme.id, moduleOrdre, actif)
+      } catch {
+        onToast(t('cahier_de_texte.toast_network_error'), 'error')
+      }
     } finally {
       setBusyModuleOrdre(null)
     }
@@ -178,23 +333,13 @@ export default function CahierProgrammeTab({
 
   return (
     <div style={{ maxWidth: 820, display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {/* Sélecteur Classe + Matière */}
-      <div
-        style={{
-          background: 'var(--surface)',
-          borderRadius: 12,
-          border: '1px solid var(--border)',
-          padding: '12px 14px',
-        }}
-      >
+      <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: '12px 14px' }}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <div>
             <label style={LBL}>{t('cahier_de_texte.class_label')}</label>
             <select value={selectedClass} onChange={(e) => onClassChange(e.target.value)} style={SEL}>
               <option value="">{t('cahier_de_texte.class_placeholder')}</option>
-              {classes.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
+              {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
           <div>
@@ -206,13 +351,18 @@ export default function CahierProgrammeTab({
               style={{ ...SEL, opacity: !selectedClass ? 0.5 : 1 }}
             >
               <option value="">{t('cahier_de_texte.subject_placeholder')}</option>
-              {subjects.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
+              {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
         </div>
       </div>
+
+      {pendingLocalCount > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 12px', borderRadius: 8, background: 'var(--amber-light)', border: '1px solid var(--amber)', color: 'var(--amber)', fontSize: 12, fontWeight: 700 }}>
+          <CloudOff size={14} />
+          {t('cahier_de_texte.prog_pending_sync').replace('{count}', String(pendingLocalCount))}
+        </div>
+      )}
 
       {!selectedClass || !selectedSubject ? (
         <div style={{ padding: 28, textAlign: 'center', background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', color: 'var(--text3)', fontSize: 12.5 }}>
@@ -228,34 +378,21 @@ export default function CahierProgrammeTab({
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 700 }}>
             <AlertCircle size={15} /> {error}
           </span>
-          <button
-            type="button"
-            onClick={loadProgression}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)', fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}
-          >
+          <button type="button" onClick={loadProgression} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)', fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}>
             <RefreshCw size={12} /> {t('cahier_de_texte.prog_retry')}
           </button>
         </div>
       ) : !progression?.programme ? (
         <div style={{ padding: 32, textAlign: 'center', background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8, color: 'var(--text3)' }}>
-            <Inbox size={28} strokeWidth={1.6} />
-          </div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)' }}>
-            {t('cahier_de_texte.prog_empty_title')}
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>
-            {t('cahier_de_texte.prog_empty_hint')}
-          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8, color: 'var(--text3)' }}><Inbox size={28} strokeWidth={1.6} /></div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)' }}>{t('cahier_de_texte.prog_empty_title')}</div>
+          <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>{t('cahier_de_texte.prog_empty_hint')}</div>
         </div>
       ) : (
         <>
-          {/* Carte résumé progression globale */}
           <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: '14px 16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>
-                {progression.programme.titre}
-              </div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>{progression.programme.titre}</div>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                 {progression.modulesDesactivesCount > 0 && (
                   <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 9px', borderRadius: 999, background: 'var(--amber-light)', color: 'var(--amber)' }}>
@@ -285,7 +422,6 @@ export default function CahierProgrammeTab({
             )}
           </div>
 
-          {/* Modules repliables */}
           {progression.modules.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {progression.modules.map((mod) => (
@@ -294,14 +430,11 @@ export default function CahierProgrammeTab({
                   module={mod}
                   lecons={leconsParModule.get(mod.moduleOrdre) ?? []}
                   expanded={Boolean(expandedModules[mod.moduleOrdre])}
-                  canEdit={featureEnabled && isOnline}
+                  canEdit={featureEnabled}
                   busyChapitreId={busyChapitreId}
                   busyModuleOrdre={busyModuleOrdre}
                   onToggleExpand={() =>
-                    setExpandedModules((prev) => ({
-                      ...prev,
-                      [mod.moduleOrdre]: !prev[mod.moduleOrdre],
-                    }))
+                    setExpandedModules((prev) => ({ ...prev, [mod.moduleOrdre]: !prev[mod.moduleOrdre] }))
                   }
                   onToggleModuleActif={handleToggleModuleActif}
                   onToggleLecon={handleToggleLecon}
@@ -312,7 +445,6 @@ export default function CahierProgrammeTab({
             </div>
           )}
 
-          {/* Chapitres plats (programmes manuels sans modules) */}
           {chapitresSansModule.length > 0 && (
             <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
               {chapitresSansModule.map((ch) => {
@@ -320,11 +452,11 @@ export default function CahierProgrammeTab({
                 const fromCahier = ch.sourceRealisation === 'CAHIER' || ch.sourceRealisation === 'LES_DEUX'
                 return (
                   <div key={ch.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 8, background: ch.realise ? 'var(--green-light)' : 'var(--bg)' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 9, flex: 1, cursor: featureEnabled && isOnline ? 'pointer' : 'default' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 9, flex: 1, cursor: featureEnabled ? 'pointer' : 'default' }}>
                       <input
                         type="checkbox"
                         checked={ch.cocheDirecte || ch.realise}
-                        disabled={!featureEnabled || !isOnline || isBusy}
+                        disabled={!featureEnabled || isBusy}
                         onChange={() => handleToggleLecon(ch.id, !ch.cocheDirecte)}
                         style={{ width: 17, height: 17, accentColor: 'var(--green)' }}
                       />
@@ -334,8 +466,7 @@ export default function CahierProgrammeTab({
                     </label>
                     {fromCahier && (
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10.5, fontWeight: 700, padding: '2px 7px', borderRadius: 999, background: 'var(--blue-light)', color: 'var(--blue)' }}>
-                        <BookOpenCheck size={11} />
-                        {t('cahier_de_texte.prog_validated_via_cahier')}
+                        <BookOpenCheck size={11} /> {t('cahier_de_texte.prog_validated_via_cahier')}
                       </span>
                     )}
                     {ch.volumeHeuresPrevu !== null && ch.volumeHeuresPrevu !== undefined && (

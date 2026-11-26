@@ -17,6 +17,8 @@ export interface PendingAction {
     | 'TEACHER_ASSIGNMENT'
     | 'TIMETABLE_GRID_CONFIG'
     | 'PEDAGOGY_PROGRAM'
+    | 'CHAPITRE_AVANCEMENT_TOGGLE'
+    | 'PROGRAMME_MODULE_TOGGLE'
     | 'ORIENTATION_RECORD'
     | 'MESSAGE_SEND'
     | 'ENROLLMENT_DRAFT'
@@ -38,7 +40,7 @@ export interface PendingAction {
     | 'STUDENT_TRANSFER_REVOKE'
   payload: unknown
   endpoint: string
-  method: 'POST' | 'PATCH'
+  method: 'POST' | 'PATCH' | 'PUT'
   createdAt: number
   status: 'PENDING' | 'SYNCING' | 'FAILED' | 'CONFLICT'
   /**

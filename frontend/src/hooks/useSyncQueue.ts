@@ -76,6 +76,9 @@ export function useSyncQueue() {
             window.dispatchEvent(new CustomEvent('zekoulabia:message-status-updated', { detail: { clientMessageId, status: 'SENT' } }))
           }
         }
+        if (action.type === 'CHAPITRE_AVANCEMENT_TOGGLE' || action.type === 'PROGRAMME_MODULE_TOGGLE') {
+          window.dispatchEvent(new CustomEvent('zekoulabia:pedagogie-synced'))
+        }
         synced++
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err)

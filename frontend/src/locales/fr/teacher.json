@@ -234,7 +234,10 @@
     "prog_still_done_via_cahier": "Coche directe retirée : la leçon reste validée via le cahier de texte.",
     "prog_module_error": "Impossible de modifier l'état de ce module",
     "prog_module_deactivated_toast": "Module désactivé (exclu du taux de progression, conservé et réactivable)",
-    "prog_module_reactivated_toast": "Module réactivé"
+    "prog_module_reactivated_toast": "Module réactivé",
+    "prog_pending_sync": "{count} modification(s) enregistrée(s) localement — synchronisation automatique à la reconnexion",
+    "prog_saved_offline": "Avancement enregistré hors-ligne — sera synchronisé dès la reconnexion",
+    "prog_module_saved_offline": "État du module enregistré hors-ligne — sera synchronisé dès la reconnexion"
   },
   "department": {
     "title": "Département {name}",

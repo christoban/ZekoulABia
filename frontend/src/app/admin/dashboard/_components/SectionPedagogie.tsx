@@ -5,13 +5,14 @@ import { fetchApi } from '@/lib/fetchApi'
 import { getCachedData, putCachedData } from '@/lib/offline/db'
 import { useT } from '@/lib/i18n'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
-import { Circle, TrendingUp, BookOpen, WifiOff } from 'lucide-react'
+import { Circle, TrendingUp, BookOpen, WifiOff, BarChart3 } from 'lucide-react'
 import DelegationSupervisionBanner from './DelegationSupervisionBanner'
 import { confirmAction } from '@/components/shell/ConfirmDialog'
 import type { AdminSection } from '../_types'
 import PedagogieAlertesTab from './pedagogie/PedagogieAlertesTab'
 import PedagogieProgressionTab from './pedagogie/PedagogieProgressionTab'
 import PedagogieProgrammesTab from './pedagogie/PedagogieProgrammesTab'
+import PedagogieRapportAvancementTab from './pedagogie/PedagogieRapportAvancementTab'
 import InitProgrammesClasseModal from './pedagogie/InitProgrammesClasseModal'
 import InitProgrammesEcoleModal from './pedagogie/InitProgrammesEcoleModal'
 import SyncProgrammesNationauxModal, { type DeriveProgrammeSummary } from './pedagogie/SyncProgrammesNationauxModal'
@@ -282,6 +283,7 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
         {tabBtn('alertes', <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Circle size={8} fill="var(--red)" stroke="none" /> Alertes retard</span>)}
         {tabBtn('progression', <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><TrendingUp size={14} strokeWidth={2} /> Progression</span>)}
         {tabBtn('programmes', <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><BookOpen size={14} strokeWidth={2} /> Programmes</span>)}
+        {materialisationEnabled && tabBtn('rapports', <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><BarChart3 size={14} strokeWidth={2} /> Synthèse</span>)}
       </div>
 
       {tab === 'alertes' && (
@@ -343,6 +345,10 @@ export default function SectionPedagogie({ onToast, onNav }: Props) {
           onAddChapitre={handleAddChapitre}
           onDeleteChapitre={handleDeleteChapitre}
         />
+      )}
+
+      {tab === 'rapports' && materialisationEnabled && (
+        <PedagogieRapportAvancementTab onToast={onToast} />
       )}
 
       <InitProgrammesClasseModal
