@@ -7,7 +7,7 @@ export interface AjouterChapitreInput {
   programmeId: string;
   titre: string;
   ordre?: number;
-  volumeHeuresPrevu?: number;
+  volumeHeuresPrevu?: number | null;
   sequenceCibleFin?: number | null;
 }
 
@@ -16,7 +16,7 @@ export interface MettreAJourChapitreInput {
   id: string;
   titre?: string;
   ordre?: number;
-  volumeHeuresPrevu?: number;
+  volumeHeuresPrevu?: number | null;
   sequenceCibleFin?: number | null;
 }
 

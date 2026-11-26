@@ -71,7 +71,7 @@ export class PedagogieController {
       const user = req.user;
       const programmeId = String(req.params.programmeId);
       const { titre, ordre, volumeHeuresPrevu, sequenceCibleFin } = req.body as {
-        titre?: string; ordre?: number; volumeHeuresPrevu?: number; sequenceCibleFin?: number;
+        titre?: string; ordre?: number; volumeHeuresPrevu?: number | null; sequenceCibleFin?: number;
       };
       const chapitre = await this.gererChapitre.ajouter({ schoolId: user.schoolId, programmeId, titre: titre ?? '', ordre, volumeHeuresPrevu, sequenceCibleFin });
       res.status(201).json({ success: true, data: chapitre });
@@ -83,7 +83,7 @@ export class PedagogieController {
       const user = req.user;
       const id = String(req.params.id);
       const { titre, ordre, volumeHeuresPrevu, sequenceCibleFin } = req.body as {
-        titre?: string; ordre?: number; volumeHeuresPrevu?: number; sequenceCibleFin?: number | null;
+        titre?: string; ordre?: number; volumeHeuresPrevu?: number | null; sequenceCibleFin?: number | null;
       };
       const updated = await this.gererChapitre.mettreAJour({ schoolId: user.schoolId, id, titre, ordre, volumeHeuresPrevu, sequenceCibleFin });
       res.json({ success: true, data: updated });

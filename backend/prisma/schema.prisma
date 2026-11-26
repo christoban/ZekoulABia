@@ -243,6 +243,8 @@ model School {
   broadcastLogs                BroadcastLog[]
   programmes                   Programme[]
   cahierDeTexte                CahierDeTexte[]
+  chapitreAvancements          ChapitreAvancement[]
+  programmeModuleEtats         ProgrammeModuleEtat[]
   employeeFiles                EmployeeFile[]
   careerEvents                 CareerEvent[]
   staffAttendances             StaffAttendance[]
@@ -684,6 +686,8 @@ model User {
   teacherUnavailabilities         TeacherUnavailability[]     @relation("TeacherUnavailabilities")
   headedDepartments               Department[]                @relation("DepartmentHead")
   cahierDeTexte                   CahierDeTexte[]             @relation("TeacherCahierDeTexte")
+  chapitreAvancements             ChapitreAvancement[]        @relation("UserChapitreAvancements")
+  programmeModuleEtats            ProgrammeModuleEtat[]       @relation("UserProgrammeModuleEtats")
   employeeFile                    EmployeeFile?               @relation("EmployeeFileUser")
   employeeCareerEvents            CareerEvent[]               @relation("EmployeeCareerEvents")
   staffAttendances                StaffAttendance[]           @relation("StaffAttendanceUser")
@@ -1162,7 +1166,8 @@ model OfficialProgrammeProgression {
   active         Boolean        @default(true)
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
-  template       SchoolTemplate @relation(fields: [templateCode], references: [code])
+  template               SchoolTemplate @relation(fields: [templateCode], references: [code])
+  materialisedProgrammes Programme[]
 
   @@unique([templateCode, level, filiere, subjectName])
   @@index([templateCode, level])
@@ -1233,6 +1238,7 @@ model AcademicYear {
   classPromotions      ClassPromotion[]
   programmes           Programme[]
   cahierDeTexte        CahierDeTexte[]
+  chapitreAvancements  ChapitreAvancement[]
   feePlans             FeePlan[]
   classes              Class[]
   teachingAssignments  TeachingAssignment[]
@@ -1349,6 +1355,7 @@ model Class {
   subjectOverrides           ClassSubjectOverride[]
   programmes                 Programme[]
   cahierDeTexte              CahierDeTexte[]
+  chapitreAvancements        ChapitreAvancement[]
   studentOnboardings         StudentOnboarding[]
   roomAssignments            ClassRoomAssignment[]
   enrollments                Enrollment[]
@@ -3748,38 +3755,92 @@ model BookLoan {
 // ── Pédagogie ─────────────────────────────────────────────────────────────────
 
 model Programme {
-  id             String       @id @default(cuid())
-  schoolId       String
-  subjectId      String
-  classId        String?
-  level          String?
-  academicYearId String
-  titre          String
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  school         School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  subject        Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  class          Class?       @relation(fields: [classId], references: [id], onDelete: Cascade)
-  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-  chapitres      Chapitre[]
+  id                    String                        @id @default(cuid())
+  schoolId              String
+  subjectId             String
+  classId               String?
+  level                 String?
+  academicYearId        String
+  titre                 String
+  officialProgressionId String?
+  source                String                        @default("manuel")
+  sourceChecksum        String?
+  filiere               String?
+  createdAt             DateTime                      @default(now())
+  updatedAt             DateTime                      @updatedAt
+  school                School                        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  subject               Subject                       @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  class                 Class?                        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  academicYear          AcademicYear                  @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  officialProgression   OfficialProgrammeProgression? @relation(fields: [officialProgressionId], references: [id], onDelete: SetNull)
+  chapitres             Chapitre[]
+  moduleEtats           ProgrammeModuleEtat[]
 
   @@index([schoolId])
   @@index([subjectId])
   @@index([academicYearId])
+  @@index([schoolId, academicYearId, classId, subjectId])
+  @@index([officialProgressionId])
 }
 
 model Chapitre {
-  id                   String          @id @default(cuid())
-  programmeId          String
-  titre                String
-  ordre                Int
-  volumeHeuresPrevu    Int             @default(2)
-  sequenceCibleFin     Int?
-  createdAt            DateTime        @default(now())
-  programme            Programme       @relation(fields: [programmeId], references: [id], onDelete: Cascade)
-  cahierDeTexteEntries CahierDeTexte[]
+  id                    String               @id @default(cuid())
+  programmeId           String
+  titre                 String
+  ordre                 Int
+  volumeHeuresPrevu     Int?
+  sequenceCibleFin      Int?
+  officialProgressionId String?
+  moduleOrdre           Int?
+  moduleTitre           String?
+  positionDansModule    Int?
+  numeroAffiche         String?
+  sourceUrl             String?
+  sourceKey             String?
+  createdAt             DateTime             @default(now())
+  programme             Programme            @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  cahierDeTexteEntries  CahierDeTexte[]
+  avancements           ChapitreAvancement[]
 
   @@index([programmeId])
+  @@index([programmeId, ordre])
+  @@index([programmeId, moduleOrdre])
+}
+
+model ChapitreAvancement {
+  id             String       @id @default(cuid())
+  schoolId       String
+  classId        String
+  chapitreId     String
+  academicYearId String
+  statut         String       @default("FAIT")
+  cocheParId     String
+  cocheLe        DateTime     @default(now())
+  school         School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  class          Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  chapitre       Chapitre     @relation(fields: [chapitreId], references: [id], onDelete: Cascade)
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  cochePar       User         @relation("UserChapitreAvancements", fields: [cocheParId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, chapitreId])
+  @@index([schoolId, classId, academicYearId])
+  @@index([chapitreId])
+}
+
+model ProgrammeModuleEtat {
+  id           String    @id @default(cuid())
+  schoolId     String
+  programmeId  String
+  moduleOrdre  Int
+  actif        Boolean   @default(true)
+  modifieParId String
+  modifieLe    DateTime  @default(now())
+  school       School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  programme    Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  modifiePar   User      @relation("UserProgrammeModuleEtats", fields: [modifieParId], references: [id], onDelete: Cascade)
+
+  @@unique([programmeId, moduleOrdre])
+  @@index([schoolId, programmeId])
 }
 
 model CahierDeTexte {

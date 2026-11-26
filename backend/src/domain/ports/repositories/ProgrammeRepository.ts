@@ -5,8 +5,15 @@ export interface ProgrammeChapitreProps {
   id: string;
   titre: string;
   ordre: number;
-  volumeHeuresPrevu: number;
+  volumeHeuresPrevu: number | null;
   sequenceCibleFin: number | null;
+  officialProgressionId?: string | null;
+  moduleOrdre?: number | null;
+  moduleTitre?: string | null;
+  positionDansModule?: number | null;
+  numeroAffiche?: string | null;
+  sourceUrl?: string | null;
+  sourceKey?: string | null;
   createdAt: Date;
 }
 
@@ -18,6 +25,10 @@ export interface ProgrammeProps {
   level: string | null;
   academicYearId: string;
   titre: string;
+  officialProgressionId?: string | null;
+  source?: string;
+  sourceChecksum?: string | null;
+  filiere?: string | null;
   createdAt: Date;
   updatedAt: Date;
   subject?: { id: string; name: string };

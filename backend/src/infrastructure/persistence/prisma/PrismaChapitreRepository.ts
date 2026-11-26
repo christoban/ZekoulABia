@@ -14,7 +14,22 @@ export class PrismaChapitreRepository implements ChapitreRepository {
   }
 
   async create(data: ChapitreCreateData): Promise<ChapitreProps> {
-    return this.prisma.chapitre.create({ data: { programmeId: data.programmeId, titre: data.titre, ordre: data.ordre, volumeHeuresPrevu: data.volumeHeuresPrevu, sequenceCibleFin: data.sequenceCibleFin } });
+    return this.prisma.chapitre.create({
+      data: {
+        programmeId: data.programmeId,
+        titre: data.titre,
+        ordre: data.ordre,
+        volumeHeuresPrevu: data.volumeHeuresPrevu,
+        sequenceCibleFin: data.sequenceCibleFin,
+        ...(data.officialProgressionId !== undefined && { officialProgressionId: data.officialProgressionId }),
+        ...(data.moduleOrdre !== undefined && { moduleOrdre: data.moduleOrdre }),
+        ...(data.moduleTitre !== undefined && { moduleTitre: data.moduleTitre }),
+        ...(data.positionDansModule !== undefined && { positionDansModule: data.positionDansModule }),
+        ...(data.numeroAffiche !== undefined && { numeroAffiche: data.numeroAffiche }),
+        ...(data.sourceUrl !== undefined && { sourceUrl: data.sourceUrl }),
+        ...(data.sourceKey !== undefined && { sourceKey: data.sourceKey }),
+      },
+    });
   }
 
   async update(data: ChapitreUpdateData): Promise<ChapitreProps> {

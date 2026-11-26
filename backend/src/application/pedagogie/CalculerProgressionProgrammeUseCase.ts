@@ -4,15 +4,23 @@ import type { ClasseRepository } from '@domain/ports/repositories/ClasseReposito
 import type { AnneeAcademiqueRepository } from '@domain/ports/repositories/AnneeAcademiqueRepository';
 
 export interface ProgressionAvecProgramme {
-  programme: { id: string; titre: string } | null;
+  programme: { id: string; titre: string; source?: string; officialProgressionId?: string | null } | null;
   chapitresTotal: number;
   chapitresRealises: number;
-  totalHeuresPrevu: number;
-  heuresRealisees: number;
+  totalHeuresPrevu: number | null;
+  heuresRealisees: number | null;
+  hasHeuresPrevu: boolean;
   progressionPct: number | null;
   attenduPct: number | null;
   retardPct: number | null;
-  chapitres: { id: string; ordre: number; titre: string; volumeHeuresPrevu: number; sequenceCibleFin: number | null; realise: boolean }[];
+  chapitres: {
+    id: string;
+    ordre: number;
+    titre: string;
+    volumeHeuresPrevu: number | null;
+    sequenceCibleFin: number | null;
+    realise: boolean;
+  }[];
   entries: { chapitreId: string | null; date: Date }[];
 }
 
@@ -79,21 +87,32 @@ export class CalculerProgressionProgrammeUseCase {
     const chapitresAbordees = new Set<string>(entries.map(e => e.chapitreId).filter((x): x is string => x !== null));
     const chapitresTotal = chapitres.length;
     const chapitresRealises = chapitres.filter(c => chapitresAbordees.has(c.id)).length;
-    const totalHeuresPrevu = chapitres.reduce((s, c) => s + c.volumeHeuresPrevu, 0);
-    const heuresRealisees = chapitres
-      .filter(c => chapitresAbordees.has(c.id))
-      .reduce((s, c) => s + c.volumeHeuresPrevu, 0);
+    const hasHeuresPrevu = chapitres.some(c => c.volumeHeuresPrevu !== null && c.volumeHeuresPrevu !== undefined);
+    const totalHeuresPrevu = hasHeuresPrevu
+      ? chapitres.reduce((s, c) => s + (c.volumeHeuresPrevu ?? 0), 0)
+      : null;
+    const heuresRealisees = hasHeuresPrevu
+      ? chapitres
+          .filter(c => chapitresAbordees.has(c.id))
+          .reduce((s, c) => s + (c.volumeHeuresPrevu ?? 0), 0)
+      : null;
     const progressionPct = chapitresTotal > 0 ? Math.round((chapitresRealises / chapitresTotal) * 100) : null;
 
     const annee = await this.anneeRepository.findById(anneeId);
     const attenduPct = this.datePourcentage(annee?.startDate, annee?.endDate);
 
     return {
-      programme: { id: programme.id, titre: programme.titre },
+      programme: {
+        id: programme.id,
+        titre: programme.titre,
+        source: programme.source,
+        officialProgressionId: programme.officialProgressionId ?? null,
+      },
       chapitresTotal,
       chapitresRealises,
       totalHeuresPrevu,
       heuresRealisees,
+      hasHeuresPrevu,
       progressionPct,
       attenduPct,
       retardPct: attenduPct !== null && progressionPct !== null ? attenduPct - progressionPct : null,
@@ -197,8 +216,9 @@ export class CalculerProgressionProgrammeUseCase {
       programme: null,
       chapitresTotal: 0,
       chapitresRealises: 0,
-      totalHeuresPrevu: 0,
-      heuresRealisees: 0,
+      totalHeuresPrevu: null,
+      heuresRealisees: null,
+      hasHeuresPrevu: false,
       progressionPct: null,
       attenduPct: null,
       retardPct: null,

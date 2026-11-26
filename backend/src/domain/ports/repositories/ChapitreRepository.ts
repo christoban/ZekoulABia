@@ -6,8 +6,15 @@ export interface ChapitreProps {
   programmeId: string;
   titre: string;
   ordre: number;
-  volumeHeuresPrevu: number;
+  volumeHeuresPrevu: number | null;
   sequenceCibleFin: number | null;
+  officialProgressionId?: string | null;
+  moduleOrdre?: number | null;
+  moduleTitre?: string | null;
+  positionDansModule?: number | null;
+  numeroAffiche?: string | null;
+  sourceUrl?: string | null;
+  sourceKey?: string | null;
   createdAt: Date;
 }
 
@@ -17,7 +24,7 @@ export interface ChapitreUpdateData {
   id: string;
   titre?: string;
   ordre?: number;
-  volumeHeuresPrevu?: number;
+  volumeHeuresPrevu?: number | null;
   sequenceCibleFin?: number | null;
 }
 
