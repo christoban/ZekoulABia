@@ -55,9 +55,14 @@ import { VerifierRecuUseCase } from '@application/matricule/VerifierRecuUseCase'
 import { ConfirmerCorrespondanceFuzzyUseCase } from '@application/matricule/ConfirmerCorrespondanceFuzzyUseCase';
 import { SignalerErreurCarteScolaireUseCase } from '@application/matricule/SignalerErreurCarteScolaireUseCase';
 import type { CreerClasseUseCase } from '@application/class/CreerClasseUseCase';
+import type { AutoMaterialisationProgrammesPort } from '@domain/ports/services/AutoMaterialisationProgrammesPort';
 import type { CoreContainerContext } from './coreContext';
 
-export function createOnboardingUserContainer(core: CoreContainerContext, creerClasseUseCase: CreerClasseUseCase) {
+export function createOnboardingUserContainer(
+  core: CoreContainerContext,
+  creerClasseUseCase: CreerClasseUseCase,
+  autoMaterialisation?: AutoMaterialisationProgrammesPort,
+) {
   const schoolActivationRepository = new PrismaSchoolActivationRepository(prisma);
   const invitationRepository = new PrismaInvitationRepository(prisma);
   const importUtilisateursRepository = new PrismaImportUtilisateursRepository(prisma);
@@ -79,7 +84,7 @@ export function createOnboardingUserContainer(core: CoreContainerContext, creerC
     school: {
       onboarder: new OnboarderEcoleUseCase(core.schoolRepository, core.userRepository, core.emailService),
       approuver: new ApprouverEcoleUseCase(core.schoolRepository, core.userRepository, core.emailService),
-      activer: new ActiverEtablissementUseCase(schoolActivationRepository),
+      activer: new ActiverEtablissementUseCase(schoolActivationRepository, autoMaterialisation),
       schoolActivationRepository,
       schoolRepository: core.schoolRepository,
       invitationRepository,

@@ -9,6 +9,7 @@
  */
 import type { AnneeAcademiqueRepository } from '@domain/ports/repositories/AnneeAcademiqueRepository';
 import type { ClasseRepository } from '@domain/ports/repositories/ClasseRepository';
+import type { AutoMaterialisationProgrammesPort } from '@domain/ports/services/AutoMaterialisationProgrammesPort';
 
 export interface ValiderStructureCommande {
   schoolId: string;
@@ -23,6 +24,7 @@ export class ValiderStructureAnneeSuivanteUseCase {
   constructor(
     private readonly anneeRepository: AnneeAcademiqueRepository,
     private readonly classeRepository: ClasseRepository,
+    private readonly autoMaterialisation?: AutoMaterialisationProgrammesPort,
   ) {}
 
   async execute(commande: ValiderStructureCommande): Promise<ValiderStructureResultat> {
@@ -46,6 +48,15 @@ export class ValiderStructureAnneeSuivanteUseCase {
     }
 
     const classesActivees = await this.classeRepository.activerToutesDraft(commande.schoolId, commande.anneeSuivanteId);
+
+    // Lot 2 : auto-matérialisation non bloquante des programmes officiels pour la nouvelle année
+    if (this.autoMaterialisation && classesActivees > 0) {
+      await this.autoMaterialisation.materialiserPourEcoleSiActif({
+        schoolId: commande.schoolId,
+        academicYearId: commande.anneeSuivanteId,
+      });
+    }
+
     return { classesActivees };
   }
 }

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import type { PedagogieController } from '@infrastructure/http/controllers/PedagogieController';
 import type { PedagogieMaterialisationController } from '@infrastructure/http/controllers/PedagogieMaterialisationController';
+import type { PedagogieSynchronisationController } from '@infrastructure/http/controllers/PedagogieSynchronisationController';
 import { requirePermission, requireRole } from '@infrastructure/http/middlewares/auth';
 import { requireOfficialProgrammesMaterialisation } from '@infrastructure/config/featureFlags';
 
@@ -10,6 +11,7 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 *
 export function creerPedagogieRoutes(
   ctrl: PedagogieController,
   materialisationCtrl?: PedagogieMaterialisationController,
+  syncCtrl?: PedagogieSynchronisationController,
 ): Router {
   const router = Router();
 
@@ -69,6 +71,40 @@ export function creerPedagogieRoutes(
       requireOfficialProgrammesMaterialisation,
       requireRole('TEACHER', 'STAFF'),
       materialisationCtrl.basculerModuleActif,
+    );
+  }
+
+  // Lot 2 : Initialisation en lot d'école, détection de dérive & synchronisation différentielle
+  if (syncCtrl) {
+    router.post(
+      '/ecole/initialiser-programmes/propose',
+      requireOfficialProgrammesMaterialisation,
+      requirePermission('MANAGE_CLASSES'),
+      syncCtrl.proposerInitialisationEcole,
+    );
+    router.post(
+      '/ecole/initialiser-programmes/apply',
+      requireOfficialProgrammesMaterialisation,
+      requirePermission('MANAGE_CLASSES'),
+      syncCtrl.appliquerInitialisationEcole,
+    );
+    router.get(
+      '/programmes/derives',
+      requireOfficialProgrammesMaterialisation,
+      requirePermission('MANAGE_CLASSES'),
+      syncCtrl.listerDerivesEcole,
+    );
+    router.post(
+      '/programmes/:programmeId/synchroniser/propose',
+      requireOfficialProgrammesMaterialisation,
+      requirePermission('MANAGE_CLASSES'),
+      syncCtrl.proposerSynchronisationProgramme,
+    );
+    router.post(
+      '/programmes/:programmeId/synchroniser/apply',
+      requireOfficialProgrammesMaterialisation,
+      requirePermission('MANAGE_CLASSES'),
+      syncCtrl.appliquerSynchronisationProgramme,
     );
   }
 

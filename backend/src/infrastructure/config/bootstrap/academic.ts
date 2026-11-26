@@ -8,6 +8,7 @@ import { ClassCouncilController } from '@infrastructure/http/controllers/ClassCo
 import { AcademicYearController } from '@infrastructure/http/controllers/AcademicYearController';
 import { PedagogieController } from '@infrastructure/http/controllers/PedagogieController';
 import { PedagogieMaterialisationController } from '@infrastructure/http/controllers/PedagogieMaterialisationController';
+import { PedagogieSynchronisationController } from '@infrastructure/http/controllers/PedagogieSynchronisationController';
 import { TemplateController } from '@infrastructure/http/controllers/TemplateController';
 import { StudentDocumentController } from '@infrastructure/http/controllers/StudentDocumentController';
 import { InviteOnboardingController } from '@infrastructure/http/controllers/InviteOnboardingController';
@@ -179,10 +180,21 @@ export function registerAcademicRoutes(app: Application, prismaParam: typeof pri
     c.pedagogie.basculerModuleActif,
     pedagogieAudit,
   );
+  const pedagogieSynchronisationController = new PedagogieSynchronisationController(
+    c.pedagogie.initialiserEcole,
+    c.pedagogie.listerDerivesEcole,
+    c.pedagogie.proposerSynchronisation,
+    c.pedagogie.appliquerSynchronisation,
+    pedagogieAudit,
+  );
   app.use(
     '/api/v2/pedagogie',
     requireAuth,
-    creerPedagogieRoutes(pedagogieController, pedagogieMaterialisationController),
+    creerPedagogieRoutes(
+      pedagogieController,
+      pedagogieMaterialisationController,
+      pedagogieSynchronisationController,
+    ),
   );
 
   app.use('/api/v2/onboarding', creerOnboardingRoutes(onboardingController));

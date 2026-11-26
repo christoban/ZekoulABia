@@ -6,6 +6,7 @@
  * matières, départements, et applique les formules/mentions du template dans l'école.
  */
 import type { SchoolActivationRepository } from '@domain/ports/repositories/SchoolActivationRepository';
+import type { AutoMaterialisationProgrammesPort } from '@domain/ports/services/AutoMaterialisationProgrammesPort';
 import { getTemplateMeta, isPEBSFrancophoneEligible, isPEBSAnglophoneEligible } from './schoolTemplateConfig';
 import { creerCalendrierInitial } from './activation/activationCalendar';
 import { genererEtSauvegarderClasses } from './activation/activationClasses';
@@ -26,7 +27,10 @@ export interface ActiverEtablissementResultat {
 }
 
 export class ActiverEtablissementUseCase {
-  constructor(private readonly schoolActivationRepository: SchoolActivationRepository) {}
+  constructor(
+    private readonly schoolActivationRepository: SchoolActivationRepository,
+    private readonly autoMaterialisation?: AutoMaterialisationProgrammesPort,
+  ) {}
 
   async execute(commande: ActiverEtablissementCommande): Promise<ActiverEtablissementResultat> {
     const { schoolId } = commande;
@@ -81,6 +85,7 @@ export class ActiverEtablissementUseCase {
     let classCount = 0;
     let subjectCount = 0;
     let academicYearName = '';
+    let academicYearId = '';
 
     await this.schoolActivationRepository.activerEtablissement(schoolId, async (tx) => {
       // 1. Calendrier scolaire, périodes et séquences
@@ -94,6 +99,7 @@ export class ActiverEtablissementUseCase {
         isComplexe,
       });
       academicYearName = calRes.academicYearName;
+      academicYearId = calRes.academicYear.id;
 
       // 2. Génération et persistance des classes
       const classRes = await genererEtSauvegarderClasses({
@@ -150,6 +156,14 @@ export class ActiverEtablissementUseCase {
       });
       subjectCount += recRes.subjectCountAdded;
     });
+
+    // Lot 2 : auto-matérialisation non bloquante des programmes officiels (si feature flag actif)
+    if (this.autoMaterialisation && academicYearId) {
+      await this.autoMaterialisation.materialiserPourEcoleSiActif({
+        schoolId: school.id,
+        academicYearId,
+      });
+    }
 
     return {
       schoolId: school.id,

@@ -24,11 +24,15 @@ import { createExamsCampaignContainer } from './container/examsCampaignContainer
 export function creerContainer() {
   const core = createCoreContainerContext();
   const assessmentGrade = createAssessmentGradeContainer(core);
-  const academic = createAcademicContainer(core);
   const timetable = createTimetableContainer(core);
+  const academic = createAcademicContainer(core, timetable.pedagogie.autoMaterialisation);
   const financeHr = createFinanceHrContainer(core);
   const communication = createCommunicationContainer(core);
-  const onboardingUser = createOnboardingUserContainer(core, academic.class.creer);
+  const onboardingUser = createOnboardingUserContainer(
+    core,
+    academic.class.creer,
+    timetable.pedagogie.autoMaterialisation,
+  );
   const examsCampaign = createExamsCampaignContainer(core, onboardingUser.eleveOnboarding.creerSquelette);
 
   return {

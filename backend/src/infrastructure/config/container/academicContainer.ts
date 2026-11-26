@@ -58,9 +58,13 @@ import { ValiderStructureAnneeSuivanteUseCase } from '@application/academicYear/
 import { AnnulerStructureProposeeUseCase } from '@application/academicYear/AnnulerStructureProposeeUseCase';
 import { MettreAJourCalendrierUseCase } from '@application/academicYear/MettreAJourCalendrierUseCase';
 import { ObtenirProfilAcademiqueUseCase } from '@application/student/ObtenirProfilAcademiqueUseCase';
+import type { AutoMaterialisationProgrammesPort } from '@domain/ports/services/AutoMaterialisationProgrammesPort';
 import type { CoreContainerContext } from './coreContext';
 
-export function createAcademicContainer(core: CoreContainerContext) {
+export function createAcademicContainer(
+  core: CoreContainerContext,
+  autoMaterialisation?: AutoMaterialisationProgrammesPort,
+) {
   const studentProfileRepository = new PrismaStudentProfileRepository(prisma);
   const studentDocumentRepository = new PrismaStudentDocumentRepository(prisma);
   const teachingAssignmentRepository = new PrismaTeachingAssignmentRepository(prisma);
@@ -169,6 +173,7 @@ export function createAcademicContainer(core: CoreContainerContext) {
     core.matiereRepository,
     new CreerCanalClasseUseCase(messagerieRepository),
     new CreerCanalParentsUseCase(messagerieRepository),
+    autoMaterialisation,
   );
 
   const classGroup = {
@@ -229,7 +234,11 @@ export function createAcademicContainer(core: CoreContainerContext) {
       core.classeRepository,
       promotionRepository,
     ),
-    validerStructureSuivante: new ValiderStructureAnneeSuivanteUseCase(core.anneeRepository, core.classeRepository),
+    validerStructureSuivante: new ValiderStructureAnneeSuivanteUseCase(
+      core.anneeRepository,
+      core.classeRepository,
+      autoMaterialisation,
+    ),
     annulerStructureSuivante: new AnnulerStructureProposeeUseCase(core.anneeRepository, core.classeRepository),
   };
 

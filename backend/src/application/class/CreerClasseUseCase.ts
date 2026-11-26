@@ -4,6 +4,7 @@ import type { AnneeAcademiqueRepository } from '@domain/ports/repositories/Annee
 import type { MatiereRepository } from '@domain/ports/repositories/MatiereRepository';
 import type { CreerCanalClasseUseCase } from '@application/messagerie/CreerCanalClasseUseCase';
 import type { CreerCanalParentsUseCase } from '@application/messagerie/CreerCanalParentsUseCase';
+import type { AutoMaterialisationProgrammesPort } from '@domain/ports/services/AutoMaterialisationProgrammesPort';
 import { CYCLE2_LEVELS, NIVEAU_MAP } from '@application/school/SubjectAssignmentHelper';
 
 // Re-export pour ne casser les imports existants dans le reste du codebase
@@ -20,6 +21,7 @@ export class CreerClasseUseCase implements CreerClasseService {
     // CreerClasseUseCase.test.ts, qui l'instancie avec un seul argument).
     private readonly creerCanalClasseUseCase?: CreerCanalClasseUseCase,
     private readonly creerCanalParentsUseCase?: CreerCanalParentsUseCase,
+    private readonly autoMaterialisation?: AutoMaterialisationProgrammesPort,
   ) {}
 
   async execute(commande: CreerClasseCommande): Promise<CreerClasseResultat> {
@@ -81,6 +83,15 @@ export class CreerClasseUseCase implements CreerClasseService {
         this.creerCanalClasseUseCase.execute(params),
         this.creerCanalParentsUseCase.execute(params),
       ]);
+    }
+
+    // Lot 2 : auto-matérialisation non bloquante des programmes officiels (si feature flag actif)
+    if (this.autoMaterialisation) {
+      await this.autoMaterialisation.materialiserPourClasseSiActif({
+        schoolId: commande.schoolId,
+        classId: classe.id,
+        academicYearId: academicYearId!,
+      });
     }
 
     return {

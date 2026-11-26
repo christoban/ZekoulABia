@@ -24,7 +24,7 @@ function toNullableString(val: unknown): string | null {
   return null;
 }
 
-function extraireChapitresJson(raw: unknown): OfficialChapterSource[] {
+export function extraireChapitresJson(raw: unknown): OfficialChapterSource[] {
   if (!Array.isArray(raw)) return [];
   const chapitres: OfficialChapterSource[] = [];
 
@@ -265,3 +265,4 @@ export class PrismaMaterialisationProgrammeRepository
     });
   }
 }
+

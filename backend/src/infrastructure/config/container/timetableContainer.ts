@@ -8,6 +8,8 @@ import { PrismaChapitreRepository } from '@infrastructure/persistence/prisma/Pri
 import { PrismaCahierDeTexteRepository } from '@infrastructure/persistence/prisma/PrismaCahierDeTexteRepository';
 import { PrismaMaterialisationProgrammeRepository } from '@infrastructure/persistence/prisma/PrismaMaterialisationProgrammeRepository';
 import { PrismaChapitreAvancementRepository } from '@infrastructure/persistence/prisma/PrismaChapitreAvancementRepository';
+import { PrismaSynchronisationProgrammeRepository } from '@infrastructure/persistence/prisma/PrismaSynchronisationProgrammeRepository';
+import { FeatureFlaggedAutoMaterialisationService } from '@infrastructure/services/pedagogie/FeatureFlaggedAutoMaterialisationService';
 import { SchedulingGridAdapter } from '@infrastructure/scheduling/SchedulingGridAdapter';
 import { ORToolsWasmAdapter } from '@infrastructure/scheduling/ORToolsWasmAdapter';
 import { JwtQrTokenService } from '@infrastructure/services/qr/QrTokenService';
@@ -55,6 +57,10 @@ import { ProposerInitialisationProgrammesClasseUseCase } from '@application/peda
 import { AppliquerInitialisationProgrammesClasseUseCase } from '@application/pedagogie/AppliquerInitialisationProgrammesClasseUseCase';
 import { BasculerAvancementChapitreUseCase } from '@application/pedagogie/BasculerAvancementChapitreUseCase';
 import { BasculerModuleActifUseCase } from '@application/pedagogie/BasculerModuleActifUseCase';
+import { InitialiserProgrammesEcoleUseCase } from '@application/pedagogie/InitialiserProgrammesEcoleUseCase';
+import { ListerDerivesProgrammesEcoleUseCase } from '@application/pedagogie/ListerDerivesProgrammesEcoleUseCase';
+import { ProposerSynchronisationProgrammeUseCase } from '@application/pedagogie/ProposerSynchronisationProgrammeUseCase';
+import { AppliquerSynchronisationProgrammeUseCase } from '@application/pedagogie/AppliquerSynchronisationProgrammeUseCase';
 import type { CoreContainerContext } from './coreContext';
 
 export function createTimetableContainer(core: CoreContainerContext) {
@@ -69,8 +75,22 @@ export function createTimetableContainer(core: CoreContainerContext) {
   const cahierDeTexteRepository = new PrismaCahierDeTexteRepository(prisma);
   const materialisationProgrammeRepository = new PrismaMaterialisationProgrammeRepository(prisma);
   const chapitreAvancementRepository = new PrismaChapitreAvancementRepository(prisma);
+  const synchronisationProgrammeRepository = new PrismaSynchronisationProgrammeRepository(prisma);
   const proposerInitialisationProgrammesClasse = new ProposerInitialisationProgrammesClasseUseCase(
     materialisationProgrammeRepository,
+  );
+  const appliquerInitialisationProgrammesClasse = new AppliquerInitialisationProgrammesClasseUseCase(
+    proposerInitialisationProgrammesClasse,
+    materialisationProgrammeRepository,
+  );
+  const initialiserProgrammesEcole = new InitialiserProgrammesEcoleUseCase(
+    synchronisationProgrammeRepository,
+    proposerInitialisationProgrammesClasse,
+    appliquerInitialisationProgrammesClasse,
+  );
+  const autoMaterialisationProgrammes = new FeatureFlaggedAutoMaterialisationService(
+    appliquerInitialisationProgrammesClasse,
+    initialiserProgrammesEcole,
   );
 
   const proposerEmploiDuTempsUseCase = new ProposerEmploiDuTempsUseCase(
@@ -187,10 +207,12 @@ export function createTimetableContainer(core: CoreContainerContext) {
         core.anneeRepository,
       ),
       proposerInitialisationClasse: proposerInitialisationProgrammesClasse,
-      appliquerInitialisationClasse: new AppliquerInitialisationProgrammesClasseUseCase(
-        proposerInitialisationProgrammesClasse,
-        materialisationProgrammeRepository,
-      ),
+      appliquerInitialisationClasse: appliquerInitialisationProgrammesClasse,
+      initialiserEcole: initialiserProgrammesEcole,
+      listerDerivesEcole: new ListerDerivesProgrammesEcoleUseCase(synchronisationProgrammeRepository),
+      proposerSynchronisation: new ProposerSynchronisationProgrammeUseCase(synchronisationProgrammeRepository),
+      appliquerSynchronisation: new AppliquerSynchronisationProgrammeUseCase(synchronisationProgrammeRepository),
+      autoMaterialisation: autoMaterialisationProgrammes,
       basculerAvancementChapitre: new BasculerAvancementChapitreUseCase(
         chapitreAvancementRepository,
         cahierDeTexteRepository,

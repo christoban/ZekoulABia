@@ -56,7 +56,10 @@ export function registerAuthOnboardingRoutes(app: Application, prismaParam: type
 
   // ── Activation de l'établissement (Admin, après configuration) ─────
   const schoolActivationRepository = new PrismaSchoolActivationRepository(p);
-  const activerEtablissementUseCase = new ActiverEtablissementUseCase(schoolActivationRepository);
+  const activerEtablissementUseCase = new ActiverEtablissementUseCase(
+    schoolActivationRepository,
+    c.pedagogie.autoMaterialisation,
+  );
 
   // ── Catalogue templates + Onboarding conversationnel Phase 2 ───────
   const listerTemplatesCatalogUseCase = new ListerTemplatesCatalogUseCase();
