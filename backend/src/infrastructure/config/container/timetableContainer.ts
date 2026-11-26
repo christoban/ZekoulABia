@@ -61,6 +61,8 @@ import { InitialiserProgrammesEcoleUseCase } from '@application/pedagogie/Initia
 import { ListerDerivesProgrammesEcoleUseCase } from '@application/pedagogie/ListerDerivesProgrammesEcoleUseCase';
 import { ProposerSynchronisationProgrammeUseCase } from '@application/pedagogie/ProposerSynchronisationProgrammeUseCase';
 import { AppliquerSynchronisationProgrammeUseCase } from '@application/pedagogie/AppliquerSynchronisationProgrammeUseCase';
+import { GenererRapportAvancementProgrammesUseCase } from '@application/pedagogie/GenererRapportAvancementProgrammesUseCase';
+import { RelancerRetardsProgrammesUseCase } from '@application/pedagogie/RelancerRetardsProgrammesUseCase';
 import type { CoreContainerContext } from './coreContext';
 
 export function createTimetableContainer(core: CoreContainerContext) {
@@ -87,6 +89,13 @@ export function createTimetableContainer(core: CoreContainerContext) {
     synchronisationProgrammeRepository,
     proposerInitialisationProgrammesClasse,
     appliquerInitialisationProgrammesClasse,
+  );
+  const calculerProgressionProgramme = new CalculerProgressionProgrammeUseCase(
+    programmeRepository,
+    cahierDeTexteRepository,
+    core.classeRepository,
+    core.anneeRepository,
+    chapitreAvancementRepository,
   );
   const autoMaterialisationProgrammes = new FeatureFlaggedAutoMaterialisationService(
     appliquerInitialisationProgrammesClasse,
@@ -193,18 +202,25 @@ export function createTimetableContainer(core: CoreContainerContext) {
         core.rattachementRepository,
         verifierPresenceAvantCahier,
       ),
-      calculerProgression: new CalculerProgressionProgrammeUseCase(
-        programmeRepository,
-        cahierDeTexteRepository,
-        core.classeRepository,
-        core.anneeRepository,
-        chapitreAvancementRepository,
-      ),
+      calculerProgression: calculerProgressionProgramme,
       obtenirSlot: new ObtenirSlotDuJourUseCase(timetableRepository, core.anneeRepository),
       genererRapport: new GenererRapportPedagogieUseCase(
         cahierDeTexteRepository,
         core.departmentRepository,
         core.anneeRepository,
+      ),
+      genererRapportAvancement: new GenererRapportAvancementProgrammesUseCase(
+        programmeRepository,
+        cahierDeTexteRepository,
+        core.classeRepository,
+        core.anneeRepository,
+        chapitreAvancementRepository,
+        core.departmentRepository,
+      ),
+      relancerRetardsProgrammes: new RelancerRetardsProgrammesUseCase(
+        calculerProgressionProgramme,
+        core.departmentRepository,
+        core.notificationService,
       ),
       proposerInitialisationClasse: proposerInitialisationProgrammesClasse,
       appliquerInitialisationClasse: appliquerInitialisationProgrammesClasse,

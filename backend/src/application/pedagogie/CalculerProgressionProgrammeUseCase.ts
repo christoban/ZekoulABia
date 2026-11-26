@@ -73,6 +73,7 @@ export interface CalculerProgressionInput {
 export interface AlerteRetardProgramme {
   programmeId: string;
   programmeTitre: string;
+  subjectId: string;
   subjectName: string;
   className: string;
   classId: string;
@@ -348,6 +349,7 @@ export class CalculerProgressionProgrammeUseCase {
           alertes.push({
             programmeId: prog.id,
             programmeTitre: prog.titre,
+            subjectId: prog.subjectId,
             subjectName: prog.subject?.name ?? '',
             className: classe?.name ?? cid,
             classId: cid,

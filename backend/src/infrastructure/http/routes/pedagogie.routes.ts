@@ -3,6 +3,7 @@ import multer from 'multer';
 import type { PedagogieController } from '@infrastructure/http/controllers/PedagogieController';
 import type { PedagogieMaterialisationController } from '@infrastructure/http/controllers/PedagogieMaterialisationController';
 import type { PedagogieSynchronisationController } from '@infrastructure/http/controllers/PedagogieSynchronisationController';
+import type { PedagogiePilotageController } from '@infrastructure/http/controllers/PedagogiePilotageController';
 import { requirePermission, requireRole } from '@infrastructure/http/middlewares/auth';
 import { requireOfficialProgrammesMaterialisation } from '@infrastructure/config/featureFlags';
 
@@ -12,6 +13,7 @@ export function creerPedagogieRoutes(
   ctrl: PedagogieController,
   materialisationCtrl?: PedagogieMaterialisationController,
   syncCtrl?: PedagogieSynchronisationController,
+  pilotageCtrl?: PedagogiePilotageController,
 ): Router {
   const router = Router();
 
@@ -105,6 +107,28 @@ export function creerPedagogieRoutes(
       requireOfficialProgrammesMaterialisation,
       requirePermission('MANAGE_CLASSES'),
       syncCtrl.appliquerSynchronisationProgramme,
+    );
+  }
+
+  // Lot 3 : Rapport consolidé d'avancement (JSON/CSV) & relances ciblées des retards
+  if (pilotageCtrl) {
+    router.get(
+      '/rapports/avancement',
+      requireOfficialProgrammesMaterialisation,
+      requirePermission('MANAGE_CLASSES', 'SUPERVISE_LESSON_PLANS'),
+      pilotageCtrl.getRapportAvancement,
+    );
+    router.post(
+      '/alertes-retard/notifier/propose',
+      requireOfficialProgrammesMaterialisation,
+      requirePermission('MANAGE_CLASSES'),
+      pilotageCtrl.proposerRelanceRetards,
+    );
+    router.post(
+      '/alertes-retard/notifier/apply',
+      requireOfficialProgrammesMaterialisation,
+      requirePermission('MANAGE_CLASSES'),
+      pilotageCtrl.appliquerRelanceRetards,
     );
   }
 
