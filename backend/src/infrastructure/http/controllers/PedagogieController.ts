@@ -168,7 +168,8 @@ export class PedagogieController {
         res.status(400).json({ success: false, message: 'classId et subjectId sont requis' });
         return;
       }
-      const resultat = await this.calculerProgression.calculerProgression({ schoolId: user.schoolId, classId, subjectId, academicYearId });
+      const actor = { userId: user.userId, role: user.role, permissions: user.permissions };
+      const resultat = await this.calculerProgression.calculerProgression({ schoolId: user.schoolId, classId, subjectId, academicYearId, actor });
       res.json({ success: true, data: resultat });
     } catch (e) { this.gererErreur(e, res, next); }
   };
@@ -204,7 +205,8 @@ export class PedagogieController {
       const user = req.user;
       const subjectId = String(req.params.subjectId);
       const { classId } = req.query as { classId?: string };
-      const data = await this.calculerProgression.verifierProgrammeMatiere(user.schoolId, subjectId, classId);
+      const actor = { userId: user.userId, role: user.role, permissions: user.permissions };
+      const data = await this.calculerProgression.verifierProgrammeMatiere(user.schoolId, subjectId, classId, undefined, actor);
       res.json({ success: true, data });
     } catch (e) { this.gererErreur(e, res, next); }
   };

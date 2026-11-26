@@ -11,6 +11,7 @@
  *   → accès refusé en écriture programmes/chapitres et sur les rapports consolidés (NONE).
  */
 import type { DepartmentRepository } from '@domain/ports/repositories/DepartmentRepository';
+import type { RattachementEnseignantRepository } from '@domain/ports/repositories/RattachementEnseignantRepository';
 import { PedagogieForbiddenError } from './errors';
 
 export interface PedagogieActor {
@@ -78,5 +79,42 @@ export async function exigerDroitGestionProgrammeMatiere(
 
   throw new PedagogieForbiddenError(
     "Accès refusé : seuls l'administration, le censeur ou l'Animateur Pédagogique du département peuvent gérer les programmes.",
+  );
+}
+
+/**
+ * Vérifie que l'acteur a le droit de consulter un programme ou sa progression
+ * pour un couple (classId, subjectId) :
+ * - ADMIN / MANAGE_CLASSES (Censeur) : toute l'école ;
+ * - AP chef de département : matières de son département ;
+ * - Enseignant (TEACHER) : uniquement s'il est affecté à (classId, subjectId) ;
+ * - Tout autre rôle (enseignant non affecté, élève, parent, staff sans droit) : 403.
+ */
+export async function exigerDroitLectureProgrammeClasseMatiere(
+  departmentRepository: DepartmentRepository,
+  rattachementRepository: RattachementEnseignantRepository | undefined,
+  schoolId: string,
+  subjectId: string,
+  classId: string | undefined,
+  actor?: PedagogieActor,
+): Promise<void> {
+  if (!actor) return;
+
+  const scope = await resoudreScopePedagogie(departmentRepository, schoolId, actor);
+  if (scope.kind === 'SCHOOL_WIDE') return;
+  if (scope.kind === 'DEPARTMENT_SCOPED' && scope.subjectIds.has(subjectId)) return;
+
+  if (actor.role.toUpperCase() === 'TEACHER' && classId && rattachementRepository) {
+    const rattache = await rattachementRepository.estRattacheALaClasse(
+      actor.userId,
+      classId,
+      subjectId,
+      { autoriserProfesseurPrincipal: false },
+    );
+    if (rattache) return;
+  }
+
+  throw new PedagogieForbiddenError(
+    "Accès refusé : vous n'êtes pas affecté à cette classe/matière ni autorisé à consulter ce programme.",
   );
 }

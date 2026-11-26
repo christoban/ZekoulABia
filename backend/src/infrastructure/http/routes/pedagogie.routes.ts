@@ -29,11 +29,11 @@ export function creerPedagogieRoutes(
   router.delete('/chapitres/:id', ctrl.deleteChapitre);
 
   // Cahier de texte
-  router.post('/cahier-de-texte', ctrl.createCahierDeTexte);
+  router.post('/cahier-de-texte', requireRole('TEACHER', 'ADMIN', 'STAFF'), ctrl.createCahierDeTexte);
   router.get('/cahier-de-texte', ctrl.listCahierDeTexte);
 
   // Scan photo via Groq Vision (multipart)
-  router.post('/scan', upload.single('image'), ctrl.scanCahier);
+  router.post('/scan', requireRole('TEACHER', 'ADMIN', 'STAFF'), upload.single('image'), ctrl.scanCahier);
 
   // Slot du jour (pré-remplissage automatique)
   router.get('/today-slot', ctrl.getTodaySlot);

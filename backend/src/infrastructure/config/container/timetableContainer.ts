@@ -97,6 +97,7 @@ export function createTimetableContainer(core: CoreContainerContext) {
     core.anneeRepository,
     chapitreAvancementRepository,
     core.departmentRepository,
+    core.rattachementRepository,
   );
   const autoMaterialisationProgrammes = new FeatureFlaggedAutoMaterialisationService(
     appliquerInitialisationProgrammesClasse,

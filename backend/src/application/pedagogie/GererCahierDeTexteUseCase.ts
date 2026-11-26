@@ -43,9 +43,16 @@ export class GererCahierDeTexteUseCase {
       throw new PedagogieValidationError('classId, subjectId et au moins un contenu (contenuRealise ou contenuLibre) sont requis');
     }
 
+    const roleUpper = input.role.toUpperCase();
+    if (!['TEACHER', 'ADMIN', 'STAFF'].includes(roleUpper)) {
+      throw new PedagogieForbiddenError(
+        "Accès refusé : seuls les enseignants et l'encadrement pédagogique peuvent enregistrer une séance dans le cahier de texte.",
+      );
+    }
+
     // V2.11 — Gate présence enseignant (scope TEACHER uniquement) avant saisie du cahier de textes.
     // Non bloquante : ne bloque que si un mode fiable (QR configuré non scanné) était disponible.
-    if (input.role === 'TEACHER' && this.verifierPresence) {
+    if (roleUpper === 'TEACHER' && this.verifierPresence) {
       try {
         await this.verifierPresence.execute({
           teacherId: input.teacherId,

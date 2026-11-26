@@ -8,94 +8,33 @@ import type {
   ProgrammeModuleEtatProps,
 } from '@domain/ports/repositories/ChapitreAvancementRepository';
 import type { DepartmentRepository } from '@domain/ports/repositories/DepartmentRepository';
+import type { RattachementEnseignantRepository } from '@domain/ports/repositories/RattachementEnseignantRepository';
 import type { SourceRealisationLecon } from './BasculerAvancementChapitreUseCase';
 import { PedagogieForbiddenError } from './errors';
-import { resoudreScopePedagogie, type PedagogieActor } from './PedagogieAccessGuard';
+import {
+  exigerDroitLectureProgrammeClasseMatiere,
+  resoudreScopePedagogie,
+  type PedagogieActor,
+} from './PedagogieAccessGuard';
 import {
   estLeconComptabilisee,
   estLeconRetireeDuReferentiel,
 } from '@domain/rules/programmeLeconsComptabilisees';
+import type {
+  AlerteRetardProgramme,
+  CalculerProgressionInput,
+  ProgressionAvecProgramme,
+  ProgressionChapitreDetail,
+  ProgressionModuleDetail,
+} from './progressionTypes';
 
-export interface ProgressionChapitreDetail {
-  id: string;
-  ordre: number;
-  titre: string;
-  volumeHeuresPrevu: number | null;
-  sequenceCibleFin: number | null;
-  moduleOrdre: number | null;
-  moduleTitre: string | null;
-  positionDansModule: number | null;
-  numeroAffiche: string | null;
-  sourceUrl: string | null;
-  moduleActif: boolean;
-  /** Leçon retirée du référentiel national : visible, exclue du taux, jamais supprimée. */
-  retireDuReferentiel: boolean;
-  retireDuReferentielLe: Date | null;
-  realise: boolean;
-  cocheDirecte: boolean;
-  nbSeancesCahier: number;
-  sourceRealisation: SourceRealisationLecon;
-  cocheLe: Date | null;
-}
-
-export interface ProgressionModuleDetail {
-  moduleOrdre: number;
-  moduleTitre: string;
-  actif: boolean;
-  leconsTotal: number;
-  leconsRealisees: number;
-  progressionPct: number | null;
-  modifieLe: Date | null;
-  modifieParId: string | null;
-}
-
-export interface ProgressionAvecProgramme {
-  programme: {
-    id: string;
-    titre: string;
-    source?: string;
-    officialProgressionId?: string | null;
-    filiere?: string | null;
-  } | null;
-  chapitresTotal: number;
-  chapitresRealises: number;
-  leconsTotal: number;
-  leconsRealisees: number;
-  modulesDesactivesCount: number;
-  leconsRetireesCount: number;
-  totalHeuresPrevu: number | null;
-  heuresRealisees: number | null;
-  hasHeuresPrevu: boolean;
-  progressionPct: number | null;
-  attenduPct: number | null;
-  retardPct: number | null;
-  modules: ProgressionModuleDetail[];
-  chapitres: ProgressionChapitreDetail[];
-  entries: { chapitreId: string | null; date: Date }[];
-}
-
-export interface CalculerProgressionInput {
-  schoolId: string;
-  classId: string;
-  subjectId: string;
-  academicYearId?: string;
-}
-
-export interface AlerteRetardProgramme {
-  programmeId: string;
-  programmeTitre: string;
-  subjectId: string;
-  subjectName: string;
-  className: string;
-  classId: string;
-  chapitresTotal: number;
-  chapitresRealises: number;
-  modulesDesactivesCount: number;
-  progressionPct: number;
-  attenduPct: number;
-  retardPct: number;
-  niveau: 'CRITIQUE' | 'MODERE';
-}
+export type {
+  AlerteRetardProgramme,
+  CalculerProgressionInput,
+  ProgressionAvecProgramme,
+  ProgressionChapitreDetail,
+  ProgressionModuleDetail,
+} from './progressionTypes';
 
 export class CalculerProgressionProgrammeUseCase {
   constructor(
@@ -105,9 +44,21 @@ export class CalculerProgressionProgrammeUseCase {
     private readonly anneeRepository: AnneeAcademiqueRepository,
     private readonly avancementRepository?: ChapitreAvancementRepository,
     private readonly departmentRepository?: DepartmentRepository,
+    private readonly rattachementRepository?: RattachementEnseignantRepository,
   ) {}
 
   async calculerProgression(input: CalculerProgressionInput): Promise<ProgressionAvecProgramme> {
+    if (input.actor && this.departmentRepository) {
+      await exigerDroitLectureProgrammeClasseMatiere(
+        this.departmentRepository,
+        this.rattachementRepository,
+        input.schoolId,
+        input.subjectId,
+        input.classId,
+        input.actor,
+      );
+    }
+
     const anneeId = input.academicYearId ?? (await this.anneeRepository.findCourante(input.schoolId))?.id;
     if (!anneeId) {
       return this.vide();
@@ -409,7 +360,19 @@ export class CalculerProgressionProgrammeUseCase {
     subjectId: string,
     classId?: string,
     academicYearId?: string,
+    actor?: PedagogieActor,
   ): Promise<{ hasProgramme: boolean; chapitres: ProgrammeChapitreProps[] }> {
+    if (actor && this.departmentRepository) {
+      await exigerDroitLectureProgrammeClasseMatiere(
+        this.departmentRepository,
+        this.rattachementRepository,
+        schoolId,
+        subjectId,
+        classId,
+        actor,
+      );
+    }
+
     const anneeId = academicYearId ?? (await this.anneeRepository.findCourante(schoolId))?.id;
     let programme = null;
 
